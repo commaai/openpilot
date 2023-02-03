@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QHBoxLayout>
-#include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -14,7 +13,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   // message filter
-  QLineEdit *filter = new QLineEdit(this);
+  filter = new QLineEdit(this);
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
@@ -43,6 +42,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // signals/slots
   QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
+  QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
@@ -81,6 +81,13 @@ void MessagesWidget::updateSuppressedButtons() {
     suppress_clear->setEnabled(true);
     suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
   }
+}
+
+void MessagesWidget::reset() {
+  model->reset();
+  filter->clear();
+  current_msg_id = "";
+  updateSuppressedButtons();
 }
 
 
@@ -213,4 +220,12 @@ void MessageListModel::suppress() {
 
 void MessageListModel::clearSuppress() {
   suppressed_bytes.clear();
+}
+
+void MessageListModel::reset() {
+  beginResetModel();
+  filter_str = "";
+  clearSuppress();
+  msgs.clear();
+  endResetModel();
 }

@@ -5,6 +5,7 @@ AbstractStream *can = nullptr;
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
+  QObject::connect(this, &AbstractStream::streamStarted, this, &AbstractStream::reset);
 }
 
 void AbstractStream::process(QHash<QString, CanData> *messages) {
@@ -15,6 +16,14 @@ void AbstractStream::process(QHash<QString, CanData> *messages) {
   emit msgsReceived(messages);
   delete messages;
   processing = false;
+}
+
+void AbstractStream::reset() {
+  can_msgs.clear();
+  counters.clear();
+  counters_begin_sec = 0;
+  processing = false;
+
 }
 
 bool AbstractStream::updateEvent(const Event *event) {

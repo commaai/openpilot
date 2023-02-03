@@ -59,6 +59,7 @@ public:
 protected:
   void process(QHash<QString, CanData> *);
   bool updateEvent(const Event *event);
+  void reset();
 
   bool is_live_streaming = false;
   std::atomic<double> counters_begin_sec = 0;
