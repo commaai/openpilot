@@ -45,7 +45,7 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==22.3
+pip install pip==22.3.1
 pip install poetry==1.2.2
 
 poetry config virtualenvs.prefer-active-python true --local
@@ -69,11 +69,13 @@ else
   RUN="poetry run"
 fi
 
-echo "pre-commit hooks install..."
-shopt -s nullglob
-for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-  cd $DIR/$(dirname $f)
-  if [ -e ".git" ]; then
-    $RUN pre-commit install
-  fi
-done
+if [ "$(uname)" != "Darwin" ]; then
+  echo "pre-commit hooks install..."
+  shopt -s nullglob
+  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
+    cd $DIR/$(dirname $f)
+    if [ -e ".git" ]; then
+      $RUN pre-commit install
+    fi
+  done
+fi

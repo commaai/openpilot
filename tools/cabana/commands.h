@@ -1,8 +1,8 @@
 #pragma once
 
 #include <QUndoCommand>
+#include <QUndoStack>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
 
 class EditMsgCommand : public QUndoCommand {
@@ -60,4 +60,9 @@ private:
   const QString id;
   Signal old_signal = {};
   Signal new_signal = {};
+};
+
+namespace UndoStack {
+  QUndoStack *instance();
+  inline void push(QUndoCommand *cmd) { instance()->push(cmd); }
 };

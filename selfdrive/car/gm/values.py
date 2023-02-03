@@ -11,7 +11,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
   STEER_MAX = 300  # GM limit is 3Nm. Used by carcontroller to generate LKA output
-  ACTIVE_STEER_STEP = 2  # Active control frames per command (50hz)
+  STEER_STEP = 2  # Active control frames per command (50hz)
   INACTIVE_STEER_STEP = 10  # Inactive control frames per command (10hz)
   STEER_DELTA_UP = 7  # Delta rates require review due to observed EPS weakness
   STEER_DELTA_DOWN = 17
@@ -75,7 +75,7 @@ class CAR:
 
 class Footnote(Enum):
   OBD_II = CarFootnote(
-    'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware">community built ASCM harness</a>. ' +
+    'Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware" target="_blank">community built ASCM harness</a>. ' +
     '<b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b>',
     Column.MODEL)
 

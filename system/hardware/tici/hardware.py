@@ -85,6 +85,16 @@ class Tici(HardwareBase):
   def amplifier(self):
     return Amplifier()
 
+  @cached_property
+  def model(self):
+    with open("/sys/firmware/devicetree/base/model") as f:
+      model = f.read().strip('\x00')
+    model = model.split('comma ')[-1]
+    # TODO: remove this with AGNOS 7+
+    if model.startswith('Qualcomm'):
+      model = 'tici'
+    return model
+
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
@@ -385,15 +395,22 @@ class Tici(HardwareBase):
 
   def set_screen_brightness(self, percentage):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
+      val = int(percentage * (max_brightness / 100.))
       with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-        f.write(str(int(percentage * 10.23)))
+        f.write(str(val))
     except Exception:
       pass
 
   def get_screen_brightness(self):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
       with open("/sys/class/backlight/panel0-backlight/brightness") as f:
-        return int(float(f.read()) / 10.23)
+        return int(float(f.read()) / (max_brightness / 100.))
     except Exception:
       return 0
 
@@ -401,7 +418,7 @@ class Tici(HardwareBase):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
     if not powersave_enabled:
-      self.amplifier.initialize_configuration()
+      self.amplifier.initialize_configuration(self.model)
 
     # *** CPU config ***
 
@@ -430,7 +447,7 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration()
+    self.amplifier.initialize_configuration(self.model)
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
