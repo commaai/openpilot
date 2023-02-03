@@ -73,6 +73,7 @@ private:
   void applyNiceNumbers(qreal min, qreal max);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
+  void updateSeriesPoints();
 
   QValueAxis *axis_x;
   QValueAxis *axis_y;
