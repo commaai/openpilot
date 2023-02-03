@@ -506,8 +506,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.save();
 
-  const int ww = 115;
-  const int hh = 115;
+  const int ww = 144;
 
   // circle background
   /*
@@ -559,14 +558,14 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
     // float end_shade = std::fmax(std::fmin(0.4 + 0.6*(scene.face_kpts_draw_d[i+1] + 20)/100, 1.0), 0.0);
     // linearGrad.setColorAt(1, QColor::fromRgbF(end_shade, end_shade, end_shade, opacity));
 
-    painter.setPen(QPen(QColor::fromRgbF(draw_shade, draw_shade, draw_shade, 1.0), 6, Qt::SolidLine, Qt::RoundCap));
+    painter.setPen(QPen(QColor::fromRgbF(draw_shade, draw_shade, draw_shade, 1.0), 7.7, Qt::SolidLine, Qt::RoundCap));
     painter.drawLine(start_p, end_p);
   }
 
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   const int eff_ww = ww - 16;
-  const int eff_hh = hh - 20;
+  const int eff_hh = ww - 16;
   // tracking arcs
   float delta_x = -scene.driver_pose_sins[1] * eff_ww / 2;
   float delta_y = -scene.driver_pose_sins[0] * eff_hh / 2;
