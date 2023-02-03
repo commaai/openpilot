@@ -415,8 +415,13 @@ def main(sm=None, pm=None, qc=None):
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
+  # disable until set as main gps source, to better analyze startup time
+  use_internet = False #"LAIKAD_NO_INTERNET" not in os.environ
+
   replay = "REPLAY" in os.environ
-  use_internet = "LAIKAD_NO_INTERNET" not in os.environ
+  if replay or "CI" in os.environ:
+    use_internet = True
+
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
