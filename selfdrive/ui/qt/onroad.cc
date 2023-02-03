@@ -506,8 +506,6 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.save();
 
-  const int ww = 144;
-
   // circle background
   /*
   painter.setOpacity(1.0);
@@ -564,21 +562,16 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-  const int eff_ww = ww - 16;
-  const int eff_hh = ww - 16;
   // tracking arcs
-  float delta_x = -scene.driver_pose_sins[1] * eff_ww / 2;
-  float delta_y = -scene.driver_pose_sins[0] * eff_hh / 2;
-  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.53, 0.26, 0.945*(1.0-dm_fade_state)), 1.3, Qt::SolidLine, Qt::RoundCap));
-  painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - eff_hh / 2, fabs(delta_x), eff_hh), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
-  painter.drawArc(QRectF(x - eff_ww / 2, std::fmin(y + delta_y, y), eff_ww, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
-
-  /*
-  // circle border (status)
-  painter.setPen(QPen(QColor::fromRgbF(opacity, opacity, opacity, 1.0), 4, Qt::SolidLine, Qt::RoundCap));
-  painter.setBrush(Qt::NoBrush);
-  painter.drawEllipse(x - eff_ww / 2, y - eff_hh / 2, eff_ww, eff_hh);
-  */
+  const int arc_l = 128;
+  float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
+  float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
+  float arc_k1 = fmin(1.0, scene.driver_pose_diff[1] * 5.0);
+  float arc_k2 = fmin(1.0, scene.driver_pose_diff[0] * 5.0);
+  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+6.0*arc_k1, Qt::SolidLine, Qt::RoundCap));
+  painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - arc_l / 2, fabs(delta_x), arc_l), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
+  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+6.0*arc_k2, Qt::SolidLine, Qt::RoundCap));
+  painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   painter.restore();
 }

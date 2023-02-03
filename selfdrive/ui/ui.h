@@ -105,6 +105,7 @@ typedef struct UIScene {
 
   // driverStateV2
   float driver_pose_vals[3];
+  float driver_pose_diff[3];
   float driver_pose_sins[3];
   float driver_pose_coss[3];
   QPointF face_kpts_draw[FACE_KPTS_SIZE];
