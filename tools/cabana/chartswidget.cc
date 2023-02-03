@@ -322,7 +322,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 
   QToolButton *manage_btn = new QToolButton();
   manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  manage_btn->setIcon(utils::icon("gear"));
+  manage_btn->setIcon(utils::icon("list"));
   manage_btn->setAutoRaise(true);
   QMenu *menu = new QMenu(this);
   line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
