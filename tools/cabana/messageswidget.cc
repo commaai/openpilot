@@ -183,7 +183,7 @@ void MessageListModel::sortMessages() {
 void MessageListModel::msgsReceived(const QHash<QString, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
   bool update_all = new_msgs->size() == can->can_msgs.size();
-  if (update_all || filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
+  if (update_all || (filter_str.isEmpty() && msgs.size() != can->can_msgs.size())) {
     msgs = can->can_msgs.keys();
   }
   if (update_all || msgs.size() != prev_row_count) {
