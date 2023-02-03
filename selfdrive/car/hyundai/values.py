@@ -426,10 +426,9 @@ FW_VERSIONS = {
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\000AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
+      b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
-      b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
