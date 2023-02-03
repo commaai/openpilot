@@ -370,7 +370,8 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     glonass_t gl_stream(&stream);
     glonass_t::string_5_t* data = static_cast<glonass_t::string_5_t*>(gl_stream.data());
 
-    // TODO: remove parsing string5, its only needed for the year
+    // string5 parsing is only needed to get the year, this can be removed and
+    // the year can be fetched later in laika (note rollovers and leap year)
     uint8_t n_4 = data->n_4();
     uint16_t year = get_glonass_year(n_4, current_day);
 
