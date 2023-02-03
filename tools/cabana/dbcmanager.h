@@ -18,6 +18,7 @@ public:
   // return vector<signals>, sort by start_bits
   std::vector<const Signal *> getSignals() const;
   inline const SignalExtraInfo &extraInfo(const Signal *sig) const { return sig_extra_info.at(sig); }
+  DBCMsg &operator=(const DBCMsg &src);
 
   QString name;
   uint32_t size;

@@ -1,6 +1,5 @@
 #include "tools/cabana/dbcmanager.h"
 
-#include <QDebug>
 #include <QFile>
 #include <QVector>
 #include <limits>
@@ -36,7 +35,8 @@ void DBCManager::open(const QString &dbc_file_name) {
 }
 
 void DBCManager::open(const QString &name, const QString &content) {
-  std::istringstream stream(content.toStdString());
+  std::string content_str = content.toStdString();
+  std::istringstream stream(content_str);
   dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
   msgs.clear();
   for (auto &msg : dbc->msgs) {
@@ -49,7 +49,7 @@ void DBCManager::open(const QString &name, const QString &content) {
       m.sig_extra_info[&sig] = {};
     }
   }
-  parseExtraInfo(content.toStdString());
+  parseExtraInfo(content_str);
   emit DBCFileChanged();
 }
 
@@ -272,4 +272,14 @@ bool operator==(const Signal &l, const Signal &r) {
 bool operator==(const SignalExtraInfo &l, const SignalExtraInfo &r) {
   return l.min == r.min && l.max == r.max && l.comment == r.comment &&
          l.unit == r.unit && l.val_desc == r.val_desc;
+}
+
+DBCMsg &DBCMsg::operator=(const DBCMsg &src) {
+  name = src.name;
+  size = src.size;
+  for (auto &[name, s] : src.sigs) {
+    sigs[name] = s;
+    sig_extra_info[&sigs[name]] = src.extraInfo(&s);
+  }
+  return *this;
 }
