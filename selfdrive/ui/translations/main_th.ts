@@ -238,6 +238,14 @@
         <source>Disengage to Power Off</source>
         <translation>ยกเลิกระบบช่วยขับเพื่อปิดเครื่อง</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation>รีเซ็ต</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>ทบทวน</translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -271,6 +279,17 @@
     <message>
         <source>camera starting</source>
         <translation>กำลังเปิดกล้อง</translation>
+    </message>
+</context>
+<context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation>คุณกำลังใช้โหมดทดลอง</translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation>คุณกำลังใช้โหมดชิล</translation>
     </message>
 </context>
 <context>
@@ -464,6 +483,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Enable</source>
+        <translation>เปิดใช้งาน</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>ยกเลิก</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -583,13 +613,6 @@ location set</source>
     <message>
         <source>Unable to mount data partition. Press confirm to reset your device.</source>
         <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูล กดยืนยันเพื่อรีเซ็ตอุปกรณ์ของคุณ</translation>
-    </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
-    <message>
-        <source>Ok</source>
-        <translation>ตกลง</translation>
     </message>
 </context>
 <context>
@@ -850,6 +873,10 @@ location set</source>
         <source>Select a branch</source>
         <translation>เลือก Branch</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>ถอนการติดตั้ง</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -975,28 +1002,56 @@ location set</source>
         <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 ควบคุมเร่ง/เบรคแบบ End-to-end (อยู่ขั้นพัฒนา) 🌮</translation>
-    </message>
-    <message>
         <source>Experimental openpilot Longitudinal Control</source>
         <translation>ทดลองใช้ระบบควบคุมการเร่ง/เบรคโดย openpilot</translation>
     </message>
     <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในขั้นทดลอง และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด&lt;/b&gt;</translation>
+        <source>Experimental Mode</source>
+        <translation>โหมดทดลอง</translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>ให้ openpilot ควบคุมการเร่ง/เบรคแบบ end-to-end โดย openpilot จะขับอย่างที่มนุษย์คิด ระบบยังอยู่ในขั้นทดลอง</translation>
+        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในขั้นพัฒนา และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation>ขณะนี้ยังไม่มีระบบควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้</translation>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
+        <translation>โดยปกติสำหรับรถคันนี้ openpilot จะควบคุมการเร่ง/เบรคด้วยระบบ ACC จากโรงงาน แทนการควยคุมโดย openpilot เปิดสวิตซ์นี้เพื่อให้ openpilot ควบคุมการเร่ง/เบรค แนะนำให้เปิดโหมดทดลองเมื่อต้องการให้ openpilot ควบคุมการเร่ง/เบรค ซึ่งอยู่ในขั้นพัฒนา</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
-        <translation>เปิดใช้งานระบบควบคุมการเร่ง/เบรคขั้นทดลอง เพื่อเปิดใช้งานสิ่งนี้</translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>โดยปกติ openpilot จะขับใน&lt;b&gt;โหมดชิล&lt;/b&gt; เปิดโหมดทดลองเพื่อใช้&lt;b&gt;ความสามารถในขั้นพัฒนา&lt;/b&gt; ซึ่งยังไม่พร้อมสำหรับโหมดชิล ความสามารถในขั้นพัฒนามีดังนี้:</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮 ควบคุมเร่ง/เบรคแบบ End-to-End 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>ให้ openpilot ควบคุมการเร่ง/เบรค โดย openpilot จะขับอย่างที่มนุษย์คิด รวมถึงการหยุดที่ไฟแดง และป้ายหยุดรถ เนื่องจาก openpilot จะกำหนดความเร็วในการขับด้วยตัวเอง การตั้งความเร็วจะเป็นเพียงการกำหนดความเร็วสูงสูดเท่านั้น ความสามารถนี้ยังอยู่ในขั้นพัฒนา อาจเกิดข้อผิดพลาดขึ้นได้</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>การแสดงภาพการขับขี่แบบใหม่</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>ขณะนี้โหมดทดลองไม่สามารถใช้งานได้ในรถคันนี้ เนื่องจากเปิดใช้ระบบควบคุมการเร่ง/เบรคของรถที่ติดตั้งจากโรงงานอยู่</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>ระบบควบคุมการเร่ง/เบรคโดย openpilot อาจมาในการอัปเดตในอนาคต</translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>เวอร์ชันทดลองของระบบควบคุมการเร่ง/เบรคโดย openpilot สามารถทดสอบได้พร้อมกับโหมดการทดลอง บน branch ที่กำลังพัฒนา</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>เปิดระบบควบคุมการเร่ง/เบรคขั้นพัฒนาโดย openpilot เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
 </context>
 <context>
@@ -1051,6 +1106,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>เลิกใช้เครือข่าย Wi-Fi &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>เลิกใช้</translation>
     </message>
 </context>
 </TS>
