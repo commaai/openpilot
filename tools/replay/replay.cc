@@ -114,9 +114,9 @@ void Replay::seekTo(double seconds, bool relative) {
     rInfo("seeking to %d s, segment %d", (int)seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    emit seekedTo(seconds);
     return isSegmentMerged(seg);
   });
-  emit seekedTo(seconds);
   queueSegment();
 }
 
