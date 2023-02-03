@@ -40,7 +40,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
-  QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
+  QObject::connect(filter, &QLineEdit::textEdited, model, &MessageListModel::setFilterString);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
@@ -227,7 +227,7 @@ void MessageListModel::clearSuppress() {
 void MessageListModel::reset() {
   beginResetModel();
   filter_str = "";
-  clearSuppress();
   msgs.clear();
+  clearSuppress();
   endResetModel();
 }
