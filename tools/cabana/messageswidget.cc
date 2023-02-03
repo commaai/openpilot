@@ -106,11 +106,12 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   } else if (role == Qt::UserRole && index.column() == 4) {
     QList<QVariant> colors;
+    colors.reserve(can_data.dat.size());
     for (int i = 0; i < can_data.dat.size(); i++){
       if (suppressed_bytes.contains({id, i})) {
         colors.append(QColor(255, 255, 255, 0));
       } else {
-        colors.append(can_data.colors[i]);
+        colors.append(i < can_data.colors.size() ? can_data.colors[i] : QColor(255, 255, 255, 0));
       }
     }
     return colors;

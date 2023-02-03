@@ -57,7 +57,7 @@ const CanData &AbstractStream::lastMessage(const QString &id) {
 }
 
 void AbstractStream::updateLastMsgsTo(double sec) {
-  QHash<std::pair<uint8_t, uint32_t>, CanData> last_msgs; // Much faster than QHash<String, CanData>
+  QHash<std::pair<uint8_t, uint32_t>, CanData> last_msgs;  // Much faster than QHash<String, CanData>
   last_msgs.reserve(can_msgs.size());
   double route_start_time = routeStartTime();
   uint64_t last_ts = (sec + route_start_time) * 1e9;
@@ -67,8 +67,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       for (const auto &c : (*it)->event.getCan()) {
         auto &m = last_msgs[{c.getSrc(), c.getAddress()}];
         if (++m.count == 1) {
-          m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
           m.ts = ((*it)->mono_time / 1e9) - route_start_time;
+          m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
+          m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
+          m.last_change_t = QVector<double>(m.dat.size(), m.ts);
         } else {
           m.freq = m.count / std::max(1.0, m.ts);
         }
