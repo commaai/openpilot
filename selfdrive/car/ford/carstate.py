@@ -118,7 +118,7 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
-      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthrough the remaining buttons
       ("WiprFront_D_Stat", "Steering_Data_FD1"),
       ("LghtAmb_D_Sns", "Steering_Data_FD1"),
       ("AccButtnGapDecPress", "Steering_Data_FD1"),

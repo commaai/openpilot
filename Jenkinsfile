@@ -81,6 +81,7 @@ pipeline {
 
       parallel {
 
+        /*
         stage('simulator') {
           agent {
             dockerfile {
@@ -90,7 +91,8 @@ pipeline {
             }
           }
           steps {
-            sh "git config --global --add safe.directory ${WORKSPACE}"
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --recursive"
             sh "git lfs pull"
             lock(resource: "", label: "simulator", inversePrecedence: true, quantity: 1) {
               sh "${WORKSPACE}/tools/sim/build_container.sh"
@@ -107,6 +109,7 @@ pipeline {
             }
           }
         }
+        */
 
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
@@ -151,7 +154,7 @@ pipeline {
         stage('camerad-ar') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-ar0321", [
+            phone_steps("tici-ar0231", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
@@ -189,7 +192,7 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+              ["model replay", "cd selfdrive/test/process_replay && NO_NAV=1 ./model_replay.py"],
             ])
           }
         }

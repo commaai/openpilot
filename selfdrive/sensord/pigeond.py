@@ -123,7 +123,7 @@ class TTYPigeon():
       init_baudrate(self)
 
       # clear configuration
-      self.send_with_ack(b"\xb5\x62\x06\x09\x0d\x00\x00\x00\x1f\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x17\x71\x5b")
+      self.send_with_ack(b"\xb5\x62\x06\x09\x0d\x00\x1f\x1f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x17\x71\xd7")
 
       # clear flash memory (almanac backup)
       self.send_with_ack(b"\xB5\x62\x09\x14\x04\x00\x01\x00\x00\x00\x22\xf0")
@@ -303,8 +303,7 @@ def main():
 
   pigeon, pm = create_pigeon()
   init_baudrate(pigeon)
-  r = initialize_pigeon(pigeon)
-  Params().put_bool("UbloxAvailable", r)
+  initialize_pigeon(pigeon)
 
   # start receiving data
   run_receiving(pigeon, pm)

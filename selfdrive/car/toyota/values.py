@@ -125,6 +125,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
     ToyotaCarInfo("Lexus UX Hybrid 2019-22"),
   ],
@@ -230,7 +231,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
-    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS],
+    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS, CAR.LEXUS_RC],
   }
 )
 
@@ -765,6 +766,7 @@ FW_VERSIONS = {
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203202\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
+      b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -831,6 +833,7 @@ FW_VERSIONS = {
       b'\x01896630ZJ1000\x00\x00\x00\x00',
       b'\x01896630ZU8000\x00\x00\x00\x00',
       b'\x01896637621000\x00\x00\x00\x00',
+      b'\x01896637623000\x00\x00\x00\x00',
       b'\x01896637624000\x00\x00\x00\x00',
       b'\x01896637626000\x00\x00\x00\x00',
       b'\x01896637639000\x00\x00\x00\x00',
@@ -839,6 +842,7 @@ FW_VERSIONS = {
       b'\x02896630A07000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630A21000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZJ5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x02896630ZK8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZN8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZQ3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZR2000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -1737,22 +1741,29 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_RC: {
+    (Ecu.engine, 0x700, None): [
+      b'\x01896632478200\x00\x00\x00\x00',
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\x0232484000\x00\x00\x00\x00\x00\x00\x00\x0052422000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'F152624150\x00\x00\x00\x00\x00\x00',
       b'F152624221\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.dsu, 0x791, None): [
+      b'881512407000\x00\x00\x00\x00',
       b'881512409100\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B24081\x00\x00\x00\x00\x00\x00',
+      b'8965B24320\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4702300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F2401200\x00\x00\x00\x00',
       b'8646F2402200\x00\x00\x00\x00',
     ],
   },
