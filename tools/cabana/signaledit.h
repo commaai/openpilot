@@ -40,7 +40,7 @@ public:
   void setMessage(const QString &id);
   void setFilter(const QString &txt);
   void addSignal(int start_bit, int size, bool little_endian);
-  bool saveSignal(const Signal *origin_s, Signal &s);
+  bool saveSignal(const Signal *origin_s, Signal &s, const SignalExtraInfo *extra_info = nullptr);
   void resizeSignal(const Signal *sig, int start_bit, int size);
   void removeSignal(const Signal *sig);
   inline Item *getItem(const QModelIndex &index) const { return index.isValid() ? (Item *)index.internalPointer() : root.get(); }

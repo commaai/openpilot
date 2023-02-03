@@ -1,53 +1,135 @@
 #include "tools/cabana/dbcmanager.h"
 
-#include <limits>
-#include <sstream>
+#include <QDebug>
+#include <QFile>
 #include <QVector>
+#include <limits>
+#include <regex>
+#include <sstream>
+
+namespace {
+
+std::regex bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
+std::regex sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+std::regex sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+std::regex sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
+std::regex val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
+
+inline bool startswith(const std::string &str, const char *prefix) { return str.find(prefix, 0) == 0; }
+inline std::string &trim(std::string &s, const char *t = " \t\n\r\f\v") {
+  s.erase(s.find_last_not_of(t) + 1);
+  return s.erase(0, s.find_first_not_of(t));
+}
+
+}  // namespace
 
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 
 DBCManager::~DBCManager() {}
 
 void DBCManager::open(const QString &dbc_file_name) {
-  dbc = const_cast<DBC *>(dbc_lookup(dbc_file_name.toStdString()));
-  initMsgMap();
+  QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, dbc_file_name);
+  QFile file(opendbc_file_path);
+  if (file.open(QIODevice::ReadOnly)) {
+    open(dbc_file_name, file.readAll());
+  }
 }
 
 void DBCManager::open(const QString &name, const QString &content) {
   std::istringstream stream(content.toStdString());
   dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  initMsgMap();
-}
-
-void DBCManager::initMsgMap() {
   msgs.clear();
   for (auto &msg : dbc->msgs) {
     auto &m = msgs[msg.address];
     m.name = msg.name.c_str();
     m.size = msg.size;
-    for (auto &s : msg.sigs)
-      m.sigs[QString::fromStdString(s.name)] = s;
+    for (auto &s : msg.sigs) {
+      auto &sig = m.sigs[QString::fromStdString(s.name)];
+      sig = s;
+      m.sig_extra_info[&sig] = {};
+    }
   }
+  parseExtraInfo(content.toStdString());
   emit DBCFileChanged();
 }
 
+void DBCManager::parseExtraInfo(const std::string &content) {
+  auto getExtraInfo = [&](uint32_t address, const std::string &sig_name) -> SignalExtraInfo * {
+    if (auto m = (DBCMsg *)msg(address)) {
+      if (auto it = m->sigs.find(sig_name.c_str()); it != m->sigs.end()) {
+        return &m->sig_extra_info[&(it->second)];
+      }
+    }
+    return nullptr;
+  };
+
+  std::smatch match;
+  std::string line;
+  uint32_t address = 0;
+  std::istringstream stream(content);
+  while (std::getline(stream, line)) {
+    line = trim(line);
+    if (startswith(line, "BO_ ")) {
+      address = (std::regex_match(line, match, bo_regexp)) ? std::stoul(match[1].str()) : 0;
+    } else if (startswith(line, "SG_ ")) {
+      int offset = 0;
+      if (!std::regex_search(line, match, sg_regexp)) {
+        if (!std::regex_search(line, match, sgm_regexp)) continue;
+        offset = 1;
+      }
+      std::string sig_name = match[1].str();
+      if (auto extra = getExtraInfo(address, sig_name)) {
+        extra->min = match[offset + 8].str().c_str();
+        extra->max = match[offset + 9].str().c_str();
+        extra->unit = match[offset + 10].str().c_str();
+      }
+    } else if (startswith(line, "VAL_ ")) {
+      if (std::regex_search(line, match, val_regexp)) {
+        uint32_t msg_address = std::stoul(match[1].str());
+        std::string sig_name = match[2].str();
+        if (auto extra = getExtraInfo(msg_address, sig_name)) {
+          extra->val_desc = QString::fromStdString(match[3].str()).trimmed();
+        }
+      }
+    } else if (startswith(line, "CM_ SG_ ")) {
+      if (std::regex_search(line, match, sg_comment_regexp)) {
+        uint32_t msg_address = std::stoul(match[1].str());
+        std::string sig_name = match[2].str();
+        if (auto extra = getExtraInfo(msg_address, sig_name)) {
+          extra->comment = match[3].str().c_str();
+        }
+      }
+    }
+  }
+}
+
 QString DBCManager::generateDBC() {
-  QString dbc_string;
+  QString dbc_string, signal_comment, val_desc;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
     for (auto &[name, sig] : m.sigs) {
-      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [0|0] \"\" XXX\n")
+      const SignalExtraInfo &extra = m.extraInfo(&sig);
+      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
                         .arg(name)
                         .arg(sig.start_bit)
                         .arg(sig.size)
                         .arg(sig.is_little_endian ? '1' : '0')
                         .arg(sig.is_signed ? '-' : '+')
                         .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10);
+                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(extra.min)
+                        .arg(extra.max)
+                        .arg(extra.unit);
+      if (!extra.comment.isEmpty()) {
+        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(name).arg(extra.comment);
+      }
+      if (!extra.val_desc.isEmpty()) {
+        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(name).arg(extra.val_desc);
+      }
     }
     dbc_string += "\n";
   }
-  return dbc_string;
+  return dbc_string + signal_comment + val_desc;
 }
 
 void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
@@ -67,12 +149,13 @@ void DBCManager::removeMsg(const QString &id) {
 void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto &s = m->sigs[sig.name.c_str()];
+    m->sig_extra_info[&s] = {};
     s = sig;
     emit signalAdded(parseId(id).second, &s);
   }
 }
 
-void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
+void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig, const SignalExtraInfo &extra) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     // change key name
     QString new_name = QString::fromStdString(sig.name);
@@ -81,6 +164,8 @@ void DBCManager::updateSignal(const QString &id, const QString &sig_name, const 
     auto it = m->sigs.insert(std::move(node));
     auto &s = m->sigs[new_name];
     s = sig;
+
+    m->sig_extra_info[&s] = extra;
     emit signalUpdated(&s);
   }
 }
@@ -90,6 +175,7 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
     auto it = m->sigs.find(sig_name);
     if (it != m->sigs.end()) {
       emit signalRemoved(&(it->second));
+      m->sig_extra_info.erase(&(it->second));
       m->sigs.erase(it);
     }
   }
@@ -108,8 +194,8 @@ DBCManager *dbc() {
 
 // DBCMsg
 
-std::vector<const Signal*> DBCMsg::getSignals() const {
-  std::vector<const Signal*> ret;
+std::vector<const Signal *> DBCMsg::getSignals() const {
+  std::vector<const Signal *> ret;
   ret.reserve(sigs.size());
   for (auto &[_, sig] : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
@@ -181,4 +267,9 @@ bool operator==(const Signal &l, const Signal &r) {
          l.msb == r.msb && l.lsb == r.lsb &&
          l.is_signed == r.is_signed && l.is_little_endian == r.is_little_endian &&
          l.factor == r.factor && l.offset == r.offset;
+}
+
+bool operator==(const SignalExtraInfo &l, const SignalExtraInfo &r) {
+  return l.min == r.min && l.max == r.max && l.comment == r.comment &&
+         l.unit == r.unit && l.val_desc == r.val_desc;
 }

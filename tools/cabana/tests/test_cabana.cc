@@ -18,12 +18,16 @@ TEST_CASE("DBCManager::generateDBC") {
   auto &new_msgs = dbc_from_generated.messages();
   REQUIRE(msgs.size() == new_msgs.size());
   for (auto &[address, m] : msgs) {
-    auto new_m = new_msgs.at(address);
+    auto &new_m = new_msgs.at(address);
     REQUIRE(m.name == new_m.name);
     REQUIRE(m.size == new_m.size);
-    REQUIRE(m.sigs.size() == new_m.sigs.size());
-    for (auto &[name, sig] : m.sigs)
-      REQUIRE(sig == new_m.sigs[name]);
+    auto sigs = m.getSignals();
+    auto new_sigs = new_m.getSignals();
+    REQUIRE(sigs.size() == new_sigs.size());
+    for (int i = 0; i < sigs.size(); ++i) {
+      REQUIRE(*sigs[i] == *new_sigs[i]);
+      REQUIRE(m.extraInfo(sigs[i]) == new_m.extraInfo(new_sigs[i]));
+    }
   }
 }
 

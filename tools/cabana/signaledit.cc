@@ -25,7 +25,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name.c_str(), .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum", "Maximum", "Description"};
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -117,12 +117,18 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (index.column() == 0) {
         return item->type == Item::Sig ? QString::fromStdString(item->sig->name) : item->title;
       } else {
+        auto &extra_info = dbc()->msg(msg_id)->extraInfo(item->sig);
         switch (item->type) {
           case Item::Sig: return item->sig_val;
           case Item::Name: return QString::fromStdString(item->sig->name);
           case Item::Size: return item->sig->size;
           case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
           case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::Unit: return extra_info.unit;
+          case Item::Comment: return extra_info.comment;
+          case Item::Min: return extra_info.min;
+          case Item::Max: return extra_info.max;
+          case Item::Desc: return extra_info.val_desc;
           default: break;
         }
       }
@@ -141,6 +147,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
 
   Item *item = getItem(index);
   Signal s = *item->sig;
+  SignalExtraInfo extra_info = dbc()->msg(msg_id)->extraInfo(item->sig);
   switch (item->type) {
     case Item::Name: s.name = value.toString().toStdString(); break;
     case Item::Size: s.size = value.toInt(); break;
@@ -148,9 +155,14 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
     case Item::Factor: s.factor = value.toDouble(); break;
+    case Item::Unit: extra_info.unit = value.toString(); break;
+    case Item::Comment: extra_info.comment = value.toString(); break;
+    case Item::Min: extra_info.min = value.toString(); break;
+    case Item::Max: extra_info.max = value.toString(); break;
+    case Item::Desc: extra_info.val_desc = value.toString(); break;
     default: return false;
   }
-  bool ret = saveSignal(item->sig, s);
+  bool ret = saveSignal(item->sig, s, &extra_info);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
 }
@@ -170,7 +182,7 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
   }
 }
 
-bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
+bool SignalModel::saveSignal(const Signal *origin_s, Signal &s, const SignalExtraInfo *extra_info) {
   auto msg = dbc()->msg(msg_id);
   if (s.name != origin_s->name && msg->sigs.count(s.name.c_str()) != 0) {
     QString text = tr("There is already a signal with the same name '%1'").arg(s.name.c_str());
@@ -196,7 +208,8 @@ bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
     s.msb = s.start_bit;
   }
 
-  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
+  SignalExtraInfo extra = extra_info ? *extra_info : msg->extraInfo(origin_s);
+  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s, extra));
   return true;
 }
 
@@ -301,7 +314,8 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset || item->type == SignalModel::Item::Factor) {
+  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
+      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
     e->setValidator(index.row() == 0 ? name_validator : double_validator);
