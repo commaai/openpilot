@@ -56,11 +56,17 @@ void OpenRouteDialog::loadRoute() {
       route = basename.mid(0, pos);
     }
   }
-  failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
-  btn_box->setEnabled(true);
-  if (failed_to_load) {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+
+  bool is_valid_format = Route::parseRoute(route).str.size() > 0;
+  if (is_valid_format) {
+    failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
+    if (failed_to_load) {
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+    } else {
+      accept();
+    }
   } else {
-    accept();
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   }
+  btn_box->setEnabled(true);
 }
