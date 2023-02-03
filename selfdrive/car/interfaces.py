@@ -406,8 +406,6 @@ class CarStateBase(ABC):
       'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
       'E': GearShifter.eco, 'ECO': GearShifter.eco,
       'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
-      '_1': GearShifter.manumatic, '_2': GearShifter.manumatic, '_3': GearShifter.manumatic,
-      '_4': GearShifter.manumatic, '_5': GearShifter.manumatic, '_6': GearShifter.manumatic,
       'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
       'S': GearShifter.sport, 'SPORT': GearShifter.sport, 'SPORT_DRIVESPORT': GearShifter.sport,
       'L': GearShifter.low, 'LOW': GearShifter.low,
