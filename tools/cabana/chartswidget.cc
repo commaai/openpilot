@@ -613,7 +613,7 @@ void ChartView::leaveEvent(QEvent *event) {
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
-      !manage_btn_proxy->widget()->underMouse() && !close_btn_proxy->widget()->underMouse()) {
+      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
     QDrag *drag = new QDrag(this);
