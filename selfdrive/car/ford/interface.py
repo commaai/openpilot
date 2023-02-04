@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.ford.values import CANFD_CARS, CAR, Ecu
+from selfdrive.car.ford.values import CANFD_CARS, CANBUS, CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -16,6 +16,10 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
 
     if candidate in CANFD_CARS:
+      CANBUS.main = 4
+      CANBUS.radar = 5
+      CANBUS.camera = 6
+
       # assume internal dos panda + external red panda
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.ford, Panda.FLAG_FORD_CANFD)]
