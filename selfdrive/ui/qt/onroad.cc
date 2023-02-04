@@ -396,7 +396,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
     int dm_icon_x = rightHandDM ? rect().right() -  168 / 2 - (bdr_s * 2) : 168 / 2 + (bdr_s * 2);
     drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, dmActive ? 1.0 : 0.2);
     drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
+             dm_img, blackColor(0), dmActive ? 1.0 : 0.2);
   }
   p.restore();
 }
@@ -417,7 +417,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  // p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
