@@ -29,7 +29,6 @@ public:
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
-  void setPlotAreaLeftPosition(int pos);
   qreal getYAsixLabelWidth() const;
   void setSeriesType(QAbstractSeries::SeriesType type);
 
@@ -75,6 +74,7 @@ private:
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
   void updateSeriesPoints();
 
+  int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
   QVector<QPointF> track_pts;
@@ -86,6 +86,7 @@ private:
   QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
   QAction *line_series_action;
   QAction *scatter_series_action;
+  friend class ChartsWidget;
  };
 
 class ChartsWidget : public QWidget {

@@ -200,7 +200,7 @@ ChartView *ChartsWidget::createChart() {
   QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
-  QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(100); });
+  QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(0); });
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -283,8 +283,15 @@ void ChartsWidget::alignCharts() {
   for (auto c : charts) {
     plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
   }
+  // round up to 20
+  plot_left = std::max(((plot_left + 20) / 10) * 10 + 20, 50);
   for (auto c : charts) {
-    c->setPlotAreaLeftPosition(plot_left);
+    if (c->align_to != plot_left) {
+      auto margins = c->chart()->margins();
+      margins.setLeft(margins.left() + plot_left - c->chart()->plotArea().left());
+      c->chart()->setMargins(margins);
+      c->align_to = plot_left;
+    }
   }
 }
 
@@ -357,14 +364,7 @@ qreal ChartView::getYAsixLabelWidth() const {
   }
   QFontMetrics fm(axis_y->labelsFont());
   int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
-  return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;
-}
-
-void ChartView::setPlotAreaLeftPosition(int pos) {
-  if (std::ceil(chart()->plotArea().left()) != pos) {
-    const float left_margin = chart()->margins().left() + pos - chart()->plotArea().left();
-    chart()->setMargins(QMargins(left_margin, 11, 11, 11));
-  }
+  return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n)));
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
@@ -568,6 +568,7 @@ void ChartView::updateAxisY() {
     }
   }
 
+  int prev_w = getYAsixLabelWidth();
   if (min_y == std::numeric_limits<double>::max()) min_y = 0;
   if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
   if (std::abs(max_y - min_y) < 1e-3) {
@@ -576,7 +577,10 @@ void ChartView::updateAxisY() {
     double range = max_y - min_y;
     applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
   }
-  emit axisYUpdated();
+  if (getYAsixLabelWidth() != prev_w) {
+    align_to = 0;
+    emit axisYUpdated();
+  }
 }
 
 void ChartView::applyNiceNumbers(qreal min, qreal max) {
