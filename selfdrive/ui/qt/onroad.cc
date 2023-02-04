@@ -180,7 +180,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
-  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -563,14 +563,14 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // tracking arcs
-  const int arc_l = 128;
+  const int arc_l = 133;
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
   float arc_k1 = fmin(1.0, scene.driver_pose_diff[1] * 5.0);
   float arc_k2 = fmin(1.0, scene.driver_pose_diff[0] * 5.0);
-  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+6.0*arc_k1, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+8.0*arc_k1, Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - arc_l / 2, fabs(delta_x), arc_l), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
-  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+6.0*arc_k2, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 1.0+8.0*arc_k2, Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   painter.restore();
