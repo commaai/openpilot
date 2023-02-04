@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.ford.values import CAR, Ecu
+from selfdrive.car.ford.values import CANFD_CARS, CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -13,7 +14,13 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "ford"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+
+    if candidate in CANFD_CARS:
+      # assume internal dos panda + external red panda
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                           get_safety_config(car.CarParams.SafetyModel.ford, Panda.FLAG_FORD_CANFD)]
+    else:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # These cars are dashcam only until the port is finished
     ret.dashcamOnly = True
