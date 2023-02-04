@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QRubberBand>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QToolTip>
@@ -67,10 +68,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   main_layout->addWidget(charts_scroll);
-
-  align_charts_timer = new QTimer(this);
-  align_charts_timer->setSingleShot(true);
-  align_charts_timer->callOnTimeout(this, &ChartsWidget::alignCharts);
 
   // init settings
   use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
@@ -146,12 +143,13 @@ void ChartsWidget::updateState() {
     can->seekTo(zoomed_range.first);
   }
 
-  setUpdatesEnabled(false);
+  charts_layout->parentWidget()->setUpdatesEnabled(false);
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
     c->updatePlot(cur_sec, range.first, range.second);
   }
-  setUpdatesEnabled(true);
+  alignCharts();
+  charts_layout->parentWidget()->setUpdatesEnabled(true);
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
@@ -200,7 +198,6 @@ ChartView *ChartsWidget::createChart() {
   QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
-  QObject::connect(chart, &ChartView::axisYUpdated, [this]() { align_charts_timer->start(0); });
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -279,18 +276,15 @@ void ChartsWidget::removeAll() {
 }
 
 void ChartsWidget::alignCharts() {
-  int plot_left = 0;
+  auto max = std::max_element(charts.begin(), charts.end(), [](auto &l, auto &r) { return l->y_label_width < r->y_label_width; });
+  // round up to 10
+  int plot_left = std::max(((*max)->y_label_width / 10) * 10 + 10, 50);
   for (auto c : charts) {
-    plot_left = qMax((qreal)plot_left, c->getYAsixLabelWidth());
-  }
-  // round up to 20
-  plot_left = std::max(((plot_left + 20) / 10) * 10 + 20, 50);
-  for (auto c : charts) {
-    if (c->align_to != plot_left) {
+    auto delta = plot_left - c->chart()->plotArea().left();
+    if (std::abs(delta) > 1) {
       auto margins = c->chart()->margins();
-      margins.setLeft(margins.left() + plot_left - c->chart()->plotArea().left());
+      margins.setLeft(margins.left() + delta);
       c->chart()->setMargins(margins);
-      c->align_to = plot_left;
     }
   }
 }
@@ -356,15 +350,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
-}
-
-qreal ChartView::getYAsixLabelWidth() const {
-  if (axis_y->max() <= axis_y->min() || axis_y->tickCount() <= 1) {
-    return 0;
-  }
-  QFontMetrics fm(axis_y->labelsFont());
-  int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
-  return qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n)));
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
@@ -549,68 +534,34 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         s.last_value_mono_time = events->back()->mono_time;
       }
       s.series->replace(s.vals);
-      updateAxisY();
     }
   }
+  updateAxisY();
 }
 
 // auto zoom on yaxis
 void ChartView::updateAxisY() {
   if (sigs.isEmpty()) return;
 
-  double min_y = std::numeric_limits<double>::max();
-  double max_y = std::numeric_limits<double>::lowest();
+  double min = std::numeric_limits<double>::max();
+  double max = std::numeric_limits<double>::lowest();
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
-      if (it->y() < min_y) min_y = it->y();
-      if (it->y() > max_y) max_y = it->y();
+      if (it->y() < min) min = it->y();
+      if (it->y() > max) max = it->y();
     }
   }
+  if (min == std::numeric_limits<double>::max()) min = 0;
+  if (max == std::numeric_limits<double>::lowest()) max = 0;
 
-  int prev_w = getYAsixLabelWidth();
-  if (min_y == std::numeric_limits<double>::max()) min_y = 0;
-  if (max_y == std::numeric_limits<double>::lowest()) max_y = 0;
-  if (std::abs(max_y - min_y) < 1e-3) {
-    applyNiceNumbers(min_y - 1, max_y + 1);
-  } else {
-    double range = max_y - min_y;
-    applyNiceNumbers(min_y - range * 0.05, max_y + range * 0.05);
-  }
-  if (getYAsixLabelWidth() != prev_w) {
-    align_to = 0;
-    emit axisYUpdated();
-  }
-}
+  double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
+  axis_y->setRange(min - delta, max + delta);
+  axis_y->applyNiceNumbers();
 
-void ChartView::applyNiceNumbers(qreal min, qreal max) {
-  int tick_count = axis_y->tickCount();
-  qreal range = niceNumber((max - min), true);  // range with ceiling
-  qreal step = niceNumber(range / (tick_count - 1), false);
-  min = qFloor(min / step);
-  max = qCeil(max / step);
-  tick_count = int(max - min) + 1;
-  axis_y->setRange(min * step, max * step);
-  axis_y->setTickCount(tick_count);
-  axis_y->setLabelFormat("%.1f");
-}
-
-// nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
-qreal ChartView::niceNumber(qreal x, bool ceiling) {
-  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
-  qreal q = x / z; //q<10 && q>=1;
-  if (ceiling) {
-    if (q <= 1.0) q = 1;
-    else if (q <= 2.0) q = 2;
-    else if (q <= 5.0) q = 5;
-    else q = 10;
-  } else {
-    if (q < 1.5) q = 1;
-    else if (q < 3.0) q = 2;
-    else if (q < 7.0) q = 5;
-    else q = 10;
-  }
-  return q * z;
+  QFontMetrics fm(axis_y->labelsFont());
+  int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
+  y_label_width = qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20; // left margin 20
 }
 
 void ChartView::leaveEvent(QEvent *event) {
