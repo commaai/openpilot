@@ -17,8 +17,15 @@ class DBCMsg {
 public:
   // return vector<signals>, sort by start_bits
   std::vector<const Signal *> getSignals() const;
-  inline const SignalExtraInfo &extraInfo(const Signal *sig) const { return sig_extra_info.at(sig); }
   DBCMsg &operator=(const DBCMsg &src);
+  const SignalExtraInfo extraInfo(const Signal *sig) const {
+    auto it = sig_extra_info.find(sig);
+    return it != sig_extra_info.end() ? it->second : SignalExtraInfo{};
+  }
+  const Signal *sig(const QString &sig_name) const {
+    auto it = sigs.find(sig_name);
+    return it != sigs.end() ? &(it->second) : nullptr;
+  }
 
   QString name;
   uint32_t size;
@@ -65,7 +72,7 @@ signals:
   void DBCFileChanged();
 
 private:
-  void parseExtraInfo(const std::string &content);
+  void parseExtraInfo(const QString &content);
   DBC *dbc = nullptr;
   std::map<uint32_t, DBCMsg> msgs;
 };
