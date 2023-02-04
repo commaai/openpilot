@@ -1,5 +1,5 @@
 diff --git a/selfdrive/locationd/generated/glonass.cpp b/selfdrive/locationd/generated/glonass.cpp
-index 6a48fe62c..149134fbb 100644
+index 5b17bc327..b5c6aa610 100644
 --- a/selfdrive/locationd/generated/glonass.cpp
 +++ b/selfdrive/locationd/generated/glonass.cpp
 @@ -17,7 +17,7 @@ glonass_t::glonass_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, glonass

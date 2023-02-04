@@ -225,10 +225,7 @@ selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/generated/ubx.cpp
-selfdrive/locationd/generated/ubx.h
-selfdrive/locationd/generated/gps.cpp
-selfdrive/locationd/generated/gps.h
+selfdrive/locationd/generated/*
 
 selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h

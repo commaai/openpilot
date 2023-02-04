@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <bitset>
 #include <cassert>
@@ -105,6 +106,8 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
+  Params p;
+
   // there should be at least one panda connected
   if (pandas.size() == 0) {
     return false;
@@ -116,25 +119,20 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
-  Params p = Params();
-
-  // wait for VIN to be read
+  // wait for FW query at OBD port to finish
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
-    std::string value_vin = p.get("CarVin");
-    if (value_vin.size() > 0) {
-      // sanity check VIN format
-      assert(value_vin.size() == 17);
-      LOGW("got CarVin %s", value_vin.c_str());
+    if (p.getBool("FirmwareObdQueryDone")) {
+      LOGW("finished FW query at OBD port");
       break;
     }
     util::sleep_for(20);
   }
 
-  // set to ELM327 for ECU knockouts
+  // set to ELM327 to finish fingerprinting and for potential ECU knockouts
   for (Panda *panda : pandas) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
