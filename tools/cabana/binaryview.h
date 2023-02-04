@@ -21,7 +21,7 @@ public:
 class BinaryViewModel : public QAbstractTableModel {
 public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
+  void refresh();
   void updateState();
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
@@ -39,12 +39,11 @@ public:
     QColor bg_color = QApplication::style()->standardPalette().color(QPalette::Base);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val = "0";
+    QString val = "-";
     QList<const Signal *> sigs;
   };
   std::vector<Item> items;
 
-private:
   QString msg_id;
   const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
@@ -69,6 +68,7 @@ signals:
   void resizeSignal(const Signal *sig, int from, int size);
 
 private:
+  void refresh();
   std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
   void mousePressEvent(QMouseEvent *event) override;

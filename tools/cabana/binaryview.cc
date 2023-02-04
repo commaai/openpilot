@@ -4,8 +4,10 @@
 #include <QHeaderView>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QScrollBar>
 #include <QToolTip>
 
+#include "tools/cabana/commands.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 // BinaryView
@@ -30,12 +32,15 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
   setMouseTracking(true);
-  setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
 }
 
 QSize BinaryView::minimumSizeHint() const {
-  return {horizontalHeader()->minimumSectionSize() * 9 + VERTICAL_HEADER_WIDTH + 2, 0};
+  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH,
+          CELL_HEIGHT * std::min(model->rowCount(), 10)};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -124,13 +129,20 @@ void BinaryView::leaveEvent(QEvent *event) {
 }
 
 void BinaryView::setMessage(const QString &message_id) {
-  model->setMessage(message_id);
+  model->msg_id = message_id;
+  verticalScrollBar()->setValue(0);
+  refresh();
+}
+
+void BinaryView::refresh() {
+  if (model->msg_id.isEmpty()) return;
+
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
   hovered_sig = nullptr;
   highlightPosition(QCursor::pos());
-  updateState();
+  model->refresh();
 }
 
 QSet<const Signal *> BinaryView::getOverlappingSignals() const {
@@ -155,9 +167,8 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 
 // BinaryViewModel
 
-void BinaryViewModel::setMessage(const QString &message_id) {
+void BinaryViewModel::refresh() {
   beginResetModel();
-  msg_id = message_id;
   items.clear();
   if ((dbc_msg = dbc()->msg(msg_id))) {
     row_count = dbc_msg->size;
@@ -184,6 +195,7 @@ void BinaryViewModel::setMessage(const QString &message_id) {
     items.resize(row_count * column_count);
   }
   endResetModel();
+  updateState();
 }
 
 void BinaryViewModel::updateState() {
@@ -200,7 +212,7 @@ void BinaryViewModel::updateState() {
   }
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
-    for (int j = 0; j < column_count - 1; ++j) {
+    for (int j = 0; j < 8; ++j) {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
     }
     hex[0] = toHex(binary[i] >> 4);
@@ -214,7 +226,7 @@ void BinaryViewModel::updateState() {
     }
   }
 
-  for (int i = 0; i < row_count * column_count; ++i) {
+  for (int i = 0; i < items.size(); ++i) {
     if (i >= prev_items.size() || prev_items[i].val != items[i].val || prev_items[i].bg_color != items[i].bg_color) {
       auto idx = index(i / column_count, i % column_count);
       emit dataChanged(idx, idx);
