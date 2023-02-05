@@ -72,11 +72,9 @@ pipeline {
 
     stage('build nightly') {
       agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-      /*
       when {
         branch 'master-ci'
       }
-      */
       steps {
         phone_steps("tici-needs-can", [
           ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],

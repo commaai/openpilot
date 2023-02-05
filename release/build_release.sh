@@ -12,7 +12,8 @@ SOURCE_DIR="$(git rev-parse --show-toplevel)"
 if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
 else
-  exit 0
+  echo "no release files set"
+  exit 1
 fi
 
 if [ -z "$RELEASE_BRANCH" ]; then
