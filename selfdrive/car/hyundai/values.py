@@ -73,7 +73,6 @@ class CAR:
   IONIQ_EV_LTD = "HYUNDAI IONIQ ELECTRIC LIMITED 2019"
   IONIQ_EV_2020 = "HYUNDAI IONIQ ELECTRIC 2020"
   IONIQ_PHEV_2019 = "HYUNDAI IONIQ PLUG-IN HYBRID 2019"
-  IONIQ_PHEV_2021 = "HYUNDAI IONIQ PLUG-IN HYBRID 2021"
   IONIQ_PHEV = "HYUNDAI IONIQ PHEV 2020"
   KONA = "HYUNDAI KONA 2020"
   KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
@@ -158,7 +157,6 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
-  CAR.IONIQ_PHEV_2021: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2021", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21", "All", harness=Harness.hyundai_h),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
@@ -414,23 +412,6 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PAE0G16NS1\xdbD\r\x81',
       b'\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PAE0G16NS1\x00\x00\x00\x00',
-    ],
-  },
-  CAR.IONIQ_PHEV_2021: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2600         ',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
-    ],
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\x00\x00\x00\x00',
     ],
   },
   CAR.IONIQ_PHEV: {
