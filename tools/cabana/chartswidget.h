@@ -71,6 +71,8 @@ private:
   void updateAxisY();
   void updateTitle();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
+  qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
   void updateSeriesPoints();
 

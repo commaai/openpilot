@@ -301,6 +301,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
+  axis_y->setLabelFormat("%.1f");
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->layout()->setContentsMargins(0, 0, 40, 0);
@@ -565,12 +566,41 @@ void ChartView::updateAxisY() {
   if (max == std::numeric_limits<double>::lowest()) max = 0;
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
-  axis_y->setRange(min - delta, max + delta);
-  axis_y->applyNiceNumbers();
+  auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
+  if (min_y != axis_y->min() || max_y != axis_y->max()) {
+    axis_y->setRange(min_y, max_y);
+    axis_y->setTickCount(tick_count);
+    QFontMetrics fm(axis_y->labelsFont());
+    int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
+    y_label_width = qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;  // left margin 20
+  }
+}
 
-  QFontMetrics fm(axis_y->labelsFont());
-  int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
-  y_label_width = qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;  // left margin 20
+std::tuple<double, double, int> ChartView::getNiceAxisNumbers(qreal min, qreal max, int tick_count) {
+  qreal range = niceNumber((max - min), true);  // range with ceiling
+  qreal step = niceNumber(range / (tick_count - 1), false);
+  min = qFloor(min / step);
+  max = qCeil(max / step);
+  tick_count = int(max - min) + 1;
+  return {min * step, max * step, tick_count};
+}
+
+// nice numbers can be expressed as form of 1*10^n, 2* 10^n or 5*10^n
+qreal ChartView::niceNumber(qreal x, bool ceiling) {
+  qreal z = qPow(10, qFloor(std::log10(x))); //find corresponding number of the form of 10^n than is smaller than x
+  qreal q = x / z; //q<10 && q>=1;
+  if (ceiling) {
+    if (q <= 1.0) q = 1;
+    else if (q <= 2.0) q = 2;
+    else if (q <= 5.0) q = 5;
+    else q = 10;
+  } else {
+    if (q < 1.5) q = 1;
+    else if (q < 3.0) q = 2;
+    else if (q < 7.0) q = 5;
+    else q = 10;
+  }
+  return q * z;
 }
 
 void ChartView::leaveEvent(QEvent *event) {
