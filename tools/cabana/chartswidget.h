@@ -7,7 +7,6 @@
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
-#include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
