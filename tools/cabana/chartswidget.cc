@@ -556,8 +556,9 @@ void ChartView::updateAxisY() {
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
   for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    for (auto it = begin; it != s.vals.end() && it->x() <= axis_x->max(); ++it) {
+    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+    auto last = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    for (auto it = first; it != last; ++it) {
       if (it->y() < min) min = it->y();
       if (it->y() > max) max = it->y();
     }
@@ -570,9 +571,10 @@ void ChartView::updateAxisY() {
   if (min_y != axis_y->min() || max_y != axis_y->max()) {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
+
     QFontMetrics fm(axis_y->labelsFont());
-    int n = qMax(int(-qFloor(std::log10((axis_y->max() - axis_y->min()) / (axis_y->tickCount() - 1)))), 0) + 1;
-    y_label_width = qMax(fm.width(QString::number(axis_y->min(), 'f', n)), fm.width(QString::number(axis_y->max(), 'f', n))) + 20;  // left margin 20
+    int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
+    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 20;  // left margin 20
   }
 }
 
