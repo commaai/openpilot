@@ -12,12 +12,13 @@ Usage: ./cabana [options] route
 
 Options:
   -h, --help             Displays this help.
-  --demo                 use a demo route instead of providing your own
-  --qcam                 load qcamera
-  --data_dir <data_dir>  local directory with routes
+  --demo                 Use a demo route instead of providing your own
+  --qcam                 Display qcamera
+  --ecam                 Display the wide road camera
+  --data_dir <data_dir>  Load local directory with routes
 
 Arguments:
-  route                  the drive to replay. find your drives at
+  route                  Specify the drive to replay. Find your drives at
                          connect.comma.ai
 ```
 
