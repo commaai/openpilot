@@ -129,5 +129,6 @@ class LateralPlanner:
     lateralPlan.useLaneLines = False
     lateralPlan.laneChangeState = self.DH.lane_change_state
     lateralPlan.laneChangeDirection = self.DH.lane_change_direction
+    lateralPlan.laneChangePrev = self.DH.prev_lane_change
 
     pm.send('lateralPlan', plan_send)

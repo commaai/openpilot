@@ -1,5 +1,6 @@
 from cereal import log
 from common.conversions import Conversions as CV
+from common.params import Params
 from common.realtime import DT_MDL
 
 LaneChangeState = log.LateralPlan.LaneChangeState
@@ -40,7 +41,15 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
 
+    self.param_s = Params()
+    self.lane_change_wait_timer = 0
+    self.prev_lane_change = False
+
   def update(self, carstate, lateral_active, lane_change_prob):
+    lane_change_set_timer = int(self.param_s.get("AutoLaneChangeTimer", encoding="utf8"))
+    lane_change_auto_timer = 0.0 if lane_change_set_timer == 0 else 0.1 if lane_change_set_timer == 1 else \
+                             0.5 if lane_change_set_timer == 2 else 1.0 if lane_change_set_timer == 3 else \
+                             1.5 if lane_change_set_timer == 4 else 2.0
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
@@ -48,11 +57,13 @@ class DesireHelper:
     if not lateral_active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
+      self.prev_lane_change = False
     else:
       # LaneChangeState.off
-      if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
+      if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed and not carstate.brakePressed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
+        self.lane_change_wait_timer = 0
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -67,10 +78,14 @@ class DesireHelper:
         blindspot_detected = ((carstate.leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (carstate.rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
+        self.lane_change_wait_timer += DT_MDL
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
-        elif torque_applied and not blindspot_detected:
+          self.prev_lane_change = False
+        elif (torque_applied or ((lane_change_auto_timer and self.lane_change_wait_timer > lane_change_auto_timer) and not self.prev_lane_change)) and \
+          not blindspot_detected:
           self.lane_change_state = LaneChangeState.laneChangeStarting
+          self.prev_lane_change = True
 
       # LaneChangeState.laneChangeStarting
       elif self.lane_change_state == LaneChangeState.laneChangeStarting:
@@ -92,6 +107,7 @@ class DesireHelper:
             self.lane_change_state = LaneChangeState.preLaneChange
           else:
             self.lane_change_state = LaneChangeState.off
+            self.prev_lane_change = False
 
     if self.lane_change_state in (LaneChangeState.off, LaneChangeState.preLaneChange):
       self.lane_change_timer = 0.0
