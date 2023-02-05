@@ -231,8 +231,12 @@ void ChartsWidget::updateLayout() {
   columns_cb_action->setVisible(show_column_cb);
 
   n = std::min(column_count, n);
-  for (int i = 0; i < charts.size(); ++i) {
-    charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
+  if (charts.size() != charts_layout->count() || n != charts_layout->columnCount()) {
+    charts_layout->parentWidget()->setUpdatesEnabled(false);
+    for (int i = 0; i < charts.size(); ++i) {
+      charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
+    }
+    QTimer::singleShot(0, [this]() { charts_layout->parentWidget()->setUpdatesEnabled(true); });
   }
   alignCharts(true);
 }
