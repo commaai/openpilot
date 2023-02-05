@@ -642,8 +642,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     double max = chart()->mapToValue(rect.bottomRight()).x();
 
     // Prevent zooming/seeking past the end of the route
-    min = std::clamp(min, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
-    max = std::clamp(max, can->routeStartTime(), can->routeStartTime() + can->totalSeconds());
+    min = std::clamp(min, 0., can->totalSeconds());
+    max = std::clamp(max, 0., can->totalSeconds());
 
     double min_rounded = std::floor(min * 10.0) / 10.0;
     double max_rounded = std::floor(max * 10.0) / 10.0;
