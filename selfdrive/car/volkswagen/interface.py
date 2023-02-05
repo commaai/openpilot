@@ -23,7 +23,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "volkswagen"
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
 
     use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
 
@@ -106,6 +106,11 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.ATLAS_MK1:
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
+
+    elif candidate == CAR.CRAFTER_MK2:
+      ret.mass = 2100 + STD_CARGO_KG
+      ret.wheelbase = 3.64  # SWB, LWB is 4.49, TBD how to detect difference
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
 
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG

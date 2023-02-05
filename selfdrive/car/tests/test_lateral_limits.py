@@ -40,7 +40,7 @@ class TestLateralLimits(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     CarInterface, _, _ = interfaces[cls.car_model]
-    CP = CarInterface.get_params(cls.car_model)
+    CP = CarInterface.get_non_essential_params(cls.car_model)
 
     if CP.dashcamOnly:
       raise unittest.SkipTest("Platform is behind dashcamOnly")

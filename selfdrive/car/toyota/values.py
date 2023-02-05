@@ -125,6 +125,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.COROLLAH_TSS2: [
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
+    ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
     ToyotaCarInfo("Lexus UX Hybrid 2019-22"),
   ],
@@ -161,7 +162,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
   CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "Lexus Safety System+"),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
-  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-22", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+  CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19"),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
@@ -230,7 +231,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
-    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS],
+    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS, CAR.LEXUS_RC],
   }
 )
 
@@ -347,6 +348,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
+      b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
@@ -765,6 +767,7 @@ FW_VERSIONS = {
       b'\x03312N6100\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203202\x00\x00\x00\x00',
       b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203302\x00\x00\x00\x00',
+      b'\x03312N6200\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x02312K4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02312U5000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -840,11 +843,13 @@ FW_VERSIONS = {
       b'\x02896630A07000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630A21000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZJ5000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x02896630ZK8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZN8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZQ3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZR2000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZT8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896630ZT9000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x02896630ZZ0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312K6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312L0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -857,6 +862,7 @@ FW_VERSIONS = {
       b'8965B12361\x00\x00\x00\x00\x00\x00',
       b'8965B12451\x00\x00\x00\x00\x00\x00',
       b'8965B16011\x00\x00\x00\x00\x00\x00',
+      b'8965B16101\x00\x00\x00\x00\x00\x00',
       b'8965B76012\x00\x00\x00\x00\x00\x00',
       b'8965B76050\x00\x00\x00\x00\x00\x00',
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
@@ -904,6 +910,7 @@ FW_VERSIONS = {
       b'\x028646F1202100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F1202200\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
       b'\x028646F1601100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F1601200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b"\x028646F1601300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00",
       b'\x028646F4203400\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F76020C0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1006,6 +1013,7 @@ FW_VERSIONS = {
       b'\x01896630ED9100\x00\x00\x00\x00',
       b'\x01896630EE1000\x00\x00\x00\x00',
       b'\x01896630EE1100\x00\x00\x00\x00',
+      b'\x01896630EG3000\x00\x00\x00\x00',
       b'\x01896630EG5000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
@@ -1585,12 +1593,14 @@ FW_VERSIONS = {
       b'\x028966333V4000\x00\x00\x00\x00897CF3305001\x00\x00\x00\x00',
       b'\x02896633T09000\x00\x00\x00\x00897CF3307001\x00\x00\x00\x00',
       b'\x01896633T38000\x00\x00\x00\x00',
+      b'\x01896633T58000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152633423\x00\x00\x00\x00\x00\x00',
       b'F152633680\x00\x00\x00\x00\x00\x00',
       b'F152633681\x00\x00\x00\x00\x00\x00',
       b'F152633F50\x00\x00\x00\x00\x00\x00',
+      b'F152633F51\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B33252\x00\x00\x00\x00\x00\x00',
@@ -1606,6 +1616,7 @@ FW_VERSIONS = {
       b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0610000\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F33030D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3303100\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F3303200\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1738,22 +1749,29 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_RC: {
+    (Ecu.engine, 0x700, None): [
+      b'\x01896632478200\x00\x00\x00\x00',
+    ],
     (Ecu.engine, 0x7e0, None): [
       b'\x0232484000\x00\x00\x00\x00\x00\x00\x00\x0052422000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'F152624150\x00\x00\x00\x00\x00\x00',
       b'F152624221\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.dsu, 0x791, None): [
+      b'881512407000\x00\x00\x00\x00',
       b'881512409100\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B24081\x00\x00\x00\x00\x00\x00',
+      b'8965B24320\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'8821F4702300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F2401200\x00\x00\x00\x00',
       b'8646F2402200\x00\x00\x00\x00',
     ],
   },
