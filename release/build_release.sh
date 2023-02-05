@@ -15,6 +15,12 @@ else
   exit 0
 fi
 
+if [ -z "$RELEASE_BRANCH" ]; then
+  echo "RELEASE_BRANCH is not set"
+  exit 1
+fi
+
+
 # set git identity
 source $DIR/identity.sh
 
@@ -24,7 +30,7 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-git checkout --orphan tmpbranch
+git checkout --orphan $RELEASE_BRANCH
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -102,14 +108,14 @@ rm -rf $TEST_FILES
 
 if [ ! -z "$RELEASE_BRANCH" ]; then
   echo "[-] pushing release T=$SECONDS"
-  git push -f origin tmpbranch:$RELEASE_BRANCH
+  git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
 fi
 
 if [ ! -z "$DASHCAM_BRANCH" ]; then
   # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
   git commit -m "create dashcam release from release"
-  git push -f origin tmpbranch:$DASHCAM_BRANCH
+  git push -f origin $RELEASE_BRANCH:$DASHCAM_BRANCH
 fi
 
 echo "[-] done T=$SECONDS"
