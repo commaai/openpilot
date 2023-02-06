@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 232 Supported Cars
+# 233 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -100,6 +100,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|EV6 (without HDA II) 2022[<sup>5</sup>](#footnotes)|Highway Driving Assist|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=EV6 (without HDA II) 2022">Hyundai L</a>||
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Forte 2019-21">Hyundai G</a>||
 |Kia|K5 2021-22|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=K5 2021-22">Hyundai A</a>||
+|Kia|K5 Hybrid 2020|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=K5 Hybrid 2020">Hyundai A</a>||
 |Kia|Niro EV 2019|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2019">Hyundai H</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Kia|Niro EV 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2020">Hyundai F</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Kia|Niro EV 2021|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2021">Hyundai C</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
@@ -123,7 +124,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Lexus|CT Hybrid 2017-18|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=CT Hybrid 2017-18">Toyota</a>||
 |Lexus|ES 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=ES 2019-22">Toyota</a>||
 |Lexus|ES Hybrid 2017-18|Lexus Safety System+|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=ES Hybrid 2017-18">Toyota</a>||
-|Lexus|ES Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=ES Hybrid 2019-22">Toyota</a>|<a href="https://youtu.be/BZ29osRVJeg?t=12" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
+|Lexus|ES Hybrid 2019-23|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=ES Hybrid 2019-23">Toyota</a>|<a href="https://youtu.be/BZ29osRVJeg?t=12" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Lexus|IS 2017-19|All|Stock|19 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=IS 2017-19">Toyota</a>||
 |Lexus|NX 2018-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=NX 2018-19">Toyota</a>||
 |Lexus|NX 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=NX 2020-21">Toyota</a>||

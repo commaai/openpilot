@@ -292,7 +292,10 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     font.setBold(true);
     painter->setFont(font);
     painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
-    painter->drawText(option.rect.adjusted(rc.width() + 9, 0, 0, 0), option.displayAlignment, index.data(Qt::DisplayRole).toString());
+    QString text = index.data(Qt::DisplayRole).toString();
+    QRect text_rect = option.rect.adjusted(rc.width() + 9, 0, 0, 0);
+    text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
+    painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
