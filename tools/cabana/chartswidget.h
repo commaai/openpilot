@@ -7,7 +7,6 @@
 #include <QListWidget>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
-#include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
@@ -17,6 +16,8 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 using namespace QtCharts;
+
+const int CHART_MIN_WIDTH = 300;
 
 class ChartView : public QChartView {
   Q_OBJECT
@@ -29,9 +30,8 @@ public:
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
-  void setPlotAreaLeftPosition(int pos);
-  qreal getYAsixLabelWidth() const;
   void setSeriesType(QAbstractSeries::SeriesType type);
+  void updatePlotArea(int left = 0);
 
   struct SigItem {
     QString msg_id;
@@ -49,7 +49,6 @@ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
-  void axisYUpdated();
 
 private slots:
   void msgRemoved(uint32_t address);
@@ -67,25 +66,30 @@ private:
   void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
+  QSize sizeHint() const override { return {CHART_MIN_WIDTH, settings.chart_height}; }
   void updateAxisY();
   void updateTitle();
   void drawForeground(QPainter *painter, const QRectF &rect) override;
-  void applyNiceNumbers(qreal min, qreal max);
+  std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
   void updateSeriesPoints();
 
+  int y_label_width = 50;
+  int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
   QVector<QPointF> track_pts;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
+  QGraphicsRectItem *background;
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
   QAction *line_series_action;
   QAction *scatter_series_action;
+  friend class ChartsWidget;
  };
 
 class ChartsWidget : public QWidget {
@@ -107,7 +111,7 @@ signals:
 
 private:
   void resizeEvent(QResizeEvent *event) override;
-  void alignCharts();
+  void alignCharts(bool force = false);
   void newChart();
   ChartView * createChart();
   void removeChart(ChartView *chart);
@@ -129,7 +133,6 @@ private:
   QAction *dock_btn;
   QAction *reset_zoom_btn;
   QAction *remove_all_btn;
-  QTimer *align_charts_timer;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
   uint32_t max_chart_range = 0;
@@ -141,7 +144,7 @@ private:
   QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
-  const int CHART_MIN_WIDTH = 300;
+  int align_to = 0;
 };
 
 class SeriesSelector : public QDialog {
