@@ -529,20 +529,38 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
       }
-      double route_start_time = can->routeStartTime();
+
+      struct Chunk {
+        std::vector<Event *>::const_iterator first, second;
+        QVector<QPointF> vals;
+      };
+      // split into one minitue chunks
+      QVector<Chunk> chunks;
       Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
       auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      for (auto it = begin; it != events->end(); ++it) {
-        if ((*it)->which == cereal::Event::Which::CAN) {
-          for (const auto &c : (*it)->event.getCan()) {
-            if (s.address == c.getAddress() && s.source == c.getSrc()) {
-              auto dat = c.getDat();
-              double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
-              double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
-              s.vals.push_back({ts, value});
+      for (auto it = begin, second = begin; it != events->end(); it = second) {
+        second = std::lower_bound(it, events->end(), (*it)->mono_time + 1e9 * 60, [](auto &e, uint64_t ts) { return e->mono_time < ts; });
+        chunks.push_back({it, second});
+      }
+
+      QtConcurrent::blockingMap(chunks, [&](Chunk &chunk) {
+        chunk.vals.reserve(60 * 100);  // 100 hz
+        double route_start_time = can->routeStartTime();
+        for (auto it = chunk.first; it != chunk.second; ++it) {
+          if ((*it)->which == cereal::Event::Which::CAN) {
+            for (const auto &c : (*it)->event.getCan()) {
+              if (s.address == c.getAddress() && s.source == c.getSrc()) {
+                auto dat = c.getDat();
+                double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
+                double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
+                chunk.vals.push_back({ts, value});
+              }
             }
           }
         }
+      });
+      for (auto &c : chunks) {
+        s.vals.append(c.vals);
       }
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
