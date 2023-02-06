@@ -14,7 +14,6 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -31,7 +30,7 @@ void Setup::download(QString url) {
   auto version = util::read_file("/VERSION");
 
   struct curl_slist *list = NULL;
-  list = curl_slist_append(list, ("X-openpilot-dongle-id: " + getDongleId().value_or("")).toStdString().c_str());
+  list = curl_slist_append(list, ("X-openpilot-serial: " + Hardware::get_serial()).c_str());
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
