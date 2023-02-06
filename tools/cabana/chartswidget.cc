@@ -317,6 +317,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   background->setPen(Qt::NoPen);
   background->setZValue(chart->zValue() - 1);
 
+  move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart);
+  move_icon->setToolTip(tr("Drag and drop to combine charts"));
+
   QToolButton *remove_btn = new QToolButton();
   remove_btn->setIcon(utils::icon("x"));
   remove_btn->setAutoRaise(true);
@@ -460,6 +463,7 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
+  move_icon->setPos(11, 8);
 }
 
 void ChartView::updatePlotArea(int left) {
@@ -472,8 +476,12 @@ void ChartView::updatePlotArea(int left) {
 }
 
 void ChartView::updateTitle() {
+  for (QLegendMarker *marker : chart()->legend()->markers()) {
+    QObject::connect(marker, &QLegendMarker::clicked, this, &ChartView::handleMarkerClicked, Qt::UniqueConnection);
+  }
   for (auto &s : sigs) {
-    s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
+    auto decoration = s.series->isVisible() ? "none" : "line-through";
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b><font color=\"gray\">%3 %4</font></span>").arg(decoration).arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
   }
 }
 
@@ -578,6 +586,8 @@ void ChartView::updateAxisY() {
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
   for (auto &s : sigs) {
+    if (!s.series->isVisible()) continue;
+
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
     for (auto it = first; it != last; ++it) {
@@ -634,8 +644,7 @@ void ChartView::leaveEvent(QEvent *event) {
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
-  if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
-      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos())) {
+  if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
     QDrag *drag = new QDrag(this);
@@ -806,6 +815,18 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
       s.series = series;
     }
     updateSeriesPoints();
+    updateTitle();
+  }
+}
+
+void ChartView::handleMarkerClicked() {
+  auto marker = qobject_cast<QLegendMarker *>(sender());
+  Q_ASSERT(marker);
+  if (sigs.size() > 1) {
+    auto series = marker->series();
+    series->setVisible(!series->isVisible());
+    marker->setVisible(true);
+    updateAxisY();
     updateTitle();
   }
 }
