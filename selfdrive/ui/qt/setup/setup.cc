@@ -31,7 +31,7 @@ void Setup::download(QString url) {
   auto version = util::read_file("/VERSION");
 
   struct curl_slist *list = NULL;
-  list = curl_slist_append(list, ("X-comma-dongle-id: " + getDongleId().value_or("")).c_str());
+  list = curl_slist_append(list, ("X-openpilot-dongle-id: " + getDongleId().value_or("")).c_str());
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
