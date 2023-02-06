@@ -14,6 +14,7 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
@@ -29,6 +30,9 @@ void Setup::download(QString url) {
 
   auto version = util::read_file("/VERSION");
 
+  struct curl_slist *list = NULL;
+  list = curl_slist_append(list, ("X-comma-dongle-id: " + getDongleId().value_or("")).c_str());
+
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "w");
 
@@ -38,6 +42,7 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, (USER_AGENT + version).c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 
   int ret = curl_easy_perform(curl);
 
@@ -50,6 +55,7 @@ void Setup::download(QString url) {
     emit finished(false);
   }
 
+  curl_slist_free_all(list);
   curl_easy_cleanup(curl);
   fclose(fp);
 }
