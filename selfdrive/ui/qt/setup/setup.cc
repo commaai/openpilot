@@ -178,7 +178,7 @@ QWidget * Setup::network_setup() {
   QObject::connect(request, &HttpRequest::requestDone, [=](const QString &, bool success) {
     cont->setEnabled(success);
     if (success) {
-      const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;
+      const bool cell = networking->wifi->currentNetworkType() != NetworkType::WIFI;
       cont->setText(cell ? tr("Continue without Wi-Fi") : tr("Continue"));
     } else {
       cont->setText(tr("Waiting for internet"));
