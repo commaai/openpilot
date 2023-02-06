@@ -564,6 +564,8 @@ void ChartView::updateAxisY() {
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
   for (auto &s : sigs) {
+    if (!s.series->isVisible()) continue;
+
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
     for (auto it = first; it != last; ++it) {
@@ -804,6 +806,7 @@ void ChartView::handleMarkerClicked() {
     auto series = marker->series();
     series->setVisible(!series->isVisible());
     marker->setVisible(true);
+    updateAxisY();
     updateTitle();
   }
 }
