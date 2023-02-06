@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>설치중...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>수신중： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>델타병합： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>파일갱신： </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
