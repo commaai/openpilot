@@ -6,7 +6,6 @@
 #include <QMessageBox>
 #include <QToolButton>
 
-#include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -38,8 +37,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(name_label);
-  toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
-  remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
+  toolbar->addAction(utils::icon("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
+  remove_msg_act = toolbar->addAction(utils::icon("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
   main_layout->addWidget(toolbar);
 
@@ -63,8 +62,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(splitter, bootstrapPixmap("file-earmark-ruled"), "&Msg");
-  tab_widget->addTab(history_log = new LogsWidget(this), bootstrapPixmap("stopwatch"), "&Logs");
+  tab_widget->addTab(splitter, utils::icon("file-earmark-ruled"), "&Msg");
+  tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
@@ -103,6 +102,16 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
         tabbar->removeTab(1);
     }
   }
+}
+
+void DetailWidget::removeAll() {
+  msg_id = "";
+  tabbar->blockSignals(true);
+  while (tabbar->count() > 0) {
+    tabbar->removeTab(0);
+  }
+  tabbar->blockSignals(false);
+  stacked_layout->setCurrentIndex(0);
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
@@ -148,7 +157,7 @@ void DetailWidget::refresh() {
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
-    warning_icon->setPixmap(bootstrapPixmap(msg ? "exclamation-triangle" : "info-circle"));
+    warning_icon->setPixmap(utils::icon(msg ? "exclamation-triangle" : "info-circle"));
   }
   warning_widget->setVisible(!warnings.isEmpty());
 }

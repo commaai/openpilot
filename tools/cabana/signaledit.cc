@@ -10,8 +10,6 @@
 
 #include "tools/cabana/commands.h"
 
-#include "selfdrive/ui/qt/util.h"
-
 // SignalModel
 
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
@@ -132,7 +130,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (item->type == Item::Endian) return item->sig->is_little_endian ? Qt::Checked : Qt::Unchecked;
       if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
-      return bootstrapPixmap(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
+      return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     }
   }
   return {};
@@ -294,7 +292,10 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     font.setBold(true);
     painter->setFont(font);
     painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
-    painter->drawText(option.rect.adjusted(rc.width() + 9, 0, 0, 0), option.displayAlignment, index.data(Qt::DisplayRole).toString());
+    QString text = index.data(Qt::DisplayRole).toString();
+    QRect text_rect = option.rect.adjusted(rc.width() + 9, 0, 0, 0);
+    text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
+    painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
@@ -331,7 +332,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   hl->addWidget(filter_edit);
   hl->addStretch(1);
   auto collapse_btn = new QToolButton();
-  collapse_btn->setIcon(bootstrapPixmap("dash-square"));
+  collapse_btn->setIcon(utils::icon("dash-square"));
   collapse_btn->setIconSize({12, 12});
   collapse_btn->setAutoRaise(true);
   collapse_btn->setToolTip(tr("Collapse All"));
@@ -375,7 +376,7 @@ void SignalView::setMessage(const QString &id) {
 void SignalView::rowsChanged() {
   auto create_btn = [](const QString &id, const QString &tooltip) {
     auto btn = new QToolButton();
-    btn->setIcon(bootstrapPixmap(id));
+    btn->setIcon(utils::icon(id));
     btn->setToolTip(tooltip);
     btn->setAutoRaise(true);
     return btn;

@@ -1,13 +1,16 @@
 #include "tools/cabana/util.h"
 
+#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+
+#include "selfdrive/ui/qt/util.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint32_t freq) {
+void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
@@ -42,16 +45,15 @@ const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint
   }
 
   prev_dat = dat;
-  return colors;
 }
 
-void HexColors::clear() {
+void ChangeTracker::clear() {
   prev_dat.clear();
   last_change_t.clear();
   colors.clear();
 }
 
-QList<QVariant> HexColors::toVariantList(const QVector<QColor> &colors) {
+QList<QVariant> ChangeTracker::toVariantList(const QVector<QColor> &colors) {
   QList<QVariant> ret;
   ret.reserve(colors.size());
   for (auto &c : colors) ret.append(c);
@@ -100,3 +102,17 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
 }
+
+namespace utils {
+QPixmap icon(const QString &id) {
+  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                           QApplication::style()->standardPalette().color(QPalette::Background).value();
+  QPixmap pm = bootstrapPixmap(id);
+  if (dark_theme) {
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(pm.rect(), Qt::lightGray);
+  }
+  return pm;
+}
+}  // namespace utils
