@@ -64,6 +64,9 @@ procs = [
   PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
+  PythonProcess("gpxd", "selfdrive.gpxd.gpxd"),
+  PythonProcess("gpxd_uploader", "selfdrive.gpxd.gpx_uploader", offroad=True),
+
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
   PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),

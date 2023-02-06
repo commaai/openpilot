@@ -143,6 +143,9 @@ selfdrive/debug/uiview.py
 selfdrive/debug/hyundai_enable_radar_points.py
 selfdrive/debug/vw_mqb_config.py
 
+selfdrive/gpxd/gpx_uploader.py
+selfdrive/gpxd/gpxd.py
+
 common/SConscript
 common/version.h
 
