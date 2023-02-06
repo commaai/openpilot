@@ -556,7 +556,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.setOpacity(1.0);
   painter.setPen(Qt::NoPen);
   painter.setBrush(blackColor(70));
-  painter.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
 
   painter.setCompositionMode(QPainter::CompositionMode_Source);
   painter.setRenderHint(QPainter::Antialiasing);
