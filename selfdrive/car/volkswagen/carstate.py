@@ -67,6 +67,7 @@ class CarState(CarStateBase):
     brake_pressure_detected = bool(pt_cp.vl["ESP_05"]["ESP_Fahrer_bremst"])
     ret.brakePressed = brake_pedal_pressed or brake_pressure_detected
     ret.parkingBrake = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
+    ret.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
@@ -181,6 +182,7 @@ class CarState(CarStateBase):
     ret.brake = pt_cp.vl["Bremse_5"]["Bremsdruck"] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
     ret.brakePressed = bool(pt_cp.vl["Motor_2"]["Bremslichtschalter"])
     ret.parkingBrake = bool(pt_cp.vl["Kombi_1"]["Bremsinfo"])
+    ret.brakeLights = bool(pt_cp.vl["Motor_2"]['Bremstestschalter'])
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
@@ -277,6 +279,7 @@ class CarState(CarStateBase):
       ("AB_Gurtschloss_BF", "Airbag_02"),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05"),           # Driver applied brake pressure over threshold
       ("MO_Fahrer_bremst", "Motor_14"),          # Brake pedal switch
+      ("ESP_Status_Bremsdruck", "ESP_05"),       # Brakes applied
       ("ESP_Bremsdruck", "ESP_05"),              # Brake pressure
       ("MO_Fahrpedalrohwert_01", "Motor_20"),    # Accelerator pedal value
       ("EPS_Lenkmoment", "LH_EPS_03"),           # Absolute driver torque input
