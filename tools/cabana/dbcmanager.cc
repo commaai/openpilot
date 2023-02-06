@@ -43,7 +43,7 @@ void DBCManager::parseExtraInfo(const QString &content) {
   static QRegExp sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegExp sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegExp sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
-  static QRegExp val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
+  static QRegExp val_regexp(R"(VAL_ (\w+) (\w+) (.*);)");
   auto getExtraInfo = [&](uint32_t address, const QString &name) -> SignalExtraInfo * {
     if (auto m = (DBCMsg *)msg(address)) {
       if (auto sig = m->sig(name)) return &(m->sig_extra_info[sig]);
