@@ -14,6 +14,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.api import Api
 from common.params import Params
+from common.realtime import sec_since_boot
 from common.realtime import set_core_affinity
 from system.hardware import TICI
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
@@ -235,6 +236,10 @@ def uploader_fn(exit_event):
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf8')
 
+  transition_to_offroad_last = 0.
+  disable_onroad_upload_offroad_transition_timeout = 900. # wait until offroad for 15 minutes before starting uploads
+  offroad_last = params.get_bool("IsOffroad")
+
   if dongle_id is None:
     cloudlog.info("uploader missing dongle_id")
     raise Exception("uploader can't start without dongle id")
@@ -249,12 +254,35 @@ def uploader_fn(exit_event):
   backoff = 0.1
   while not exit_event.is_set():
     sm.update(0)
+
+    offroad = params.get_bool("IsOffroad")
+    t = sec_since_boot()
+    if offroad and not offroad_last and t > 300.:
+      transition_to_offroad_last = sec_since_boot()
+    offroad_last = offroad
+
     offroad = params.get_bool("IsOffroad")
     network_type = sm['deviceState'].networkType if not force_wifi else NetworkType.wifi
     if network_type == NetworkType.none:
       if allow_sleep:
         time.sleep(60 if offroad else 5)
       continue
+
+    if params.get_bool("DisableOnroadUploads"):
+      if not offroad or (transition_to_offroad_last > 0. and t - transition_to_offroad_last < disable_onroad_upload_offroad_transition_timeout):
+        if not offroad:
+          cloudlog.info("not uploading: onroad uploads disabled")
+        else:
+          wait_minutes = int(disable_onroad_upload_offroad_transition_timeout / 60)
+          time_left = disable_onroad_upload_offroad_transition_timeout - (t - transition_to_offroad_last)
+          if time_left / 60. > 2.:
+            time_left_str = f"{int(time_left / 60)} minute(s)"
+          else:
+            time_left_str = f"{int(time_left)} seconds(s)"
+          cloudlog.info(f"not uploading: waiting until offroad for {wait_minutes} minutes; {time_left_str} left")
+        if allow_sleep:
+          time.sleep(60)
+        continue
 
     d = uploader.next_file_to_upload()
     if d is None:  # Nothing to upload
