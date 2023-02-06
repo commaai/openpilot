@@ -58,6 +58,7 @@ class CAR:
   CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
   CHR = "TOYOTA C-HR 2018"
   CHRH = "TOYOTA C-HR HYBRID 2018"
+  CHRH_TSS2 = "TOYOTA C-HR HYBRID 2022" #TSS 2.5
   COROLLA = "TOYOTA COROLLA 2017"
   COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
@@ -125,6 +126,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-23"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
   CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
+  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2021-23"),
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
@@ -690,6 +692,23 @@ FW_VERSIONS = {
       b'8646FF404000    ',
       b'8646FF406000    ',
       b'8646FF407000    ',
+    ],
+  },
+  CAR.CHRH_TSS2: {
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B10092\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152610041\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x0189663F438000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 15): [
+      b'\x018821FF410500\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 109): [
+      b'\x028646FF413100\x00\x00\x00\x008646GF411100\x00\x00\x00\x00',
     ],
   },
   CAR.COROLLA: {
@@ -2017,6 +2036,7 @@ DBC = {
   CAR.LEXUS_RXH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CHRH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
+  CAR.CHRH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRYH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -2057,7 +2077,7 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 
 # Toyota/Lexus Safety Sense 2.0 and 2.5
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
-            CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2,
+            CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2, CAR.CHRH_TSS2,
             CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH}
