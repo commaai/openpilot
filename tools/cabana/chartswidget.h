@@ -8,6 +8,7 @@
 #include <QGraphicsProxyWidget>
 #include <QSlider>
 #include <QtCharts/QChartView>
+#include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
@@ -56,6 +57,7 @@ private slots:
   void signalUpdated(const Signal *sig);
   void signalRemoved(const Signal *sig);
   void manageSeries();
+  void handleMarkerClicked();
 
 private:
   QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);

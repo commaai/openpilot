@@ -472,8 +472,12 @@ void ChartView::updatePlotArea(int left) {
 }
 
 void ChartView::updateTitle() {
+  for (QLegendMarker *marker : chart()->legend()->markers()) {
+    QObject::connect(marker, &QLegendMarker::clicked, this, &ChartView::handleMarkerClicked, Qt::UniqueConnection);
+  }
   for (auto &s : sigs) {
-    s.series->setName(QString("<b>%1</b> <font color=\"gray\">%2 %3</font>").arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
+    auto decoration = s.series->isVisible() ? "none" : "line-through";
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b><font color=\"gray\">%3 %4</font></span>").arg(decoration).arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
   }
 }
 
@@ -617,7 +621,8 @@ void ChartView::leaveEvent(QEvent *event) {
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
-      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos())) {
+      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos()) &&
+      !chart()->legend()->geometry().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
     QDrag *drag = new QDrag(this);
@@ -788,6 +793,17 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
       s.series = series;
     }
     updateSeriesPoints();
+    updateTitle();
+  }
+}
+
+void ChartView::handleMarkerClicked() {
+  auto marker = qobject_cast<QLegendMarker *>(sender());
+  Q_ASSERT(marker);
+  if (sigs.size() > 1) {
+    auto series = marker->series();
+    series->setVisible(!series->isVisible());
+    marker->setVisible(true);
     updateTitle();
   }
 }
