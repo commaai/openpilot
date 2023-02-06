@@ -673,26 +673,6 @@ location set</source>
         <translation>インターネット接続を待機中</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>インストールするソフトウェアを選択してください</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>ﾄﾞﾗｲﾌﾞﾚｺｰﾀﾞｰ</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>カスタムソフトウェア</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>URL を入力</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>カスタムソフトウェア</translation>
-    </message>
-    <message>
         <source>Downloading...</source>
         <translation>ダウンロード中...</translation>
     </message>
@@ -711,6 +691,10 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>最初からやり直す</translation>
+    </message>
+    <message>
+        <source>Enter installer URL</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
