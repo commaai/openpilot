@@ -317,6 +317,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   background->setPen(Qt::NoPen);
   background->setZValue(chart->zValue() - 1);
 
+  move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart);
+  move_icon->setToolTip(tr("Drag and drop to combine charts"));
+
   QToolButton *remove_btn = new QToolButton();
   remove_btn->setIcon(utils::icon("x"));
   remove_btn->setAutoRaise(true);
@@ -460,6 +463,7 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
+  move_icon->setPos(11, 8);
 }
 
 void ChartView::updatePlotArea(int left) {
@@ -622,9 +626,7 @@ void ChartView::leaveEvent(QEvent *event) {
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event) {
-  if (event->button() == Qt::LeftButton && !chart()->plotArea().contains(event->pos()) &&
-      !manage_btn_proxy->geometry().contains(event->pos()) && !close_btn_proxy->geometry().contains(event->pos()) &&
-      !chart()->legend()->geometry().contains(event->pos())) {
+  if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
     QDrag *drag = new QDrag(this);
