@@ -440,9 +440,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   // dm icon
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
-    drawDriverState(p, s, dm_icon_x, rect().bottom() - footer_h / 2, dmActive ? 1.0 : 0.2);
-    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-             dm_img, blackColor(0), dmActive ? 1.0 : 0.2);
+    int dm_icon_y = rect().bottom() - footer_h / 2;
+    float opacity = dmActive ? 1.0 : 0.2;
+    drawDriverState(p, s, dm_icon_x, dm_icon_y, opacity);
+    drawIcon(p, dm_icon_x, dm_icon_y, dm_img, blackColor(0), opacity);
   }
   p.restore();
 }
@@ -558,51 +559,25 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.setBrush(blackColor(70));
   painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
 
-  painter.setCompositionMode(QPainter::CompositionMode_Source);
-  painter.setRenderHint(QPainter::Antialiasing);
-
-  // QLinearGradient linearGrad;
-  QPointF start_p;
-  QPointF end_p;
-  int face_segment_idx = 0;
-  float draw_shade = opacity > 0.9 ? 1.0 : 0.28;
-  bool in_end_idxs;
-  float kp1;
-  float kp2;
-  for (int i = 0; i < std::size(scene.face_kpts_draw); ++i) {
-    in_end_idxs = false;
-    for (int ei = face_segment_idx; ei < std::size(face_end_idxs); ei++) {
-      if (i == face_end_idxs[ei]) {
-        in_end_idxs = true;
-        break;
-      }
-    }
-
-    if (in_end_idxs) {
-      face_segment_idx +=1;
-      continue;
-    }
-
-    kp1 = (scene.face_kpts_draw_d[i] - 8) / 120 + 1.0;
-    kp2 = (scene.face_kpts_draw_d[i+1] - 8) / 120 + 1.0;
-    start_p = QPointF(scene.face_kpts_draw[i].x()*kp1 + x, scene.face_kpts_draw[i].y()*kp1 + y);
-    end_p = QPointF(scene.face_kpts_draw[i+1].x()*kp2 + x, scene.face_kpts_draw[i+1].y()*kp2 + y);
-
-    painter.setPen(QPen(QColor::fromRgbF(draw_shade, draw_shade, draw_shade, 1.0), 7.7, Qt::SolidLine, Qt::RoundCap));
-    painter.drawLine(start_p, end_p);
+  // face
+  QPointF draw_kpts[FACE_KPTS_SIZE];
+  float kp;
+  for (int i = 0; i < FACE_KPTS_SIZE; ++i) {
+    kp = (scene.face_kpts_draw_d[i] - 8) / 120 + 1.0;
+    draw_kpts[i] = QPointF(scene.face_kpts_draw[i].x() * kp + x, scene.face_kpts_draw[i].y() * kp + y);
   }
 
-  painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 7.7, Qt::SolidLine, Qt::RoundCap));
+  painter.drawPolyline(draw_kpts, FACE_KPTS_SIZE);
 
   // tracking arcs
   const int arc_l = 133;
+  QColor arc_color = QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state));
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
-  float arc_k1 = fmin(1.0, scene.driver_pose_diff[1] * 5.0);
-  float arc_k2 = fmin(1.0, scene.driver_pose_diff[0] * 5.0);
-  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 4.0+9.0*arc_k1, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(arc_color, 4.0+9.0*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - arc_l / 2, fabs(delta_x), arc_l), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
-  painter.setPen(QPen(QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state)), 4.0+9.0*arc_k2, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(arc_color, 4.0+9.0*fmin(1.0, scene.driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   painter.restore();
