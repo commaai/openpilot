@@ -10,7 +10,6 @@
 #include <QMenu>
 #include <QRubberBand>
 #include <QToolBar>
-#include <QToolButton>
 #include <QToolTip>
 #include <QtConcurrent>
 
@@ -22,7 +21,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
-  toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), "");
   new_plot_btn->setToolTip(tr("New Plot"));
@@ -45,8 +43,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   range_slider_action = toolbar->addWidget(range_slider);
 
-  reset_zoom_btn = toolbar->addAction(utils::icon("zoom-out"), "");
+  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new QToolButton());
+  reset_zoom_btn->setIcon(utils::icon("zoom-out"));
   reset_zoom_btn->setToolTip(tr("Reset zoom"));
+  reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
   remove_all_btn = toolbar->addAction(utils::icon("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
@@ -84,7 +85,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
-  QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
+  QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -163,8 +164,8 @@ void ChartsWidget::updateToolBar() {
   range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
-  reset_zoom_btn->setVisible(is_zoomed);
-  reset_zoom_btn->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
+  reset_zoom_action->setVisible(is_zoomed);
+  reset_zoom_btn->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -799,11 +800,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
 }
 
 void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+  scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
   if (type != series_type) {
     series_type = type;
-    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
-    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
-
     for (auto &s : sigs) {
       chart()->removeSeries(s.series);
       s.series->deleteLater();
