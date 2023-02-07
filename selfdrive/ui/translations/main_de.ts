@@ -312,18 +312,6 @@
         <source>Installing...</source>
         <translation>Installiere...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>Empfange Objekte: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>Unterschiede verarbeiten: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>Dateien aktualisieren: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>

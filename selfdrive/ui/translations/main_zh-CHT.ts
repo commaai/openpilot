@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>安裝中…</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>接收對象： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>分析差異： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>更新檔案： </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
