@@ -24,7 +24,7 @@ public:
   static std::string get_serial() {
     std::ifstream stream("/proc/cmdline");
     std::string cmdline;
-    std::getline(stream, cmdline)
+    std::getline(stream, cmdline);
 
     auto start = cmdline.find("serialno=");
     if (start != std::string::npos) {
