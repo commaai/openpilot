@@ -149,7 +149,6 @@ void ChartsWidget::updateState() {
   for (auto c : charts) {
     c->updatePlot(cur_sec, range.first, range.second);
   }
-  alignCharts();
   charts_layout->parentWidget()->setUpdatesEnabled(true);
 }
 
@@ -186,13 +185,14 @@ ChartView *ChartsWidget::createChart() {
   auto chart = new ChartView(this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
-  chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
+  QObject::connect(chart, &ChartView::axisYLabelWidthChanged, this, &ChartsWidget::alignCharts);
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -231,14 +231,14 @@ void ChartsWidget::updateLayout() {
   columns_cb_action->setVisible(show_column_cb);
 
   n = std::min(column_count, n);
-  if (charts.size() != charts_layout->count() || n != charts_layout->columnCount()) {
+  if (charts.size() != charts_layout->count() || n != current_column_count) {
+    current_column_count = n;
     charts_layout->parentWidget()->setUpdatesEnabled(false);
     for (int i = 0; i < charts.size(); ++i) {
       charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
     }
     QTimer::singleShot(0, [this]() { charts_layout->parentWidget()->setUpdatesEnabled(true); });
   }
-  alignCharts(true);
 }
 
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
@@ -275,16 +275,14 @@ void ChartsWidget::removeAll() {
   emit seriesChanged();
 }
 
-void ChartsWidget::alignCharts(bool force) {
+void ChartsWidget::alignCharts() {
   int plot_left = 0;
   for (auto c : charts) {
     plot_left = std::max(plot_left, c->y_label_width);
   }
   plot_left = std::max((plot_left / 10) * 10 + 10, 50);
-  if (std::exchange(align_to, plot_left) != align_to || force) {
-    for (auto c : charts) {
-      c->updatePlotArea(align_to);
-    }
+  for (auto c : charts) {
+    c->updatePlotArea(plot_left);
   }
 }
 
@@ -459,7 +457,7 @@ void ChartView::manageSeries() {
 
 void ChartView::resizeEvent(QResizeEvent *event) {
   QChartView::resizeEvent(event);
-  updatePlotArea();
+  updatePlotArea(align_to);
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
@@ -467,12 +465,14 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartView::updatePlotArea(int left) {
-  align_to = left > 0 ? left : align_to;
   QRect r = rect();
-  background->setRect(r);
-  chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
-  chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
-  chart()->layout()->invalidate();
+  if (align_to != left || r != background->rect()) {
+    align_to = left;
+    background->setRect(r);
+    chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
+    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
+    chart()->layout()->invalidate();
+  }
 }
 
 void ChartView::updateTitle() {
@@ -600,13 +600,14 @@ void ChartView::updateAxisY() {
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
-  if (min_y != axis_y->min() || max_y != axis_y->max()) {
+  if (min_y != axis_y->min() || max_y != axis_y->max() || y_label_width == 0) {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 20;  // left margin 20
+    emit axisYLabelWidthChanged(y_label_width);
   }
 }
 
