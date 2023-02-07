@@ -800,11 +800,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
 }
 
 void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+  scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
   if (type != series_type) {
     series_type = type;
-    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
-    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
-
     for (auto &s : sigs) {
       chart()->removeSeries(s.series);
       s.series->deleteLater();
