@@ -7,6 +7,19 @@
 #include "common/util.h"
 #include "system/hardware/base.h"
 
+std::string get_device_serial() {
+  std::ifstream stream("/proc/cmdline");
+  std::string cmdline;
+  std::getline(stream, cmdline);
+
+  auto start = cmdline.find("serialno=");
+  if (start != std::string::npos) {
+    auto end = cmdline.find(" ", start + 9);
+    return cmdline.substr(start + 9, end - start - 9);
+  }
+  return "cccccc";
+}
+
 class HardwareTici : public HardwareNone {
 public:
   static constexpr float MAX_VOLUME = 0.9;
@@ -22,16 +35,8 @@ public:
   static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
 
   static std::string get_serial() {
-    std::ifstream stream("/proc/cmdline");
-    std::string cmdline;
-    std::getline(stream, cmdline);
-
-    auto start = cmdline.find("serialno=");
-    if (start != std::string::npos) {
-      auto end = cmdline.find(" ", start + 9);
-      return cmdline.substr(start + 9, end - start - 9);
-    }
-    return "cccccc";
+    static std::string serial = get_device_serial();
+    return serial;
   }
 
   static void reboot() { std::system("sudo reboot"); };
