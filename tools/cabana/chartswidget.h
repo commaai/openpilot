@@ -5,9 +5,11 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
 #include <QtCharts/QChartView>
+#include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
@@ -56,6 +58,7 @@ private slots:
   void signalUpdated(const Signal *sig);
   void signalRemoved(const Signal *sig);
   void manageSeries();
+  void handleMarkerClicked();
 
 private:
   QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
@@ -80,6 +83,7 @@ private:
   QValueAxis *axis_x;
   QValueAxis *axis_y;
   QVector<QPointF> track_pts;
+  QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QGraphicsRectItem *background;
