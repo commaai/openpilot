@@ -8,6 +8,7 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
+#include <QToolButton>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
@@ -33,7 +34,7 @@ public:
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(QAbstractSeries::SeriesType type);
-  void updatePlotArea(int left = 0);
+  void updatePlotArea(int left);
 
   struct SigItem {
     QString msg_id;
@@ -51,6 +52,7 @@ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
+  void axisYLabelWidthChanged(int w);
 
 private slots:
   void msgRemoved(uint32_t address);
@@ -78,7 +80,7 @@ private:
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
   void updateSeriesPoints();
 
-  int y_label_width = 50;
+  int y_label_width = 0;
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
@@ -115,7 +117,7 @@ signals:
 
 private:
   void resizeEvent(QResizeEvent *event) override;
-  void alignCharts(bool force = false);
+  void alignCharts();
   void newChart();
   ChartView * createChart();
   void removeChart(ChartView *chart);
@@ -133,9 +135,12 @@ private:
   QLabel *title_label;
   QLabel *range_lb;
   QSlider *range_slider;
+  QAction *range_lb_action;
+  QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
-  QAction *reset_zoom_btn;
+  QAction *reset_zoom_action;
+  QToolButton *reset_zoom_btn;
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
@@ -148,7 +153,7 @@ private:
   QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
-  int align_to = 0;
+  int current_column_count = 0;
 };
 
 class SeriesSelector : public QDialog {

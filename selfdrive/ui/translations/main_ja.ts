@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>インストールしています...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>ｵﾌﾞｼﾞｪｸﾄをﾀﾞｳﾝﾛｰﾄﾞしています： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>デルタを解決しています： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>ファイルを更新しています： </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>

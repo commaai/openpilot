@@ -10,7 +10,6 @@
 #include <QMenu>
 #include <QRubberBand>
 #include <QToolBar>
-#include <QToolButton>
 #include <QToolTip>
 #include <QtConcurrent>
 
@@ -36,17 +35,19 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(stretch_label);
 
-  toolbar->addWidget(new QLabel(tr("Range:")));
-  toolbar->addWidget(range_lb = new QLabel(this));
+  range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new QSlider(Qt::Horizontal, this);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
   range_slider->setPageStep(60);  // 1 min
-  toolbar->addWidget(range_slider);
+  range_slider_action = toolbar->addWidget(range_slider);
 
-  reset_zoom_btn = toolbar->addAction(utils::icon("zoom-out"), "");
-  reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
+  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new QToolButton());
+  reset_zoom_btn->setIcon(utils::icon("zoom-out"));
+  reset_zoom_btn->setToolTip(tr("Reset zoom"));
+  reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
   remove_all_btn = toolbar->addAction(utils::icon("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
@@ -84,7 +85,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
-  QObject::connect(reset_zoom_btn, &QAction::triggered, this, &ChartsWidget::zoomReset);
+  QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -149,7 +150,6 @@ void ChartsWidget::updateState() {
   for (auto c : charts) {
     c->updatePlot(cur_sec, range.first, range.second);
   }
-  alignCharts();
   charts_layout->parentWidget()->setUpdatesEnabled(true);
 }
 
@@ -160,12 +160,15 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
-  range_lb->setText(QString(" %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   title_label->setText(tr("Charts: %1").arg(charts.size()));
-  dock_btn->setIcon(utils::icon(docking ? "arrow-up-right" : "arrow-down-left"));
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
+  range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
+  range_lb_action->setVisible(!is_zoomed);
+  range_slider_action->setVisible(!is_zoomed);
+  reset_zoom_action->setVisible(is_zoomed);
+  reset_zoom_btn->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  reset_zoom_btn->setEnabled(is_zoomed);
+  dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
+  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
@@ -186,13 +189,14 @@ ChartView *ChartsWidget::createChart() {
   auto chart = new ChartView(this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
-  chart->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+  chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
+  QObject::connect(chart, &ChartView::axisYLabelWidthChanged, this, &ChartsWidget::alignCharts);
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -231,14 +235,14 @@ void ChartsWidget::updateLayout() {
   columns_cb_action->setVisible(show_column_cb);
 
   n = std::min(column_count, n);
-  if (charts.size() != charts_layout->count() || n != charts_layout->columnCount()) {
+  if (charts.size() != charts_layout->count() || n != current_column_count) {
+    current_column_count = n;
     charts_layout->parentWidget()->setUpdatesEnabled(false);
     for (int i = 0; i < charts.size(); ++i) {
       charts_layout->addWidget(charts[charts.size() - i - 1], i / n, i % n);
     }
     QTimer::singleShot(0, [this]() { charts_layout->parentWidget()->setUpdatesEnabled(true); });
   }
-  alignCharts(true);
 }
 
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
@@ -275,16 +279,14 @@ void ChartsWidget::removeAll() {
   emit seriesChanged();
 }
 
-void ChartsWidget::alignCharts(bool force) {
+void ChartsWidget::alignCharts() {
   int plot_left = 0;
   for (auto c : charts) {
     plot_left = std::max(plot_left, c->y_label_width);
   }
   plot_left = std::max((plot_left / 10) * 10 + 10, 50);
-  if (std::exchange(align_to, plot_left) != align_to || force) {
-    for (auto c : charts) {
-      c->updatePlotArea(align_to);
-    }
+  for (auto c : charts) {
+    c->updatePlotArea(plot_left);
   }
 }
 
@@ -459,7 +461,7 @@ void ChartView::manageSeries() {
 
 void ChartView::resizeEvent(QResizeEvent *event) {
   QChartView::resizeEvent(event);
-  updatePlotArea();
+  updatePlotArea(align_to);
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
@@ -467,12 +469,14 @@ void ChartView::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartView::updatePlotArea(int left) {
-  align_to = left > 0 ? left : align_to;
   QRect r = rect();
-  background->setRect(r);
-  chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
-  chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
-  chart()->layout()->invalidate();
+  if (align_to != left || r != background->rect()) {
+    align_to = left;
+    background->setRect(r);
+    chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
+    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
+    chart()->layout()->invalidate();
+  }
 }
 
 void ChartView::updateTitle() {
@@ -500,7 +504,7 @@ void ChartView::updateSeriesPoints() {
   // Show points when zoomed in enough
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
 
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
@@ -509,21 +513,6 @@ void ChartView::updateSeriesPoints() {
       ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
     } else {
       s.series->setPointsVisible(pixels_per_point > 20);
-
-      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
-#ifndef __APPLE
-      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
-      bool use_opengl = pixels_per_point < 1;
-      s.series->setUseOpenGL(use_opengl);
-
-      // Qt doesn't properly apply device pixel ratio in OpenGL mode
-      QApplication *application = static_cast<QApplication *>(QApplication::instance());
-      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
-
-      QPen pen = s.series->pen();
-      pen.setWidth(2.0 * scale);
-      s.series->setPen(pen);
-#endif
     }
   }
 }
@@ -589,7 +578,7 @@ void ChartView::updateAxisY() {
     if (!s.series->isVisible()) continue;
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto last = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
     for (auto it = first; it != last; ++it) {
       if (it->y() < min) min = it->y();
       if (it->y() > max) max = it->y();
@@ -600,13 +589,14 @@ void ChartView::updateAxisY() {
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
-  if (min_y != axis_y->min() || max_y != axis_y->max()) {
+  if (min_y != axis_y->min() || max_y != axis_y->max() || y_label_width == 0) {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 20;  // left margin 20
+    emit axisYLabelWidthChanged(y_label_width);
   }
 }
 
@@ -779,6 +769,19 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
       }
     }
   }
+
+  // paint points. OpenGL mode lacks certain features (such as showing points)
+  painter->setPen(Qt::NoPen);
+  for (auto &s : sigs) {
+    if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
+      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+      for (auto it = first; it != last; ++it) {
+        painter->setBrush(s.series->color());
+        painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
+      }
+    }
+  }
 }
 
 QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
@@ -797,11 +800,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
 }
 
 void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
+  line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
+  scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
   if (type != series_type) {
     series_type = type;
-    line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
-    scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
-
     for (auto &s : sigs) {
       chart()->removeSeries(s.series);
       s.series->deleteLater();
