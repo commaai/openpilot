@@ -220,9 +220,14 @@ void MainWindow::loadFile(const QString &fn) {
     QFile file(fn);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
-      dbc()->open(dbc_name, file.readAll());
-      setCurrentFile(fn);
-      statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
+      QString error;
+      bool ret = dbc()->open(dbc_name, file.readAll(), &error);
+      if (ret) {
+        setCurrentFile(fn);
+        statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
+      } else {
+        QMessageBox::warning(this, tr("Failed to load DBC file"), error);
+      }
     }
   }
 }
@@ -251,11 +256,14 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 void MainWindow::loadDBCFromClipboard() {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
-  dbc()->open("from_clipboard.dbc", dbc_str);
-  if (dbc()->messages().size() > 0) {
+  QString error;
+  bool ret = dbc()->open("from_clipboard.dbc", dbc_str, &error);
+  if (ret && dbc()->messages().size() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
-    QMessageBox::warning(this, tr("Load From Clipboard"), tr("Failed to parse dbc from clipboard!\nMake sure that you paste the text with correct format."));
+    if (!error.isEmpty()) error += "\n";
+    QMessageBox::warning(this, tr("Failed to Load From Clipboard"),
+                         tr("%1Make sure that you paste the text with correct format.").arg(error));
   }
 }
 
