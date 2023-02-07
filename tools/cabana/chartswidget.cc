@@ -503,7 +503,7 @@ void ChartView::updateSeriesPoints() {
   // Show points when zoomed in enough
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto end = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
 
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
@@ -512,21 +512,6 @@ void ChartView::updateSeriesPoints() {
       ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
     } else {
       s.series->setPointsVisible(pixels_per_point > 20);
-
-      // TODO: On MacOS QChartWidget doesn't work with the OpenGL settings that CameraWidget needs.
-#ifndef __APPLE
-      // OpenGL mode lacks certain features (such as showing points), only use when drawing many points
-      bool use_opengl = pixels_per_point < 1;
-      s.series->setUseOpenGL(use_opengl);
-
-      // Qt doesn't properly apply device pixel ratio in OpenGL mode
-      QApplication *application = static_cast<QApplication *>(QApplication::instance());
-      float scale = use_opengl ? application->devicePixelRatio() : 1.0;
-
-      QPen pen = s.series->pen();
-      pen.setWidth(2.0 * scale);
-      s.series->setPen(pen);
-#endif
     }
   }
 }
@@ -592,7 +577,7 @@ void ChartView::updateAxisY() {
     if (!s.series->isVisible()) continue;
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto last = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
     for (auto it = first; it != last; ++it) {
       if (it->y() < min) min = it->y();
       if (it->y() > max) max = it->y();
@@ -780,6 +765,19 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
       if (!track_pts[i].isNull() && i < sigs.size()) {
         painter->setBrush(sigs[i].series->color().darker(125));
         painter->drawEllipse(track_pts[i], 5.5, 5.5);
+      }
+    }
+  }
+
+  // paint points. OpenGL mode lacks certain features (such as showing points)
+  painter->setPen(Qt::NoPen);
+  for (auto &s : sigs) {
+    if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
+      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
+      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+      for (auto it = first; it != last; ++it) {
+        painter->setBrush(s.series->color());
+        painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
       }
     }
   }
