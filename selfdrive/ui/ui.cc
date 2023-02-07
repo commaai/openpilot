@@ -138,7 +138,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   }};
 
   // transform vertices
-  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
+  for (int kpi = 0; kpi < FACE_KPTS_SIZE; kpi++) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = QPointF(kpt_this.v[0], kpt_this.v[1]);
