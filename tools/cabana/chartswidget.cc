@@ -22,6 +22,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
+  toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), "");
   new_plot_btn->setToolTip(tr("New Plot"));
@@ -45,7 +46,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider_action = toolbar->addWidget(range_slider);
 
   reset_zoom_btn = toolbar->addAction(utils::icon("zoom-out"), "");
-  reset_zoom_btn->setToolTip(tr("Reset zoom (drag on chart to zoom X-Axis)"));
+  reset_zoom_btn->setToolTip(tr("Reset zoom"));
   remove_all_btn = toolbar->addAction(utils::icon("x"), "");
   remove_all_btn->setToolTip(tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
@@ -161,9 +162,10 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
-  reset_zoom_btn->setVisible(is_zoomed);
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
+  reset_zoom_btn->setVisible(is_zoomed);
+  reset_zoom_btn->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
