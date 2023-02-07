@@ -171,14 +171,18 @@ QWidget * Setup::network_setup() {
   cont->setObjectName("navBtn");
   cont->setProperty("primary", true);
   QObject::connect(cont, &QPushButton::clicked, [=]() {
-    QString url = InputDialog::getText(tr("Enter installer URL"), this, "");
-    if (url.isEmpty()) {
-      return;
-    }
-    setCurrentWidget(downloading_widget);
-    QTimer::singleShot(1000, this, [=]() {
-      download(url);
+    auto w = currentWidget();
+    QTimer::singleShot(0, [=]() {
+      setCurrentWidget(downloading_widget);
     });
+    QString url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
+    if (!url.isEmpty()) {
+      QTimer::singleShot(1000, this, [=]() {
+        download(url);
+      });
+    } else {
+      setCurrentWidget(w);
+    }
   });
   blayout->addWidget(cont);
 

@@ -673,6 +673,14 @@ location set</source>
         <translation>連接至網路中</translation>
     </message>
     <message>
+        <source>Enter URL</source>
+        <translation>輸入網址</translation>
+    </message>
+    <message>
+        <source>for Custom Software</source>
+        <translation>定制的軟體</translation>
+    </message>
+    <message>
         <source>Downloading...</source>
         <translation>下載中…</translation>
     </message>
@@ -691,10 +699,6 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>重新開始</translation>
-    </message>
-    <message>
-        <source>Enter installer URL</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

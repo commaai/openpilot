@@ -677,6 +677,14 @@ trabalho definido</translation>
         <translation>Esperando pela internet</translation>
     </message>
     <message>
+        <source>Enter URL</source>
+        <translation>Preencher URL</translation>
+    </message>
+    <message>
+        <source>for Custom Software</source>
+        <translation>para o Software Customizado</translation>
+    </message>
+    <message>
         <source>Downloading...</source>
         <translation>Baixando...</translation>
     </message>
@@ -695,10 +703,6 @@ trabalho definido</translation>
     <message>
         <source>Start over</source>
         <translation>Inicializar</translation>
-    </message>
-    <message>
-        <source>Enter installer URL</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

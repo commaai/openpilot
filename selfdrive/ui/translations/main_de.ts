@@ -675,6 +675,14 @@ location set</source>
         <translation>Auf Internet warten</translation>
     </message>
     <message>
+        <source>Enter URL</source>
+        <translation>URL eingeben</translation>
+    </message>
+    <message>
+        <source>for Custom Software</source>
+        <translation>für spezifische Software</translation>
+    </message>
+    <message>
         <source>Downloading...</source>
         <translation>Herunterladen...</translation>
     </message>
@@ -693,10 +701,6 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>Von neuem beginnen</translation>
-    </message>
-    <message>
-        <source>Enter installer URL</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -671,6 +671,14 @@ location set</source>
         <translation>等待网络连接</translation>
     </message>
     <message>
+        <source>Enter URL</source>
+        <translation>输入网址</translation>
+    </message>
+    <message>
+        <source>for Custom Software</source>
+        <translation>以下载自定义软件</translation>
+    </message>
+    <message>
         <source>Downloading...</source>
         <translation>正在下载……</translation>
     </message>
@@ -689,10 +697,6 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>重来</translation>
-    </message>
-    <message>
-        <source>Enter installer URL</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
