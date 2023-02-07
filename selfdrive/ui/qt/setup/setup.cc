@@ -185,7 +185,20 @@ QWidget * Setup::network_setup() {
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
   cont->setProperty("primary", true);
-  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+  QObject::connect(cont, &QPushButton::clicked, [=]() {
+    auto w = currentWidget();
+    QTimer::singleShot(0, [=]() {
+      setCurrentWidget(downloading_widget);
+    });
+    QString url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
+    if (!url.isEmpty()) {
+      QTimer::singleShot(1000, this, [=]() {
+        download(url);
+      });
+    } else {
+      setCurrentWidget(w);
+    }
+  });
   blayout->addWidget(cont);
 
   // setup timer for testing internet connection
@@ -208,106 +221,6 @@ QWidget * Setup::network_setup() {
     }
   });
   timer->start(1000);
-
-  return widget;
-}
-
-QWidget * radio_button(QString title, QButtonGroup *group) {
-  QPushButton *btn = new QPushButton(title);
-  btn->setCheckable(true);
-  group->addButton(btn);
-  btn->setStyleSheet(R"(
-    QPushButton {
-      height: 230;
-      padding-left: 100px;
-      padding-right: 100px;
-      text-align: left;
-      font-size: 80px;
-      font-weight: 400;
-      border-radius: 10px;
-      background-color: #4F4F4F;
-    }
-    QPushButton:checked {
-      background-color: #465BEA;
-    }
-  )");
-
-  // checkmark icon
-  QPixmap pix(":/img_circled_check.svg");
-  btn->setIcon(pix);
-  btn->setIconSize(QSize(0, 0));
-  btn->setLayoutDirection(Qt::RightToLeft);
-  QObject::connect(btn, &QPushButton::toggled, [=](bool checked) {
-    btn->setIconSize(checked ? QSize(104, 104) : QSize(0, 0));
-  });
-  return btn;
-}
-
-QWidget * Setup::software_selection() {
-  QWidget *widget = new QWidget();
-  QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(55, 50, 55, 50);
-  main_layout->setSpacing(0);
-
-  // title
-  QLabel *title = new QLabel(tr("Choose Software to Install"));
-  title->setStyleSheet("font-size: 90px; font-weight: 500;");
-  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
-
-  main_layout->addSpacing(50);
-
-  // dashcam + custom radio buttons
-  QButtonGroup *group = new QButtonGroup(widget);
-  group->setExclusive(true);
-
-  QWidget *dashcam = radio_button(tr("Dashcam"), group);
-  main_layout->addWidget(dashcam);
-
-  main_layout->addSpacing(30);
-
-  QWidget *custom = radio_button(tr("Custom Software"), group);
-  main_layout->addWidget(custom);
-
-  main_layout->addStretch();
-
-  // back + continue buttons
-  QHBoxLayout *blayout = new QHBoxLayout;
-  main_layout->addLayout(blayout);
-  blayout->setSpacing(50);
-
-  QPushButton *back = new QPushButton(tr("Back"));
-  back->setObjectName("navBtn");
-  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
-  blayout->addWidget(back);
-
-  QPushButton *cont = new QPushButton(tr("Continue"));
-  cont->setObjectName("navBtn");
-  cont->setEnabled(false);
-  cont->setProperty("primary", true);
-  blayout->addWidget(cont);
-
-  QObject::connect(cont, &QPushButton::clicked, [=]() {
-    auto w = currentWidget();
-    QTimer::singleShot(0, [=]() {
-      setCurrentWidget(downloading_widget);
-    });
-    QString url = DASHCAM_URL;
-    if (group->checkedButton() != dashcam) {
-      url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
-    }
-    if (!url.isEmpty()) {
-      QTimer::singleShot(1000, this, [=]() {
-        download(url);
-      });
-    } else {
-      setCurrentWidget(w);
-    }
-  });
-
-  connect(group, QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked), [=](QAbstractButton *btn) {
-    btn->setChecked(true);
-    cont->setEnabled(true);
-  });
 
   return widget;
 }
@@ -387,7 +300,6 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
 
   addWidget(getting_started());
   addWidget(network_setup());
-  addWidget(software_selection());
 
   downloading_widget = downloading();
   addWidget(downloading_widget);

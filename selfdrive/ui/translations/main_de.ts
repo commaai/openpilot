@@ -675,18 +675,6 @@ location set</source>
         <translation>Auf Internet warten</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>Software zum installieren auswählen</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Spezifische Software</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>URL eingeben</translation>
     </message>

@@ -677,18 +677,6 @@ trabalho definido</translation>
         <translation>Esperando pela internet</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>Escolher Software para Instalar</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Sofware Customizado</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>Preencher URL</translation>
     </message>
