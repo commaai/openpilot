@@ -20,6 +20,17 @@
 const std::string USER_AGENT = "AGNOSSetup-";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
 
+bool is_elf(char *fname) {
+  FILE *fp = fopen(fname, "rb");
+  if (fp == NULL) {
+    return false;
+  }
+  char buf[4];
+  size_t n = fread(buf, 1, 4, fp);
+  fclose(fp);
+  return n == 4 && buf[0] == 0x7f && buf[1] == 'E' && buf[2] == 'L' && buf[3] == 'F';
+}
+
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
   if (!curl) {
@@ -44,10 +55,9 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 
   int ret = curl_easy_perform(curl);
-
   long res_status = 0;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
-  if (ret == CURLE_OK && res_status == 200) {
+  if (ret == CURLE_OK && res_status == 200 && is_elf(tmpfile)) {
     rename(tmpfile, "/tmp/installer");
     emit finished(true);
   } else {
