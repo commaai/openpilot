@@ -2036,7 +2036,8 @@ DBC = {
   CAR.LEXUS_RXH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CHRH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CHRH_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
+#  CAR.CHRH_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
+  CAR.CHRH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRYH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
@@ -2086,7 +2087,8 @@ NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CHRH_TSS2, CAR.CAMRY, CAR.CAMRYH
 UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC}
 
 # these cars have a radar which sends ACC messages instead of the camera
-RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.CHRH_TSS2}
+#RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.CHRH_TSS2}
+RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022}
 
 EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.CHRH_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS,
                  CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
