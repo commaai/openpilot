@@ -54,7 +54,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   connect(targetBranchBtn, &ButtonControl::clicked, [=]() {
     auto current = params.get("GitBranch");
     QStringList branches = QString::fromStdString(params.get("UpdaterAvailableBranches")).split(",");
-    for (QString b : {current.c_str(), "devel-staging", "devel", "master-ci", "master"}) {
+    for (QString b : {current.c_str(), "devel-staging", "devel", "nightly", "master-ci", "master"}) {
       auto i = branches.indexOf(b);
       if (i >= 0) {
         branches.removeAt(i);
