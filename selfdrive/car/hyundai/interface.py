@@ -122,6 +122,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.756
       ret.steerRatio = 16.
       tire_stiffness_factor = 0.385
+      if candidate == CAR.TUCSON_4TH_GEN:
+        ret.flags |= HyundaiFlags.ALT_LIMITS.value
     elif candidate == CAR.SANTA_CRUZ_1ST_GEN:
       ret.mass = 1870. + STD_CARGO_KG  # weight from Limited trim - the only supported trim
       ret.wheelbase = 3.000

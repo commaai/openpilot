@@ -26,29 +26,38 @@ class CarControllerParams:
     self.STEER_STEP = 1  # 100 Hz
 
     if CP.carFingerprint in CANFD_CAR:
-      self.STEER_MAX = 270
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
-      self.STEER_DELTA_UP = 2
-      self.STEER_DELTA_DOWN = 3
 
-    # To determine the limit for your car, find the maximum value that the stock LKAS will request.
-    # If the max stock LKAS request is <384, add your car to this list.
-    elif CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.IONIQ,
-                               CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
-                               CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
-      self.STEER_MAX = 255
+      if CP.flags & HyundaiFlags.ALT_LIMITS:
+        self.STEER_MAX = 100
+        self.STEER_DELTA_UP = 1
+        self.STEER_DELTA_DOWN = 1
 
-    # these cars have significantly more torque than most HKG; limit to 70% of max
-    elif CP.flags & HyundaiFlags.ALT_LIMITS:
-      self.STEER_MAX = 270
-      self.STEER_DELTA_UP = 2
-      self.STEER_DELTA_DOWN = 3
+      # CAN-FD default
+      else:
+        self.STEER_MAX = 270
+        self.STEER_DELTA_UP = 2
+        self.STEER_DELTA_DOWN = 3
 
-    # Default for most HKG
     else:
-      self.STEER_MAX = 384
+      # To determine the limit for your car, find the maximum value that the stock LKAS will request.
+      # If the max stock LKAS request is <384, add your car to this list.
+      if CP.carFingerprint in (CAR.GENESIS_G80, CAR.GENESIS_G90, CAR.ELANTRA, CAR.IONIQ,
+                                 CAR.IONIQ_EV_LTD, CAR.SANTA_FE_PHEV_2022, CAR.SONATA_LF, CAR.KIA_FORTE, CAR.KIA_NIRO_PHEV,
+                                 CAR.KIA_OPTIMA_H, CAR.KIA_SORENTO):
+        self.STEER_MAX = 255
+
+      # these cars have significantly more torque than most HKG; limit to 70% of max
+      elif CP.flags & HyundaiFlags.ALT_LIMITS:
+        self.STEER_MAX = 270
+        self.STEER_DELTA_UP = 2
+        self.STEER_DELTA_DOWN = 3
+
+      # Default for most CAN HKG
+      else:
+        self.STEER_MAX = 384
 
 
 class HyundaiFlags(IntFlag):
