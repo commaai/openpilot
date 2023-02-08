@@ -262,7 +262,7 @@ void MainWindow::loadDBCFromClipboard() {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     if (!error.isEmpty()) error += "\n";
-    QMessageBox::warning(this, tr("Failed to Load From Clipboard"),
+    QMessageBox::warning(this, tr("Failed to load DBC from clipboard"),
                          tr("%1Make sure that you paste the text with correct format.").arg(error));
   }
 }
