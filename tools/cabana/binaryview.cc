@@ -173,7 +173,6 @@ void BinaryViewModel::refresh() {
   if ((dbc_msg = dbc()->msg(msg_id))) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
-    int i = 0;
     for (auto sig : dbc_msg->getSignals()) {
       auto [start, end] = getSignalRange(sig);
       for (int j = start; j <= end; ++j) {
@@ -185,10 +184,9 @@ void BinaryViewModel::refresh() {
         }
         if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
         if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].bg_color = getColor(i);
+        items[idx].bg_color = getColor(sig);
         items[idx].sigs.push_back(sig);
       }
-      ++i;
     }
   } else {
     row_count = can->lastMessage(msg_id).dat.size();
