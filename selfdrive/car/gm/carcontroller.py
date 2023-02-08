@@ -13,6 +13,8 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10
+# Enforce a minimum interval between steering messages to avoid a fault
+MIN_STEER_MSG_INTERVAL_MS = 15
 
 
 class CarController:
@@ -59,17 +61,14 @@ class CarController:
     if CC.latActive or sync_steer:
       steer_step = self.params.STEER_STEP
 
-    dt = (int(now_nanos * 1e9) - CS.loopback_lka_steering_cmd_ts_nanos) * 1e-6
-    # print('lka t cc', CS.loopback_lka_steering_cmd_ts_nanos, dt)
-
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
     if CS.loopback_lka_steering_cmd_updated:
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
 
-    send_steer_msg = (self.frame - self.last_steer_frame) >= steer_step and not CS.loopback_lka_steering_cmd_updated and dt > 15
-    if send_steer_msg:
+    dt = (now_nanos - CS.loopback_lka_steering_cmd_ts_nanos) * 1e-6
+    if (self.frame - self.last_steer_frame) >= steer_step and not CS.loopback_lka_steering_cmd_updated and dt > MIN_STEER_MSG_INTERVAL_MS:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if not self.sent_lka_steering_cmd:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
