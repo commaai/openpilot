@@ -571,7 +571,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
 
   // tracking arcs
   const int arc_l = 133;
-  const float arc_t_default = 5.2;
+  const float arc_t_default = 6.7;
   const float arc_t_extend = 12.0;
   QColor arc_color = QColor::fromRgbF(0.09, 0.945, 0.26, 0.4*(1.0-dm_fade_state));
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
