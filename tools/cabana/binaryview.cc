@@ -218,12 +218,9 @@ void BinaryViewModel::updateState() {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
 
       // Bit update frequency based highlighting
-      bool not_defined = (items[i * column_count + j].bg_color == QApplication::style()->standardPalette().color(QPalette::Base));
-      if (not_defined) {
-        items[i * column_count + j].bg_color = QColor(102, 86, 169, 255);
-      }
+      bool has_signal = items[i * column_count + j].sigs.size() > 0;
+      double offset = has_signal ? 50 : 0;
 
-      double offset = not_defined ? 50 : 0;
       double min_f = last_msg.bit_change_counts[i][7 - j] == 0 ? offset : offset + 25;
       double max_f = 255.0;
 
