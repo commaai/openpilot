@@ -25,8 +25,7 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
-const int FACE_KPTS_SIZE = 31;
-const vec3 default_face_kpts_3d[FACE_KPTS_SIZE] = {
+const vec3 default_face_kpts_3d[31] = {
   {-7.74, -51.07, 8.00}, {-18.64, -48.16, 8.00}, {-26.64, -43.80, 8.00}, {-33.18, -37.26, 8.00}, {-36.08, -29.99, 8.00},
   {-36.81, -25.63, 8.00}, {-36.81, -9.64, 8.00}, {-36.08, -3.82, 8.00}, {-33.90, 4.17, 8.00}, {-33.90, 20.89, 8.00},
   {-33.18, 23.07, 8.00}, {-31.72, 25.98, 8.00}, {-22.27, 36.88, 8.00}, {-12.83, 47.06, 8.00}, {-7.74, 49.24, 8.00},
@@ -119,7 +118,7 @@ typedef struct UIScene {
   float driver_pose_diff[3];
   float driver_pose_sins[3];
   float driver_pose_coss[3];
-  vec3 face_kpts_draw[FACE_KPTS_SIZE];
+  vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;

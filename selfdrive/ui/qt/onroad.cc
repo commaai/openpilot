@@ -560,15 +560,15 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
 
   // face
-  QPointF face_kpts_draw[FACE_KPTS_SIZE];
+  QPointF face_kpts_draw[std::size(default_face_kpts_3d)];
   float kp;
-  for (int i = 0; i < FACE_KPTS_SIZE; ++i) {
+  for (int i = 0; i < std::size(default_face_kpts_3d); ++i) {
     kp = (scene.face_kpts_draw[i].v[2] - 8) / 120 + 1.0;
     face_kpts_draw[i] = QPointF(scene.face_kpts_draw[i].v[0] * kp + x, scene.face_kpts_draw[i].v[1] * kp + y);
   }
 
   painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 5.2, Qt::SolidLine, Qt::RoundCap));
-  painter.drawPolyline(face_kpts_draw, FACE_KPTS_SIZE);
+  painter.drawPolyline(face_kpts_draw, std::size(default_face_kpts_3d));
 
   // tracking arcs
   const int arc_l = 133;

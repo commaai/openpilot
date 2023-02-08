@@ -138,7 +138,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   }};
 
   // transform vertices
-  for (int kpi = 0; kpi < FACE_KPTS_SIZE; kpi++) {
+  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
@@ -261,7 +261,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   timer->start(1000 / UI_FREQ);
 
   // initial dm draw
-  for (int kpi = 0; kpi < FACE_KPTS_SIZE; kpi++) {
+  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
     scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2])}};
   }
