@@ -279,7 +279,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     }
 
     // color label
-    auto bg_color = QColor(getColor(item->row()));
+    auto bg_color = getColor(item->sig);
     QRect rc{option.rect.left() + 3, option.rect.top(), 22, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);

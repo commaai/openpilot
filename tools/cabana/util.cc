@@ -4,6 +4,9 @@
 #include <QFontDatabase>
 #include <QPainter>
 
+#include <limits>
+#include <cmath>
+
 #include "selfdrive/ui/qt/util.h"
 
 static QColor blend(QColor a, QColor b) {
@@ -94,6 +97,17 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     pos.moveLeft(pos.right() + space.width());
     i++;
   }
+}
+
+QColor getColor(const Signal *sig) {
+  float h = 19 * (float)sig->lsb / 64.0;
+  h = fmod(h, 1.0);
+
+  size_t hash = qHash(QString::fromStdString(sig->name));
+  float v = 13 * (float)(hash & 0xff) / 255.0;
+  v = 0.75 + fmod(v, 0.25);
+
+  return QColor::fromHsvF(h, 0.5, v);
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
