@@ -226,7 +226,9 @@ void MainWindow::loadFile(const QString &fn) {
         setCurrentFile(fn);
         statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
       } else {
-        QMessageBox::warning(this, tr("Failed to load DBC file"), error);
+        QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC file"), tr("Failed to parse DBC file %1").arg(fn));
+        msg_box.setDetailedText(error);
+        msg_box.exec();
       }
     }
   }
@@ -261,9 +263,11 @@ void MainWindow::loadDBCFromClipboard() {
   if (ret && dbc()->messages().size() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
-    if (!error.isEmpty()) error += "\n";
-    QMessageBox::warning(this, tr("Failed to load DBC from clipboard"),
-                         tr("%1Make sure that you paste the text with correct format.").arg(error));
+    QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
+    if (!error.isEmpty()) {
+      msg_box.setDetailedText(error);
+    }
+    msg_box.exec();
   }
 }
 
