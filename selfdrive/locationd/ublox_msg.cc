@@ -213,6 +213,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setAf1(subframe_1->af_1() * pow(2, -43));
       eph.setAf0(subframe_1->af_0() * pow(2, -31));
       eph.setSvHealth(subframe_1->sv_health());
+      eph.setTowCount(subframe.how()->tow_count());
       iodc_lsb = subframe_1->iodc_lsb();
     }
 
