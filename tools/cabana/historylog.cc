@@ -49,7 +49,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       }
       return show_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(QColor(getColor(section - 1)));
+      return QBrush(getColor(sigs[section - 1]));
     }
   }
   return {};
