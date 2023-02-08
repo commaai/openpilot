@@ -440,7 +440,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   if (!hideDM) {
     int dm_icon_x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
     int dm_icon_y = rect().bottom() - footer_h / 2;
-    float opacity = dmActive ? 1.0 : 0.2;
+    float opacity = dmActive ? 0.65 : 0.2;
     drawDriverState(p, s, dm_icon_x, dm_icon_y, opacity);
     drawIcon(p, dm_icon_x, dm_icon_y, dm_img, blackColor(0), opacity);
   }
