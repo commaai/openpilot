@@ -310,7 +310,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   axis_y->setLabelFormat("%.1f");
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
-  chart->legend()->layout()->setContentsMargins(0, 0, 40, 0);
+  chart->legend()->layout()->setContentsMargins(16, 0, 40, 0);
   chart->legend()->setShowToolTips(true);
   chart->setMargins({0, 0, 0, 0});
 
@@ -525,6 +525,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         s.vals.clear();
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
+        s.series->setColor(getColor(s.sig));
       }
 
       struct Chunk {

@@ -7,6 +7,10 @@
 #include <QStyledItemDelegate>
 #include <QVector>
 
+#include "tools/cabana/dbcmanager.h"
+using namespace dbcmanager;
+
+
 class ChangeTracker {
 public:
   void compute(const QByteArray &dat, double ts, uint32_t freq);
@@ -33,11 +37,7 @@ public:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 inline char toHex(uint value) { return "0123456789ABCDEF"[value & 0xF]; }
-inline const QString &getColor(int i) {
-  // TODO: add more colors
-  static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
-  return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
+QColor getColor(const dbcmanager::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT

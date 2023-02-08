@@ -15,7 +15,6 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/common.h"
 #include "tools/cabana/route.h"
 
 static MainWindow *main_win = nullptr;
