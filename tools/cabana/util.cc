@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+#include <QDebug>
 
 #include <limits>
 #include <cmath>
@@ -104,10 +105,10 @@ QColor getColor(const Signal *sig) {
   h = fmod(h, 1.0);
 
   size_t hash = qHash(QString::fromStdString(sig->name));
-  float v = 13 * (float)(hash & 0xff) / 255.0;
-  v = 0.75 + fmod(v, 0.25);
+  float s = 0.25 + 0.5 * (float)((hash >> 8) & 0xff) / 255.0;
+  float v = 0.75 + 0.25 * (float)((hash >> 16) & 0xff) / 255.0;
 
-  return QColor::fromHsvF(h, 0.5, v);
+  return QColor::fromHsvF(h, s, v);
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
