@@ -746,7 +746,6 @@ class Controls:
         self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
 
     self.pm.send('carControl', cc_send)
-
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC
 
