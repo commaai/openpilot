@@ -47,7 +47,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return show_signals ? sigs[section - 1].name.split('_').join(' ') : "Data";
+      return show_signals ? sigs[section - 1].name : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
       return QBrush(QColor(getColor(section - 1)));
     }
@@ -169,8 +169,8 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
     return time_col_size;
   } else {
     int default_size = qMax(100, (rect().width() - time_col_size.width()) / (model()->columnCount() - 1));
-    const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
+    QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text.replace(QChar('_'), ' '));
     QSize size = rect.size() + QSize{10, 6};
     return QSize{qMax(size.width(), default_size), size.height()};
   }
@@ -182,7 +182,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text);
+  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 
 // LogsWidget
