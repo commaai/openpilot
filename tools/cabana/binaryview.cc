@@ -7,6 +7,8 @@
 #include <QScrollBar>
 #include <QToolTip>
 
+#include <cmath>
+
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streams/abstractstream.h"
 
@@ -212,6 +214,19 @@ void BinaryViewModel::updateState() {
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
+
+      // Bit update frequency based highlighting
+      bool has_signal = items[i * column_count + j].sigs.size() > 0;
+      double offset = has_signal ? 50 : 0;
+
+      double min_f = last_msg.bit_change_counts[i][7 - j] == 0 ? offset : offset + 25;
+      double max_f = 255.0;
+
+      double factor = 0.25;
+      double scaler = max_f / log2(1.0 + factor);
+
+      double alpha = std::clamp(offset + log2(1.0 + factor * (double)last_msg.bit_change_counts[i][7 - j] / (double)last_msg.count) * scaler, min_f, max_f);
+      items[i * column_count + j].bg_color.setAlpha(alpha);
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
@@ -264,9 +279,17 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-    painter->fillRect(option.rect, sig_hovered ? item->bg_color.darker(125) : item->bg_color);  // 4/5x brightness
+    int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
+    QColor bg = item->bg_color;
+    if (bg.alpha() < min_alpha) {
+      bg.setAlpha(min_alpha);
+    }
+    painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
     painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
+  } else {
+    painter->fillRect(option.rect, item->bg_color);
   }
+
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {

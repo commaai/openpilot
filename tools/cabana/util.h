@@ -17,6 +17,7 @@ public:
 
   QVector<double> last_change_t;
   QVector<QColor> colors;
+  QVector<std::array<uint32_t, 8>> bit_change_counts;
 
 private:
   const int periodic_threshold = 10;

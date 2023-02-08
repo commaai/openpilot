@@ -16,6 +16,7 @@ struct CanData {
   QByteArray dat;
   QVector<QColor> colors;
   QVector<double> last_change_t;
+  QVector<std::array<uint32_t, 8>> bit_change_counts;
 };
 
 class AbstractStream : public QObject {
