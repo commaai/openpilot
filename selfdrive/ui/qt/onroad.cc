@@ -563,21 +563,23 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s,
   QPointF face_kpts_draw[FACE_KPTS_SIZE];
   float kp;
   for (int i = 0; i < FACE_KPTS_SIZE; ++i) {
-    kp = (scene.face_kpts_draw_d[i] - 8) / 120 + 1.0;
-    face_kpts_draw[i] = QPointF(scene.face_kpts_draw[i].x() * kp + x, scene.face_kpts_draw[i].y() * kp + y);
+    kp = (scene.face_kpts_draw[i].v[2] - 8) / 120 + 1.0;
+    face_kpts_draw[i] = QPointF(scene.face_kpts_draw[i].v[0] * kp + x, scene.face_kpts_draw[i].v[1] * kp + y);
   }
 
-  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 7.7, Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 5.2, Qt::SolidLine, Qt::RoundCap));
   painter.drawPolyline(face_kpts_draw, FACE_KPTS_SIZE);
 
   // tracking arcs
   const int arc_l = 133;
+  const float arc_t_default = 5.0;
+  const float arc_t_extend = 12.0;
   QColor arc_color = QColor::fromRgbF(0.09, 0.945, 0.26, 0.3*(1.0-dm_fade_state));
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
-  painter.setPen(QPen(arc_color, 3.0+10.0*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - arc_l / 2, fabs(delta_x), arc_l), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
-  painter.setPen(QPen(arc_color, 3.0+10.0*fmin(1.0, scene.driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
+  painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
   painter.restore();

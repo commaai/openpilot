@@ -116,7 +116,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   UIScene &scene = s->scene;
   const auto driver_orient = driverstate.getLeftDriverData().getFaceOrientation();
   for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
-    float v_this = (i == 0 ? 0.7 : 0.4) * driver_orient[i];
+    float v_this = (i == 0 ? (driver_orient[i] < 0 ? 0.7 : 0.9) : 0.4) * driver_orient[i];
     scene.driver_pose_diff[i] = fabs(scene.driver_pose_vals[i] - v_this);
     scene.driver_pose_vals[i] = 0.6 * v_this + (1 - 0.6) * scene.driver_pose_vals[i];
     scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
@@ -141,8 +141,7 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
   for (int kpi = 0; kpi < FACE_KPTS_SIZE; kpi++) {
     vec3 kpt_this = default_face_kpts_3d[kpi];
     kpt_this = matvecmul3(r_xyz, kpt_this);
-    scene.face_kpts_draw[kpi] = QPointF(kpt_this.v[0], kpt_this.v[1]);
-    scene.face_kpts_draw_d[kpi] = kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state;
+    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
   }
 }
 
@@ -260,6 +259,12 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
+
+  // initial dm draw
+  for (int kpi = 0; kpi < FACE_KPTS_SIZE; kpi++) {
+    vec3 kpt_this = default_face_kpts_3d[kpi];
+    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2])}};
+  }
 }
 
 void UIState::update() {
