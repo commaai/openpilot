@@ -485,7 +485,7 @@ void ChartView::updateTitle() {
   }
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
-    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b><font color=\"gray\">%3 %4</font></span>").arg(decoration).arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name.c_str(), msgName(s.msg_id), s.msg_id));
   }
 }
 
