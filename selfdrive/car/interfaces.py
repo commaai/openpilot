@@ -232,8 +232,9 @@ class CarInterfaceBase(ABC):
 
     return reader
 
+  # TODO make c a log.Event with union carControl?
   @abstractmethod
-  def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+  def apply(self, c: car.CarControl, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,

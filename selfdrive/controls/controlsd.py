@@ -731,7 +731,8 @@ class Controls:
 
     if not self.read_only and self.initialized:
       # send car controls over can
-      self.last_actuators, can_sends = self.CI.apply(CC)
+      now_nanos = int(sec_since_boot() * 1e9)  # TODO: figure out clean way to get this from cereal. need to create an Event, not CarControl
+      self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -820,6 +821,7 @@ class Controls:
       self.pm.send('carParams', cp_send)
 
     # carControl
+    # TODO: move this up?
     cc_send = messaging.new_message('carControl')
     cc_send.valid = CS.canValid
     cc_send.carControl = CC
