@@ -276,7 +276,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
-  setProperty("dm_fade_state", fmax(0.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)(dmActive)))));
   setProperty("status", s.status);
 
   // update engageability/experimental mode button
@@ -287,6 +286,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
+
+  // DM icon transition
+  dm_fade_state = fmax(0.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)(dmActive))));
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {

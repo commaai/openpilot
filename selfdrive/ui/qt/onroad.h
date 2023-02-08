@@ -59,7 +59,6 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool dmActive MEMBER dmActive);
   Q_PROPERTY(bool hideDM MEMBER hideDM);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
-  Q_PROPERTY(float dm_fade_state MEMBER dm_fade_state);
   Q_PROPERTY(int status MEMBER status);
 
 public:
