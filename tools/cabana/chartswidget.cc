@@ -9,6 +9,7 @@
 #include <QLineEdit>
 #include <QMenu>
 #include <QRubberBand>
+#include <QPushButton>
 #include <QToolBar>
 #include <QToolTip>
 #include <QtConcurrent>
@@ -251,12 +252,14 @@ void ChartsWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartsWidget::newChart() {
-  SeriesSelector dlg(this);
+  SeriesSelector dlg(tr("New Chart"), this);
   if (dlg.exec() == QDialog::Accepted) {
-    QList<QStringList> series_list = dlg.series();
-    if (!series_list.isEmpty()) {
+    auto items = dlg.seletedItems();
+    if (!items.isEmpty()) {
       auto c = createChart();
-      c->addSeries(series_list);
+      for (auto it : items) {
+        c->addSeries(it->msg_id, it->sig);
+      }
     }
   }
 }
@@ -425,33 +428,24 @@ void ChartView::msgRemoved(uint32_t address) {
   }
 }
 
-void ChartView::addSeries(const QList<QStringList> &series_list) {
-  for (auto &s : series_list) {
-    if (auto m = dbc()->msg(s[0])) {
-      auto it = m->sigs.find(s[2]);
-      if (it != m->sigs.end() && !hasSeries(s[0], &(it->second))) {
-        addSeries(s[0], &(it->second));
-      }
-    }
-  }
-}
-
 void ChartView::manageSeries() {
-  SeriesSelector dlg(this);
+  SeriesSelector dlg(tr("Mange Chart"), this);
   for (auto &s : sigs) {
-    dlg.addSeries(s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name));
+    dlg.addSelected(s.msg_id, s.sig);
   }
-
-  int ret = dlg.exec();
-  if (ret == QDialog::Accepted) {
-    QList<QStringList> series_list = dlg.series();
-    if (series_list.isEmpty()) {
+  if (dlg.exec() == QDialog::Accepted) {
+    auto items = dlg.seletedItems();
+    if (items.isEmpty()) {
       emit remove();
     } else {
-      addSeries(series_list);
+      for (auto s : items) {
+        if (!hasSeries(s->msg_id, s->sig)) {
+          addSeries(s->msg_id, s->sig);
+        }
+      }
       for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-        bool exists = std::any_of(series_list.cbegin(), series_list.cend(), [&](auto &s) {
-          return s[0] == it->msg_id && s[2] == it->sig->name.c_str();
+        bool exists = std::any_of(items.cbegin(), items.cend(), [&](auto &s) {
+          return s->msg_id == it->msg_id && s->sig == it->sig;
         });
         it = exists ? ++it : removeItem(it);
       }
@@ -737,11 +731,9 @@ void ChartView::dropEvent(QDropEvent *event) {
       event->accept();
     } else {
       ChartView *source_chart = (ChartView *)event->source();
-      QList<QStringList> series;
       for (auto &s : source_chart->sigs) {
-        series.push_back({s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name)});
+        addSeries(s.msg_id, s.sig);
       }
-      addSeries(series);
       emit source_chart->remove();
       event->acceptProposedAction();
     }
@@ -836,40 +828,37 @@ void ChartView::handleMarkerClicked() {
 
 // SeriesSelector
 
-SeriesSelector::SeriesSelector(QWidget *parent) {
-  setWindowTitle(tr("Manage Chart Series"));
-  QHBoxLayout *contents_layout = new QHBoxLayout();
+SeriesSelector::SeriesSelector(QString title, QWidget *parent) : QDialog(parent) {
+  setWindowTitle(title);
+  QGridLayout *main_layout = new QGridLayout(this);
 
-  QVBoxLayout *left_layout = new QVBoxLayout();
-  left_layout->addWidget(new QLabel(tr("Select Signals:")));
-
-  msgs_combo = new QComboBox(this);
+  // left column
+  main_layout->addWidget(new QLabel(tr("Available Signals")), 0, 0);
+  main_layout->addWidget(msgs_combo = new QComboBox(this), 1, 0);
   msgs_combo->setEditable(true);
-  msgs_combo->lineEdit()->setPlaceholderText(tr("Select Msg"));
+  msgs_combo->lineEdit()->setPlaceholderText(tr("Select a msg..."));
   msgs_combo->setInsertPolicy(QComboBox::NoInsert);
   msgs_combo->completer()->setCompletionMode(QCompleter::PopupCompletion);
   msgs_combo->completer()->setFilterMode(Qt::MatchContains);
 
-  left_layout->addWidget(msgs_combo);
-  sig_list = new QListWidget(this);
-  sig_list->setSortingEnabled(true);
-  sig_list->setToolTip(tr("Double click on an item to add signal to chart"));
-  left_layout->addWidget(sig_list);
+  main_layout->addWidget(available_list = new QListWidget(this), 2, 0);
 
-  QVBoxLayout *right_layout = new QVBoxLayout();
-  right_layout->addWidget(new QLabel(tr("Chart Signals:")));
-  chart_series = new QListWidget(this);
-  chart_series->setSortingEnabled(true);
-  chart_series->setToolTip(tr("Double click on an item to remove signal from chart"));
-  right_layout->addWidget(chart_series);
-  contents_layout->addLayout(left_layout);
-  contents_layout->addLayout(right_layout);
+  // buttons
+  QVBoxLayout *btn_layout = new QVBoxLayout();
+  QPushButton *add_btn = new QPushButton(utils::icon("chevron-right"), "", this);
+  QPushButton *remove_btn = new QPushButton(utils::icon("chevron-left"), "", this);
+  btn_layout->addStretch(0);
+  btn_layout->addWidget(add_btn);
+  btn_layout->addWidget(remove_btn);
+  btn_layout->addStretch(0);
+  main_layout->addLayout(btn_layout, 0, 1, 3, 1);
+
+  // right column
+  main_layout->addWidget(new QLabel(tr("Selected Signals")), 0, 2);
+  main_layout->addWidget(selected_list = new QListWidget(this), 1, 2, 2, 1);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addLayout(contents_layout);
-  main_layout->addWidget(buttonBox);
+  main_layout->addWidget(buttonBox, 3, 2);
 
   for (auto it = can->can_msgs.cbegin(); it != can->can_msgs.cend(); ++it) {
     if (auto m = dbc()->msg(it.key())) {
@@ -877,56 +866,59 @@ SeriesSelector::SeriesSelector(QWidget *parent) {
     }
   }
   msgs_combo->model()->sort(0);
+  msgs_combo->setCurrentIndex(-1);
 
+  QObject::connect(msgs_combo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SeriesSelector::updateAvailableList);
+  QObject::connect(available_list, &QListWidget::currentRowChanged, [=](int row) { add_btn->setEnabled(row != -1); });
+  QObject::connect(selected_list, &QListWidget::currentRowChanged, [=](int row) { remove_btn->setEnabled(row != -1); });
+  QObject::connect(available_list, &QListWidget::itemDoubleClicked, this, &SeriesSelector::add);
+  QObject::connect(selected_list, &QListWidget::itemDoubleClicked, this, &SeriesSelector::remove);
+  QObject::connect(add_btn, &QPushButton::clicked, [this]() { if (auto item = available_list->currentItem()) add(item); });
+  QObject::connect(remove_btn, &QPushButton::clicked, [this]() { if (auto item = selected_list->currentItem()) remove(item);});
   QObject::connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
   QObject::connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  QObject::connect(msgs_combo, SIGNAL(currentIndexChanged(int)), SLOT(msgSelected(int)));
-  QObject::connect(sig_list, &QListWidget::itemDoubleClicked, this, &SeriesSelector::addSignal);
-  QObject::connect(chart_series, &QListWidget::itemDoubleClicked, [](QListWidgetItem *item) { delete item; });
-
-  if (int index = msgs_combo->currentIndex(); index >= 0) {
-    msgSelected(index);
-  }
 }
 
-void SeriesSelector::msgSelected(int index) {
+void SeriesSelector::add(QListWidgetItem *item) {
+  auto it = (ListItem *)item;
+  addItemToList(selected_list, it->msg_id, it->sig, true);
+  delete item;
+}
+
+void SeriesSelector::remove(QListWidgetItem *item) {
+  auto it = (ListItem *)item;
+  if (it->msg_id == msgs_combo->currentData().toString()) {
+    addItemToList(available_list, it->msg_id, it->sig);
+  }
+  delete item;
+}
+
+void SeriesSelector::updateAvailableList(int index) {
+  if (index == -1) return;
+  available_list->clear();
   QString msg_id = msgs_combo->itemData(index).toString();
-  sig_list->clear();
-  if (auto m = dbc()->msg(msg_id)) {
-    for (auto &[name, s] : m->sigs) {
-      QStringList data({msg_id, m->name, name});
-      QListWidgetItem *item = new QListWidgetItem(name, sig_list);
-      item->setData(Qt::UserRole, data);
-      sig_list->addItem(item);
+  auto selected_items = seletedItems();
+  for (auto &[name, s] : dbc()->msg(msg_id)->sigs) {
+    bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig=&s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
+    if (!is_selected) {
+      addItemToList(available_list, msg_id, &s);
     }
   }
 }
 
-void SeriesSelector::addSignal(QListWidgetItem *item) {
-  QStringList data = item->data(Qt::UserRole).toStringList();
-  addSeries(data[0], data[1], data[2]);
-}
+void SeriesSelector::addItemToList(QListWidget *parent, const QString id, const Signal *sig, bool show_msg_name) {
+  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name.c_str());
+  if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id);
 
-void SeriesSelector::addSeries(const QString &id, const QString &msg_name, const QString &sig_name) {
-  QStringList data({id, msg_name, sig_name});
-  for (int i = 0; i < chart_series->count(); ++i) {
-    if (chart_series->item(i)->data(Qt::UserRole).toStringList() == data) {
-      return;
-    }
-  }
-  QListWidgetItem *new_item = new QListWidgetItem(chart_series);
-  new_item->setData(Qt::UserRole, data);
-  chart_series->addItem(new_item);
-  QLabel *label = new QLabel(QString("%0 <font color=\"gray\">%1 %2</font>").arg(data[2]).arg(data[1]).arg(data[0]), chart_series);
+  QLabel *label = new QLabel(text);
   label->setContentsMargins(5, 0, 5, 0);
+  auto new_item = new ListItem(id, sig, parent);
   new_item->setSizeHint(label->sizeHint());
-  chart_series->setItemWidget(new_item, label);
+  parent->setItemWidget(new_item, label);
 }
 
-QList<QStringList> SeriesSelector::series() {
-  QList<QStringList> ret;
-  for (int i = 0; i < chart_series->count(); ++i) {
-    ret.push_back(chart_series->item(i)->data(Qt::UserRole).toStringList());
-  }
+QList<SeriesSelector::ListItem *> SeriesSelector::seletedItems() {
+  QList<SeriesSelector::ListItem *> ret;
+  for (int i = 0; i < selected_list->count(); ++i) ret.push_back((ListItem *)selected_list->item(i));
   return ret;
 }
