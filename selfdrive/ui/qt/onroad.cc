@@ -275,7 +275,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  setProperty("hideDM", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) || (!s.scene.dm_rendered));
   setProperty("status", s.status);
 
   // update engageability/experimental mode button

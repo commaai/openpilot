@@ -143,6 +143,8 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
   }
+
+  scene.dm_rendered = true;
 }
 
 static void update_sockets(UIState *s) {
@@ -259,12 +261,6 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
-
-  // initial dm draw
-  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
-    vec3 kpt_this = default_face_kpts_3d[kpi];
-    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2])}};
-  }
 }
 
 void UIState::update() {
