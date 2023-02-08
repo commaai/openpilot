@@ -58,7 +58,7 @@ class CAR:
   CAMRYH_TSS2 = "TOYOTA CAMRY HYBRID 2021"
   CHR = "TOYOTA C-HR 2018"
   CHRH = "TOYOTA C-HR HYBRID 2018"
-  CHRH_TSS2 = "TOYOTA C-HR HYBRID 2018" #TSS 2.5
+  CHRH_TSS2 = "TOYOTA C-HR HYBRID 2022" #TSS 2.5
   COROLLA = "TOYOTA COROLLA 2017"
   COROLLA_TSS2 = "TOYOTA COROLLA TSS2 2019"
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
@@ -126,7 +126,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-23"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-21"),
   CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
-  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2017-23"),
+  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2022"),
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
