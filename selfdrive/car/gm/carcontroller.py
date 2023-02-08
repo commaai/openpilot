@@ -1,7 +1,7 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
-from common.realtime import DT_CTRL
+from common.realtime import DT_CTRL, sec_since_boot
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
@@ -56,17 +56,23 @@ class CarController:
     out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
     sync_steer = (init_lka_counter or out_of_sync) and self.CP.networkLocation == NetworkLocation.fwdCamera
 
-    steer_step = self.params.INACTIVE_STEER_STEP
-    if CC.latActive or sync_steer:
-      steer_step = self.params.STEER_STEP
+    # steer_step = self.params.INACTIVE_STEER_STEP
+    # if CC.latActive or sync_steer:
+    #   steer_step = self.params.STEER_STEP
+    steer_step = 1
+
+    now = sec_since_boot()
+    dt = (int(now * 1e9) - CS.lka_t) * 1e-6
+    # print('lka t cc', CS.lka_t, dt)
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
     # next Panda loopback confirmation in the current CS frame.
     if CS.loopback_lka_steering_cmd_updated:
-      self.lka_steering_cmd_counter += 1
+      # self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
     elif (self.frame - self.last_steer_frame) >= steer_step:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
+      init_lka_counter = not self.sent_lka_steering_cmd
       if init_lka_counter:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
 
@@ -79,6 +85,7 @@ class CarController:
       self.last_steer_frame = self.frame
       self.apply_steer_last = apply_steer
       idx = self.lka_steering_cmd_counter % 4
+      self.lka_steering_cmd_counter += 1
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, CC.latActive))
 
     if self.CP.openpilotLongitudinalControl:
