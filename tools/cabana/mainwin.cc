@@ -257,7 +257,7 @@ void MainWindow::loadDBCFromClipboard() {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
-  bool ret = dbc()->open("from_clipboard.dbc", dbc_str, &error);
+  bool ret = dbc()->open("clipboard", dbc_str, &error);
   if (ret && dbc()->messages().size() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
