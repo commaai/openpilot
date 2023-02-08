@@ -868,7 +868,7 @@ SeriesSelector::SeriesSelector(QString title, QWidget *parent) : QDialog(parent)
   msgs_combo->model()->sort(0);
   msgs_combo->setCurrentIndex(-1);
 
-  QObject::connect(msgs_combo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SeriesSelector::updateAvaibleList);
+  QObject::connect(msgs_combo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SeriesSelector::updateAvailableList);
   QObject::connect(available_list, &QListWidget::currentRowChanged, [=](int row) { add_btn->setEnabled(row != -1); });
   QObject::connect(selected_list, &QListWidget::currentRowChanged, [=](int row) { remove_btn->setEnabled(row != -1); });
   QObject::connect(available_list, &QListWidget::itemDoubleClicked, this, &SeriesSelector::add);
@@ -893,7 +893,7 @@ void SeriesSelector::remove(QListWidgetItem *item) {
   delete item;
 }
 
-void SeriesSelector::updateAvaibleList(int index) {
+void SeriesSelector::updateAvailableList(int index) {
   if (index == -1) return;
   available_list->clear();
   QString msg_id = msgs_combo->itemData(index).toString();

@@ -168,7 +168,7 @@ public:
   inline void addSelected(const QString &id, const Signal *sig) { addItemToList(selected_list, id, sig, true); }
 
 private:
-  void updateAvaibleList(int index);
+  void updateAvailableList(int index);
   void addItemToList(QListWidget *parent, const QString id, const Signal *sig, bool show_msg_name = false);
   void add(QListWidgetItem *item);
   void remove(QListWidgetItem *item);
