@@ -64,8 +64,8 @@ class CarController:
       self.lka_steering_cmd_counter += 1
       self.sent_lka_steering_cmd = True
 
-    # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
-    # next Panda loopback confirmation in the current CS frame.
+    # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just
+    # received the ASCMLKASteeringCmd loopback confirmation in the current CS frame
     if (self.frame - self.last_steer_frame) >= steer_step and not CS.loopback_lka_steering_cmd_updated:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if not self.sent_lka_steering_cmd:
