@@ -273,7 +273,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("is_cruise_set", cruise_set);
   setProperty("is_metric", s.scene.is_metric);
   setProperty("speed", cur_speed);
-  setProperty("isStandstill", sm["carState"].getCarState().getStandstill());
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
   setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
