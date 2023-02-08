@@ -17,7 +17,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
-    return HexColors::toVariantList(m.colors);
+    return ChangeTracker::toVariantList(m.colors);
   }
   return {};
 }
@@ -79,7 +79,7 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 
 void HistoryLogModel::updateState() {
   if (!msg_id.isEmpty()) {
-    uint64_t current_time = (can->currentSec() + can->routeStartTime()) * 1e9;
+    uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
     auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
     if ((has_more_data = !new_msgs.empty())) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
@@ -109,7 +109,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (src == c.getSrc() && address == c.getAddress()) {
+        if (address == c.getAddress() && src == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
             values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));
@@ -140,9 +140,10 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
   if (dynamic_mode) {
     auto first = std::upper_bound(events->rbegin(), events->rend(), from_time, [=](uint64_t ts, auto &e) { return e->mono_time < ts; });
     auto msgs = fetchData(first, events->rend(), min_time);
-    if (update_colors && min_time > 0) {
+    if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        it->colors = hex_colors.colors;
       }
     }
     return msgs;
@@ -152,7 +153,8 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events->end(), 0);
     if (update_colors) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        it->colors = hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        it->colors = hex_colors.colors;
       }
     }
     return msgs;

@@ -7,19 +7,20 @@
 #include <QStyledItemDelegate>
 #include <QVector>
 
-class HexColors {
+class ChangeTracker {
 public:
- const QVector<QColor> &compute(const QByteArray &dat, double ts, uint32_t freq);
- static QList<QVariant> toVariantList(const QVector<QColor> &colors);
- void clear();
+  void compute(const QByteArray &dat, double ts, uint32_t freq);
+  static QList<QVariant> toVariantList(const QVector<QColor> &colors);
+  void clear();
+
+  QVector<double> last_change_t;
+  QVector<QColor> colors;
 
 private:
   const int periodic_threshold = 10;
   const int start_alpha = 128;
   const float fade_time = 2.0;
   QByteArray prev_dat;
-  QVector<double> last_change_t;
-  QVector<QColor> colors;
 };
 
 class MessageBytesDelegate : public QStyledItemDelegate {

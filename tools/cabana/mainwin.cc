@@ -15,6 +15,7 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/route.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -66,6 +67,11 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  if (!can->liveStreaming()) {
+    file_menu->addAction(tr("Open Route..."), this, &MainWindow::openRoute);
+    file_menu->addSeparator();
+  }
+
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
 
@@ -185,6 +191,17 @@ void MainWindow::DBCFileChanged() {
   setWindowFilePath(QString("%1").arg(dbc()->name()));
 }
 
+void MainWindow::openRoute() {
+  OpenRouteDialog dlg(this);
+  if (dlg.exec()) {
+    detail_widget->removeAll();
+    charts_widget->removeAll();
+    statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
+  } else if (dlg.failedToLoad()) {
+    close();
+  }
+}
+
 void MainWindow::newFile() {
   remindSaveChanges();
   dbc()->open("untitled.dbc", "");
@@ -250,7 +267,11 @@ void MainWindow::loadDBCFromFingerprint() {
 
   remindSaveChanges();
   auto fingerprint = can->carFingerprint();
-  video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  if (can->liveStreaming()) {
+    video_dock->setWindowTitle(can->routeName());
+  } else {
+    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  }
   if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
