@@ -3,7 +3,7 @@
 #include <QUndoCommand>
 #include <QUndoStack>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/common.h"
 
 class EditMsgCommand : public QUndoCommand {
 public:
@@ -25,7 +25,7 @@ public:
 
 private:
   const QString id;
-  DBCMsg message;
+  Msg message;
 };
 
 class AddSigCommand : public QUndoCommand {
@@ -48,21 +48,18 @@ public:
 private:
   const QString id;
   Signal signal = {};
-  SignalExtraInfo extra_info = {};
 };
 
 class EditSignalCommand : public QUndoCommand {
 public:
-  EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, const SignalExtraInfo &extra_info, QUndoCommand *parent = nullptr);
+  EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const QString id;
   Signal old_signal = {};
-  SignalExtraInfo old_extra_info = {};
   Signal new_signal = {};
-  SignalExtraInfo new_extra_info = {};
 };
 
 namespace UndoStack {

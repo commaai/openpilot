@@ -7,7 +7,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/common.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT

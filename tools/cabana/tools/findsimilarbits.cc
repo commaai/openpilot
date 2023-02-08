@@ -7,8 +7,7 @@
 #include <QPushButton>
 #include <QRadioButton>
 
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/common.h"
 
 FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags() | Qt::Window) {
   setWindowTitle(tr("Find similar bits"));

@@ -9,6 +9,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/common.h"
 
 // SignalModel
 
@@ -23,7 +24,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 }
 
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
-  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name.c_str(), .type = Item::Sig};
+  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
   QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
@@ -47,9 +48,9 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    for (auto &s : msg->getSignals()) {
-      if (filter_str.isEmpty() || QString::fromStdString(s->name).contains(filter_str, Qt::CaseInsensitive)) {
-        insertItem(root.get(), root->children.size(), s);
+    for (auto &s : msg->sigs) {
+      if (filter_str.isEmpty() || s.name.contains(filter_str, Qt::CaseInsensitive)) {
+        insertItem(root.get(), root->children.size(), &s);
       }
     }
   }
@@ -115,20 +116,19 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     const Item *item = getItem(index);
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
       if (index.column() == 0) {
-        return item->type == Item::Sig ? QString::fromStdString(item->sig->name) : item->title;
+        return item->type == Item::Sig ? item->sig->name : item->title;
       } else {
-        auto &extra_info = dbc()->msg(msg_id)->extraInfo(item->sig);
         switch (item->type) {
           case Item::Sig: return item->sig_val;
-          case Item::Name: return QString::fromStdString(item->sig->name);
+          case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
           case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
           case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
-          case Item::Unit: return extra_info.unit;
-          case Item::Comment: return extra_info.comment;
-          case Item::Min: return extra_info.min;
-          case Item::Max: return extra_info.max;
-          case Item::Desc: return extra_info.val_desc;
+          case Item::Unit: return item->sig->unit;
+          case Item::Comment: return item->sig->comment;
+          case Item::Min: return item->sig->min;
+          case Item::Max: return item->sig->max;
+          case Item::Desc: return item->sig->val_desc;
           default: break;
         }
       }
@@ -147,22 +147,21 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
 
   Item *item = getItem(index);
   Signal s = *item->sig;
-  SignalExtraInfo extra_info = dbc()->msg(msg_id)->extraInfo(item->sig);
   switch (item->type) {
-    case Item::Name: s.name = value.toString().toStdString(); break;
+    case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
     case Item::Factor: s.factor = value.toDouble(); break;
-    case Item::Unit: extra_info.unit = value.toString(); break;
-    case Item::Comment: extra_info.comment = value.toString(); break;
-    case Item::Min: extra_info.min = value.toString(); break;
-    case Item::Max: extra_info.max = value.toString(); break;
-    case Item::Desc: extra_info.val_desc = value.toString(); break;
+    case Item::Unit: s.unit = value.toString(); break;
+    case Item::Comment: s.comment = value.toString(); break;
+    case Item::Min: s.min = value.toString(); break;
+    case Item::Max: s.max = value.toString(); break;
+    case Item::Desc: s.val_desc = value.toString(); break;
     default: return false;
   }
-  bool ret = saveSignal(item->sig, s, &extra_info);
+  bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
 }
@@ -182,10 +181,10 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
   }
 }
 
-bool SignalModel::saveSignal(const Signal *origin_s, Signal &s, const SignalExtraInfo *extra_info) {
+bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
   auto msg = dbc()->msg(msg_id);
-  if (s.name != origin_s->name && msg->sigs.count(s.name.c_str()) != 0) {
-    QString text = tr("There is already a signal with the same name '%1'").arg(s.name.c_str());
+  if (s.name != origin_s->name && msg->sig(s.name) != nullptr) {
+    QString text = tr("There is already a signal with the same name '%1'").arg(s.name);
     QMessageBox::warning(nullptr, tr("Failed to save signal"), text);
     return false;
   }
@@ -208,8 +207,7 @@ bool SignalModel::saveSignal(const Signal *origin_s, Signal &s, const SignalExtr
     s.msb = s.start_bit;
   }
 
-  SignalExtraInfo extra = extra_info ? *extra_info : msg->extraInfo(origin_s);
-  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s, extra));
+  UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
   return true;
 }
 
@@ -225,8 +223,8 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
 
   Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
-    sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    if (msg->sigs.count(sig.name.c_str()) == 0) break;
+    sig.name = QString("NEW_SIGNAL_%1").arg(i);
+    if (msg->sig(sig.name) == nullptr) break;
   }
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));

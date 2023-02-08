@@ -6,7 +6,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/common.h"
 
 class BinaryItemDelegate : public QStyledItemDelegate {
 public:
@@ -45,7 +45,6 @@ public:
   std::vector<Item> items;
 
   QString msg_id;
-  const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
   const int column_count = 9;
 };

@@ -36,9 +36,8 @@ RemoveMsgCommand::RemoveMsgCommand(const QString &id, QUndoCommand *parent) : id
 void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
     dbc()->updateMsg(id, message.name, message.size);
-    for (auto &[name, s] : message.sigs) {
-      dbc()->addSignal(id, s, message.extraInfo(&s));
-    }
+    for (auto &s : message.sigs)
+      dbc()->addSignal(id, s);
   }
 }
 
@@ -51,38 +50,31 @@ void RemoveMsgCommand::redo() {
 
 AddSigCommand::AddSigCommand(const QString &id, const Signal &sig, QUndoCommand *parent)
     : id(id), signal(sig), QUndoCommand(parent) {
-  setText(QObject::tr("Add signal %1 to %2").arg(sig.name.c_str()).arg(DBCManager::parseId(id).second));
+  setText(QObject::tr("Add signal %1 to %2").arg(sig.name).arg(DBCManager::parseId(id).second));
 }
 
-void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name.c_str()); }
-void AddSigCommand::redo() { dbc()->addSignal(id, signal, {}); }
+void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name); }
+void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
 
 // RemoveSigCommand
 
 RemoveSigCommand::RemoveSigCommand(const QString &id, const Signal *sig, QUndoCommand *parent)
     : id(id), signal(*sig), QUndoCommand(parent) {
-  if (auto msg = dbc()->msg(id)) {
-    extra_info = msg->extraInfo(sig);
-  }
-  setText(QObject::tr("Remove signal %1 from %2").arg(signal.name.c_str()).arg(DBCManager::parseId(id).second));
+  setText(QObject::tr("Remove signal %1 from %2").arg(signal.name).arg(DBCManager::parseId(id).second));
 }
 
-void RemoveSigCommand::undo() { dbc()->addSignal(id, signal, extra_info); }
-void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name.c_str()); }
+void RemoveSigCommand::undo() { dbc()->addSignal(id, signal); }
+void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name); }
 
 // EditSignalCommand
 
-EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, const SignalExtraInfo &extra_info, QUndoCommand *parent)
+EditSignalCommand::EditSignalCommand(const QString &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
     : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
-  if (auto msg = dbc()->msg(id)) {
-    old_extra_info = msg->extraInfo(sig);
-  }
-  new_extra_info = extra_info;
-  setText(QObject::tr("Edit signal %1").arg(old_signal.name.c_str()));
+  setText(QObject::tr("Edit signal %1").arg(old_signal.name));
 }
 
-void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal, old_extra_info); }
-void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name.c_str(), new_signal, new_extra_info); }
+void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name, old_signal); }
+void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name, new_signal); }
 
 namespace UndoStack {
 

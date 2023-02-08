@@ -2,8 +2,8 @@
 #include "opendbc/can/common.h"
 #undef INFO
 #include "catch2/catch.hpp"
-#include "tools/cabana/dbcmanager.h"
 #include "tools/replay/logreader.h"
+#include "tools/cabana/common.h"
 
 // demo route, first segment
 const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
@@ -21,12 +21,9 @@ TEST_CASE("DBCManager::generateDBC") {
     auto &new_m = new_msgs.at(address);
     REQUIRE(m.name == new_m.name);
     REQUIRE(m.size == new_m.size);
-    auto sigs = m.getSignals();
-    auto new_sigs = new_m.getSignals();
-    REQUIRE(sigs.size() == new_sigs.size());
-    for (int i = 0; i < sigs.size(); ++i) {
-      REQUIRE(*sigs[i] == *new_sigs[i]);
-      REQUIRE(m.extraInfo(sigs[i]) == new_m.extraInfo(new_sigs[i]));
+    REQUIRE(m.sigs.size() == new_m.sigs.size());
+    for (int i = 0; i < m.sigs.size(); ++i) {
+      REQUIRE(m.sigs[i] == new_m.sigs[i]);
     }
   }
 }
@@ -41,13 +38,13 @@ TEST_CASE("Parse can messages") {
   REQUIRE(log.events.size() > 0);
   for (auto e : log.events) {
     if (e->which == cereal::Event::Which::CAN) {
-      std::map<std::pair<uint32_t, std::string>, std::vector<double>> values_1;
+      std::map<std::pair<uint32_t, QString>, std::vector<double>> values_1;
       for (const auto &c : e->event.getCan()) {
         const auto msg = dbc.msg(c.getAddress());
         if (c.getSrc() == 0 && msg) {
-          for (auto &[name, sig] : msg->sigs) {
+          for (auto &sig : msg->sigs) {
             double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), sig);
-            values_1[{c.getAddress(), name.toStdString()}].push_back(val);
+            values_1[{c.getAddress(), sig.name}].push_back(val);
           }
         }
       }
@@ -57,7 +54,7 @@ TEST_CASE("Parse can messages") {
       for (auto &[key, v1] : values_1) {
         bool found = false;
         for (auto &v2 : values_2) {
-          if (v2.address == key.first && v2.name == key.second) {
+          if (v2.address == key.first && key.second == v2.name.c_str()) {
             REQUIRE(v2.all_values.size() == v1.size());
             REQUIRE(v2.all_values == v1);
             found = true;

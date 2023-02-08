@@ -428,9 +428,9 @@ void ChartView::msgRemoved(uint32_t address) {
 void ChartView::addSeries(const QList<QStringList> &series_list) {
   for (auto &s : series_list) {
     if (auto m = dbc()->msg(s[0])) {
-      auto it = m->sigs.find(s[2]);
-      if (it != m->sigs.end() && !hasSeries(s[0], &(it->second))) {
-        addSeries(s[0], &(it->second));
+      auto sig = m->sig(s[2]);
+      if (sig && !hasSeries(s[0], sig)) {
+        addSeries(s[0], sig);
       }
     }
   }
@@ -439,7 +439,7 @@ void ChartView::addSeries(const QList<QStringList> &series_list) {
 void ChartView::manageSeries() {
   SeriesSelector dlg(this);
   for (auto &s : sigs) {
-    dlg.addSeries(s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name));
+    dlg.addSeries(s.msg_id, msgName(s.msg_id), s.sig->name);
   }
 
   int ret = dlg.exec();
@@ -451,7 +451,7 @@ void ChartView::manageSeries() {
       addSeries(series_list);
       for (auto it = sigs.begin(); it != sigs.end(); /**/) {
         bool exists = std::any_of(series_list.cbegin(), series_list.cend(), [&](auto &s) {
-          return s[0] == it->msg_id && s[2] == it->sig->name.c_str();
+          return s[0] == it->msg_id && s[2] == it->sig->name;
         });
         it = exists ? ++it : removeItem(it);
       }
@@ -485,7 +485,7 @@ void ChartView::updateTitle() {
   }
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
-    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b><font color=\"gray\">%3 %4</font></span>").arg(decoration).arg(s.sig->name.c_str()).arg(msgName(s.msg_id)).arg(s.msg_id));
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b><font color=\"gray\">%3 %4</font></span>").arg(decoration).arg(s.sig->name).arg(msgName(s.msg_id)).arg(s.msg_id));
   }
 }
 
@@ -697,7 +697,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
         value = QString::number(it->y());
         track_pts[i] = chart()->mapToPosition(*it);
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name.c_str(), value));
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name, value));
     }
     auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
     auto pt = (max == track_pts.end()) ? ev->pos() : *max;
@@ -738,7 +738,7 @@ void ChartView::dropEvent(QDropEvent *event) {
       ChartView *source_chart = (ChartView *)event->source();
       QList<QStringList> series;
       for (auto &s : source_chart->sigs) {
-        series.push_back({s.msg_id, msgName(s.msg_id), QString::fromStdString(s.sig->name)});
+        series.push_back({s.msg_id, msgName(s.msg_id), s.sig->name});
       }
       addSeries(series);
       emit source_chart->remove();
@@ -892,9 +892,9 @@ void SeriesSelector::msgSelected(int index) {
   QString msg_id = msgs_combo->itemData(index).toString();
   sig_list->clear();
   if (auto m = dbc()->msg(msg_id)) {
-    for (auto &[name, s] : m->sigs) {
-      QStringList data({msg_id, m->name, name});
-      QListWidgetItem *item = new QListWidgetItem(name, sig_list);
+    for (auto &s : m->sigs) {
+      QStringList data({msg_id, m->name, s.name});
+      QListWidgetItem *item = new QListWidgetItem(s.name, sig_list);
       item->setData(Qt::UserRole, data);
       sig_list->addItem(item);
     }
