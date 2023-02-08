@@ -673,18 +673,6 @@ location set</source>
         <translation>네트워크 접속을 기다립니다</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>설치할 소프트웨어를 선택하세요</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Custom Software</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>URL 입력</translation>
     </message>
