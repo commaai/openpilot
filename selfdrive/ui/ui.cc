@@ -112,6 +112,39 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
+void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
+  UIScene &scene = s->scene;
+  const auto driver_orient = is_rhd ? driverstate.getRightDriverData().getFaceOrientation() : driverstate.getLeftDriverData().getFaceOrientation();
+  for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
+    float v_this = (i == 0 ? (driver_orient[i] < 0 ? 0.7 : 0.9) : 0.4) * driver_orient[i];
+    scene.driver_pose_diff[i] = fabs(scene.driver_pose_vals[i] - v_this);
+    scene.driver_pose_vals[i] = 0.8 * v_this + (1 - 0.8) * scene.driver_pose_vals[i];
+    scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
+    scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
+  }
+
+  const mat3 r_xyz = (mat3){{
+    scene.driver_pose_coss[1]*scene.driver_pose_coss[2],
+    scene.driver_pose_coss[1]*scene.driver_pose_sins[2],
+    -scene.driver_pose_sins[1],
+
+    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_coss[0]*scene.driver_pose_sins[2],
+    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_coss[0]*scene.driver_pose_coss[2],
+    -scene.driver_pose_sins[0]*scene.driver_pose_coss[1],
+
+    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_sins[0]*scene.driver_pose_sins[2],
+    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_sins[0]*scene.driver_pose_coss[2],
+    scene.driver_pose_coss[0]*scene.driver_pose_coss[1],
+  }};
+
+  // transform vertices
+  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
+    vec3 kpt_this = default_face_kpts_3d[kpi];
+    kpt_this = matvecmul3(r_xyz, kpt_this);
+    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
+  }
+}
+
 static void update_sockets(UIState *s) {
   s->sm->update(0);
 }
@@ -213,7 +246,7 @@ void UIState::updateStatus() {
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
-    "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
   });
 

@@ -3,7 +3,6 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QHBoxLayout>
-#include <QLineEdit>
 #include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -14,7 +13,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   // message filter
-  QLineEdit *filter = new QLineEdit(this);
+  filter = new QLineEdit(this);
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
@@ -41,8 +40,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
-  QObject::connect(filter, &QLineEdit::textChanged, model, &MessageListModel::setFilterString);
+  QObject::connect(filter, &QLineEdit::textEdited, model, &MessageListModel::setFilterString);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
+  QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
@@ -81,6 +81,13 @@ void MessagesWidget::updateSuppressedButtons() {
     suppress_clear->setEnabled(true);
     suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
   }
+}
+
+void MessagesWidget::reset() {
+  model->reset();
+  filter->clear();
+  current_msg_id = "";
+  updateSuppressedButtons();
 }
 
 
@@ -175,10 +182,11 @@ void MessageListModel::sortMessages() {
 
 void MessageListModel::msgsReceived(const QHash<QString, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
-  if (filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
+  bool update_all = new_msgs->size() == can->can_msgs.size();
+  if (update_all || (filter_str.isEmpty() && msgs.size() != can->can_msgs.size())) {
     msgs = can->can_msgs.keys();
   }
-  if (msgs.size() != prev_row_count) {
+  if (update_all || msgs.size() != prev_row_count) {
     sortMessages();
     return;
   }
@@ -214,4 +222,12 @@ void MessageListModel::suppress() {
 
 void MessageListModel::clearSuppress() {
   suppressed_bytes.clear();
+}
+
+void MessageListModel::reset() {
+  beginResetModel();
+  filter_str = "";
+  msgs.clear();
+  clearSuppress();
+  endResetModel();
 }

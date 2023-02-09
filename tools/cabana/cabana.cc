@@ -4,6 +4,7 @@
 #include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
+#include "tools/cabana/route.h"
 #include "tools/cabana/streams/livestream.h"
 #include "tools/cabana/streams/replaystream.h"
 
@@ -26,10 +27,6 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
   cmd_parser.process(app);
-  const QStringList args = cmd_parser.positionalArguments();
-  if (args.empty() && !cmd_parser.isSet("demo") && !cmd_parser.isSet("stream")) {
-    cmd_parser.showHelp();
-  }
 
   std::unique_ptr<OpenpilotPrefix> op_prefix;
   std::unique_ptr<AbstractStream> stream;
@@ -41,7 +38,6 @@ int main(int argc, char *argv[]) {
 #ifndef __APPLE__
     op_prefix.reset(new OpenpilotPrefix());
 #endif
-    const QString route = args.empty() ? DEMO_ROUTE : args.first();
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
       replay_flags |= REPLAY_FLAG_ECAM;
@@ -50,9 +46,22 @@ int main(int argc, char *argv[]) {
     } else if (cmd_parser.isSet("no-vipc")) {
       replay_flags |= REPLAY_FLAG_NO_VIPC;
     }
-    auto replay_stream = new ReplayStream(&app);
+
+    const QStringList args = cmd_parser.positionalArguments();
+    QString route;
+    if (args.size() > 0) {
+      route = args.first();
+    } else if (cmd_parser.isSet("demo")) {
+      route = DEMO_ROUTE;
+    }
+
+    auto replay_stream = new ReplayStream(replay_flags, &app);
     stream.reset(replay_stream);
-    if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
+    if (route.isEmpty()) {
+      if (OpenRouteDialog dlg(nullptr); !dlg.exec()) {
+        return 0;
+      }
+    } else if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"))) {
       return 0;
     }
   }
