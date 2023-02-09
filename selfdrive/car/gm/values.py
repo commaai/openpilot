@@ -6,6 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 Ecu = car.CarParams.Ecu
 
 
@@ -67,6 +68,7 @@ class CAR:
   MALIBU = "CHEVROLET MALIBU PREMIER 2017"
   ACADIA = "GMC ACADIA DENALI 2018"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
+  ESCALADE = "CADILLAC ESCALADE 2017"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
@@ -99,6 +101,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
+  CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
     GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", "https://youtu.be/xvwzGMUA210"),
@@ -134,6 +137,28 @@ class CanBus:
   SW_GMLAN = 3
   LOOPBACK = 128
   DROPPED = 192
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine],
+      bus=0,
+    ),
+  ],
+)
+
+FW_VERSIONS = {
+  CAR.ESCALADE: {
+    (Ecu.engine, 0x7E0, None): [
+      b'\x0812677878\x00\x00\x00\x00\x00\x00\x00\x0012680043\x00\x00\x00\x00\x00\x00\x00\x0012680014\x00\x00\x00'
+      b'\x00\x00\x00\x00\x0012667480\x00\x00\x00\x00\x00\x00\x00\x0012667660\x00\x00\x00\x00\x00\x00\x00\x001266771'
+      b'8\x00\x00\x00\x00\x00\x00\x00\x0012667822\x00\x00\x00\x00\x00\x00\x00\x0012680085\x00\x00\x00'
+      b'\x00\x00\x00\x00\x00',
+    ]
+  }
+}
 
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [
