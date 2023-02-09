@@ -28,7 +28,6 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
-  void addSeries(const QList<QStringList> &series_list);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
@@ -157,19 +156,24 @@ private:
 };
 
 class SeriesSelector : public QDialog {
-  Q_OBJECT
-
 public:
-  SeriesSelector(QWidget *parent);
-  void addSeries(const QString &id, const QString& msg_name, const QString &sig_name);
-  QList<QStringList> series();
+  struct ListItem : public QListWidgetItem {
+    ListItem(const QString &msg_id, const Signal *sig, QListWidget *parent) : msg_id(msg_id), sig(sig), QListWidgetItem(parent) {}
+    QString msg_id;
+    const Signal *sig;
+  };
 
-private slots:
-  void msgSelected(int index);
-  void addSignal(QListWidgetItem *item);
+  SeriesSelector(QString title, QWidget *parent);
+  QList<ListItem *> seletedItems();
+  inline void addSelected(const QString &id, const Signal *sig) { addItemToList(selected_list, id, sig, true); }
 
 private:
+  void updateAvailableList(int index);
+  void addItemToList(QListWidget *parent, const QString id, const Signal *sig, bool show_msg_name = false);
+  void add(QListWidgetItem *item);
+  void remove(QListWidgetItem *item);
+
   QComboBox *msgs_combo;
-  QListWidget *sig_list;
-  QListWidget *chart_series;
+  QListWidget *available_list;
+  QListWidget *selected_list;
 };
