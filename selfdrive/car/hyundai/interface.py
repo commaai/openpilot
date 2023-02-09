@@ -34,6 +34,8 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
       else:
         # non-HDA2
+        if 0x1cf not in fingerprint[4]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
         # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
         if 0x130 not in fingerprint[4]:
           if 0x40 not in fingerprint[4]:
@@ -42,9 +44,6 @@ class CarInterface(CarInterfaceBase):
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
-
-      if 0x1cf not in fingerprint[get_e_can_bus(ret.flags)]:
-        ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
