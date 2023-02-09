@@ -3,6 +3,10 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+#include <QDebug>
+
+#include <limits>
+#include <cmath>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -14,6 +18,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
+    bit_change_counts.resize(dat.size());
     std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
     std::fill(last_change_t.begin(), last_change_t.end(), ts);
   } else {
@@ -33,6 +38,13 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         } else {
           // Periodic changes
           colors[i] = blend(colors[i], QColor(102, 86, 169, start_alpha / 2));  // Greyish/Blue
+        }
+
+        // Track bit level changes
+        for (int bit = 0; bit < 8; bit++){
+          if ((cur ^ last) & (1 << bit)) {
+            bit_change_counts[i][bit] += 1;
+          }
         }
 
         last_change_t[i] = ts;
@@ -94,6 +106,17 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     pos.moveLeft(pos.right() + space.width());
     i++;
   }
+}
+
+QColor getColor(const Signal *sig) {
+  float h = 19 * (float)sig->lsb / 64.0;
+  h = fmod(h, 1.0);
+
+  size_t hash = qHash(QString::fromStdString(sig->name));
+  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
+  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+
+  return QColor::fromHsvF(h, s, v);
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
