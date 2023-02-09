@@ -312,18 +312,6 @@
         <source>Installing...</source>
         <translation>Instalando...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>Recebendo objetos: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>Resolvendo deltas: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>Atualizando arquivos: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -687,18 +675,6 @@ trabalho definido</translation>
     <message>
         <source>Waiting for internet</source>
         <translation>Esperando pela internet</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Escolher Software para Instalar</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Sofware Customizado</translation>
     </message>
     <message>
         <source>Enter URL</source>

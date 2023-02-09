@@ -267,7 +267,11 @@ void MainWindow::loadDBCFromFingerprint() {
 
   remindSaveChanges();
   auto fingerprint = can->carFingerprint();
-  video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  if (can->liveStreaming()) {
+    video_dock->setWindowTitle(can->routeName());
+  } else {
+    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  }
   if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
