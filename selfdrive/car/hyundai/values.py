@@ -211,9 +211,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
     HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
   ],
-  CAR.KIA_NIRO_HEV_2ND_GEN: [
-    HyundaiCarInfo("Kia Niro Hybrid 2023", harness=Harness.hyundai_a),
-  ],
+  CAR.KIA_NIRO_HEV_2ND_GEN: HyundaiCarInfo("Kia Niro Hybrid 2023", harness=Harness.hyundai_a),
   CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA_G4_FL: HyundaiCarInfo("Kia Optima 2019-20", harness=Harness.hyundai_g),
   CAR.KIA_OPTIMA_H: [
@@ -1695,6 +1693,7 @@ DBC = {
   CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.KIA_NIRO_PHEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar_generated'),
   CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_NIRO_HEV_2ND_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_OPTIMA_G4: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_G4_FL: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
@@ -1728,5 +1727,4 @@ DBC = {
   CAR.KIA_SORENTO_PHEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_4TH_GEN: dbc_dict('hyundai_canfd', None),
-  CAR.KIA_NIRO_HEV_2ND_GEN: dbc_dict('hyundai_canfd', None),
 }
