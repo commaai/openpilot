@@ -16,8 +16,8 @@ FILTER_DT = 1. / (SAMPLE_RATE / FFT_SAMPLES)
 def calculate_spl(measurements):
   # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
   sound_pressure = np.sqrt(np.mean(measurements ** 2))  # RMS of amplitudes
-  sound_pressure = max(REFERENCE_SPL, sound_pressure) # Make sure measurements being 0 doesn't cause an issue
-  sound_pressure_level = 20 * np.log10(sound_pressure / REFERENCE_SPL)  # dB
+  sound_pressure_clamped = max(REFERENCE_SPL, sound_pressure) # Make sure measurements being 0 doesn't cause an issue
+  sound_pressure_level = 20 * np.log10(sound_pressure_clamped / REFERENCE_SPL)  # dB
   return sound_pressure, sound_pressure_level
 
 
