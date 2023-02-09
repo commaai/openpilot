@@ -63,7 +63,7 @@ RAM_CARS = RAM_DT | RAM_HD
 # the increased steer rate hasn't been verified on these cars.
 # remove from this list once it's been tested and confirmed to not fault
 CHRYSLER_OLD_TUNING_BLACKLIST = {CAR.PACIFICA_2017_HYBRID, CAR.PACIFICA_2018, CAR.PACIFICA_2018_HYBRID,
-                                 CAR.PACIFICA_2019_HYBRID, CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019}
+                                 CAR.PACIFICA_2020, CAR.JEEP_CHEROKEE}
 
 @dataclass
 class ChryslerCarInfo(CarInfo):
