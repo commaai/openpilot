@@ -4,7 +4,7 @@ import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
-from cereal import car, log
+from cereal import car
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -233,7 +233,7 @@ class CarInterfaceBase(ABC):
     return reader
 
   @abstractmethod
-  def apply(self, c: log.Event) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+  def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,

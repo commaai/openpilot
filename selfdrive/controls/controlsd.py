@@ -729,14 +729,9 @@ class Controls:
     if current_alert:
       hudControl.visualAlert = current_alert.visual_alert
 
-    # carControl
-    cc_send = messaging.new_message('carControl')
-    cc_send.valid = CS.canValid
-    cc_send.carControl = CC
-
     if not self.read_only and self.initialized:
       # send car controls over can
-      self.last_actuators, can_sends = self.CI.apply(cc_send)
+      self.last_actuators, can_sends = self.CI.apply(CC, int(sec_since_boot() * 1e9))
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -744,10 +739,6 @@ class Controls:
                              STEER_ANGLE_SATURATION_THRESHOLD
       else:
         self.steer_limited = abs(CC.actuators.steer - CC.actuatorsOutput.steer) > 1e-2
-
-    self.pm.send('carControl', cc_send)
-    # copy CarControl to pass to CarInterface on the next iteration
-    self.CC = CC
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
                   (self.state == State.softDisabling)
@@ -827,6 +818,15 @@ class Controls:
       cp_send = messaging.new_message('carParams')
       cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
+
+    # carControl
+    cc_send = messaging.new_message('carControl')
+    cc_send.valid = CS.canValid
+    cc_send.carControl = CC
+    self.pm.send('carControl', cc_send)
+
+    # copy CarControl to pass to CarInterface on the next iteration
+    self.CC = CC
 
   def step(self):
     start_time = sec_since_boot()
