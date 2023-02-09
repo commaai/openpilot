@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 233 Supported Cars
+# 234 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -174,7 +174,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon 2022">Toyota</a>||
 |Toyota|Avalon Hybrid 2019-21|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon Hybrid 2019-21">Toyota</a>||
 |Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon Hybrid 2022">Toyota</a>||
-|Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2017-21">Toyota</a>||
+|Toyota|C-HR 2017-20|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2017-20">Toyota</a>||
+|Toyota|C-HR 2021|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2021">Toyota</a>||
 |Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR Hybrid 2017-19">Toyota</a>||
 |Toyota|Camry 2018-20|All|Stock|0 mph[<sup>6</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Camry 2018-20">Toyota</a>|<a href="https://www.youtube.com/watch?v=fkcjviZY9CM" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>6</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Camry 2021-22">Toyota</a>||
