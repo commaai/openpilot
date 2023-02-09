@@ -56,7 +56,7 @@ class CarController:
       # - on startup, first few msgs are blocked
       # - until we're in sync with camera so counters align when relay closes, preventing a fault.
       #   openpilot can subtly drift, so this is activated throughout a drive to stay synced
-      out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.camera_lka_steering_cmd_counter + 1) % 4
+      out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.cam_lka_steering_cmd_counter + 1) % 4
       if not self.sent_lka_steering_cmd or out_of_sync:
         steer_step = self.params.STEER_STEP
 
