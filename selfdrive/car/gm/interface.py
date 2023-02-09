@@ -56,11 +56,11 @@ class CarInterface(CarInterfaceBase):
     )
     friction = friction_interp if friction_compensation else 0.0
 
-    steer_torque_pts = np.arange(-1, 1, 0.01)
+    steer_torque_pts = np.arange(-1, 1.01, 0.01)
     lateral_accel_pts = np.interp(
       steer_torque_pts,
-      [-1, -0.6, 0.3, 0.3, 0.6, 1],
-      [torque_params.latAccelFactor * x for x in [2, 1.5, 1, 1, 1.5, 2]]
+      [-1.0, -0.6, -0.3, 0.3, 0.6, 1.0],
+      [torque_params.latAccelFactor * x for x in [1.5, 1.25, 1.0, 1.0, 1.25, 1.5]]
     ) * steer_torque_pts
 
     lateral_accel_value = np.interp(lateral_accel_value, lateral_accel_pts, steer_torque_pts) + friction
@@ -202,7 +202,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.8
       ret.centerToFront = 2.15  # measured
       tire_stiffness_factor = 1.0
-      ret.steerActuatorDelay = 0.2
+      ret.steerActuatorDelay = 0.12
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
