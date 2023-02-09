@@ -235,7 +235,6 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      # ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
       ret.experimentalLongitudinalAvailable = ret.flags & (HyundaiFlags.EV_CAR.value | HyundaiFlags.HYBRID_CAR.value) != 0 and candidate not in CANFD_RADAR_SCC_CAR
     else:
       ret.longitudinalTuning.kpV = [0.5]
