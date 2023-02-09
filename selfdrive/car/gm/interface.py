@@ -5,7 +5,7 @@ from math import fabs
 from panda import Panda
 
 from common.numpy_fast import interp
-from selfdrive.controls.lib.drive_helpers import apply_deadzone
+from selfdrive.controls.lib.drive_helpers import apply_center_deadzone
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
   def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction_interp = interp(
-      apply_deadzone(lateral_accel_error, lateral_accel_deadzone),
+      apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
       [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
       [-torque_params.friction, torque_params.friction]
     )
