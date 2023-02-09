@@ -520,6 +520,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
       }
+      s.series->setColor(getColor(s.sig));
 
       struct Chunk {
         std::vector<Event *>::const_iterator first, second;
