@@ -1,8 +1,10 @@
-Version 0.9.1 (2022-12-XX)
+Version 0.9.1 (2023-2-20)
 ========================
 * Adjust alert volume using ambient noise level
 * Removed driver monitoring timer resetting on interaction if face detected and distracted
-* New German translation thanks to Vrabetz and CzokNorris!
+* UI updates
+  * Driver monitoring icon shows driver's head pose
+  * German translation thanks to Vrabetz and CzokNorris!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
