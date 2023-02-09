@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_updated = False
     self.loopback_lka_steering_cmd_ts_nanos = 0
     self.pt_lka_steering_cmd_counter = 0
-    self.camera_lka_steering_cmd_counter = 0
+    self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
   def update(self, pt_cp, cam_cp, loopback_cp):
@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     self.loopback_lka_steering_cmd_ts_nanos = loopback_cp.ts_nanos["ASCMLKASteeringCmd"]["RollingCounter"]
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       self.pt_lka_steering_cmd_counter = pt_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
-      self.camera_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
+      self.cam_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
