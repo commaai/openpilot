@@ -132,8 +132,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021):
-      ret.mass = 1737. + STD_CARGO_KG
+    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
+      ret.mass = 3452. * CV.LB_TO_KG + STD_CARGO_KG  # average of all the cars
       ret.wheelbase = 2.7
       ret.steerRatio = 13.9 if CAR.KIA_NIRO_HEV_2021 else 13.73  # Spec
       tire_stiffness_factor = 0.385
@@ -195,10 +195,6 @@ class CarInterface(CarInterfaceBase):
         ret.mass = 3957 * CV.LB_TO_KG + STD_CARGO_KG
       else:
         ret.mass = 4537 * CV.LB_TO_KG + STD_CARGO_KG
-    elif candidate == CAR.KIA_NIRO_HEV_2ND_GEN:
-      ret.mass = 3247.0 * CV.LB_TO_KG + STD_CARGO_KG # weight from EX and above trims
-      ret.wheelbase = 2.72
-      ret.steerRatio = 13.7 # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/niro/2023/specifications
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
