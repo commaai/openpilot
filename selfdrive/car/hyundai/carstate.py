@@ -161,8 +161,10 @@ class CarState(CarStateBase):
     self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1
     speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
 
-    if self.CP.carFingerprint in (EV_CAR | HYBRID_CAR):
-      if self.CP.carFingerprint in EV_CAR:
+    # if self.CP.carFingerprint in (EV_CAR | HYBRID_CAR):
+    if self.CP.flags & (HyundaiFlags.EV_CAR | HyundaiFlags.HYBRID_CAR):
+      # if self.CP.carFingerprint in EV_CAR:
+      if self.CP.flags & HyundaiFlags.EV_CAR:
         ret.gas = cp.vl["ACCELERATOR"]["ACCELERATOR_PEDAL"] / 255.
       else:
         ret.gas = cp.vl["ACCELERATOR_ALT"]["ACCELERATOR_PEDAL"] / 1023.
@@ -493,14 +495,14 @@ class CarState(CarStateBase):
         ("SCC_CONTROL", 50),
       ]
 
-    if CP.carFingerprint in EV_CAR:
+    if CP.flags & HyundaiFlags.EV_CAR:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR"),
       ]
       checks += [
         ("ACCELERATOR", 100),
       ]
-    elif CP.carFingerprint in HYBRID_CAR:
+    elif CP.flags & HyundaiFlags.HYBRID_CAR:
       signals += [
         ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
       ]

@@ -28,6 +28,14 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     if candidate in CANFD_CAR:
+      # 0x100 is ICE accelerator msg, 0x35 is EV, 0x105 is hybrid
+      if 0x100 not in fingerprint[4]:
+        # TODO: we should be checking PT bus, not 4 or 5. sunny's opening a PR
+        if 0x35 not in fingerprint[4] and 0x35 not in fingerprint[5]:
+          ret.flags |= HyundaiFlags.HYBRID_CAR.value
+        else:
+          ret.flags |= HyundaiFlags.EV_CAR.value
+
       # detect HDA2 with ADAS Driving ECU
       if Ecu.adas in [fw.ecu for fw in car_fw]:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
@@ -227,7 +235,8 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
+      # ret.experimentalLongitudinalAvailable = candidate in (HYBRID_CAR | EV_CAR) and candidate not in CANFD_RADAR_SCC_CAR
+      ret.experimentalLongitudinalAvailable = ret.flags & (HyundaiFlags.EV_CAR.value | HyundaiFlags.HYBRID_CAR.value) != 0 and candidate not in CANFD_RADAR_SCC_CAR
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
@@ -272,9 +281,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_LONG
-    if candidate in HYBRID_CAR:
+    if candidate in HYBRID_CAR or ret.flags & HyundaiFlags.HYBRID_CAR.value:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_HYBRID_GAS
-    elif candidate in EV_CAR:
+    elif candidate in EV_CAR or ret.flags & HyundaiFlags.EV_CAR.value:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
     if candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
