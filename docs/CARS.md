@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 233 Supported Cars
+# 235 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -107,6 +107,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Niro EV 2022|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2022">Hyundai H</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2021">Hyundai F</a>||
 |Kia|Niro Hybrid 2022|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2022">Hyundai H</a>||
+|Kia|Niro Hybrid 2023[<sup>5</sup>](#footnotes)|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2023">Hyundai A</a>||
 |Kia|Niro Plug-in Hybrid 2018-19|All|openpilot available[<sup>1</sup>](#footnotes)|10 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Plug-in Hybrid 2018-19">Hyundai C</a>||
 |Kia|Niro Plug-in Hybrid 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Plug-in Hybrid 2020">Hyundai D</a>||
 |Kia|Optima 2017|Advanced Smart Cruise Control|Stock|0 mph|32 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Optima 2017">Hyundai B</a>||
@@ -174,7 +175,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Toyota|Avalon 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon 2022">Toyota</a>||
 |Toyota|Avalon Hybrid 2019-21|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon Hybrid 2019-21">Toyota</a>||
 |Toyota|Avalon Hybrid 2022|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Avalon Hybrid 2022">Toyota</a>||
-|Toyota|C-HR 2017-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2017-21">Toyota</a>||
+|Toyota|C-HR 2017-20|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2017-20">Toyota</a>||
+|Toyota|C-HR 2021|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR 2021">Toyota</a>||
 |Toyota|C-HR Hybrid 2017-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=C-HR Hybrid 2017-19">Toyota</a>||
 |Toyota|Camry 2018-20|All|Stock|0 mph[<sup>6</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Camry 2018-20">Toyota</a>|<a href="https://www.youtube.com/watch?v=fkcjviZY9CM" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Toyota|Camry 2021-22|All|openpilot|0 mph[<sup>6</sup>](#footnotes)|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Toyota&model=Camry 2021-22">Toyota</a>||

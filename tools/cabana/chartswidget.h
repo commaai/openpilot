@@ -5,9 +5,12 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
+#include <QToolButton>
 #include <QtCharts/QChartView>
+#include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
@@ -25,13 +28,12 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
-  void addSeries(const QList<QStringList> &series_list);
   void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(QAbstractSeries::SeriesType type);
-  void updatePlotArea(int left = 0);
+  void updatePlotArea(int left);
 
   struct SigItem {
     QString msg_id;
@@ -49,6 +51,7 @@ signals:
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
+  void axisYLabelWidthChanged(int w);
 
 private slots:
   void msgRemoved(uint32_t address);
@@ -56,6 +59,7 @@ private slots:
   void signalUpdated(const Signal *sig);
   void signalRemoved(const Signal *sig);
   void manageSeries();
+  void handleMarkerClicked();
 
 private:
   QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
@@ -75,11 +79,12 @@ private:
   QXYSeries *createSeries(QAbstractSeries::SeriesType type);
   void updateSeriesPoints();
 
-  int y_label_width = 50;
+  int y_label_width = 0;
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
   QVector<QPointF> track_pts;
+  QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QGraphicsRectItem *background;
@@ -111,7 +116,7 @@ signals:
 
 private:
   void resizeEvent(QResizeEvent *event) override;
-  void alignCharts(bool force = false);
+  void alignCharts();
   void newChart();
   ChartView * createChart();
   void removeChart(ChartView *chart);
@@ -129,9 +134,12 @@ private:
   QLabel *title_label;
   QLabel *range_lb;
   QSlider *range_slider;
+  QAction *range_lb_action;
+  QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
-  QAction *reset_zoom_btn;
+  QAction *reset_zoom_action;
+  QToolButton *reset_zoom_btn;
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
@@ -144,23 +152,28 @@ private:
   QAction *columns_cb_action;
   QComboBox *columns_cb;
   int column_count = 1;
-  int align_to = 0;
+  int current_column_count = 0;
 };
 
 class SeriesSelector : public QDialog {
-  Q_OBJECT
-
 public:
-  SeriesSelector(QWidget *parent);
-  void addSeries(const QString &id, const QString& msg_name, const QString &sig_name);
-  QList<QStringList> series();
+  struct ListItem : public QListWidgetItem {
+    ListItem(const QString &msg_id, const Signal *sig, QListWidget *parent) : msg_id(msg_id), sig(sig), QListWidgetItem(parent) {}
+    QString msg_id;
+    const Signal *sig;
+  };
 
-private slots:
-  void msgSelected(int index);
-  void addSignal(QListWidgetItem *item);
+  SeriesSelector(QString title, QWidget *parent);
+  QList<ListItem *> seletedItems();
+  inline void addSelected(const QString &id, const Signal *sig) { addItemToList(selected_list, id, sig, true); }
 
 private:
+  void updateAvailableList(int index);
+  void addItemToList(QListWidget *parent, const QString id, const Signal *sig, bool show_msg_name = false);
+  void add(QListWidgetItem *item);
+  void remove(QListWidgetItem *item);
+
   QComboBox *msgs_combo;
-  QListWidget *sig_list;
-  QListWidget *chart_series;
+  QListWidget *available_list;
+  QListWidget *selected_list;
 };

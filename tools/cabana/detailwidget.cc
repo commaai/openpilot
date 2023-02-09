@@ -232,9 +232,14 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
     return hlayout;
   };
 
+  auto lb = new QLabel(tr("<-Select a message to to view details"));
+  lb->setAlignment(Qt::AlignHCenter);
+  main_layout->addWidget(lb);
   main_layout->addLayout(newShortcutRow("Pause", "Space"));
   main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
   main_layout->addStretch(0);
 
   setStyleSheet("QLabel{color:darkGray;}");
+  setBackgroundRole(QPalette::Base);
+  setAutoFillBackground(true);
 }
