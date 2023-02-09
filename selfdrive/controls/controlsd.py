@@ -734,10 +734,7 @@ class Controls:
 
     if not self.read_only and self.initialized:
       # send car controls over can
-      now_nanos = int(sec_since_boot() * 1e9)
-      if REPLAY:
-        now_nanos = self.can_log_mono_time
-
+      now_nanos = self.can_log_mono_time if REPLAY else int(sec_since_boot() * 1e9)
       self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
