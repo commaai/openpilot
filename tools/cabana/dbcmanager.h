@@ -22,7 +22,7 @@ public:
   ~DBCManager();
 
   void open(const QString &dbc_file_name);
-  void open(const QString &name, const QString &content);
+  bool open(const QString &name, const QString &content, QString *error = nullptr);
   QString generateDBC();
   void addSignal(const QString &id, const Signal &sig);
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
