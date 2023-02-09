@@ -97,7 +97,7 @@ protected:
   void updateFrameMat() override;
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
-  void drawDriverState(QPainter &painter, const UIState *s, int x, int y, float opacity);
+  void drawDriverState(QPainter &painter, const UIState *s);
   void drawHud(QPainter &p, const UIState *s);
   inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
   inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }

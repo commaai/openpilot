@@ -143,8 +143,6 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
     kpt_this = matvecmul3(r_xyz, kpt_this);
     scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
   }
-
-  scene.dm_rendered = true;
 }
 
 static void update_sockets(UIState *s) {

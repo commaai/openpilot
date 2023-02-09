@@ -275,7 +275,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideDM", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) || (!s.scene.dm_rendered));
+  setProperty("hideDM", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
   // update engageability/experimental mode button
@@ -438,14 +438,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p, const UIState *s) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // dm icon
-  if (!hideDM) {
-    int dm_icon_x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
-    int dm_icon_y = rect().bottom() - footer_h / 2;
-    float opacity = dmActive ? 0.65 : 0.2;
-    drawDriverState(p, s, dm_icon_x, dm_icon_y, opacity);
-    drawIcon(p, dm_icon_x, dm_icon_y, dm_img, blackColor(0), opacity);
-  }
   p.restore();
 }
 
@@ -549,8 +541,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s, int x, int y, float opacity) {
+void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s) {
   const UIScene &scene = s->scene;
+
+  // dm icon
+  int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
+  int y = rect().bottom() - footer_h / 2;
+  float opacity = dmActive ? 0.65 : 0.2;
+  drawIcon(painter, x, y, dm_img, blackColor(0), opacity);
 
   painter.save();
 
@@ -694,10 +692,12 @@ void AnnotatedCameraWidget::paintGL() {
         drawLead(painter, lead_two, s->scene.lead_vertices[1]);
       }
     }
+  }
 
-    if (sm.rcv_frame("driverStateV2") > s->scene.started_frame) {
-      update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
-    }
+  // DMoji
+  if (!hideDM && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+    update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
+    drawDriverState(painter, s);
   }
 
   drawHud(painter, s);
