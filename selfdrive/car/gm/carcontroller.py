@@ -68,8 +68,8 @@ class CarController:
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we
     # received the ASCMLKASteeringCmd loopback confirmation too recently
-    last_steer_msg_ms = (now_nanos - CS.loopback_lka_steering_cmd_ts_nanos) * 1e-6
-    if (self.frame - self.last_steer_frame) >= steer_step and last_steer_msg_ms > MIN_STEER_MSG_INTERVAL_MS:
+    last_lka_steer_msg_ms = (now_nanos - CS.loopback_lka_steering_cmd_ts_nanos) * 1e-6
+    if (self.frame - self.last_steer_frame) >= steer_step and last_lka_steer_msg_ms > MIN_STEER_MSG_INTERVAL_MS:
       # Initialize ASCMLKASteeringCmd counter using the camera until we get a msg on the bus
       if not self.sent_lka_steering_cmd:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
