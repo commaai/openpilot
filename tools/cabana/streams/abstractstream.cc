@@ -34,6 +34,7 @@ bool AbstractStream::updateEvent(const Event *event) {
       change_trackers[id].compute(data.dat, data.ts, data.freq);
       data.colors = change_trackers[id].colors;
       data.last_change_t = change_trackers[id].last_change_t;
+      data.bit_change_counts = change_trackers[id].bit_change_counts;
     }
 
     double ts = millis_since_boot();
