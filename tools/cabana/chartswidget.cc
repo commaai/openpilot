@@ -365,7 +365,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
-  QXYSeries *series = createSeries(series_type);
+  QXYSeries *series = createSeries(series_type, getColor(sig));
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -519,8 +519,8 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         s.vals.clear();
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
         s.last_value_mono_time = 0;
-        s.series->setColor(getColor(s.sig));
       }
+      s.series->setColor(getColor(s.sig));
 
       struct Chunk {
         std::vector<Event *>::const_iterator first, second;
@@ -777,13 +777,14 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   }
 }
 
-QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type) {
+QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor color) {
   QXYSeries *series = nullptr;
   if (type == QAbstractSeries::SeriesTypeLine) {
     series = new QLineSeries(this);
   } else {
     series = new QScatterSeries(this);
   }
+  series->setColor(color);
     // TODO: Due to a bug in CameraWidget the camera frames
     // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
 #ifndef __APPLE__
@@ -802,7 +803,7 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      auto series = createSeries(series_type);
+      auto series = createSeries(series_type, getColor(s.sig));
       chart()->addSeries(series);
       series->attachAxis(axis_x);
       series->attachAxis(axis_y);
