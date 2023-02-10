@@ -266,10 +266,28 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   hex_font.setBold(true);
 }
 
+bool BinaryItemDelegate::isSameColor(const QModelIndex &index, int dx, int dy) const {
+  QModelIndex index2 = index.sibling(index.row() + dy, index.column() + dx);
+  if (!index2.isValid()) {
+    return false;
+  }
+
+  auto item1 = (const BinaryViewModel::Item *)index.internalPointer();
+  auto item2 = (const BinaryViewModel::Item *)index2.internalPointer();
+
+  QColor color1 = item1->bg_color;
+  QColor color2 = item2->bg_color;
+
+  // Ignore alpha
+  return (color1.red() == color2.red()) && (color2.green() == color2.green()) && (color1.blue() == color2.blue());
+}
+
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
+
+  const int border_width = 2;
 
   if (index.column() == 8) {
     painter->setFont(hex_font);
@@ -281,6 +299,32 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
     int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
     QColor bg = item->bg_color;
+    QColor border_color = bg;
+    border_color.setAlphaF(0.75);
+
+    // Draw border on edge of signal
+    bool draw_left = !isSameColor(index, -1, 0);
+    bool draw_top = !isSameColor(index, 0, -1);
+    bool draw_right = !isSameColor(index, 1, 0);
+    bool draw_bottom = !isSameColor(index, 0, 1);
+
+    painter->setPen(QPen(QBrush(border_color), border_width));
+    QRect left_right = option.rect.marginsRemoved(QMargins(border_width / 2, draw_top ? border_width + border_width / 2 : border_width / 2, 0, draw_bottom ? border_width : 0));
+    QRect top_bottom = option.rect.marginsRemoved(QMargins(border_width / 2, border_width / 2, 0, 0));
+
+    if (draw_left) {
+      painter->drawLine(left_right.topLeft(), left_right.bottomLeft());
+    }
+    if (draw_top) {
+      painter->drawLine(top_bottom.topLeft(), top_bottom.topRight());
+    }
+    if (draw_right) {
+      painter->drawLine(left_right.topRight(), left_right.bottomRight());
+    }
+    if (draw_bottom) {
+      painter->drawLine(top_bottom.bottomLeft(), top_bottom.bottomRight());
+    }
+
     if (bg.alpha() < min_alpha) {
       bg.setAlpha(min_alpha);
     }
@@ -291,10 +335,11 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   }
 
 
-  painter->drawText(option.rect, Qt::AlignCenter, item->val);
+  QRect text_rect = option.rect.marginsRemoved(QMargins(border_width, border_width, border_width, border_width));
+  painter->drawText(text_rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
-    painter->drawText(option.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
+    painter->drawText(text_rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
   }
   painter->restore();
 }
