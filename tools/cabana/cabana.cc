@@ -8,12 +8,20 @@
 #include "tools/cabana/streams/livestream.h"
 #include "tools/cabana/streams/replaystream.h"
 
+void hand_term(int s) {
+  std::signal(s, SIG_DFL);
+  qApp->quit();
+}
+
 int main(int argc, char *argv[]) {
-  QCoreApplication::setApplicationName("Cabana");
-  QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-  initApp(argc, argv);
   QApplication app(argc, argv);
+  // QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   app.setApplicationDisplayName("Cabana");
+
+  // setup signal handlers to exit gracefully
+  std::signal(SIGINT, hand_term);
+  std::signal(SIGTERM, hand_term);
+
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();

@@ -59,6 +59,10 @@ QWidget *VideoWidget::createCameraWidget() {
   QVBoxLayout *l = new QVBoxLayout(w);
   l->setContentsMargins(0, 0, 0, 0);
   cam_widget = new CameraWidget("camerad", can->visionStreamType(), false);
+  QSurfaceFormat fmt;
+  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
+  fmt.setSamples(16);
+  cam_widget->setFormat(fmt);
   l->addWidget(cam_widget);
 
   // slider controls

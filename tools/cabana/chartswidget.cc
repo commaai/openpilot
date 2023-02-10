@@ -785,11 +785,7 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
     series = new QScatterSeries(this);
   }
   series->setColor(color);
-    // TODO: Due to a bug in CameraWidget the camera frames
-    // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
-#ifndef __APPLE__
   series->setUseOpenGL(true);
-#endif
   return series;
 }
 
