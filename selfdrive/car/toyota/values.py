@@ -233,7 +233,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # FIXME: On some models, abs can sometimes be missing
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
-    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.LEXUS_IS, CAR.LEXUS_RC],
+    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
   }
 )
 
@@ -637,18 +637,25 @@ FW_VERSIONS = {
   },
   CAR.CHR_TSS2: {
     (Ecu.abs, 0x7b0, None): [
+      b'F152610260\x00\x00\x00\x00\x00\x00',
       b'F1526F4270\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B10091\x00\x00\x00\x00\x00\x00',
+      b'8965B10110\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x0189663F459000\x00\x00\x00\x00',
     ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\x0331014000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
+    ],
     (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821FF410200\x00\x00\x00\x00',
       b'\x018821FF410300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646FF410200\x00\x00\x00\x008646GF408200\x00\x00\x00\x00',
       b'\x028646FF411100\x00\x00\x00\x008646GF409000\x00\x00\x00\x00',
     ],
   },
