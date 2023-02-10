@@ -83,7 +83,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->selection_color = item->bg_color;
+        delegate->selection_color = getColor(s);
         break;
       }
     }
@@ -277,15 +277,17 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
-    bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-    int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
-    QColor bg = item->bg_color;
-    if (bg.alpha() < min_alpha) {
-      bg.setAlpha(min_alpha);
+  } else if (!item->sigs.isEmpty()) {
+    if (!item->sigs.contains(bin_view->resize_sig)) {
+      QColor bg = item->bg_color;
+      bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
+      int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
+      if (bg.alpha() < min_alpha) {
+        bg.setAlpha(min_alpha);
+      }
+      painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
+      painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
     }
-    painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
-    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
   } else {
     painter->fillRect(option.rect, item->bg_color);
   }
