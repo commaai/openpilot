@@ -67,6 +67,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
 
       # Tuning for experimental long
       ret.longitudinalTuning.kpV = [2.0, 1.5]
@@ -89,6 +90,7 @@ class CarInterface(CarInterfaceBase):
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minSteerSpeed = 7 * CV.MPH_TO_MS
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -100,8 +102,6 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    # Some GMs need some tolerance above 10 kph to avoid a fault
-    ret.minSteerSpeed = 10.2 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
