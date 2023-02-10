@@ -50,6 +50,10 @@ class CarState(CarStateBase):
     # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
     ret.standstill = ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
 
+    # Cluster speed is likely on low speed GMLAN for ASCM cars
+    if self.CP.networkLocation == NetworkLocation.fwdCamera:
+      ret.vEgoCluster = pt_cp.vl["SPEED_RELATED"]["ClusterSpeed"]
+
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
     else:
@@ -184,13 +188,14 @@ class CarState(CarStateBase):
       ("ECMAcceleratorPos", 80),
     ]
 
-    # Used to read back last counter sent to PT by camera
     if CP.networkLocation == NetworkLocation.fwdCamera:
       signals += [
+        ("ClusterSpeed", "SPEED_RELATED"),
         ("RollingCounter", "ASCMLKASteeringCmd"),
       ]
       checks += [
-        ("ASCMLKASteeringCmd", 0),
+        ("SPEED_RELATED", 10),
+        ("ASCMLKASteeringCmd", 0),  # Used to read back last counter sent to PT by camera
       ]
 
     if CP.transmissionType == TransmissionType.direct:
