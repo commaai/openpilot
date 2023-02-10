@@ -62,6 +62,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
 void ChangeTracker::clear() {
   prev_dat.clear();
   last_change_t.clear();
+  bit_change_counts.clear();
   colors.clear();
 }
 
