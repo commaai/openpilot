@@ -6,6 +6,7 @@
 #include <QRegExpValidator>
 #include <QStyledItemDelegate>
 #include <QVector>
+#include <array>
 
 #include "opendbc/can/common_dbc.h"
 
