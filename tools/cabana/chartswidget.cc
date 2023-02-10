@@ -310,7 +310,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
-  axis_y->setLabelFormat("%.1f");
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->layout()->setContentsMargins(16, 0, 40, 0);
