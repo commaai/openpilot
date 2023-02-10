@@ -52,7 +52,8 @@ class CarState(CarStateBase):
 
     # Cluster speed is likely on low speed GMLAN for ASCM cars
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      ret.vEgoCluster = pt_cp.vl["SPEED_RELATED"]["ClusterSpeed"]
+      # TODO: make sure units are always kph
+      ret.vEgoCluster = pt_cp.vl["SPEED_RELATED"]["ClusterSpeed"] * CV.KPH_TO_MS
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
