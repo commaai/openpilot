@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
+  def torque_from_lateral_accel_gm(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, vego, friction_compensation):
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction_interp = interp(
       apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
@@ -55,16 +55,25 @@ class CarInterface(CarInterfaceBase):
       [-torque_params.friction, torque_params.friction]
     )
     friction = friction_interp if friction_compensation else 0.0
+    steer_torque = lateral_accel_value / torque_params.latAccelFactor
 
-    steer_torque_pts = np.arange(-1, 1.01, 0.01)
-    lateral_accel_pts = np.interp(
-      steer_torque_pts,
-      [-1.0, -0.6, -0.3, 0.3, 0.6, 1.0],
-      [torque_params.latAccelFactor * x for x in [1.5, 1.25, 1.0, 1.0, 1.25, 1.5]]
-    ) * steer_torque_pts
+    steer_break_pts = np.arange(-1.0, 1.25, 0.25)
+    steer_lataccel_factors = np.array([1.5, 1.25, 1.1, 1.0, 1.0, 1.0, 1.1, 1.25, 1.5])
+    steer_correction_factor = np.interp(
+      steer_torque,
+      steer_break_pts,
+      steer_lataccel_factors
+    )
 
-    lateral_accel_value = np.interp(lateral_accel_value, lateral_accel_pts, steer_torque_pts) + friction
-    return float(lateral_accel_value)
+    vego_break_pts = np.array([0.0, 10.0, 15.0, 20.0, 100.0])
+    vego_lataccel_factors = np.array([1.5, 1.5, 1.25, 1.0, 1.0])
+    vego_correction_factor = np.interp(
+      vego,
+      vego_break_pts,
+      vego_lataccel_factors,
+    )
+
+    return float((steer_torque / (steer_correction_factor * vego_correction_factor)) + friction)
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     return self.torque_from_lateral_accel_gm
