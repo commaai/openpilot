@@ -310,10 +310,16 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
+  QFont f;
+  f.setPointSize(8);
+  axis_x->setLabelsFont(f);
+  axis_y->setLabelsFont(f);
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->layout()->setContentsMargins(16, 0, 40, 0);
   chart->legend()->setShowToolTips(true);
+  f.setPointSize(10);
+  chart->legend()->setFont(f);
   chart->setMargins({0, 0, 0, 0});
 
   background = new QGraphicsRectItem(chart);
