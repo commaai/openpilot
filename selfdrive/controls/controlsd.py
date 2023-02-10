@@ -187,6 +187,7 @@ class Controls:
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
+    self.can_log_mono_time = 0
 
     self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
 
@@ -425,6 +426,8 @@ class Controls:
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = self.CI.update(self.CC, can_strs)
+    if len(can_strs) and REPLAY:
+      self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
     self.sm.update(0)
 
@@ -731,7 +734,8 @@ class Controls:
 
     if not self.read_only and self.initialized:
       # send car controls over can
-      self.last_actuators, can_sends = self.CI.apply(CC)
+      now_nanos = self.can_log_mono_time if REPLAY else int(sec_since_boot() * 1e9)
+      self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:

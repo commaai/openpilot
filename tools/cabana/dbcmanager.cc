@@ -13,12 +13,13 @@ void sortSignalsByAddress(QList<Signal> &sigs) {
   std::sort(sigs.begin(), sigs.end(), [](auto &a, auto &b) { return a.start_bit < b.start_bit; });
 }
 
-void DBCManager::open(const QString &dbc_file_name) {
+bool DBCManager::open(const QString &dbc_file_name, QString *error) {
   QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, dbc_file_name);
   QFile file(opendbc_file_path);
   if (file.open(QIODevice::ReadOnly)) {
-    open(dbc_file_name, file.readAll());
+    return open(dbc_file_name, file.readAll(), error);
   }
+  return false;
 }
 
 void DBCManager::parseExtraInfo(const QString &content) {
@@ -216,31 +217,37 @@ bool operator==(const Signal &l, const Signal &r) {
 #include "opendbc/can/common_dbc.h"
 std::vector<std::string> dbcmanager::DBCManager::allDBCNames() { return get_dbc_names(); }
 
-void dbcmanager::DBCManager::open(const QString &name, const QString &content) {
-  std::istringstream stream(content.toStdString());
-  auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  msgs.clear();
-  for (auto &msg : dbc->msgs) {
-    auto &m = msgs[msg.address];
-    m.name = msg.name.c_str();
-    m.size = msg.size;
-    for (auto &s : msg.sigs) {
-      m.sigs.push_back({});
-      auto &sig = m.sigs.last();
-      sig.name = s.name.c_str();
-      sig.start_bit = s.start_bit;
-      sig.msb = s.msb;
-      sig.lsb = s.lsb;
-      sig.size = s.size;
-      sig.is_signed = s.is_signed;
-      sig.factor = s.factor;
-      sig.offset = s.offset;
-      sig.is_little_endian = s.is_little_endian;
+bool dbcmanager::DBCManager::open(const QString &name, const QString &content, QString *error) {
+  try {
+    std::istringstream stream(content.toStdString());
+    auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
+    msgs.clear();
+    for (auto &msg : dbc->msgs) {
+      auto &m = msgs[msg.address];
+      m.name = msg.name.c_str();
+      m.size = msg.size;
+      for (auto &s : msg.sigs) {
+        m.sigs.push_back({});
+        auto &sig = m.sigs.last();
+        sig.name = s.name.c_str();
+        sig.start_bit = s.start_bit;
+        sig.msb = s.msb;
+        sig.lsb = s.lsb;
+        sig.size = s.size;
+        sig.is_signed = s.is_signed;
+        sig.factor = s.factor;
+        sig.offset = s.offset;
+        sig.is_little_endian = s.is_little_endian;
+      }
+      sortSignalsByAddress(m.sigs);
     }
-    sortSignalsByAddress(m.sigs);
+    parseExtraInfo(content);
+    name_ = name;
+    emit DBCFileChanged();
+    delete dbc;
+  } catch (std::exception &e) {
+    if (error) *error = e.what();
+    return false;
   }
-  parseExtraInfo(content);
-  name_ = name;
-  emit DBCFileChanged();
-  delete dbc;
+  return true;
 }

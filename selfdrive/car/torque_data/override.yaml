@@ -38,6 +38,7 @@ GENESIS GV70 1ST GEN: [2.42, 2.42, 0.1]
 KIA SORENTO PLUG-IN HYBRID 4TH GEN: [2.5, 2.5, 0.1]
 GENESIS GV60 ELECTRIC 1ST GEN: [2.5, 2.5, 0.1]
 KIA SORENTO 4TH GEN: [2.5, 2.5, 0.1]
+KIA NIRO HYBRID 2ND GEN: [2.42, 2.5, 0.12]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

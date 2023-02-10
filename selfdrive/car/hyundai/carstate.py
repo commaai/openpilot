@@ -6,6 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from selfdrive.car.hyundai.hyundaicanfd import get_e_can_bus
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
@@ -21,7 +22,9 @@ class CarState(CarStateBase):
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
     self.main_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
-    self.gear_msg_canfd = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
+    self.gear_msg_canfd = "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
+                          "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
+                          "GEAR_SHIFTER"
     if CP.carFingerprint in CANFD_CAR:
       self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
     elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
@@ -425,7 +428,9 @@ class CarState(CarStateBase):
   def get_can_parser_canfd(CP):
 
     cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
-    gear_msg = "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else "GEAR_SHIFTER"
+    gear_msg = "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
+               "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
+               "GEAR_SHIFTER"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
@@ -511,8 +516,7 @@ class CarState(CarStateBase):
         ("ACCELERATOR_BRAKE_ALT", 100),
       ]
 
-    bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_e_can_bus(CP))
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
