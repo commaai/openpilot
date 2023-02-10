@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
     steer_torque = lateral_accel_value / torque_params.latAccelFactor
 
     steer_break_pts = np.arange(-1.0, 1.25, 0.25)
-    steer_lataccel_factors = np.array([1.5, 1.25, 1.1, 1.0, 1.0, 1.0, 1.1, 1.25, 1.5])
+    steer_lataccel_factors = np.array([1.5, 1.15, 1.1, 1.0, 1.0, 1.0, 1.1, 1.15, 1.5])
     steer_correction_factor = np.interp(
       steer_torque,
       steer_break_pts,
