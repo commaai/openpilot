@@ -36,7 +36,7 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QApplication::style()->standardPalette().color(QPalette::Base);
+    QColor bg_color = QColor(102, 86, 169, 0);
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "-";
