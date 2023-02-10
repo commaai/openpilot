@@ -62,8 +62,8 @@ class CarController:
       if not self.sent_lka_steering_cmd or out_of_sync:
         steer_step = self.params.STEER_STEP
 
-    if CS.loopback_lka_steering_cmd_updated:
-      self.lka_steering_cmd_counter += 1
+    if CS.loopback_lka_steering_cmd_msgs != 0:
+      self.lka_steering_cmd_counter += CS.loopback_lka_steering_cmd_msgs
       self.sent_lka_steering_cmd = True
 
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we
