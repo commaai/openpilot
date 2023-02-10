@@ -23,6 +23,9 @@ class CarState(CarStateBase):
     self.cam_lka_steering_cmd_counter = 0
     self.buttons_counter = 0
 
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
+    self.cluster_min_speed = CV.KPH_TO_MS / 2.
+
   def update(self, pt_cp, cam_cp, loopback_cp):
     ret = car.CarState.new_message()
 
@@ -50,10 +53,12 @@ class CarState(CarStateBase):
     # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
     ret.standstill = ret.wheelSpeeds.rl <= STANDSTILL_THRESHOLD and ret.wheelSpeeds.rr <= STANDSTILL_THRESHOLD
 
-    # Cluster speed is likely on low speed GMLAN for ASCM cars
-    if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      # TODO: make sure units are always kph
-      ret.vEgoCluster = pt_cp.vl["SPEED_RELATED"]["ClusterSpeed"] * CV.KPH_TO_MS
+    ret.vEgoCluster = ret.vEgo * 1.005
+
+    # # Cluster speed is likely on low speed GMLAN for ASCM cars
+    # if self.CP.networkLocation == NetworkLocation.fwdCamera:
+    #   # TODO: make sure units are always kph
+    #   ret.vEgoCluster = pt_cp.vl["SPEED_RELATED"]["ClusterSpeed"] * CV.KPH_TO_MS
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
