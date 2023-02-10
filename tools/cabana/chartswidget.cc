@@ -789,6 +789,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
     // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
 #ifndef __APPLE__
   series->setUseOpenGL(true);
+  // Qt doesn't properly apply device pixel ratio in OpenGL mode
+  QPen pen = series->pen();
+  pen.setWidth(2.0 * qApp->devicePixelRatio());
+  series->setPen(pen);
 #endif
   return series;
 }
