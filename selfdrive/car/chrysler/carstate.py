@@ -136,6 +136,7 @@ class CarState(CarStateBase):
       ("COUNTER", "EPS_2",),
       ("COLUMN_TORQUE", "EPS_2"),
       ("EPS_TORQUE_MOTOR", "EPS_2"),
+      ("TEMPORARY_LKAS_FAULT", "EPS_2"),
       ("LKAS_STATE", "EPS_2"),
       ("COUNTER", "CRUISE_BUTTONS"),
     ]
