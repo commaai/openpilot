@@ -82,6 +82,12 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   QStyleOptionViewItemV4 opt = option;
   initStyleOption(&opt, index);
 
+  auto byte_list = opt.text.split(" ");
+  if (byte_list.size() <= 1) {
+    QStyledItemDelegate::paint(painter, option, index);
+    return;
+  }
+
   if ((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active)) {
     painter->setPen(option.palette.color(QPalette::HighlightedText));
   } else {
@@ -98,7 +104,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   QList<QVariant> colors = index.data(Qt::UserRole).toList();
   int i = 0;
-  for (auto &byte : opt.text.split(" ")) {
+  for (auto &byte : byte_list) {
     if (i < colors.size()) {
       painter->fillRect(pos.marginsAdded(margins), colors[i].value<QColor>());
     }
