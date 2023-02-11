@@ -23,6 +23,9 @@ class CarInterface(CarInterfaceBase):
     elif candidate in RAM_DT:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
+    if candidate in CHRYSLER_OLD_TUNING_BLACKLIST:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_LOWER_RATE
+
     ret.minSteerSpeed = 3.8  # m/s
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     if candidate not in RAM_CARS:
@@ -106,5 +109,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)
