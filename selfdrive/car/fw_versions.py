@@ -304,6 +304,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
 
 if __name__ == "__main__":
+  import time
   import argparse
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin
