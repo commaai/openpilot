@@ -234,10 +234,10 @@ FW_VERSIONS = {
       b'68475160AG',
     ],
     (Ecu.eps, 0x75A, None): [
-      b'68273275AF', #Steer to 0 Capable
-      b'68273275AG', #Steer to 0 Capable
-      b'68312176AE', #Steer to 0 Capable
-      b'68312176AG', #Steer to 0 Capable
+      b'68273275AF',
+      b'68273275AG',
+      b'68312176AE',
+      b'68312176AG',
       b'68440789AC',
       b'68466110AB',
       b'68469901AA',
