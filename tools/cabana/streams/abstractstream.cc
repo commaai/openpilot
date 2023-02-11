@@ -72,6 +72,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
           m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
           m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
           m.last_change_t = QVector<double>(m.dat.size(), m.ts);
+          m.bit_change_counts.resize(m.dat.size());
         } else {
           m.freq = m.count / std::max(1.0, m.ts);
         }

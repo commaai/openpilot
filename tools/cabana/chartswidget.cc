@@ -310,7 +310,6 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
   axis_y = new QValueAxis(this);
-  axis_y->setLabelFormat("%.1f");
   chart->addAxis(axis_x, Qt::AlignBottom);
   chart->addAxis(axis_y, Qt::AlignLeft);
   chart->legend()->layout()->setContentsMargins(16, 0, 40, 0);
@@ -789,6 +788,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
     // are drawn instead of the graphs on MacOS. Re-enable OpenGL when fixed
 #ifndef __APPLE__
   series->setUseOpenGL(true);
+  // Qt doesn't properly apply device pixel ratio in OpenGL mode
+  QPen pen = series->pen();
+  pen.setWidth(2.0 * qApp->devicePixelRatio());
+  series->setPen(pen);
 #endif
   return series;
 }
