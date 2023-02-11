@@ -291,10 +291,18 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   }
 
 
+  QColor bg = item->bg_color;
+  bg.setAlpha(255);
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
+    if (!item->is_msb || !item->is_lsb) {
+      painter->fillRect(QRect(option.rect.bottomLeft().x() + (item->is_msb ? 40 : 0), option.rect.bottomLeft().y()-2, option.rect.width()-40, -4), bg);
+    }
     painter->setFont(small_font);
     painter->drawText(option.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
+  } else if (!item->sigs.isEmpty()) {
+    bg.setAlpha(255);
+    painter->fillRect(QRect(option.rect.bottomLeft().x(), option.rect.bottomLeft().y()-2, option.rect.width(), -4), bg);
   }
   painter->restore();
 }
