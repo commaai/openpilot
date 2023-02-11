@@ -332,19 +332,19 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
 
   const int spacing = 1;
   QRect rc = option.rect.adjusted(draw_left * 3, draw_top * spacing, draw_right * -3, draw_bottom * -spacing);
-  QRegion substract;
+  QRegion subtract;
   if (!draw_top) {
     if (!draw_left && !isSameColor(index, -1, -1)) {
-      substract += QRect{rc.left(), rc.top(), 3, spacing};
+      subtract += QRect{rc.left(), rc.top(), 3, spacing};
     } else if (!draw_right && !isSameColor(index, 1, -1)) {
-      substract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
+      subtract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
     }
   }
   if (!draw_bottom) {
     if (!draw_left && !isSameColor(index, -1, 1)) {
-      substract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
+      subtract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
     } else if (!draw_right && !isSameColor(index, 1, 1)) {
-      substract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
+      subtract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
     }
   }
 
@@ -356,12 +356,12 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
 
   painter->setClipping(true);
-  painter->setClipRegion(QRegion(rc).subtracted(substract));
-  if (!substract.isEmpty()) {
-    // fill gaps
+  painter->setClipRegion(QRegion(rc).subtracted(subtract));
+  if (!subtract.isEmpty()) {
+    // fill gaps inside corners.
     pen.setWidth(2);
     painter->setPen(pen);
-    for (auto &r : substract) {
+    for (auto &r : subtract) {
       painter->drawRect(r);
     }
   }
