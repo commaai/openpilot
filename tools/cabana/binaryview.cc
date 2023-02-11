@@ -278,20 +278,25 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty()) {
-    if (!item->sigs.contains(bin_view->resize_sig)) {
+    // the signal beging resized does not need to update bg color here
+    bool resizing = bin_view->selectionModel()->hasSelection() && item->sigs.contains(bin_view->resize_sig);
+    if (!resizing) {
       QColor bg = item->bg_color;
-      bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-      int min_alpha = sig_hovered ? 255 : 50;
-      if (bg.alpha() < min_alpha) {
-        bg.setAlpha(min_alpha);
+      if (item->sigs.contains(bin_view->hovered_sig)) {
+        bg.setAlpha(255);
+        painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
+        painter->setPen(option.palette.color(QPalette::BrightText));
+      } else {
+        int min_alpha = 50;
+        if (bg.alpha() < min_alpha) {
+          bg.setAlpha(min_alpha);
+        }
+        painter->fillRect(option.rect, bg);
       }
-      painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
-      painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
     }
   } else {
     painter->fillRect(option.rect, item->bg_color);
   }
-
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
