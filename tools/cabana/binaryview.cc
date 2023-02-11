@@ -268,7 +268,6 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
   if (index.column() == 8) {
@@ -277,25 +276,21 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else if (!item->sigs.isEmpty()) {
-    // the signal beging resized does not need to update bg color here
-    bool resizing = bin_view->selectionModel()->hasSelection() && item->sigs.contains(bin_view->resize_sig);
-    if (!resizing) {
-      QColor bg = item->bg_color;
-      if (item->sigs.contains(bin_view->hovered_sig)) {
+  } else {
+    BinaryView *bin_view = (BinaryView *)parent();
+    bool item_resizing = bin_view->selectionModel()->hasSelection() && item->sigs.contains(bin_view->resize_sig);
+    if (!item_resizing) {
+      if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
+        QColor bg = item->bg_color;
         bg.setAlpha(255);
         painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
         painter->setPen(option.palette.color(QPalette::BrightText));
       } else {
-        int min_alpha = 50;
-        if (bg.alpha() < min_alpha) {
-          bg.setAlpha(min_alpha);
-        }
+        QColor bg = item->bg_color;
+        bg.setAlpha(std::max(50, bg.alpha()));
         painter->fillRect(option.rect, bg);
       }
     }
-  } else {
-    painter->fillRect(option.rect, item->bg_color);
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
