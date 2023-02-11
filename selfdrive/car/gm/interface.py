@@ -57,8 +57,8 @@ class CarInterface(CarInterfaceBase):
     friction = friction_interp if friction_compensation else 0.0
     steer_torque = lateral_accel_value / torque_params.latAccelFactor
 
-    steer_break_pts = np.arange(-1.0, 1.25, 0.25)
-    # steer_break_pts = np.array([-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0])
+    # steer_break_pts = np.arange(-1.0, 1.25, 0.25)
+    steer_break_pts = np.array([-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0])
     steer_lataccel_factors = np.array([1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5])
     steer_correction_factor = np.interp(
       steer_torque,
