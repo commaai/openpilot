@@ -1,13 +1,13 @@
 #include "tools/cabana/binaryview.h"
 
+#include <cmath>
+
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScrollBar>
 #include <QToolTip>
-
-#include <cmath>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -287,8 +287,6 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
-  const int border_width = 2;
-
   if (index.column() == 8) {
     painter->setFont(hex_font);
     painter->fillRect(option.rect, item->bg_color);
@@ -297,10 +295,12 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-    int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
     QColor bg = item->bg_color;
     QColor border_color = bg;
-    border_color.setAlphaF(0.75);
+    border_color.setAlphaF(1.0);
+    if (bg.alpha() < 50) {
+      bg.setAlpha(50);
+    }
 
     // Draw border on edge of signal
     bool draw_left = !isSameColor(index, -1, 0);
@@ -308,38 +308,51 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     bool draw_right = !isSameColor(index, 1, 0);
     bool draw_bottom = !isSameColor(index, 0, 1);
 
-    painter->setPen(QPen(QBrush(border_color), border_width));
-    QRect left_right = option.rect.marginsRemoved(QMargins(border_width / 2, draw_top ? border_width + border_width / 2 : border_width / 2, 0, draw_bottom ? border_width : 0));
-    QRect top_bottom = option.rect.marginsRemoved(QMargins(border_width / 2, border_width / 2, 0, 0));
+    const int spacing = 1;
+    QRect rc = option.rect.adjusted(draw_left ? 3 : 0, draw_top * spacing, draw_right ? -3 : 0, draw_bottom ? -spacing : 0);
+    QRegion substract;
+    if (!draw_top) {
+      if (!draw_left && !isSameColor(index, -1, -1)) {
+        substract += QRect{rc.left(), rc.top(), 3, spacing};
+      } else if (!draw_right && !isSameColor(index, 1, -1)) {
+        substract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
+      }
+    }
+    if (!draw_bottom) {
+      if (!draw_left && !isSameColor(index, -1, 1)) {
+        substract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
+      } else if (!draw_right && !isSameColor(index, 1, 1)) {
+        substract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
+      }
+    }
 
-    if (draw_left) {
-      painter->drawLine(left_right.topLeft(), left_right.bottomLeft());
-    }
-    if (draw_top) {
-      painter->drawLine(top_bottom.topLeft(), top_bottom.topRight());
-    }
-    if (draw_right) {
-      painter->drawLine(left_right.topRight(), left_right.bottomRight());
-    }
-    if (draw_bottom) {
-      painter->drawLine(top_bottom.bottomLeft(), top_bottom.bottomRight());
-    }
+    QPen border_pen = QPen(QBrush(border_color), 1);
+    painter->setPen(border_pen);
+    if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
+    if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
+    if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
+    if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
 
-    if (bg.alpha() < min_alpha) {
-      bg.setAlpha(min_alpha);
+    if (!substract.isEmpty()) {
+      painter->setClipping(true);
+      painter->setClipRegion(QRegion(rc).subtracted(substract));
+      border_pen.setWidth(2);
+      painter->setPen(border_pen);
+      for (auto &r : substract) {
+        painter->drawRect(r);
+      }
     }
-    painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
+    painter->fillRect(rc, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
     painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
+    painter->setClipping(false);
   } else {
     painter->fillRect(option.rect, item->bg_color);
   }
 
-
-  QRect text_rect = option.rect.marginsRemoved(QMargins(border_width, border_width, border_width, border_width));
-  painter->drawText(text_rect, Qt::AlignCenter, item->val);
+  painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
-    painter->drawText(text_rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
+    painter->drawText(option.rect.adjusted(8, 0, -8, -3), Qt::AlignRight | Qt::AlignBottom, item->is_msb ? "M" : "L");
   }
   painter->restore();
 }
