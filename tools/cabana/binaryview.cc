@@ -281,7 +281,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (!item->sigs.contains(bin_view->resize_sig)) {
       QColor bg = item->bg_color;
       bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-      int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
+      int min_alpha = sig_hovered ? 255 : 50;
       if (bg.alpha() < min_alpha) {
         bg.setAlpha(min_alpha);
       }
