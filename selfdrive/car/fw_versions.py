@@ -219,8 +219,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   # Do non-OBD queries for matched brand, or all if no match is found
   params = Params()
   params.put_bool("FirmwareObdQueryDone", True)
-  while not params.get_bool("ObdMultiplexingFinished"):
-    time.sleep(0.02)
+  params.get_bool("ObdMultiplexingFinished", block=True)
 
   for brand in FW_QUERY_CONFIGS.keys():
     if brand == matched_brand or matched_brand is None:
