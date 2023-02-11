@@ -83,7 +83,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->selection_color = item->bg_color;
+        delegate->selection_color = getColor(s);
         break;
       }
     }
@@ -284,7 +284,6 @@ bool BinaryItemDelegate::isSameColor(const QModelIndex &index, int dx, int dy) c
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
   if (index.column() == 8) {
@@ -293,60 +292,23 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
-    bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
-    QColor bg = item->bg_color;
-    QColor border_color = bg;
-    border_color.setAlphaF(1.0);
-    if (bg.alpha() < 50) {
-      bg.setAlpha(50);
-    }
-
-    // Draw border on edge of signal
-    bool draw_left = !isSameColor(index, -1, 0);
-    bool draw_top = !isSameColor(index, 0, -1);
-    bool draw_right = !isSameColor(index, 1, 0);
-    bool draw_bottom = !isSameColor(index, 0, 1);
-
-    const int spacing = 1;
-    QRect rc = option.rect.adjusted(draw_left ? 3 : 0, draw_top * spacing, draw_right ? -3 : 0, draw_bottom ? -spacing : 0);
-    QRegion substract;
-    if (!draw_top) {
-      if (!draw_left && !isSameColor(index, -1, -1)) {
-        substract += QRect{rc.left(), rc.top(), 3, spacing};
-      } else if (!draw_right && !isSameColor(index, 1, -1)) {
-        substract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
-      }
-    }
-    if (!draw_bottom) {
-      if (!draw_left && !isSameColor(index, -1, 1)) {
-        substract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
-      } else if (!draw_right && !isSameColor(index, 1, 1)) {
-        substract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
-      }
-    }
-
-    QPen border_pen = QPen(QBrush(border_color), 1);
-    painter->setPen(border_pen);
-    if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
-    if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
-    if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
-    if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
-
-    if (!substract.isEmpty()) {
-      painter->setClipping(true);
-      painter->setClipRegion(QRegion(rc).subtracted(substract));
-      border_pen.setWidth(2);
-      painter->setPen(border_pen);
-      for (auto &r : substract) {
-        painter->drawRect(r);
-      }
-    }
-    painter->fillRect(rc, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
-    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
-    painter->setClipping(false);
   } else {
-    painter->fillRect(option.rect, item->bg_color);
+    BinaryView *bin_view = (BinaryView *)parent();
+    bool item_resizing = bin_view->selectionModel()->hasSelection() && item->sigs.contains(bin_view->resize_sig);
+    if (!item_resizing) {
+      QColor bg = item->bg_color;
+      if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
+        bg.setAlpha(255);
+        painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
+        painter->setPen(option.palette.color(QPalette::BrightText));
+      } else {
+        if (item->sigs.size() > 0) {
+          drawBorder(painter, option, index);
+        }
+        painter->fillRect(option.rect, bg);
+        painter->setPen(Qt::black);
+      }
+    }
   }
 
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
@@ -355,4 +317,51 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(option.rect.adjusted(8, 0, -8, -3), Qt::AlignRight | Qt::AlignBottom, item->is_msb ? "M" : "L");
   }
   painter->restore();
+}
+
+// Draw border on edge of signal
+void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  QColor border_color = item->bg_color;
+  border_color.setAlphaF(1.0);
+
+  bool draw_left = !isSameColor(index, -1, 0);
+  bool draw_top = !isSameColor(index, 0, -1);
+  bool draw_right = !isSameColor(index, 1, 0);
+  bool draw_bottom = !isSameColor(index, 0, 1);
+
+  const int spacing = 1;
+  QRect rc = option.rect.adjusted(draw_left * 3, draw_top * spacing, draw_right * -3, draw_bottom * -spacing);
+  QRegion substract;
+  if (!draw_top) {
+    if (!draw_left && !isSameColor(index, -1, -1)) {
+      substract += QRect{rc.left(), rc.top(), 3, spacing};
+    } else if (!draw_right && !isSameColor(index, 1, -1)) {
+      substract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
+    }
+  }
+  if (!draw_bottom) {
+    if (!draw_left && !isSameColor(index, -1, 1)) {
+      substract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
+    } else if (!draw_right && !isSameColor(index, 1, 1)) {
+      substract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
+    }
+  }
+
+  QPen pen = QPen(QBrush(border_color), 1);
+  painter->setPen(pen);
+  if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
+  if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
+  if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
+  if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
+
+  painter->setClipping(true);
+  painter->setClipRegion(QRegion(rc).subtracted(substract));
+  if (!substract.isEmpty()) {
+    pen.setWidth(2);
+    painter->setPen(pen);
+    for (auto &r : substract) {
+      painter->drawRect(r);
+    }
+  }
 }
