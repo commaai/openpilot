@@ -32,7 +32,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
   toolbar->addWidget(time_label);
-  name_label = new QLabel(this);
+  name_label = new ElidedLabel(this);
+  name_label->setContentsMargins(5, 0, 5, 0);
   name_label->setStyleSheet("font-weight:bold;");
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -102,6 +103,16 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
         tabbar->removeTab(1);
     }
   }
+}
+
+void DetailWidget::removeAll() {
+  msg_id = "";
+  tabbar->blockSignals(true);
+  while (tabbar->count() > 0) {
+    tabbar->removeTab(0);
+  }
+  tabbar->blockSignals(false);
+  stacked_layout->setCurrentIndex(0);
 }
 
 void DetailWidget::setMessage(const QString &message_id) {
@@ -222,9 +233,14 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
     return hlayout;
   };
 
+  auto lb = new QLabel(tr("<-Select a message to to view details"));
+  lb->setAlignment(Qt::AlignHCenter);
+  main_layout->addWidget(lb);
   main_layout->addLayout(newShortcutRow("Pause", "Space"));
   main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
   main_layout->addStretch(0);
 
   setStyleSheet("QLabel{color:darkGray;}");
+  setBackgroundRole(QPalette::Base);
+  setAutoFillBackground(true);
 }

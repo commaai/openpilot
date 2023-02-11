@@ -20,6 +20,7 @@ void Settings::save() {
   s.setValue("chart_range", chart_range);
   s.setValue("chart_column_count", chart_column_count);
   s.setValue("last_dir", last_dir);
+  s.setValue("last_route_dir", last_route_dir);
   s.setValue("window_state", window_state);
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
@@ -36,6 +37,7 @@ void Settings::load() {
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
   last_dir = s.value("last_dir", QDir::homePath()).toString();
+  last_route_dir = s.value("last_route_dir", QDir::homePath()).toString();
   window_state = s.value("window_state").toByteArray();
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();

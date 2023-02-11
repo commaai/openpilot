@@ -213,6 +213,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setAf1(subframe_1->af_1() * pow(2, -43));
       eph.setAf0(subframe_1->af_0() * pow(2, -31));
       eph.setSvHealth(subframe_1->sv_health());
+      eph.setTowCount(subframe.how()->tow_count());
       iodc_lsb = subframe_1->iodc_lsb();
     }
 
@@ -374,6 +375,13 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     // the year can be fetched later in laika (note rollovers and leap year)
     uint8_t n_4 = data->n_4();
     uint16_t year = get_glonass_year(n_4, current_day);
+    if (current_day > 1461) {
+      // impossible day within last 4 year, reject ephemeris
+      // TODO: check if this can be detected via hamming code
+      LOGE("INVALID DATA: current day out of range: %d, %d", current_day, n_4);
+      glonass_strings[msg->sv_id()].clear();
+      return kj::Array<capnp::word>();
+    }
 
     uint16_t last_leap_year = 1996 + 4*(n_4-1);
     uint16_t days_till_this_year = (year - last_leap_year)*365;

@@ -13,10 +13,16 @@ void DBCManager::open(const QString &dbc_file_name) {
   initMsgMap();
 }
 
-void DBCManager::open(const QString &name, const QString &content) {
-  std::istringstream stream(content.toStdString());
-  dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  initMsgMap();
+bool DBCManager::open(const QString &name, const QString &content, QString *error) {
+  try {
+    std::istringstream stream(content.toStdString());
+    dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
+    initMsgMap();
+    return true;
+  } catch (std::exception &e) {
+    if (error) *error = e.what();
+  }
+  return false;
 }
 
 void DBCManager::initMsgMap() {

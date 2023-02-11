@@ -15,6 +15,7 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/route.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -66,6 +67,11 @@ MainWindow::MainWindow() : QMainWindow() {
 
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
+  if (!can->liveStreaming()) {
+    file_menu->addAction(tr("Open Route..."), this, &MainWindow::openRoute);
+    file_menu->addSeparator();
+  }
+
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
 
@@ -185,6 +191,17 @@ void MainWindow::DBCFileChanged() {
   setWindowFilePath(QString("%1").arg(dbc()->name()));
 }
 
+void MainWindow::openRoute() {
+  OpenRouteDialog dlg(this);
+  if (dlg.exec()) {
+    detail_widget->removeAll();
+    charts_widget->removeAll();
+    statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
+  } else if (dlg.failedToLoad()) {
+    close();
+  }
+}
+
 void MainWindow::newFile() {
   remindSaveChanges();
   dbc()->open("untitled.dbc", "");
@@ -203,9 +220,16 @@ void MainWindow::loadFile(const QString &fn) {
     QFile file(fn);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
-      dbc()->open(dbc_name, file.readAll());
-      setCurrentFile(fn);
-      statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
+      QString error;
+      bool ret = dbc()->open(dbc_name, file.readAll(), &error);
+      if (ret) {
+        setCurrentFile(fn);
+        statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
+      } else {
+        QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC file"), tr("Failed to parse DBC file %1").arg(fn));
+        msg_box.setDetailedText(error);
+        msg_box.exec();
+      }
     }
   }
 }
@@ -234,11 +258,16 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 void MainWindow::loadDBCFromClipboard() {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
-  dbc()->open("from_clipboard.dbc", dbc_str);
-  if (dbc()->messages().size() > 0) {
+  QString error;
+  bool ret = dbc()->open("clipboard", dbc_str, &error);
+  if (ret && dbc()->messages().size() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
-    QMessageBox::warning(this, tr("Load From Clipboard"), tr("Failed to parse dbc from clipboard!\nMake sure that you paste the text with correct format."));
+    QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
+    if (!error.isEmpty()) {
+      msg_box.setDetailedText(error);
+    }
+    msg_box.exec();
   }
 }
 
@@ -250,7 +279,11 @@ void MainWindow::loadDBCFromFingerprint() {
 
   remindSaveChanges();
   auto fingerprint = can->carFingerprint();
-  video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  if (can->liveStreaming()) {
+    video_dock->setWindowTitle(can->routeName());
+  } else {
+    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  }
   if (!fingerprint.isEmpty()) {
     auto dbc_name = fingerprint_to_dbc[fingerprint];
     if (dbc_name != QJsonValue::Undefined) {
