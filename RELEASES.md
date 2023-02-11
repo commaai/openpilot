@@ -5,6 +5,8 @@ Version 0.9.1 (2023-2-20)
 * UI updates
   * Driver monitoring icon shows driver's head pose
   * German translation thanks to Vrabetz and CzokNorris!
+* New driving model
+  * 30% improved height estimation resulting in better driving performance for tall cars
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support
