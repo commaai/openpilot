@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+import time
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
@@ -216,7 +217,10 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
       break
 
   # Do non-OBD queries for matched brand, or all if no match is found
-  Params().put_bool("FirmwareObdQueryDone", True)
+  params = Params()
+  params.put_bool("FirmwareObdQueryDone", True)
+  while not params.get_bool("ObdMultiplexingFinished"):
+    time.sleep(0.02)
 
   for brand, config in FW_QUERY_CONFIGS.items():
     if brand == matched_brand or matched_brand is None:
@@ -302,7 +306,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
 
 if __name__ == "__main__":
-  import time
   import argparse
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin
