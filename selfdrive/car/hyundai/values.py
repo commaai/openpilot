@@ -86,6 +86,7 @@ class CAR:
   SONATA_LF = "HYUNDAI SONATA 2019"
   TUCSON = "HYUNDAI TUCSON 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
+  PALISADE_2023 = "HYUNDAI PALISADE 2023"
   VELOSTER = "HYUNDAI VELOSTER 2019"
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
   IONIQ_5 = "HYUNDAI IONIQ 5 2022"
@@ -174,6 +175,9 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.PALISADE: [
     HyundaiCarInfo("Hyundai Palisade 2020-22", "All", "https://youtu.be/TAnDqjF4fDY?t=456", harness=Harness.hyundai_h),
     HyundaiCarInfo("Kia Telluride 2020-22", "All", harness=Harness.hyundai_h),
+  ],
+  CAR.PALISADE_2023: [
+    HyundaiCarInfo("Hyundai Palisade (with HDA II) 2023", "All", harness=Harness.hyundai_a),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
@@ -1605,10 +1609,39 @@ FW_VERSIONS = {
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.06 99110-P2000         ',
     ],
   },
+  CAR.PALISADE_2023: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
+      b'\xf1\x8799110S8150\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
+    ],
+    (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00LX ESC \x0e 101"\x02& 58910-S8700',
+      b'\xf1\x8758910-S8700\xf1\x00LX ESC \x0e 101"\x02& 58910-S8700',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81640T3051\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00LXP MDPS C 1.00 1.00 56310-S8620 4LXPC100',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.04 99211-S8150 220622',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p55  U992\x00\x00\x00\x00\x00\x00SLXTG38NSB\xd0\x01\xcd\xb1',
+      b'\xf1\x87LDNVFN170000KF55\xa9\x99\x89\x98\x87www\x89\x99\x98\x99\x98\x88\x89\x88\x88\x88\x88\x88u\x8f\xf8\xffz\x99\xaf\xff\x00\xe3\xf1\x81U992\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p55  U992\x00\x00\x00\x00\x00\x00SLXTG38NSB\xd0\x01\xcd\xb1',
+    ],
+    (Ecu.adas, 0x730, None): [
+      b'\xf1\x00LX2 ADRV 1.00 1.00 220314',
+    ],
+    (Ecu.cornerRadar, 0x7B7, None): [
+      b'\xf1\x00LX2 BCW RR 1.00 , 1.00 (x\x053"\x01\x95\x00\x07',
+    ]
+  },
 }
 
 CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022],
+  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.PALISADE_2023],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
 }
 
@@ -1629,6 +1662,9 @@ CANFD_RADAR_SCC_CAR = {CAR.GENESIS_GV70_1ST_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN, C
 
 # The camera does SCC on these cars, rather than the radar
 CAMERA_SCC_CAR = {CAR.KONA_EV_2022, }
+
+# These cars have both CAN and CAN-FD messages
+CAN_CANFD_CAR = {CAR.PALISADE_2023, }
 
 HYBRID_CAR = {CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.IONIQ, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.IONIQ_PHEV_2019, CAR.TUCSON_HYBRID_4TH_GEN, CAR.KIA_SPORTAGE_HYBRID_5TH_GEN, CAR.KIA_SORENTO_PHEV_4TH_GEN}  # these cars use a different gas signal
 EV_CAR = {CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.KONA_EV_2022, CAR.KIA_EV6, CAR.IONIQ_5, CAR.GENESIS_GV60_EV_1ST_GEN}
@@ -1691,4 +1727,5 @@ DBC = {
   CAR.KIA_SORENTO_PHEV_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_4TH_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.PALISADE_2023: dbc_dict('hyundai_palisade_2023', None),
 }

@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, CAN_CANFD_CAR
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -131,7 +131,7 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
-    if not self.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl and self.CP.carFingerprint not in CAN_CANFD_CAR:
       aeb_src = "FCA11" if self.CP.carFingerprint in FEATURES["use_fca"] else "SCC12"
       aeb_sig = "FCA_CmdAct" if self.CP.carFingerprint in FEATURES["use_fca"] else "AEB_CmdAct"
       aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
@@ -288,7 +288,6 @@ class CarState(CarStateBase):
     ]
     checks = [
       # address, frequency
-      ("MDPS12", 50),
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
@@ -300,8 +299,10 @@ class CarState(CarStateBase):
       ("WHL_SPD11", 50),
       ("SAS11", 100),
     ]
+    freq_mdps12 = 100 if CP.carFingerprint in CAN_CANFD_CAR else 50
+    checks.append(("MDPS12", freq_mdps12))
 
-    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR:
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in (CAMERA_SCC_CAR | CAN_CANFD_CAR):
       signals += [
         ("MainMode_ACC", "SCC11"),
         ("VSetDis", "SCC11"),
@@ -327,13 +328,25 @@ class CarState(CarStateBase):
           ("CF_VSM_Warn", "SCC12"),
           ("CF_VSM_DecCmdAct", "SCC12"),
         ]
+    elif CP.carFingerprint in CAN_CANFD_CAR:
+      signals += [
+        ("MainMode_ACC", "SCC12"),
+        ("VSetDis", "SCC12"),
+        ("SCCInfoDisplay", "SCC12"),
+        ("ACC_ObjDist", "SCC12"),
+        ("ACCMode", "SCC12"),
+      ]
+      checks += [
+        ("SCC12", 50),
+      ]
 
     if CP.enableBsm:
       signals += [
         ("CF_Lca_IndLeft", "LCA11"),
         ("CF_Lca_IndRight", "LCA11"),
       ]
-      checks.append(("LCA11", 50))
+      freq_lca11 = 20 if CP.carFingerprint in CAN_CANFD_CAR else 50
+      checks.append(("LCA11", freq_lca11))
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if CP.carFingerprint in HYBRID_CAR:
@@ -363,7 +376,8 @@ class CarState(CarStateBase):
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    bus = 4 if CP.carFingerprint in CAN_CANFD_CAR else 0
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -373,21 +387,24 @@ class CarState(CarStateBase):
     signals = [
       # signal_name, signal_address
       ("CF_Lkas_LdwsActivemode", "LKAS11"),
-      ("CF_Lkas_LdwsSysState", "LKAS11"),
-      ("CF_Lkas_SysWarning", "LKAS11"),
       ("CF_Lkas_LdwsLHWarning", "LKAS11"),
       ("CF_Lkas_LdwsRHWarning", "LKAS11"),
-      ("CF_Lkas_HbaLamp", "LKAS11"),
-      ("CF_Lkas_FcwBasReq", "LKAS11"),
-      ("CF_Lkas_HbaSysState", "LKAS11"),
-      ("CF_Lkas_FcwOpt", "LKAS11"),
-      ("CF_Lkas_HbaOpt", "LKAS11"),
-      ("CF_Lkas_FcwSysState", "LKAS11"),
-      ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
-      ("CF_Lkas_FusionState", "LKAS11"),
       ("CF_Lkas_FcwOpt_USM", "LKAS11"),
-      ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
     ]
+    if CP.carFingerprint not in CAN_CANFD_CAR:
+      signals += [
+        ("CF_Lkas_LdwsSysState", "LKAS11"),
+        ("CF_Lkas_SysWarning", "LKAS11"),
+        ("CF_Lkas_HbaLamp", "LKAS11"),
+        ("CF_Lkas_FcwBasReq", "LKAS11"),
+        ("CF_Lkas_HbaSysState", "LKAS11"),
+        ("CF_Lkas_FcwOpt", "LKAS11"),
+        ("CF_Lkas_HbaOpt", "LKAS11"),
+        ("CF_Lkas_FcwSysState", "LKAS11"),
+        ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
+        ("CF_Lkas_FusionState", "LKAS11"),
+        ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
+      ]
     checks = [
       ("LKAS11", 100)
     ]
@@ -419,7 +436,8 @@ class CarState(CarStateBase):
           ("CF_VSM_DecCmdAct", "SCC12"),
         ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    bus = 6 if CP.carFingerprint in CAN_CANFD_CAR else 2
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
   def get_can_parser_canfd(CP):
