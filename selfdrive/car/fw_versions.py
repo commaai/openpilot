@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-import time
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
@@ -219,7 +218,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   # Do non-OBD queries for matched brand, or all if no match is found
   params = Params()
   params.put_bool("FirmwareObdQueryDone", True)
-  params.get_bool("ObdMultiplexingFinished", block=True)
+  params.get_bool("ObdMultiplexingDisabled", block=True)
 
   for brand in FW_QUERY_CONFIGS.keys():
     if brand == matched_brand or matched_brand is None:

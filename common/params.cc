@@ -155,7 +155,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"NavSettingTime24h", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavdRender", PERSISTENT},
-    {"ObdMultiplexingFinished", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"ObdMultiplexingDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},

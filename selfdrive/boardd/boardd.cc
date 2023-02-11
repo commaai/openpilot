@@ -137,7 +137,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
-  p.putBool("ObdMultiplexingFinished", true);
+  p.putBool("ObdMultiplexingDisabled", true);
 
   std::string params;
   LOGW("waiting for params to set safety model");
