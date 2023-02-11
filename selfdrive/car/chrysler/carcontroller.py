@@ -19,7 +19,7 @@ class CarController:
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     can_sends = []
 
     lkas_active = CC.latActive and self.lkas_control_bit_prev

@@ -24,7 +24,7 @@ class CarController:
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
 
-  def update(self, CC, CS, ext_bus):
+  def update(self, CC, CS, ext_bus, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
