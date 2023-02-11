@@ -358,6 +358,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   painter->setClipping(true);
   painter->setClipRegion(QRegion(rc).subtracted(substract));
   if (!substract.isEmpty()) {
+    // fill gaps
     pen.setWidth(2);
     painter->setPen(pen);
     for (auto &r : substract) {
