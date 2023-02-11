@@ -729,8 +729,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.espDisabled: {
-    ET.SOFT_DISABLE: soft_disable_alert("ESP Off"),
-    ET.NO_ENTRY: NoEntryAlert("ESP Off"),
+    ET.SOFT_DISABLE: soft_disable_alert("Electronic Stability Program Off"),
+    ET.NO_ENTRY: NoEntryAlert("Electronic Stability Program Off"),
   },
 
   EventName.lowBattery: {
