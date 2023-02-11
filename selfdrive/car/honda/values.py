@@ -172,11 +172,18 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HONDA_VERSION_RESPONSE],
       bus=1,
     ),
-    # Query Nidec PT bus from camera for data collection
+    # Nidec PT bus
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
+    ),
+    # Bosch PT bus
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+      bus=1,
+      non_obd=True,
     ),
   ],
   extra_ecus=[
