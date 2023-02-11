@@ -218,7 +218,10 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   # Do non-OBD queries for matched brand, or all if no match is found
   params = Params()
   params.put_bool("FirmwareObdQueryDone", True)
+
+  cloudlog.warning("Waiting for OBD multiplexing to be disabled")
   params.get_bool("ObdMultiplexingDisabled", block=True)
+  cloudlog.warning("OBD multiplexing disabled")
 
   for brand in FW_QUERY_CONFIGS.keys():
     if brand == matched_brand or matched_brand is None:
