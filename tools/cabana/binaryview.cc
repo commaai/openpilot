@@ -271,13 +271,8 @@ bool BinaryItemDelegate::isSameColor(const QModelIndex &index, int dx, int dy) c
   if (!index2.isValid()) {
     return false;
   }
-
-  auto item1 = (const BinaryViewModel::Item *)index.internalPointer();
-  auto item2 = (const BinaryViewModel::Item *)index2.internalPointer();
-
-  QColor color1 = item1->bg_color;
-  QColor color2 = item2->bg_color;
-
+  auto color1 = ((const BinaryViewModel::Item *)index.internalPointer())->bg_color;
+  auto color2 = ((const BinaryViewModel::Item *)index2.internalPointer())->bg_color;
   // Ignore alpha
   return (color1.red() == color2.red()) && (color2.green() == color2.green()) && (color1.blue() == color2.blue());
 }
@@ -328,7 +323,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   bool draw_right = !isSameColor(index, 1, 0);
   bool draw_bottom = !isSameColor(index, 0, 1);
 
-  const int spacing = 1;
+  const int spacing = 2;
   QRect rc = option.rect.adjusted(draw_left * 3, draw_top * spacing, draw_right * -3, draw_bottom * -spacing);
   QRegion subtract;
   if (!draw_top) {
@@ -346,8 +341,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
     }
   }
 
-  QPen pen = QPen(QBrush(border_color), 1);
-  painter->setPen(pen);
+  painter->setPen(QPen(border_color, 1));
   if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
   if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
   if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
@@ -356,8 +350,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
   if (!subtract.isEmpty()) {
     // fill gaps inside corners.
-    pen.setWidth(2);
-    painter->setPen(pen);
+    painter->setPen(QPen(border_color, 2));
     for (auto &r : subtract) {
       painter->drawRect(r);
     }
