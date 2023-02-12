@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDialogButtonBox>
 #include <QSplitter>
 #include <QStackedLayout>
 #include <QTabWidget>
@@ -14,8 +15,12 @@
 class EditMessageDialog : public QDialog {
 public:
   EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
+  void validateName(const QString &text);
 
+  QString original_name;
+  QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
+  QLabel *error_label;
   QSpinBox *size_spin;
 };
 
