@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include <QByteArray>
 #include <QColor>
 #include <QFont>
