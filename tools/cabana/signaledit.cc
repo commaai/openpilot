@@ -266,6 +266,7 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
+  small_font.setPointSize(8);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
 }
 
@@ -280,20 +281,19 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    QRect rc{option.rect.left() + 3, option.rect.top(), 22, option.rect.height()};
+    QRect rc{option.rect.left(), option.rect.top(), 18, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
-    painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 5, 5);
+    painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 3, 3);
     painter->setPen(item->highlight ? Qt::white : Qt::black);
+    painter->setFont(small_font);
     painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
 
     // signal name
-    QFont font;
-    font.setBold(true);
-    painter->setFont(font);
+    painter->setFont(option.font);
     painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
     QString text = index.data(Qt::DisplayRole).toString();
-    QRect text_rect = option.rect.adjusted(rc.width() + 9, 0, 0, 0);
+    QRect text_rect = option.rect.adjusted(rc.width() + 6, 0, 0, 0);
     text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();

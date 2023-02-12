@@ -34,6 +34,7 @@ bool AbstractStream::updateEvent(const Event *event) {
       change_trackers[id].compute(data.dat, data.ts, data.freq);
       data.colors = change_trackers[id].colors;
       data.last_change_t = change_trackers[id].last_change_t;
+      data.bit_change_counts = change_trackers[id].bit_change_counts;
     }
 
     double ts = millis_since_boot();
@@ -71,6 +72,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
           m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
           m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
           m.last_change_t = QVector<double>(m.dat.size(), m.ts);
+          m.bit_change_counts.resize(m.dat.size());
         } else {
           m.freq = m.count / std::max(1.0, m.ts);
         }

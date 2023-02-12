@@ -5,6 +5,7 @@
 #include <QTabWidget>
 #include <QToolBar>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/historylog.h"
@@ -40,7 +41,8 @@ private:
   void updateState(const QHash<QString, CanData> * msgs = nullptr);
 
   QString msg_id;
-  QLabel *name_label, *time_label, *warning_icon, *warning_label;
+  QLabel *time_label, *warning_icon, *warning_label;
+  ElidedLabel *name_label;
   QWidget *warning_widget;
   QTabBar *tabbar;
   QTabWidget *tab_widget;

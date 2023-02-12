@@ -25,6 +25,16 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
 
+const vec3 default_face_kpts_3d[] = {
+  {-5.98, -51.20, 8.00}, {-17.64, -49.14, 8.00}, {-23.81, -46.40, 8.00}, {-29.98, -40.91, 8.00}, {-32.04, -37.49, 8.00},
+  {-34.10, -32.00, 8.00}, {-36.16, -21.03, 8.00}, {-36.16, 6.40, 8.00}, {-35.47, 10.51, 8.00}, {-32.73, 19.43, 8.00},
+  {-29.30, 26.29, 8.00}, {-24.50, 33.83, 8.00}, {-19.01, 41.37, 8.00}, {-14.21, 46.17, 8.00}, {-12.16, 47.54, 8.00},
+  {-4.61, 49.60, 8.00}, {4.99, 49.60, 8.00}, {12.53, 47.54, 8.00}, {14.59, 46.17, 8.00}, {19.39, 41.37, 8.00},
+  {24.87, 33.83, 8.00}, {29.67, 26.29, 8.00}, {33.10, 19.43, 8.00}, {35.84, 10.51, 8.00}, {36.53, 6.40, 8.00},
+  {36.53, -21.03, 8.00}, {34.47, -32.00, 8.00}, {32.42, -37.49, 8.00}, {30.36, -40.91, 8.00}, {24.19, -46.40, 8.00},
+  {18.02, -49.14, 8.00}, {6.36, -51.20, 8.00}, {-5.98, -51.20, 8.00},
+};
+
 struct Alert {
   QString text1;
   QString text2;
@@ -102,6 +112,13 @@ typedef struct UIScene {
 
   // lead
   QPointF lead_vertices[2];
+
+  // DMoji state
+  float driver_pose_vals[3];
+  float driver_pose_diff[3];
+  float driver_pose_sins[3];
+  float driver_pose_coss[3];
+  vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
@@ -183,6 +200,7 @@ public slots:
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height);
 void update_model(UIState *s, const cereal::ModelDataV2::Reader &model);
+void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd);
 void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line);
 void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);
