@@ -32,6 +32,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton();
+  play_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   control_layout->addWidget(play_btn);
 
   QButtonGroup *group = new QButtonGroup(this);

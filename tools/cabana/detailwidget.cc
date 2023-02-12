@@ -32,7 +32,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
   toolbar->addWidget(time_label);
-  name_label = new QLabel(this);
+  name_label = new ElidedLabel(this);
+  name_label->setContentsMargins(5, 0, 5, 0);
   name_label->setStyleSheet("font-weight:bold;");
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
