@@ -219,7 +219,7 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
 void EditMessageDialog::validateName(const QString &text) {
   bool valid = false;
   error_label->setVisible(false);
-  if (!text.isEmpty() && text != original_name) {
+  if (!text.isEmpty() && text != original_name && text != "untitled") {
     valid = std::none_of(dbc()->messages().begin(), dbc()->messages().end(),
                          [&text](auto &m) { return m.second.name == text; });
     if (!valid) {
