@@ -290,21 +290,72 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->fillRect(option.rect, item->bg_color);
   }
 
+  painter->drawText(option.rect, Qt::AlignCenter, item->val);
 
   QColor bg = item->bg_color;
   bg.setAlpha(255);
-  painter->drawText(option.rect, Qt::AlignCenter, item->val);
+  QColor border = bg.darker(125);
+  int bar_height = 7;
+  int bar_height_with_border = bar_height + 1;
   if (item->is_msb || item->is_lsb) {
-    if (!item->is_msb || !item->is_lsb) {
-      painter->fillRect(QRect(option.rect.bottomLeft().x() + (item->is_msb ? 40 : 0), option.rect.bottomLeft().y()-2, option.rect.width()-40, -4), bg);
-      painter->setFont(small_font);
-      painter->drawText(option.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
-    } else {
-      painter->fillRect(QRect(option.rect.bottomLeft().x()+20, option.rect.bottomLeft().y()-2, option.rect.width()-40, -4), bg);
+    auto bl = option.rect.bottomLeft();
+    auto br = option.rect.bottomRight();
+    if (item->is_msb) {
+      QPolygon lpoly;
+      lpoly << QPoint(bl.x() + option.rect.width()/4, bl.y())
+            << QPoint(bl.x() + option.rect.width()/4 + bar_height/2, bl.y() - bar_height/2)
+            << QPoint(bl.x() + option.rect.width()/4, bl.y() - bar_height)
+            << QPoint(bl.x() + option.rect.width()/2, bl.y() - bar_height)
+            << QPoint(bl.x() + option.rect.width()/2, bl.y())
+            << QPoint(bl.x() + option.rect.width()/4, bl.y());
+      QPainterPath path;
+      path.addPolygon(lpoly);
+      painter->fillPath(path, bg);
+      painter->setPen(bg);
+      painter->drawPath(path);
+      painter->setPen(border);
+      painter->drawLines(lpoly);
+
+      if (!item->is_lsb) {
+        // rectangle to edge of cell when only MSB
+        auto rect = option.rect.adjusted(option.rect.width()/2, option.rect.height()-bar_height_with_border, 0, 0);
+        painter->fillRect(rect, bg);
+        painter->setPen(border);
+        painter->drawLine(rect.topLeft(), rect.topRight());
+        painter->drawLine(rect.bottomLeft(), rect.bottomRight());
+      }
+    }
+    if (item->is_lsb) {
+      QPolygon rpoly;
+      rpoly << QPoint(br.x() - option.rect.width()/4 - bar_height/2, br.y())
+            << QPoint(br.x() - option.rect.width()/4, br.y() - bar_height/2)
+            << QPoint(br.x() - option.rect.width()/4 - bar_height/2, br.y() - bar_height)
+            << QPoint(br.x() - option.rect.width()/2, br.y() - bar_height)
+            << QPoint(br.x() - option.rect.width()/2, br.y())
+            << QPoint(br.x() - option.rect.width()/4 - bar_height/2, br.y());
+      QPainterPath path;
+      path.addPolygon(rpoly);
+      painter->fillPath(path, bg);
+      painter->setPen(bg);
+      painter->drawPath(path);
+      painter->setPen(border);
+      painter->drawLines(rpoly);
+
+      if (!item->is_msb) {
+        // rectangle to edge of cell when only LSB
+        auto rect = option.rect.adjusted(0, option.rect.height()-bar_height_with_border, -option.rect.width()/2, 0);
+        painter->fillRect(rect, bg);
+        painter->setPen(border);
+        painter->drawLine(rect.topLeft(), rect.topRight());
+        painter->drawLine(rect.bottomLeft(), rect.bottomRight());
+      }
     }
   } else if (!item->sigs.isEmpty()) {
-    bg.setAlpha(255);
-    painter->fillRect(QRect(option.rect.bottomLeft().x(), option.rect.bottomLeft().y()-2, option.rect.width(), -4), bg);
+    auto rect = option.rect.adjusted(0, option.rect.height()-bar_height_with_border, 0, 0);
+    painter->fillRect(rect, bg);
+    painter->setPen(border);
+    painter->drawLine(rect.topLeft(), rect.topRight());
+    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
   }
   painter->restore();
 }
