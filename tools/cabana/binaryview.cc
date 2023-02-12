@@ -271,12 +271,13 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
+  QPen text_pen;
   if (index.column() == 8) {
     painter->setFont(hex_font);
     painter->fillRect(option.rect, item->bg_color);
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
-    painter->setPen(option.palette.color(QPalette::BrightText));
+    text_pen = QPen(option.palette.color(QPalette::BrightText));
   } else if (!item->sigs.isEmpty() && (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig))) {
     bool sig_hovered = item->sigs.contains(bin_view->hovered_sig);
     int min_alpha = item->sigs.contains(bin_view->hovered_sig) ? 255 : 50;
@@ -285,26 +286,50 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       bg.setAlpha(min_alpha);
     }
     painter->fillRect(option.rect, sig_hovered ? bg.darker(125) : bg);  // 4/5x brightness
-    painter->setPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
+    text_pen = QPen(sig_hovered ? option.palette.color(QPalette::BrightText) : Qt::black);
   } else {
     painter->fillRect(option.rect, item->bg_color);
   }
 
+  painter->setPen(text_pen);
+  painter->drawText(option.rect, Qt::AlignCenter, item->val);
 
   QColor bg = item->bg_color;
   bg.setAlpha(255);
-  painter->drawText(option.rect, Qt::AlignCenter, item->val);
+  QColor border = bg.darker(110);
+  int bar_height = 10;
   if (item->is_msb || item->is_lsb) {
+    // start or end of signal
     if (!item->is_msb || !item->is_lsb) {
-      painter->fillRect(QRect(option.rect.bottomLeft().x() + (item->is_msb ? 40 : 0), option.rect.bottomLeft().y()-2, option.rect.width()-40, -4), bg);
+      // multi-bit signal
+      auto rect = option.rect.adjusted(item->is_msb ? option.rect.width()/4 : 0, option.rect.height()-bar_height, item->is_msb ? 0 : -option.rect.width()/4, 0);
+      painter->fillRect(rect, bg);
+      painter->setPen(border);
+      painter->drawLine(item->is_msb ? rect.topLeft() : rect.topRight(), item->is_msb ? rect.bottomLeft() : rect.bottomRight());
+      painter->drawLine(rect.topLeft(), rect.topRight());
+      painter->drawLine(rect.bottomLeft(), rect.bottomRight());
+      painter->setPen(text_pen);
       painter->setFont(small_font);
       painter->drawText(option.rect, Qt::AlignHCenter | Qt::AlignBottom, item->is_msb ? "MSB" : "LSB");
     } else {
-      painter->fillRect(QRect(option.rect.bottomLeft().x()+20, option.rect.bottomLeft().y()-2, option.rect.width()-40, -4), bg);
+      // single-bit signal
+      auto rect = option.rect.adjusted(option.rect.width()/4, option.rect.height()-bar_height, -option.rect.width()/4, 0);
+      painter->fillRect(rect, bg);
+      painter->setPen(border);
+      painter->drawLine(rect.topLeft(), rect.bottomLeft());
+      painter->drawLine(rect.topLeft(), rect.topRight());
+      painter->drawLine(rect.bottomLeft(), rect.bottomRight());
+      painter->drawLine(rect.topRight(), rect.bottomRight());
     }
   } else if (!item->sigs.isEmpty()) {
+    // middle of signal
     bg.setAlpha(255);
-    painter->fillRect(QRect(option.rect.bottomLeft().x(), option.rect.bottomLeft().y()-2, option.rect.width(), -4), bg);
+    auto rect = option.rect.adjusted(0, option.rect.height()-bar_height, 0, 0);
+    painter->fillRect(rect, bg);
+    painter->setPen(border);
+    painter->drawLine(rect.topLeft(), rect.topRight());
+    painter->drawLine(rect.bottomLeft(), rect.bottomRight());
   }
+
   painter->restore();
 }
