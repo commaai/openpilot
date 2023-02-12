@@ -284,6 +284,7 @@ bool BinaryItemDelegate::isSameColor(const QModelIndex &index, int dx, int dy) c
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  BinaryView *bin_view = (BinaryView *)parent();
   painter->save();
 
   if (index.column() == 8) {
@@ -292,22 +293,19 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else {
-    BinaryView *bin_view = (BinaryView *)parent();
-    bool item_resizing = bin_view->selectionModel()->hasSelection() && item->sigs.contains(bin_view->resize_sig);
-    if (!item_resizing) {
-      QColor bg = item->bg_color;
-      if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
-        bg.setAlpha(255);
-        painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
-        painter->setPen(option.palette.color(QPalette::BrightText));
-      } else {
-        if (item->sigs.size() > 0) {
-          drawBorder(painter, option, index);
-        }
-        painter->fillRect(option.rect, bg);
-        painter->setPen(Qt::black);
+  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) { // not resizing
+    QColor bg = item->bg_color;
+    if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
+      bg.setAlpha(255);
+      painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
+      painter->setPen(option.palette.color(QPalette::BrightText));
+    } else {
+      if (item->sigs.size() > 0) {
+        drawBorder(painter, option, index);
+        bg.setAlpha(std::max(50, bg.alpha()));
       }
+      painter->fillRect(option.rect, bg);
+      painter->setPen(Qt::black);
     }
   }
 
@@ -355,7 +353,6 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
   if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
 
-  painter->setClipping(true);
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
   if (!subtract.isEmpty()) {
     // fill gaps inside corners.
