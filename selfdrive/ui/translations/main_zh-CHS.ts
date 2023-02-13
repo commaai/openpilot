@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>正在安装……</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>正在接收： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>正在处理： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>正在更新文件： </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -683,18 +671,6 @@ location set</source>
         <translation>等待网络连接</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>选择要安装的软件</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam（行车记录仪）</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>自定义软件</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>输入网址</translation>
     </message>
@@ -1016,14 +992,6 @@ location set</source>
         <translation>针对此车辆，openpilot默认使用车辆自带的ACC，而非openpilot的纵向控制。启用此选项将切换到openpilot纵向控制。当使用试验性的openpilot纵向控制时，建议同时启用试验模式。</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>openpilot 默认 &lt;b&gt;轻松模式&lt;/b&gt;驾驶车辆。试验模式启用一些轻松模式之外的 &lt;b&gt;试验性功能&lt;/b&gt;。试验性功能包括：</translation>
     </message>
@@ -1042,6 +1010,22 @@ location set</source>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>当低速行驶时，驾驶视角将切换到前向广角摄像头，便于更完整地显示转向路径。右上角将显示试验模式图标。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
     </message>
 </context>
 <context>
