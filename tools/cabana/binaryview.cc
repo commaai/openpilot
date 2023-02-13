@@ -143,8 +143,8 @@ void BinaryView::refresh() {
   anchor_index = QModelIndex();
   resize_sig = nullptr;
   hovered_sig = nullptr;
-  highlightPosition(QCursor::pos());
   model->refresh();
+  highlightPosition(QCursor::pos());
 }
 
 QSet<const Signal *> BinaryView::getOverlappingSignals() const {
