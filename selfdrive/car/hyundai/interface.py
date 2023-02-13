@@ -44,6 +44,7 @@ class CarInterface(CarInterfaceBase):
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
+      # Send LFA message on cars with HDA
       if 0x485 in fingerprint[0]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
 
