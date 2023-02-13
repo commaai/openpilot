@@ -356,6 +356,9 @@ def match_fw_to_hyundai_fuzzy(fw_versions_dict):
   invalid = []
   candidates = FW_VERSIONS
   for candidate, fws in candidates.items():
+    if 'HYUNDAI GENESIS' in candidate:
+      invalid.append(candidate)
+      continue
     candidate_platform_codes_radar = get_platform_codes(fws[(Ecu.fwdRadar, 0x7d0, None)])
     candidate_platform_codes_camera = get_platform_codes(fws[(Ecu.fwdCamera, 0x7c4, None)])
 
