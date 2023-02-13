@@ -330,7 +330,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
     if (!draw_left && !isSameColor(index, -1, -1)) {
       subtract += QRect{rc.left(), rc.top(), 3, spacing};
     } else if (!draw_right && !isSameColor(index, 1, -1)) {
-      subtract += QRect{rc.right() - 2, rc.top() - (spacing - 1), 3, spacing};
+      subtract += QRect{rc.right() - 2, rc.top(), 3, spacing};
     }
   }
   if (!draw_bottom) {
