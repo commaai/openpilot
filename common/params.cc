@@ -266,6 +266,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SpeedLimitPercOffset", PERSISTENT},
     {"SpeedLimitStyle", PERSISTENT},
     {"SpeedLimitValueOffset", PERSISTENT},
+    {"SpeedLimitOffsetType", PERSISTENT},
     {"StandStillTimer", PERSISTENT},
     {"StockLongToyota", PERSISTENT},
     {"TorqueDeadzoneDeg", PERSISTENT},

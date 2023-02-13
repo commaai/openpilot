@@ -84,6 +84,7 @@ def manager_init() -> None:
     ("SpeedLimitPercOffset", "1"),
     ("SpeedLimitStyle", "0"),
     ("SpeedLimitValueOffset", "0"),
+    ("SpeedLimitOffsetType", "0"),
     ("StandStillTimer", "0"),
     ("StockLongToyota", "0"),
     ("TorqueDeadzoneDeg", "0"),
