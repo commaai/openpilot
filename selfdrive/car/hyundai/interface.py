@@ -46,7 +46,7 @@ class CarInterface(CarInterfaceBase):
     else:
       # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
       if 0x38d in fingerprint[0]:
-        ret.flags |= HyundaiFlags.USE_FCA
+        ret.flags |= HyundaiFlags.USE_FCA.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
