@@ -2,7 +2,7 @@
 import unittest
 
 from cereal import car
-from selfdrive.car.hyundai.values import CANFD_CAR, FW_VERSIONS, FW_QUERY_CONFIG
+from selfdrive.car.hyundai.values import CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}

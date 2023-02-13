@@ -1,9 +1,13 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QHeaderView>
+#include <QLineEdit>
+#include <QSet>
+#include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/canmessages.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -18,7 +22,11 @@ public:
   void setFilterString(const QString &string);
   void msgsReceived(const QHash<QString, CanData> *new_msgs = nullptr);
   void sortMessages();
+  void suppress();
+  void clearSuppress();
+  void reset();
   QStringList msgs;
+  QSet<std::pair<QString, int>> suppressed_bytes;
 
 private:
   QString filter_str;
@@ -32,6 +40,10 @@ class MessagesWidget : public QWidget {
 public:
   MessagesWidget(QWidget *parent);
   void selectMessage(const QString &message_id);
+  QByteArray saveHeaderState() const { return table_widget->horizontalHeader()->saveState(); }
+  bool restoreHeaderState(const QByteArray &state) const { return table_widget->horizontalHeader()->restoreState(state); }
+  void updateSuppressedButtons();
+  void reset();
 
 signals:
   void msgSelectionChanged(const QString &message_id);
@@ -39,5 +51,9 @@ signals:
 protected:
   QTableView *table_widget;
   QString current_msg_id;
+  QLineEdit *filter;
   MessageListModel *model;
+  QPushButton *suppress_add;
+  QPushButton *suppress_clear;
+
 };

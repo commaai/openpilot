@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "hyundai"
-    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
+    ret.radarUnavailable = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -35,9 +35,12 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[4]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        # ICE cars do not have 0x130; GEARS message on 0x40 instead
+        # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
         if 0x130 not in fingerprint[4]:
-          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
+          if 0x40 not in fingerprint[4]:
+            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
+          else:
+            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
 
@@ -129,8 +132,8 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1985. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
-    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021):
-      ret.mass = 1737. + STD_CARGO_KG
+    elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
+      ret.mass = 3452. * CV.LB_TO_KG + STD_CARGO_KG  # average of all the cars
       ret.wheelbase = 2.7
       ret.steerRatio = 13.9 if CAR.KIA_NIRO_HEV_2021 else 13.73  # Spec
       tire_stiffness_factor = 0.385
@@ -166,7 +169,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.65
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
-    elif candidate == CAR.KIA_K5_2021:
+    elif candidate in (CAR.KIA_K5_2021, CAR.KIA_K5_HEV_2020):
       ret.mass = 3228. * CV.LB_TO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 13.27  # 2021 Kia K5 Steering Ratio (all trims)
@@ -327,5 +330,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

@@ -8,7 +8,9 @@
 struct DBCMsg {
   QString name;
   uint32_t size;
+  // signal must be saved as value in map to make undo stack work properly.
   std::map<QString, Signal> sigs;
+  // return vector<signals>, sort by start_bits
   std::vector<const Signal*> getSignals() const;
 };
 
@@ -20,7 +22,7 @@ public:
   ~DBCManager();
 
   void open(const QString &dbc_file_name);
-  void open(const QString &name, const QString &content);
+  bool open(const QString &name, const QString &content, QString *error = nullptr);
   QString generateDBC();
   void addSignal(const QString &id, const Signal &sig);
   void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
@@ -28,9 +30,7 @@ public:
 
   static std::pair<uint8_t, uint32_t> parseId(const QString &id);
   inline static std::vector<std::string> allDBCNames() { return get_dbc_names(); }
-  inline std::map<uint32_t, DBCMsg> &allMsgs() { return msgs; }
   inline QString name() const { return dbc ? dbc->name.c_str() : ""; }
-
   void updateMsg(const QString &id, const QString &name, uint32_t size);
   void removeMsg(const QString &id);
   inline const std::map<uint32_t, DBCMsg> &messages() const { return msgs; }
@@ -41,7 +41,7 @@ public:
   }
 
 signals:
-  void signalAdded(const Signal *sig);
+  void signalAdded(uint32_t address, const Signal *sig);
   void signalRemoved(const Signal *sig);
   void signalUpdated(const Signal *sig);
   void msgUpdated(uint32_t address);

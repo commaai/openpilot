@@ -59,15 +59,15 @@ class TestCarInterfaces(unittest.TestCase):
     CC = car.CarControl.new_message()
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     CC = car.CarControl.new_message()
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
@@ -76,7 +76,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Run radar interface once
     radar_interface.update([])
-    if not car_params.radarOffCan and radar_interface.rcp is not None and \
+    if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
