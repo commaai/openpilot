@@ -66,6 +66,7 @@ procs = [
 
   PythonProcess("gpxd", "selfdrive.gpxd.gpxd"),
   PythonProcess("gpxd_uploader", "selfdrive.gpxd.gpx_uploader", offroad=True),
+  PythonProcess("mapd", "selfdrive.mapd.mapd"),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),

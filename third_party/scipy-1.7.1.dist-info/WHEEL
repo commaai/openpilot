@@ -1,0 +1,6 @@
+Wheel-Version: 1.0
+Generator: bdist_wheel (0.36.2)
+Root-Is-Purelib: false
+Tag: cp38-cp38-manylinux_2_17_aarch64
+Tag: cp38-cp38-manylinux2014_aarch64
+

@@ -105,6 +105,10 @@ def manager_init() -> None:
     if params.get(k) is None:
       params.put(k, v)
 
+  # parameters set by Environment Variables
+  if os.getenv("HANDSMONITORING") is not None:
+    params.put_bool("HandsOnWheelMonitoring", bool(int(os.getenv("HANDSMONITORING", "0"))))
+
   # is this dashcam?
   if os.getenv("PASSIVE") is not None:
     params.put_bool("Passive", bool(int(os.getenv("PASSIVE", "0"))))

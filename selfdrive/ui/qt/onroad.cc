@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <QDebug>
+#include <iomanip>
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -52,7 +53,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
-  Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
+  Alert alert = Alert::get(*(s.sm), s.scene.started_frame, s.scene.display_debug_alert_frame);
   if (s.sm->updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
@@ -76,6 +77,70 @@ void OnroadWindow::updateState(const UIState &s) {
     update();
   }
 }
+
+
+void issue_debug_snapshot(SubMaster &sm) {
+  auto longitudinal_plan = sm["longitudinalPlan"].getLongitudinalPlan();
+  auto live_map_data = sm["liveMapData"].getLiveMapData();
+  auto car_state = sm["carState"].getCarState();
+
+  auto t = std::time(nullptr);
+  auto tm = *std::localtime(&t);
+  std::ostringstream param_name_os;
+  param_name_os << std::put_time(&tm, "%Y-%m-%d--%H-%M-%S");
+
+  std::ostringstream os;
+  os.setf(std::ios_base::fixed);
+  os.precision(2);
+  os << "Datetime: " << param_name_os.str() << ", vEgo: " << car_state.getVEgo() * 3.6 << "\n\n";
+  os.precision(6);
+  os << "Location: (" << live_map_data.getLastGpsLatitude() << ", " << live_map_data.getLastGpsLongitude()  << ")\n";
+  os.precision(2);
+  os << "Bearing: " << live_map_data.getLastGpsBearingDeg() << "; ";
+  os << "GPSSpeed: " << live_map_data.getLastGpsSpeed() * 3.6 << "\n\n";
+  os.precision(1);
+  os << "Speed Limit: " << live_map_data.getSpeedLimit() * 3.6 << ", ";
+  os << "Valid: " << live_map_data.getSpeedLimitValid() << "\n";
+  os << "Speed Limit Ahead: " << live_map_data.getSpeedLimitAhead() * 3.6 << ", ";
+  os << "Valid: " << live_map_data.getSpeedLimitAheadValid() << ", ";
+  os << "Distance: " << live_map_data.getSpeedLimitAheadDistance() << "\n";
+  os << "Turn Speed Limit: " << live_map_data.getTurnSpeedLimit() * 3.6 << ", ";
+  os << "Valid: " << live_map_data.getTurnSpeedLimitValid() << ", ";
+  os << "End Distance: " << live_map_data.getTurnSpeedLimitEndDistance() << ", ";
+  os << "Sign: " << live_map_data.getTurnSpeedLimitSign() << "\n\n";
+
+  const auto turn_speeds = live_map_data.getTurnSpeedLimitsAhead();
+  os << "Turn Speed Limits Ahead:\n";
+  os << "VALUE\tDIST\tSIGN\n";
+
+  if (turn_speeds.size() == 0) {
+    os << "-\t-\t-" << "\n\n";
+  } else {
+    const auto distances = live_map_data.getTurnSpeedLimitsAheadDistances();
+    const auto signs = live_map_data.getTurnSpeedLimitsAheadSigns();
+    for(int i = 0; i < turn_speeds.size(); i++) {
+      os << turn_speeds[i] * 3.6 << "\t" << distances[i] << "\t" << signs[i] << "\n";
+    }
+    os << "\n";
+  }
+
+  os << "SPEED LIMIT CONTROLLER:\n";
+  os << "sl: " << longitudinal_plan.getSpeedLimit() * 3.6  << ", ";
+  os << "state: " << int(longitudinal_plan.getSpeedLimitControlState()) << ", ";
+  os << "isMap: " << longitudinal_plan.getIsMapSpeedLimit() << "\n\n";
+
+  os << "TURN SPEED CONTROLLER:\n";
+  os << "speed: " << longitudinal_plan.getTurnSpeed() * 3.6 << ", ";
+  os << "state: " << int(longitudinal_plan.getTurnSpeedControlState()) << "\n\n";
+
+  os << "VISION TURN CONTROLLER:\n";
+  os << "speed: " << longitudinal_plan.getVisionTurnSpeed() * 3.6 << ", ";
+  os << "state: " << int(longitudinal_plan.getVisionTurnControllerState());
+
+  Params().put(param_name_os.str().c_str(), os.str().c_str(), os.str().length());
+  uiState()->scene.display_debug_alert_frame = sm.frame;
+}
+
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {

@@ -260,6 +260,7 @@ class Controls:
 
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
+      self.events.add_from_msg(self.sm['longitudinalPlan'].eventsDEPRECATED)
 
     # Add car events, ignore if CAN isn't valid
     if CS.canValid:
