@@ -460,3 +460,8 @@ void SignalView::signalHovered(const Signal *sig) {
     }
   }
 }
+
+void SignalView::leaveEvent(QEvent *event) {
+  emit highlight(nullptr);
+  QWidget::leaveEvent(event);
+}
