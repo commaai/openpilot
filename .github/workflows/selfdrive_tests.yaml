@@ -246,7 +246,6 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      continue-on-error: true
       run: |
         (exit 1)
     - name: Print diff
