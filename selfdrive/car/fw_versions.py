@@ -233,18 +233,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   parallel_addrs = []
   logging_addrs = []
   ecu_types = {}
-  # logging_addrs = defaultdict(list)
 
   for brand, brand_versions in versions.items():
-    # print(brand, brand_versions.keys())
-    # print(brand, brand_versions["debug"])
     for candidate, ecu in brand_versions.items():
-      # if brand not in logging_addrs:
-      #   logging_addrs[brand] = []
-      # if car == "debug":
-      #   logging_addrs.append() [brand].append(ecu)
-      #   # logging_addrs[brand].append(ecu)
-
       for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
@@ -261,14 +252,12 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
             addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
-  print('logging', logging_addrs)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
-      # print(addr_chunk)
       for brand, r in requests:
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
