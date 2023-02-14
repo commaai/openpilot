@@ -99,7 +99,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-  CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse Premium 2017"),
+  CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse Premium 2017", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
