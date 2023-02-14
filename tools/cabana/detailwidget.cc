@@ -1,6 +1,5 @@
 #include "tools/cabana/detailwidget.h"
 
-#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QMenu>
 #include <QMessageBox>
@@ -190,11 +189,13 @@ void DetailWidget::removeMsg() {
 
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Edit message"));
+EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent)
+    : original_name(title), QDialog(parent) {
+  setWindowTitle(tr("Edit message: %1").arg(msg_id));
   QFormLayout *form_layout = new QFormLayout(this);
-  form_layout->addRow("ID", new QLabel(msg_id));
 
+  form_layout->addRow("", error_label = new QLabel);
+  error_label->setVisible(false);
   name_edit = new QLineEdit(title, this);
   name_edit->setValidator(new NameValidator(name_edit));
   form_layout->addRow(tr("Name"), name_edit);
@@ -205,12 +206,28 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   size_spin->setValue(size);
   form_layout->addRow(tr("Size"), size_spin);
 
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  form_layout->addRow(buttonBox);
-  setFixedWidth(parent->width() * 0.9);
+  btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  btn_box->button(QDialogButtonBox::Ok)->setEnabled(false);
+  form_layout->addRow(btn_box);
 
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  setFixedWidth(parent->width() * 0.9);
+  connect(name_edit, &QLineEdit::textEdited, this, &EditMessageDialog::validateName);
+  connect(btn_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+void EditMessageDialog::validateName(const QString &text) {
+  bool valid = false;
+  error_label->setVisible(false);
+  if (!text.isEmpty() && text != original_name && text.compare(UNTITLED, Qt::CaseInsensitive) != 0) {
+    valid = std::none_of(dbc()->messages().begin(), dbc()->messages().end(),
+                         [&text](auto &m) { return m.second.name == text; });
+    if (!valid) {
+      error_label->setText(tr("Name already exists"));
+      error_label->setVisible(true);
+    }
+  }
+  btn_box->button(QDialogButtonBox::Ok)->setEnabled(valid);
 }
 
 // WelcomeWidget
