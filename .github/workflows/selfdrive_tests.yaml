@@ -246,6 +246,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
+      continue-on-error: true
       run: |
         (exit 1)
     - name: Print diff
@@ -266,7 +267,7 @@ jobs:
         echo ${{ steps.print_diff.conclusion }} || true
         echo "steps.print_diff.conclusion" || true
     - name: Upload reference logs
-      if: ${{ github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }} && steps.print_diff.outcome == 'success'
+      if: ${{ steps.print_diff.outcome == 'success' && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
