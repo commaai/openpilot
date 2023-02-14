@@ -89,6 +89,7 @@ signals:
 
 private:
   void rowsChanged();
+  void leaveEvent(QEvent *event);
 
   QString msg_id;
   QTreeView *tree;

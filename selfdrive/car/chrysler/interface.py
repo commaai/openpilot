@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
-from selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, CHRYSLER_OLD_TUNING_BLACKLIST, ChryslerFlags
+from selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -23,9 +23,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate in RAM_DT:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
 
-    if candidate in CHRYSLER_OLD_TUNING_BLACKLIST:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_LOWER_RATE
-
     ret.minSteerSpeed = 3.8  # m/s
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     if candidate not in RAM_CARS:
@@ -41,11 +38,10 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.089
       ret.steerRatio = 16.2  # Pacifica Hybrid 2017
 
-      if candidate in CHRYSLER_OLD_TUNING_BLACKLIST:
-        ret.lateralTuning.init('pid')
-        ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-        ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
+      ret.lateralTuning.pid.kf = 0.00006
 
     # Jeep
     elif candidate in (CAR.JEEP_CHEROKEE, CAR.JEEP_CHEROKEE_2019):
@@ -54,11 +50,10 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.7
       ret.steerActuatorDelay = 0.2
 
-      if candidate in CHRYSLER_OLD_TUNING_BLACKLIST:
-        ret.lateralTuning.init('pid')
-        ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
-        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
-        ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
+      ret.lateralTuning.pid.kf = 0.00006
 
     # Ram
     elif candidate == CAR.RAM_1500:
