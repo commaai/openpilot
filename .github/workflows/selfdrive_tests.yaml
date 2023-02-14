@@ -265,7 +265,7 @@ jobs:
         echo ${{ steps.print_diff.conclusion }}
         echo "steps.print_diff.conclusion"
     - name: Upload reference logs
-      if: ${{ steps.print_diff.outcome == 'success' && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      if: ${{ github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }} && steps.print_diff.outcome == 'success'
       run: |
         ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
