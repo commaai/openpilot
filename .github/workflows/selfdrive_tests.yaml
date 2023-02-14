@@ -247,11 +247,12 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       run: |
-        (exit 1)
+        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        coverage xml"
     - name: Print diff
       id: print-diff
       if: always()
-      run: echo "successful"
+      run: cat selfdrive/test/process_replay/diff.txt
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
