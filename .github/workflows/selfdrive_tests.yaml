@@ -260,10 +260,10 @@ jobs:
         path: selfdrive/test/process_replay/diff.txt
     - name: debug
       run: |
-        echo ${{ steps.print_diff.outcome }}
-        echo "$steps.print_diff.outcome"
-        echo ${{ steps.print_diff.conclusion }}
-        echo "steps.print_diff.conclusion"
+        echo ${{ steps.print_diff.outcome }} || true
+        echo "$steps.print_diff.outcome" || true
+        echo ${{ steps.print_diff.conclusion }} || true
+        echo "steps.print_diff.conclusion" || true
     - name: Upload reference logs
       if: ${{ github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }} && steps.print_diff.outcome == 'success'
       run: |
