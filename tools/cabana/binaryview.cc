@@ -58,7 +58,7 @@ void BinaryView::addShortcuts() {
     }
   });
 
-  // Change endianess (e)
+  // Change endianness (e)
   QShortcut *shortcut_endian = new QShortcut(QKeySequence(Qt::Key_E), this);
   QObject::connect(shortcut_endian, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
