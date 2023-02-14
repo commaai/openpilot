@@ -780,8 +780,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
   QXYSeries *series = nullptr;
   if (type == QAbstractSeries::SeriesTypeLine) {
     series = new QLineSeries(this);
+    chart()->legend()->setMarkerShape(QLegend::MarkerShapeRectangle);
   } else {
     series = new QScatterSeries(this);
+    chart()->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
   }
   series->setColor(color);
     // TODO: Due to a bug in CameraWidget the camera frames
