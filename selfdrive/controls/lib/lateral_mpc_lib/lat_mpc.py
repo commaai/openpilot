@@ -180,6 +180,8 @@ class LateralMpc():
 
     t = sec_since_boot()
     self.solution_status = self.solver.solve()
+    if self.solution_status != 0:
+      raise RuntimeError(self.solution_status)
     self.solve_time = sec_since_boot() - t
 
     for i in range(N+1):
