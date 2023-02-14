@@ -364,6 +364,8 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 }
 
 void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
+  if (hasSeries(msg_id, sig)) return;
+
   QXYSeries *series = createSeries(series_type, getColor(sig));
   chart()->addSeries(series);
   series->attachAxis(axis_x);
@@ -438,9 +440,7 @@ void ChartView::manageSeries() {
       emit remove();
     } else {
       for (auto s : items) {
-        if (!hasSeries(s->msg_id, s->sig)) {
-          addSeries(s->msg_id, s->sig);
-        }
+        addSeries(s->msg_id, s->sig);
       }
       for (auto it = sigs.begin(); it != sigs.end(); /**/) {
         bool exists = std::any_of(items.cbegin(), items.cend(), [&](auto &s) {
@@ -852,7 +852,9 @@ SeriesSelector::SeriesSelector(QString title, QWidget *parent) : QDialog(parent)
   // buttons
   QVBoxLayout *btn_layout = new QVBoxLayout();
   QPushButton *add_btn = new QPushButton(utils::icon("chevron-right"), "", this);
+  add_btn->setEnabled(false);
   QPushButton *remove_btn = new QPushButton(utils::icon("chevron-left"), "", this);
+  remove_btn->setEnabled(false);
   btn_layout->addStretch(0);
   btn_layout->addWidget(add_btn);
   btn_layout->addWidget(remove_btn);

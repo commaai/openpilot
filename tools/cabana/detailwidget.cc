@@ -74,6 +74,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, signal_view, &SignalView::expandSignal);
+  QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
+  QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
+  QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
