@@ -18,7 +18,6 @@ EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
 X_DIM = 4
 P_DIM = 2
-N = 32
 COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 2
 SPEED_OFFSET = 10.0
