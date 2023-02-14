@@ -259,6 +259,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: debug
+      if: always()
       run: |
         echo ${{ steps.print_diff.outcome }} || true
         echo "$steps.print_diff.outcome" || true
