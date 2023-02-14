@@ -252,7 +252,7 @@ jobs:
     - name: Print diff
       id: print_diff
       if: always()
-      run: echo "should be successful"
+      run: cat selfdrive/test/process_replay/diff.txt
     - uses: actions/upload-artifact@v2
       if: always()
       continue-on-error: true
@@ -267,7 +267,7 @@ jobs:
         echo ${{ steps.print_diff.conclusion }} || true
         echo "steps.print_diff.conclusion" || true
     - name: Upload reference logs
-      if: ${{ steps.print_diff.outcome == 'success' && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      if: ${{ failure() && steps.print_diff.outcome == 'success' && github.event_name == 'pull_request' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "CI=1 AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
