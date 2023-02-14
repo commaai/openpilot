@@ -58,7 +58,7 @@ class CarInterface(CarInterfaceBase):
 
     # TODO:
     # 1. Learn the correction factors from data
-    # 2. Generalize the logic to other GM torque control cars
+    # 2. Generalize the logic to other GM torque control platforms
     steer_break_pts = np.array([-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0])
     steer_lataccel_factors = np.array([1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5])
     steer_correction_factor = np.interp(
