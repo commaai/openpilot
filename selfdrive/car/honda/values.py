@@ -171,12 +171,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HONDA_VERSION_REQUEST],
       [HONDA_VERSION_RESPONSE],
       bus=1,
+      logging=True
     ),
     # Query Nidec PT bus from camera for data collection
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=0,
+      logging=True
     ),
   ],
   extra_ecus=[
