@@ -62,9 +62,13 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_endian = new QShortcut(QKeySequence(Qt::Key_E), this);
   QObject::connect(shortcut_endian, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
+      const Signal *hovered_sig_prev = hovered_sig;
       Signal s = *hovered_sig;
       s.is_little_endian = !s.is_little_endian;
       emit editSignal(hovered_sig, s);
+
+      hovered_sig = nullptr;
+      highlight(hovered_sig_prev);
     }
   });
 
@@ -72,9 +76,13 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_sign = new QShortcut(QKeySequence(Qt::Key_S), this);
   QObject::connect(shortcut_sign, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
+      const Signal *hovered_sig_prev = hovered_sig;
       Signal s = *hovered_sig;
       s.is_signed = !s.is_signed;
       emit editSignal(hovered_sig, s);
+
+      hovered_sig = nullptr;
+      highlight(hovered_sig_prev);
     }
   });
 
