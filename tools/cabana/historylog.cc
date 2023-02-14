@@ -81,11 +81,12 @@ void HistoryLogModel::updateState() {
   if (!msg_id.isEmpty()) {
     uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
     auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
-    if ((has_more_data = !new_msgs.empty())) {
+    if (!new_msgs.empty()) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
       messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
       endInsertRows();
     }
+    has_more_data = new_msgs.size() >= batch_size;
     last_fetch_time = current_time;
   }
 }
@@ -93,11 +94,12 @@ void HistoryLogModel::updateState() {
 void HistoryLogModel::fetchMore(const QModelIndex &parent) {
   if (!messages.empty()) {
     auto new_msgs = fetchData(messages.back().mono_time);
-    if ((has_more_data = !new_msgs.empty())) {
+    if (!new_msgs.empty()) {
       beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
       messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
       endInsertRows();
     }
+    has_more_data = new_msgs.size() >= batch_size;
   }
 }
 
