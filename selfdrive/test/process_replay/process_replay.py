@@ -204,7 +204,7 @@ def controlsd_rcv_callback(msg, CP, cfg, fsm):
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
     return [], False
-  elif CP.radarOffCan:
+  elif CP.radarUnavailable:
     return ["radarState", "liveTracks"], True
 
   radar_msgs = {"honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474],

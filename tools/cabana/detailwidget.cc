@@ -1,13 +1,10 @@
 #include "tools/cabana/detailwidget.h"
 
-#include <QDialogButtonBox>
 #include <QFormLayout>
 #include <QMenu>
 #include <QMessageBox>
-#include <QScrollBar>
-#include <QTimer>
+#include <QToolButton>
 
-#include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/commands.h"
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -15,7 +12,6 @@
 // DetailWidget
 
 DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
-  undo_stack = new QUndoStack(this);
   QWidget *main_widget = new QWidget(this);
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -29,19 +25,20 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(tabbar);
 
   // message title
-  toolbar = new QToolBar(this);
+  QToolBar *toolbar = new QToolBar(this);
   toolbar->setIconSize({16, 16});
   toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
   time_label->setStyleSheet("font-weight:bold");
   toolbar->addWidget(time_label);
-  name_label = new QLabel(this);
+  name_label = new ElidedLabel(this);
+  name_label->setContentsMargins(5, 0, 5, 0);
   name_label->setStyleSheet("font-weight:bold;");
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(name_label);
-  toolbar->addAction(bootstrapPixmap("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
-  remove_msg_act = toolbar->addAction(bootstrapPixmap("x-lg"), "", this, &DetailWidget::removeMsg);
+  toolbar->addAction(utils::icon("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
+  remove_msg_act = toolbar->addAction(utils::icon("x-lg"), "", this, &DetailWidget::removeMsg);
   remove_msg_act->setToolTip(tr("Remove Message"));
   main_layout->addWidget(toolbar);
 
@@ -54,41 +51,38 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(warning_widget);
 
   // msg widget
-  QWidget *msg_widget = new QWidget(this);
-  QVBoxLayout *msg_layout = new QVBoxLayout(msg_widget);
-  msg_layout->setContentsMargins(0, 0, 0, 0);
-  // binary view
-  binary_view = new BinaryView(this);
-  msg_layout->addWidget(binary_view);
-  // signals
-  signals_layout = new QVBoxLayout();
-  signals_layout->setSpacing(0);
-  msg_layout->addLayout(signals_layout);
-  msg_layout->addStretch(0);
-
-  scroll = new QScrollArea(this);
-  scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setWidget(msg_widget);
-  scroll->setWidgetResizable(true);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  splitter = new QSplitter(Qt::Vertical, this);
+  splitter->setAutoFillBackground(true);
+  splitter->addWidget(binary_view = new BinaryView(this));
+  splitter->addWidget(signal_view = new SignalView(charts, this));
+  binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  signal_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+  splitter->setStretchFactor(0, 0);
+  splitter->setStretchFactor(1, 1);
 
   tab_widget = new QTabWidget(this);
   tab_widget->setTabPosition(QTabWidget::South);
-  tab_widget->addTab(scroll, bootstrapPixmap("file-earmark-ruled"), "&Msg");
-  history_log = new LogsWidget(this);
-  tab_widget->addTab(history_log, bootstrapPixmap("stopwatch"), "&Logs");
+  tab_widget->addTab(splitter, utils::icon("file-earmark-ruled"), "&Msg");
+  tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
   stacked_layout = new QStackedLayout(this);
   stacked_layout->addWidget(new WelcomeWidget(this));
   stacked_layout->addWidget(main_widget);
 
-  QObject::connect(binary_view, &BinaryView::signalClicked, this, &DetailWidget::showForm);
-  QObject::connect(binary_view, &BinaryView::resizeSignal, this, &DetailWidget::resizeSignal);
-  QObject::connect(binary_view, &BinaryView::addSignal, this, &DetailWidget::addSignal);
+  QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
+  QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
+  QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
+  QObject::connect(binary_view, &BinaryView::signalClicked, signal_view, &SignalView::expandSignal);
+  QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
+  QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
+  QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
+  QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
+  QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
   QObject::connect(can, &AbstractStream::msgsReceived, this, &DetailWidget::updateState);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, [this]() { dbcMsgChanged(); });
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1 && tabbar->tabText(index) != msg_id) {
@@ -96,14 +90,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
-  QObject::connect(charts, &ChartsWidget::seriesChanged, this, &DetailWidget::updateChartState);
-  QObject::connect(history_log, &LogsWidget::openChart, [this](const QString &id, const Signal *sig) {
-    this->charts->showChart(id, sig, true, false);
-  });
-  QObject::connect(undo_stack, &QUndoStack::indexChanged, [this]() {
-    if (undo_stack->count() > 0)
-      dbcMsgChanged();
-  });
+  QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -120,6 +107,16 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
   }
 }
 
+void DetailWidget::removeAll() {
+  msg_id = "";
+  tabbar->blockSignals(true);
+  while (tabbar->count() > 0) {
+    tabbar->removeTab(0);
+  }
+  tabbar->blockSignals(false);
+  stacked_layout->setCurrentIndex(0);
+}
+
 void DetailWidget::setMessage(const QString &message_id) {
   msg_id = message_id;
   int index = tabbar->count() - 1;
@@ -128,41 +125,27 @@ void DetailWidget::setMessage(const QString &message_id) {
     index = tabbar->addTab(message_id);
     tabbar->setTabToolTip(index, msgName(message_id));
   }
-  tabbar->setCurrentIndex(index);
-  dbcMsgChanged();
-  scroll->verticalScrollBar()->setValue(0);
-  stacked_layout->setCurrentIndex(1);
-}
-
-void DetailWidget::dbcMsgChanged(int show_form_idx) {
-  if (msg_id.isEmpty()) return;
 
   setUpdatesEnabled(false);
 
+  signal_view->setMessage(msg_id);
   binary_view->setMessage(msg_id);
   history_log->setMessage(msg_id);
 
-  int i = 0;
+  stacked_layout->setCurrentIndex(1);
+  tabbar->setCurrentIndex(index);
+  refresh();
+  splitter->setSizes({1, 2});
+
+  setUpdatesEnabled(true);
+}
+
+void DetailWidget::refresh() {
+  if (msg_id.isEmpty()) return;
+
   QStringList warnings;
   const DBCMsg *msg = dbc()->msg(msg_id);
   if (msg) {
-    for (auto sig : msg->getSignals()) {
-      SignalEdit *form = i < signal_list.size() ? signal_list[i] : nullptr;
-      if (!form) {
-        form = new SignalEdit(i, this);
-        QObject::connect(form, &SignalEdit::remove, this, &DetailWidget::removeSignal);
-        QObject::connect(form, &SignalEdit::save, this, &DetailWidget::saveSignal);
-        QObject::connect(form, &SignalEdit::showFormClicked, this, &DetailWidget::showForm);
-        QObject::connect(form, &SignalEdit::highlight, binary_view, &BinaryView::highlight);
-        QObject::connect(binary_view, &BinaryView::signalHovered, form, &SignalEdit::signalHovered);
-        QObject::connect(form, &SignalEdit::showChart, charts, &ChartsWidget::showChart);
-        signals_layout->addWidget(form);
-        signal_list.push_back(form);
-      }
-      form->setSignal(msg_id, sig);
-      form->setChartOpened(charts->hasSignal(msg_id, sig));
-      ++i;
-    }
     if (msg->size != can->lastMessage(msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
@@ -172,22 +155,17 @@ void DetailWidget::dbcMsgChanged(int show_form_idx) {
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
-  for (/**/; i < signal_list.size(); ++i)
-    signal_list[i]->hide();
-
-  toolbar->setVisible(!msg_id.isEmpty());
   remove_msg_act->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
-    warning_icon->setPixmap(bootstrapPixmap(msg ? "exclamation-triangle" : "info-circle"));
+    warning_icon->setPixmap(utils::icon(msg ? "exclamation-triangle" : "info-circle"));
   }
   warning_widget->setVisible(!warnings.isEmpty());
-  setUpdatesEnabled(true);
 }
 
-void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
+void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
   if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
     return;
@@ -198,97 +176,31 @@ void DetailWidget::updateState(const QHash<QString, CanData> * msgs) {
     history_log->updateState();
 }
 
-void DetailWidget::showForm(const Signal *sig) {
-  setUpdatesEnabled(false);
-  for (auto f : signal_list) {
-    f->updateForm(f->sig == sig && !f->form->isVisible());
-    if (f->sig == sig && f->form->isVisible()) {
-      QTimer::singleShot(0, [=]() { scroll->ensureWidgetVisible(f); });
-    }
-  }
-  setUpdatesEnabled(true);
-}
-
-void DetailWidget::updateChartState() {
-  for (auto f : signal_list)
-    f->setChartOpened(charts->hasSignal(f->msg_id, f->sig));
-}
-
 void DetailWidget::editMsg() {
   QString id = msg_id;
   auto msg = dbc()->msg(id);
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    undo_stack->push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  undo_stack->push(new RemoveMsgCommand(msg_id));
-}
-
-void DetailWidget::addSignal(int start_bit, int size, bool little_endian) {
-  auto msg = dbc()->msg(msg_id);
-  if (!msg) {
-    for (int i = 1; /**/; ++i) {
-      QString name = QString("NEW_MSG_%1").arg(i);
-      auto it = std::find_if(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; });
-      if (it == dbc()->messages().end()) {
-        undo_stack->push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
-        msg = dbc()->msg(msg_id);
-        break;
-      }
-    }
-  }
-  Signal sig = {.is_little_endian = little_endian, .factor = 1};
-  for (int i = 1; /**/; ++i) {
-    sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    if (msg->sigs.count(sig.name.c_str()) == 0) break;
-  }
-  updateSigSizeParamsFromRange(sig, start_bit, size);
-  undo_stack->push(new AddSigCommand(msg_id, sig));
-}
-
-void DetailWidget::resizeSignal(const Signal *sig, int start_bit, int size) {
-  Signal s = *sig;
-  updateSigSizeParamsFromRange(s, start_bit, size);
-  saveSignal(sig, s);
-}
-
-void DetailWidget::saveSignal(const Signal *sig, const Signal &new_sig) {
-  auto msg = dbc()->msg(msg_id);
-  if (new_sig.name != sig->name) {
-    auto it = msg->sigs.find(new_sig.name.c_str());
-    if (it != msg->sigs.end()) {
-      QString warning_str = tr("There is already a signal with the same name '%1'").arg(new_sig.name.c_str());
-      QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-      return;
-    }
-  }
-  auto [start, end] = getSignalRange(&new_sig);
-  if (start < 0 || end >= msg->size * 8) {
-    QString warning_str = tr("Signal size [%1] exceed limit").arg(new_sig.size);
-    QMessageBox::warning(this, tr("Failed to save signal"), warning_str);
-    return;
-  }
-
-  undo_stack->push(new EditSignalCommand(msg_id, sig, new_sig));
-}
-
-void DetailWidget::removeSignal(const Signal *sig) {
-  undo_stack->push(new RemoveSigCommand(msg_id, sig));
+  UndoStack::push(new RemoveMsgCommand(msg_id));
 }
 
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Edit message"));
+EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent)
+    : original_name(title), QDialog(parent) {
+  setWindowTitle(tr("Edit message: %1").arg(msg_id));
   QFormLayout *form_layout = new QFormLayout(this);
-  form_layout->addRow("ID", new QLabel(msg_id));
 
+  form_layout->addRow("", error_label = new QLabel);
+  error_label->setVisible(false);
   name_edit = new QLineEdit(title, this);
-  name_edit->setValidator(new QRegExpValidator(QRegExp("^(\\w+)"), name_edit));
+  name_edit->setValidator(new NameValidator(name_edit));
   form_layout->addRow(tr("Name"), name_edit);
 
   size_spin = new QSpinBox(this);
@@ -297,12 +209,28 @@ EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title
   size_spin->setValue(size);
   form_layout->addRow(tr("Size"), size_spin);
 
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  form_layout->addRow(buttonBox);
-  setFixedWidth(parent->width() * 0.9);
+  btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  btn_box->button(QDialogButtonBox::Ok)->setEnabled(false);
+  form_layout->addRow(btn_box);
 
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  setFixedWidth(parent->width() * 0.9);
+  connect(name_edit, &QLineEdit::textEdited, this, &EditMessageDialog::validateName);
+  connect(btn_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
+  connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+void EditMessageDialog::validateName(const QString &text) {
+  bool valid = false;
+  error_label->setVisible(false);
+  if (!text.isEmpty() && text != original_name && text.compare(UNTITLED, Qt::CaseInsensitive) != 0) {
+    valid = std::none_of(dbc()->messages().begin(), dbc()->messages().end(),
+                         [&text](auto &m) { return m.second.name == text; });
+    if (!valid) {
+      error_label->setText(tr("Name already exists"));
+      error_label->setVisible(true);
+    }
+  }
+  btn_box->button(QDialogButtonBox::Ok)->setEnabled(valid);
 }
 
 // WelcomeWidget
@@ -325,9 +253,14 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
     return hlayout;
   };
 
+  auto lb = new QLabel(tr("<-Select a message to to view details"));
+  lb->setAlignment(Qt::AlignHCenter);
+  main_layout->addWidget(lb);
   main_layout->addLayout(newShortcutRow("Pause", "Space"));
   main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
   main_layout->addStretch(0);
 
   setStyleSheet("QLabel{color:darkGray;}");
+  setBackgroundRole(QPalette::Base);
+  setAutoFillBackground(true);
 }

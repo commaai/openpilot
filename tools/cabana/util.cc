@@ -1,16 +1,24 @@
 #include "tools/cabana/util.h"
 
+#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+#include <QDebug>
+
+#include <limits>
+#include <cmath>
+
+#include "selfdrive/ui/qt/util.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint32_t freq) {
+void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
+    bit_change_counts.resize(dat.size());
     std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
     std::fill(last_change_t.begin(), last_change_t.end(), ts);
   } else {
@@ -32,6 +40,13 @@ const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint
           colors[i] = blend(colors[i], QColor(102, 86, 169, start_alpha / 2));  // Greyish/Blue
         }
 
+        // Track bit level changes
+        for (int bit = 0; bit < 8; bit++){
+          if ((cur ^ last) & (1 << bit)) {
+            bit_change_counts[i][bit] += 1;
+          }
+        }
+
         last_change_t[i] = ts;
       } else {
         // Fade out
@@ -42,16 +57,16 @@ const QVector<QColor> &HexColors::compute(const QByteArray &dat, double ts, uint
   }
 
   prev_dat = dat;
-  return colors;
 }
 
-void HexColors::clear() {
+void ChangeTracker::clear() {
   prev_dat.clear();
   last_change_t.clear();
+  bit_change_counts.clear();
   colors.clear();
 }
 
-QList<QVariant> HexColors::toVariantList(const QVector<QColor> &colors) {
+QList<QVariant> ChangeTracker::toVariantList(const QVector<QColor> &colors) {
   QList<QVariant> ret;
   ret.reserve(colors.size());
   for (auto &c : colors) ret.append(c);
@@ -65,13 +80,14 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegat
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QList<QVariant> colors = index.data(Qt::UserRole).toList();
-  if (colors.empty()) {
+  QStyleOptionViewItemV4 opt = option;
+  initStyleOption(&opt, index);
+
+  auto byte_list = opt.text.split(" ");
+  if (byte_list.size() <= 1) {
     QStyledItemDelegate::paint(painter, option, index);
     return;
   }
-  QStyleOptionViewItemV4 opt = option;
-  initStyleOption(&opt, index);
 
   if ((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active)) {
     painter->setPen(option.palette.color(QPalette::HighlightedText));
@@ -85,10 +101,11 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   pos.moveLeft(pos.x() + space.width());
 
   int m = space.width() / 2;
-  const QMargins margins(m + 1, m, m, m);
+  const QMargins margins(m, m, m, m);
 
+  QList<QVariant> colors = index.data(Qt::UserRole).toList();
   int i = 0;
-  for (auto &byte : opt.text.split(" ")) {
+  for (auto &byte : byte_list) {
     if (i < colors.size()) {
       painter->fillRect(pos.marginsAdded(margins), colors[i].value<QColor>());
     }
@@ -97,3 +114,35 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     i++;
   }
 }
+
+QColor getColor(const Signal *sig) {
+  float h = 19 * (float)sig->lsb / 64.0;
+  h = fmod(h, 1.0);
+
+  size_t hash = qHash(QString::fromStdString(sig->name));
+  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
+  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+
+  return QColor::fromHsvF(h, s, v);
+}
+
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+
+QValidator::State NameValidator::validate(QString &input, int &pos) const {
+  input.replace(' ', '_');
+  return QRegExpValidator::validate(input, pos);
+}
+
+namespace utils {
+QPixmap icon(const QString &id) {
+  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
+                           QApplication::style()->standardPalette().color(QPalette::Background).value();
+  QPixmap pm = bootstrapPixmap(id);
+  if (dark_theme) {
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+    p.fillRect(pm.rect(), Qt::lightGray);
+  }
+  return pm;
+}
+}  // namespace utils

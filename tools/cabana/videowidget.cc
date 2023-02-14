@@ -13,8 +13,6 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
-#include "selfdrive/ui/qt/util.h"
-
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -34,6 +32,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   // btn controls
   QHBoxLayout *control_layout = new QHBoxLayout();
   play_btn = new QPushButton();
+  play_btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   control_layout->addWidget(play_btn);
 
   QButtonGroup *group = new QButtonGroup(this);
@@ -130,7 +129,7 @@ void VideoWidget::updateState() {
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_btn->setIcon(bootstrapPixmap(can->isPaused() ? "play" : "pause"));
+  play_btn->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 

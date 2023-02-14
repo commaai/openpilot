@@ -18,7 +18,7 @@ class CarInterface(CarInterfaceBase):
     # These cars are dashcam only until the port is finished
     ret.dashcamOnly = True
 
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
@@ -78,5 +78,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

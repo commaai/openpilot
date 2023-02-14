@@ -13,10 +13,16 @@ void DBCManager::open(const QString &dbc_file_name) {
   initMsgMap();
 }
 
-void DBCManager::open(const QString &name, const QString &content) {
-  std::istringstream stream(content.toStdString());
-  dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
-  initMsgMap();
+bool DBCManager::open(const QString &name, const QString &content, QString *error) {
+  try {
+    std::istringstream stream(content.toStdString());
+    dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
+    initMsgMap();
+    return true;
+  } catch (std::exception &e) {
+    if (error) *error = e.what();
+  }
+  return false;
 }
 
 void DBCManager::initMsgMap() {
@@ -68,7 +74,7 @@ void DBCManager::addSignal(const QString &id, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto &s = m->sigs[sig.name.c_str()];
     s = sig;
-    emit signalAdded(&s);
+    emit signalAdded(parseId(id).second, &s);
   }
 }
 
@@ -110,6 +116,7 @@ DBCManager *dbc() {
 
 std::vector<const Signal*> DBCMsg::getSignals() const {
   std::vector<const Signal*> ret;
+  ret.reserve(sigs.size());
   for (auto &[_, sig] : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
   return ret;

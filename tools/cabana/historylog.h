@@ -33,7 +33,6 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void updateColors();
   void refresh();
 
 public slots:
@@ -54,7 +53,7 @@ public:
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
   QString msg_id;
-  HexColors hex_colors;
+  ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
@@ -76,13 +75,12 @@ public:
   void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
   void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
 
-signals:
-  void openChart(const QString &msg_id, const Signal *sig);
-
 private slots:
   void setFilter();
 
 private:
+  void refresh();
+
   QTableView *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;

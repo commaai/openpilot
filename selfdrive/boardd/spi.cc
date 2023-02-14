@@ -1,3 +1,4 @@
+#ifndef __APPLE__
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
@@ -315,7 +316,10 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
     goto transfer_fail;
   }
   rx_data_len = *(uint16_t *)(rx_buf+1);
-  assert(rx_data_len < SPI_BUF_SIZE);
+  if (rx_data_len >= SPI_BUF_SIZE) {
+    LOGE("SPI: RX data len larger than buf size %d", rx_data_len);
+    goto transfer_fail;
+  }
 
   // Read data
   transfer.len = rx_data_len + 1;
@@ -339,3 +343,4 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
 transfer_fail:
   return ret;
 }
+#endif
