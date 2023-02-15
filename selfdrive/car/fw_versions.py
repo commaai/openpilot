@@ -198,6 +198,15 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
+def disable_obd_multiplexing(params):
+  if not params.get_bool("ObdMultiplexingDisabled"):
+    params.put_bool("FirmwareObdQueryDone", True)
+
+    cloudlog.warning("Waiting for OBD multiplexing to be disabled")
+    params.get_bool("ObdMultiplexingDisabled", block=True)
+    cloudlog.warning("OBD multiplexing disabled")
+
+
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
@@ -214,14 +223,9 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
       matched_brand = brand
       break
 
+  disable_obd_multiplexing(Params())
+
   # Do non-OBD queries for matched brand, or all if no match is found
-  params = Params()
-  params.put_bool("FirmwareObdQueryDone", True)
-
-  cloudlog.warning("Waiting for OBD multiplexing to be disabled")
-  params.get_bool("ObdMultiplexingDisabled", block=True)
-  cloudlog.warning("OBD multiplexing disabled")
-
   for brand in FW_QUERY_CONFIGS.keys():
     if brand == matched_brand or matched_brand is None:
       all_car_fw.extend(get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexed=False, debug=debug, progress=progress))
