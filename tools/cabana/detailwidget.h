@@ -50,6 +50,7 @@ private:
   ElidedLabel *name_label;
   QWidget *warning_widget;
   QTabBar *tabbar;
+  QList<MessageId> tabbar_ids;
   QTabWidget *tab_widget;
   QAction *remove_msg_act;
   LogsWidget *history_log;

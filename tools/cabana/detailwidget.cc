@@ -84,13 +84,16 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
-  // FIXME: keep track of message ids with separate list
-  // QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-  //   if (index != -1 && tabbar->tabText(index) != msg_id.toString()) {
-  //     setMessage(tabbar->tabText(index));
-  //   }
-  // });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
+  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
+    if (index != -1) {
+      setMessage(tabbar_ids[index]);
+    }
+  });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [this](int index) {
+    tabbar_ids.removeAt(index);
+    tabbar->removeTab(index);
+    assert(tabbar_ids.size() == tabbar->count());
+  });
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
 
@@ -114,18 +117,21 @@ void DetailWidget::removeAll() {
   while (tabbar->count() > 0) {
     tabbar->removeTab(0);
   }
+  tabbar_ids.clear();
   tabbar->blockSignals(false);
   stacked_layout->setCurrentIndex(0);
 }
 
 void DetailWidget::setMessage(const MessageId &message_id) {
   msg_id = message_id;
-  int index = tabbar->count() - 1;
-  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id->toString(); --index) { /**/ } // TODO: don't use strings to find tabs
+  int index = tabbar_ids.indexOf(*msg_id);
+
   if (index == -1) {
+    tabbar_ids.append(*msg_id);
     index = tabbar->addTab(message_id.toString());
     tabbar->setTabToolTip(index, msgName(message_id));
   }
+  assert(tabbar->count() == tabbar_ids.size());
 
   setUpdatesEnabled(false);
 
