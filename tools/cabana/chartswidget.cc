@@ -11,9 +11,11 @@
 #include <QRubberBand>
 #include <QPushButton>
 #include <QToolBar>
+#include <QToolButton>
 #include <QToolTip>
 #include <QtConcurrent>
 
+const int MAX_COLUMN_COUNT = 4;
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
@@ -23,14 +25,17 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
   toolbar->setIconSize({16, 16});
 
-  QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), "");
-  new_plot_btn->setToolTip(tr("New Plot"));
+  QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), tr("New Plot"));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, 12, 0);
-  columns_cb = new QComboBox(this);
-  columns_cb->addItems({"1", "2", "3", "4"});
-  columns_lb_action = toolbar->addWidget(new QLabel(tr("Columns:")));
-  columns_cb_action = toolbar->addWidget(columns_cb);
+
+  QMenu *menu = new QMenu(this);
+  for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
+    menu->addAction(tr("%1").arg(i + 1), [=]() { setColumnCount(i + 1); });
+  }
+  columns_action = toolbar->addAction("");
+  columns_action->setMenu(menu);
+  qobject_cast<QToolButton*>(toolbar->widgetForAction(columns_action))->setPopupMode(QToolButton::InstantPopup);
 
   QLabel *stretch_label = new QLabel(this);
   stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -44,13 +49,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   range_slider->setPageStep(60);  // 1 min
   range_slider_action = toolbar->addWidget(range_slider);
 
-  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new QToolButton());
-  reset_zoom_btn->setIcon(utils::icon("zoom-out"));
-  reset_zoom_btn->setToolTip(tr("Reset zoom"));
-  reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  reset_zoom_action = toolbar->addAction(utils::icon("zoom-out"), tr("Reset Zoom"));
+  qobject_cast<QToolButton*>(toolbar->widgetForAction(reset_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  remove_all_btn = toolbar->addAction(utils::icon("x"), "");
-  remove_all_btn->setToolTip(tr("Remove all charts"));
+  remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
 
@@ -73,10 +75,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   // init settings
   use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
                    QApplication::style()->standardPalette().color(QPalette::Background).value();
-  column_count = std::clamp(settings.chart_column_count, 1, columns_cb->count());
+  column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
-  columns_cb->setCurrentIndex(column_count - 1);
   range_slider->setValue(max_chart_range);
   updateToolBar();
 
@@ -86,8 +87,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
-  QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
-  QObject::connect(columns_cb, SIGNAL(activated(int)), SLOT(setColumnCount(int)));
+  QObject::connect(reset_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
     emit dock(!docking);
@@ -162,11 +162,12 @@ void ChartsWidget::setMaxChartRange(int value) {
 
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
+  columns_action->setText(tr("Column: %1").arg(column_count));
   range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_btn->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
+  reset_zoom_action->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -211,29 +212,29 @@ void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bo
     chart->addSeries(id, sig);
     updateState();
   } else if (!show && chart) {
-    chart->removeSeries(id, sig);
+    chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }
   updateToolBar();
   setUpdatesEnabled(true);
 }
 
 void ChartsWidget::setColumnCount(int n) {
-  n = std::clamp(n + 1, 1, columns_cb->count());
+  n = std::clamp(n, 1, MAX_COLUMN_COUNT);
   if (column_count != n) {
     column_count = settings.chart_column_count = n;
+    updateToolBar();
     updateLayout();
   }
 }
 
 void ChartsWidget::updateLayout() {
-  int n = columns_cb->count();
+  int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
     if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
   }
 
   bool show_column_cb = n > 1;
-  columns_lb_action->setVisible(show_column_cb);
-  columns_cb_action->setVisible(show_column_cb);
+  columns_action->setVisible(show_column_cb);
 
   n = std::min(column_count, n);
   if (charts.size() != charts_layout->count() || n != current_column_count) {
@@ -305,7 +306,6 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 
 ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   series_type = settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter;
-
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
@@ -367,9 +367,6 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   if (hasSeries(msg_id, sig)) return;
 
   QXYSeries *series = createSeries(series_type, getColor(sig));
-  chart()->addSeries(series);
-  series->attachAxis(axis_x);
-  series->attachAxis(axis_y);
   auto [source, address] = DBCManager::parseId(msg_id);
   sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
   updateTitle();
@@ -378,30 +375,29 @@ void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
   emit seriesAdded(msg_id, sig);
 }
 
-void ChartView::removeSeries(const QString &msg_id, const Signal *sig) {
-  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
-  if (it != sigs.end()) {
-    it = removeItem(it);
-  }
-}
-
 bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
-QList<ChartView::SigItem>::iterator ChartView::removeItem(const QList<ChartView::SigItem>::iterator &it) {
-  chart()->removeSeries(it->series);
-  it->series->deleteLater();
-  QString msg_id = it->msg_id;
-  const Signal *sig = it->sig;
-  auto ret = sigs.erase(it);
-  emit seriesRemoved(msg_id, sig);
-  if (!sigs.isEmpty()) {
-    updateAxisY();
-  } else {
-    emit remove();
+void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
+  int prev_size = sigs.size();
+  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
+    if (predicate(*it)) {
+      chart()->removeSeries(it->series);
+      it->series->deleteLater();
+      auto msg_id = it->msg_id;
+      auto sig = it->sig;
+      it = sigs.erase(it);
+      emit seriesRemoved(msg_id, sig);
+    } else {
+      ++it;
+    }
   }
-  return ret;
+  if (sigs.empty()) {
+    emit remove();
+  } else if (sigs.size() != prev_size) {
+    updateAxisY();
+  }
 }
 
 void ChartView::signalUpdated(const Signal *sig) {
@@ -412,21 +408,9 @@ void ChartView::signalUpdated(const Signal *sig) {
   }
 }
 
-void ChartView::signalRemoved(const Signal *sig) {
-  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-    it = (it->sig == sig) ? removeItem(it) : ++it;
-  }
-}
-
 void ChartView::msgUpdated(uint32_t address) {
   if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; }))
     updateTitle();
-}
-
-void ChartView::msgRemoved(uint32_t address) {
-  for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-    it = (it->address == address) ? removeItem(it) : ++it;
-  }
 }
 
 void ChartView::manageSeries() {
@@ -436,19 +420,12 @@ void ChartView::manageSeries() {
   }
   if (dlg.exec() == QDialog::Accepted) {
     auto items = dlg.seletedItems();
-    if (items.isEmpty()) {
-      emit remove();
-    } else {
-      for (auto s : items) {
-        addSeries(s->msg_id, s->sig);
-      }
-      for (auto it = sigs.begin(); it != sigs.end(); /**/) {
-        bool exists = std::any_of(items.cbegin(), items.cend(), [&](auto &s) {
-          return s->msg_id == it->msg_id && s->sig == it->sig;
-        });
-        it = exists ? ++it : removeItem(it);
-      }
+    for (auto s : items) {
+      addSeries(s->msg_id, s->sig);
     }
+    removeIf([&](auto &s) {
+      return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
+    });
   }
 }
 
@@ -503,7 +480,7 @@ void ChartView::updateSeriesPoints() {
     int pixels_per_point = width() / num_points;
 
     if (series_type == QAbstractSeries::SeriesTypeScatter) {
-      ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 1, 8));
+      ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 2, 8));
     } else {
       s.series->setPointsVisible(pixels_per_point > 20);
     }
@@ -698,7 +675,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     text_list.push_front(QString::number(chart()->mapToValue(pt).x(), 'f', 3));
     QPointF tooltip_pt(pt.x() + 12, plot_area.top() - 20);
     QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), pt.isNull() ? "" : text_list.join("<br />"), this, plot_area.toRect());
-    scene()->update();
+    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   } else {
     QToolTip::hideText();
   }
@@ -795,6 +772,9 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
   pen.setWidth(2.0 * qApp->devicePixelRatio());
   series->setPen(pen);
 #endif
+  chart()->addSeries(series);
+  series->attachAxis(axis_x);
+  series->attachAxis(axis_y);
   return series;
 }
 
@@ -809,9 +789,6 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
     }
     for (auto &s : sigs) {
       auto series = createSeries(series_type, getColor(s.sig));
-      chart()->addSeries(series);
-      series->attachAxis(axis_x);
-      series->attachAxis(axis_y);
       series->replace(s.vals);
       s.series = series;
     }
