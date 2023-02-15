@@ -22,7 +22,7 @@
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
-  if (main_win) emit main_win->showMessage(msg, 0);
+  if (main_win) emit main_win->showMessage(msg, 2000);
 }
 
 MainWindow::MainWindow() : QMainWindow() {
@@ -45,7 +45,7 @@ MainWindow::MainWindow() : QMainWindow() {
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit showMessage(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 2000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
@@ -176,6 +176,7 @@ void MainWindow::createStatusBar() {
   progress_bar->setTextVisible(true);
   progress_bar->setFixedSize({230, 16});
   progress_bar->setVisible(false);
+  statusBar()->addWidget(new QLabel(tr("For Help,Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
 }
 
