@@ -459,16 +459,17 @@ void HelpOverlay::paintEvent(QPaintEvent *event) {
 
 void HelpOverlay::drawHelpForWidget(QPainter &painter, QWidget *w) {
   if (w && w->isVisible() && !w->whatsThis().isEmpty()) {
-    QTextDocument document;
-    document.setHtml(w->whatsThis());
-    QSize doc_size = document.size().toSize();
-    QPoint topleft = w->mapTo(parentWidget(), QPoint((w->rect().width() - doc_size.width()) / 2, (w->rect().height() - doc_size.height()) / 2));
-
-    painter.save();
-    painter.fillRect(QRect{topleft, doc_size}, palette().toolTipBase());
-    painter.translate(topleft);
-    document.drawContents(&painter);
-    painter.restore();
+    QPoint pt = mapFromGlobal(w->mapToGlobal(w->rect().center()));
+    if (rect().contains(pt)) {
+      QTextDocument document;
+      document.setHtml(w->whatsThis());
+      QSize doc_size = document.size().toSize();
+      QPoint topleft = {pt.x() - doc_size.width() / 2, pt.y() - doc_size.height() / 2};
+      painter.translate(topleft);
+      painter.fillRect(QRect{{0, 0}, doc_size}, palette().toolTipBase());
+      document.drawContents(&painter);
+      painter.translate(-topleft);
+    }
   }
 }
 
