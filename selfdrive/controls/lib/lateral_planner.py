@@ -52,10 +52,9 @@ class LateralPlanner:
   def update(self, sm, v_plan):
     # clip speed , lateral planning is not possible at 0 speed
     self.v_ego = max(MIN_SPEED, sm['carState'].vEgo)
-    v_plan = self.v_ego * np.ones(len(T_IDXS))
+    v_plan = np.clip(v_plan, MIN_SPEED, np.inf)
     self.v_plan = v_plan
-    plan_odo = np.concatenate(([0], np.cumsum(((v_plan[0:-1] + v_plan[1:])/2) * np.diff(T_IDXS))))
-    plan_odo = np.clip(plan_odo, MIN_SPEED, np.inf)[:LAT_MPC_N + 1]
+    plan_odo = np.concatenate(([0], np.cumsum(((v_plan[0:-1] + v_plan[1:])/2) * np.diff(T_IDXS))))[:LAT_MPC_N + 1]
     measured_curvature = sm['controlsState'].curvature
 
     # Parse model predictions
