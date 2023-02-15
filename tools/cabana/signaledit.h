@@ -37,7 +37,7 @@ public:
   QModelIndex parent(const QModelIndex &index) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-  void setMessage(const QString &id);
+  void setMessage(const MessageId &id);
   void setFilter(const QString &txt);
   void addSignal(int start_bit, int size, bool little_endian);
   bool saveSignal(const Signal *origin_s, Signal &s);
@@ -54,9 +54,9 @@ private:
   void handleSignalRemoved(const Signal *sig);
   void handleMsgChanged(uint32_t address);
   void refresh();
-  void updateState(const QHash<QString, CanData> *msgs);
+  void updateState(const QHash<MessageId, CanData> *msgs);
 
-  QString msg_id;
+  MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
   friend class SignalView;
@@ -76,7 +76,7 @@ class SignalView : public QWidget {
 
 public:
   SignalView(ChartsWidget *charts, QWidget *parent);
-  void setMessage(const QString &id);
+  void setMessage(const MessageId &id);
   void signalHovered(const Signal *sig);
   void updateChartState();
   void expandSignal(const Signal *sig);
@@ -85,13 +85,13 @@ public:
 
 signals:
   void highlight(const Signal *sig);
-  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
+  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
 
 private:
   void rowsChanged();
   void leaveEvent(QEvent *event);
 
-  QString msg_id;
+  MessageId msg_id;
   QTreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;

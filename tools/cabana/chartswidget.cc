@@ -181,7 +181,7 @@ void ChartsWidget::settingChanged() {
   }
 }
 
-ChartView *ChartsWidget::findChart(const QString &id, const Signal *sig) {
+ChartView *ChartsWidget::findChart(const MessageId &id, const Signal *sig) {
   for (auto c : charts)
     if (c->hasSeries(id, sig)) return c;
   return nullptr;
@@ -204,7 +204,7 @@ ChartView *ChartsWidget::createChart() {
   return chart;
 }
 
-void ChartsWidget::showChart(const QString &id, const Signal *sig, bool show, bool merge) {
+void ChartsWidget::showChart(const MessageId &id, const Signal *sig, bool show, bool merge) {
   setUpdatesEnabled(false);
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
@@ -363,19 +363,18 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
 }
 
-void ChartView::addSeries(const QString &msg_id, const Signal *sig) {
+void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
   if (hasSeries(msg_id, sig)) return;
 
   QXYSeries *series = createSeries(series_type, getColor(sig));
-  auto [source, address] = DBCManager::parseId(msg_id);
-  sigs.push_back({.msg_id = msg_id, .address = address, .source = source, .sig = sig, .series = series});
+  sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
   updateTitle();
   updateSeries(sig);
   updateSeriesPoints();
   emit seriesAdded(msg_id, sig);
 }
 
-bool ChartView::hasSeries(const QString &msg_id, const Signal *sig) const {
+bool ChartView::hasSeries(const MessageId &msg_id, const Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
@@ -409,7 +408,7 @@ void ChartView::signalUpdated(const Signal *sig) {
 }
 
 void ChartView::msgUpdated(uint32_t address) {
-  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.address == address; }))
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id.address == address; }))
     updateTitle();
 }
 
@@ -455,7 +454,7 @@ void ChartView::updateTitle() {
   }
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
-    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name.c_str(), msgName(s.msg_id), s.msg_id));
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name.c_str(), msgName(s.msg_id), s.msg_id.toString()));
   }
 }
 
@@ -517,7 +516,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
         for (auto it = chunk.first; it != chunk.second; ++it) {
           if ((*it)->which == cereal::Event::Which::CAN) {
             for (const auto &c : (*it)->event.getCan()) {
-              if (s.address == c.getAddress() && s.source == c.getSrc()) {
+              if (s.msg_id.address == c.getAddress() && s.msg_id.source == c.getSrc()) {
                 auto dat = c.getDat();
                 double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
                 double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
@@ -847,7 +846,7 @@ SeriesSelector::SeriesSelector(QString title, QWidget *parent) : QDialog(parent)
 
   for (auto it = can->can_msgs.cbegin(); it != can->can_msgs.cend(); ++it) {
     if (auto m = dbc()->msg(it.key())) {
-      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(it.key()), it.key());
+      msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(it.key().toString()), QVariant::fromValue(it.key()));
     }
   }
   msgs_combo->model()->sort(0);
@@ -872,7 +871,7 @@ void SeriesSelector::add(QListWidgetItem *item) {
 
 void SeriesSelector::remove(QListWidgetItem *item) {
   auto it = (ListItem *)item;
-  if (it->msg_id == msgs_combo->currentData().toString()) {
+  if (it->msg_id == msgs_combo->currentData().value<MessageId>()) {
     addItemToList(available_list, it->msg_id, it->sig);
   }
   delete item;
@@ -881,7 +880,7 @@ void SeriesSelector::remove(QListWidgetItem *item) {
 void SeriesSelector::updateAvailableList(int index) {
   if (index == -1) return;
   available_list->clear();
-  QString msg_id = msgs_combo->itemData(index).toString();
+  MessageId msg_id = msgs_combo->itemData(index).value<MessageId>();
   auto selected_items = seletedItems();
   for (auto &[name, s] : dbc()->msg(msg_id)->sigs) {
     bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig=&s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
@@ -891,9 +890,9 @@ void SeriesSelector::updateAvailableList(int index) {
   }
 }
 
-void SeriesSelector::addItemToList(QListWidget *parent, const QString id, const Signal *sig, bool show_msg_name) {
+void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const Signal *sig, bool show_msg_name) {
   QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name.c_str());
-  if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id);
+  if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
 
   QLabel *label = new QLabel(text);
   label->setContentsMargins(5, 0, 5, 0);
