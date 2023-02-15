@@ -46,12 +46,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
-  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(current_msg_id); });
+  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(*current_msg_id); });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
-      if (model->msgs[current.row()] != current_msg_id) {
+      if (model->msgs[current.row()] != *current_msg_id) {
         current_msg_id = model->msgs[current.row()];
-        emit msgSelectionChanged(current_msg_id);
+        emit msgSelectionChanged(*current_msg_id);
       }
     }
   });
@@ -67,7 +67,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   updateSuppressedButtons();
 }
 
-void MessagesWidget::selectMessage(const QString &msg_id) {
+void MessagesWidget::selectMessage(const MessageId &msg_id) {
   if (int row = model->msgs.indexOf(msg_id); row != -1) {
     table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
@@ -86,7 +86,7 @@ void MessagesWidget::updateSuppressedButtons() {
 void MessagesWidget::reset() {
   model->reset();
   filter->clear();
-  current_msg_id = "";
+  current_msg_id = std::nullopt;
   updateSuppressedButtons();
 }
 
@@ -106,7 +106,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case 0: return msgName(id);
-      case 1: return id;
+      case 1: return id.toString(); // TODO: put source and address in separate columns
       case 2: return can_data.freq;
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
@@ -128,9 +128,9 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 }
 
 void MessageListModel::setFilterString(const QString &string) {
-  auto contains = [](const QString &id, const QString &txt) {
+  auto contains = [](const MessageId &id, const QString &txt) {
     auto cs = Qt::CaseInsensitive;
-    if (id.contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
+    if (id.toString().contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
     // Search by signal name
     if (const auto msg = dbc()->msg(id)) {
       for (auto &signal : msg->getSignals()) {
@@ -151,36 +151,37 @@ void MessageListModel::setFilterString(const QString &string) {
 }
 
 void MessageListModel::sortMessages() {
+  // TODO: Add proper comparison operators to MessageId
   beginResetModel();
   if (sort_column == 0) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{msgName(l), l};
-      auto rr = std::pair{msgName(r), r};
+      auto ll = std::pair{msgName(l), l.source};
+      auto rr = std::pair{msgName(r), r.source};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = DBCManager::parseId(l);
-      auto rr = DBCManager::parseId(r);
+      auto ll = std::pair{l.source, l.address};
+      auto rr = std::pair{r.source, r.address};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 2) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).freq, l};
-      auto rr = std::pair{can->lastMessage(r).freq, r};
+      auto ll = std::pair{can->lastMessage(l).freq, l.source};
+      auto rr = std::pair{can->lastMessage(r).freq, r.source};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 3) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).count, l};
-      auto rr = std::pair{can->lastMessage(r).count, r};
+      auto ll = std::pair{can->lastMessage(l).count, l.source};
+      auto rr = std::pair{can->lastMessage(r).count, r.source};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   }
   endResetModel();
 }
 
-void MessageListModel::msgsReceived(const QHash<QString, CanData> *new_msgs) {
+void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
   if (filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
     msgs = can->can_msgs.keys();

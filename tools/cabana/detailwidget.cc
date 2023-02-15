@@ -84,11 +84,12 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &DetailWidget::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
-  QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-    if (index != -1 && tabbar->tabText(index) != msg_id) {
-      setMessage(tabbar->tabText(index));
-    }
-  });
+  // FIXME: keep track of message ids with separate list
+  // QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
+  //   if (index != -1 && tabbar->tabText(index) != msg_id.toString()) {
+  //     setMessage(tabbar->tabText(index));
+  //   }
+  // });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
@@ -108,7 +109,7 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 }
 
 void DetailWidget::removeAll() {
-  msg_id = "";
+  msg_id = std::nullopt;
   tabbar->blockSignals(true);
   while (tabbar->count() > 0) {
     tabbar->removeTab(0);
@@ -117,20 +118,20 @@ void DetailWidget::removeAll() {
   stacked_layout->setCurrentIndex(0);
 }
 
-void DetailWidget::setMessage(const QString &message_id) {
+void DetailWidget::setMessage(const MessageId &message_id) {
   msg_id = message_id;
   int index = tabbar->count() - 1;
-  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id; --index) { /**/ }
+  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id->toString(); --index) { /**/ } // TODO: don't use strings to find tabs
   if (index == -1) {
-    index = tabbar->addTab(message_id);
+    index = tabbar->addTab(message_id.toString());
     tabbar->setTabToolTip(index, msgName(message_id));
   }
 
   setUpdatesEnabled(false);
 
-  signal_view->setMessage(msg_id);
-  binary_view->setMessage(msg_id);
-  history_log->setMessage(msg_id);
+  signal_view->setMessage(*msg_id);
+  binary_view->setMessage(*msg_id);
+  history_log->setMessage(*msg_id);
 
   stacked_layout->setCurrentIndex(1);
   tabbar->setCurrentIndex(index);
@@ -141,12 +142,12 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::refresh() {
-  if (msg_id.isEmpty()) return;
+  if (!msg_id) return;
 
   QStringList warnings;
-  const DBCMsg *msg = dbc()->msg(msg_id);
+  const DBCMsg *msg = dbc()->msg(*msg_id);
   if (msg) {
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (msg->size != can->lastMessage(*msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
@@ -156,7 +157,7 @@ void DetailWidget::refresh() {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
   remove_msg_act->setEnabled(msg != nullptr);
-  name_label->setText(msgName(msg_id));
+  name_label->setText(msgName(*msg_id));
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
@@ -165,9 +166,9 @@ void DetailWidget::refresh() {
   warning_widget->setVisible(!warnings.isEmpty());
 }
 
-void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
+void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
+  if (!msg_id || (msgs && !msgs->contains(*msg_id)))
     return;
 
   if (tab_widget->currentIndex() == 0)
@@ -177,24 +178,24 @@ void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
 }
 
 void DetailWidget::editMsg() {
-  QString id = msg_id;
+  MessageId id = *msg_id;
   auto msg = dbc()->msg(id);
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    UndoStack::push(new EditMsgCommand(*msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  UndoStack::push(new RemoveMsgCommand(msg_id));
+  UndoStack::push(new RemoveMsgCommand(*msg_id));
 }
 
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent)
+EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent)
     : original_name(title), QDialog(parent) {
-  setWindowTitle(tr("Edit message: %1").arg(msg_id));
+  setWindowTitle(tr("Edit message: %1").arg(msg_id.toString()));
   QFormLayout *form_layout = new QFormLayout(this);
 
   form_layout->addRow("", error_label = new QLabel);

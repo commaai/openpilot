@@ -4,12 +4,12 @@ AbstractStream *can = nullptr;
 
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
-  new_msgs = std::make_unique<QHash<QString, CanData>>();
+  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
 }
 
-void AbstractStream::process(QHash<QString, CanData> *messages) {
+void AbstractStream::process(QHash<MessageId, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     can_msgs[it.key()] = it.value();
   }
@@ -25,7 +25,7 @@ bool AbstractStream::updateEvent(const Event *event) {
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = event->mono_time / 1e9 - routeStartTime();
     for (const auto &c : event->event.getCan()) {
-      QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
+      MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
@@ -44,14 +44,14 @@ bool AbstractStream::updateEvent(const Event *event) {
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
-      new_msgs.reset(new QHash<QString, CanData>);
+      new_msgs.reset(new QHash<MessageId, CanData>);
       new_msgs->reserve(100);
     }
   }
   return true;
 }
 
-const CanData &AbstractStream::lastMessage(const QString &id) {
+const CanData &AbstractStream::lastMessage(const MessageId &id) {
   static CanData empty_data;
   auto it = can_msgs.find(id);
   return it != can_msgs.end() ? it.value() : empty_data;
@@ -87,7 +87,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   counters.clear();
   can_msgs.clear();
   for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {
-    QString msg_id = QString("%1:%2").arg(it.key().first).arg(it.key().second, 1, 16);
+    MessageId msg_id = {.source = it.key().first, .address = it.key().second};
     can_msgs[msg_id] = it.value();
     counters[msg_id] = it.value().count;
   }
