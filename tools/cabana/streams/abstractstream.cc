@@ -58,7 +58,7 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) {
 }
 
 void AbstractStream::updateLastMsgsTo(double sec) {
-  QHash<std::pair<uint8_t, uint32_t>, CanData> last_msgs;  // Much faster than QHash<String, CanData>
+  QHash<MessageId, CanData> last_msgs;
   last_msgs.reserve(can_msgs.size());
   double route_start_time = routeStartTime();
   uint64_t last_ts = (sec + route_start_time) * 1e9;
@@ -66,7 +66,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   for (auto it = last; it != events()->rend(); ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        auto &m = last_msgs[{c.getSrc(), c.getAddress()}];
+        auto &m = last_msgs[{.source = c.getSrc(), .address = c.getAddress()}];
         if (++m.count == 1) {
           m.ts = ((*it)->mono_time / 1e9) - route_start_time;
           m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
@@ -87,9 +87,8 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   counters.clear();
   can_msgs.clear();
   for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {
-    MessageId msg_id = {.source = it.key().first, .address = it.key().second};
-    can_msgs[msg_id] = it.value();
-    counters[msg_id] = it.value().count;
+    can_msgs[it.key()] = it.value();
+    counters[it.key()] = it.value().count;
   }
   emit updated();
   emit msgsReceived(&can_msgs);
