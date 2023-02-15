@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QApplication>
 #include <QList>
 #include <QSet>
@@ -46,7 +48,7 @@ public:
   };
   std::vector<Item> items;
 
-  QString msg_id;
+  std::optional<MessageId> msg_id;
   const DBCMsg *dbc_msg = nullptr;
   int row_count = 0;
   const int column_count = 9;
@@ -57,7 +59,7 @@ class BinaryView : public QTableView {
 
 public:
   BinaryView(QWidget *parent = nullptr);
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
@@ -70,7 +72,7 @@ signals:
   void resizeSignal(const Signal *sig, int from, int size);
   void removeSignal(const Signal *sig);
   void editSignal(const Signal *origin_s, Signal &s);
-  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
+  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
 
 private:
   void addShortcuts();

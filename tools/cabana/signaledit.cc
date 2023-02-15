@@ -31,7 +31,7 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Sign
   }
 }
 
-void SignalModel::setMessage(const QString &id) {
+void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
   filter_str = "";
   refresh();
@@ -56,7 +56,7 @@ void SignalModel::refresh() {
   endResetModel();
 }
 
-void SignalModel::updateState(const QHash<QString, CanData> *msgs) {
+void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || (msgs->contains(msg_id))) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
@@ -230,13 +230,13 @@ void SignalModel::removeSignal(const Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(uint32_t address) {
-  if (address == DBCManager::parseId(msg_id).second) {
+  if (address == msg_id.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
-  if (address == DBCManager::parseId(msg_id).second) {
+  if (address == msg_id.address) {
     int i = 0;
     for (; i < root->children.size(); ++i) {
       if (sig->start_bit < root->children[i]->sig->start_bit) break;
@@ -367,7 +367,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { expandSignal(sig); });
 }
 
-void SignalView::setMessage(const QString &id) {
+void SignalView::setMessage(const MessageId &id) {
   msg_id = id;
   filter_edit->clear();
   model->setMessage(id);
