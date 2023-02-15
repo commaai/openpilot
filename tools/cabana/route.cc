@@ -125,7 +125,6 @@ void RemoteRouteList::getDevices() {
 
 void RemoteRouteList::getRouteList(const QString &dongleid) {
   list->clear();
-  qDebug() << dongleid;
   HttpRequest *http = new HttpRequest(this, false);
   QObject::connect(http, &HttpRequest::requestDone, [=](const QString &json, bool success, QNetworkReply::NetworkError error) {
     if (success) {
