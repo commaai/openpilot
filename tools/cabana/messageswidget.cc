@@ -151,30 +151,27 @@ void MessageListModel::setFilterString(const QString &string) {
 }
 
 void MessageListModel::sortMessages() {
-  // TODO: Add proper comparison operators to MessageId
   beginResetModel();
   if (sort_column == 0) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{msgName(l), l.source};
-      auto rr = std::pair{msgName(r), r.source};
+      auto ll = std::pair{msgName(l), l};
+      auto rr = std::pair{msgName(r), r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{l.source, l.address};
-      auto rr = std::pair{r.source, r.address};
-      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
+      return sort_order == Qt::AscendingOrder ? l < r : l > r;
     });
   } else if (sort_column == 2) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).freq, l.source};
-      auto rr = std::pair{can->lastMessage(r).freq, r.source};
+      auto ll = std::pair{can->lastMessage(l).freq, l};
+      auto rr = std::pair{can->lastMessage(r).freq, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 3) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = std::pair{can->lastMessage(l).count, l.source};
-      auto rr = std::pair{can->lastMessage(r).count, r.source};
+      auto ll = std::pair{can->lastMessage(l).count, l};
+      auto rr = std::pair{can->lastMessage(r).count, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   }

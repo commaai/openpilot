@@ -20,6 +20,14 @@ struct MessageId {
   bool operator!=(const MessageId &other) const {
     return !(*this == other);
   }
+
+  bool operator<(const MessageId &other) const {
+    return std::pair{source, address} < std::pair{other.source, other.address};
+  }
+
+  bool operator>(const MessageId &other) const {
+    return std::pair{source, address} > std::pair{other.source, other.address};
+  }
 };
 
 Q_DECLARE_METATYPE(MessageId);
