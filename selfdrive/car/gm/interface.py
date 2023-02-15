@@ -204,8 +204,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.95  # 116 inches in meters
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.longitudinalTuning.kpV = [3.5, 2.18]
-
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.ESCALADE_ESV:
