@@ -68,6 +68,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
+  QFont small_font;
 };
 
 class SignalView : public QWidget {
@@ -88,6 +89,7 @@ signals:
 
 private:
   void rowsChanged();
+  void leaveEvent(QEvent *event);
 
   QString msg_id;
   QTreeView *tree;

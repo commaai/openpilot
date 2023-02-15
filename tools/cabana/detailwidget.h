@@ -1,10 +1,12 @@
 #pragma once
 
+#include <QDialogButtonBox>
 #include <QSplitter>
 #include <QStackedLayout>
 #include <QTabWidget>
 #include <QToolBar>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
 #include "tools/cabana/chartswidget.h"
 #include "tools/cabana/historylog.h"
@@ -13,8 +15,12 @@
 class EditMessageDialog : public QDialog {
 public:
   EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
+  void validateName(const QString &text);
 
+  QString original_name;
+  QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
+  QLabel *error_label;
   QSpinBox *size_spin;
 };
 
@@ -40,7 +46,8 @@ private:
   void updateState(const QHash<QString, CanData> * msgs = nullptr);
 
   QString msg_id;
-  QLabel *name_label, *time_label, *warning_icon, *warning_label;
+  QLabel *time_label, *warning_icon, *warning_label;
+  ElidedLabel *name_label;
   QWidget *warning_widget;
   QTabBar *tabbar;
   QTabWidget *tab_widget;
