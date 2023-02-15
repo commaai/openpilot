@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 from cereal import car
+import numpy as np
+from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_LONG
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog
@@ -32,7 +35,7 @@ def plannerd_thread(sm=None, pm=None):
     if sm.updated['modelV2']:
       longitudinal_planner.update(sm)
       longitudinal_planner.publish(sm, pm)
-      lateral_planner.update(sm, longitudinal_planner.mpc.v_solution)
+      lateral_planner.update(sm, np.interp(T_IDXS, T_IDXS_LONG, longitudinal_planner.mpc.v_solution))
       lateral_planner.publish(sm, pm)
 
 
