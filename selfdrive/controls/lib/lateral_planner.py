@@ -17,12 +17,12 @@ CAMERA_OFFSET = 0.04
 PATH_COST = 1.0
 LATERAL_MOTION_COST = 0.11
 LATERAL_ACCEL_COST = 0.0
-LATERAL_JERK_COST = 0.05
+LATERAL_JERK_COST = 0.04
 # Extreme steering rate is unpleasant, even
 # when it does not cause bad jerk.
 # TODO this cost should be lowered when low
 # speed lateral control is stable on all cars
-STEERING_RATE_COST = 800.0
+STEERING_RATE_COST = 700.0
 
 
 class LateralPlanner:
@@ -49,12 +49,8 @@ class LateralPlanner:
     self.x0 = x0
     self.lat_mpc.reset(x0=self.x0)
 
-  def update(self, sm, v_plan):
+  def update(self, sm):
     # clip speed , lateral planning is not possible at 0 speed
-    self.v_ego = max(MIN_SPEED, sm['carState'].vEgo)
-    v_plan = np.clip(v_plan, MIN_SPEED, np.inf)
-    self.v_plan = v_plan
-    plan_odo = np.concatenate(([0], np.cumsum(((v_plan[0:-1] + v_plan[1:])/2) * np.diff(T_IDXS))))[:LAT_MPC_N + 1]
     measured_curvature = sm['controlsState'].curvature
 
     # Parse model predictions
@@ -66,7 +62,8 @@ class LateralPlanner:
       self.plan_yaw_rate = np.array(md.orientationRate.z)
       self.velocity_xyz = np.column_stack([md.velocity.x, md.velocity.y, md.velocity.z])
       car_speed = np.linalg.norm(self.velocity_xyz, axis=1)
-      self.model_odo = np.concatenate(([0], np.cumsum(((car_speed[0:-1] + car_speed[1:])/2) * np.diff(self.t_idxs))))
+      self.v_plan = np.clip(car_speed, MIN_SPEED, np.inf)
+      self.v_ego = self.v_plan[0]
 
     # Lane change logic
     desire_state = md.meta.desireState
@@ -80,12 +77,9 @@ class LateralPlanner:
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
                              STEERING_RATE_COST)
 
-    y_pts = np.interp(plan_odo, self.model_odo, self.path_xyz[:, 1])
-    heading_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw)
-    yaw_rate_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw_rate)
-    #y_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.path_xyz[:, 1])
-    #heading_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
-    #yaw_rate_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
+    y_pts = self.path_xyz[:LAT_MPC_N+1, 1]
+    heading_pts = self.plan_yaw[:LAT_MPC_N+1]
+    yaw_rate_pts = self.plan_yaw_rate[:LAT_MPC_N+1]
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
