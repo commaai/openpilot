@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QComboBox>
 #include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
@@ -8,7 +7,6 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QSlider>
-#include <QToolButton>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
@@ -28,7 +26,6 @@ class ChartView : public QChartView {
 public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const QString &msg_id, const Signal *sig);
-  void removeSeries(const QString &msg_id, const Signal *sig);
   bool hasSeries(const QString &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
@@ -54,15 +51,14 @@ signals:
   void axisYLabelWidthChanged(int w);
 
 private slots:
-  void msgRemoved(uint32_t address);
   void msgUpdated(uint32_t address);
   void signalUpdated(const Signal *sig);
-  void signalRemoved(const Signal *sig);
   void manageSeries();
   void handleMarkerClicked();
+  void msgRemoved(uint32_t address) { removeIf([=](auto &s) { return s.address == address; }); }
+  void signalRemoved(const Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
-  QList<ChartView::SigItem>::iterator removeItem(const QList<ChartView::SigItem>::iterator &it);
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -78,6 +74,7 @@ private:
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(QAbstractSeries::SeriesType type, QColor color);
   void updateSeriesPoints();
+  void removeIf(std::function<bool(const SigItem &)> predicate);
 
   int y_label_width = 0;
   int align_to = 0;
@@ -139,7 +136,6 @@ private:
   bool docking = true;
   QAction *dock_btn;
   QAction *reset_zoom_action;
-  QToolButton *reset_zoom_btn;
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
@@ -148,9 +144,7 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   bool use_dark_theme = false;
-  QAction *columns_lb_action;
-  QAction *columns_cb_action;
-  QComboBox *columns_cb;
+  QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
 };
