@@ -5,8 +5,7 @@
 #include <QVector>
 
 uint qHash(const MessageId &item) {
-  // TODO: faster hash function?
-  return qHash(item.toString());
+  return qHash(item.source) ^ qHash(item.address);
 }
 
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
