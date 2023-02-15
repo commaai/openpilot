@@ -1545,7 +1545,7 @@ DBC = {
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
   CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
-  CAR.HRV_2023: dbc_dict('honda_hrv_2023_can_generated', None),
+  CAR.HRV_2023: dbc_dict('honda_civic_ex_2022_can_generated', None),
 }
 
 STEER_THRESHOLD = {
