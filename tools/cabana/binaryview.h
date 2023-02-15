@@ -13,6 +13,8 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
+  bool isSameColor(const QModelIndex &index, int dx, int dy) const;
+  void drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
   QFont small_font, hex_font;
   QColor selection_color;
@@ -66,8 +68,12 @@ signals:
   void signalHovered(const Signal *sig);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
+  void removeSignal(const Signal *sig);
+  void editSignal(const Signal *origin_s, Signal &s);
+  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
 
 private:
+  void addShortcuts();
   void refresh();
   std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;
