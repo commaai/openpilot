@@ -257,7 +257,8 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
   lb->setAlignment(Qt::AlignHCenter);
   main_layout->addWidget(lb);
   main_layout->addLayout(newShortcutRow("Pause", "Space"));
-  main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
+  main_layout->addLayout(newShortcutRow("Help", "F1"));
+  main_layout->addLayout(newShortcutRow("WhatsThis", "Shift+F1"));
   main_layout->addStretch(0);
 
   setStyleSheet("QLabel{color:darkGray;}");

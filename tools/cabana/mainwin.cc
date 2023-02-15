@@ -9,7 +9,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QResizeEvent>
 #include <QShortcut>
+#include <QTextDocument>
 #include <QUndoView>
 #include <QVBoxLayout>
 #include <QWidgetAction>
@@ -126,6 +128,7 @@ void MainWindow::createActions() {
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
 }
 
 void MainWindow::createDockWindows() {
@@ -421,4 +424,61 @@ void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg->show();
+}
+
+void MainWindow::onlineHelp() {
+  if (auto help = findChild<HelpOverlay*>()) {
+    help->close();
+  } else {
+    help = new HelpOverlay(this);
+    help->setGeometry(rect());
+    help->show();
+    help->raise();
+  }
+}
+
+// HelpOverlay
+HelpOverlay::HelpOverlay(MainWindow *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_NoSystemBackground, true);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose);
+  parent->installEventFilter(this);
+}
+
+void HelpOverlay::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.fillRect(rect(), QColor(0, 0, 0, 50));
+  MainWindow *parent = (MainWindow *)parentWidget();
+  drawHelpForWidget(painter, parent->findChild<MessagesWidget *>());
+  drawHelpForWidget(painter, parent->findChild<BinaryView *>());
+  drawHelpForWidget(painter, parent->findChild<SignalView *>());
+  drawHelpForWidget(painter, parent->findChild<ChartsWidget *>());
+  drawHelpForWidget(painter, parent->findChild<VideoWidget *>());
+}
+
+void HelpOverlay::drawHelpForWidget(QPainter &painter, QWidget *w) {
+  if (w && w->isVisible() && !w->whatsThis().isEmpty()) {
+    QTextDocument document;
+    document.setHtml(w->whatsThis());
+    QSize doc_size = document.size().toSize();
+    QPoint topleft = w->mapTo(parentWidget(), QPoint((w->rect().width() - doc_size.width()) / 2, (w->rect().height() - doc_size.height()) / 2));
+
+    painter.save();
+    painter.fillRect(QRect{topleft, doc_size}, palette().toolTipBase());
+    painter.translate(topleft);
+    document.drawContents(&painter);
+    painter.restore();
+  }
+}
+
+bool HelpOverlay::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == parentWidget() && event->type() == QEvent::Resize) {
+    QResizeEvent *resize_event = (QResizeEvent *)(event);
+    setGeometry(QRect{QPoint(0, 0), resize_event->size()});
+  }
+  return false;
+}
+
+void HelpOverlay::mouseReleaseEvent(QMouseEvent *event) {
+  close();
 }
