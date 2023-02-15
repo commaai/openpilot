@@ -267,6 +267,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
 
+     elif candidate in (CAR.HRV_2023):
+      ret.mass = 1305. + STD_CARGO_KG
+      ret.wheelbase = 2.61
+      ret.centerToFront = ret.wheelbase * 0.41
+	  #the remaining parameters were copied from Civic 2022
+      ret.steerRatio = 15.38
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 1.
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      
     else:
       raise ValueError(f"unsupported car {candidate}")
 
