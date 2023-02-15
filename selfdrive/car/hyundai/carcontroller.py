@@ -53,7 +53,6 @@ class CarController:
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
-    self.resume_count = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -169,11 +168,10 @@ class CarController:
           # send resume at a max freq of 10Hz
           if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
             # send 25 messages at a time to increases the likelihood of resume being accepted
-            can_sends.extend([hyundaican.create_clu11(self.packer, self.resume_count, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
-            self.resume_count += 1
-            if self.resume_count > 5:
+            resume_count = self.frame - self.last_button_frame - 10 - 1
+            can_sends.extend([hyundaican.create_clu11(self.packer, resume_count, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
+            if (self.frame - self.last_button_frame) * DT_CTRL > 0.15:
               self.last_button_frame = self.frame
-              self.resume_count = 0
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
