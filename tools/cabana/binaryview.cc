@@ -46,7 +46,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
     <b>Binary View</b><br/>
     <!-- TODO: add descprition here -->
     Shortcuts:<br />
-    Delte Signal:
+    Delete Signal:
       <span style="background-color:lightGray;color:gray"> x </span>,
       <span style="background-color:lightGray;color:gray"> Backspace </span>,
       <span style="background-color:lightGray;color:gray"> Delete</span><br />
