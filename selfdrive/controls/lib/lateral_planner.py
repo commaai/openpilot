@@ -80,12 +80,12 @@ class LateralPlanner:
                              LATERAL_ACCEL_COST, LATERAL_JERK_COST,
                              STEERING_RATE_COST)
 
-    #y_pts = np.interp(plan_odo, self.model_odo, self.path_xyz[:, 1])
-    #heading_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw)
-    #yaw_rate_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw_rate)
-    y_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.path_xyz[:, 1])
-    heading_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
-    yaw_rate_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
+    y_pts = np.interp(plan_odo, self.model_odo, self.path_xyz[:, 1])
+    heading_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw)
+    yaw_rate_pts = np.interp(plan_odo, self.model_odo, self.plan_yaw_rate)
+    #y_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.path_xyz[:, 1])
+    #heading_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    #yaw_rate_pts = np.interp(plan_odo, np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw_rate)
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
