@@ -57,6 +57,8 @@ class Request:
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
+  # FW responses from these queries will not be used for fingerprinting
+  logging: bool = False
 
 
 @dataclass
