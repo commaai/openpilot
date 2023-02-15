@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <optional>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
@@ -22,7 +24,7 @@ class HistoryLogModel : public QAbstractTableModel {
 
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -52,7 +54,7 @@ public:
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
-  QString msg_id;
+  std::optional<MessageId> msg_id;
   ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
@@ -71,7 +73,7 @@ class LogsWidget : public QWidget {
 
 public:
   LogsWidget(QWidget *parent);
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
   void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
 
