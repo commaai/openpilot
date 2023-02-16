@@ -17,8 +17,8 @@ def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvatur
   curv_rate_pts = np.zeros(LAT_MPC_N + 1)
 
   x0 = np.array([x_init, y_init, psi_init, curvature_init])
-  p = np.column_stack([v_ref * np.ones(LAT_MPC_N),
-                      CAR_ROTATION_RADIUS * np.ones(LAT_MPC_N)])
+  p = np.column_stack([v_ref * np.ones(LAT_MPC_N + 1),
+                      CAR_ROTATION_RADIUS * np.ones(LAT_MPC_N + 1)])
 
   # converge in no more than 10 iterations
   for _ in range(10):
