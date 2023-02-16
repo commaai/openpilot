@@ -35,7 +35,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
@@ -44,7 +44,7 @@ int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const
   return max_idx;
 }
 
-void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
@@ -54,7 +54,7 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
   }
 }
 
-void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   QPolygonF left_points, right_points;
@@ -79,9 +79,11 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
   *pvd = left_points + right_points;
 }
 
-void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+void update_model(UIState *s, 
+                  const cereal::ModelDataV2::Reader &model,
+                  const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
-  auto model_position = model.getPosition();
+  auto model_position = plan.getPosition();
   float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
@@ -248,6 +250,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
     "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
+    "uiPlan",
   });
 
   Params params;
