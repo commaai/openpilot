@@ -50,12 +50,9 @@ class Pc(HardwareBase):
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
 
-  def get_usb_present(self):
-    return False
-
   def get_current_power_draw(self):
     return 0
-  
+
   def get_som_power_draw(self):
     return 0
 

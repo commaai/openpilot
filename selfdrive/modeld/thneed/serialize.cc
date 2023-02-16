@@ -14,9 +14,9 @@ void Thneed::load(const char *filename) {
 
   string buf = util::read_file(filename);
   int jsz = *(int *)buf.data();
-  string err;
+  string jsonerr;
   string jj(buf.data() + sizeof(int), jsz);
-  Json jdat = Json::parse(jj, err);
+  Json jdat = Json::parse(jj, jsonerr);
 
   map<cl_mem, cl_mem> real_mem;
   real_mem[NULL] = NULL;
@@ -33,11 +33,14 @@ void Thneed::load(const char *filename) {
       assert(mobj["needs_load"].bool_value() == false);
     } else {
       if (mobj["needs_load"].bool_value()) {
-        //printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, &buf[ptr], NULL);
+        if (debug >= 1) printf("loading %p %d @ 0x%X\n", clbuf, sz, ptr);
         ptr += sz;
       } else {
-        clbuf = clCreateBuffer(context, CL_MEM_READ_WRITE, sz, NULL, NULL);
+        // TODO: is there a faster way to init zeroed out buffers?
+        void *host_zeros = calloc(sz, 1);
+        clbuf = clCreateBuffer(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, sz, host_zeros, NULL);
+        free(host_zeros);
       }
     }
     assert(clbuf != NULL);
@@ -48,13 +51,33 @@ void Thneed::load(const char *filename) {
       desc.image_width = mobj["width"].int_value();
       desc.image_height = mobj["height"].int_value();
       desc.image_row_pitch = mobj["row_pitch"].int_value();
+      assert(sz == desc.image_height*desc.image_row_pitch);
+#ifdef QCOM2
       desc.buffer = clbuf;
-
-      cl_image_format format;
+#else
+      // TODO: we are creating unused buffers on PC
+      clReleaseMemObject(clbuf);
+#endif
+      cl_image_format format = {0};
       format.image_channel_order = CL_RGBA;
-      format.image_channel_data_type = CL_HALF_FLOAT;
+      format.image_channel_data_type = mobj["float32"].bool_value() ? CL_FLOAT : CL_HALF_FLOAT;
 
-      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, NULL);
+      cl_int errcode;
+
+#ifndef QCOM2
+      if (mobj["needs_load"].bool_value()) {
+        clbuf = clCreateImage(context, CL_MEM_COPY_HOST_PTR | CL_MEM_READ_WRITE, &format, &desc, &buf[ptr-sz], &errcode);
+      } else {
+        clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+      }
+#else
+      clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
+#endif
+      if (clbuf == NULL) {
+        printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer
+        );
+      }
       assert(clbuf != NULL);
     }
 
@@ -65,6 +88,30 @@ void Thneed::load(const char *filename) {
   for (const auto &[name, source] : jdat["programs"].object_items()) {
     if (debug >= 1) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
     g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
+  }
+
+  for (auto &obj : jdat["inputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    input_clmem.push_back(aa);
+    input_sizes.push_back(sz);
+    printf("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+
+    cl_int cl_err;
+    void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
+    if (cl_err != CL_SUCCESS) printf("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
+    assert(cl_err == CL_SUCCESS);
+    inputs.push_back(ret);
+  }
+
+  for (auto &obj : jdat["outputs"].array_items()) {
+    auto mobj = obj.object_items();
+    int sz = mobj["size"].int_value();
+    printf("Thneed::save: adding output with size %d\n", sz);
+    // TODO: support multiple outputs
+    output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
+    assert(output != NULL);
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
@@ -105,154 +152,3 @@ void Thneed::load(const char *filename) {
 
   clFinish(command_queue);
 }
-
-void Thneed::save(const char *filename, bool save_binaries) {
-  printf("Thneed::save: saving to %s\n", filename);
-
-  // get kernels
-  std::vector<Json> kernels;
-  std::set<string> saved_objects;
-  std::vector<Json> objects;
-  std::map<string, string> programs;
-  std::map<string, string> binaries;
-
-  for (auto &k : kq) {
-    kernels.push_back(k->to_json());
-
-    // check args for objects
-    int i = 0;
-    for (auto &a : k->args) {
-      if (a.size() == 8) {
-        if (saved_objects.find(a) == saved_objects.end()) {
-          saved_objects.insert(a);
-          cl_mem val = *(cl_mem*)(a.data());
-          if (val != NULL) {
-            bool needs_load = k->arg_names[i] == "weights" || k->arg_names[i] == "biases";
-
-            auto jj = Json::object({
-              {"id", a},
-              {"arg_type", k->arg_types[i]},
-            });
-
-            if (k->arg_types[i] == "image2d_t" || k->arg_types[i] == "image1d_t") {
-              cl_mem buf;
-              clGetImageInfo(val, CL_IMAGE_BUFFER, sizeof(buf), &buf, NULL);
-              string aa = string((char *)&buf, sizeof(buf));
-              jj["buffer_id"] = aa;
-
-              size_t width, height, row_pitch;
-              clGetImageInfo(val, CL_IMAGE_WIDTH, sizeof(width), &width, NULL);
-              clGetImageInfo(val, CL_IMAGE_HEIGHT, sizeof(height), &height, NULL);
-              clGetImageInfo(val, CL_IMAGE_ROW_PITCH, sizeof(row_pitch), &row_pitch, NULL);
-              jj["width"] = (int)width;
-              jj["height"] = (int)height;
-              jj["row_pitch"] = (int)row_pitch;
-              jj["size"] = (int)(height * row_pitch);
-              jj["needs_load"] = false;
-
-              if (saved_objects.find(aa) == saved_objects.end()) {
-                saved_objects.insert(aa);
-                size_t sz;
-                clGetMemObjectInfo(buf, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-                // save the buffer
-                objects.push_back(Json::object({
-                  {"id", aa},
-                  {"arg_type", "<image buffer>"},
-                  {"needs_load", needs_load},
-                  {"size", (int)sz}
-                }));
-                if (needs_load) assert(sz == height * row_pitch);
-              }
-            } else {
-              size_t sz = 0;
-              clGetMemObjectInfo(val, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
-              jj["size"] = (int)sz;
-              jj["needs_load"] = needs_load;
-            }
-
-            objects.push_back(jj);
-          }
-        }
-      }
-      i++;
-    }
-
-    if (save_binaries) {
-      int err;
-      size_t binary_size = 0;
-      err = clGetProgramInfo(k->program, CL_PROGRAM_BINARY_SIZES, sizeof(binary_size), &binary_size, NULL);
-      assert(err == 0);
-      assert(binary_size > 0);
-      string sv(binary_size, '\x00');
-
-      uint8_t* bufs[1] = { (uint8_t*)sv.data(), };
-      err = clGetProgramInfo(k->program, CL_PROGRAM_BINARIES, sizeof(bufs), &bufs, NULL);
-      assert(err == 0);
-
-      binaries[k->name] = sv;
-    } else {
-      programs[k->name] = g_program_source[k->program];
-    }
-  }
-
-  vector<string> saved_buffers;
-  for (auto &obj : objects) {
-    auto mobj = obj.object_items();
-    cl_mem val = *(cl_mem*)(mobj["id"].string_value().data());
-    int sz = mobj["size"].int_value();
-    if (mobj["needs_load"].bool_value()) {
-      char *buf = (char *)malloc(sz);
-      if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
-        assert(false);
-      } else {
-        // buffers allocated with CL_MEM_HOST_WRITE_ONLY, hence this hack
-        //hexdump((uint32_t*)val, 0x100);
-
-        // the worst hack in thneed, the flags are at 0x14
-        ((uint32_t*)val)[0x14] &= ~CL_MEM_HOST_WRITE_ONLY;
-        cl_int ret = clEnqueueReadBuffer(command_queue, val, CL_TRUE, 0, sz, buf, 0, NULL, NULL);
-        assert(ret == CL_SUCCESS);
-      }
-      //printf("saving buffer: %d %p %s\n", sz, buf, mobj["arg_type"].string_value().c_str());
-      saved_buffers.push_back(string(buf, sz));
-      free(buf);
-    }
-  }
-
-  std::vector<Json> jbinaries;
-  for (auto &obj : binaries) {
-    jbinaries.push_back(Json::object({{"name", obj.first}, {"length", (int)obj.second.size()}}));
-    saved_buffers.push_back(obj.second);
-  }
-
-  Json jdat = Json::object({
-    {"kernels", kernels},
-    {"objects", objects},
-    {"programs", programs},
-    {"binaries", jbinaries},
-  });
-
-  string str = jdat.dump();
-  int jsz = str.length();
-
-  FILE *f = fopen(filename, "wb");
-  fwrite(&jsz, 1, sizeof(jsz), f);
-  fwrite(str.data(), 1, jsz, f);
-  for (auto &s : saved_buffers) {
-    fwrite(s.data(), 1, s.length(), f);
-  }
-  fclose(f);
-}
-
-Json CLQueuedKernel::to_json() const {
-  return Json::object {
-    { "name", name },
-    { "work_dim", (int)work_dim },
-    { "global_work_size", Json::array { (int)global_work_size[0], (int)global_work_size[1], (int)global_work_size[2] } },
-    { "local_work_size", Json::array { (int)local_work_size[0], (int)local_work_size[1], (int)local_work_size[2] } },
-    { "num_args", (int)num_args },
-    { "args", args },
-    { "args_size", args_size },
-  };
-}
-

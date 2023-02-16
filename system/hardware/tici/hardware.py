@@ -85,6 +85,16 @@ class Tici(HardwareBase):
   def amplifier(self):
     return Amplifier()
 
+  @cached_property
+  def model(self):
+    with open("/sys/firmware/devicetree/base/model") as f:
+      model = f.read().strip('\x00')
+    model = model.split('comma ')[-1]
+    # TODO: remove this with AGNOS 7+
+    if model.startswith('Qualcomm'):
+      model = 'tici'
+    return model
+
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
@@ -287,7 +297,7 @@ class Tici(HardwareBase):
     ]
 
     upload = [
-      # Create root Hierarchy Token Bucket that sends all trafic to 1:20
+      # Create root Hierarchy Token Bucket that sends all traffic to 1:20
       (True, tc + ["qdisc", "add", "dev", adapter, "root", "handle", "1:", "htb", "default", "20"]),
 
       # Create class 1:20 with specified rate limit
@@ -372,7 +382,6 @@ class Tici(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
-    # Note that for this to work and have the device stay powered off, the panda needs to be in UsbPowerMode::CLIENT!
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
@@ -386,15 +395,22 @@ class Tici(HardwareBase):
 
   def set_screen_brightness(self, percentage):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
+      val = int(percentage * (max_brightness / 100.))
       with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-        f.write(str(int(percentage * 10.23)))
+        f.write(str(val))
     except Exception:
       pass
 
   def get_screen_brightness(self):
     try:
+      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+        max_brightness = float(f.read().strip())
+
       with open("/sys/class/backlight/panel0-backlight/brightness") as f:
-        return int(float(f.read()) / 10.23)
+        return int(float(f.read()) / (max_brightness / 100.))
     except Exception:
       return 0
 
@@ -402,7 +418,7 @@ class Tici(HardwareBase):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
     if not powersave_enabled:
-      self.amplifier.initialize_configuration()
+      self.amplifier.initialize_configuration(self.model)
 
     # *** CPU config ***
 
@@ -417,6 +433,7 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
     affine_irq(5, 565)   # kgsl-3d0
+    affine_irq(4, 126)   # SPI goes on boardd core
     affine_irq(4, 740)   # xhci-hcd:usb1 goes on the boardd core
     affine_irq(4, 1069)  # xhci-hcd:usb3 goes on the boardd core
     for irq in range(237, 246):
@@ -430,7 +447,7 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration()
+    self.amplifier.initialize_configuration(self.model)
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
@@ -481,7 +498,7 @@ class Tici(HardwareBase):
 
     # blue prime config
     if sim_id.startswith('8901410'):
-      os.system('mmcli -m 0 --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn=Broadband"')
 
   def get_networks(self):
     r = {}

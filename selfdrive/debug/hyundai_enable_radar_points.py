@@ -6,7 +6,7 @@ firmware versions. If you want to try on a new radar make sure to note the defau
 in case it's different from the other radars and you need to revert the changes.
 
 After changing the config the car should not show any faults when openpilot is not running.
-These config changes are persistent accross car reboots. You need to run this script again
+These config changes are persistent across car reboots. You need to run this script again
 to go back to the default values.
 
 USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by these changes."""
@@ -50,6 +50,10 @@ SUPPORTED_FW_VERSIONS = {
     tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
   # 2020 GENESIS G70
   b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
+  # 2019 SANTA FE
+  b"TM__ SCC F-CUP      1.00 1.00 99110-S1210\x19\x01%\x168    ": ConfigValues(
     default_config=b"\x00\x00\x00\x01\x00\x00",
     tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
 }

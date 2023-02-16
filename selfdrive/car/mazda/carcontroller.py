@@ -15,7 +15,7 @@ class CarController:
     self.brake_counter = 0
     self.frame = 0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     can_sends = []
 
     apply_steer = 0
@@ -59,6 +59,7 @@ class CarController:
 
     new_actuators = CC.actuators.copy()
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1
     return new_actuators, can_sends

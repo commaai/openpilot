@@ -2,11 +2,10 @@
 
 #include <cassert>
 
-ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra) {
-  thneed = new Thneed(true);
+ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra, bool luse_tf8, cl_context context) {
+  thneed = new Thneed(true, context);
   thneed->load(path);
   thneed->clexec();
-  thneed->find_inputs_outputs();
 
   recorded = false;
   output = loutput;
@@ -23,6 +22,14 @@ void ThneedModel::addTrafficConvention(float *state, int state_size) {
 
 void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
+}
+
+void ThneedModel::addDrivingStyle(float *state, int state_size) {
+    drivingStyle = state;
+}
+
+void ThneedModel::addNavFeatures(float *state, int state_size) {
+  navFeatures = state;
 }
 
 void ThneedModel::addImage(float *image_input_buf, int buf_size) {

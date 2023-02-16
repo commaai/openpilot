@@ -25,8 +25,10 @@ public:
 
 private:
   QPixmap img;
+  QTimer *timer;
   void updateQrCode(const QString &text);
   void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 private slots:
   void refresh();

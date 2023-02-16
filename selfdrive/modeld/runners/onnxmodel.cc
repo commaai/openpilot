@@ -14,7 +14,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8) {
+ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8, cl_context context) {
   LOGD("loading model %s", path);
 
   output = _output;
@@ -97,6 +97,16 @@ void ONNXModel::addDesire(float *state, int state_size) {
   desire_state_size = state_size;
 }
 
+void ONNXModel::addNavFeatures(float *state, int state_size) {
+  nav_features_input_buf = state;
+  nav_features_size = state_size;
+}
+
+void ONNXModel::addDrivingStyle(float *state, int state_size) {
+    driving_style_input_buf = state;
+    driving_style_size = state_size;
+}
+
 void ONNXModel::addTrafficConvention(float *state, int state_size) {
   traffic_convention_input_buf = state;
   traffic_convention_size = state_size;
@@ -128,7 +138,13 @@ void ONNXModel::execute() {
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }
-  if (traffic_convention_input_buf != NULL) {
+  if (nav_features_input_buf != NULL) {
+    pwrite(nav_features_input_buf, nav_features_size);
+  }
+  if (driving_style_input_buf != NULL) {
+    pwrite(driving_style_input_buf, driving_style_size);
+  }
+   if (traffic_convention_input_buf != NULL) {
     pwrite(traffic_convention_input_buf, traffic_convention_size);
   }
   if (calib_input_buf != NULL) {

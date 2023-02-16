@@ -1,3 +1,5 @@
+import copy
+
 from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
@@ -6,7 +8,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE
+from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
 
 class CarState(CarStateBase):
@@ -15,6 +17,8 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR_PACKET"]["GEAR"]
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
+    self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
+    self.cluster_min_speed = CV.KPH_TO_MS / 2.
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -24,6 +28,7 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
+    self.lkas_hud = {}
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -52,8 +57,9 @@ class CarState(CarStateBase):
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    ret.standstill = ret.vEgoRaw < 0.001
+    ret.standstill = ret.vEgoRaw == 0
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
     torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
@@ -82,51 +88,63 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    # steer rate fault, goes to 21 or 25 for 1 frame, then 9 for ~2 seconds
-    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 21, 25)
+    # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
+    # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
+    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
     # 17 is a fault from a prolonged high torque delta between cmd and user
-    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] == 17
+    # 3 is a fault from the lka command message not being received by the EPS
+    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
-    if self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
+      # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
+      cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
+      ret.accFaulted = cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
+      cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]
 
-    if self.CP.carFingerprint in RADAR_ACC_CAR:
-      self.acc_type = cp.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp.vl["ACC_HUD"]["FCW"])
-    elif self.CP.carFingerprint in TSS2_CAR:
-      self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp_cam.vl["ACC_HUD"]["FCW"])
+    # UI_SET_SPEED is always non-zero when main is on, hide until first enable
+    if ret.cruiseState.speed != 0:
+      is_metric = cp.vl["BODY_CONTROL_STATE_2"]["UNITS"] in (1, 2)
+      conversion_factor = CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS
+      ret.cruiseState.speedCluster = cluster_set_speed * conversion_factor
+
+    cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
+
+    if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
+      self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+      ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
     # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in (CAR.LEXUS_IS, CAR.LEXUS_RC)) or \
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR) or \
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
-    if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
-      # ignore standstill in hybrid vehicles, since pcm allows to restart without
-      # receiving any special command. Also if interceptor is detected
-      ret.cruiseState.standstill = False
-    else:
+    if self.CP.carFingerprint not in (NO_STOP_TIMER_CAR - TSS2_CAR):
+      # ignore standstill state in certain vehicles, since pcm allows to restart with just an acceleration request
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
     ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
-    ret.stockAeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
-
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
+
+    if not self.CP.enableDsu:
+      ret.stockAeb = bool(cp_acc.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_acc.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
+
+    if self.CP.carFingerprint != CAR.PRIUS_V:
+      self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
     return ret
 
@@ -147,6 +165,7 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RR", "BODY_CONTROL_STATE"),
       ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
       ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
+      ("UNITS", "BODY_CONTROL_STATE_2"),
       ("TC_DISABLED", "ESP_CONTROL"),
       ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
@@ -154,6 +173,7 @@ class CarState(CarStateBase):
       ("CRUISE_ACTIVE", "PCM_CRUISE"),
       ("CRUISE_STATE", "PCM_CRUISE"),
       ("GAS_RELEASED", "PCM_CRUISE"),
+      ("UI_SET_SPEED", "PCM_CRUISE_SM"),
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
       ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR"),
       ("STEER_ANGLE", "STEER_TORQUE_SENSOR"),
@@ -168,12 +188,14 @@ class CarState(CarStateBase):
       ("LIGHT_STALK", 1),
       ("BLINKERS_STATE", 0.15),
       ("BODY_CONTROL_STATE", 3),
+      ("BODY_CONTROL_STATE_2", 2),
       ("ESP_CONTROL", 3),
       ("EPS_STATUS", 25),
       ("BRAKE_MODULE", 40),
       ("WHEEL_SPEEDS", 80),
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
+      ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
@@ -184,13 +206,16 @@ class CarState(CarStateBase):
       signals.append(("GAS_PEDAL", "GAS_PEDAL"))
       checks.append(("GAS_PEDAL", 33))
 
-    if CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       signals.append(("MAIN_ON", "DSU_CRUISE"))
       signals.append(("SET_SPEED", "DSU_CRUISE"))
+      signals.append(("UI_SET_SPEED", "PCM_CRUISE_ALT"))
       checks.append(("DSU_CRUISE", 5))
+      checks.append(("PCM_CRUISE_ALT", 1))
     else:
       signals.append(("MAIN_ON", "PCM_CRUISE_2"))
       signals.append(("SET_SPEED", "PCM_CRUISE_2"))
+      signals.append(("ACC_FAULTED", "PCM_CRUISE_2"))
       signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2"))
       checks.append(("PCM_CRUISE_2", 33))
 
@@ -219,27 +244,43 @@ class CarState(CarStateBase):
         ("ACC_HUD", 1),
       ]
 
+    if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu:
+      signals += [
+        ("FORCE", "PRE_COLLISION"),
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+      ]
+      checks += [
+        ("PRE_COLLISION", 33),
+      ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      ("FORCE", "PRE_COLLISION"),
-      ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
-    ]
+    signals = []
+    checks = []
 
-    # use steering message to check if panda is connected to frc
-    checks = [
-      ("STEERING_LKA", 42),
-      ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
-    ]
+    if CP.carFingerprint != CAR.PRIUS_V:
+      signals += [
+        ("LANE_SWAY_FLD", "LKAS_HUD"),
+        ("LANE_SWAY_BUZZER", "LKAS_HUD"),
+        ("LANE_SWAY_WARNING", "LKAS_HUD"),
+        ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
+        ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
+      ]
+      checks += [
+        ("LKAS_HUD", 1),
+      ]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       signals += [
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+        ("FORCE", "PRE_COLLISION"),
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
       ]
       checks += [
+        ("PRE_COLLISION", 33),
         ("ACC_CONTROL", 33),
         ("ACC_HUD", 1),
       ]

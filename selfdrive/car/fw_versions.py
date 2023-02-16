@@ -1,235 +1,25 @@
 #!/usr/bin/env python3
-import struct
-import traceback
 from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
+from common.params import Params
 from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
-ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 
+FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
-def p16(val):
-  return struct.pack("!H", val)
-
-
-TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT, 0x0])
-TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40, 0x0])
-
-SHORT_TESTER_PRESENT_REQUEST = bytes([uds.SERVICE_TYPE.TESTER_PRESENT])
-SHORT_TESTER_PRESENT_RESPONSE = bytes([uds.SERVICE_TYPE.TESTER_PRESENT + 0x40])
-
-DEFAULT_DIAGNOSTIC_REQUEST = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL,
-                                    uds.SESSION_TYPE.DEFAULT])
-DEFAULT_DIAGNOSTIC_RESPONSE = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40,
-                                    uds.SESSION_TYPE.DEFAULT, 0x0, 0x32, 0x1, 0xf4])
-
-EXTENDED_DIAGNOSTIC_REQUEST = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL,
-                                     uds.SESSION_TYPE.EXTENDED_DIAGNOSTIC])
-EXTENDED_DIAGNOSTIC_RESPONSE = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40,
-                                      uds.SESSION_TYPE.EXTENDED_DIAGNOSTIC, 0x0, 0x32, 0x1, 0xf4])
-
-UDS_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
-UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
-
-
-HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf100)  # Long description
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100)
-HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
-
-
-TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
-TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
-
-VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
-VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
-
-OBD_VERSION_REQUEST = b'\x09\x04'
-OBD_VERSION_RESPONSE = b'\x49\x04'
-
-DEFAULT_RX_OFFSET = 0x8
-VOLKSWAGEN_RX_OFFSET = 0x6a
-
-MAZDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-MAZDA_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
-
-NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
-NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
-
-NISSAN_VERSION_REQUEST_STANDARD = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-NISSAN_VERSION_RESPONSE_STANDARD =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-
-NISSAN_RX_OFFSET = 0x20
-
-SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
-SUBARU_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_DATA_IDENTIFICATION)
-
-CHRYSLER_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf132)
-CHRYSLER_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(0xf132)
-
-CHRYSLER_RX_OFFSET = -0x280
-
-FORD_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-FORD_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
-
-
-@dataclass
-class Request:
-  brand: str
-  request: List[bytes]
-  response: List[bytes]
-  whitelist_ecus: List[int] = field(default_factory=list)
-  rx_offset: int = DEFAULT_RX_OFFSET
-  bus: int = 1
-
-
-REQUESTS: List[Request] = [
-  # Subaru
-  Request(
-    "subaru",
-    [TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
-  ),
-  # Hyundai
-  Request(
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_LONG],
-    [HYUNDAI_VERSION_RESPONSE],
-  ),
-  Request(
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_MULTI],
-    [HYUNDAI_VERSION_RESPONSE],
-  ),
-  # Honda
-  Request(
-    "honda",
-    [UDS_VERSION_REQUEST],
-    [UDS_VERSION_RESPONSE],
-  ),
-  # Toyota
-  Request(
-    "toyota",
-    [SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
-    bus=0,
-  ),
-  Request(
-    "toyota",
-    [SHORT_TESTER_PRESENT_REQUEST, OBD_VERSION_REQUEST],
-    [SHORT_TESTER_PRESENT_RESPONSE, OBD_VERSION_RESPONSE],
-    bus=0,
-  ),
-  Request(
-    "toyota",
-    [TESTER_PRESENT_REQUEST, DEFAULT_DIAGNOSTIC_REQUEST, EXTENDED_DIAGNOSTIC_REQUEST, UDS_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, DEFAULT_DIAGNOSTIC_RESPONSE, EXTENDED_DIAGNOSTIC_RESPONSE, UDS_VERSION_RESPONSE],
-    bus=0,
-  ),
-  # Volkswagen
-  Request(
-    "volkswagen",
-    [VOLKSWAGEN_VERSION_REQUEST_MULTI],
-    [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
-    rx_offset=VOLKSWAGEN_RX_OFFSET,
-  ),
-  Request(
-    "volkswagen",
-    [VOLKSWAGEN_VERSION_REQUEST_MULTI],
-    [VOLKSWAGEN_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine, Ecu.transmission],
-  ),
-  # Mazda
-  Request(
-    "mazda",
-    [MAZDA_VERSION_REQUEST],
-    [MAZDA_VERSION_RESPONSE],
-  ),
-  # Nissan
-  Request(
-    "nissan",
-    [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-    [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-  ),
-  Request(
-    "nissan",
-    [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-    [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-    rx_offset=NISSAN_RX_OFFSET,
-  ),
-  Request(
-    "nissan",
-    [NISSAN_VERSION_REQUEST_STANDARD],
-    [NISSAN_VERSION_RESPONSE_STANDARD],
-    rx_offset=NISSAN_RX_OFFSET,
-  ),
-  # Body
-  Request(
-    "body",
-    [TESTER_PRESENT_REQUEST, UDS_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, UDS_VERSION_RESPONSE],
-    bus=0,
-  ),
-  # Chrysler / FCA / Stellantis
-  Request(
-    "chrysler",
-    [CHRYSLER_VERSION_REQUEST],
-    [CHRYSLER_VERSION_RESPONSE],
-    rx_offset=CHRYSLER_RX_OFFSET,
-  ),
-  Request(
-    "chrysler",
-    [CHRYSLER_VERSION_REQUEST],
-    [CHRYSLER_VERSION_RESPONSE],
-  ),
-  # Ford
-  Request(
-    "ford",
-    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    whitelist_ecus=[Ecu.engine],
-  ),
-  Request(
-    "ford",
-    [TESTER_PRESENT_REQUEST, FORD_VERSION_REQUEST],
-    [TESTER_PRESENT_RESPONSE, FORD_VERSION_RESPONSE],
-    bus=0,
-    whitelist_ecus=[Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera],
-  ),
-]
+MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
+REQUESTS = [(brand, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
 
 def chunks(l, n=128):
@@ -240,17 +30,15 @@ def chunks(l, n=128):
 def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    if filter_brand is None or fw.brand == filter_brand:
-      addr = fw.address
+    if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
-      fw_versions_dict[(addr, sub_addr)].add(fw.fwVersion)
+      fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
 
 
 def get_brand_addrs():
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
   brand_addrs = defaultdict(set)
-  for brand, cars in versions.items():
+  for brand, cars in VERSIONS.items():
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
   return brand_addrs
@@ -302,7 +90,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict):
+def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -312,19 +100,19 @@ def match_fw_to_car_exact(fw_versions_dict):
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
+      config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
       ecu_type = ecu[0]
       addr = ecu[1:]
+
       found_versions = fw_versions_dict.get(addr, set())
-      if ecu_type == Ecu.esp and candidate in (TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER, TOYOTA.SIENNA, TOYOTA.LEXUS_IS) and not len(found_versions):
-        continue
+      if not len(found_versions):
+        # Some models can sometimes miss an ecu, or show on two different addresses
+        if candidate in config.non_essential_ecus.get(ecu_type, []):
+          continue
 
-      # On some Toyota models, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in (TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS) and not len(found_versions):
-        continue
-
-      # Ignore non essential ecus
-      if ecu_type not in ESSENTIAL_ECUS and not len(found_versions):
-        continue
+        # Ignore non essential ecus
+        if ecu_type not in ESSENTIAL_ECUS:
+          continue
 
       # Virtual debug ecu doesn't need to match the database
       if ecu_type == Ecu.debug:
@@ -345,11 +133,10 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
-  brands = get_interface_attr('FW_VERSIONS', ignore_none=True).keys()
   for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
-    for brand in brands:
+    for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       matches |= match_func(fw_versions_dict)
 
@@ -359,17 +146,17 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan):
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
   queries = list()
   parallel_queries = list()
   responses = set()
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
-  for r in REQUESTS:
-    if r.brand not in versions:
+  for brand, r in REQUESTS:
+    # Skip query if no panda available
+    if r.bus > num_pandas * 4 - 1:
       continue
 
-    for brand_versions in versions[r.brand].values():
+    for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
@@ -388,7 +175,7 @@ def get_present_ecus(logcan, sendcan):
 
   queries.insert(0, parallel_queries)
 
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  ecu_responses = set()
   for query in queries:
     ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
@@ -398,9 +185,9 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {r.brand: set() for r in REQUESTS}
+  brand_matches = {brand: set() for brand, _ in REQUESTS}
 
-  brand_rx_offsets = set((r.brand, r.rx_offset) for r in REQUESTS)
+  brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
@@ -411,25 +198,48 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
-def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+def disable_obd_multiplexing(params):
+  if not params.get_bool("ObdMultiplexingDisabled"):
+    params.put_bool("FirmwareObdQueryDone", True)
+
+    cloudlog.warning("Waiting for OBD multiplexing to be disabled")
+    params.get_bool("ObdMultiplexingDisabled", block=True)
+    cloudlog.warning("OBD multiplexing disabled")
+
+
+def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
+  matched_brand: Optional[str] = None
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
-    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
+    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
+      matched_brand = brand
       break
+
+  disable_obd_multiplexing(Params())
+
+  # Do non-OBD queries for matched brand, or all if no match is found
+  for brand in FW_QUERY_CONFIGS.keys():
+    if brand == matched_brand or matched_brand is None:
+      all_car_fw.extend(get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexed=False, debug=debug, progress=progress))
 
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
-  versions = get_interface_attr('FW_VERSIONS', ignore_none=True)
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexed=True, debug=False, progress=False):
+  versions = VERSIONS.copy()
+
+  # Each brand can define extra ECUs to query for data collection
+  for brand, config in FW_QUERY_CONFIGS.items():
+    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
+
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 
@@ -440,14 +250,18 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
+  logging_addrs = []
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
-    for c in brand_versions.values():
-      for ecu_type, addr, sub_addr in c.keys():
+    for candidate, ecu in brand_versions.items():
+      for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
+
+        if a not in logging_addrs and candidate == "debug":
+          logging_addrs.append(a)
 
         if sub_addr is None:
           if a not in parallel_addrs:
@@ -460,33 +274,42 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [r for r in REQUESTS if query_brand is None or r.brand == query_brand]
+  requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
-      for r in requests:
+      for brand, r in requests:
+        # Skip query if no panda available
+        if r.bus > num_pandas * 4 - 1:
+          continue
+        # Or if request is not designated for current multiplexing mode
+        elif r.non_obd == obd_multiplexed:
+          continue
+
         try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (r.brand, 'any') and
+          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (addr, rx_addr), version in query.get_data(timeout).items():
+            for (tx_addr, sub_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types.get((r.brand, addr[0], addr[1]), Ecu.unknown)
+              ecu_key = (brand, tx_addr, sub_addr)
+              f.ecu = ecu_types.get(ecu_key, Ecu.unknown)
               f.fwVersion = version
-              f.address = addr[0]
-              f.responseAddress = rx_addr
+              f.address = tx_addr
+              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
               f.request = r.request
-              f.brand = r.brand
+              f.brand = brand
               f.bus = r.bus
+              f.logging = r.logging or ecu_key in logging_addrs
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+              if sub_addr is not None:
+                f.subAddress = sub_addr
 
               car_fw.append(f)
         except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+          cloudlog.exception("FW query exception")
 
   return car_fw
 
@@ -504,6 +327,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   logcan = messaging.sub_sock('can')
+  pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
   extra: Any = None
@@ -517,16 +341,17 @@ if __name__ == "__main__":
     extra = {"any": {"debug": extra}}
 
   time.sleep(1.)
+  num_pandas = len(messaging.recv_one_retry(pandaStates_sock).pandaStates)
 
   t = time.time()
   print("Getting vin...")
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()

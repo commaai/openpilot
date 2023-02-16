@@ -15,43 +15,48 @@ from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
 
-original_segments = [
+source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI", "d824e27e8c60172c|2022-07-08--21-21-15--0"),     # HYUNDAI.KIA_EV6
+  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
-  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),         # CHRYSLER.RAM_1500
-  ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
+  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA_2018_HYBRID
+  ("RAM", "2f4452b03ccb98f0|2022-09-07--13-55-08--10"),        # CHRYSLER.RAM_1500
+  ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
+  ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.BOLT_EUV
+  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.BRONCO_SPORT_MK1
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
-  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
 
-  # Enable when port is tested and dascamOnly is no longer set
+  # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
+  #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
 ]
 
 segments = [
-  ("BODY", "regen660D86654BA|2022-07-06--14-27-15--0"),
-  ("HYUNDAI", "regen114E5FF24D8|2022-07-14--17-08-47--0"),
-  ("HYUNDAI", "d824e27e8c60172c|2022-07-08--21-21-15--0"),
-  ("TOYOTA", "regenBA97410FBEC|2022-07-06--14-26-49--0"),
-  ("TOYOTA2", "regenDEDB1D9C991|2022-07-06--14-54-08--0"),
-  ("TOYOTA3", "regenDDC1FE60734|2022-07-06--14-32-06--0"),
-  ("HONDA", "regenE62960EEC38|2022-07-14--19-33-24--0"),
-  ("HONDA2", "regenC3EBD92F029|2022-07-14--19-29-47--0"),
-  ("CHRYSLER", "regen38346FB33D0|2022-07-14--18-05-26--0"),
-  ("RAM", "2f4452b03ccb98f0|2022-07-07--08-01-56--3"),
-  ("SUBARU", "regen54A1E2BE5AA|2022-07-14--18-07-50--0"),
-  ("GM", "regen01D09D915B5|2022-07-06--14-36-20--0"),
-  ("NISSAN", "regenCA0B0DC946E|2022-07-14--18-10-17--0"),
-  ("VOLKSWAGEN", "regen007098CA0EF|2022-07-06--15-01-26--0"),
-  ("MAZDA", "regen61BA413D53B|2022-07-06--14-39-42--0"),
+  ("BODY", "regenFA002A80700|2022-09-27--15-37-02--0"),
+  ("HYUNDAI", "regenBE53A59065B|2022-09-27--16-52-03--0"),
+  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),
+  ("TOYOTA", "regen929C5790007|2022-09-27--16-27-47--0"),
+  ("TOYOTA2", "regenEA3950D7F22|2022-09-27--15-43-24--0"),
+  ("TOYOTA3", "regen89026F6BD8D|2022-09-27--15-45-37--0"),
+  ("HONDA", "regenC7D5645EB17|2022-09-27--15-47-29--0"),
+  ("HONDA2", "regenCC2ECCE5742|2022-09-27--16-18-01--0"),
+  ("CHRYSLER", "regenC253C4DAC90|2022-09-27--15-51-03--0"),
+  ("RAM", "regen20490083AE7|2022-09-27--15-53-15--0"),
+  ("SUBARU", "regen1E72BBDCED5|2022-09-27--15-55-31--0"),
+  ("GM", "regen45B05A80EF6|2022-09-27--15-57-22--0"),
+  ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),
+  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),
+  ("NISSAN", "regenC19D899B46D|2022-09-27--15-59-13--0"),
+  ("VOLKSWAGEN", "regenD8F7AC4BD0D|2022-09-27--16-41-45--0"),
+  ("MAZDA", "regenFC3F9ECBB64|2022-09-27--16-03-09--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -117,19 +122,19 @@ def format_diff(results, log_paths, ref_commit):
     for proc, diff in list(result.items()):
       # long diff
       diff2 += f"*** process: {proc} ***\n"
-      diff2 += f"\tref: {log_paths[segment]['ref']}\n\n"
-      diff2 += f"\tnew: {log_paths[segment]['new']}\n\n"
+      diff2 += f"\tref: {log_paths[segment][proc]['ref']}\n"
+      diff2 += f"\tnew: {log_paths[segment][proc]['new']}\n\n"
 
       # short diff
       diff1 += f"    {proc}\n"
       if isinstance(diff, str):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
         diff1 += f"        {diff}\n"
         failed = True
       elif len(diff):
-        diff1 += f"        ref: {log_paths[segment]['ref']}\n"
-        diff1 += f"        new: {log_paths[segment]['new']}\n\n"
+        diff1 += f"        ref: {log_paths[segment][proc]['ref']}\n"
+        diff1 += f"        new: {log_paths[segment][proc]['new']}\n\n"
 
         cnt: Dict[str, int] = {}
         for d in diff:
@@ -196,8 +201,7 @@ if __name__ == "__main__":
     untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
     assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
 
-
-  log_paths: DefaultDict[str, Dict[str, str]] = defaultdict(dict)
+  log_paths: DefaultDict[str, Dict[str, Dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
@@ -225,8 +229,8 @@ if __name__ == "__main__":
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
-        log_paths[segment]['ref'] = ref_log_path
-        log_paths[segment]['new'] = cur_log_fn
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name + cfg.subtest_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)

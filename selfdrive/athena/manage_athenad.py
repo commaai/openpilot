@@ -27,7 +27,7 @@ def main():
   except Exception:
     cloudlog.exception("manage_athenad.exception")
   finally:
-    params.delete(ATHENA_MGR_PID_PARAM)
+    params.remove(ATHENA_MGR_PID_PARAM)
 
 
 if __name__ == '__main__':

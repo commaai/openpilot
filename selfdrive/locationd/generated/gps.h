@@ -273,7 +273,7 @@ public:
         ~tlm_t();
 
     private:
-        std::string m_magic;
+        std::string m_preamble;
         uint64_t m_tlm;
         bool m_integrity_status;
         bool m_reserved;
@@ -281,7 +281,7 @@ public:
         gps_t* m__parent;
 
     public:
-        std::string magic() const { return m_magic; }
+        std::string preamble() const { return m_preamble; }
         uint64_t tlm() const { return m_tlm; }
         bool integrity_status() const { return m_integrity_status; }
         bool reserved() const { return m_reserved; }

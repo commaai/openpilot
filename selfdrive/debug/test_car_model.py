@@ -4,11 +4,11 @@ import sys
 from typing import List, Tuple
 import unittest
 
-from selfdrive.car.tests.routes import TestRoute
+from selfdrive.car.tests.routes import CarTestRoute
 from selfdrive.car.tests.test_models import TestCarModel
 
 
-def create_test_models_suite(routes: List[Tuple[str, TestRoute]], ci=False) -> unittest.TestSuite:
+def create_test_models_suite(routes: List[Tuple[str, CarTestRoute]], ci=False) -> unittest.TestSuite:
   test_suite = unittest.TestSuite()
   for car_model, test_route in routes:
     # create new test case and discover tests
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.print_help()
     sys.exit()
 
-  test_route = TestRoute(args.route, args.car, segment=args.segment)
+  test_route = CarTestRoute(args.route, args.car, segment=args.segment)
   test_suite = create_test_models_suite([(args.car, test_route)], ci=args.ci)
 
   unittest.TextTestRunner().run(test_suite)

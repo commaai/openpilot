@@ -85,8 +85,23 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia):
       time_q = time_q[1:]
       print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
+def main(addr, cams, nvidia=False):
+  vipc_server = VisionIpcServer("camerad")
+  for vst in cams.values():
+    vipc_server.create_buffers(vst, 4, False, W, H)
+  vipc_server.start_listener()
+
+  procs = []
+  for k, v in cams.items():
+    p = multiprocessing.Process(target=decoder, args=(addr, k, vipc_server, v, nvidia))
+    p.start()
+    procs.append(p)
+
+  for p in procs:
+    p.join()
+
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Decode video streams and broacast on VisionIPC")
+  parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
   parser.add_argument("addr", help="Address of comma three")
   parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
@@ -98,11 +113,4 @@ if __name__ == "__main__":
     ("driverEncodeData", VisionStreamType.VISION_STREAM_DRIVER),
   ]
   cams = dict([all_cams[int(x)] for x in args.cams.split(",")])
-
-  vipc_server = VisionIpcServer("camerad")
-  for vst in cams.values():
-    vipc_server.create_buffers(vst, 4, False, W, H)
-  vipc_server.start_listener()
-
-  for k,v in cams.items():
-    multiprocessing.Process(target=decoder, args=(args.addr, k, vipc_server, v, args.nvidia)).start()
+  main(args.addr, cams, args.nvidia)

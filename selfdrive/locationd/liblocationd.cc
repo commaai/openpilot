@@ -3,8 +3,8 @@
 extern "C" {
   typedef Localizer* Localizer_t;
 
-  Localizer *localizer_init() {
-    return new Localizer();
+  Localizer *localizer_init(bool has_ublox) {
+    return new Localizer(has_ublox);
   }
 
   void localizer_get_message_bytes(Localizer *localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid,
@@ -24,6 +24,18 @@ extern "C" {
     memcpy(state_buff, state.data(), sizeof(double) * state.size());
     Eigen::VectorXd stdev = localizer->get_stdev();
     memcpy(std_buff, stdev.data(), sizeof(double) * stdev.size());
+  }
+
+  bool is_gps_ok(Localizer *localizer){
+    return localizer->is_gps_ok();
+  }
+
+  bool are_inputs_ok(Localizer *localizer){
+    return localizer->are_inputs_ok();
+  }
+
+  void observation_timings_invalid_reset(Localizer *localizer){
+    localizer->observation_timings_invalid_reset();
   }
 
 }

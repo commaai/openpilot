@@ -23,11 +23,13 @@
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false);
+  SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false, cl_context context = NULL);
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addCalib(float *state, int state_size);
   void addDesire(float *state, int state_size);
+  void addDrivingStyle(float *state, int state_size);
+  void addNavFeatures(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
@@ -75,6 +77,10 @@ private:
   std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
   float *desire;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
+  float *navFeatures;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> navFeaturesBuffer;
+  float *drivingStyle;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> drivingStyleBuffer;
   float *calib;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> calibBuffer;
 };

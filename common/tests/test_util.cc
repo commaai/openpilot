@@ -136,10 +136,27 @@ TEST_CASE("util::create_directories") {
     REQUIRE(util::create_directories(dir + "/file", 0755) == false);
     REQUIRE(util::create_directories(dir + "/file/1/2/3", 0755) == false);
   }
-  SECTION("end with slashs") {
+  SECTION("end with slashes") {
     REQUIRE(util::create_directories(dir + "/", 0755));
   }
   SECTION("empty") {
     REQUIRE(util::create_directories("", 0755) == false);
   }
+}
+
+TEST_CASE("util::remove_files_in_dir") {
+  std::string tmp_dir = "/tmp/test_remove_all_in_dir";
+  system("rm /tmp/test_remove_all_in_dir -rf");
+  REQUIRE(util::create_directories(tmp_dir, 0755));
+  const int tmp_file_cnt = 10;
+  for (int i = 0; i < tmp_file_cnt; ++i) {
+    std::string tmp_file = tmp_dir + "/test_XXXXXX";
+    int fd = mkstemp((char*)tmp_file.c_str());
+    close(fd);
+    REQUIRE(util::file_exists(tmp_file.c_str()));
+  }
+
+  REQUIRE(util::read_files_in_dir(tmp_dir).size() == tmp_file_cnt);
+  util::remove_files_in_dir(tmp_dir);
+  REQUIRE(util::read_files_in_dir(tmp_dir).empty());
 }

@@ -72,7 +72,7 @@ std::optional<ProcStat> procStat(std::string stat) {
   }
 
   std::string name = stat.substr(open_paren + 1, close_paren - open_paren - 1);
-  // repace space in name with _
+  // replace space in name with _
   std::replace(&stat[open_paren], &stat[close_paren], ' ', '_');
   std::istringstream iss(stat);
   std::vector<std::string> v{std::istream_iterator<std::string>(iss),
@@ -95,7 +95,7 @@ std::optional<ProcStat> procStat(std::string stat) {
       .num_threads = stol(v[StatPos::num_threads - 1]),
       .starttime = stoull(v[StatPos::starttime - 1]),
       .vms = stoul(v[StatPos::vsize - 1]),
-      .rss = stoul(v[StatPos::rss - 1]),
+      .rss = stol(v[StatPos::rss - 1]),
       .processor = stoi(v[StatPos::processor - 1]),
     };
     return p;

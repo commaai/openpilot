@@ -6,16 +6,13 @@ import numpy as np
 from selfdrive.test.helpers import with_processes
 from system.camerad.snapshot.snapshot import get_snapshots
 
-from system.hardware import TICI
-
 TEST_TIME = 45
 REPEAT = 5
 
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
+    pass
 
   def _numpy_rgb2gray(self, im):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
@@ -37,13 +34,11 @@ class TestCamerad(unittest.TestCase):
     start = time.time()
     while time.time() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
+      wpic, _ = get_snapshots(frame="wideRoadCameraState")
 
       res = self._is_exposure_okay(rpic)
       res = res and self._is_exposure_okay(dpic)
-
-      if TICI:
-        wpic, _ = get_snapshots(frame="wideRoadCameraState")
-        res = res and self._is_exposure_okay(wpic)
+      res = res and self._is_exposure_okay(wpic)
 
       if passed > 0 and not res:
         passed = -passed # fails test if any failure after first sus

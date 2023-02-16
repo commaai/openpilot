@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/params.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
@@ -45,8 +46,24 @@ public:
     title_label->setText(title);
   }
 
+  void setValue(const QString &val) {
+    value->setText(val);
+  }
+
+  const QString getDescription() {
+    return description->text();
+  }
+
+  QLabel *icon_label;
+  QPixmap icon_pixmap;
+
+public slots:
+  void showDescription() {
+    description->setVisible(true);
+  };
+
 signals:
-  void showDescription();
+  void showDescriptionEvent();
 
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
@@ -54,6 +71,9 @@ protected:
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
+
+private:
+  ElidedLabel *value;
   QLabel *description = nullptr;
 };
 
@@ -105,7 +125,10 @@ public:
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
   }
 
-  void setEnabled(bool enabled) { toggle.setEnabled(enabled); toggle.update(); }
+  void setEnabled(bool enabled) {
+    toggle.setEnabled(enabled);
+    toggle.update();
+  }
 
 signals:
   void toggleFlipped(bool state);
@@ -121,20 +144,57 @@ class ParamControl : public ToggleControl {
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
     key = param.toStdString();
-    QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      params.putBool(key, state);
+    QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
+      QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
+                      "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
+      ConfirmationDialog dialog(content, tr("Enable"), tr("Cancel"), true, this);
+
+      bool confirmed = store_confirm && params.getBool(key + "Confirmed");
+      if (!confirm || confirmed || !state || dialog.exec()) {
+        if (store_confirm && state) params.putBool(key + "Confirmed", true);
+        params.putBool(key, state);
+        setIcon(state);
+      } else {
+        toggle.togglePosition();
+      }
     });
   }
 
-  void showEvent(QShowEvent *event) override {
-    if (params.getBool(key) != toggle.on) {
+  void setConfirmation(bool _confirm, bool _store_confirm) {
+    confirm = _confirm;
+    store_confirm = _store_confirm;
+  };
+
+  void setActiveIcon(const QString &icon) {
+    active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
+  }
+
+  void refresh() {
+    bool state = params.getBool(key);
+    if (state != toggle.on) {
       toggle.togglePosition();
+      setIcon(state);
     }
   };
 
+  void showEvent(QShowEvent *event) override {
+    refresh();
+  };
+
 private:
+  void setIcon(bool state) {
+    if (state && !active_icon_pixmap.isNull()) {
+      icon_label->setPixmap(active_icon_pixmap);
+    } else if (!icon_pixmap.isNull()) {
+      icon_label->setPixmap(icon_pixmap);
+    }
+  };
+
   std::string key;
   Params params;
+  QPixmap active_icon_pixmap;
+  bool confirm = false;
+  bool store_confirm = false;
 };
 
 class ListWidget : public QWidget {
@@ -157,9 +217,12 @@ private:
     QPainter p(this);
     p.setPen(Qt::gray);
     for (int i = 0; i < inner_layout.count() - 1; ++i) {
-      QRect r = inner_layout.itemAt(i)->geometry();
-      int bottom = r.bottom() + inner_layout.spacing() / 2;
-      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      QWidget *widget = inner_layout.itemAt(i)->widget();
+      if (widget == nullptr || widget->isVisible()) {
+        QRect r = inner_layout.itemAt(i)->geometry();
+        int bottom = r.bottom() + inner_layout.spacing() / 2;
+        p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+      }
     }
   }
   QVBoxLayout outer_layout;

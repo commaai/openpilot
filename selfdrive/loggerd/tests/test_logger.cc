@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <sstream>
 #include <thread>
+#include <utility>
 
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
@@ -47,7 +48,7 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
         }
         ++i;
       } catch (const kj::Exception &ex) {
-        INFO("failed parse " << i << " excpetion :" << ex.getDescription());
+        INFO("failed parse " << i << " exception :" << ex.getDescription());
         REQUIRE(0);
         break;
       }

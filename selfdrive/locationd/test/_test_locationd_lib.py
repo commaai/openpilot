@@ -19,7 +19,7 @@ LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../
 class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
-Localizer_t localizer_init();
+Localizer_t localizer_init(bool has_ublox);
 void localizer_get_message_bytes(Localizer_t localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
 
@@ -27,7 +27,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     self.ffi.cdef(header)
     self.lib = self.ffi.dlopen(LIBLOCATIOND_PATH)
 
-    self.localizer = self.lib.localizer_init()
+    self.localizer = self.lib.localizer_init(True) # default to ublox
 
     self.buff_size = 2048
     self.msg_buff = self.ffi.new(f'char[{self.buff_size}]')
@@ -51,23 +51,23 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
   @unittest.skip("temporarily disabled due to false positives")
   def test_device_fell(self):
-    msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 1
-    msg.sensorEvents[0].timestamp = msg.logMonoTime
-    msg.sensorEvents[0].type = 1
-    msg.sensorEvents[0].init('acceleration')
-    msg.sensorEvents[0].acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
+    msg = messaging.new_message('accelerometer')
+    msg.accelerometer.sensor = 1
+    msg.accelerometer.timestamp = msg.logMonoTime
+    msg.accelerometer.type = 1
+    msg.accelerometer.init('acceleration')
+    msg.accelerometer.acceleration.v = [10.0, 0.0, 0.0]  # zero with gravity
     self.localizer_handle_msg(msg)
 
     ret = self.localizer_get_msg()
     self.assertTrue(ret.liveLocationKalman.deviceStable)
 
-    msg = messaging.new_message('sensorEvents', 1)
-    msg.sensorEvents[0].sensor = 1
-    msg.sensorEvents[0].timestamp = msg.logMonoTime
-    msg.sensorEvents[0].type = 1
-    msg.sensorEvents[0].init('acceleration')
-    msg.sensorEvents[0].acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
+    msg = messaging.new_message('accelerometer')
+    msg.accelerometer.sensor = 1
+    msg.accelerometer.timestamp = msg.logMonoTime
+    msg.accelerometer.type = 1
+    msg.accelerometer.init('acceleration')
+    msg.accelerometer.acceleration.v = [50.1, 0.0, 0.0]  # more than 40 m/s**2
     self.localizer_handle_msg(msg)
 
     ret = self.localizer_get_msg()

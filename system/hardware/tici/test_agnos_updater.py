@@ -15,7 +15,7 @@ class TestAgnosUpdater(unittest.TestCase):
       m = json.load(f)
 
     for img in m:
-      r = requests.head(img['url'])
+      r = requests.head(img['url'], timeout=10)
       r.raise_for_status()
       self.assertEqual(r.headers['Content-Type'], "application/x-xz")
       if not img['sparse']:

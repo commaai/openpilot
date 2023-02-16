@@ -16,7 +16,7 @@
       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
        <range left="0.000450" top="5.384416" right="2483.624998" bottom="-7.503945"/>
        <limitY/>
-       <curve color="#1ac938" name="roll compenstated lateral acceleration"/>
+       <curve color="#1ac938" name="roll compensated lateral acceleration"/>
       </plot>
      </DockArea>
      <DockArea name="...">
@@ -51,15 +51,9 @@
   <plugin ID="Cereal Subscriber"/>
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
- <previouslyLoaded_Datafiles>
-  <fileInfo filename="../tmp2db6nfa2.rlog" prefix="">
-   <selected_datasources value=""/>
-   <plugin ID="DataLoad Rlog"/>
-  </fileInfo>
- </previouslyLoaded_Datafiles>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations>
-  <snippet name="roll compenstated lateral acceleration">
+  <snippet name="roll compensated lateral acceleration">
    <global></global>
    <function>if (v3 == 0 and v4 == 1) then
   return  (value * v1 ^ 2) - (v2 * 9.81)
