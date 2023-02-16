@@ -7,9 +7,11 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScrollBar>
+#include <QShortcut>
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/signaledit.h"
 
 // BinaryView
 
@@ -37,6 +39,63 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
 
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &BinaryView::refresh);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
+
+  addShortcuts();
+}
+
+void BinaryView::addShortcuts() {
+  // Delete (x, backspace, delete)
+  QShortcut *shortcut_delete_x = new QShortcut(QKeySequence(Qt::Key_X), this);
+  QShortcut *shortcut_delete_backspace = new QShortcut(QKeySequence(Qt::Key_Backspace), this);
+  QShortcut *shortcut_delete_delete = new QShortcut(QKeySequence(Qt::Key_Delete), this);
+  QObject::connect(shortcut_delete_delete, &QShortcut::activated, shortcut_delete_x, &QShortcut::activated);
+  QObject::connect(shortcut_delete_backspace, &QShortcut::activated, shortcut_delete_x, &QShortcut::activated);
+  QObject::connect(shortcut_delete_x, &QShortcut::activated, [=]{
+    if (hovered_sig != nullptr) {
+      emit removeSignal(hovered_sig);
+      hovered_sig = nullptr;
+    }
+  });
+
+  // Change endianness (e)
+  QShortcut *shortcut_endian = new QShortcut(QKeySequence(Qt::Key_E), this);
+  QObject::connect(shortcut_endian, &QShortcut::activated, [=]{
+    if (hovered_sig != nullptr) {
+      const Signal *hovered_sig_prev = hovered_sig;
+      Signal s = *hovered_sig;
+      s.is_little_endian = !s.is_little_endian;
+      emit editSignal(hovered_sig, s);
+
+      hovered_sig = nullptr;
+      highlight(hovered_sig_prev);
+    }
+  });
+
+  // Change signedness (s)
+  QShortcut *shortcut_sign = new QShortcut(QKeySequence(Qt::Key_S), this);
+  QObject::connect(shortcut_sign, &QShortcut::activated, [=]{
+    if (hovered_sig != nullptr) {
+      const Signal *hovered_sig_prev = hovered_sig;
+      Signal s = *hovered_sig;
+      s.is_signed = !s.is_signed;
+      emit editSignal(hovered_sig, s);
+
+      hovered_sig = nullptr;
+      highlight(hovered_sig_prev);
+    }
+  });
+
+  // Open chart (c, p, g)
+  QShortcut *shortcut_plot = new QShortcut(QKeySequence(Qt::Key_P), this);
+  QShortcut *shortcut_plot_g = new QShortcut(QKeySequence(Qt::Key_G), this);
+  QShortcut *shortcut_plot_c = new QShortcut(QKeySequence(Qt::Key_C), this);
+  QObject::connect(shortcut_plot_g, &QShortcut::activated, shortcut_plot, &QShortcut::activated);
+  QObject::connect(shortcut_plot_c, &QShortcut::activated, shortcut_plot, &QShortcut::activated);
+  QObject::connect(shortcut_plot, &QShortcut::activated, [=]{
+    if (hovered_sig != nullptr) {
+      emit showChart(*model->msg_id, hovered_sig, true, false);
+    }
+  });
 }
 
 QSize BinaryView::minimumSizeHint() const {
@@ -129,14 +188,14 @@ void BinaryView::leaveEvent(QEvent *event) {
   QTableView::leaveEvent(event);
 }
 
-void BinaryView::setMessage(const QString &message_id) {
+void BinaryView::setMessage(const MessageId &message_id) {
   model->msg_id = message_id;
   verticalScrollBar()->setValue(0);
   refresh();
 }
 
 void BinaryView::refresh() {
-  if (model->msg_id.isEmpty()) return;
+  if (!model->msg_id) return;
 
   clearSelection();
   anchor_index = QModelIndex();
@@ -171,7 +230,7 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 void BinaryViewModel::refresh() {
   beginResetModel();
   items.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
+  if (auto dbc_msg = dbc()->msg(*msg_id)) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     for (auto &sig : dbc_msg->sigs) {
@@ -190,7 +249,7 @@ void BinaryViewModel::refresh() {
       }
     }
   } else {
-    row_count = can->lastMessage(msg_id).dat.size();
+    row_count = can->lastMessage(*msg_id).dat.size();
     items.resize(row_count * column_count);
   }
   endResetModel();
@@ -199,7 +258,7 @@ void BinaryViewModel::refresh() {
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-  const auto &last_msg = can->lastMessage(msg_id);
+  const auto &last_msg = can->lastMessage(*msg_id);
   const auto &binary = last_msg.dat;
 
   // data size may changed.

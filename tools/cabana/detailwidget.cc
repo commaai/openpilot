@@ -72,6 +72,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, signal_view, &SignalView::expandSignal);
+  QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
+  QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
+  QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
   QObject::connect(tab_widget, &QTabWidget::currentChanged, [this]() { updateState(); });
@@ -80,11 +83,15 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &DetailWidget::refresh);
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-    if (index != -1 && tabbar->tabText(index) != msg_id) {
-      setMessage(tabbar->tabText(index));
+    if (index != -1) {
+      setMessage(tabbar_ids[index]);
     }
   });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [this](int index) {
+    tabbar_ids.removeAt(index);
+    tabbar->removeTab(index);
+    assert(tabbar_ids.size() == tabbar->count());
+  });
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
 
@@ -103,29 +110,32 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
 }
 
 void DetailWidget::removeAll() {
-  msg_id = "";
+  msg_id = std::nullopt;
   tabbar->blockSignals(true);
   while (tabbar->count() > 0) {
     tabbar->removeTab(0);
   }
+  tabbar_ids.clear();
   tabbar->blockSignals(false);
   stacked_layout->setCurrentIndex(0);
 }
 
-void DetailWidget::setMessage(const QString &message_id) {
+void DetailWidget::setMessage(const MessageId &message_id) {
   msg_id = message_id;
-  int index = tabbar->count() - 1;
-  for (/**/; index >= 0 && tabbar->tabText(index) != msg_id; --index) { /**/ }
+  int index = tabbar_ids.indexOf(*msg_id);
+
   if (index == -1) {
-    index = tabbar->addTab(message_id);
+    tabbar_ids.append(*msg_id);
+    index = tabbar->addTab(message_id.toString());
     tabbar->setTabToolTip(index, msgName(message_id));
   }
+  assert(tabbar->count() == tabbar_ids.size());
 
   setUpdatesEnabled(false);
 
-  signal_view->setMessage(msg_id);
-  binary_view->setMessage(msg_id);
-  history_log->setMessage(msg_id);
+  signal_view->setMessage(*msg_id);
+  binary_view->setMessage(*msg_id);
+  history_log->setMessage(*msg_id);
 
   stacked_layout->setCurrentIndex(1);
   tabbar->setCurrentIndex(index);
@@ -136,12 +146,12 @@ void DetailWidget::setMessage(const QString &message_id) {
 }
 
 void DetailWidget::refresh() {
-  if (msg_id.isEmpty()) return;
+  if (!msg_id) return;
 
   QStringList warnings;
-  auto msg = dbc()->msg(msg_id);
+  auto msg = dbc()->msg(*msg_id);
   if (msg) {
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (msg->size != can->lastMessage(*msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
@@ -151,7 +161,7 @@ void DetailWidget::refresh() {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
   remove_msg_act->setEnabled(msg != nullptr);
-  name_label->setText(msgName(msg_id));
+  name_label->setText(msgName(*msg_id));
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
@@ -160,9 +170,9 @@ void DetailWidget::refresh() {
   warning_widget->setVisible(!warnings.isEmpty());
 }
 
-void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
+void DetailWidget::updateState(const QHash<MessageId, CanData> *msgs) {
   time_label->setText(QString::number(can->currentSec(), 'f', 3));
-  if (msg_id.isEmpty() || (msgs && !msgs->contains(msg_id)))
+  if (!msg_id || (msgs && !msgs->contains(*msg_id)))
     return;
 
   if (tab_widget->currentIndex() == 0)
@@ -172,24 +182,24 @@ void DetailWidget::updateState(const QHash<QString, CanData> *msgs) {
 }
 
 void DetailWidget::editMsg() {
-  QString id = msg_id;
+  MessageId id = *msg_id;
   auto msg = dbc()->msg(id);
   int size = msg ? msg->size : can->lastMessage(id).dat.size();
   EditMessageDialog dlg(id, msgName(id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
+    UndoStack::push(new EditMsgCommand(*msg_id, dlg.name_edit->text(), dlg.size_spin->value()));
   }
 }
 
 void DetailWidget::removeMsg() {
-  UndoStack::push(new RemoveMsgCommand(msg_id));
+  UndoStack::push(new RemoveMsgCommand(*msg_id));
 }
 
 // EditMessageDialog
 
-EditMessageDialog::EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent)
+EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent)
     : original_name(title), QDialog(parent) {
-  setWindowTitle(tr("Edit message: %1").arg(msg_id));
+  setWindowTitle(tr("Edit message: %1").arg(msg_id.toString()));
   QFormLayout *form_layout = new QFormLayout(this);
 
   form_layout->addRow("", error_label = new QLabel);

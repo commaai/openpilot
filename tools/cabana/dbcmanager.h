@@ -4,6 +4,34 @@
 #include <QList>
 #include <QString>
 
+struct MessageId {
+  uint8_t source;
+  uint32_t address;
+
+  QString toString() const {
+    return QString("%1:%2").arg(source).arg(address, 1, 16);
+  }
+
+  bool operator==(const MessageId &other) const {
+    return source == other.source && address == other.address;
+  }
+
+  bool operator!=(const MessageId &other) const {
+    return !(*this == other);
+  }
+
+  bool operator<(const MessageId &other) const {
+    return std::pair{source, address} < std::pair{other.source, other.address};
+  }
+
+  bool operator>(const MessageId &other) const {
+    return std::pair{source, address} > std::pair{other.source, other.address};
+  }
+};
+
+uint qHash(const MessageId &item);
+Q_DECLARE_METATYPE(MessageId);
+
 namespace dbcmanager {
 
 struct Signal {
@@ -36,16 +64,16 @@ public:
   bool open(const QString &dbc_file_name, QString *error = nullptr);
   bool open(const QString &name, const QString &content, QString *error = nullptr);
   QString generateDBC();
-  void addSignal(const QString &id, const Signal &sig);
-  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
-  void removeSignal(const QString &id, const QString &sig_name);
-  static std::pair<uint8_t, uint32_t> parseId(const QString &id);
+  void addSignal(const MessageId &id, const Signal &sig);
+  void updateSignal(const MessageId &id, const QString &sig_name, const Signal &sig);
+  void removeSignal(const MessageId &id, const QString &sig_name);
+
   static std::vector<std::string> allDBCNames();
   inline QString name() const { return name_; }
-  void updateMsg(const QString &id, const QString &name, uint32_t size);
-  void removeMsg(const QString &id);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size);
+  void removeMsg(const MessageId &id);
   inline const std::map<uint32_t, Msg> &messages() const { return msgs; }
-  inline const Msg *msg(const QString &id) const { return msg(parseId(id).second); }
+  inline const Msg *msg(const MessageId &id) const { return msg(id.address); }
   inline const Msg *msg(uint32_t address) const {
     auto it = msgs.find(address);
     return it != msgs.end() ? &it->second : nullptr;
@@ -76,7 +104,7 @@ int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const Signal *s);
 DBCManager *dbc();
-inline QString msgName(const QString &id) {
+inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
 }
