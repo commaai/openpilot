@@ -685,12 +685,14 @@ FW_VERSIONS = {
   },
   CAR.SANTA_FE: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1210         ',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.01 99110-S2000         ',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.02 99110-S2000         ',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.03 99110-S2000         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00TM ESC \r 100\x18\x031 58910-S2650',
+      b'\xf1\x00TM ESC \r 105\x19\x05# 58910-S1500',
       b'\xf1\x00TM ESC \r 103\x18\x11\x08 58910-S2650',
       b'\xf1\x00TM ESC \r 104\x19\x07\x08 58910-S2650',
       b'\xf1\x00TM ESC \x02 100\x18\x030 58910-S2600',
@@ -709,11 +711,14 @@ FW_VERSIONS = {
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8A12',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
+      b'\xf1\x00TM  MDPS R 1.00 1.02 57700-S1100 4TMDP102'
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.01 99211-S1010 181207',
       b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  U833\x00\x00\x00\x00\x00\x00TTM4V22US3_<]\xf1',
       b'\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM4T20NS5\x00\x00\x00\x00',
       b'\xf1\x87LBJSGA7082574HG0\x87www\x98\x88\x88\x88\x99\xaa\xb9\x9afw\x86gx\x99\xa7\x89co\xf8\xffvU_\xffR\xaf\xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM2T20NS1\x00\xa6\xe0\x91',
       b'\xf1\x87LBKSGA0458404HG0vfvg\x87www\x89\x99\xa8\x99y\xaa\xa7\x9ax\x88\xa7\x88t_\xf9\xff\x86w\x8f\xff\x15x\xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM2T20NS1\x00\x00\x00\x00',
