@@ -37,7 +37,7 @@ class CarControllerParams:
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    # The max amount of deceleration possible using ASCMGasRegenCmd alone. May vary by speed with some cars
+    # The max amount of deceleration possible using ASCMGasRegenCmd alone. May vary by speed on some cars
     self.MAX_REGEN_ACCEL_BP = [0.]  # m/s
     self.MAX_REGEN_ACCEL_V = [0.]  # m/s^2
 
