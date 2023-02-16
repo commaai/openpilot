@@ -2,7 +2,6 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from system.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED
