@@ -1,14 +1,16 @@
 #pragma once
 
 #include <deque>
+#include <optional>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/canmessages.h"
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -22,7 +24,7 @@ class HistoryLogModel : public QAbstractTableModel {
 
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -30,22 +32,30 @@ public:
   void fetchMore(const QModelIndex &parent) override;
   inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return std::max(1ul, sigs.size()) + 1; }
-  void setDynamicMode(int state);
-  void segmentsMerged();
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override {
+    return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
+  }
   void refresh();
 
+public slots:
+  void setDisplayType(int type);
+  void setDynamicMode(int state);
+  void segmentsMerged();
+
+public:
   struct Message {
     uint64_t mono_time = 0;
     QVector<double> sig_values;
-    QString data;
+    QByteArray data;
+    QVector<QColor> colors;
   };
 
   template <class InputIt>
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
-  QString msg_id;
+  std::optional<MessageId> msg_id;
+  ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
@@ -54,13 +64,8 @@ public:
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<const Signal*> sigs;
-  bool dynamic_mode = false;
-};
-
-class HistoryLog : public QTableView {
-public:
-  HistoryLog(QWidget *parent);
-  int sizeHintForColumn(int column) const override { return -1; };
+  bool dynamic_mode = true;
+  bool display_signals_mode = true;
 };
 
 class LogsWidget : public QWidget {
@@ -68,23 +73,20 @@ class LogsWidget : public QWidget {
 
 public:
   LogsWidget(QWidget *parent);
-  void setMessage(const QString &message_id);
-  void updateState();
-
-signals:
-  void openChart(const QString &msg_id, const Signal *sig);
+  void setMessage(const MessageId &message_id);
+  void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
+  void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
 
 private slots:
   void setFilter();
 
 private:
-  void doubleClicked(const QModelIndex &index);
-  void showEvent(QShowEvent *event) override;
+  void refresh();
 
-  HistoryLog *logs;
+  QTableView *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;
-  QComboBox *signals_cb, *comp_box;
+  QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;
-  QString cur_filter_text;
+  QWidget *filters_widget;
 };
