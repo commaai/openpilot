@@ -88,6 +88,11 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
 
+    # These cars have been put into dashcam only due to both a lack of users and test coverage.
+    # These cars likely still work fine. Once a user confirms each car works and a test route is
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
+
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
     else:
@@ -115,7 +120,6 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
-      ret.longitudinalActuatorDelayUpperBound = 0.5
 
       if experimental_long:
         ret.pcmCruise = False
@@ -135,10 +139,9 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
 
-    # These cars have been put into dashcam only due to both a lack of users and test coverage.
-    # These cars likely still work fine. Once a user confirms each car works and a test route is
-    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
+    # Longitudinal delay: cars without regen or engine braking have a large delay to initially start braking
+    if ret.networkLocation == NetworkLocation.fwdCamera or ret.transmissionType == TransmissionType.automatic:
+      ret.longitudinalActuatorDelayUpperBound = 0.5
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
@@ -184,7 +187,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
-      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
