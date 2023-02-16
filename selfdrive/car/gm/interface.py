@@ -198,6 +198,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
 
+    elif candidate == CAR.ESCALADE:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 5653. * CV.LB_TO_KG + STD_CARGO_KG  # (5552+5815)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
