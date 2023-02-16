@@ -42,6 +42,21 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &BinaryView::refresh);
 
   addShortcuts();
+  setWhatsThis(R"(
+    <b>Binary View</b><br/>
+    <!-- TODO: add descprition here -->
+    Shortcuts:<br />
+    Delete Signal:
+      <span style="background-color:lightGray;color:gray"> x </span>,
+      <span style="background-color:lightGray;color:gray"> Backspace </span>,
+      <span style="background-color:lightGray;color:gray"> Delete</span><br />
+    Change endianness: <span style="background-color:lightGray;color:gray"> e </span><br />
+    Change singedness: <span style="background-color:lightGray;color:gray"> s </span><br />
+    Open chart:
+      <span style="background-color:lightGray;color:gray"> c </span>,
+      <span style="background-color:lightGray;color:gray"> p </span>,
+      <span style="background-color:lightGray;color:gray"> g </span><br />
+  )");
 }
 
 void BinaryView::addShortcuts() {
