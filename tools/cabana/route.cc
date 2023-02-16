@@ -114,7 +114,8 @@ void RemoteRouteList::getDevices() {
           dongleid_cb->addItem(device.toObject()["dongle_id"].toString());
         }
       }
-    } else {
+    }
+    if (dongleid_cb->count() == 0) {
       msg_label->setText(tr("Failed to load routes from server"));
       retry_btn->setVisible(true);
     }
@@ -125,21 +126,23 @@ void RemoteRouteList::getDevices() {
 
 void RemoteRouteList::getRouteList(const QString &dongleid) {
   list->clear();
-  HttpRequest *http = new HttpRequest(this, false);
-  QObject::connect(http, &HttpRequest::requestDone, [=](const QString &json, bool success, QNetworkReply::NetworkError error) {
-    if (success) {
-      auto doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
-      if (!doc.isEmpty() && doc.isArray()) {
-        for (const auto &route : doc.array()) {
-          list->addItem(route.toObject()["canonical_route_name"].toString());
+  if (!dongleid.isEmpty()) {
+    HttpRequest *http = new HttpRequest(this, false);
+    QObject::connect(http, &HttpRequest::requestDone, [=](const QString &json, bool success, QNetworkReply::NetworkError error) {
+      if (success) {
+        auto doc = QJsonDocument::fromJson(json.trimmed().toUtf8());
+        if (!doc.isEmpty() && doc.isArray()) {
+          for (const auto &route : doc.array()) {
+            list->addItem(route.toObject()["canonical_route_name"].toString());
+          }
         }
+        setCurrentIndex(1);
+      } else {
+        msg_label->setText(tr("Failed to load routes from server"));
+        retry_btn->setVisible(true);
       }
-      setCurrentIndex(1);
-    } else {
-      msg_label->setText(tr("Failed to load routes from server"));
-      retry_btn->setVisible(true);
-    }
-    http->deleteLater();
-  });
-  http->sendRequest(QString("https://api.commadotai.com/v1/%1/segments").arg(dongleid));
+      http->deleteLater();
+    });
+    http->sendRequest(QString("https://api.commadotai.com/v1/%1/segments").arg(dongleid));
+  }
 }
