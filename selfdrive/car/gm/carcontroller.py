@@ -17,6 +17,13 @@ CAMERA_CANCEL_DELAY_FRAMES = 10
 MIN_STEER_MSG_INTERVAL_MS = 15
 
 
+def get_gas_brake_lookup_bp(params, v_ego):
+  max_regen_acceleration = interp(v_ego, params.MAX_REGEN_ACCEL_BP, params.MAX_REGEN_ACCEL_V)
+  gas_lookup_bp = [max_regen_acceleration, 0., params.ACCEL_MAX]
+  brake_lookup_bp = [params.ACCEL_MIN, max_regen_acceleration]
+  return gas_lookup_bp, brake_lookup_bp
+
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -93,9 +100,9 @@ class CarController:
           self.apply_gas = self.params.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.params.update_ev_gas_brake_threshold(CS.out.vEgo)
-          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          gas_lookup_bp, brake_lookup_bp = get_gas_brake_lookup_bp(self.params, CS.out.vEgo)
+          self.apply_gas = int(round(interp(actuators.accel, gas_lookup_bp, self.params.GAS_LOOKUP_V)))
+          self.apply_brake = int(round(interp(actuators.accel, brake_lookup_bp, self.params.BRAKE_LOOKUP_V)))
 
         idx = (self.frame // 4) % 4
 

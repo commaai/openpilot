@@ -1,5 +1,4 @@
 from collections import defaultdict
-from common.numpy_fast import interp
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
@@ -8,6 +7,8 @@ from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
+NetworkLocation = car.CarParams.NetworkLocation
+TransmissionType = car.CarParams.TransmissionType
 
 
 class CarControllerParams:
@@ -38,38 +39,36 @@ class CarControllerParams:
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    if CP.carFingerprint in CAMERA_ACC_CAR:
+    # The max amount of deceleration possible using ASCMGasRegenCmd alone. May vary by speed with some cars
+    self.MAX_REGEN_ACCEL_BP = [0.]  # m/s
+    self.MAX_REGEN_ACCEL_V = [0.]  # m/s^2
+
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_GAS = 3400
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
-      # Camera ACC vehicles have no regen while enabled.
-      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
-      max_regen_acceleration = 0.
 
     else:
       self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
       self.INACTIVE_REGEN = 1404
-      # ICE has much less engine braking force compared to regen in EVs,
-      # lower threshold removes some braking deadzone
-      max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
 
-    self.GAS_LOOKUP_BP = [max_regen_acceleration, 0., self.ACCEL_MAX]
+      if CP.transmissionType == TransmissionType.direct:
+        # determined by letting Volt regen to a stop in L gear from 89mph,
+        # and by letting off gas and allowing car to creep, for determining
+        # the positive threshold values at very low speed
+        self.MAX_REGEN_ACCEL_BP = [0, 2.0, 10.]
+        self.MAX_REGEN_ACCEL_V = [0.5, 0.0, 1.0]
+      else:
+        # ICE has much less engine braking force compared to regen in EVs,
+        # lower threshold removes some braking deadzone
+        self.MAX_REGEN_ACCEL_V = [-0.1]
+
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
-
-    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, max_regen_acceleration]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
-  # determined by letting Volt regen to a stop in L gear from 89mph,
-  # and by letting off gas and allowing car to creep, for determining
-  # the positive threshold values at very low speed
-  EV_GAS_BRAKE_THRESHOLD_BP = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.29, 1.52, 1.55, 1.6, 1.7, 1.8, 2.0, 2.2, 2.5, 5.52, 9.6, 20.5, 23.5, 35.0] # [m/s]
-  EV_GAS_BRAKE_THRESHOLD_V = [0.678, 0.67, 0.63, 0.56, 0.49, 0.38, 0.3, 0.13, 0.0, -0.14, -0.16, -0.18, -0.215, -0.255, -0.32, -0.41, -0.5, -0.72, -0.895, -1.125, -1.145, -1.16] # [m/s^s]
-
-  def update_ev_gas_brake_threshold(self, v_ego):
-    gas_brake_threshold = interp(v_ego, self.EV_GAS_BRAKE_THRESHOLD_BP, self.EV_GAS_BRAKE_THRESHOLD_V)
-    self.EV_GAS_LOOKUP_BP = [gas_brake_threshold, max(0., gas_brake_threshold), self.ACCEL_MAX]
-    self.EV_BRAKE_LOOKUP_BP = [self.ACCEL_MIN, gas_brake_threshold]
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
