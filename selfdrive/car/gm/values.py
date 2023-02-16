@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
+from common.numpy_fast import interp
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
@@ -66,6 +67,12 @@ class CarControllerParams:
 
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
+
+  def get_gas_brake_lookup_bp(self, v_ego):
+    max_regen_acceleration = interp(v_ego, self.MAX_REGEN_ACCEL_BP, self.MAX_REGEN_ACCEL_V)
+    gas_lookup_bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
+    brake_lookup_bp = [self.ACCEL_MIN, max_regen_acceleration]
+    return gas_lookup_bp, brake_lookup_bp
 
 
 class CAR:
