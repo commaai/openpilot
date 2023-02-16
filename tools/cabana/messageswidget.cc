@@ -69,10 +69,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
     <!-- TODO: add descprition here -->
-    Byte colors: <br />
+    Byte color: <br />
     <span style="color:gray;">■ </span> constant changing<br />
-    <span style="color:red;">■ </span> increase <br />
-    <span style="color:blue;">■ </span> decrease<br />
+    <span style="color:blue;">■ </span> increasing<br />
+    <span style="color:red;">■ </span> decreasing <br />
   )"));
 }
 
