@@ -66,7 +66,7 @@ class CAR:
   CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
   MALIBU = "CHEVROLET MALIBU PREMIER 2017"
   ACADIA = "GMC ACADIA DENALI 2018"
-  BUICK_LACROSSE = "BUICK LACROSSE PREMIUM 2017"
+  BUICK_LACROSSE = "BUICK LACROSSE 2017"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE = "CADILLAC ESCALADE 2017"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
@@ -100,7 +100,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
-  CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse Premium 2017-19", "Adaptive Cruise Control (ACC)"),
+  CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse 2017-19", "Driver Confidence Package 2"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
