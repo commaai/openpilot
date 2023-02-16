@@ -483,6 +483,7 @@ FW_VERSIONS = {
   CAR.IONIQ_HEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2600         ',
+      b'\xf1\x00AEhe SCC FHCUP      1.00 1.00 99110-G2600         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310G2510\x00 4APHC101',
@@ -495,6 +496,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HAE0G16NL2\x00\x00\x00\x00',
+      b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HAE0G16NL2\x96\xda\xd4\xee',
     ],
   },
   CAR.SONATA: {
