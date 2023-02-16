@@ -382,6 +382,10 @@ void CameraWidget::vipcThread() {
         }
       }
       emit vipcThreadFrameReceived();
+    } else {
+      if (!isVisible()) {
+        vipc_client->connected = false;
+      }
     }
   }
 

@@ -407,6 +407,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
   params.put_bool("UbloxAvailable", True)
+  params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"

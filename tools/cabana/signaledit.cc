@@ -31,7 +31,7 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Sign
   }
 }
 
-void SignalModel::setMessage(const QString &id) {
+void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
   filter_str = "";
   refresh();
@@ -56,7 +56,7 @@ void SignalModel::refresh() {
   endResetModel();
 }
 
-void SignalModel::updateState(const QHash<QString, CanData> *msgs) {
+void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || (msgs->contains(msg_id))) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
@@ -230,13 +230,13 @@ void SignalModel::removeSignal(const Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(uint32_t address) {
-  if (address == DBCManager::parseId(msg_id).second) {
+  if (address == msg_id.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
-  if (address == DBCManager::parseId(msg_id).second) {
+  if (address == msg_id.address) {
     int i = 0;
     for (; i < root->children.size(); ++i) {
       if (sig->start_bit < root->children[i]->sig->start_bit) break;
@@ -266,6 +266,7 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
+  small_font.setPointSize(8);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
 }
 
@@ -279,21 +280,20 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     }
 
     // color label
-    auto bg_color = QColor(getColor(item->row()));
-    QRect rc{option.rect.left() + 3, option.rect.top(), 22, option.rect.height()};
+    auto bg_color = getColor(item->sig);
+    QRect rc{option.rect.left(), option.rect.top(), 18, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
-    painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 5, 5);
+    painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 3, 3);
     painter->setPen(item->highlight ? Qt::white : Qt::black);
+    painter->setFont(small_font);
     painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
 
     // signal name
-    QFont font;
-    font.setBold(true);
-    painter->setFont(font);
+    painter->setFont(option.font);
     painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
     QString text = index.data(Qt::DisplayRole).toString();
-    QRect text_rect = option.rect.adjusted(rc.width() + 9, 0, 0, 0);
+    QRect text_rect = option.rect.adjusted(rc.width() + 6, 0, 0, 0);
     text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
@@ -367,7 +367,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { expandSignal(sig); });
 }
 
-void SignalView::setMessage(const QString &id) {
+void SignalView::setMessage(const MessageId &id) {
   msg_id = id;
   filter_edit->clear();
   model->setMessage(id);
@@ -448,4 +448,9 @@ void SignalView::signalHovered(const Signal *sig) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0));
     }
   }
+}
+
+void SignalView::leaveEvent(QEvent *event) {
+  emit highlight(nullptr);
+  QWidget::leaveEvent(event);
 }
