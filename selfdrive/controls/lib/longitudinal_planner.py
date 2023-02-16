@@ -122,7 +122,7 @@ class LongitudinalPlanner:
     self.mpc.update(sm['radarState'], v_cruise, x, v, a, j)
 
     self.v_desired_trajectory_full = np.interp(T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
-    self.v_desired_trajectory = self.v_desired_trajectory[:CONTROL_N]
+    self.v_desired_trajectory = self.v_desired_trajectory_full[:CONTROL_N]
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
