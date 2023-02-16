@@ -7,8 +7,6 @@ from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 Ecu = car.CarParams.Ecu
-NetworkLocation = car.CarParams.NetworkLocation
-TransmissionType = car.CarParams.TransmissionType
 
 
 class CarControllerParams:
@@ -43,7 +41,7 @@ class CarControllerParams:
     self.MAX_REGEN_ACCEL_BP = [0.]  # m/s
     self.MAX_REGEN_ACCEL_V = [0.]  # m/s^2
 
-    if CP.networkLocation == NetworkLocation.fwdCamera:
+    if CP.carFingerprint in CAMERA_ACC_CAR:
       # Camera ACC vehicles have no regen while enabled.
       # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_GAS = 3400
@@ -55,7 +53,7 @@ class CarControllerParams:
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
       self.INACTIVE_REGEN = 1404
 
-      if CP.transmissionType == TransmissionType.direct:
+      if CP.carFingerprint in EV_CAR:
         # determined by letting Volt regen to a stop in L gear from 89mph,
         # and by letting off gas and allowing car to creep, for determining
         # the positive threshold values at very low speed
