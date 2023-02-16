@@ -4,6 +4,10 @@
 #include <sstream>
 #include <QVector>
 
+uint qHash(const MessageId &item) {
+  return qHash(item.source) ^ qHash(item.address);
+}
+
 DBCManager::DBCManager(QObject *parent) : QObject(parent) {}
 
 DBCManager::~DBCManager() {}
@@ -56,29 +60,27 @@ QString DBCManager::generateDBC() {
   return dbc_string;
 }
 
-void DBCManager::updateMsg(const QString &id, const QString &name, uint32_t size) {
-  auto [_, address] = parseId(id);
-  auto &m = msgs[address];
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
+  auto &m = msgs[id.address];
   m.name = name;
   m.size = size;
-  emit msgUpdated(address);
+  emit msgUpdated(id.address);
 }
 
-void DBCManager::removeMsg(const QString &id) {
-  uint32_t address = parseId(id).second;
-  msgs.erase(address);
-  emit msgRemoved(address);
+void DBCManager::removeMsg(const MessageId &id) {
+  msgs.erase(id.address);
+  emit msgRemoved(id.address);
 }
 
-void DBCManager::addSignal(const QString &id, const Signal &sig) {
-  if (auto m = const_cast<DBCMsg *>(msg(id))) {
+void DBCManager::addSignal(const MessageId &id, const Signal &sig) {
+  if (auto m = const_cast<DBCMsg *>(msg(id.address))) {
     auto &s = m->sigs[sig.name.c_str()];
     s = sig;
-    emit signalAdded(parseId(id).second, &s);
+    emit signalAdded(id.address, &s);
   }
 }
 
-void DBCManager::updateSignal(const QString &id, const QString &sig_name, const Signal &sig) {
+void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, const Signal &sig) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     // change key name
     QString new_name = QString::fromStdString(sig.name);
@@ -91,7 +93,7 @@ void DBCManager::updateSignal(const QString &id, const QString &sig_name, const 
   }
 }
 
-void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
+void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = const_cast<DBCMsg *>(msg(id))) {
     auto it = m->sigs.find(sig_name);
     if (it != m->sigs.end()) {
@@ -99,12 +101,6 @@ void DBCManager::removeSignal(const QString &id, const QString &sig_name) {
       m->sigs.erase(it);
     }
   }
-}
-
-std::pair<uint8_t, uint32_t> DBCManager::parseId(const QString &id) {
-  const auto list = id.split(':');
-  if (list.size() != 2) return {0, 0};
-  return {list[0].toInt(), list[1].toUInt(nullptr, 16)};
 }
 
 DBCManager *dbc() {
