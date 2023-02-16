@@ -9,7 +9,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QResizeEvent>
 #include <QShortcut>
+#include <QTextDocument>
 #include <QUndoView>
 #include <QVBoxLayout>
 #include <QWidgetAction>
@@ -20,7 +22,7 @@
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
-  if (main_win) emit main_win->showMessage(msg, 0);
+  if (main_win) emit main_win->showMessage(msg, 2000);
 }
 
 MainWindow::MainWindow() : QMainWindow() {
@@ -43,7 +45,7 @@ MainWindow::MainWindow() : QMainWindow() {
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit showMessage(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 2000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
@@ -125,6 +127,7 @@ void MainWindow::createActions() {
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
@@ -173,6 +176,7 @@ void MainWindow::createStatusBar() {
   progress_bar->setTextVisible(true);
   progress_bar->setFixedSize({230, 16});
   progress_bar->setVisible(false);
+  statusBar()->addWidget(new QLabel(tr("For Help,Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
 }
 
@@ -421,4 +425,62 @@ void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg->show();
+}
+
+void MainWindow::onlineHelp() {
+  if (auto help = findChild<HelpOverlay*>()) {
+    help->close();
+  } else {
+    help = new HelpOverlay(this);
+    help->setGeometry(rect());
+    help->show();
+    help->raise();
+  }
+}
+
+// HelpOverlay
+HelpOverlay::HelpOverlay(MainWindow *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_NoSystemBackground, true);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose);
+  parent->installEventFilter(this);
+}
+
+void HelpOverlay::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.fillRect(rect(), QColor(0, 0, 0, 50));
+  MainWindow *parent = (MainWindow *)parentWidget();
+  drawHelpForWidget(painter, parent->findChild<MessagesWidget *>());
+  drawHelpForWidget(painter, parent->findChild<BinaryView *>());
+  drawHelpForWidget(painter, parent->findChild<SignalView *>());
+  drawHelpForWidget(painter, parent->findChild<ChartsWidget *>());
+  drawHelpForWidget(painter, parent->findChild<VideoWidget *>());
+}
+
+void HelpOverlay::drawHelpForWidget(QPainter &painter, QWidget *w) {
+  if (w && w->isVisible() && !w->whatsThis().isEmpty()) {
+    QPoint pt = mapFromGlobal(w->mapToGlobal(w->rect().center()));
+    if (rect().contains(pt)) {
+      QTextDocument document;
+      document.setHtml(w->whatsThis());
+      QSize doc_size = document.size().toSize();
+      QPoint topleft = {pt.x() - doc_size.width() / 2, pt.y() - doc_size.height() / 2};
+      painter.translate(topleft);
+      painter.fillRect(QRect{{0, 0}, doc_size}, palette().toolTipBase());
+      document.drawContents(&painter);
+      painter.translate(-topleft);
+    }
+  }
+}
+
+bool HelpOverlay::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == parentWidget() && event->type() == QEvent::Resize) {
+    QResizeEvent *resize_event = (QResizeEvent *)(event);
+    setGeometry(QRect{QPoint(0, 0), resize_event->size()});
+  }
+  return false;
+}
+
+void HelpOverlay::mouseReleaseEvent(QMouseEvent *event) {
+  close();
 }

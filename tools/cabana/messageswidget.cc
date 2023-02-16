@@ -65,6 +65,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
 
   updateSuppressedButtons();
+
+  setWhatsThis(tr(R"(
+    <b>Message View</b><br/>
+    <!-- TODO: add descprition here -->
+    Byte color: <br />
+    <span style="color:gray;">■ </span> constant changing<br />
+    <span style="color:blue;">■ </span> increasing<br />
+    <span style="color:red;">■ </span> decreasing <br />
+  )"));
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {

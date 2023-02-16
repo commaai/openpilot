@@ -365,6 +365,11 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { expandSignal(sig); });
+
+  setWhatsThis(tr(R"(
+    <b>Signal view</b><br />
+    <!-- TODO: add descprition here -->
+  )"));
 }
 
 void SignalView::setMessage(const MessageId &id) {
