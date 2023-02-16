@@ -43,6 +43,10 @@ class CarInterface(CarInterfaceBase):
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+    else:
+      # Send LFA message on cars with HDA
+      if 0x485 in fingerprint[2]:
+        ret.flags |= HyundaiFlags.SEND_LFA.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4

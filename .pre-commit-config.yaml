@@ -19,7 +19,7 @@ repos:
     rev: v2.2.1
     hooks:
     -   id: codespell
-        exclude: '^(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)'
+        exclude: '^(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup
