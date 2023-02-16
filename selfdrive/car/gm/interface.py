@@ -139,7 +139,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
 
-    # Longitudinal delay: cars without regen or engine braking have a large delay to initially start braking
+    # Longitudinal delay: ICE or cars without regen have a large delay to initially start braking
     if ret.networkLocation == NetworkLocation.fwdCamera or ret.transmissionType == TransmissionType.automatic:
       ret.longitudinalActuatorDelayUpperBound = 0.5
 
