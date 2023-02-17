@@ -84,13 +84,17 @@ RemoteRouteList::RemoteRouteList(QWidget *parent) : QStackedWidget(parent) {
   main_layout->addWidget(list = new QListWidget);
 
   QWidget *loading_w = new QWidget(this);
-  QHBoxLayout *h = new QHBoxLayout(loading_w);
+  QVBoxLayout *v = new QVBoxLayout(loading_w);
   msg_label = new QLabel(tr("Loading routes from server..."));
   msg_label->setAlignment(Qt::AlignCenter);
+  v->addStretch(0);
+  v->addWidget(msg_label);
+  QHBoxLayout *h = new QHBoxLayout();
   h->addStretch(0);
-  h->addWidget(msg_label);
   h->addWidget(retry_btn = new QPushButton(tr("Retry")));
   h->addStretch(0);
+  v->addLayout(h);
+  v->addStretch(0);
 
   addWidget(loading_w);
   addWidget(w);
@@ -116,7 +120,11 @@ void RemoteRouteList::getDevices() {
       }
     }
     if (dongleid_cb->count() == 0) {
-      msg_label->setText(tr("Failed to load routes from server"));
+      QString text = tr("Failed to load routes from server\n");
+      if (error == QNetworkReply::ContentAccessDenied || error == QNetworkReply::AuthenticationRequiredError) {
+        text += tr("Unauthorized. Authenticate with tools/lib/auth.py");
+      }
+      msg_label->setText(text);
       retry_btn->setVisible(true);
     }
     http->deleteLater();
@@ -138,7 +146,7 @@ void RemoteRouteList::getRouteList(const QString &dongleid) {
         }
         setCurrentIndex(1);
       } else {
-        msg_label->setText(tr("Failed to load routes from server"));
+        msg_label->setText(tr("Failed to load routes from server\n"));
         retry_btn->setVisible(true);
       }
       http->deleteLater();
