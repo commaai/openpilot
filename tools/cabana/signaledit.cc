@@ -334,7 +334,7 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return spin;
   } else if (item->type == SignalModel::Item::Desc) {
     ValueDescriptionDlg dlg(item->sig->val_desc, parent);
-    dlg.setWindowTitle(tr("Edit Value Description: %1").arg(item->sig->name));
+    dlg.setWindowTitle(item->sig->name);
     if (dlg.exec()) {
       ((QAbstractItemModel *)index.model())->setData(index, QVariant::fromValue(dlg.val_desc));
     }
@@ -507,26 +507,29 @@ ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, Q
 
   int row = 0;
   for (auto &[val, desc] : descriptions) {
-    auto item = new QTableWidgetItem(val);
-    table->setItem(row, 0, item);
+    table->setItem(row, 0, new QTableWidgetItem(val));
     table->setItem(row, 1, new QTableWidgetItem(desc));
     ++row;
   }
 
   auto btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &ValueDescriptionDlg::save);
-  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  QObject::connect(add, &QPushButton::clicked, [this]() { table->setRowCount(table->rowCount() + 1); });
-  QObject::connect(remove, &QPushButton::clicked, [this]() { table->removeRow(table->currentRow()); });
-  QObject::connect(table, &QTableWidget::itemSelectionChanged, [=]() {
-    remove->setEnabled(table->currentRow() != -1);
-  });
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addLayout(toolbar_layout);
   main_layout->addWidget(table);
   main_layout->addWidget(btn_box);
   setMinimumWidth(500);
+
+  QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &ValueDescriptionDlg::save);
+  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(add, &QPushButton::clicked, [this]() {
+    table->setRowCount(table->rowCount() + 1);
+    table->setItem(table->rowCount() - 1, 0, new QTableWidgetItem);
+    table->setItem(table->rowCount() - 1, 1, new QTableWidgetItem);
+  });
+  QObject::connect(remove, &QPushButton::clicked, [this]() { table->removeRow(table->currentRow()); });
+  QObject::connect(table, &QTableWidget::itemSelectionChanged, [=]() {
+    remove->setEnabled(table->currentRow() != -1);
+  });
 }
 
 void ValueDescriptionDlg::save() {
