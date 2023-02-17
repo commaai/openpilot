@@ -388,14 +388,15 @@ class SimulatorBridge(ABC):
       self.close()
   
   def _run(self, q: Queue):
-    self._vehicle_state = VehicleState()
+    vehicle_state = VehicleState()
+    self._vehicle_state = vehicle_state
     world = self.spawn_objects()
 
     # launch fake car threads
-    self._threads.append(threading.Thread(target=panda_state_function, args=(self._vehicle_state, self._exit_event,)))
+    self._threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, self._exit_event,)))
     self._threads.append(threading.Thread(target=peripheral_state_function, args=(self._exit_event,)))
     self._threads.append(threading.Thread(target=fake_driver_monitoring, args=(self._exit_event,)))
-    self._threads.append(threading.Thread(target=can_function_runner, args=(self._vehicle_state, self._exit_event,)))
+    self._threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, self._exit_event,)))
     for t in self._threads:
       t.start()
 
@@ -454,7 +455,7 @@ class SimulatorBridge(ABC):
             cruise_button = CruiseButtons.CANCEL
             is_openpilot_engaged = False
         elif m[0] == "ignition":
-          self._vehicle_state.ignition = not self._vehicle_state.ignition
+          vehicle_state.ignition = not vehicle_state.ignition
         elif m[0] == "quit":
           break
 
@@ -517,11 +518,11 @@ class SimulatorBridge(ABC):
       world.apply_controls(steer_sim, throttle_out, brake_out, rk.frame)
 
       # --------------Step 3-------------------------------
-      self._vehicle_state.speed = world.get_speed()
-      self._vehicle_state.vel = world.get_velocity()
-      self._vehicle_state.angle = steer_out
-      self._vehicle_state.cruise_button = cruise_button
-      self._vehicle_state.is_engaged = is_openpilot_engaged
+      vehicle_state.speed = world.get_speed()
+      vehicle_state.vel = world.get_velocity()
+      vehicle_state.angle = steer_out
+      vehicle_state.cruise_button = cruise_button
+      vehicle_state.is_engaged = is_openpilot_engaged
 
       if rk.frame % PRINT_DECIMATION == 0:
         print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(throttle_out, 3), "; steer(deg): ",
@@ -551,7 +552,7 @@ class SimulatorBridge(ABC):
   
   # Must return object of class `World`, after spawning objects into that world
   @abstractmethod
-  def spawn_objects(self):
+  def spawn_objects(self) -> World:
     pass
 
 class CarlaBridge(SimulatorBridge):
