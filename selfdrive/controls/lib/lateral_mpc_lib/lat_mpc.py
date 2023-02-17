@@ -4,6 +4,7 @@ import numpy as np
 
 from casadi import SX, vertcat, sin, cos
 from common.realtime import sec_since_boot
+# WARNING: imports outside of constants will not trigger a rebuild
 from selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
