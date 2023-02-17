@@ -103,7 +103,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.6
       ret.steerRatio = 13.42  # Spec
       tire_stiffness_factor = 0.385
-    elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV_2019, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
+    elif candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.IONIQ_HEV_2022):
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73  # Spec
