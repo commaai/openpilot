@@ -62,8 +62,9 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   last_msgs.reserve(can_msgs.size());
   double route_start_time = routeStartTime();
   uint64_t last_ts = (sec + route_start_time) * 1e9;
-  auto last = std::upper_bound(events()->rbegin(), events()->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
-  for (auto it = last; it != events()->rend(); ++it) {
+  auto evs = events();
+  auto last = std::upper_bound(evs->rbegin(), evs->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
+  for (auto it = last; it != evs->rend(); ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
         auto &m = last_msgs[{.source = c.getSrc(), .address = c.getAddress()}];

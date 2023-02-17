@@ -101,10 +101,14 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
     QMenu menu(this);
     menu.addAction(tr("Close Other Tabs"));
     if (menu.exec(tabbar->mapToGlobal(pt))) {
+      tabbar_ids.move(index, 0);
       tabbar->moveTab(index, 0);
       tabbar->setCurrentIndex(0);
-      while (tabbar->count() > 1)
+      while (tabbar->count() > 1) {
+        tabbar_ids.removeAt(1);
         tabbar->removeTab(1);
+      }
+      assert(tabbar_ids.size() == tabbar->count());
     }
   }
 }
@@ -258,11 +262,12 @@ WelcomeWidget::WelcomeWidget(QWidget *parent) : QWidget(parent) {
     return hlayout;
   };
 
-  auto lb = new QLabel(tr("<-Select a message to to view details"));
+  auto lb = new QLabel(tr("<-Select a message to view details"));
   lb->setAlignment(Qt::AlignHCenter);
   main_layout->addWidget(lb);
   main_layout->addLayout(newShortcutRow("Pause", "Space"));
-  main_layout->addLayout(newShortcutRow("Help", "Alt + H"));
+  main_layout->addLayout(newShortcutRow("Help", "F1"));
+  main_layout->addLayout(newShortcutRow("WhatsThis", "Shift+F1"));
   main_layout->addStretch(0);
 
   setStyleSheet("QLabel{color:darkGray;}");

@@ -94,6 +94,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
     docking = !docking;
     updateToolBar();
   });
+
+  setWhatsThis(tr(R"(
+    <b>Chart view</b><br />
+    <!-- TODO: add descprition here -->
+  )"));
 }
 
 void ChartsWidget::eventsMerged() {

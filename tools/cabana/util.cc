@@ -73,27 +73,32 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegat
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  auto byte_list = index.data(Qt::DisplayRole).toString().split(" ");
+  QStyleOptionViewItemV4 opt = option;
+  initStyleOption(&opt, index);
+
+  auto byte_list = opt.text.split(" ");
   if (byte_list.size() <= 1) {
     QStyledItemDelegate::paint(painter, option, index);
     return;
   }
 
-  auto role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
-  painter->setPen(option.palette.color(role));
+  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
+  painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
-  int space = painter->boundingRect(option.rect, option.displayAlignment, " ").width();
-  QRect pos = painter->boundingRect(option.rect, option.displayAlignment, "00");
-  pos.moveLeft(pos.x() + space);
+  QRect space = painter->boundingRect(opt.rect, opt.displayAlignment, " ");
+  QRect pos = painter->boundingRect(opt.rect, opt.displayAlignment, "00");
+  pos.moveLeft(pos.x() + space.width());
 
-  int m = space / 2;
+  int m = space.width() / 2;
+  const QMargins margins(m, m, m, m);
+
   auto colors = index.data(Qt::UserRole).value<QVector<QColor>>();
   for (int i = 0; i < byte_list.size(); ++i) {
     if (i < colors.size()) {
-      painter->fillRect(pos.adjusted(-m, -m, m, m), colors[i]);
+      painter->fillRect(pos.marginsAdded(margins), colors[i]);
     }
-    painter->drawText(pos, option.displayAlignment, byte_list[i]);
-    pos.moveLeft(pos.right() + space);
+    painter->drawText(pos, opt.displayAlignment, byte_list[i]);
+    pos.moveLeft(pos.right() + space.width());
   }
 }
 
