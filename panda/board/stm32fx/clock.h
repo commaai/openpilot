@@ -4,9 +4,18 @@ void clock_init(void) {
   while ((RCC->CR & RCC_CR_HSERDY) == 0);
 
   // divide things
+  // AHB = 96MHz
+  // APB1 = 48MHz
+  // APB2 = 48MHz
   register_set(&(RCC->CFGR), RCC_CFGR_HPRE_DIV1 | RCC_CFGR_PPRE2_DIV2 | RCC_CFGR_PPRE1_DIV2, 0xFF7FFCF3U);
 
-  // 16mhz crystal
+  // 16MHz crystal
+  // PLLM: 8
+  // PLLN: 96
+  // PLLP: 2
+  // PLLQ: 4
+  // P output: 96MHz
+  // Q output: 48MHz
   register_set(&(RCC->PLLCFGR), RCC_PLLCFGR_PLLQ_2 | RCC_PLLCFGR_PLLM_3 | RCC_PLLCFGR_PLLN_6 | RCC_PLLCFGR_PLLN_5 | RCC_PLLCFGR_PLLSRC_HSE, 0x7F437FFFU);
 
   // start PLL

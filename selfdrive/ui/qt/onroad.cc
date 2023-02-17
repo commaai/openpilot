@@ -31,6 +31,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
     split->insertWidget(0, arCam);
   }
 
+  if (getenv("MAP_RENDER_VIEW")) {
+    CameraWidget *map_render = new CameraWidget("navd", VISION_STREAM_MAP, false, this);
+    split->insertWidget(0, map_render);
+  }
+
   stacked_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
@@ -170,12 +175,63 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
+ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
+  setVisible(false);
+  setFixedSize(btn_size, btn_size);
+  setCheckable(true);
+
+  params = Params();
+  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
+  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+
+  QObject::connect(this, &QPushButton::toggled, [=](bool checked) {
+    params.putBool("ExperimentalMode", checked);
+  });
+}
+
+void ExperimentalButton::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
+  // button is "visible" if engageable or enabled
+  const auto cs = sm["controlsState"].getControlsState();
+  setVisible(cs.getEngageable() || cs.getEnabled());
+
+  // button is "checked" if experimental mode is enabled
+  setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
+
+  // disable button when experimental mode is not available, or has not been confirmed for the first time
+  const auto cp = sm["carParams"].getCarParams();
+  const bool experimental_mode_available = cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl();
+  setEnabled(params.getBool("ExperimentalModeConfirmed") && experimental_mode_available);
+}
+
+void ExperimentalButton::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  QPoint center(btn_size / 2, btn_size / 2);
+  QPixmap img = isChecked() ? experimental_img : engage_img;
+
+  p.setOpacity(1.0);
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 0, 0, 166));
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
+  p.setOpacity(isDown() ? 0.8 : 1.0);
+  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
+}
+
+
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
-  engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
-  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size - 5, img_size - 5});
-  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
+  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  main_layout->setMargin(bdr_s);
+  main_layout->setSpacing(0);
+
+  experimental_btn = new ExperimentalButton(this);
+  main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -204,7 +260,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     v_ego_cluster_seen = true;
   }
   float cur_speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  cur_speed  *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
+  cur_speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
 
   auto speed_limit_sign = sm["navInstruction"].getNavInstruction().getSpeedLimitSign();
   float speed_limit = nav_alive ? sm["navInstruction"].getNavInstruction().getSpeedLimit() : 0.0;
@@ -219,15 +275,20 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideDM", cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  setProperty("hideDM", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
-  // update engageability and DM icons at 2Hz
+  // update engageability/experimental mode button
+  experimental_btn->updateState(s);
+
+  // update DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
-    setProperty("engageable", cs.getEngageable() || cs.getEnabled());
     setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
     setProperty("rightHandDM", sm["driverMonitoringState"].getDriverMonitoringState().getIsRHD());
   }
+
+  // DM icon transition
+  dm_fade_state = fmax(0.0, fmin(1.0, dm_fade_state+0.2*(0.5-(float)(dmActive))));
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -377,19 +438,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  // engage-ability icon
-  if (engageable) {
-    SubMaster &sm = *(uiState()->sm);
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
-             sm["controlsState"].getControlsState().getExperimentalMode() ? experimental_img : engage_img, blackColor(166), 1.0);
-  }
-
-  // dm icon
-  if (!hideDM) {
-    int dm_icon_x = rightHandDM ? rect().right() -  radius / 2 - (bdr_s * 2) : radius / 2 + (bdr_s * 2);
-    drawIcon(p, dm_icon_x, rect().bottom() - footer_h / 2,
-             dm_img, blackColor(70), dmActive ? 1.0 : 0.2);
-  }
   p.restore();
 }
 
@@ -409,7 +457,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.setOpacity(1.0);  // bg dictates opacity of ellipse
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
+  p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
 }
@@ -493,13 +541,56 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.restore();
 }
 
-void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
+void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s) {
+  const UIScene &scene = s->scene;
+
+  painter.save();
+
+  // base icon
+  int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
+  int y = rect().bottom() - footer_h / 2;
+  float opacity = dmActive ? 0.65 : 0.2;
+  drawIcon(painter, x, y, dm_img, blackColor(0), opacity);
+
+  // circle background
+  painter.setOpacity(1.0);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(blackColor(70));
+  painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
+
+  // face
+  QPointF face_kpts_draw[std::size(default_face_kpts_3d)];
+  float kp;
+  for (int i = 0; i < std::size(default_face_kpts_3d); ++i) {
+    kp = (scene.face_kpts_draw[i].v[2] - 8) / 120 + 1.0;
+    face_kpts_draw[i] = QPointF(scene.face_kpts_draw[i].v[0] * kp + x, scene.face_kpts_draw[i].v[1] * kp + y);
+  }
+
+  painter.setPen(QPen(QColor::fromRgbF(1.0, 1.0, 1.0, opacity), 5.2, Qt::SolidLine, Qt::RoundCap));
+  painter.drawPolyline(face_kpts_draw, std::size(default_face_kpts_3d));
+
+  // tracking arcs
+  const int arc_l = 133;
+  const float arc_t_default = 6.7;
+  const float arc_t_extend = 12.0;
+  QColor arc_color = QColor::fromRgbF(0.09, 0.945, 0.26, 0.4*(1.0-dm_fade_state)*(s->engaged()));
+  float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
+  float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
+  painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
+  painter.drawArc(QRectF(std::fmin(x + delta_x, x), y - arc_l / 2, fabs(delta_x), arc_l), (scene.driver_pose_sins[1]>0 ? 90 : -90) * 16, 180 * 16);
+  painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
+  painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
+
+  painter.restore();
+}
+
+void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
   painter.save();
 
   const float speedBuff = 10.;
   const float leadBuff = 40.;
-  const float d_rel = lead_data.getX()[0];
-  const float v_rel = lead_data.getV()[0];
+  const float d_rel = lead_data.getDRel();
+  const float v_rel = lead_data.getVRel();
 
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
@@ -534,6 +625,7 @@ void AnnotatedCameraWidget::paintGL() {
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
+  const cereal::RadarState::Reader &radar_state = sm["radarState"].getRadarState();
 
   // draw camera frame
   {
@@ -584,21 +676,28 @@ void AnnotatedCameraWidget::paintGL() {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_model(s, sm["modelV2"].getModelV2());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
-        update_leads(s, sm["radarState"].getRadarState(), sm["modelV2"].getModelV2().getPosition());
+        update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
       }
     }
 
     drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control) {
-      const auto leads = model.getLeadsV3();
-      if (leads[0].getProb() > .5) {
-        drawLead(painter, leads[0], s->scene.lead_vertices[0]);
+      auto lead_one = radar_state.getLeadOne();
+      auto lead_two = radar_state.getLeadTwo();
+      if (lead_one.getStatus()) {
+        drawLead(painter, lead_one, s->scene.lead_vertices[0]);
       }
-      if (leads[1].getProb() > .5 && (std::abs(leads[1].getX()[0] - leads[0].getX()[0]) > 3.0)) {
-        drawLead(painter, leads[1], s->scene.lead_vertices[1]);
+      if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+        drawLead(painter, lead_two, s->scene.lead_vertices[1]);
       }
     }
+  }
+
+  // DMoji
+  if (!hideDM && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+    update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
+    drawDriverState(painter, s);
   }
 
   drawHud(painter);

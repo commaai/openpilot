@@ -2,6 +2,7 @@ from cereal import car
 from opendbc.can.packer import CANPacker
 from common.numpy_fast import clip
 from common.conversions import Conversions as CV
+from common.realtime import DT_CTRL
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import mqbcan, pqcan
 from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
@@ -23,14 +24,14 @@ class CarController:
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
 
-  def update(self, CC, CS, ext_bus):
+  def update(self, CC, CS, ext_bus, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []
 
     # **** Steering Controls ************************************************ #
 
-    if self.frame % self.CCP.HCA_STEP == 0:
+    if self.frame % self.CCP.STEER_STEP == 0:
       # Logic to avoid HCA state 4 "refused":
       #   * Don't steer unless HCA is in state 3 "ready" or 5 "active"
       #   * Don't steer at standstill
@@ -49,14 +50,14 @@ class CarController:
           self.hcaEnabledFrameCount = 0
         else:
           self.hcaEnabledFrameCount += 1
-          if self.hcaEnabledFrameCount >= 118 * (100 / self.CCP.HCA_STEP):  # 118s
+          if self.hcaEnabledFrameCount >= 118 * (100 / self.CCP.STEER_STEP):  # 118s
             hcaEnabled = False
             self.hcaEnabledFrameCount = 0
           else:
             hcaEnabled = True
             if self.apply_steer_last == apply_steer:
               self.hcaSameTorqueCount += 1
-              if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.HCA_STEP):  # 1.9s
+              if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.STEER_STEP):  # 1.9s
                 apply_steer -= (1, -1)[apply_steer < 0]
                 self.hcaSameTorqueCount = 0
             else:
@@ -88,10 +89,13 @@ class CarController:
                                                        CS.out.steeringPressed, hud_alert, hud_control))
 
     if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
+      lead_distance = 0
+      if hud_control.leadVisible and self.frame * DT_CTRL > 1.0:  # Don't display lead until we know the scaling factor
+        lead_distance = 512 if CS.upscale_lead_car_signal else 8
       acc_hud_status = self.CCS.acc_hud_status_value(CS.out.cruiseState.available, CS.out.accFaulted, CC.longActive)
       set_speed = hud_control.setSpeed * CV.MS_TO_KPH  # FIXME: follow the recent displayed-speed updates, also use mph_kmh toggle to fix display rounding problem?
       can_sends.append(self.CCS.create_acc_hud_control(self.packer_pt, CANBUS.pt, acc_hud_status, set_speed,
-                                                       hud_control.leadVisible))
+                                                       lead_distance))
 
     # **** Stock ACC Button Controls **************************************** #
 
@@ -103,6 +107,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
+    new_actuators.steerOutputCan = self.apply_steer_last
 
     self.gra_acc_counter_last = CS.gra_stock_values["COUNTER"]
     self.frame += 1

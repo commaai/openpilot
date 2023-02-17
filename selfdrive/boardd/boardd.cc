@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <bitset>
 #include <cassert>
@@ -48,8 +49,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_IL 200
-#define SATURATE_IL 1600
+#define CUTOFF_IL 400
+#define SATURATE_IL 1000
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 using namespace std::chrono_literals;
 
@@ -105,6 +106,8 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
+  Params p;
+
   // there should be at least one panda connected
   if (pandas.size() == 0) {
     return false;
@@ -116,28 +119,25 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
-  Params p = Params();
-
-  // wait for VIN to be read
+  // wait for FW query at OBD port to finish
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
-    std::string value_vin = p.get("CarVin");
-    if (value_vin.size() > 0) {
-      // sanity check VIN format
-      assert(value_vin.size() == 17);
-      LOGW("got CarVin %s", value_vin.c_str());
+    if (p.getBool("FirmwareObdQueryDone")) {
+      LOGW("finished FW query at OBD port");
       break;
     }
     util::sleep_for(20);
   }
 
-  // set to ELM327 for ECU knockouts
+  // set to ELM327 to finish fingerprinting and for potential ECU knockouts
   for (Panda *panda : pandas) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
+
+  p.putBool("ObdMultiplexingDisabled", true);
 
   std::string params;
   LOGW("waiting for params to set safety model");
@@ -225,9 +225,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
-        LOGT("sending sendcan to panda: %s", (panda->hw_serial).c_str());
+        LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
         panda->can_send(event.getSendcan());
-        LOGT("sendcan sent to panda: %s", (panda->hw_serial).c_str());
+        LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
     }
   }
@@ -528,9 +528,6 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    // Other pandas don't have fan/IR to control
-    if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
-
     if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
@@ -543,9 +540,8 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
-      float cur_gain = event.getDriverCameraState().getGain();
 
-      cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
+      cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {

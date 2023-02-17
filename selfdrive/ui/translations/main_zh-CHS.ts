@@ -285,11 +285,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>试验模式运行</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>轻松模式运行</translation>
     </message>
 </context>
 <context>
@@ -310,18 +310,6 @@
     <message>
         <source>Installing...</source>
         <translation>正在安装……</translation>
-    </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>正在接收： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>正在处理： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>正在更新文件： </translation>
     </message>
 </context>
 <context>
@@ -683,18 +671,6 @@ location set</source>
         <translation>等待网络连接</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>选择要安装的软件</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam（行车记录仪）</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>自定义软件</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>输入网址</translation>
     </message>
@@ -1013,19 +989,43 @@ location set</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
+        <translation>针对此车辆，openpilot默认使用车辆自带的ACC，而非openpilot的纵向控制。启用此选项将切换到openpilot纵向控制。当使用试验性的openpilot纵向控制时，建议同时启用试验模式。</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot 默认 &lt;b&gt;轻松模式&lt;/b&gt;驾驶车辆。试验模式启用一些轻松模式之外的 &lt;b&gt;试验性功能&lt;/b&gt;。试验性功能包括：</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮 端到端（End-to-End） 纵向控制 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>允许驾驶模型控制加速和制动，openpilot将模仿人类驾驶车辆，包括在红灯和停车让行标识前停车。鉴于驾驶模型确定行驶车速，所设定的车速仅作为上限。此功能尚处于早期测试状态，有可能会出现操作错误。</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>新驾驶视角</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>当低速行驶时，驾驶视角将切换到前向广角摄像头，便于更完整地显示转向路径。右上角将显示试验模式图标。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:     &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.     Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.     &lt;br&gt;     &lt;h4&gt;New Driving Visualization&lt;/h4&gt;     The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.    </source>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
     </message>
 </context>
 <context>

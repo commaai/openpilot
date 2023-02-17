@@ -1,4 +1,4 @@
-#include "visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
 #include <atomic>
 #include <stdio.h>

@@ -54,16 +54,12 @@ class CarController:
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
 
     # steering torque
-    steer = actuators.steer
-    if self.CP.carFingerprint in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
-      # these cars have significantly more torque than most HKG; limit to 70% of max
-      steer = clip(steer, -0.7, 0.7)
-    new_steer = int(round(steer * self.params.STEER_MAX))
+    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     if not CC.latActive:
@@ -86,10 +82,15 @@ class CarController:
 
     # tester present - w/ no response (keeps relevant ECU disabled)
     if self.frame % 100 == 0 and not (self.CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and self.CP.openpilotLongitudinalControl:
+      # for longitudinal control, either radar or ADAS driving ECU
       addr, bus = 0x7d0, 0
       if self.CP.flags & HyundaiFlags.CANFD_HDA2.value:
         addr, bus = 0x730, 5
       can_sends.append([addr, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
+
+      # for blinkers
+      if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
+        can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 5])
 
     # >90 degree steering fault prevention
     # Count up to MAX_ANGLE_FRAMES, at which point we need to cut torque to avoid a steering fault
@@ -120,6 +121,10 @@ class CarController:
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long):
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CP, CC.enabled))
+
+      # blinkers
+      if hda2 and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
+        can_sends.extend(hyundaicanfd.create_spas_messages(self.packer, self.frame, CC.leftBlinker, CC.rightBlinker))
 
       if self.CP.openpilotLongitudinalControl:
         if hda2:
@@ -164,7 +169,8 @@ class CarController:
           if (self.frame - self.last_button_frame) * DT_CTRL > 0.1:
             # send 25 messages at a time to increases the likelihood of resume being accepted
             can_sends.extend([hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.RES_ACCEL, self.CP.carFingerprint)] * 25)
-            self.last_button_frame = self.frame
+            if (self.frame - self.last_button_frame) * DT_CTRL >= 0.15:
+              self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
         # TODO: unclear if this is needed
@@ -173,10 +179,7 @@ class CarController:
                                                         hud_control.leadVisible, set_speed_in_units, stopping, CC.cruiseControl.override))
 
       # 20 Hz LFA MFA message
-      if self.frame % 5 == 0 and self.car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
-                                                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.KONA_EV, CAR.KONA_EV_2022,
-                                                          CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022,
-                                                          CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022, CAR.GENESIS_G70_2020, CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022):
+      if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
         can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled))
 
       # 5 Hz ACC options
@@ -189,6 +192,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
+    new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = accel
 
     self.frame += 1

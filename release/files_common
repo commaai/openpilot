@@ -71,6 +71,7 @@ selfdrive/rtshield.py
 selfdrive/statsd.py
 
 system/logmessaged.py
+system/micd.py
 system/swaglog.py
 system/version.py
 
@@ -145,6 +146,7 @@ selfdrive/debug/vw_mqb_config.py
 common/SConscript
 common/version.h
 
+common/prefix.h
 common/swaglog.h
 common/swaglog.cc
 common/statlog.h
@@ -190,8 +192,6 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 
-selfdrive/controls/lib/cluster/*
-
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
@@ -216,6 +216,7 @@ system/hardware/tici/amplifier.py
 system/hardware/tici/updater
 system/hardware/tici/iwlist.py
 system/hardware/pc/__init__.py
+system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
 selfdrive/locationd/__init__.py
@@ -224,13 +225,9 @@ selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/generated/ubx.cpp
-selfdrive/locationd/generated/ubx.h
-selfdrive/locationd/generated/gps.cpp
-selfdrive/locationd/generated/gps.h
+selfdrive/locationd/generated/*
 
 selfdrive/locationd/laikad.py
-selfdrive/locationd/laikad_helpers.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
@@ -280,7 +277,6 @@ selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
 selfdrive/sensord/SConscript
-selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
@@ -321,12 +317,17 @@ selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/maps/*.cc
 selfdrive/ui/qt/maps/*.h
+selfdrive/ui/qt/setup/*.cc
+selfdrive/ui/qt/setup/*.h
+
+selfdrive/ui/installer/*.cc
+selfdrive/ui/installer/*.h
+selfdrive/ui/installer/*.cc
 
 system/camerad/SConscript
 system/camerad/main.cc
 
 system/camerad/snapshot/*
-system/camerad/include/*
 system/camerad/cameras/camera_common.h
 system/camerad/cameras/camera_common.cc
 system/camerad/cameras/sensor2_i2c.h
@@ -348,19 +349,27 @@ selfdrive/manager/test/test_manager.py
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
+selfdrive/modeld/navmodeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
+selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
 
 selfdrive/modeld/models/commonmodel.cc
 selfdrive/modeld/models/commonmodel.h
+
 selfdrive/modeld/models/driving.cc
 selfdrive/modeld/models/driving.h
+selfdrive/modeld/models/supercombo.onnx
+
 selfdrive/modeld/models/dmonitoring.cc
 selfdrive/modeld/models/dmonitoring.h
-selfdrive/modeld/models/supercombo.onnx
 selfdrive/modeld/models/dmonitoring_model_q.dlc
+
+selfdrive/modeld/models/nav.cc
+selfdrive/modeld/models/nav.h
+selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
@@ -374,7 +383,6 @@ selfdrive/modeld/thneed/thneed.h
 selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
-selfdrive/modeld/thneed/include/*
 
 selfdrive/modeld/runners/snpemodel.cc
 selfdrive/modeld/runners/snpemodel.h
@@ -402,7 +410,10 @@ selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
+third_party/.gitignore
 third_party/SConscript
+
+third_party/cluster/*
 
 third_party/linux/**
 third_party/opencl/**
@@ -426,14 +437,13 @@ third_party/snpe/dsp**
 third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
+third_party/acados/acados_template/**
 
+third_party/bootstrap/**
 third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
-
-pyextra/.gitignore
-pyextra/acados_template/**
 
 rednose/.gitignore
 rednose/**
@@ -484,6 +494,7 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
+panda/SConscript
 panda/board/**
 panda/certs/**
 panda/crypto/**
@@ -566,17 +577,13 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/openpilot/compile.py
 tinygrad_repo/accel/opencl/*
+tinygrad_repo/tinygrad/llops/ops_opencl.py
+tinygrad_repo/openpilot/compile.py
 tinygrad_repo/extra/onnx.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
 tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/llops/ops_opencl.py
-tinygrad_repo/tinygrad/helpers.py
-tinygrad_repo/tinygrad/mlops.py
-tinygrad_repo/tinygrad/ops.py
-tinygrad_repo/tinygrad/shapetracker.py
-tinygrad_repo/tinygrad/tensor.py
-tinygrad_repo/tinygrad/nn/__init__.py
-tinygrad_repo/tinygrad/nn/optim.py
+tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/*.py

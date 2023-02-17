@@ -55,13 +55,20 @@ void DMA2_Stream3_IRQ_Handler(void) {
   // Clear interrupt flag
   DMA2->LIFCR = DMA_LIFCR_CTCIF3;
 
-  // Wait until the transaction is actually finished and clear the DR
-  // TODO: needs a timeout here, otherwise it gets stuck with no master clock!
-  while (!(SPI4->SR & SPI_SR_TXC));
+  // Wait until the transaction is actually finished and clear the DR.
+  // Timeout to prevent hang when the master clock stops.
+  bool timed_out = false;
+  uint32_t start_time = microsecond_timer_get();  
+  while (!(SPI4->SR & SPI_SR_TXC)) {
+    if (get_ts_elapsed(microsecond_timer_get(), start_time) > SPI_TIMEOUT_US) {
+      timed_out = true;
+      break;
+    }
+  }
   volatile uint8_t dat = SPI4->TXDR;
   (void)dat;
 
-  spi_handle_tx();
+  spi_handle_tx(timed_out);
 }
 
 

@@ -5,8 +5,8 @@
 #include <csignal>
 #include <cerrno>
 
-#include "services.h"
-#include "impl_msgq.h"
+#include "cereal/services.h"
+#include "cereal/messaging/impl_msgq.h"
 
 
 volatile sig_atomic_t msgq_do_exit = 0;

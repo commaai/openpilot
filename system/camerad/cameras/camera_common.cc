@@ -167,7 +167,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setExposureValPercent(perc);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
-    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0231);
   } else if (c->camera_id == CAMERA_ID_OX03C10) {
     framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
   }

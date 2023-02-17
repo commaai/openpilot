@@ -120,29 +120,29 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 void TogglesPanel::updateToggles() {
   auto e2e_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
-  const QString e2e_description = tr("\
-    openpilot defaults to driving in <b>chill mode</b>.\
-    Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. \
-    Experimental features are listed below: \
-    <br> \
-    <h4>🌮 End-to-End Longitudinal Control 🌮</h4> \
-    Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. \
-    Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected. \
-    <br> \
-    <h4>New Driving Visualization</h4> \
-    The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.\
-    ");
+  const QString e2e_description = QString("%1<br>"
+                                          "<h4>%2</h4><br>"
+                                          "%3<br>"
+                                          "<h4>%4</h4><br>"
+                                          "%5")
+                                  .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
+                                  .arg(tr("🌮 End-to-End Longitudinal Control 🌮"))
+                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
+                                       "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected."))
+                                  .arg(tr("New Driving Visualization"))
+                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
+  const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
-    if (!CP.getExperimentalLongitudinalAvailable()) {
+    if (!CP.getExperimentalLongitudinalAvailable() || is_release) {
       params.remove("ExperimentalLongitudinalEnabled");
     }
-    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable());
+    op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
     const bool op_long = CP.getOpenpilotLongitudinalControl() && !CP.getExperimentalLongitudinalAvailable();
     const bool exp_long_enabled = CP.getExperimentalLongitudinalAvailable() && params.getBool("ExperimentalLongitudinalEnabled");
@@ -155,9 +155,18 @@ void TogglesPanel::updateToggles() {
       e2e_toggle->setEnabled(false);
       params.remove("ExperimentalMode");
 
-      const QString no_long = tr("Experimental mode is currently unavailable on this car, since the car's stock ACC is used for longitudinal control.");
-      const QString exp_long = tr("Enable experimental longitudinal control to allow experimental mode.");
-      e2e_toggle->setDescription("<b>" + (CP.getExperimentalLongitudinalAvailable() ? exp_long : no_long) + "</b><br><br>" + e2e_description);
+      const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
+
+      QString long_desc = unavailable + " " + \
+                          tr("openpilot longitudinal control may come in a future update.");
+      if (CP.getExperimentalLongitudinalAvailable()) {
+        if (is_release) {
+          long_desc = unavailable + " " + tr("An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+        } else {
+          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
+        }
+      }
+      e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
     e2e_toggle->refresh();

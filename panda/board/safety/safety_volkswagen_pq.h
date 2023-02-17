@@ -14,8 +14,11 @@ const SteeringLimits VOLKSWAGEN_PQ_STEERING_LIMITS = {
 
 // longitudinal limits
 // acceleration in m/s2 * 1000 to avoid floating point math
-const int VOLKSWAGEN_PQ_MAX_ACCEL = 2000;
-const int VOLKSWAGEN_PQ_MIN_ACCEL = -3500;
+const LongitudinalLimits VOLKSWAGEN_PQ_LONG_LIMITS = {
+  .max_accel = 2000,
+  .min_accel = -3500,
+  .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
+};
 
 #define MSG_LENKHILFE_3         0x0D0   // RX from EPS, for steering angle and driver steering torque
 #define MSG_HCA_1               0x0D2   // TX by OP, Heading Control Assist steering torque
@@ -106,8 +109,7 @@ static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
     // Signal: Bremse_1.Geschwindigkeit_neu__Bremse_1_
     if (addr == MSG_BREMSE_1) {
       int speed = ((GET_BYTE(to_push, 2) & 0xFEU) >> 1) | (GET_BYTE(to_push, 3) << 7);
-      // DBC speed scale 0.01: 0.3m/s = 108.
-      vehicle_moving = speed > 108;
+      vehicle_moving = speed > 0;
     }
 
     // Update driver input torque samples
@@ -174,7 +176,7 @@ static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int volkswagen_pq_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
+static int volkswagen_pq_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
   int tx = 1;
 
@@ -203,24 +205,10 @@ static int volkswagen_pq_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed
   // Safety check for acceleration commands
   // To avoid floating point math, scale upward and compare to pre-scaled safety m/s2 boundaries
   if (addr == MSG_ACC_SYSTEM) {
-    bool violation = 0;
-    int desired_accel = 0;
-
     // Signal: ACC_System.ACS_Sollbeschl (acceleration in m/s2, scale 0.005, offset -7.22)
-    desired_accel = ((((GET_BYTE(to_send, 4) & 0x7U) << 8) | GET_BYTE(to_send, 3)) * 5U) - 7220U;
+    int desired_accel = ((((GET_BYTE(to_send, 4) & 0x7U) << 8) | GET_BYTE(to_send, 3)) * 5U) - 7220U;
 
-    // VW send one increment above the max range when inactive
-    if (desired_accel == 3010) {
-      desired_accel = 0;
-    }
-
-    if (!longitudinal_allowed && (desired_accel != 0)) {
-      violation = 1;
-    }
-
-    violation |= max_limit_check(desired_accel, VOLKSWAGEN_PQ_MAX_ACCEL, VOLKSWAGEN_PQ_MIN_ACCEL);
-
-    if (violation) {
+    if (longitudinal_accel_checks(desired_accel, VOLKSWAGEN_PQ_LONG_LIMITS)) {
       tx = 0;
     }
   }

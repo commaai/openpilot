@@ -30,7 +30,7 @@ services = {
   "temperatureSensor": (True, 100., 100),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
-  "can": (True, 100.),
+  "can": (True, 100., 1223),  # decimation gives ~5 msgs in a full segment
   "controlsState": (True, 100., 10),
   "pandaStates": (True, 2., 1),
   "peripheralState": (True, 2., 1),
@@ -74,8 +74,11 @@ services = {
   "navInstruction": (True, 1., 10),
   "navRoute": (True, 0.),
   "navThumbnail": (True, 0.),
+  "navModel": (True, 2., 4.),
+  "mapRenderState": (True, 2., 1.),
   "qRoadEncodeIdx": (False, 20.),
   "userFlag": (True, 0., 1),
+  "microphone": (True, 10., 10),
 
   # debug
   "uiDebug": (True, 0., 1),

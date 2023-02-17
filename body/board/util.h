@@ -19,7 +19,6 @@ void calcAvgSpeed(void);
 
 // Poweroff Functions
 void poweroff(void);
-void poweroffPressCheck(void);
 
 // GPIO functions
 uint8_t detect_with_pull(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t mode);

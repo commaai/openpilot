@@ -285,11 +285,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>실험적 모드 사용</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>안정적 모드 사용</translation>
     </message>
 </context>
 <context>
@@ -310,18 +310,6 @@
     <message>
         <source>Installing...</source>
         <translation>설치중...</translation>
-    </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>수신중： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>델타병합： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>파일갱신： </translation>
     </message>
 </context>
 <context>
@@ -501,7 +489,7 @@ location set</source>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 comma prime에 가입합니다</translation>
+        <translation>connect.comma.ai 접속 comma prime 가입</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -685,18 +673,6 @@ location set</source>
         <translation>네트워크 접속을 기다립니다</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>설치할 소프트웨어를 선택하세요</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Custom Software</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>URL 입력</translation>
     </message>
@@ -875,7 +851,7 @@ location set</source>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation>삭제</translation>
+        <translation>제거</translation>
     </message>
 </context>
 <context>
@@ -1015,19 +991,43 @@ location set</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤을 사용하려면 이 옵션을 활성화하세요. 실험적 openpilot 롱컨트롤을 사용하는 경우 실험적 모드를 활성화 하세요.</translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:     &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.     Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.     &lt;br&gt;     &lt;h4&gt;New Driving Visualization&lt;/h4&gt;     The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.    </source>
-        <translation type="unfinished"></translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다. 실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다. 실험적 모드의 특징은 아래에 나열되어 있습니다</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮 E2E 롱컨트롤 🌮</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>주행모델이 가속과 감속을 제어하도록 합니다. openpilot은 신호등과 정지표지판을 보고 멈추는 것을 포함하여 운전자가 생각하는것처럼 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 상한선으로만 작용합니다. 이것은 알파 기능이므로 사용에 주의해야 합니다.</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>새로운 주행 시각화</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>주행 시각화는 저속에서 도로를 향하는 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드의 로고도 우측상단에 표시됩니다.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>차량에 장착된 ACC가 롱컨트롤에 사용되기 때문에 현재 이 차량은 실험적 모드를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>오픈파일럿 롱컨트롤의 실험 버전은 실험적 모드와 함께 릴리즈 되지 않은 브랜치에서 테스트할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
     </message>
 </context>
 <context>

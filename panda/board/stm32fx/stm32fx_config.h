@@ -10,10 +10,11 @@
 // from the linker script
 #define APP_START_ADDRESS 0x8004000U
 
-#define CORE_FREQ 96U // in Mhz
-//APB1 - 48Mhz, APB2 - 96Mhz
-#define APB1_FREQ CORE_FREQ/2U 
-#define APB2_FREQ CORE_FREQ/1U
+#define CORE_FREQ 96U // in MHz
+#define APB1_FREQ (CORE_FREQ/2U)
+#define APB1_TIMER_FREQ (APB1_FREQ*2U)  // APB1 is multiplied by 2 for the timer peripherals
+#define APB2_FREQ (CORE_FREQ/2U)
+#define APB2_TIMER_FREQ (APB2_FREQ*2U)  // APB2 is multiplied by 2 for the timer peripherals
 
 #define BOOTLOADER_ADDRESS 0x1FFF0004U
 

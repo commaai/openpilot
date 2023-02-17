@@ -2,16 +2,13 @@
 import math
 from cereal import car
 from common.realtime import DT_CTRL
-from selfdrive.car import scale_rot_inertia, scale_tire_stiffness, get_safety_config
+from selfdrive.car import get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.body.values import SPEED_FROM_RPM
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=None, car_fw=None, experimental_long=False):
-
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.notCar = True
     ret.carName = "body"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
@@ -27,13 +24,9 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeedFactor = SPEED_FROM_RPM
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
-
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
 
@@ -50,5 +43,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

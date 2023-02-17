@@ -92,11 +92,11 @@ class GNSSMeasurement:
     self.processed = True
     return True
 
-  def correct(self, est_pos, dog, allow_incomplete_delay=False):
+  def correct(self, est_pos, dog):
     for obs in self.observables:
       if obs[0] == 'C':  # or obs[0] == 'L':
         delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
-        if delay is not None and (allow_incomplete_delay or delay != 0):
+        if delay is not None:
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
                                          delay)
@@ -147,10 +147,10 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, allow_incomplete_delay=False) -> List[GNSSMeasurement]:
+def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
-    if meas.correct(est_pos, dog, allow_incomplete_delay):
+    if meas.correct(est_pos, dog):
       corrected_measurements.append(meas)
   return corrected_measurements
 
@@ -290,108 +290,6 @@ def read_rinex_obs(obsdata) -> List[List[GNSSMeasurement]]:
                                               recv_time.week, recv_time.tow,
                                               observables, observables_std))
   return measurements
-
-
-def calc_pos_fix(measurements, x0=[0, 0, 0, 0, 0], no_weight=False, signal='C1C', min_measurements=6):
-  '''
-  Calculates gps fix with WLS optimizer
-
-  returns:
-  0 -> list with positions
-  1 -> pseudorange errs
-  '''
-  import scipy.optimize as opt  # Only use scipy here
-
-  n = len(measurements)
-  if n < min_measurements:
-    return []
-
-  Fx_pos = pr_residual(measurements, signal=signal, no_weight=no_weight, no_nans=True)
-  opt_pos = opt.least_squares(Fx_pos, x0).x
-  return opt_pos, Fx_pos(opt_pos, no_weight=True)
-
-
-def calc_vel_fix(measurements, est_pos, v0=[0, 0, 0, 0], no_weight=False, signal='D1C'):
-  '''
-  Calculates gps velocity fix with WLS optimizer
-
-  returns:
-  0 -> list with velocities
-  1 -> pseudorange_rate errs
-  '''
-  import scipy.optimize as opt  # Only use scipy here
-
-  n = len(measurements)
-  if n < 6:
-    return []
-
-  Fx_vel = prr_residual(measurements, est_pos, signal=signal, no_weight=no_weight, no_nans=True)
-  opt_vel = opt.least_squares(Fx_vel, v0).x
-  return opt_vel, Fx_vel(opt_vel, no_weight=True)
-
-
-def pr_residual(measurements: List[GNSSMeasurement], signal='C1C', no_weight=False, no_nans=False):
-  # solve for pos
-  def Fx_pos(xxx_todo_changeme, no_weight=no_weight):
-    (x, y, z, bc, bg) = xxx_todo_changeme
-    rows = []
-
-    for meas in measurements:
-      if signal in meas.observables_final and np.isfinite(meas.observables_final[signal]):
-        pr = meas.observables_final[signal]
-        sat_pos = meas.sat_pos_final
-        theta = 0
-      elif signal in meas.observables and np.isfinite(meas.observables[signal]) and meas.processed:
-        pr = meas.observables[signal]
-        pr += meas.sat_clock_err * constants.SPEED_OF_LIGHT
-        sat_pos = meas.sat_pos
-        theta = constants.EARTH_ROTATION_RATE * (pr - bc) / constants.SPEED_OF_LIGHT
-      else:
-        if not no_nans:
-          rows.append(np.nan)
-        continue
-      if no_weight:
-        weight = 1
-      else:
-        weight = (1 / meas.observables_std[signal])
-
-      val = np.sqrt(
-          (sat_pos[0] * np.cos(theta) + sat_pos[1] * np.sin(theta) - x) ** 2 +
-          (sat_pos[1] * np.cos(theta) - sat_pos[0] * np.sin(theta) - y) ** 2 +
-          (sat_pos[2] - z) ** 2
-      )
-      if meas.constellation_id == ConstellationId.GLONASS:
-        rows.append(weight * (val - (pr - bc - bg)))
-      elif meas.constellation_id == ConstellationId.GPS:
-        rows.append(weight * (val - (pr - bc)))
-    return rows
-  return Fx_pos
-
-
-def prr_residual(measurements, est_pos, signal='D1C', no_weight=False, no_nans=False):
-  # solve for vel
-  def Fx_vel(vel, no_weight=no_weight):
-    rows = []
-    for meas in measurements:
-      if signal not in meas.observables or not np.isfinite(meas.observables[signal]):
-        if not no_nans:
-          rows.append(np.nan)
-        continue
-      if meas.corrected:
-        sat_pos = meas.sat_pos_final
-      else:
-        sat_pos = meas.sat_pos
-      if no_weight:
-        weight = 1
-      else:
-        weight = (1 / meas.observables[signal])
-      los_vector = (sat_pos - est_pos[0:3]
-                    ) / np.linalg.norm(sat_pos - est_pos[0:3])
-      rows.append(
-        weight * ((meas.sat_vel - vel[0:3]).dot(los_vector) -
-                  (meas.observables[signal] - vel[3])))
-    return rows
-  return Fx_vel
 
 
 def get_Q(recv_pos, sat_positions):

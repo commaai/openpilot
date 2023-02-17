@@ -24,6 +24,7 @@
 
 #include "obj/gitversion.h"
 
+#include "can_comms.h"
 #include "main_comms.h"
 
 
@@ -63,11 +64,11 @@ void set_safety_mode(uint16_t mode, uint16_t param) {
   uint16_t mode_copy = mode;
   int err = set_safety_hooks(mode_copy, param);
   if (err == -1) {
-    puts("Error: safety set mode failed. Falling back to SILENT\n");
+    print("Error: safety set mode failed. Falling back to SILENT\n");
     mode_copy = SAFETY_SILENT;
     err = set_safety_hooks(mode_copy, 0U);
     if (err == -1) {
-      puts("Error: Failed setting SILENT mode. Hanging\n");
+      print("Error: Failed setting SILENT mode. Hanging\n");
       while (true) {
         // TERMINAL ERROR: we can't continue if SILENT safety mode isn't succesfully set
       }
@@ -154,18 +155,18 @@ void tick_handler(void) {
     if (loop_counter == 0U) {
       can_live = pending_can_live;
 
-      //puth(usart1_dma); puts(" "); puth(DMA2_Stream5->M0AR); puts(" "); puth(DMA2_Stream5->NDTR); puts("\n");
+      //puth(usart1_dma); print(" "); puth(DMA2_Stream5->M0AR); print(" "); puth(DMA2_Stream5->NDTR); print("\n");
 
       // reset this every 16th pass
       if ((uptime_cnt & 0xFU) == 0U) {
         pending_can_live = 0;
       }
       #ifdef DEBUG
-        puts("** blink ");
-        puts("rx:"); puth4(can_rx_q.r_ptr); puts("-"); puth4(can_rx_q.w_ptr); puts("  ");
-        puts("tx1:"); puth4(can_tx1_q.r_ptr); puts("-"); puth4(can_tx1_q.w_ptr); puts("  ");
-        puts("tx2:"); puth4(can_tx2_q.r_ptr); puts("-"); puth4(can_tx2_q.w_ptr); puts("  ");
-        puts("tx3:"); puth4(can_tx3_q.r_ptr); puts("-"); puth4(can_tx3_q.w_ptr); puts("\n");
+        print("** blink ");
+        print("rx:"); puth4(can_rx_q.r_ptr); print("-"); puth4(can_rx_q.w_ptr); print("  ");
+        print("tx1:"); puth4(can_tx1_q.r_ptr); print("-"); puth4(can_tx1_q.w_ptr); print("  ");
+        print("tx2:"); puth4(can_tx2_q.r_ptr); print("-"); puth4(can_tx2_q.w_ptr); print("  ");
+        print("tx3:"); puth4(can_tx3_q.r_ptr); print("-"); puth4(can_tx3_q.w_ptr); print("\n");
       #endif
 
       // set green LED to be controls allowed
@@ -214,9 +215,9 @@ void tick_handler(void) {
       if (!heartbeat_disabled) {
         // if the heartbeat has been gone for a while, go to SILENT safety mode and enter power save
         if (heartbeat_counter >= (check_started() ? HEARTBEAT_IGNITION_CNT_ON : HEARTBEAT_IGNITION_CNT_OFF)) {
-          puts("device hasn't sent a heartbeat for 0x");
+          print("device hasn't sent a heartbeat for 0x");
           puth(heartbeat_counter);
-          puts(" seconds. Safety is set to SILENT mode.\n");
+          print(" seconds. Safety is set to SILENT mode.\n");
 
           if (controls_allowed_countdown > 0U) {
             siren_countdown = 5U;
@@ -231,6 +232,7 @@ void tick_handler(void) {
           if (current_safety_mode != SAFETY_SILENT) {
             set_safety_mode(SAFETY_SILENT, 0U);
           }
+
           if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
             set_power_save_state(POWER_SAVE_STATUS_ENABLED);
           }
@@ -238,8 +240,10 @@ void tick_handler(void) {
           // Also disable IR when the heartbeat goes missing
           current_board->set_ir_power(0U);
 
-          // If enumerated but no heartbeat (phone up, boardd not running), turn the fan on to cool the device
-          if(usb_enumerated){
+          // TODO: need a SPI equivalent
+          // If enumerated but no heartbeat (phone up, boardd not running), or when the SOM GPIO is pulled high by the ABL,
+          // turn the fan on to cool the device
+          if(usb_enumerated || current_board->read_som_gpio()){
             fan_set_power(50U);
           } else {
             fan_set_power(0U);
@@ -316,16 +320,16 @@ int main(void) {
   adc_init();
 
   // print hello
-  puts("\n\n\n************************ MAIN START ************************\n");
+  print("\n\n\n************************ MAIN START ************************\n");
 
   // check for non-supported board types
   if(hw_type == HW_TYPE_UNKNOWN){
-    puts("Unsupported board type\n");
+    print("Unsupported board type\n");
     while (1) { /* hang */ }
   }
 
-  puts("Config:\n");
-  puts("  Board type: "); puts(current_board->board_type); puts("\n");
+  print("Config:\n");
+  print("  Board type: "); print(current_board->board_type); print("\n");
 
   // init board
   current_board->init();
@@ -340,12 +344,16 @@ int main(void) {
     uart_init(&uart_ring_gps, 115200);
   }
 
-  if(current_board->has_lin){
+  if (current_board->has_lin) {
     // enable LIN
     uart_init(&uart_ring_lin1, 10400);
     UART5->CR2 |= USART_CR2_LINEN;
     uart_init(&uart_ring_lin2, 10400);
     USART3->CR2 |= USART_CR2_LINEN;
+  }
+
+  if (current_board->fan_max_rpm > 0U) {
+    llfan_init();
   }
 
   microsecond_timer_init();
@@ -361,7 +369,7 @@ int main(void) {
   tick_timer_init();
 
 #ifdef DEBUG
-  puts("DEBUG ENABLED\n");
+  print("DEBUG ENABLED\n");
 #endif
   // enable USB (right before interrupts or enum can fail!)
   usb_init();
@@ -372,7 +380,7 @@ int main(void) {
   }
 #endif
 
-  puts("**** INTERRUPTS ON ****\n");
+  print("**** INTERRUPTS ON ****\n");
   enable_interrupts();
 
   // LED should keep on blinking all the time

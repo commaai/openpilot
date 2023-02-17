@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
-      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"]
+      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -51,7 +51,7 @@ class CarState(CarStateBase):
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
-      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"], None)
+      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"])
       ret.gearShifter = self.parse_gear_shifter(gear)
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
@@ -118,7 +118,7 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
-      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthrough the remaining buttons
       ("WiprFront_D_Stat", "Steering_Data_FD1"),
       ("LghtAmb_D_Sns", "Steering_Data_FD1"),
       ("AccButtnGapDecPress", "Steering_Data_FD1"),
@@ -171,7 +171,7 @@ class CarState(CarStateBase):
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [
-        ("TrnGear_D_RqDrv", "Gear_Shift_by_Wire_FD1"),       # GWM transmission gear position
+        ("TrnRng_D_RqGsm", "Gear_Shift_by_Wire_FD1"),        # GWM transmission gear position
       ]
       checks += [
         ("Gear_Shift_by_Wire_FD1", 10),

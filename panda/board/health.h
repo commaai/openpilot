@@ -28,7 +28,7 @@ struct __attribute__((packed)) health_t {
   uint8_t safety_rx_checks_invalid;
 };
 
-#define CAN_HEALTH_PACKET_VERSION 3
+#define CAN_HEALTH_PACKET_VERSION 4
 typedef struct __attribute__((packed)) {
   uint8_t bus_off;
   uint32_t bus_off_cnt;
@@ -46,6 +46,7 @@ typedef struct __attribute__((packed)) {
   uint32_t total_tx_cnt;
   uint32_t total_rx_cnt;
   uint32_t total_fwd_cnt; // Messages forwarded from one bus to another
+  uint32_t total_tx_checksum_error_cnt;
   uint16_t can_speed;
   uint16_t can_data_speed;
   uint8_t canfd_enabled;

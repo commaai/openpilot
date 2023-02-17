@@ -37,7 +37,7 @@
 #define CAN_NUM_FROM_CANIF(CAN_DEV) (((CAN_DEV)==FDCAN1) ? 0UL : (((CAN_DEV) == FDCAN2) ? 1UL : 2UL))
 
 
-void puts(const char *a);
+void print(const char *a);
 
 // kbps multiplied by 10
 const uint32_t speeds[] = {100U, 200U, 500U, 1000U, 1250U, 2500U, 5000U, 10000U};
@@ -148,10 +148,10 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *CANx, uint32_t speed, uint32_t data_sp
     }
     ret = fdcan_exit_init(CANx);
     if (!ret) {
-      puts(CAN_NAME_FROM_CANIF(CANx)); puts(" set_speed timed out! (2)\n");
+      print(CAN_NAME_FROM_CANIF(CANx)); print(" set_speed timed out! (2)\n");
     }
   } else {
-    puts(CAN_NAME_FROM_CANIF(CANx)); puts(" set_speed timed out! (1)\n");
+    print(CAN_NAME_FROM_CANIF(CANx)); print(" set_speed timed out! (1)\n");
   }
   return ret;
 }
@@ -219,7 +219,7 @@ bool llcan_init(FDCAN_GlobalTypeDef *CANx) {
 
     ret = fdcan_exit_init(CANx);
     if(!ret) {
-      puts(CAN_NAME_FROM_CANIF(CANx)); puts(" llcan_init timed out (2)!\n");
+      print(CAN_NAME_FROM_CANIF(CANx)); print(" llcan_init timed out (2)!\n");
     }
 
     if (CANx == FDCAN1) {
@@ -232,11 +232,11 @@ bool llcan_init(FDCAN_GlobalTypeDef *CANx) {
       NVIC_EnableIRQ(FDCAN3_IT0_IRQn);
       NVIC_EnableIRQ(FDCAN3_IT1_IRQn);
     } else {
-      puts("Invalid CAN: initialization failed\n");
+      print("Invalid CAN: initialization failed\n");
     }
 
   } else {
-    puts(CAN_NAME_FROM_CANIF(CANx)); puts(" llcan_init timed out (1)!\n");
+    print(CAN_NAME_FROM_CANIF(CANx)); print(" llcan_init timed out (1)!\n");
   }
   return ret;
 }

@@ -4,10 +4,8 @@
 #include <cstdlib>
 #include <cerrno>
 
-#include <zmq.h>
-
-#include "services.h"
-#include "impl_zmq.h"
+#include "cereal/services.h"
+#include "cereal/messaging/impl_zmq.h"
 
 static int get_port(std::string endpoint) {
   int port = -1;

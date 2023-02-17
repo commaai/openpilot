@@ -1,4 +1,4 @@
-#include "visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
 #define ALIGN(x, align) (((x) + (align)-1) & ~((align)-1))
 

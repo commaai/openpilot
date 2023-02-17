@@ -41,6 +41,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         resp[1] = 0xff;
       }
       break;
+    // **** 0xc3: fetch MCU UID
+    case 0xc3:
+      #ifdef UID_BASE
+        (void)memcpy(resp, ((uint8_t *)UID_BASE), 12);
+        resp_len = 12;
+      #endif
+      break;
     // **** 0xd0: fetch serial number
     case 0xd0:
       #ifndef STM32F2
@@ -59,12 +66,12 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       // this allows reflashing of the bootstub
       switch (req->param1) {
         case 0:
-          puts("-> entering bootloader\n");
+          print("-> entering bootloader\n");
           enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
           NVIC_SystemReset();
           break;
         case 1:
-          puts("-> entering softloader\n");
+          print("-> entering softloader\n");
           enter_bootloader_mode = ENTER_SOFTLOADER_MAGIC;
           NVIC_SystemReset();
           break;
@@ -113,11 +120,11 @@ void comms_endpoint2_write(uint8_t *data, uint32_t len) {
 int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
   UNUSED(len);
   ControlPacket_t control_req;
-  
+
   int resp_len = 0;
   switch (data[0]) {
     case 0:
-      // control transfer      
+      // control transfer
       control_req.request = ((USB_Setup_TypeDef *)(data+4))->b.bRequest;
       control_req.param1 = ((USB_Setup_TypeDef *)(data+4))->b.wValue.w;
       control_req.param2 = ((USB_Setup_TypeDef *)(data+4))->b.wIndex.w;
@@ -256,7 +263,7 @@ void soft_flasher_start(void) {
     REGISTER_INTERRUPT(CAN1_SCE_IRQn, CAN1_SCE_IRQ_Handler, CAN_INTERRUPT_RATE, FAULT_INTERRUPT_RATE_CAN_1)
   #endif
 
-  puts("\n\n\n************************ FLASHER START ************************\n");
+  print("\n\n\n************************ FLASHER START ************************\n");
 
   enter_bootloader_mode = 0;
 

@@ -27,9 +27,9 @@ void can_set_gmlan(uint8_t bus) {
       switch (prev_bus) {
         case 1:
         case 2:
-          puts("Disable GMLAN on CAN");
+          print("Disable GMLAN on CAN");
           puth(prev_bus + 1U);
-          puts("\n");
+          print("\n");
           current_board->set_can_mode(CAN_MODE_NORMAL);
           bus_config[prev_bus].bus_lookup = prev_bus;
           bus_config[prev_bus].can_num_lookup = prev_bus;
@@ -47,9 +47,9 @@ void can_set_gmlan(uint8_t bus) {
     switch (bus) {
       case 1:
       case 2:
-        puts("Enable GMLAN on CAN");
+        print("Enable GMLAN on CAN");
         puth(bus + 1U);
-        puts("\n");
+        print("\n");
         current_board->set_can_mode((bus == 1U) ? CAN_MODE_GMLAN_CAN2 : CAN_MODE_GMLAN_CAN3);
         bus_config[bus].bus_lookup = 3;
         bus_config[bus].can_num_lookup = -1;
@@ -60,11 +60,11 @@ void can_set_gmlan(uint8_t bus) {
       case 0xFF:  //-1 unsigned
         break;
       default:
-        puts("GMLAN can only be set on CAN2 or CAN3\n");
+        print("GMLAN can only be set on CAN2 or CAN3\n");
         break;
     }
   } else {
-    puts("GMLAN not available on black panda\n");
+    print("GMLAN not available on black panda\n");
   }
 }
 
@@ -127,6 +127,7 @@ void process_can(uint8_t can_number) {
           to_push.bus = bus_number;
           WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sTxMailBox[0].TDLR);
           WORD_TO_BYTE_ARRAY(&to_push.data[4], CAN->sTxMailBox[0].TDHR);
+          can_set_checksum(&to_push);
 
           rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
         }
@@ -137,14 +138,18 @@ void process_can(uint8_t can_number) {
       }
 
       if (can_pop(can_queues[bus_number], &to_send)) {
-        can_health[can_number].total_tx_cnt += 1U;
-        // only send if we have received a packet
-        CAN->sTxMailBox[0].TIR = ((to_send.extended != 0U) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
-        CAN->sTxMailBox[0].TDTR = to_send.data_len_code;
-        BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDLR, &to_send.data[0]);
-        BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDHR, &to_send.data[4]);
-        // Send request TXRQ
-        CAN->sTxMailBox[0].TIR |= 0x1U;
+        if (can_check_checksum(&to_send)) {
+          can_health[can_number].total_tx_cnt += 1U;
+          // only send if we have received a packet
+          CAN->sTxMailBox[0].TIR = ((to_send.extended != 0U) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
+          CAN->sTxMailBox[0].TDTR = to_send.data_len_code;
+          BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDLR, &to_send.data[0]);
+          BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDHR, &to_send.data[4]);
+          // Send request TXRQ
+          CAN->sTxMailBox[0].TIR |= 0x1U;
+        } else {
+          can_health[can_number].total_tx_checksum_error_cnt += 1U;
+        }
 
         usb_cb_ep3_out_complete();
       }
@@ -183,6 +188,7 @@ void can_rx(uint8_t can_number) {
     to_push.bus = bus_number;
     WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sFIFOMailBox[0].RDLR);
     WORD_TO_BYTE_ARRAY(&to_push.data[4], CAN->sFIFOMailBox[0].RDHR);
+    can_set_checksum(&to_push);
 
     // forwarding (panda only)
     int bus_fwd_num = safety_fwd_hook(bus_number, &to_push);
@@ -196,6 +202,8 @@ void can_rx(uint8_t can_number) {
       to_send.bus = to_push.bus;
       to_send.data_len_code = to_push.data_len_code;
       (void)memcpy(to_send.data, to_push.data, dlc_to_len[to_push.data_len_code]);
+      can_set_checksum(&to_send);
+
       can_send(&to_send, bus_fwd_num, true);
       can_health[can_number].total_fwd_cnt += 1U;
     }

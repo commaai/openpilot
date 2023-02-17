@@ -124,7 +124,7 @@ class CarController:
     self.brake = 0.0
     self.last_steer = 0.0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH if hud_control.speedVisible else 255
@@ -189,14 +189,14 @@ class CarController:
                      clip(CS.out.vEgo + 0.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(1.0 * 0xc6)
+      pcm_accel = int(1.0 * self.params.NIDEC_GAS_MAX)
     else:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * 0xc6)
+      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
@@ -254,7 +254,7 @@ class CarController:
         self.speed = pcm_speed
 
         if not self.CP.enableGasInterceptor:
-          self.gas = pcm_accel / 0xc6
+          self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
     new_actuators = actuators.copy()
     new_actuators.speed = self.speed
@@ -262,6 +262,7 @@ class CarController:
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
     new_actuators.steer = self.last_steer
+    new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1
     return new_actuators, can_sends

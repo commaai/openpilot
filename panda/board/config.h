@@ -1,5 +1,6 @@
-#ifndef PANDA_CONFIG_H
-#define PANDA_CONFIG_H
+#pragma once
+
+#include <stdbool.h>
 
 //#define DEBUG
 //#define DEBUG_UART
@@ -8,31 +9,27 @@
 //#define DEBUG_FAULTS
 //#define DEBUG_COMMS
 
+#define CAN_INIT_TIMEOUT_MS 500U
 #define DEEPSLEEP_WAKEUP_DELAY 3U
+#define USBPACKET_MAX_SIZE 0x40U
+#define MAX_CAN_MSGS_PER_BULK_TRANSFER 51U
 
-#define NULL ((void*)0)
-#define COMPILE_TIME_ASSERT(pred) ((void)sizeof(char[1 - (2 * ((int)(!(pred))))]))
+// USB definitions
+#define USB_VID 0xBBAAU
 
-#define MIN(a,b) \
- ({ __typeof__ (a) _a = (a); \
-     __typeof__ (b) _b = (b); \
-   (_a < _b) ? _a : _b; })
-
-#define MAX(a,b) \
- ({ __typeof__ (a) _a = (a); \
-     __typeof__ (b) _b = (b); \
-   (_a > _b) ? _a : _b; })
-
-#define ABS(a) \
- ({ __typeof__ (a) _a = (a); \
-   (_a > 0) ? _a : (-_a); })
-
-#include <stdbool.h>
-#include "panda.h"
-#ifdef STM32H7
-  #include "stm32h7/stm32h7_config.h"
+#ifdef BOOTSTUB
+  #define USB_PID 0xDDEEU
 #else
-  #include "stm32fx/stm32fx_config.h"
+  #define USB_PID 0xDDCCU
 #endif
 
+// platform includes
+#ifdef STM32H7
+  #include "stm32h7/stm32h7_config.h"
+#elif defined(STM32F2) || defined(STM32F4)
+  #include "stm32fx/stm32fx_config.h"
+#else
+  // TODO: uncomment this, cppcheck complains
+  // building for tests
+  //#include "fake_stm.h"
 #endif

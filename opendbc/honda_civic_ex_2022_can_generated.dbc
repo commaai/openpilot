@@ -447,7 +447,7 @@ BO_ 432 STANDSTILL: 7 VSA
 
 BO_ 456 ACC_CONTROL: 8 XXX
  SG_ ACCEL_COMMAND : 7|12@0- (0.01,0) [0|0] "m/s^2" XXX
- SG_ CONTROL_OFF : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ IDLESTOP_ALLOW : 8|1@0+ (1,0) [0|1] "" XXX
  SG_ STANDSTILL : 9|1@0+ (1,0) [0|1] "" XXX
  SG_ CONTROL_ON : 10|1@0+ (1,0) [0|1] "" XXX
  SG_ BOH : 23|1@0+ (1,0) [0|1] "" XXX
@@ -496,7 +496,7 @@ BO_ 254913108 LKAS_HUD_2: 8 ADAS
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
-CM_ BO_ 456 "not sure which bit enables cruise";
+CM_ SG_ 456 IDLESTOP_ALLOW "allows car to turn off engine at a standstill";
 CM_ SG_ 456 STANDSTILL "set to 1 when camera requests -4.0 m/s^2";
 
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P";

@@ -1,9 +1,5 @@
 from tinygrad.tensor import Tensor
 
-def batch_normalize(x, weight, bias, mean, invstd):
-  x = (x - mean.reshape(shape=[1, -1, 1, 1])) * weight.reshape(shape=[1, -1, 1, 1])
-  return x.mul(invstd.reshape(shape=[1, -1, 1, 1])) + bias.reshape(shape=[1, -1, 1, 1])
-
 class BatchNorm2D:
   def __init__(self, sz, eps=1e-5, affine=True, track_running_stats=True, momentum=0.1):
     assert affine, "BatchNorm2D is only supported with affine"
@@ -34,11 +30,11 @@ class BatchNorm2D:
     else:
       batch_mean, batch_var = self.running_mean, self.running_var
       # NOTE: this can be precomputed for static inference. if you manually update running_var, you have to reset this
-      if getattr(self, "batch_invstd", None) is None:
+      if not hasattr(self, "batch_invstd") or not self.batch_invstd:
         self.batch_invstd = batch_var.add(self.eps)**-0.5
       batch_invstd = self.batch_invstd
 
-    return batch_normalize(x, self.weight, self.bias, batch_mean, batch_invstd)
+    return x.batchnorm(self.weight, self.bias, batch_mean, batch_invstd)
 
 # TODO: is this good weight init?
 class Conv2d:

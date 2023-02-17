@@ -32,7 +32,6 @@ int64_t get_raw_value(const std::vector<uint8_t> &msg, const Signal &sig) {
 
 
 bool MessageState::parse(uint64_t sec, const std::vector<uint8_t> &dat) {
-
   for (int i = 0; i < parse_sigs.size(); i++) {
     auto &sig = parse_sigs[i];
 
@@ -94,7 +93,6 @@ CANParser::CANParser(int abus, const std::string& dbc_name,
           const std::vector<MessageParseOptions> &options,
           const std::vector<SignalParseOptions> &sigoptions)
   : bus(abus), aligned_buf(kj::heapArray<capnp::word>(1024)) {
-
   dbc = dbc_lookup(dbc_name);
   assert(dbc);
   init_crc_lookup_tables();
@@ -312,6 +310,7 @@ std::vector<SignalValue> CANParser::query_latest() {
       const Signal &sig = state.parse_sigs[i];
       ret.push_back((SignalValue){
         .address = state.address,
+        .ts_nanos = state.last_seen_nanos,
         .name = sig.name,
         .value = state.vals[i],
         .all_values = state.all_vals[i],

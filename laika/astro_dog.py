@@ -48,13 +48,13 @@ class AstroDog:
     self.valid_ephem_types = valid_ephem_types
 
     self.orbit_fetched_times = TimeRangeHolder()
-    self.nav_fetched_times = TimeRangeHolder()
+    self.navs_fetched_times = TimeRangeHolder()
     self.dcbs_fetched_times = TimeRangeHolder()
 
     self.dgps_delays = []
     self.ionex_maps: List[IonexMap] = []
     self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
-    self.nav: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
+    self.navs: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
     self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
 
     self.cached_ionex: Optional[IonexMap] = None
@@ -73,8 +73,8 @@ class AstroDog:
     return ionex
 
   def get_nav(self, prn, time):
-    skip_download = time in self.nav_fetched_times
-    nav = self._get_latest_valid_data(self.nav[prn], self.cached_nav[prn], self.get_nav_data, time, skip_download)
+    skip_download = time in self.navs_fetched_times
+    nav = self._get_latest_valid_data(self.navs[prn], self.cached_nav[prn], self.get_nav_data, time, skip_download)
     if nav is not None:
       self.cached_nav[prn] = nav
     return nav
@@ -97,9 +97,9 @@ class AstroDog:
     return result
 
   def get_navs(self, time):
-    if time not in self.nav_fetched_times and self.auto_update:
+    if time not in self.navs_fetched_times:
       self.get_nav_data(time)
-    return AstroDog._select_valid_temporal_items(self.nav, time, self.cached_nav)
+    return AstroDog._select_valid_temporal_items(self.navs, time, self.cached_nav)
 
   def get_orbit(self, prn: str, time: GPSTime):
     skip_download = time in self.orbit_fetched_times
@@ -133,7 +133,7 @@ class AstroDog:
     self._add_ephems(new_ephems, self.orbits, self.orbit_fetched_times)
 
   def add_navs(self, new_ephems: Dict[str, List[Ephemeris]]):
-    self._add_ephems(new_ephems, self.nav, self.nav_fetched_times)
+    self._add_ephems(new_ephems, self.navs, self.navs_fetched_times)
 
   def _add_ephems(self, new_ephems: Dict[str, List[Ephemeris]], ephems_dict, fetched_times):
     for k, v in new_ephems.items():
@@ -172,7 +172,7 @@ class AstroDog:
     if sum([len(v) for v in fetched_ephems.values()]) == 0:
       begin_day = GPSTime(time.week, SECS_IN_DAY * (time.tow // SECS_IN_DAY))
       end_day = GPSTime(time.week, SECS_IN_DAY * (1 + (time.tow // SECS_IN_DAY)))
-      self.nav_fetched_times.add(begin_day, end_day)
+      self.navs_fetched_times.add(begin_day, end_day)
 
   def download_parse_orbit(self, gps_time: GPSTime, skip_before_epoch=None) -> Dict[str, List[PolyEphemeris]]:
     # Download multiple days to be able to polyfit at the start-end of the day
@@ -265,7 +265,6 @@ class AstroDog:
       eph = self.get_orbit(prn, time)
     if not eph and self.pull_nav:
       eph = self.get_nav(prn, time)
-
     if eph:
       return eph.get_sat_info(time)
     return None

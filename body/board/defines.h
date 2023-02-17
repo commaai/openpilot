@@ -166,7 +166,8 @@ typedef struct {
   GPIO_TypeDef* ignition_port;
   uint16_t ignition_pin;
 
-  uint32_t can_addr_offset;
+  uint16_t can_addr_offset;
+  uint8_t uds_offset;
 
   GPIO_TypeDef* led_portR;
   uint16_t led_pinR;
@@ -176,5 +177,12 @@ typedef struct {
   uint16_t led_pinB;
 
 } board_t;
+
+typedef struct {
+    uint8_t left_i2c : 1;
+    uint8_t left_angle : 1;
+    uint8_t right_i2c : 1;
+    uint8_t right_angle : 1;
+} fault_status_t;
 
 #endif // DEFINES_H

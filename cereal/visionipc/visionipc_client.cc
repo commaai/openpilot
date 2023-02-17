@@ -3,10 +3,21 @@
 #include <iostream>
 #include <thread>
 
-#include "visionipc/ipc.h"
-#include "visionipc/visionipc_client.h"
-#include "visionipc/visionipc_server.h"
-#include "logger/logger.h"
+#include "cereal/visionipc/ipc.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "cereal/logger/logger.h"
+
+static int connect_to_vipc_server(const std::string &name, bool blocking) {
+  std::string path = "/tmp/visionipc_" + name;
+  int socket_fd = ipc_connect(path.c_str());
+  while (socket_fd < 0 && blocking) {
+    std::cout << "VisionIpcClient connecting" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    socket_fd = ipc_connect(path.c_str());
+  }
+  return socket_fd;
+}
 
 VisionIpcClient::VisionIpcClient(std::string name, VisionStreamType type, bool conflate, cl_device_id device_id, cl_context ctx) : name(name), type(type), device_id(device_id), ctx(ctx) {
   msg_ctx = Context::create();
@@ -29,23 +40,10 @@ bool VisionIpcClient::connect(bool blocking){
 
   num_buffers = 0;
 
-  // Connect to server socket and ask for all FDs of type
-  std::string path = "/tmp/visionipc_" + name;
-
-  int socket_fd = -1;
-  while (socket_fd < 0) {
-    socket_fd = ipc_connect(path.c_str());
-
-    if (socket_fd < 0) {
-      if (blocking){
-        std::cout << "VisionIpcClient connecting" << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      } else {
-        return false;
-      }
-    }
+  int socket_fd = connect_to_vipc_server(name, blocking);
+  if (socket_fd < 0) {
+    return false;
   }
-
   // Send stream type to server to request FDs
   int r = ipc_sendrecv_with_fds(true, socket_fd, &type, sizeof(type), nullptr, 0, nullptr);
   assert(r == sizeof(type));
@@ -114,7 +112,22 @@ VisionBuf * VisionIpcClient::recv(VisionIpcBufExtra * extra, const int timeout_m
   return buf;
 }
 
+std::set<VisionStreamType> VisionIpcClient::getAvailableStreams(const std::string &name, bool blocking) {
+  int socket_fd = connect_to_vipc_server(name, blocking);
+  if (socket_fd < 0) {
+    return {};
+  }
+  // Send VISION_STREAM_MAX to server to request available streams
+  int request = VISION_STREAM_MAX;
+  int r = ipc_sendrecv_with_fds(true, socket_fd, &request, sizeof(request), nullptr, 0, nullptr);
+  assert(r == sizeof(request));
 
+  VisionStreamType available_streams[VISION_STREAM_MAX] = {};
+  r = ipc_sendrecv_with_fds(false, socket_fd, &available_streams, sizeof(available_streams), nullptr, 0, nullptr);
+  assert(r >= sizeof(VisionStreamType) && r % sizeof(VisionStreamType) == 0);
+  close(socket_fd);
+  return std::set<VisionStreamType>(available_streams, available_streams + r / sizeof(VisionStreamType));
+}
 
 VisionIpcClient::~VisionIpcClient(){
   for (size_t i = 0; i < num_buffers; i++){

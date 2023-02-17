@@ -26,6 +26,7 @@ cdef class CANParser:
   cdef readonly:
     dict vl
     dict vl_all
+    dict ts_nanos
     string dbc_name
 
   def __init__(self, dbc_name, signals, checks=None, bus=0, enforce_checks=True):
@@ -39,6 +40,7 @@ cdef class CANParser:
 
     self.vl = {}
     self.vl_all = {}
+    self.ts_nanos = {}
     msg_name_to_address = {}
 
     for i in range(self.dbc[0].msgs.size()):
@@ -51,6 +53,8 @@ cdef class CANParser:
       self.vl[name] = self.vl[msg.address]
       self.vl_all[msg.address] = defaultdict(list)
       self.vl_all[name] = self.vl_all[msg.address]
+      self.ts_nanos[msg.address] = {}
+      self.ts_nanos[name] = self.ts_nanos[msg.address]
 
     # Convert message names into addresses
     for i in range(len(signals)):
@@ -108,6 +112,7 @@ cdef class CANParser:
       cv_name = <unicode>cv.name
       self.vl[cv.address][cv_name] = cv.value
       self.vl_all[cv.address][cv_name].extend(cv.all_values)
+      self.ts_nanos[cv.address][cv_name] = cv.ts_nanos
       updated_addrs.insert(cv.address)
 
     return updated_addrs

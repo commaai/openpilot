@@ -16,7 +16,7 @@ def saast(pos, el, humi=0.75, temp0=15.0):
     :return:        tropospheric delay (m)
     """
   pos_rad = ecef2geodetic(pos, radians=True)
-  if pos_rad[2] < -100.0 or 1E4 < pos_rad[2] or el <= 0:
+  if pos_rad[2] < -1E3 or 1E4 < pos_rad[2] or el <= 0:
     return 0.0
 
   # /* standard atmosphere */

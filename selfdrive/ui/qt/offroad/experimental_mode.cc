@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QPainter>
+#include <QPainterPath>
 #include <QStyle>
 
 #include "selfdrive/ui/ui.h"

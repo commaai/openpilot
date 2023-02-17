@@ -65,6 +65,24 @@ AddrCheckStruct hyundai_canfd_addr_checks[] = {
 };
 #define HYUNDAI_CANFD_ADDR_CHECK_LEN (sizeof(hyundai_canfd_addr_checks) / sizeof(hyundai_canfd_addr_checks[0]))
 
+// 0x1a0 is on bus 0
+AddrCheckStruct hyundai_canfd_radar_scc_addr_checks[] = {
+  {.msg = {{0x35, 1, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
+           {0x35, 0, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
+           {0x105, 0, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U}}},
+  {.msg = {{0x175, 1, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 20000U},
+           {0x175, 0, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 20000U}, { 0 }}},
+  {.msg = {{0xa0, 1, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
+           {0xa0, 0, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U}, { 0 }}},
+  {.msg = {{0xea, 1, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
+           {0xea, 0, 24, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U}, { 0 }}},
+  {.msg = {{0x1a0, 0, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{0x1cf, 1, 8, .check_checksum = false, .max_counter = 0xfU, .expected_timestep = 20000U},
+           {0x1cf, 0, 8, .check_checksum = false, .max_counter = 0xfU, .expected_timestep = 20000U},
+           {0x1aa, 0, 16, .check_checksum = false, .max_counter = 0xffU, .expected_timestep = 20000U}}},
+};
+#define HYUNDAI_CANFD_RADAR_SCC_ADDR_CHECK_LEN (sizeof(hyundai_canfd_radar_scc_addr_checks) / sizeof(hyundai_canfd_radar_scc_addr_checks[0]))
+
 AddrCheckStruct hyundai_canfd_long_addr_checks[] = {
   {.msg = {{0x35, 1, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
            {0x35, 0, 32, .check_checksum = true, .max_counter = 0xffU, .expected_timestep = 10000U},
@@ -226,8 +244,7 @@ static int hyundai_canfd_rx_hook(CANPacket_t *to_push) {
   return valid;
 }
 
-static int hyundai_canfd_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
-  UNUSED(longitudinal_allowed);
+static int hyundai_canfd_tx_hook(CANPacket_t *to_send) {
 
   int tx = 0;
   int addr = GET_ADDR(to_send);
@@ -278,13 +295,8 @@ static int hyundai_canfd_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed
     bool violation = false;
 
     if (hyundai_longitudinal) {
-      if (!longitudinal_allowed) {
-        if ((desired_accel_raw != 0) || (desired_accel_val != 0)) {
-          violation = true;
-        }
-      }
-      violation |= max_limit_check(desired_accel_raw, HYUNDAI_MAX_ACCEL, HYUNDAI_MIN_ACCEL);
-      violation |= max_limit_check(desired_accel_val, HYUNDAI_MAX_ACCEL, HYUNDAI_MIN_ACCEL);
+      violation |= longitudinal_accel_checks(desired_accel_raw, HYUNDAI_LONG_LIMITS);
+      violation |= longitudinal_accel_checks(desired_accel_val, HYUNDAI_LONG_LIMITS);
     } else {
       // only used to cancel on here
       if ((desired_accel_raw != 0) || (desired_accel_val != 0)) {
@@ -344,6 +356,8 @@ static const addr_checks* hyundai_canfd_init(uint16_t param) {
   } else {
     if (!hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
       hyundai_canfd_rx_checks = (addr_checks){hyundai_canfd_ice_addr_checks, HYUNDAI_CANFD_ICE_ADDR_CHECK_LEN};
+    } else if (!hyundai_camera_scc && !hyundai_canfd_hda2) {
+      hyundai_canfd_rx_checks = (addr_checks){hyundai_canfd_radar_scc_addr_checks, HYUNDAI_CANFD_RADAR_SCC_ADDR_CHECK_LEN};
     } else {
       hyundai_canfd_rx_checks = (addr_checks){hyundai_canfd_addr_checks, HYUNDAI_CANFD_ADDR_CHECK_LEN};
     }
