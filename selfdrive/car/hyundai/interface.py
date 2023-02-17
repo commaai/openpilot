@@ -43,6 +43,14 @@ class CarInterface(CarInterfaceBase):
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+    else:
+      # Send LFA message on cars with HDA
+      if 0x485 in fingerprint[2]:
+        ret.flags |= HyundaiFlags.SEND_LFA.value
+
+      # These cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
+      if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
+        ret.flags |= HyundaiFlags.USE_FCA.value
 
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
