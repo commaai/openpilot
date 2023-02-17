@@ -101,6 +101,19 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
+    # longitudinal
+    ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS)
+    if experimental_long and ret.experimentalLongitudinalAvailable:
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.54, 0.36]
+
+      ret.stoppingControl = True
+      ret.openpilotLongitudinalControl = experimental_long
+      if ret.openpilotLongitudinalControl:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LONG
+
     return ret
 
   # returns a car.CarState

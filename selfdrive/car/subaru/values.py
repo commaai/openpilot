@@ -29,6 +29,21 @@ class CarControllerParams:
     else:
       self.STEER_MAX = 2047
 
+  RPM_MIN = 0                   # min cruise_rpm
+  RPM_MAX = 3200                # max cruise_rpm
+  RPM_BASE = 600                # cruise_rpm idle, from stock drive
+  RPM_SCALE = 3000              # cruise_rpm, from testing
+  RPM_DELTA = 50
+
+  THROTTLE_MIN = 0              # min cruise_throttle
+  THROTTLE_MAX = 3400           # max cruise_throttle
+  THROTTLE_BASE = 1810          # cruise_throttle, from stock drive
+  THROTTLE_SCALE = 3000         # from testing
+  THROTTLE_DELTA = 50
+
+  BRAKE_MIN = 0
+  BRAKE_MAX = 400
+  BRAKE_SCALE = 1000            # from testing
 
 class CAR:
   # Global platform

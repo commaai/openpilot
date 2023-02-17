@@ -69,6 +69,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
+
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -77,8 +78,17 @@ class CarState(CarStateBase):
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
+      ret.stockAeb = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 5) or \
+                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert_Msg"] == 6) or ret.stockFcw
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
-
+      self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+      cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+      self.aeb = cp_es_brake.vl["ES_Brake"]["Cruise_Brake_Active"]
+      self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
+      cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+      self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
+      self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
+      self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
@@ -88,13 +98,21 @@ class CarState(CarStateBase):
   @staticmethod
   def get_common_global_signals():
     signals = [
+      ("COUNTER", "CruiseControl"),
+      ("Signal1", "CruiseControl"),
       ("Cruise_On", "CruiseControl"),
       ("Cruise_Activated", "CruiseControl"),
+      ("Signal2", "CruiseControl"),
       ("FL", "Wheel_Speeds"),
       ("FR", "Wheel_Speeds"),
       ("RL", "Wheel_Speeds"),
       ("RR", "Wheel_Speeds"),
+      ("COUNTER", "Brake_Status"),
+      ("Signal1", "Brake_Status"),
+      ("ES_Brake", "Brake_Status"),
+      ("Signal2", "Brake_Status"),
       ("Brake", "Brake_Status"),
+      ("Signal3", "Brake_Status"),
     ]
     checks = [
       ("CruiseControl", 20),
@@ -105,7 +123,7 @@ class CarState(CarStateBase):
     return signals, checks
 
   @staticmethod
-  def get_global_es_distance_signals():
+  def get_global_es_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
       ("Signal1", "ES_Distance"),
@@ -126,9 +144,32 @@ class CarState(CarStateBase):
       ("Cruise_Set", "ES_Distance"),
       ("Cruise_Resume", "ES_Distance"),
       ("Signal6", "ES_Distance"),
+
+      ("COUNTER", "ES_Status"),
+      ("Signal1", "ES_Status"),
+      ("Cruise_Fault", "ES_Status"),
+      ("Cruise_RPM", "ES_Status"),
+      ("Signal2", "ES_Status"),
+      ("Cruise_Activated", "ES_Status"),
+      ("Brake_Lights", "ES_Status"),
+      ("Cruise_Hold", "ES_Status"),
+      ("Signal3", "ES_Status"),
+
+      ("COUNTER", "ES_Brake"),
+      ("Signal1", "ES_Brake"),
+      ("Brake_Pressure", "ES_Brake"),
+      ("Signal2", "ES_Brake"),
+      ("Cruise_Brake_Lights", "ES_Brake"),
+      ("Cruise_Brake_Fault", "ES_Brake"),
+      ("Cruise_Brake_Active", "ES_Brake"),
+      ("Cruise_Activated", "ES_Brake"),
+      ("Signal3", "ES_Brake"),
+
     ]
     checks = [
       ("ES_Distance", 20),
+      ("ES_Status", 20),
+      ("ES_Brake", 20),
     ]
 
     return signals, checks
@@ -143,6 +184,7 @@ class CarState(CarStateBase):
       ("Steer_Error_1", "Steering_Torque"),
       ("Brake_Pedal", "Brake_Pedal"),
       ("Throttle_Pedal", "Throttle"),
+      ("Throttle_Cruise", "Throttle"),
       ("LEFT_BLINKER", "Dashlights"),
       ("RIGHT_BLINKER", "Dashlights"),
       ("SEATBELT_FL", "Dashlights"),
@@ -179,6 +221,7 @@ class CarState(CarStateBase):
 
       signals += [
         ("Steer_Warning", "Steering_Torque"),
+        ("RPM", "Transmission"),
         ("UNITS", "Dashlights"),
       ]
 
@@ -248,7 +291,7 @@ class CarState(CarStateBase):
       ]
     else:
       signals = [
-        ("Counter", "ES_DashStatus"),
+        ("COUNTER", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
@@ -290,6 +333,7 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Visible", "ES_LKAS_State"),
         ("LKAS_Alert", "ES_LKAS_State"),
         ("Signal3", "ES_LKAS_State"),
+
       ]
 
       checks = [
@@ -298,8 +342,8 @@ class CarState(CarStateBase):
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:
-        signals += CarState.get_global_es_distance_signals()[0]
-        checks += CarState.get_global_es_distance_signals()[1]
+        signals += CarState.get_global_es_signals()[0]
+        checks += CarState.get_global_es_signals()[1]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
@@ -307,8 +351,8 @@ class CarState(CarStateBase):
   def get_body_can_parser(CP):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
-      signals += CarState.get_global_es_distance_signals()[0]
-      checks += CarState.get_global_es_distance_signals()[1]
+      signals += CarState.get_global_es_signals()[0]
+      checks += CarState.get_global_es_signals()[1]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     return None
