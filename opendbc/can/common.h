@@ -1,16 +1,19 @@
 #pragma once
 
-#include <vector>
 #include <map>
+#include <string>
+#include <utility>
 #include <unordered_map>
+#include <vector>
 
-#include "common_dbc.h"
 #include <capnp/dynamic.h>
 #include <capnp/serialize.h>
 
 #ifndef DYNAMIC_CAPNP
 #include "cereal/gen/cpp/log.capnp.h"
 #endif
+
+#include "opendbc/can/common_dbc.h"
 
 #define INFO printf
 #define WARN printf

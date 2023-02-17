@@ -4,8 +4,8 @@
 #include <string>
 #include <mutex>
 
-#include "services.h"
-#include "messaging.h"
+#include "cereal/services.h"
+#include "cereal/messaging/messaging.h"
 
 const bool SIMULATION = (getenv("SIMULATION") != nullptr) && (std::string(getenv("SIMULATION")) == "1");
 
@@ -116,7 +116,7 @@ void SubMaster::update(int timeout) {
 void SubMaster::update_msgs(uint64_t current_time, const std::vector<std::pair<std::string, cereal::Event::Reader>> &messages){
   if (++frame == UINT64_MAX) frame = 1;
 
-  for(auto &kv : messages) {
+  for (auto &kv : messages) {
     auto m_find = services_.find(kv.first);
     if (m_find == services_.end()){
       continue;

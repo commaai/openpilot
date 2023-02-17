@@ -153,7 +153,7 @@ VAL_TABLE_ ChrgCordLck_D_Stat 7 "Faulty" 6 "LockFail" 5 "UnlockFail" 4 "LockInPr
 VAL_TABLE_ LkaActvStats_D2_Req 7 "NotUsed" 6 "LkaIncrIntervRight" 5 "LkaSupprRight" 4 "LkaStandIntervRight" 3 "LkaSupprLeft" 2 "LkaStandIntervLeft" 1 "LkaIncrIntervLeft" 0 "LkaNoInterv";
 VAL_TABLE_ OffOnNoDataFaulty 3 "Faulty" 2 "No_Data_Exists" 1 "On" 0 "Off";
 VAL_TABLE_ NoMessage_Msg1_3 3 "Message3" 2 "Message2" 1 "Message1" 0 "NoMessage";
-VAL_TABLE_ TrnRng_D_RqGsm 15 "Fault" 14 "UnknownPosition" 13 "Undefined_2" 12 "Undefined_1" 11 "_6" 10 "_5" 9 "_4" 8 "_3" 7 "_2" 6 "_1" 5 "Low" 4 "Sport_DriveSport" 3 "Drive" 2 "Neutral" 1 "Reverse" 0 "Park";
+VAL_TABLE_ TrnRng_D_RqGsm 15 "Fault" 14 "UnknownPosition" 13 "Undefined_2" 12 "Undefined_1" 11 "_6" 10 "_5" 9 "_4" 8 "_3" 7 "_2" 6 "_1" 5 "Low" 4 "Sport" 3 "Drive" 2 "Neutral" 1 "Reverse" 0 "Park";
 VAL_TABLE_ PrkBrkActv_D_RqGsmGear 3 "NotUsed" 2 "RequestParkBrakeEngage" 1 "NoRequest" 0 "Null";
 VAL_TABLE_ TrnPrkSys_D_Actl 15 "Faulty" 14 "NotUsed_5" 13 "NotUsed_4" 12 "NotUsed_3" 11 "NotUsed_2" 10 "NotUsed_1" 9 "FrequencyError" 8 "OutOfRangeHigh" 7 "OutOfRangeLow" 6 "Override" 5 "OutOfPark" 4 "TransitionCloseToOutOfPark" 3 "AtNoSpring" 2 "TransitionCloseToPark" 1 "Park" 0 "NotKnown";
 VAL_TABLE_ OKLowUnknownInvalid 3 "Invalid" 2 "Unknown" 1 "Low" 0 "OK";

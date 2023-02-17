@@ -15,7 +15,7 @@
 #define getsocket() socket(AF_UNIX, SOCK_SEQPACKET, 0)
 #endif
 
-#include "ipc.h"
+#include "cereal/visionipc/ipc.h"
 
 int ipc_connect(const char* socket_path) {
   int err;

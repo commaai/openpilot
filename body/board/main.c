@@ -58,6 +58,9 @@ extern board_t board;
 extern volatile uint32_t buzzerTimer;
 volatile uint32_t torque_cmd_timeout = 0U;
 volatile uint32_t ignition_off_counter = 0U;
+
+uint16_t cnt_press = 0;
+
 int16_t batVoltageCalib;         // global variable for calibrated battery voltage
 int16_t board_temp_deg_c;        // global variable for calibrated temperature in degrees Celsius
 volatile int16_t cmdL;                    // global variable for Left Command
@@ -66,9 +69,7 @@ volatile int16_t cmdR;                    // global variable for Right Command
 uint8_t hw_type;                 // type of the board detected(0 - base, 3 - knee)
 uint8_t ignition = 0;            // global variable for ignition on SBU2 line
 uint8_t charger_connected = 0;   // status of the charger port
-uint8_t fault_status = 0;        // fault status of the whole system
 uint8_t pkt_idx = 0;             // For CAN msg counter
-
 //------------------------------------------------------------------------
 // Local variables
 //------------------------------------------------------------------------
@@ -120,6 +121,7 @@ int main(void) {
   } else {
     out_enable(POWERSWITCH, false);
     ignition = 1;
+    knee_detected = 1;
   }
   // Reset LEDs on startup
   out_enable(LED_RED, false);
@@ -175,8 +177,10 @@ int main(void) {
 
         if (hw_type == HW_TYPE_KNEE) {
           // Safety to stop operation if angle sensor reading failed TODO: adjust sensivity and add lowpass to angle sensor?
-          if ((ABS((hall_angle_offset[0] + ((motPosL / 15 / GEARBOX_RATIO_LEFT) % 360)) - (sensor_angle[0] * ANGLE_TO_DEGREES)) > 5) ||
-              (ABS((hall_angle_offset[1] + ((motPosR / 15 / GEARBOX_RATIO_RIGHT) % 360)) - (sensor_angle[1] * ANGLE_TO_DEGREES)) > 5)) {
+          fault_status.left_angle = (ABS((hall_angle_offset[0] + ((motPosL / 15 / GEARBOX_RATIO_LEFT) % 360)) - (sensor_angle[0] * ANGLE_TO_DEGREES)) > 5);
+          fault_status.right_angle = (ABS((hall_angle_offset[1] + ((motPosR / 15 / GEARBOX_RATIO_RIGHT) % 360)) - (sensor_angle[1] * ANGLE_TO_DEGREES)) > 5);
+
+          if (fault_status.left_angle || fault_status.right_angle) {
             cmdL = cmdR = 0;
           }
           // Safety to stop movement when reaching dead angles, around 20 and 340 degrees
@@ -211,7 +215,7 @@ int main(void) {
           }
         }
 
-        if (ignition_off_counter <= 10) {
+        if (ignition_off_counter <= IGNITION_OFF_DELAY) {
           // MOTORS_DATA: speed_L(2), speed_R(2), counter(1), checksum(1)
           uint8_t dat[8];
           uint16_t speedL = rtY_Left.n_mot;
@@ -287,19 +291,15 @@ int main(void) {
       // runs at 10Hz
        if ((HAL_GetTick() - (main_loop_10Hz - main_loop_10Hz_runtime)) >= 100) {
         main_loop_10Hz_runtime = HAL_GetTick();
-        if (ignition_off_counter <= 10) {
-          // VAR_VALUES: fault_status(0:6), enable_motors(0:1), ignition(0:1), left motor error(1), right motor error(1), global fault status(1)
+        if (ignition_off_counter <= IGNITION_OFF_DELAY) {
+          // VAR_VALUES: fault_status(0:4), enable_motors(0:1), ignition(0:1), left motor error(1), right motor error(1)
           uint8_t dat[2];
-          dat[0] = (((fault_status & 0x3F) << 2U) | (enable_motors << 1U) | ignition);
+          dat[0] = ((fault_status.right_angle << 5U) | (fault_status.right_i2c << 4U) | (fault_status.left_angle << 3U) | (fault_status.left_i2c << 2U) | (enable_motors << 1U) | ignition);
           dat[1] = rtY_Left.z_errCode;
           dat[2] = rtY_Right.z_errCode;
           can_send_msg((0x202U + board.can_addr_offset), 0x0U, ((dat[2] << 16U) | (dat[1] << 8U) | dat[0]), 3U);
         }
         out_enable(LED_GREEN, ignition);
-        
-        if (hw_type == HW_TYPE_BASE) {
-          poweroffPressCheck();
-        }
 
         main_loop_10Hz_runtime = HAL_GetTick() - main_loop_10Hz_runtime;
         main_loop_10Hz = HAL_GetTick();
@@ -330,7 +330,7 @@ int main(void) {
         out_enable(LED_BLUE, false); // Reset LED after CAN RX
         out_enable(LED_GREEN, true); // Always use LED to show that body is on
 
-        if (ignition) {
+        if ((hw_type == HW_TYPE_BASE) && ignition) {
           ignition_off_counter = 0;
         } else {
           ignition_off_counter = (ignition_off_counter < MAX_uint32_T) ? (ignition_off_counter+1) : 0;
@@ -341,6 +341,8 @@ int main(void) {
         } else if (rtY_Left.z_errCode || rtY_Right.z_errCode) { // 1 beep (low pitch): Motor error, disable motors
           enable_motors = 0;
           beepCount(1, 24, 1);
+        } else if (fault_status.left_angle || fault_status.left_i2c || fault_status.right_angle || fault_status.right_i2c) { // 2 beeps (low pitch): Motor error, disable motors
+          beepCount(2, 24, 1);
         } else if (TEMP_WARNING_ENABLE && board_temp_deg_c >= TEMP_WARNING) { // 5 beeps (low pitch): Mainboard temperature warning
           beepCount(5, 24, 1);
         } else if (batVoltage < BAT_LVL1) { // 1 beep fast (medium pitch): Low bat 1
@@ -355,6 +357,20 @@ int main(void) {
 
         main_loop_1Hz_runtime = HAL_GetTick() - main_loop_1Hz_runtime;
         main_loop_1Hz = HAL_GetTick();
+      }
+
+      if (hw_type == HW_TYPE_BASE) {
+        if (HAL_GPIO_ReadPin(BUTTON_PORT, BUTTON_PIN)) {
+          cnt_press += 1;
+          if (cnt_press == (2 * 1008)) {
+            poweroff();
+          }
+        } else if (cnt_press >= 10) {
+          ignition = !ignition;
+          out_enable(IGNITION, ignition);
+          beepShort(5);
+          cnt_press = 0;
+        }
       }
 
       process_can();

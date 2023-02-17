@@ -28,7 +28,7 @@ void grey_set_gps_mode(uint8_t mode) {
       set_gpio_output(GPIOC, 5, 0);
       break;
     default:
-      puts("Invalid ESP/GPS mode\n");
+      print("Invalid ESP/GPS mode\n");
       break;
   }
 }
@@ -56,6 +56,6 @@ const board board_grey = {
   .set_fan_enabled = unused_set_fan_enabled,
   .set_ir_power = unused_set_ir_power,
   .set_phone_power = unused_set_phone_power,
-  .set_clock_source_mode = unused_set_clock_source_mode,
-  .set_siren = unused_set_siren
+  .set_siren = unused_set_siren,
+  .read_som_gpio = unused_read_som_gpio
 };

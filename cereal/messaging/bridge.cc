@@ -7,9 +7,9 @@
 
 typedef void (*sighandler_t)(int sig);
 
-#include "impl_msgq.h"
-#include "impl_zmq.h"
-#include "services.h"
+#include "cereal/services.h"
+#include "cereal/messaging/impl_msgq.h"
+#include "cereal/messaging/impl_zmq.h"
 
 std::atomic<bool> do_exit = false;
 static void set_do_exit(int sig) {
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   }
 
   std::map<SubSocket*, PubSocket*> sub2pub;
-  for (auto endpoint: get_services(whitelist_str, zmq_to_msgq)) {
+  for (auto endpoint : get_services(whitelist_str, zmq_to_msgq)) {
     PubSocket * pub_sock;
     SubSocket * sub_sock;
     if (zmq_to_msgq) {

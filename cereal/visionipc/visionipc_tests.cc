@@ -2,8 +2,8 @@
 #include <chrono>
 
 #include "catch2/catch.hpp"
-#include "visionipc_server.h"
-#include "visionipc_client.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "cereal/visionipc/visionipc_client.h"
 
 static void zmq_sleep(int milliseconds=1000){
   if (messaging_use_zmq()){
@@ -20,6 +20,17 @@ TEST_CASE("Connecting"){
   REQUIRE(client.connect());
 
   REQUIRE(client.connected);
+}
+
+TEST_CASE("getAvailableStreams"){
+  VisionIpcServer server("camerad");
+  server.create_buffers(VISION_STREAM_ROAD, 1, false, 100, 100);
+  server.create_buffers(VISION_STREAM_WIDE_ROAD, 1, false, 100, 100);
+  server.start_listener();
+  auto available_streams = VisionIpcClient::getAvailableStreams("camerad");
+  REQUIRE(available_streams.size() == 2);
+  REQUIRE(available_streams.count(VISION_STREAM_ROAD) == 1);
+  REQUIRE(available_streams.count(VISION_STREAM_WIDE_ROAD) == 1);
 }
 
 TEST_CASE("Check buffers"){

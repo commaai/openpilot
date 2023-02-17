@@ -53,6 +53,14 @@ UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false)
 // debug = USART2
 UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, false)
 
+// SOM debug = UART7
+#ifdef STM32H7
+  UART_BUFFER(som_debug, FIFO_SIZE_INT, FIFO_SIZE_INT, UART7, NULL, false)
+#else
+  // UART7 is not available on F4
+  UART_BUFFER(som_debug, 1U, 1U, NULL, NULL, false)
+#endif
+
 uart_ring *get_ring_by_number(int a) {
   uart_ring *ring = NULL;
   switch(a) {
@@ -67,6 +75,9 @@ uart_ring *get_ring_by_number(int a) {
       break;
     case 3:
       ring = &uart_ring_lin2;
+      break;
+    case 4:
+      ring = &uart_ring_som_debug;
       break;
     default:
       ring = NULL;
@@ -154,7 +165,7 @@ void putch(const char a) {
   (void)injectc(&uart_ring_debug, a);
 }
 
-void puts(const char *a) {
+void print(const char *a) {
   for (const char *in = a; *in; in++) {
     if (*in == '\n') putch('\r');
     putch(*in);
@@ -172,7 +183,7 @@ void putui(uint32_t i) {
     idx--;
     i_copy /= 10;
   } while (i_copy != 0U);
-  puts(&str[idx + 1U]);
+  print(&str[idx + 1U]);
 }
 
 void puthx(uint32_t i, uint8_t len) {
@@ -197,10 +208,10 @@ void puth4(unsigned int i) {
 void hexdump(const void *a, int l) {
   if (a != NULL) {
     for (int i=0; i < l; i++) {
-      if ((i != 0) && ((i & 0xf) == 0)) puts("\n");
+      if ((i != 0) && ((i & 0xf) == 0)) print("\n");
       puth2(((const unsigned char*)a)[i]);
-      puts(" ");
+      print(" ");
     }
   }
-  puts("\n");
+  print("\n");
 }

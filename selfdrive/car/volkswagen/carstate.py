@@ -13,6 +13,7 @@ class CarState(CarStateBase):
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
     self.esp_hold_confirmation = False
+    self.upscale_lead_car_signal = False
 
   def create_button_events(self, pt_cp, buttons):
     button_events = []
@@ -43,7 +44,7 @@ class CarState(CarStateBase):
 
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgo < 0.1
+    ret.standstill = ret.vEgoRaw == 0
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
@@ -62,7 +63,9 @@ class CarState(CarStateBase):
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
     ret.gasPressed = ret.gas > 0
     ret.brake = pt_cp.vl["ESP_05"]["ESP_Bremsdruck"] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
-    ret.brakePressed = bool(pt_cp.vl["ESP_05"]["ESP_Fahrer_bremst"])
+    brake_pedal_pressed = bool(pt_cp.vl["Motor_14"]["MO_Fahrer_bremst"])
+    brake_pressure_detected = bool(pt_cp.vl["ESP_05"]["ESP_Fahrer_bremst"])
+    ret.brakePressed = brake_pedal_pressed or brake_pressure_detected
     ret.parkingBrake = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
 
     # Update gear and/or clutch position data.
@@ -139,6 +142,9 @@ class CarState(CarStateBase):
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
 
+    # Digital instrument clusters expect the ACC HUD lead car distance to be scaled differently
+    self.upscale_lead_car_signal = bool(pt_cp.vl["Kombi_03"]["KBI_Variante"])
+
     return ret
 
   def update_pq(self, pt_cp, cam_cp, ext_cp, trans_type):
@@ -154,7 +160,7 @@ class CarState(CarStateBase):
     # vEgo obtained from Bremse_1 vehicle speed rather than Bremse_3 wheel speeds because Bremse_3 isn't present on NSF
     ret.vEgoRaw = pt_cp.vl["Bremse_1"]["Geschwindigkeit_neu__Bremse_1_"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgo < 0.1
+    ret.standstill = ret.vEgoRaw == 0
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
@@ -218,12 +224,13 @@ class CarState(CarStateBase):
     ret.stockAeb = False
 
     # Update ACC radar status.
-    self.acc_type = 0  # TODO: this is ACC "basic" with nonzero min speed, support FtS (1) later
+    self.acc_type = ext_cp.vl["ACC_System"]["ACS_Typ_ACC"]
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
-    ret.cruiseState.enabled = bool(pt_cp.vl["Motor_2"]["GRA_Status"])
+    ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
     if self.CP.pcmCruise:
       ret.accFaulted = ext_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
-    # TODO: update opendbc with PQ TSK state for OP long accFaulted
+    else:
+      ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
@@ -268,8 +275,9 @@ class CarState(CarStateBase):
       ("Comfort_Signal_Right", "Blinkmodi_02"),  # Right turn signal including comfort blink interval
       ("AB_Gurtschloss_FA", "Airbag_02"),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02"),        # Seatbelt status, passenger
-      ("ESP_Fahrer_bremst", "ESP_05"),           # Brake pedal pressed
-      ("ESP_Bremsdruck", "ESP_05"),              # Brake pressure applied
+      ("ESP_Fahrer_bremst", "ESP_05"),           # Driver applied brake pressure over threshold
+      ("MO_Fahrer_bremst", "Motor_14"),          # Brake pedal switch
+      ("ESP_Bremsdruck", "ESP_05"),              # Brake pressure
       ("MO_Fahrpedalrohwert_01", "Motor_20"),    # Accelerator pedal value
       ("EPS_Lenkmoment", "LH_EPS_03"),           # Absolute driver torque input
       ("EPS_VZ_Lenkmoment", "LH_EPS_03"),        # Driver torque input sign
@@ -277,6 +285,7 @@ class CarState(CarStateBase):
       ("ESP_Tastung_passiv", "ESP_21"),          # Stability control disabled
       ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
       ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
+      ("KBI_Variante", "Kombi_03"),              # Digital/full-screen instrument cluster installed
       ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
       ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
@@ -304,9 +313,11 @@ class CarState(CarStateBase):
       ("ESP_02", 50),       # From J104 ABS/ESP controller
       ("GRA_ACC_01", 33),   # From J533 CAN gateway (via LIN from steering wheel controls)
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
+      ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
       ("Blinkmodi_02", 1),  # From J519 BCM (sent at 1Hz when no lights active, 50Hz when active)
+      ("Kombi_03", 0),      # From J285 instrument cluster (not present on older cars, 1Hz when present)
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
@@ -318,7 +329,6 @@ class CarState(CarStateBase):
     elif CP.transmissionType == TransmissionType.manual:
       signals += [("MO_Kuppl_schalter", "Motor_14"),  # Clutch switch
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72")]  # Reverse light from BCM
-      checks.append(("Motor_14", 10))  # From J623 Engine control module
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Radars are here on CANBUS.pt
@@ -482,15 +492,15 @@ class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACC_Wunschgeschw_02", "ACC_02"),           # ACC set speed
-    ("ACC_Typ", "ACC_06"),                       # Basic vs F2S vs SNG
+    ("ACC_Typ", "ACC_06"),                       # Basic vs FtS vs SnG
     ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
     ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
     ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
   ]
   fwd_radar_checks = [
-    ("ACC_06", 50),                                 # From J428 ACC radar control module
-    ("ACC_10", 50),                                 # From J428 ACC radar control module
-    ("ACC_02", 17),                                 # From J428 ACC radar control module
+    ("ACC_06", 50),                              # From J428 ACC radar control module
+    ("ACC_10", 50),                              # From J428 ACC radar control module
+    ("ACC_02", 17),                              # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
     ("SWA_Infostufe_SWA_li", "SWA_01"),          # Blind spot object info, left
@@ -499,24 +509,26 @@ class MqbExtraSignals:
     ("SWA_Warnung_SWA_re", "SWA_01"),            # Blind spot object warning, right
   ]
   bsm_radar_checks = [
-    ("SWA_01", 20),                                 # From J1086 Lane Change Assist
+    ("SWA_01", 20),                              # From J1086 Lane Change Assist
   ]
 
 class PqExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
-    ("ACA_StaACC", "ACC_GRA_Anziege", 0),           # ACC drivetrain coordinator status
-    ("ACA_V_Wunsch", "ACC_GRA_Anziege", 0),         # ACC set speed
+    ("ACS_Typ_ACC", "ACC_System"),               # Basic vs FtS (no SnG support on PQ)
+    ("ACA_StaACC", "ACC_GRA_Anziege"),           # ACC drivetrain coordinator status
+    ("ACA_V_Wunsch", "ACC_GRA_Anziege"),         # ACC set speed
   ]
   fwd_radar_checks = [
-    ("ACC_GRA_Anziege", 25),                        # From J428 ACC radar control module
+    ("ACC_System", 50),                          # From J428 ACC radar control module
+    ("ACC_GRA_Anziege", 25),                     # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
-    ("SWA_Infostufe_SWA_li", "SWA_1", 0),           # Blind spot object info, left
-    ("SWA_Warnung_SWA_li", "SWA_1", 0),             # Blind spot object warning, left
-    ("SWA_Infostufe_SWA_re", "SWA_1", 0),           # Blind spot object info, right
-    ("SWA_Warnung_SWA_re", "SWA_1", 0),             # Blind spot object warning, right
+    ("SWA_Infostufe_SWA_li", "SWA_1"),           # Blind spot object info, left
+    ("SWA_Warnung_SWA_li", "SWA_1"),             # Blind spot object warning, left
+    ("SWA_Infostufe_SWA_re", "SWA_1"),           # Blind spot object info, right
+    ("SWA_Warnung_SWA_re", "SWA_1"),             # Blind spot object warning, right
   ]
   bsm_radar_checks = [
-    ("SWA_1", 20),                                  # From J1086 Lane Change Assist
+    ("SWA_1", 20),                               # From J1086 Lane Change Assist
   ]

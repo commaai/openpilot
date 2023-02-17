@@ -113,7 +113,7 @@
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>拒絕並卸載 %1</translation>
+        <translation>拒絕並解除安裝 %1</translation>
     </message>
 </context>
 <context>
@@ -132,7 +132,7 @@
     </message>
     <message>
         <source>Driver Camera</source>
-        <translation>駕駛員攝像頭</translation>
+        <translation>駕駛員監控鏡頭</translation>
     </message>
     <message>
         <source>PREVIEW</source>
@@ -285,11 +285,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>實驗模式 ON</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation type="unfinished"></translation>
+        <translation>輕鬆模式 ON</translation>
     </message>
 </context>
 <context>
@@ -310,18 +310,6 @@
     <message>
         <source>Installing...</source>
         <translation>安裝中…</translation>
-    </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>接收對象： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>分析差異： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>更新檔案： </translation>
     </message>
 </context>
 <context>
@@ -685,18 +673,6 @@ location set</source>
         <translation>連接至網路中</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>選擇要安裝的軟體</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>行車記錄器</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>定制的軟體</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>輸入網址</translation>
     </message>
@@ -859,15 +835,15 @@ location set</source>
     </message>
     <message>
         <source>UNINSTALL</source>
-        <translation>卸載</translation>
+        <translation>解除安裝</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation>卸載 %1</translation>
+        <translation>解除安裝 %1</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
-        <translation>您確定您要卸載嗎？</translation>
+        <translation>您確定您要解除安裝嗎？</translation>
     </message>
     <message>
         <source>CHECK</source>
@@ -875,7 +851,7 @@ location set</source>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation>卸載</translation>
+        <translation>解除安裝</translation>
     </message>
 </context>
 <context>
@@ -1015,19 +991,43 @@ location set</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
+        <translation>在本車輛中，openpilot預設將使用原車內建的ACC系統，而非openpilot縱向控制。開啟此開關來啟用openpilot縱向控制，使用此選項時建議一併啟用實驗模式。</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮端到端縱向控制🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>讓駕駛模型來控制油門及煞車。openpilot將會模擬人類的駕駛行為，包含在看見紅燈及停止標示時停車。由於車速將由駕駛模型決定，因此您設定的時速將成為速度上限。本功能仍在早期實驗階段，請預期模型有犯錯的可能性。</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>新的駕駛視覺介面</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>    openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;.    Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode.     Experimental features are listed below:     &lt;br&gt;     &lt;h4&gt;🌮 End-to-End Longitudinal Control 🌮&lt;/h4&gt;     Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs.     Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.     &lt;br&gt;     &lt;h4&gt;New Driving Visualization&lt;/h4&gt;     The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.    </source>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
 </context>
 <context>

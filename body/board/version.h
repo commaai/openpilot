@@ -1,1 +1,1 @@
-const uint8_t version[6] = "0.0.02";
+const uint8_t version[6] = "0.3.00";

@@ -1,25 +1,34 @@
-#include "dlc_to_len.h"
+#pragma once
 
-#define CAN_PACKET_VERSION 2
+const uint8_t PANDA_CAN_CNT = 3U;
+const uint8_t PANDA_BUS_CNT = 4U;
+
+// bump this when changing the CAN packet
+#define CAN_PACKET_VERSION 4
+
+#define CANPACKET_HEAD_SIZE 6U
+
+#if !defined(STM32F4) && !defined(STM32F2)
+  #define CANFD
+  #define CANPACKET_DATA_SIZE_MAX 64U
+#else
+  #define CANPACKET_DATA_SIZE_MAX 8U
+#endif
+
 typedef struct {
   unsigned char reserved : 1;
   unsigned char bus : 3;
-  unsigned char data_len_code : 4;
+  unsigned char data_len_code : 4;  // lookup length with dlc_to_len
   unsigned char rejected : 1;
   unsigned char returned : 1;
   unsigned char extended : 1;
   unsigned int addr : 29;
+  unsigned char checksum;
   unsigned char data[CANPACKET_DATA_SIZE_MAX];
 } __attribute__((packed, aligned(4))) CANPacket_t;
+
+const unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
 
 #define GET_BUS(msg) ((msg)->bus)
 #define GET_LEN(msg) (dlc_to_len[(msg)->data_len_code])
 #define GET_ADDR(msg) ((msg)->addr)
-
-// Flasher and pedal use raw mailbox access
-#define GET_MAILBOX_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0xFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
-#define GET_MAILBOX_BYTES_04(msg) ((msg)->RDLR)
-#define GET_MAILBOX_BYTES_48(msg) ((msg)->RDHR)
-
-#define WORD_TO_BYTE_ARRAY(dst8, src32) 0[dst8] = ((src32) & 0xFFU); 1[dst8] = (((src32) >> 8U) & 0xFFU); 2[dst8] = (((src32) >> 16U) & 0xFFU); 3[dst8] = (((src32) >> 24U) & 0xFFU)
-#define BYTE_ARRAY_TO_WORD(dst32, src8) ((dst32) = 0[src8] | (1[src8] << 8U) | (2[src8] << 16U) | (3[src8] << 24U))

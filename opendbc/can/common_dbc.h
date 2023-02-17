@@ -24,6 +24,7 @@ struct MessageParseOptions {
 
 struct SignalValue {
   uint32_t address;
+  uint64_t ts_nanos;
   std::string name;
   double value;  // latest value
   std::vector<double> all_values;  // all values from this cycle

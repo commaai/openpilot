@@ -1,15 +1,14 @@
-
-const uint32_t NISSAN_RT_INTERVAL = 250000;    // 250ms between real time checks
-
-const struct lookup_t NISSAN_LOOKUP_ANGLE_RATE_UP = {
-  {2., 7., 17.},
-  {5., .8, .15}};
-
-const struct lookup_t NISSAN_LOOKUP_ANGLE_RATE_DOWN = {
-  {2., 7., 17.},
-  {5., 3.5, .5}};
-
-const int NISSAN_DEG_TO_CAN = 100;
+const SteeringLimits NISSAN_STEERING_LIMITS = {
+  .angle_deg_to_can = 100,
+  .angle_rate_up_lookup = {
+    {2., 7., 17.},
+    {5., .8, .15}
+  },
+  .angle_rate_down_lookup = {
+    {2., 7., 17.},
+    {5., 3.5, .5}
+  },
+};
 
 const CanMsg NISSAN_TX_MSGS[] = {
   {0x169, 0, 8},  // LKAS
@@ -100,12 +99,11 @@ static int nissan_rx_hook(CANPacket_t *to_push) {
 }
 
 
-static int nissan_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
-  UNUSED(longitudinal_allowed);
+static int nissan_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
-  bool violation = 0;
+  bool violation = false;
 
   if (!msg_allowed(to_send, NISSAN_TX_MSGS, sizeof(NISSAN_TX_MSGS) / sizeof(NISSAN_TX_MSGS[0]))) {
     tx = 0;
@@ -116,34 +114,11 @@ static int nissan_tx_hook(CANPacket_t *to_send, bool longitudinal_allowed) {
     int desired_angle = ((GET_BYTE(to_send, 0) << 10) | (GET_BYTE(to_send, 1) << 2) | ((GET_BYTE(to_send, 2) >> 6) & 0x3U));
     bool lka_active = (GET_BYTE(to_send, 6) >> 4) & 1U;
 
-    // offeset 1310 * NISSAN_DEG_TO_CAN
+    // offeset 1310 * NISSAN_STEERING_LIMITS.angle_deg_to_can
     desired_angle =  desired_angle - 131000;
 
-    if (controls_allowed && lka_active) {
-      // add 1 to not false trigger the violation
-      float delta_angle_float;
-      delta_angle_float = (interpolate(NISSAN_LOOKUP_ANGLE_RATE_UP, vehicle_speed) * NISSAN_DEG_TO_CAN) + 1.;
-      int delta_angle_up = (int)(delta_angle_float);
-      delta_angle_float =  (interpolate(NISSAN_LOOKUP_ANGLE_RATE_DOWN, vehicle_speed) * NISSAN_DEG_TO_CAN) + 1.;
-      int delta_angle_down = (int)(delta_angle_float);
-      int highest_desired_angle = desired_angle_last + ((desired_angle_last > 0) ? delta_angle_up : delta_angle_down);
-      int lowest_desired_angle = desired_angle_last - ((desired_angle_last >= 0) ? delta_angle_down : delta_angle_up);
-
-      // check for violation;
-      violation |= max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
-    }
-    desired_angle_last = desired_angle;
-
-    // desired steer angle should be the same as steer angle measured when controls are off
-    if ((!controls_allowed) &&
-          ((desired_angle < (angle_meas.min - 1)) ||
-          (desired_angle > (angle_meas.max + 1)))) {
-      violation = 1;
-    }
-
-    // no lka_enabled bit if controls not allowed
-    if (!controls_allowed && lka_active) {
-      violation = 1;
+    if (steer_angle_cmd_checks(desired_angle, lka_active, NISSAN_STEERING_LIMITS)) {
+      violation = true;
     }
   }
 

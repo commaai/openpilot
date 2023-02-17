@@ -25,14 +25,23 @@ class TestCarInterfaces(unittest.TestCase):
 
     car_fw = []
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
 
     self.assertGreater(car_params.mass, 1)
+    self.assertGreater(car_params.wheelbase, 0)
+    # centerToFront is center of gravity to front wheels, assert a reasonable range
+    self.assertTrue(car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
+    # Longitudinal sanity checks
+    self.assertEqual(len(car_params.longitudinalTuning.kpV), len(car_params.longitudinalTuning.kpBP))
+    self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP))
+    self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP))
+
+    # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
@@ -51,15 +60,15 @@ class TestCarInterfaces(unittest.TestCase):
     CC = car.CarControl.new_message()
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     CC = car.CarControl.new_message()
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
@@ -68,7 +77,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Run radar interface once
     radar_interface.update([])
-    if not car_params.radarOffCan and radar_interface.rcp is not None and \
+    if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 

@@ -10,6 +10,7 @@
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "selfdrive/locationd/generated/gps.h"
+#include "selfdrive/locationd/generated/glonass.h"
 #include "selfdrive/locationd/generated/ubx.h"
 
 using namespace std::string_literals;
@@ -101,11 +102,22 @@ class UbloxMsgParser {
     inline bool valid_cheksum();
     inline bool valid();
     inline bool valid_so_far();
+    inline uint16_t get_glonass_year(uint8_t N4, uint16_t Nt);
+
+    kj::Array<capnp::word> parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg);
+    kj::Array<capnp::word> parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg);
 
     std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
 
     size_t bytes_in_parse_buf = 0;
     uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];
 
-};
+    // user range accuracy in meters
+    const std::unordered_map<uint8_t, float> glonass_URA_lookup =
+      {{ 0,  1}, { 1,   2}, { 2, 2.5}, { 3,   4}, { 4,  5}, {5, 7},
+       { 6, 10}, { 7,  12}, { 8,  14}, { 9,  16}, {10, 32},
+       {11, 64}, {12, 128}, {13, 256}, {14, 512}, {15, 1024}};
 
+    std::unordered_map<int, std::unordered_map<int, std::string>> glonass_strings;
+    std::unordered_map<int, int> glonass_superframes;
+};

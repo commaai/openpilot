@@ -11,7 +11,7 @@ uint32_t microsecond_timer_get(void);
 
 void unused_interrupt_handler(void) {
   // Something is wrong if this handler is called!
-  puts("Unused interrupt handler called!\n");
+  print("Unused interrupt handler called!\n");
   fault_occurred(FAULT_UNUSED_INTERRUPT_HANDLED);
 }
 
@@ -47,7 +47,7 @@ void handle_interrupt(IRQn_Type irq_type){
 
   // Check that the interrupts don't fire too often
   if(check_interrupt_rate && (interrupts[irq_type].call_counter > interrupts[irq_type].max_call_rate)){
-    puts("Interrupt 0x"); puth(irq_type); puts(" fired too often (0x"); puth(interrupts[irq_type].call_counter); puts("/s)!\n");
+    print("Interrupt 0x"); puth(irq_type); print(" fired too often (0x"); puth(interrupts[irq_type].call_counter); print("/s)!\n");
     fault_occurred(interrupts[irq_type].call_rate_fault);
   }
 

@@ -161,9 +161,9 @@ void gmlan_switch_init(int timeout_enable) {
 void set_gmlan_digital_output(int to_set) {
   inverted_bit_to_send = to_set;
   /*
-  puts("Writing ");
+  print("Writing ");
   puth(inverted_bit_to_send);
-  puts("\n");
+  print("\n");
   */
 }
 
@@ -207,12 +207,12 @@ void TIM12_IRQ_Handler(void) {
         if ((gmlan_sending > 0) &&  // not first bit
            ((read == 0) && (pkt_stuffed[gmlan_sending-1] == 1)) &&  // bus wrongly dominant
            (gmlan_sending != (gmlan_sendmax - 11))) {    //not ack bit
-          puts("GMLAN ERR: bus driven at ");
+          print("GMLAN ERR: bus driven at ");
           puth(gmlan_sending);
-          puts("\n");
+          print("\n");
           retry = 1;
         } else if ((read == 1) && (gmlan_sending == (gmlan_sendmax - 11))) {    // recessive during ACK
-          puts("GMLAN ERR: didn't recv ACK\n");
+          print("GMLAN ERR: didn't recv ACK\n");
           retry = 1;
         } else {
           // do not retry
@@ -224,7 +224,7 @@ void TIM12_IRQ_Handler(void) {
           gmlan_sending = 0;
           gmlan_fail_count++;
           if (gmlan_fail_count == MAX_FAIL_COUNT) {
-            puts("GMLAN ERR: giving up send\n");
+            print("GMLAN ERR: giving up send\n");
             gmlan_send_ok = false;
           }
         } else {

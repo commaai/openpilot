@@ -7,18 +7,18 @@ import urllib.error
 import pycurl
 import re
 import time
-import tempfile
 import socket
 
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from io import BytesIO
+from ftplib import FTP_TLS
 
 from atomicwrites import atomic_write
 
 from laika.ephemeris import EphemerisType
 from .constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
-from .gps_time import GPSTime
+from .gps_time import GPSTime, tow_to_datetime
 from .helpers import ConstellationId
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -177,24 +177,6 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
 
 
 def https_download_file(url):
-  if 'nasa.gov/' not in url:
-    netrc_path = None
-    f = None
-  elif os.path.isfile(dir_path + '/.netrc'):
-    netrc_path = dir_path + '/.netrc'
-    f = None
-  else:
-    try:
-      username = os.environ['NASA_USERNAME']
-      password = os.environ['NASA_PASSWORD']
-      f = tempfile.NamedTemporaryFile()
-      netrc = f"machine urs.earthdata.nasa.gov login {username} password {password}"
-      f.write(netrc.encode())
-      f.flush()
-      netrc_path = f.name
-    except KeyError:
-      raise DownloadFailed('Could not find .netrc file and no NASA_USERNAME and NASA_PASSWORD in environment for urs.earthdata.nasa.gov authentication')
-
   crl = pycurl.Curl()
   crl.setopt(crl.CAINFO, certifi.where())
   crl.setopt(crl.URL, url)
@@ -202,17 +184,12 @@ def https_download_file(url):
   crl.setopt(crl.SSL_CIPHER_LIST, 'DEFAULT@SECLEVEL=1')
   crl.setopt(crl.COOKIEJAR, '/tmp/cddis_cookies')
   crl.setopt(pycurl.CONNECTTIMEOUT, 10)
-  if netrc_path is not None:
-    crl.setopt(crl.NETRC_FILE, netrc_path)
-    crl.setopt(crl.NETRC, 2)
-
+  
   buf = BytesIO()
   crl.setopt(crl.WRITEDATA, buf)
   crl.perform()
   response = crl.getinfo(pycurl.RESPONSE_CODE)
   crl.close()
-  if f is not None:
-    f.close()
 
   if response != 200:
     raise DownloadFailed('HTTPS error ' + str(response))
@@ -228,6 +205,17 @@ def ftp_download_file(url):
   except urllib.error.URLError as e:
     raise DownloadFailed(e)
 
+def ftps_download_file(url):
+  parsed = urlparse(url)
+  try:
+    buf = BytesIO()
+    with FTP_TLS(parsed.hostname) as ftps:
+      ftps.login(user='anonymous')
+      ftps.prot_p()
+      ftps.retrbinary('RETR ' + parsed.path, buf.write)
+    return buf.getvalue()
+  except ftplib.all_errors as e:
+    raise DownloadFailed(e)
 
 @retryable
 def download_files(url_base, folder_path, cacheDir, filenames):
@@ -242,11 +230,13 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
   print('Downloading ' + url)
-  if url.startswith('https'):
+  if url.startswith('https://'):
     return https_download_file(url)
-  if url.startswith('ftp'):
+  elif url.startswith('ftp://'):
     return ftp_download_file(url)
-  raise NotImplementedError('Did find ftp or https preamble')
+  elif url.startswith('sftp://'):
+    return ftps_download_file(url)
+  raise NotImplementedError('Did not find supported url scheme')
 
 
 def download_and_cache_file_return_first_success(url_bases, folder_and_file_names, cache_dir, compression='', overwrite=False, raise_error=False):
@@ -308,26 +298,51 @@ def download_nav(time: GPSTime, cache_dir, constellation: ConstellationId):
     if GPSTime.from_datetime(datetime.utcnow()) - time > SECS_IN_DAY:
       url_bases = (
         'https://github.com/commaai/gnss-data/raw/master/gnss/data/daily/',
-        'https://cddis.nasa.gov/archive/gnss/data/daily/',
+        'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/daily/',
       )
       filename = t.strftime(f"brdc%j0.%y{c}")
       folder_path = t.strftime(f'%Y/%j/%y{c}/')
       compression = '.gz' if folder_path >= '2020/335/' else '.Z'
       return download_and_cache_file(url_bases, folder_path, cache_dir+'daily_nav/', filename, compression)
-    elif constellation == ConstellationId.GPS:
-      url_base = 'https://cddis.nasa.gov/archive/gnss/data/hourly/'
-      filename = t.strftime(f"hour%j0.%y{c}")
-      folder_path = t.strftime('%Y/%j/')
-      compression = '.gz' if folder_path >= '2020/336/' else '.Z'
-      return download_and_cache_file(url_base, folder_path, cache_dir+'hourly_nav/', filename, compression)
+    else:
+      url_bases = (
+        'https://github.com/commaai/gnss-data-hourly/raw/master/',
+        'sftp://gdc.cddis.eosdis.nasa.gov/gnss/data/hourly/',
+      )
+      times = [t, (t - timedelta(hours=1))]
+      folder_and_filenames = [(t.strftime('%Y/%j/'), t.strftime(f"hour%j0.%y{c}")) for t in times]
+      compression = '.gz' if folder_and_filenames[0][0] >= '2020/336/' else '.Z'
+      # always overwrite as this file is appended
+      return download_and_cache_file_return_first_success(url_bases,
+        folder_and_filenames, cache_dir+'hourly_nav/', compression, overwrite=True)
   except DownloadFailed:
     pass
+
+
+def download_orbits_gps_cod0(time, cache_dir, ephem_types):
+  url_bases = (
+    'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
+    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
+  )
+
+  if EphemerisType.ULTRA_RAPID_ORBIT not in ephem_types:
+    # TODO: raise error here
+    return None
+
+  tm = tow_to_datetime(time.tow, time.week).timetuple()
+  doy = str(tm.tm_yday).zfill(3)
+  filename = f"COD0OPSULT_{tm.tm_year}{doy}0000_02D_05M_ORB.SP3"
+  # TODO: add hour management
+
+  folder_path = "%i/" % time.week
+  folder_file_names = [(folder_path, filename)]
+  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.gz')
 
 
 def download_orbits_gps(time, cache_dir, ephem_types):
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/',
-    'https://cddis.nasa.gov/archive/gnss/products/',
+    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/',
     'ftp://igs.ign.fr/pub/igs/products/',
   )
   folder_path = "%i/" % time.week
@@ -344,7 +359,12 @@ def download_orbits_gps(time, cache_dir, ephem_types):
                       f"igu{time_str}_06.sp3",
                       f"igu{time_str}_00.sp3"])
   folder_file_names = [(folder_path, filename) for filename in filenames]
-  return download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  ret = download_and_cache_file_return_first_success(url_bases, folder_file_names, cache_dir+'cddis_products/', compression='.Z')
+  if ret is not None:
+    return ret
+
+  # fallback to COD0 Ultra Rapid Orbits
+  return download_orbits_gps_cod0(time, cache_dir, ephem_types)
 
 
 def download_prediction_orbits_russia_src(gps_time, cache_dir):
@@ -406,7 +426,7 @@ def download_ionex(time, cache_dir):
   t = time.as_datetime()
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/ionex/',
-    'https://cddis.nasa.gov/archive/gnss/products/ionex/',
+    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/ionex/',
     'ftp://igs.ensg.ign.fr/pub/igs/products/ionosphere/',
     'ftp://gssc.esa.int/gnss/products/ionex/',
   )
@@ -422,7 +442,7 @@ def download_dcb(time, cache_dir):
   folder_paths = []
   url_bases = (
     'https://github.com/commaai/gnss-data/raw/master/gnss/products/bias/',
-    'https://cddis.nasa.gov/archive/gnss/products/bias/',
+    'sftp://gdc.cddis.eosdis.nasa.gov/gnss/products/bias/',
     'ftp://igs.ign.fr/pub/igs/products/mgex/dcb/',
   )
   # seem to be a lot of data missing, so try many days

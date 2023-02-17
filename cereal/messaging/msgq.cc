@@ -10,6 +10,7 @@
 #include <csignal>
 #include <random>
 #include <string>
+#include <limits>
 
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -22,7 +23,7 @@
 
 #include <stdio.h>
 
-#include "msgq.h"
+#include "cereal/messaging/msgq.h"
 
 void sigusr2_handler(int signal) {
   assert(signal == SIGUSR2);
@@ -30,7 +31,7 @@ void sigusr2_handler(int signal) {
 
 uint64_t msgq_get_uid(void){
   std::random_device rd("/dev/urandom");
-  std::uniform_int_distribution<uint64_t> distribution(0,std::numeric_limits<uint32_t>::max());
+  std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint32_t>::max());
 
   #ifdef __APPLE__
     // TODO: this doesn't work
@@ -76,7 +77,7 @@ void msgq_reset_reader(msgq_queue_t * q){
 
 void msgq_wait_for_subscriber(msgq_queue_t *q){
   while (*q->num_readers == 0){
-    ;
+    // wait for subscriber
   }
 
   return;
@@ -320,9 +321,11 @@ int msgq_msg_ready(msgq_queue_t * q){
 
   uint32_t read_cycles, read_pointer;
   UNPACK64(read_cycles, read_pointer, *q->read_pointers[id]);
+  UNUSED(read_cycles);
 
   uint32_t write_cycles, write_pointer;
   UNPACK64(write_cycles, write_pointer, *q->write_pointer);
+  UNUSED(write_cycles);
 
   // Check if new message is available
   return (read_pointer != write_pointer);
@@ -350,6 +353,7 @@ int msgq_msg_recv(msgq_msg_t * msg, msgq_queue_t * q){
 
   uint32_t write_cycles, write_pointer;
   UNPACK64(write_cycles, write_pointer, *q->write_pointer);
+  UNUSED(write_cycles);
 
   char * p = q->data + read_pointer;
 

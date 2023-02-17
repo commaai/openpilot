@@ -62,8 +62,7 @@ def get_leap_seconds(time):
     return 15
   elif time <= GPSTime.from_datetime(datetime.datetime(2015, 7, 1)):
     return 16
-  # TODO is this correct?
-  elif time <= GPSTime.from_datetime(datetime.datetime(2017, 7, 1)):
+  elif time <= GPSTime.from_datetime(datetime.datetime(2017, 1, 1)):
     return 17
   else:
     return 18

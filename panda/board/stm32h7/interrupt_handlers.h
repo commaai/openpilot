@@ -72,3 +72,4 @@ void OTG_HS_EP1_OUT_IRQHandler(void) {handle_interrupt(OTG_HS_EP1_OUT_IRQn);}
 void OTG_HS_EP1_IN_IRQHandler(void) {handle_interrupt(OTG_HS_EP1_IN_IRQn);}
 void OTG_HS_WKUP_IRQHandler(void) {handle_interrupt(OTG_HS_WKUP_IRQn);}
 void OTG_HS_IRQHandler(void) {handle_interrupt(OTG_HS_IRQn);}
+void UART7_IRQHandler(void) {handle_interrupt(UART7_IRQn);}

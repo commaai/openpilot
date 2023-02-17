@@ -9,7 +9,10 @@
 #include "drivers/fan.h"
 #include "stm32h7/llfan.h"
 #include "stm32h7/llrtc.h"
+#include "stm32h7/lldac.h"
+#include "drivers/fake_siren.h"
 #include "drivers/rtc.h"
+#include "drivers/clock_source.h"
 #include "boards/red.h"
 #include "boards/red_chiplet.h"
 #include "boards/red_v2.h"
@@ -37,6 +40,6 @@ void detect_board_type(void) {
     current_board = &board_tres;
   } else {
     hw_type = HW_TYPE_UNKNOWN;
-    puts("Hardware type is UNKNOWN!\n");
+    print("Hardware type is UNKNOWN!\n");
   }
 }

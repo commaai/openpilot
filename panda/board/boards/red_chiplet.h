@@ -35,23 +35,23 @@ void red_chiplet_enable_can_transceivers(bool enabled) {
   }
 }
 
-void red_chiplet_set_usb_load_switch(bool enabled) {
+void red_chiplet_set_fan_or_usb_load_switch(bool enabled) {
   set_gpio_output(GPIOD, 3, enabled);
 }
 
 void red_chiplet_init(void) {
   common_init_gpio();
 
-  //A8, A9 : OBD_SBU1_RELAY, OBD_SBU2_RELAY
+  // A8, A3: OBD_SBU1_RELAY, OBD_SBU2_RELAY
   set_gpio_output_type(GPIOA, 8, OUTPUT_TYPE_OPEN_DRAIN);
   set_gpio_pullup(GPIOA, 8, PULL_NONE);
   set_gpio_mode(GPIOA, 8, MODE_OUTPUT);
   set_gpio_output(GPIOA, 8, 1);
 
-  set_gpio_output_type(GPIOA, 9, OUTPUT_TYPE_OPEN_DRAIN);
-  set_gpio_pullup(GPIOA, 9, PULL_NONE);
-  set_gpio_mode(GPIOA, 9, MODE_OUTPUT);
-  set_gpio_output(GPIOA, 9, 1);
+  set_gpio_output_type(GPIOA, 3, OUTPUT_TYPE_OPEN_DRAIN);
+  set_gpio_pullup(GPIOA, 3, PULL_NONE);
+  set_gpio_mode(GPIOA, 3, MODE_OUTPUT);
+  set_gpio_output(GPIOA, 3, 1);
 
   // G11,B10,D7,B11: transceiver enable
   set_gpio_pullup(GPIOG, 11, PULL_NONE);
@@ -75,7 +75,7 @@ void red_chiplet_init(void) {
   set_gpio_mode(GPIOB, 0, MODE_ANALOG);
 
   // Turn on USB load switch.
-  red_chiplet_set_usb_load_switch(true);
+  red_chiplet_set_fan_or_usb_load_switch(true);
 
   // Initialize harness
   harness_init();
@@ -109,7 +109,7 @@ const harness_configuration red_chiplet_harness_config = {
   .pin_SBU1 = 4,
   .pin_SBU2 = 1,
   .pin_relay_SBU1 = 8,
-  .pin_relay_SBU2 = 9,
+  .pin_relay_SBU2 = 3,
   .adc_channel_SBU1 = 4, // ADC12_INP4
   .adc_channel_SBU2 = 17 // ADC1_INP17
 };

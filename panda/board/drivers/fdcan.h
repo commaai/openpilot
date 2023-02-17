@@ -29,7 +29,7 @@ bool can_set_speed(uint8_t can_number) {
 
 void can_set_gmlan(uint8_t bus) {
   UNUSED(bus);
-  puts("GMLAN not available on red panda\n");
+  print("GMLAN not available on red panda\n");
 }
 
 // ***************************** CAN *****************************
@@ -84,36 +84,42 @@ void process_can(uint8_t can_number) {
     if ((CANx->TXFQS & FDCAN_TXFQS_TFQF) == 0) {
       CANPacket_t to_send;
       if (can_pop(can_queues[bus_number], &to_send)) {
-        can_health[can_number].total_tx_cnt += 1U;
+        if (can_check_checksum(&to_send)) {
+          can_health[can_number].total_tx_cnt += 1U;
 
-        uint32_t TxFIFOSA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET) + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_SIZE);
-        uint8_t tx_index = (CANx->TXFQS >> FDCAN_TXFQS_TFQPI_Pos) & 0x1F;
-        // only send if we have received a packet
-        canfd_fifo *fifo;
-        fifo = (canfd_fifo *)(TxFIFOSA + (tx_index * FDCAN_TX_FIFO_EL_SIZE));
+          uint32_t TxFIFOSA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET) + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_SIZE);
+          uint8_t tx_index = (CANx->TXFQS >> FDCAN_TXFQS_TFQPI_Pos) & 0x1F;
+          // only send if we have received a packet
+          canfd_fifo *fifo;
+          fifo = (canfd_fifo *)(TxFIFOSA + (tx_index * FDCAN_TX_FIFO_EL_SIZE));
 
-        fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0U) ? (to_send.addr) : (to_send.addr << 18));
-        fifo->header[1] = (to_send.data_len_code << 16) | (bus_config[can_number].canfd_enabled << 21) | (bus_config[can_number].brs_enabled << 20);
+          fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0U) ? (to_send.addr) : (to_send.addr << 18));
+          fifo->header[1] = (to_send.data_len_code << 16) | (bus_config[can_number].canfd_enabled << 21) | (bus_config[can_number].brs_enabled << 20);
 
-        uint8_t data_len_w = (dlc_to_len[to_send.data_len_code] / 4U);
-        data_len_w += ((dlc_to_len[to_send.data_len_code] % 4U) > 0U) ? 1U : 0U;
-        for (unsigned int i = 0; i < data_len_w; i++) {
-          BYTE_ARRAY_TO_WORD(fifo->data_word[i], &to_send.data[i*4U]);
+          uint8_t data_len_w = (dlc_to_len[to_send.data_len_code] / 4U);
+          data_len_w += ((dlc_to_len[to_send.data_len_code] % 4U) > 0U) ? 1U : 0U;
+          for (unsigned int i = 0; i < data_len_w; i++) {
+            BYTE_ARRAY_TO_WORD(fifo->data_word[i], &to_send.data[i*4U]);
+          }
+
+          CANx->TXBAR = (1UL << tx_index);
+
+          // Send back to USB
+          CANPacket_t to_push;
+
+          to_push.returned = 1U;
+          to_push.rejected = 0U;
+          to_push.extended = to_send.extended;
+          to_push.addr = to_send.addr;
+          to_push.bus = to_send.bus;
+          to_push.data_len_code = to_send.data_len_code;
+          (void)memcpy(to_push.data, to_send.data, dlc_to_len[to_push.data_len_code]);
+          can_set_checksum(&to_push);
+
+          rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
+        } else {
+          can_health[can_number].total_tx_checksum_error_cnt += 1U;
         }
-
-        CANx->TXBAR = (1UL << tx_index);
-
-        // Send back to USB
-        CANPacket_t to_push;
-
-        to_push.returned = 1U;
-        to_push.rejected = 0U;
-        to_push.extended = to_send.extended;
-        to_push.addr = to_send.addr;
-        to_push.bus = to_send.bus;
-        to_push.data_len_code = to_send.data_len_code;
-        (void)memcpy(to_push.data, to_send.data, dlc_to_len[to_push.data_len_code]);
-        rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
         usb_cb_ep3_out_complete();
       }
@@ -164,6 +170,7 @@ void can_rx(uint8_t can_number) {
       for (unsigned int i = 0; i < data_len_w; i++) {
         WORD_TO_BYTE_ARRAY(&to_push.data[i*4U], fifo->data_word[i]);
       }
+      can_set_checksum(&to_push);
 
       // forwarding (panda only)
       int bus_fwd_num = safety_fwd_hook(bus_number, &to_push);
@@ -177,6 +184,8 @@ void can_rx(uint8_t can_number) {
         to_send.bus = to_push.bus;
         to_send.data_len_code = to_push.data_len_code;
         (void)memcpy(to_send.data, to_push.data, dlc_to_len[to_push.data_len_code]);
+        can_set_checksum(&to_send);
+
         can_send(&to_send, bus_fwd_num, true);
         can_health[can_number].total_fwd_cnt += 1U;
       }

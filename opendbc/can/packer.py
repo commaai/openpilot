@@ -1,3 +1,2 @@
-# pylint: skip-file
-from opendbc.can.packer_pyx import CANPacker
+from opendbc.can.packer_pyx import CANPacker # pylint: disable=no-name-in-module, import-error
 assert CANPacker

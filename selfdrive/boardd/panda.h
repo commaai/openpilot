@@ -11,20 +11,16 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
+#include "panda/board/can_definitions.h"
 #include "selfdrive/boardd/panda_comms.h"
-
-
-#define PANDA_CAN_CNT 3
-#define PANDA_BUS_CNT 4
 
 #define USB_TX_SOFT_LIMIT   (0x100U)
 #define USBPACKET_MAX_SIZE  (0x40)
 
 #define RECV_SIZE (0x4000U)
-#define CANPACKET_HEAD_SIZE 5U
-#define CANPACKET_MAX_SIZE  72U
-#define CANPACKET_REJECTED  (0xC0U)
-#define CANPACKET_RETURNED  (0x80U)
+
+#define CAN_REJECTED_BUS_OFFSET   0xC0U
+#define CAN_RETURNED_BUS_OFFSET 0x80U
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
@@ -34,6 +30,7 @@ struct __attribute__((packed)) can_header {
   uint8_t returned : 1;
   uint8_t extended : 1;
   uint32_t addr : 29;
+  uint8_t checksum : 8;
 };
 
 struct can_frame {
@@ -47,18 +44,17 @@ struct can_frame {
 class Panda {
 private:
   std::unique_ptr<PandaCommsHandle> handle;
-  std::vector<uint8_t> recv_buf;
 
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);
 
-  std::string hw_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
   const uint32_t bus_offset;
 
   bool connected();
   bool comms_healthy();
+  std::string hw_serial();
 
   // Static functions
   static std::vector<std::string> list();
@@ -85,11 +81,16 @@ public:
   void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
+  void can_reset_communications();
 
 protected:
   // for unit tests
+  uint8_t receive_buffer[RECV_SIZE + sizeof(can_header) + 64];
+  uint32_t receive_buffer_size = 0;
+
   Panda(uint32_t bus_offset) : bus_offset(bus_offset) {}
   void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func);
-  bool unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec);
+  bool unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec);
+  uint8_t calculate_checksum(uint8_t *data, uint32_t len);
 };

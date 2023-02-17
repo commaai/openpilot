@@ -1,3 +1,24 @@
+Version 0.9.1 (2023-02-23)
+========================
+* New driving model
+  * 30% improved height estimation resulting in better driving performance for tall cars
+* Driver monitoring: removed timer resetting on user interaction if distracted
+* UI updates
+  * Adjust alert volume using ambient noise level
+  * Driver monitoring icon shows driver's head pose
+  * German translation thanks to Vrabetz and CzokNorris!
+* Cadillac Escalade 2017 support thanks to rickygilleland!
+* Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Genesis GV60 2023 support thanks to sunnyhaibin!
+* Hyundai Tucson 2022-23 support
+* Kia K5 Hybrid 2020 support thanks to sunnyhaibin!
+* Kia Niro Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Toyota C-HR 2021 support thanks to eFiniLan!
+* Toyota C-HR Hybrid 2022 support thanks to Korben00!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
+
 Version 0.9.0 (2022-11-21)
 ========================
 * New driving model

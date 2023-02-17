@@ -4,9 +4,7 @@ import inspect, functools, importlib, itertools
 import numpy as np
 from tinygrad.helpers import prod, argfix
 from typing import List, Tuple, Callable, Optional
-from tinygrad.ops import Device
-
-from tinygrad.ops import LazyBuffer
+from tinygrad.lazy import Device, LazyBuffer
 
 # **** start with two base classes, Tensor and Function ****
 
@@ -21,8 +19,7 @@ class Tensor:
       data = data.realize().toCPU()
 
     if isinstance(data, np.ndarray):
-      if data.shape == tuple():
-        data = data.reshape((1,))
+      data = data if data.shape else data.reshape((1,))
       self.lazydata = LazyBuffer.fromCPU(data.astype(np.float32), device)
     elif isinstance(data, LazyBuffer):
       self.lazydata = data
@@ -88,6 +85,9 @@ class Tensor:
   # ***** creation helper functions *****
 
   # TODO: remove use of numpy here
+
+  @classmethod
+  def zeros_like(cls, tensor, **kwargs): return cls.zeros(*tensor.shape, **kwargs)
 
   @classmethod
   def zeros(cls, *shape, **kwargs): return cls(np.zeros(shape, dtype=np.float32), **kwargs)
@@ -303,7 +303,7 @@ class Tensor:
 
   # TODO: fix the kwargs problem, then remove these (or not, since they now fix tuples)
   def reshape(self, shape, *args): return self._reshape(shape=argfix(shape, *args))
-  def expand(self, shape, *args): return self._expand(shape=argfix(shape, *args))
+  def expand(self, shape, *args): return self._expand(shape=tuple(x if x != -1 else s for s,x in zip(self.shape, argfix(shape, *args))))
   def permute(self, order, *args): return self._permute(order=argfix(order, *args))
 
   def linear(self, weight:Tensor, bias:Optional[Tensor]=None):
@@ -315,6 +315,10 @@ class Tensor:
   def layernorm(self, axis=-1, eps=1e-5):
     y = (self - self.mean(axis=axis, keepdim=True))
     return y.div((y*y).mean(axis=axis, keepdim=True).add(eps).sqrt())
+
+  def batchnorm(self, weight:Tensor, bias:Tensor, mean:Tensor, invstd:Tensor):
+    x = (self - mean.reshape(shape=[1, -1, 1, 1])) * weight.reshape(shape=[1, -1, 1, 1])
+    return x.mul(invstd.reshape(shape=[1, -1, 1, 1])) + bias.reshape(shape=[1, -1, 1, 1])
 
 # An instantiation of the Function is the Context
 class Function:
@@ -345,7 +349,7 @@ for device in [device for device in Device.__dict__.keys() if device[0] != "_"]:
 
 # register all the mlops "math" operations
 def register(name:str, fxn:Function):
-  setattr(Tensor, "_"+name if (getattr(Tensor, name, None) is not None) else name, functools.partialmethod(fxn.apply))
+  setattr(Tensor, "_"+name if hasattr(Tensor, name) else name, functools.partialmethod(fxn.apply))
 for name, cls in inspect.getmembers(importlib.import_module('tinygrad.mlops'), inspect.isclass):
   if name[0] != "_" and name != "Function" and not name.endswith("Ops"):
     register(name.lower(), cls)

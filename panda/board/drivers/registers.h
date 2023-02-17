@@ -35,7 +35,7 @@ void register_set(volatile uint32_t *addr, uint32_t val, uint32_t mask){
     register_map[hash].check_mask |= mask;
   } else {
     #ifdef DEBUG_FAULTS
-      puts("Hash collision: address 0x"); puth((uint32_t) addr); puts("!\n");
+      print("Hash collision: address 0x"); puth((uint32_t) addr); print("!\n");
     #endif
   }
   EXIT_CRITICAL()
@@ -60,11 +60,11 @@ void check_registers(void){
       ENTER_CRITICAL()
       if((*(register_map[i].address) & register_map[i].check_mask) != (register_map[i].value & register_map[i].check_mask)){
         #ifdef DEBUG_FAULTS
-          puts("Register at address 0x"); puth((uint32_t) register_map[i].address); puts(" is divergent!");
-          puts("   Map: 0x"); puth(register_map[i].value);
-          puts("   Register: 0x"); puth(*(register_map[i].address));
-          puts("   Mask: 0x"); puth(register_map[i].check_mask);
-          puts("\n");
+          print("Register at address 0x"); puth((uint32_t) register_map[i].address); print(" is divergent!");
+          print("   Map: 0x"); puth(register_map[i].value);
+          print("   Register: 0x"); puth(*(register_map[i].address));
+          print("   Mask: 0x"); puth(register_map[i].check_mask);
+          print("\n");
         #endif
         fault_occurred(FAULT_REGISTER_DIVERGENT);
       }

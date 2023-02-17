@@ -1,5 +1,5 @@
 // ******************** Prototypes ********************
-void puts(const char *a);
+void print(const char *a);
 void puth(unsigned int i);
 void puth2(unsigned int i);
 void puth4(unsigned int i);

@@ -8,7 +8,7 @@ void pedal_enable_can_transceiver(uint8_t transceiver, bool enabled) {
       set_gpio_output(GPIOB, 3, !enabled);
       break;
     default:
-      puts("Invalid CAN transceiver ("); puth(transceiver); puts("): enabling failed\n");
+      print("Invalid CAN transceiver ("); puth(transceiver); print("): enabling failed\n");
       break;
   }
 }
@@ -32,7 +32,7 @@ void pedal_set_led(uint8_t color, bool enabled) {
 
 void pedal_set_gps_mode(uint8_t mode) {
   UNUSED(mode);
-  puts("Trying to set ESP/GPS mode on pedal. This is not supported.\n");
+  print("Trying to set ESP/GPS mode on pedal. This is not supported.\n");
 }
 
 void pedal_set_can_mode(uint8_t mode){
@@ -40,7 +40,7 @@ void pedal_set_can_mode(uint8_t mode){
     case CAN_MODE_NORMAL:
       break;
     default:
-      puts("Tried to set unsupported CAN mode: "); puth(mode); puts("\n");
+      print("Tried to set unsupported CAN mode: "); puth(mode); print("\n");
       break;
   }
 }
@@ -94,6 +94,6 @@ const board board_pedal = {
   .set_fan_enabled = unused_set_fan_enabled,
   .set_ir_power = unused_set_ir_power,
   .set_phone_power = unused_set_phone_power,
-  .set_clock_source_mode = unused_set_clock_source_mode,
-  .set_siren = unused_set_siren
+  .set_siren = unused_set_siren,
+  .read_som_gpio = unused_read_som_gpio
 };

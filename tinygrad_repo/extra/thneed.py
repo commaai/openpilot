@@ -19,6 +19,7 @@ class Thneed:
     self.gobj = 0
 
     # build graph
+    # NOTE: if CLCACHE=1, this is wrong!
     nodes = defaultdict(lambda: {'in_edges': [], 'out_edges': []})
     for _, args in self.cl_cache:
       # output is always the first parameter
@@ -35,9 +36,15 @@ class Thneed:
       if len(nodes[n]['out_edges']) == 0:
         self.outputs.append(n)
   
-    for n in self.inputs.values():
-      assert n in self.buffers_to_save, f"{n} was not an input"
-      self.buffers_to_save.remove(n)
+    fake_inputs = []
+    for k,n in self.inputs.items():
+      if n in self.buffers_to_save:
+        self.buffers_to_save.remove(n)
+      else:
+        print(f"WARNING: {k} was not a used input, removing it")
+        fake_inputs.append(k)
+    for k in fake_inputs:
+      del self.inputs[k]
 
   def load(self, input_fn):
     float32 = not FLOAT16
@@ -266,49 +273,67 @@ class Thneed:
       events.append(prg.clprg(CL().cl_queue, *args))
     mt = time.monotonic()
     CL().cl_queue.finish()
-    et = time.monotonic()
-    print(f"submit in {(mt-st)*1000.0:.2f} ms, total runtime is {(et-st)*1000.0:.2f} ms")
+    et = time.monotonic() - st
+    print(f"submit in {(mt-st)*1000.0:.2f} ms, total runtime is {et*1000.0:.2f} ms")
 
-    if DEBUGCL:
+    if DEBUGCL >= 1:
+      scale_total_runtime = sum([(e.profile.end - e.profile.start) for e in events])/1e9
+      # TODO: Mac OS has a scaling issue, this hack fixes it
+      scale = 1 if (et/scale_total_runtime) < 10 else (et/scale_total_runtime)
       total_runtime = 0
       for i, ((prg, args), e) in enumerate(zip(self.cl_cache, events)):
-        runtime = (e.profile.end - e.profile.start)
-        print(f"{i:3d} time {total_runtime/1e6:5.2f} ms running {prg.name:20s} with {str(args[0]):15s} {str(args[1]):15s} count {len(args)-2:2d} runtime {runtime/1e3:7.2f} us  {prg.options}")
+        runtime = (e.profile.end - e.profile.start)*scale
+        print(f"{i:3d} time {total_runtime/1e6:5.2f} ms running {prg.name:20s} with {str(args[0]):15s} {str(args[1]):15s} count {len(args)-2:2d} runtime {runtime/1e3:7.2f} us {(prg.op_estimate)/runtime:9.2f} GFLOPS {prg.options} -> {args[2].shape if hasattr(args[2], 'shape') else args[2].size}")
+        if (DEBUGCL >= 2 and int(os.getenv("PRINT_KERNEL", "-1")) == i) or DEBUGCL >= 3:
+          print(prg.prg)
         total_runtime += runtime
-      print(f"total runtime: {total_runtime/1e6:.2f} ms")
+      print(f"total runtime: {total_runtime/1e6:.2f} ms   wall time: {et*1000.0:.2f} ms")
+    return et
 
   def optimize_local_workgroup(self):
     MAX_WORKGROUP = CL.cl_ctx.devices[0].max_work_group_size
     local_cl_cache = []
     for prg, args in self.cl_cache:
+      potential_locals = [tuple(args[1])] if args[1] is not None else []
+      runtimes = []
       args = list(args)
+
+      if args[1] is None and len(args[0]) == 1:
+        for l1 in [args[0][0], 1, 4, 16, MAX_WORKGROUP//4, MAX_WORKGROUP]:
+          potential_locals.append((l1,))
+
       if args[1] is None and len(args[0]) == 2:
-        args[1] = [min(MAX_WORKGROUP, args[0][0]), 1]
-        try:
-          e = prg.clprg(CL().cl_queue, *args)
-        except cl.LogicError:
-          # INVALID_WORK_GROUP_SIZE
-          args[1] = None
+        for l2 in [1, 4, 16, MAX_WORKGROUP//4, MAX_WORKGROUP]:
+          potential_locals.append((min(MAX_WORKGROUP, args[0][0]), l2))
 
       if args[1] is None and len(args[0]) == 3:
-        runtimes = []
         for l2 in [16,args[0][1],MAX_WORKGROUP]:
           for l3 in [4,16,args[0][2],MAX_WORKGROUP]:
             for l1 in [max(1, MAX_WORKGROUP//(l2*l3)), args[0][0], 4, 16, MAX_WORKGROUP]:
               if l1 > args[0][0] or l2 > args[0][1] or l3 > args[0][2]: continue
-              local_args = (l1, l2, l3)
-              if prod(local_args) > MAX_WORKGROUP: continue
-              args[1] = local_args
-              try:
-                e = prg.clprg(CL().cl_queue, *args)
-              except (cl.LogicError, cl.RuntimeError):
-                # INVALID_WORK_GROUP_SIZE
-                continue
-              CL().cl_queue.finish()
-              runtime = e.profile.end - e.profile.start
-              #print(runtime, args[0], args[1])
-              runtimes.append((runtime, local_args))
-        #print(sorted(runtimes)[0:5])
+              potential_locals.append((l1, l2, l3))
+
+      # TODO: why does this introduce a bug?
+      #if args[1] is not None and len(args[0]) == 3:
+      #  for l2 in [args[1][1], args[0][1]]:  # might be required, whole thing is always safe
+      #    for l3 in [4,16,args[0][2],MAX_WORKGROUP,args[1][2]]:
+      #      potential_locals.append((args[1][0], l2, l3))
+
+      for local_args in potential_locals:
+        if prod(local_args) > MAX_WORKGROUP: continue
+        args[1] = local_args
+        # 3 runs just in case
+        for i in range(3):
+          try:
+            e = prg.clprg(CL().cl_queue, *args)
+          except (cl.LogicError, cl.RuntimeError):
+            # INVALID_WORK_GROUP_SIZE
+            continue
+          CL().cl_queue.finish()
+          runtime = e.profile.end - e.profile.start
+          #print(runtime, args[0], args[1])
+          runtimes.append((runtime, local_args))
+
         if len(runtimes) > 0:
           args[1] = sorted(runtimes)[0][1]
         else:

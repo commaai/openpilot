@@ -19,14 +19,29 @@ extern I2C_HandleTypeDef hi2c1;
 const uint8_t init_imu_regaddr[] = {0x76, 0x4c, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53};
 const uint8_t init_imu_data[] =    {0x00, 0x12, 0x2f, 0x26, 0x67, 0x04, 0x00, 0x00};
 
+fault_status_t fault_status = {0};
 
 void angle_sensor_read(uint16_t *sensor_angle) {
+
+  if (fault_status.left_i2c && fault_status.right_i2c) { // Try to reinitialize halted I2C
+    if (HAL_I2C_Init(&hi2c1) == HAL_OK) {
+      fault_status.left_i2c = 0;
+      fault_status.right_i2c = 0;
+    }
+  }
+
   uint8_t buf[2];
   if (HAL_I2C_Mem_Read(&hi2c1, (AS5048_ADDRESS_LEFT<<1), AS5048B_ANGLMSB_REG, I2C_MEMADD_SIZE_8BIT, buf, 2, 10) == HAL_OK) {
     sensor_angle[0] = (buf[0] << 6) | (buf[1] & 0x3F);
+    fault_status.left_i2c = 0;
+  } else {
+    fault_status.left_i2c = 1;
   }
   if (HAL_I2C_Mem_Read(&hi2c1, (AS5048_ADDRESS_RIGHT<<1), AS5048B_ANGLMSB_REG, I2C_MEMADD_SIZE_8BIT, buf, 2, 10) == HAL_OK) {
     sensor_angle[1] = (buf[0] << 6) | (buf[1] & 0x3F);
+    fault_status.right_i2c = 0;
+  } else {
+    fault_status.right_i2c = 1;
   }
 }
 

@@ -3,10 +3,12 @@ from cereal import car
 from math import fabs
 from panda import Panda
 
+from common.numpy_fast import interp
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from selfdrive.controls.lib.drive_helpers import apply_center_deadzone
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -44,8 +46,44 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def torque_from_lateral_accel_bolt(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, vego, friction_compensation):
+    friction_interp = interp(
+      apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
+      [-torque_params.friction, torque_params.friction]
+    )
+    friction = friction_interp if friction_compensation else 0.0
+    steer_torque = lateral_accel_value / torque_params.latAccelFactor
+
+    # TODO:
+    # 1. Learn the correction factors from data
+    # 2. Generalize the logic to other GM torque control platforms
+    steer_break_pts = [-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0]
+    steer_lataccel_factors = [1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5]
+    steer_correction_factor = interp(
+      steer_torque,
+      steer_break_pts,
+      steer_lataccel_factors
+    )
+
+    vego_break_pts = [0.0, 10.0, 15.0, 20.0, 100.0]
+    vego_lataccel_factors = [1.5, 1.5, 1.25, 1.0, 1.0]
+    vego_correction_factor = interp(
+      vego,
+      vego_break_pts,
+      vego_lataccel_factors,
+    )
+
+    return (steer_torque + friction) / (steer_correction_factor * vego_correction_factor)
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.torque_from_lateral_accel_bolt
+    else:
+      return self.torque_from_lateral_accel_linear
+
+  @staticmethod
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
@@ -64,32 +102,34 @@ class CarInterface(CarInterfaceBase):
     if candidate in CAMERA_ACC_CAR:
       ret.experimentalLongitudinalAvailable = True
       ret.networkLocation = NetworkLocation.fwdCamera
-      ret.radarOffCan = True  # no radar
+      ret.radarUnavailable = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
       ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+      ret.minSteerSpeed = 10 * CV.KPH_TO_MS
+
+      # Tuning for experimental long
+      ret.longitudinalTuning.kpV = [2.0, 1.5]
+      ret.longitudinalTuning.kiV = [0.72]
+      ret.stopAccel = -2.0
+      ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
+      ret.vEgoStopping = 0.25
+      ret.vEgoStarting = 0.25
+      ret.longitudinalActuatorDelayUpperBound = 0.5
 
       if experimental_long:
         ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM_LONG
 
-        # Tuning
-        ret.longitudinalTuning.kpV = [2.0, 1.5]
-        ret.longitudinalTuning.kiV = [0.72]
-        ret.stopAccel = -2.0
-        ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
-        ret.longitudinalActuatorDelayUpperBound = 0.5
-
     else:  # ASCM, OBD-II harness
       ret.openpilotLongitudinalControl = True
       ret.networkLocation = NetworkLocation.gateway
-      ret.radarOffCan = False
+      ret.radarUnavailable = False
       ret.pcmCruise = False  # stock non-adaptive cruise control is kept off
       # supports stop and go, but initial engage must (conservatively) be above 18mph
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.minSteerSpeed = 7 * CV.MPH_TO_MS
 
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
@@ -98,11 +138,9 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX, CAR.BOLT_EV}
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX}
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
-    # Some GMs need some tolerance above 10 kph to avoid a fault
-    ret.minSteerSpeed = 10.1 * CV.KPH_TO_MS
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
@@ -160,6 +198,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
 
+    elif candidate == CAR.ESCALADE:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 5653. * CV.LB_TO_KG + STD_CARGO_KG  # (5552+5815)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
@@ -171,13 +217,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.000045
       tire_stiffness_factor = 1.0
 
-    elif candidate in (CAR.BOLT_EV, CAR.BOLT_EUV):
+    elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
-      ret.centerToFront = 2.15  # measured
+      ret.centerToFront = ret.wheelbase * 0.4
       tire_stiffness_factor = 1.0
-      ret.steerActuatorDelay = 0.2
+      ret.steerActuatorDelay = 0.12
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
@@ -194,10 +240,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
@@ -241,5 +283,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

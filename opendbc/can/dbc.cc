@@ -8,9 +8,10 @@
 #include <vector>
 #include <mutex>
 #include <cstring>
+#include <iterator>
 
-#include "common.h"
-#include "common_dbc.h"
+#include "opendbc/can/common.h"
+#include "opendbc/can/common_dbc.h"
 
 std::regex bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
 std::regex sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");

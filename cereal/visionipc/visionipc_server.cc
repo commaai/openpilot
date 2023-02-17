@@ -2,15 +2,16 @@
 #include <chrono>
 #include <cassert>
 #include <random>
+#include <limits>
 
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "messaging/messaging.h"
-#include "visionipc/ipc.h"
-#include "visionipc/visionipc_server.h"
-#include "logger/logger.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/ipc.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "cereal/logger/logger.h"
 
 std::string get_endpoint_name(std::string name, VisionStreamType type){
   if (messaging_use_zmq()){
@@ -25,7 +26,7 @@ VisionIpcServer::VisionIpcServer(std::string name, cl_device_id device_id, cl_co
   msg_ctx = Context::create();
 
   std::random_device rd("/dev/urandom");
-  std::uniform_int_distribution<uint64_t> distribution(0,std::numeric_limits<uint64_t>::max());
+  std::uniform_int_distribution<uint64_t> distribution(0, std::numeric_limits<uint64_t>::max());
   server_id = distribution(rd);
 }
 
@@ -111,6 +112,19 @@ void VisionIpcServer::listener(){
     VisionStreamType type = VisionStreamType::VISION_STREAM_MAX;
     int r = ipc_sendrecv_with_fds(false, fd, &type, sizeof(type), nullptr, 0, nullptr);
     assert(r == sizeof(type));
+
+    // send available stream types
+    if (type == VisionStreamType::VISION_STREAM_MAX) {
+      std::vector<VisionStreamType> available_stream_types;
+      for (auto& [stream_type, _] : buffers) {
+        available_stream_types.push_back(stream_type);
+      }
+      r = ipc_sendrecv_with_fds(true, fd, available_stream_types.data(), available_stream_types.size() * sizeof(VisionStreamType), nullptr, 0, nullptr);
+      assert(r == available_stream_types.size() * sizeof(VisionStreamType));
+      close(fd);
+      continue;
+    }
+
     if (buffers.count(type) <= 0) {
       std::cout << "got request for invalid buffer type: " << type << std::endl;
       close(fd);
@@ -174,7 +188,7 @@ VisionIpcServer::~VisionIpcServer(){
   listener_thread.join();
 
   // VisionBuf cleanup
-  for( auto const& [type, buf] : buffers ) {
+  for (auto const& [type, buf] : buffers) {
     for (VisionBuf* b : buf){
       if (b->free() != 0) {
         LOGE("Failed to free buffer");
@@ -184,7 +198,7 @@ VisionIpcServer::~VisionIpcServer(){
   }
 
   // Messaging cleanup
-  for( auto const& [type, sock] : sockets ) {
+  for (auto const& [type, sock] : sockets) {
     delete sock;
   }
   delete msg_ctx;

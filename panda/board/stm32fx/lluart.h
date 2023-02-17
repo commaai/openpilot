@@ -93,7 +93,7 @@ void uart_interrupt_handler(uart_ring *q) {
   uint32_t err = (status & USART_SR_ORE) | (status & USART_SR_NE) | (status & USART_SR_FE) | (status & USART_SR_PE);
   if(err != 0U){
     #ifdef DEBUG_UART
-      puts("Encountered UART error: "); puth(err); puts("\n");
+      print("Encountered UART error: "); puth(err); print("\n");
     #endif
     UART_READ_DR(q->uart)
   }
@@ -109,7 +109,7 @@ void uart_interrupt_handler(uart_ring *q) {
       dma_pointer_handler(&uart_ring_gps, DMA2_Stream5->NDTR);
     } else {
       #ifdef DEBUG_UART
-        puts("No IDLE dma_pointer_handler implemented for this UART.");
+        print("No IDLE dma_pointer_handler implemented for this UART.");
       #endif
     }
   }
@@ -128,7 +128,7 @@ void DMA2_Stream5_IRQ_Handler(void) {
   // Handle errors
   if((DMA2->HISR & DMA_HISR_TEIF5) || (DMA2->HISR & DMA_HISR_DMEIF5) || (DMA2->HISR & DMA_HISR_FEIF5)){
     #ifdef DEBUG_UART
-      puts("Encountered UART DMA error. Clearing and restarting DMA...\n");
+      print("Encountered UART DMA error. Clearing and restarting DMA...\n");
     #endif
 
     // Clear flags
@@ -173,7 +173,7 @@ void dma_rx_init(uart_ring *q) {
     // Enable interrupt
     NVIC_EnableIRQ(DMA2_Stream5_IRQn);
   } else {
-    puts("Tried to initialize RX DMA for an unsupported UART\n");
+    print("Tried to initialize RX DMA for an unsupported UART\n");
   }
 }
 
@@ -192,44 +192,46 @@ void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
 }
 
 void uart_init(uart_ring *q, int baud) {
-  // Register interrupts (max data rate: 115200 baud)
-  if(q->uart == USART1){
-    REGISTER_INTERRUPT(USART1_IRQn, USART1_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_1)
-  } else if (q->uart == USART2){
-    REGISTER_INTERRUPT(USART2_IRQn, USART2_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_2)
-  } else if (q->uart == USART3){
-    REGISTER_INTERRUPT(USART3_IRQn, USART3_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_3)
-  } else if (q->uart == UART5){
-    REGISTER_INTERRUPT(UART5_IRQn, UART5_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_5)
-  } else {
-    // UART not used. Skip registering interrupts
-  }
-  if(q->dma_rx){
-    REGISTER_INTERRUPT(DMA2_Stream5_IRQn, DMA2_Stream5_IRQ_Handler, 100U, FAULT_INTERRUPT_RATE_UART_DMA)   // Called twice per buffer
-  }
+  if(q->uart != NULL){
+    // Register interrupts (max data rate: 115200 baud)
+    if(q->uart == USART1){
+      REGISTER_INTERRUPT(USART1_IRQn, USART1_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_1)
+    } else if (q->uart == USART2){
+      REGISTER_INTERRUPT(USART2_IRQn, USART2_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_2)
+    } else if (q->uart == USART3){
+      REGISTER_INTERRUPT(USART3_IRQn, USART3_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_3)
+    } else if (q->uart == UART5){
+      REGISTER_INTERRUPT(UART5_IRQn, UART5_IRQ_Handler, 150000U, FAULT_INTERRUPT_RATE_UART_5)
+    } else {
+      // UART not used. Skip registering interrupts
+    }
+    if(q->dma_rx){
+      REGISTER_INTERRUPT(DMA2_Stream5_IRQn, DMA2_Stream5_IRQ_Handler, 100U, FAULT_INTERRUPT_RATE_UART_DMA)   // Called twice per buffer
+    }
 
-  // Set baud and enable peripheral with TX and RX mode
-  uart_set_baud(q->uart, baud);
-  q->uart->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
-  if ((q->uart == USART2) || (q->uart == USART3) || (q->uart == UART5)) {
-    q->uart->CR1 |= USART_CR1_RXNEIE;
-  }
+    // Set baud and enable peripheral with TX and RX mode
+    uart_set_baud(q->uart, baud);
+    q->uart->CR1 = USART_CR1_UE | USART_CR1_TE | USART_CR1_RE;
+    if ((q->uart == USART2) || (q->uart == USART3) || (q->uart == UART5)) {
+      q->uart->CR1 |= USART_CR1_RXNEIE;
+    }
 
-  // Enable UART interrupts
-  if(q->uart == USART1){
-    NVIC_EnableIRQ(USART1_IRQn);
-  } else if (q->uart == USART2){
-    NVIC_EnableIRQ(USART2_IRQn);
-  } else if (q->uart == USART3){
-    NVIC_EnableIRQ(USART3_IRQn);
-  } else if (q->uart == UART5){
-    NVIC_EnableIRQ(UART5_IRQn);
-  } else {
-    // UART not used. Skip enabling interrupts
-  }
+    // Enable UART interrupts
+    if(q->uart == USART1){
+      NVIC_EnableIRQ(USART1_IRQn);
+    } else if (q->uart == USART2){
+      NVIC_EnableIRQ(USART2_IRQn);
+    } else if (q->uart == USART3){
+      NVIC_EnableIRQ(USART3_IRQn);
+    } else if (q->uart == UART5){
+      NVIC_EnableIRQ(UART5_IRQn);
+    } else {
+      // UART not used. Skip enabling interrupts
+    }
 
-  // Initialise RX DMA if used
-  if(q->dma_rx){
-    dma_rx_init(q);
+    // Initialise RX DMA if used
+    if(q->dma_rx){
+      dma_rx_init(q);
+    }
   }
 }

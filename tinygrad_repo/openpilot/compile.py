@@ -1,30 +1,25 @@
 #!/usr/bin/env python3
-from ast import Assert
-import pathlib, sys
+import os, time, io, pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
-from collections import defaultdict
-import pyopencl as cl
 
-import os
-import time
-import io
-
-os.environ['OPT'] = '99'
+if os.getenv("OPT", None) is None:
+  os.environ['OPT'] = '99'
 if os.getenv("GPU", None) is None:
   os.environ['OPENCL'] = '1'
 
+ALLOWED_KERNEL_COUNT = int(os.getenv("ALLOWED_KERNEL_COUNT", 0))
 DEBUGCL = int(os.getenv("DEBUGCL", 0))
 
 import onnx
 import numpy as np
 
-import tinygrad.ops as ops
+import tinygrad.graph as graph
+from tinygrad.ops import GlobalCounters
 
-from tinygrad.llops.ops_gpu import CL, CLProgram, CLBuffer
+from tinygrad.llops.ops_gpu import CL
 from extra.utils import fetch
 from extra.onnx import get_run_onnx
 from tinygrad.tensor import Tensor
-from tinygrad.helpers import prod
 
 OPENPILOT_MODEL = "https://github.com/commaai/openpilot/raw/6c5693e965b9c63f8678f52b9e9b5abe35f23feb/selfdrive/modeld/models/supercombo.onnx"
 
@@ -62,8 +57,8 @@ def get_random_input_tensors(input_shapes):
 
 def compile(dat, output_fn):
   Tensor.no_grad = True
-  using_graph = ops.GRAPH
-  ops.GRAPH = False
+  using_graph = graph.GRAPH
+  graph.GRAPH = False
 
   onnx_model = onnx.load(io.BytesIO(dat))
   run_onnx = get_run_onnx(onnx_model)
@@ -77,7 +72,7 @@ def compile(dat, output_fn):
   # initial run(s) to load weights
   for _ in range(2):
     st = time.monotonic()
-    tinygrad_out = run_onnx(inputs)['outputs']
+    tinygrad_out = next(iter(run_onnx(inputs).values()))
     mt = time.monotonic()
     tinygrad_out.realize()
     mt2 = time.monotonic()
@@ -94,26 +89,31 @@ def compile(dat, output_fn):
   # real run
   inputs, np_inputs = get_random_input_tensors(input_shapes)
   print("***** REAL RUN *****")
-  tinygrad_out = run_onnx(inputs)['outputs']
+  tinygrad_out = next(iter(run_onnx(inputs).values()))
 
   # note, since CL.CACHE is enabled, it doesn't actually run the kernels
+  start_ops = GlobalCounters.global_ops
   CL.CACHE = []
-  if using_graph: ops.GRAPH = True
+  if using_graph: graph.GRAPH = True
   CL.kernel_count = -1
   tinygrad_out.realize()
-  ops.GRAPH = False
+  graph.GRAPH = False
   print("kernel count:", len(CL.CACHE))
+  assert len(CL.CACHE) <= ALLOWED_KERNEL_COUNT or ALLOWED_KERNEL_COUNT == 0, "too many kernels!"
+  used_ops = GlobalCounters.global_ops - start_ops
 
   from extra.thneed import Thneed
   t = Thneed(CL.CACHE, {k:inputs[k].lazydata.realized.cl for k in inputs.keys()})
   CL.CACHE = None
-  t.optimize_local_workgroup()
+  if int(os.getenv("OPTWG", "0")):
+    t.optimize_local_workgroup()
 
   # save thneed (before run)
   t.save(output_fn)
 
   print(f"buffers to save: {len(t.buffers_to_save)}, outputs: {t.outputs}")
-  t.run()
+  runtime = t.run()
+  print(f"network using {used_ops/1e9:.2f} GOPS with runtime {runtime*1e3:.2f} ms that's {used_ops/runtime*1e-9:.2f} GFLOPS")
 
   # confirm thneed found the right output
   thneed_out = np.empty((t.outputs[0].size//4,), dtype=np.float32).reshape(tinygrad_out.shape)

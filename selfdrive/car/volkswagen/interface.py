@@ -1,8 +1,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, \
-                          gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
 
@@ -22,10 +21,9 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "volkswagen"
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
 
     use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
 
@@ -74,7 +72,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
-    tire_stiffness_factor = 1.0  # Let the params learner figure this out
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kiBP = [0.]
     ret.lateralTuning.pid.kf = 0.00006
@@ -110,6 +107,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
 
+    elif candidate == CAR.CRAFTER_MK2:
+      ret.mass = 2100 + STD_CARGO_KG
+      ret.wheelbase = 3.64  # SWB, LWB is 4.49, TBD how to detect difference
+      ret.minSteerSpeed = 50 * CV.KPH_TO_MS
+
     elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
@@ -137,7 +139,6 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.SHARAN_MK2:
       ret.mass = 1639 + STD_CARGO_KG
       ret.wheelbase = 2.92
-      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
       ret.minSteerSpeed = 50 * CV.KPH_TO_MS
       ret.steerActuatorDelay = 0.2
 
@@ -214,10 +215,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unsupported car {candidate}")
 
     ret.autoResumeSng = ret.minEnableSpeed == -1
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
     return ret
 
   # returns a car.CarState
@@ -237,7 +235,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.belowSteerSpeed)
 
     if self.CS.CP.openpilotLongitudinalControl:
-      if ret.vEgo < self.CP.minEnableSpeed + 2.:
+      if ret.vEgo < self.CP.minEnableSpeed + 0.5:
         events.add(EventName.belowEngageSpeed)
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
@@ -246,5 +244,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS, self.ext_bus)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, self.ext_bus, now_nanos)

@@ -100,9 +100,9 @@ class CcpClient():
       msgs = self._panda.can_recv() or []
       if len(msgs) >= 256:
         print("CAN RX buffer overflow!!!", file=sys.stderr)
-      for rx_addr, _, rx_data, rx_bus in msgs:
+      for rx_addr, _, rx_data_bytearray, rx_bus in msgs:
         if rx_bus == self.can_bus and rx_addr == self.rx_addr:
-          rx_data = bytes(rx_data)  # convert bytearray to bytes
+          rx_data = bytes(rx_data_bytearray)
           if self.debug:
             print(f"CAN-RX: {hex(rx_addr)} - 0x{bytes.hex(rx_data)}")
           assert len(rx_data) == 8, f"message length not 8: {len(rx_data)}"
@@ -183,7 +183,7 @@ class CcpClient():
     resp = self._recv_dto(0.025)
     # mta_addr_ext = resp[0]
     mta_addr = struct.unpack(f"{self.byte_order.value}I", resp[1:5])[0]
-    return mta_addr
+    return mta_addr  # type: ignore
 
   def download_6_bytes(self, data: bytes) -> int:
     if len(data) != 6:
@@ -192,7 +192,7 @@ class CcpClient():
     resp = self._recv_dto(0.025)
     # mta_addr_ext = resp[0]
     mta_addr = struct.unpack(f"{self.byte_order.value}I", resp[1:5])[0]
-    return mta_addr
+    return mta_addr  # type: ignore
 
   def upload(self, size: int) -> bytes:
     if size > 5:
@@ -296,7 +296,7 @@ class CcpClient():
     resp = self._recv_dto(0.1)
     # mta_addr_ext = resp[0]
     mta_addr = struct.unpack(f"{self.byte_order.value}I", resp[1:5])[0]
-    return mta_addr
+    return mta_addr  # type: ignore
 
   def program_6_bytes(self, data: bytes) -> int:
     if len(data) != 6:
@@ -305,7 +305,7 @@ class CcpClient():
     resp = self._recv_dto(0.1)
     # mta_addr_ext = resp[0]
     mta_addr = struct.unpack(f"{self.byte_order.value}I", resp[1:5])[0]
-    return mta_addr
+    return mta_addr  # type: ignore
 
   def move_memory_block(self, size: int) -> None:
     self._send_cro(COMMAND_CODE.MOVE, struct.pack(f"{self.byte_order.value}I", size))

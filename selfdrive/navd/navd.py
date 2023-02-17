@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import math
 import os
 import threading
@@ -21,6 +22,7 @@ from system.swaglog import cloudlog
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 VALID_POS_STD = 50.0
+REROUTE_COUNTER_MIN = 3
 
 
 class RouteEngine:
@@ -46,6 +48,8 @@ class RouteEngine:
     self.recompute_countdown = 0
 
     self.ui_pid = None
+
+    self.reroute_counter = 0
 
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
@@ -113,6 +117,7 @@ class RouteEngine:
       self.recompute_countdown = 2**self.recompute_backoff
       self.recompute_backoff = min(6, self.recompute_backoff + 1)
       self.calculate_route(new_destination)
+      self.reroute_counter = 0
     else:
       self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
@@ -135,12 +140,27 @@ class RouteEngine:
       'language': lang,
     }
 
-    if self.last_bearing is not None:
-      params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90;"
+    # TODO: move waypoints into NavDestination param?
+    waypoints = self.params.get('NavDestinationWaypoints', encoding='utf8')
+    waypoint_coords = []
+    if waypoints is not None and len(waypoints) > 0:
+      waypoint_coords = json.loads(waypoints)
 
-    url = self.mapbox_host + f'/directions/v5/mapbox/driving-traffic/{self.last_position.longitude},{self.last_position.latitude};{destination.longitude},{destination.latitude}'
+    coords = [
+      (self.last_position.longitude, self.last_position.latitude),
+      *waypoint_coords,
+      (destination.longitude, destination.latitude)
+    ]
+    params['waypoints'] = f'0;{len(coords)-1}'
+    if self.last_bearing is not None:
+      params['bearings'] = f"{(self.last_bearing + 360) % 360:.0f},90" + (';'*(len(coords)-1))
+
+    coords_str = ';'.join([f'{lon},{lat}' for lon, lat in coords])
+    url = self.mapbox_host + '/directions/v5/mapbox/driving-traffic/' + coords_str
     try:
       resp = requests.get(url, params=params, timeout=10)
+      if resp.status_code != 200:
+        cloudlog.event("API request failed", status_code=resp.status_code, text=resp.text, error=True)
       resp.raise_for_status()
 
       r = resp.json()
@@ -175,6 +195,10 @@ class RouteEngine:
         cloudlog.warning("Got empty route response")
         self.clear_route()
 
+      # clear waypoints to avoid a re-route including past waypoints
+      # TODO: only clear once we're past a waypoint
+      self.params.remove('NavDestinationWaypoints')
+
     except requests.exceptions.RequestException:
       cloudlog.exception("failed to get route")
       self.clear_route()
@@ -202,7 +226,11 @@ class RouteEngine:
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
     total_distance = step['distance'] * remaining
     total_time = step['duration'] * remaining
-    total_time_typical = step['duration_typical'] * remaining
+
+    if step['duration_typical'] is None:
+      total_time_typical = total_time
+    else:
+      total_time_typical = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
@@ -285,8 +313,11 @@ class RouteEngine:
 
       min_d = min(min_d, minimum_distance(a, b, self.last_position))
 
-    return min_d > REROUTE_DISTANCE
-
+    if min_d > REROUTE_DISTANCE:
+      self.reroute_counter += 1
+    else:
+      self.reroute_counter = 0
+    return self.reroute_counter > REROUTE_COUNTER_MIN
     # TODO: Check for going wrong way in segment
 
 

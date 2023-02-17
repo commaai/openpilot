@@ -1,7 +1,10 @@
 #pragma once
-#include "messaging.h"
+
 #include <zmq.h>
 #include <string>
+#include <vector>
+
+#include "cereal/messaging/messaging.h"
 
 #define MAX_POLLERS 128
 
