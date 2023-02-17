@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import numpy as np
 from cereal import car
 from math import fabs
 from panda import Panda
@@ -59,23 +58,23 @@ class CarInterface(CarInterfaceBase):
     # TODO:
     # 1. Learn the correction factors from data
     # 2. Generalize the logic to other GM torque control platforms
-    steer_break_pts = np.array([-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0])
-    steer_lataccel_factors = np.array([1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5])
-    steer_correction_factor = np.interp(
+    steer_break_pts = [-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0]
+    steer_lataccel_factors = [1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5]
+    steer_correction_factor = interp(
       steer_torque,
       steer_break_pts,
       steer_lataccel_factors
     )
 
-    vego_break_pts = np.array([0.0, 10.0, 15.0, 20.0, 100.0])
-    vego_lataccel_factors = np.array([1.5, 1.5, 1.25, 1.0, 1.0])
-    vego_correction_factor = np.interp(
+    vego_break_pts = [0.0, 10.0, 15.0, 20.0, 100.0]
+    vego_lataccel_factors = [1.5, 1.5, 1.25, 1.0, 1.0]
+    vego_correction_factor = interp(
       vego,
       vego_break_pts,
       vego_lataccel_factors,
     )
 
-    return float((steer_torque + friction) / (steer_correction_factor * vego_correction_factor))
+    return (steer_torque + friction) / (steer_correction_factor * vego_correction_factor)
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     if self.CP.carFingerprint == CAR.BOLT_EUV:
@@ -199,6 +198,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
 
+    elif candidate == CAR.ESCALADE:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 5653. * CV.LB_TO_KG + STD_CARGO_KG  # (5552+5815)/2
+      ret.wheelbase = 2.95  # 116 inches in meters
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.5
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
       ret.mass = 2739. + STD_CARGO_KG
@@ -214,7 +221,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
-      ret.centerToFront = 2.15  # measured
+      ret.centerToFront = ret.wheelbase * 0.4
       tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.12
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
