@@ -121,17 +121,15 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case 4: return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole && index.column() == 4) {
-    QList<QVariant> colors;
-    colors.reserve(can_data.dat.size());
-    for (int i = 0; i < can_data.dat.size(); i++){
-      if (suppressed_bytes.contains({id, i})) {
-        colors.append(QColor(255, 255, 255, 0));
-      } else {
-        colors.append(i < can_data.colors.size() ? can_data.colors[i] : QColor(255, 255, 255, 0));
+    QVector<QColor> colors = can_data.colors;
+    if (!suppressed_bytes.empty()) {
+      for (int i = 0; i < colors.size(); i++) {
+        if (suppressed_bytes.contains({id, i})) {
+          colors[i] = QColor(255, 255, 255, 0);
+        }
       }
     }
-    return colors;
-
+    return QVariant::fromValue(colors);
   }
   return {};
 }

@@ -66,13 +66,6 @@ void ChangeTracker::clear() {
   colors.clear();
 }
 
-QList<QVariant> ChangeTracker::toVariantList(const QVector<QColor> &colors) {
-  QList<QVariant> ret;
-  ret.reserve(colors.size());
-  for (auto &c : colors) ret.append(c);
-  return ret;
-}
-
 // MessageBytesDelegate
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
@@ -89,12 +82,8 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     return;
   }
 
-  if ((option.state & QStyle::State_Selected) && (option.state & QStyle::State_Active)) {
-    painter->setPen(option.palette.color(QPalette::HighlightedText));
-  } else {
-    painter->setPen(option.palette.color(QPalette::Text));
-  }
-
+  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
+  painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
   QRect space = painter->boundingRect(opt.rect, opt.displayAlignment, " ");
   QRect pos = painter->boundingRect(opt.rect, opt.displayAlignment, "00");
@@ -103,15 +92,13 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int m = space.width() / 2;
   const QMargins margins(m, m, m, m);
 
-  QList<QVariant> colors = index.data(Qt::UserRole).toList();
-  int i = 0;
-  for (auto &byte : byte_list) {
+  auto colors = index.data(Qt::UserRole).value<QVector<QColor>>();
+  for (int i = 0; i < byte_list.size(); ++i) {
     if (i < colors.size()) {
-      painter->fillRect(pos.marginsAdded(margins), colors[i].value<QColor>());
+      painter->fillRect(pos.marginsAdded(margins), colors[i]);
     }
-    painter->drawText(pos, opt.displayAlignment, byte);
+    painter->drawText(pos, opt.displayAlignment, byte_list[i]);
     pos.moveLeft(pos.right() + space.width());
-    i++;
   }
 }
 
