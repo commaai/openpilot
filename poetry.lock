@@ -1604,7 +1604,7 @@ optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-MarkupSafe = "==2.0.1"
+MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
