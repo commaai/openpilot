@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QStyledItemDelegate>
+#include <QTableWidget>
 #include <QTreeView>
 
 #include "tools/cabana/chartswidget.h"
@@ -60,12 +61,27 @@ private:
   friend class SignalView;
 };
 
+class ValueDescriptionDlg : public QDialog {
+public:
+  ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent);
+  ValueDescription val_desc;
+
+private:
+  struct Delegate : public QStyledItemDelegate {
+    Delegate(QWidget *parent) : QStyledItemDelegate(parent) {}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  };
+
+  void save();
+  QTableWidget *table;
+};
+
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QValidator *name_validator, *double_validator, *desc_validation;
+  QValidator *name_validator, *double_validator;
   QFont small_font;
 };
 

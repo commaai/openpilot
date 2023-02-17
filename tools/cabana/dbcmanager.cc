@@ -1,4 +1,5 @@
 #include "tools/cabana/dbcmanager.h"
+#include <QDebug>
 
 #include <QFile>
 #include <QRegularExpression>
@@ -58,7 +59,14 @@ void DBCManager::parseExtraInfo(const QString &content) {
     } else if (line.startsWith("VAL_ ")) {
       if (auto match = val_regexp.match(line); match.hasMatch()) {
         if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
-          s->val_desc = match.captured(3).trimmed();
+          QStringList desc_list = match.captured(3).trimmed().split('"');
+          for (int i = 0; i < desc_list.size(); i += 2) {
+            auto val = desc_list[i].trimmed();
+            if (!val.isEmpty() && (i + 1) < desc_list.size()) {
+              auto desc = desc_list[i+1].trimmed();
+              s->val_desc.push_back({val, desc});
+            }
+          }
         }
       }
     } else if (line.startsWith("CM_ SG_ ")) {
@@ -91,7 +99,11 @@ QString DBCManager::generateDBC() {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig.name).arg(sig.comment);
       }
       if (!sig.val_desc.isEmpty()) {
-        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig.name).arg(sig.val_desc);
+        QString text;
+        for (auto &[val, desc] : sig.val_desc) {
+          text += QString("%1 \"%2\"").arg(val, desc);
+        }
+        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig.name).arg(text);
       }
     }
     dbc_string += "\n";

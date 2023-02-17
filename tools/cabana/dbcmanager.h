@@ -34,6 +34,8 @@ Q_DECLARE_METATYPE(MessageId);
 
 namespace dbcmanager {
 
+typedef QList<std::pair<QString, QString>> ValueDescription;
+
 struct Signal {
   QString name;
   int start_bit, msb, lsb, size;
@@ -41,7 +43,8 @@ struct Signal {
   double factor, offset;
   bool is_little_endian;
   QString min, max, unit;
-  QString comment, val_desc;
+  QString comment;
+  ValueDescription val_desc;
 };
 
 struct Msg {

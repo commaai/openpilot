@@ -1,5 +1,6 @@
 #include "tools/cabana/signaledit.h"
 
+#include <QDialogButtonBox>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -127,7 +128,13 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Comment: return item->sig->comment;
           case Item::Min: return item->sig->min;
           case Item::Max: return item->sig->max;
-          case Item::Desc: return item->sig->val_desc;
+          case Item::Desc: {
+            QString val_desc;
+            for (auto &[val, desc] : item->sig->val_desc) {
+              val_desc += QString("%1 \"%2\"").arg(val, desc);
+            }
+            return val_desc;
+          }
           default: break;
         }
       }
@@ -157,7 +164,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Comment: s.comment = value.toString(); break;
     case Item::Min: s.min = value.toString(); break;
     case Item::Max: s.max = value.toString(); break;
-    case Item::Desc: s.val_desc = value.toString(); break;
+    case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
   bool ret = saveSignal(item->sig, s);
@@ -275,7 +282,6 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new NameValidator(this);
-  desc_validation = new QRegularExpressionValidator(QRegularExpression(R"((\s*[-+]?[0-9]+\s+\".+?\"))"), this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
   small_font.setPointSize(8);
@@ -327,10 +333,12 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     spin->setRange(1, 64);
     return spin;
   } else if (item->type == SignalModel::Item::Desc) {
-    QLineEdit *e = new QLineEdit(parent);
-    e->setFrame(false);
-    e->setValidator(desc_validation);
-    return e;
+    ValueDescriptionDlg dlg(item->sig->val_desc, parent);
+    dlg.setWindowTitle(tr("Edit Value Description: %1").arg(item->sig->name));
+    if (dlg.exec()) {
+      ((QAbstractItemModel *)index.model())->setData(index, QVariant::fromValue(dlg.val_desc));
+    }
+    return nullptr;
   }
   return QStyledItemDelegate::createEditor(parent, option, index);
 }
@@ -454,7 +462,7 @@ void SignalView::expandSignal(const Signal *sig) {
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton*>()[0];
+    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>()[0];
     bool chart_opened = charts->hasSignal(msg_id, item->sig);
     plot_btn->setChecked(chart_opened);
     plot_btn->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
@@ -475,4 +483,68 @@ void SignalView::signalHovered(const Signal *sig) {
 void SignalView::leaveEvent(QEvent *event) {
   emit highlight(nullptr);
   QWidget::leaveEvent(event);
+}
+
+// ValueDescriptionDlg
+
+ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent) : QDialog(parent) {
+  QHBoxLayout *toolbar_layout = new QHBoxLayout();
+  QPushButton *add = new QPushButton(utils::icon("plus"), "");
+  QPushButton *remove = new QPushButton(utils::icon("dash"), "");
+  remove->setEnabled(false);
+  toolbar_layout->addWidget(add);
+  toolbar_layout->addWidget(remove);
+  toolbar_layout->addStretch(0);
+
+  table = new QTableWidget(descriptions.size(), 2, this);
+  table->setItemDelegate(new Delegate(this));
+  table->setHorizontalHeaderLabels({"Value", "Description"});
+  table->horizontalHeader()->setStretchLastSection(true);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table->setSelectionMode(QAbstractItemView::SingleSelection);
+  table->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+  table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+  int row = 0;
+  for (auto &[val, desc] : descriptions) {
+    auto item = new QTableWidgetItem(val);
+    table->setItem(row, 0, item);
+    table->setItem(row, 1, new QTableWidgetItem(desc));
+    ++row;
+  }
+
+  auto btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &ValueDescriptionDlg::save);
+  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(add, &QPushButton::clicked, [this]() { table->setRowCount(table->rowCount() + 1); });
+  QObject::connect(remove, &QPushButton::clicked, [this]() { table->removeRow(table->currentRow()); });
+  QObject::connect(table, &QTableWidget::itemSelectionChanged, [=]() {
+    remove->setEnabled(table->currentRow() != -1);
+  });
+
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addLayout(toolbar_layout);
+  main_layout->addWidget(table);
+  main_layout->addWidget(btn_box);
+  setMinimumWidth(500);
+}
+
+void ValueDescriptionDlg::save() {
+  for (int i = 0; i < table->rowCount(); ++i) {
+    QString val = table->item(i, 0)->text().trimmed();
+    QString desc = table->item(i, 1)->text().trimmed();
+    if (!val.isEmpty() && !desc.isEmpty()) {
+      val_desc.push_back({val, desc});
+    }
+  }
+  QDialog::accept();
+}
+
+QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QLineEdit *edit = new QLineEdit(parent);
+  edit->setFrame(false);
+  if (index.column() == 0) {
+    edit->setValidator(new QIntValidator(edit));
+  }
+  return edit;
 }
