@@ -139,6 +139,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
     self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
+    self.gap_dist_button = pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"]
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = pt_cp.vl["ESP_21"]["ESP_Tastung_passiv"] != 0
@@ -245,6 +246,7 @@ class CarState(CarStateBase):
                                                                             pt_cp.vl["Gate_Komf_1"]["GK1_Blinker_re"])
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
     self.gra_stock_values = pt_cp.vl["GRA_Neu"]
+    self.gap_dist_button = pt_cp.vl["GRA_Neu"]["GRA_Zeitluecke"]
 
     # Additional safety checks performed in CarInterface.
     ret.espDisabled = bool(pt_cp.vl["Bremse_1"]["ESP_Passiv_getastet"])

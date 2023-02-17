@@ -334,6 +334,8 @@ class CarStateBase(ABC):
     self.cluster_speed_hyst_gap = 0.0
     self.cluster_min_speed = 0.0  # min speed before dropping to 0
 
+    self.gap_dist_button = 0
+
     # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
     # R = 0.3
     self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],

@@ -126,6 +126,10 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
       self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
+      self.gap_dist_button = cp_cam.vl["ACC_CONTROL"]["DISTANCE"]
+
+    if self.CP.flags & ToyotaFlags.SMART_DSU:
+      self.gap_dist_button = cp.vl["SDSU"]["FD_BUTTON"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -344,6 +348,10 @@ class CarState(CarStateBase):
         ("PRE_COLLISION", 33),
       ]
 
+    if CP.flags & ToyotaFlags.SMART_DSU:
+       signals.append(("FD_BUTTON", "SDSU", 0))
+       checks.append(("SDSU", 33))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -387,6 +395,7 @@ class CarState(CarStateBase):
         ("FORCE", "PRE_COLLISION"),
         ("ACC_TYPE", "ACC_CONTROL"),
         ("FCW", "ACC_HUD"),
+        ("DISTANCE", 'ACC_CONTROL'),
       ]
       checks += [
         ("PRE_COLLISION", 33),
