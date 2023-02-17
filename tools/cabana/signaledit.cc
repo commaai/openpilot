@@ -275,9 +275,10 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new NameValidator(this);
+  desc_validation = new QRegularExpressionValidator(QRegularExpression(R"((\s*[-+]?[0-9]+\s+\".+?\"))"), this);
   double_validator = new QDoubleValidator(this);
-  small_font.setPointSize(8);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  small_font.setPointSize(8);
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -325,6 +326,11 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     spin->setFrame(false);
     spin->setRange(1, 64);
     return spin;
+  } else if (item->type == SignalModel::Item::Desc) {
+    QLineEdit *e = new QLineEdit(parent);
+    e->setFrame(false);
+    e->setValidator(desc_validation);
+    return e;
   }
   return QStyledItemDelegate::createEditor(parent, option, index);
 }

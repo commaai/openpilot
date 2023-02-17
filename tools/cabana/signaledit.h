@@ -65,7 +65,7 @@ public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  QValidator *name_validator, *double_validator;
+  QValidator *name_validator, *double_validator, *desc_validation;
   QFont small_font;
 };
 
