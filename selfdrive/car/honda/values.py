@@ -183,7 +183,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
-    (Ecu.unknown, 0x18DAB3F1, None)=
+    (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
 
@@ -1518,6 +1518,9 @@ CAR.HRV_2023: {
     ],
     (Ecu.programmedFuelInjection, 0x18DA10F1, None): [
       b'37805-6HZ-M630\x00\x00',
+    ],
+    (Ecu.unknown, 0x18DAB3F1, None):[
+      b'36162-T50-E020\x00\x00',
     ],
   },
 }
