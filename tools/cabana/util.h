@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #include <QByteArray>
 #include <QColor>
 #include <QFont>
@@ -12,7 +14,6 @@
 class ChangeTracker {
 public:
   void compute(const QByteArray &dat, double ts, uint32_t freq);
-  static QList<QVariant> toVariantList(const QVector<QColor> &colors);
   void clear();
 
   QVector<double> last_change_t;
