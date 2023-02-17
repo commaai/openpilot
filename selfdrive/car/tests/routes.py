@@ -50,6 +50,7 @@ routes = [
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
+  CarTestRoute("ef8f2185104d862e|2023-02-09--18-37-13", GM.ESCALADE),
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
   CarTestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV, segment=1),
