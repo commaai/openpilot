@@ -3,10 +3,9 @@ import os
 import numpy as np
 
 from casadi import SX, vertcat, sin, cos
-
 from common.realtime import sec_since_boot
+# TODO scons won't recompile when T_IDXS changes
 from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
 
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -23,6 +22,7 @@ COST_DIM = COST_E_DIM + 2
 SPEED_OFFSET = 10.0
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
+N = 32
 
 def gen_lat_model():
   model = AcadosModel()
