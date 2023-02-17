@@ -53,11 +53,16 @@ brew "protobuf"
 brew "protobuf-c"
 brew "swig"
 cask "gcc-arm-embedded"
+brew "gcc@12"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
 
 BREW_PREFIX=$(brew --prefix)
+
+# set up gcc-12 for panda tests
+ln -s ${BREW_PREFIX}/bin/gcc-12 ${BREW_PREFIX}/bin/gcc
+ln -s ${BREW_PREFIX}/bin/g++-12 ${BREW_PREFIX}/bin/g++
 
 # archive backend tools for pip dependencies
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/zlib/lib"
