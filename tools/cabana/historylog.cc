@@ -17,7 +17,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
-    return ChangeTracker::toVariantList(m.colors);
+    return QVariant::fromValue(m.colors);
   }
   return {};
 }

@@ -53,6 +53,13 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
   updatePlayBtnState();
+
+  setWhatsThis(tr(R"(
+    <b>Video</b><br />
+    <!-- TODO: add descprition here -->
+    Shortcuts:<br />
+    Pause/Resume: <span style="background-color:lightGray;color:gray"> space </span></br>
+  )"));
 }
 
 QWidget *VideoWidget::createCameraWidget() {
