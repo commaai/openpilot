@@ -173,7 +173,8 @@ Werkzeug = "^2.1.2"
 zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "master" }
 omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
-
+markupsafe= "==2.0.1"
+metadrive-simulator = "0.2.6"
 
 [build-system]
 requires = ["poetry-core"]
