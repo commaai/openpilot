@@ -1,7 +1,7 @@
 #include "tools/cabana/dbcmanager.h"
 
 #include <QFile>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QTextStream>
 #include <QVector>
 #include <limits>
@@ -23,11 +23,11 @@ bool DBCManager::open(const QString &dbc_file_name, QString *error) {
 }
 
 void DBCManager::parseExtraInfo(const QString &content) {
-  static QRegExp bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
-  static QRegExp sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
-  static QRegExp sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
-  static QRegExp sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
-  static QRegExp val_regexp(R"(VAL_ (\w+) (\w+) (.*);)");
+  static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
+  static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+  static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
+  static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (.*);)");
   auto get_sig = [this](uint32_t address, const QString &name) -> Signal * {
     auto m = (Msg *)msg(address);
     return m ? (Signal *)m->sig(name) : nullptr;
@@ -37,32 +37,35 @@ void DBCManager::parseExtraInfo(const QString &content) {
   uint32_t address = 0;
   while (!stream.atEnd()) {
     QString line = stream.readLine().trimmed();
-    if (line.startsWith("BO_ ") && bo_regexp.indexIn(line) != -1) {
-      address = bo_regexp.capturedTexts()[1].toUInt();
-    } else if (line.startsWith("SG_ ")) {
-      QStringList result;
-      if (sg_regexp.indexIn(line) != -1) {
-        result = sg_regexp.capturedTexts();
-      } else if (sgm_regexp.indexIn(line) != -1) {
-        result = sgm_regexp.capturedTexts();
-        result.removeAt(0);
+    if (line.startsWith("BO_ ")) {
+      if (auto match = bo_regexp.match(line); match.hasMatch()) {
+        address = match.captured(1).toUInt();
       }
-      if (!result.isEmpty()) {
-        if (auto s = get_sig(address, result[1])) {
-          s->min = result[8];
-          s->max = result[9];
-          s->unit = result[10];
+    } else if (line.startsWith("SG_ ")) {
+      int offset = 0;
+      auto match = sg_regexp.match(line);
+      if (!match.hasMatch()) {
+        match = sgm_regexp.match(line);
+        offset = 1;
+      }
+      if (match.hasMatch()) {
+        if (auto s = get_sig(address, match.captured(1))) {
+          s->min = match.captured(8 + offset);
+          s->max = match.captured(9 + offset);
+          s->unit = match.captured(10 + offset);
         }
       }
-    } else if (line.startsWith("VAL_ ") && val_regexp.indexIn(line) != -1) {
-      auto result = val_regexp.capturedTexts();
-      if (auto s = get_sig(result[1].toUInt(), result[2])) {
-        s->val_desc = result[3].trimmed();
+    } else if (line.startsWith("VAL_ ")) {
+      if (auto match = val_regexp.match(line); match.hasMatch()) {
+        if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
+          s->val_desc = match.captured(3).trimmed();
+        }
       }
-    } else if (line.startsWith("CM_ SG_ ") && sg_comment_regexp.indexIn(line) != -1) {
-      auto result = sg_comment_regexp.capturedTexts();
-      if (auto s = get_sig(result[1].toUInt(), result[2])) {
-        s->comment = result[3];
+    } else if (line.startsWith("CM_ SG_ ")) {
+      if (auto match = sg_comment_regexp.match(line); match.hasMatch()) {
+        if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
+          s->comment = match.captured(3).trimmed();
+        }
       }
     }
   }
