@@ -264,9 +264,10 @@ class World(ABC):
     pass
 
 class CarlaWorld(World):
-  def __init__(self, world, vc, vehicle, camerad):
+  def __init__(self, world, vehicle, camerad):
+    import carla  # pylint: disable=import-error
     self.world = world
-    self.vc = vc
+    self.vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
     self.vehicle = vehicle
     self.max_steer_angle: float = vehicle.get_physics_control().wheels[0].max_steer_angle
     self.camerad = camerad
@@ -560,7 +561,6 @@ class CarlaBridge(SimulatorBridge):
 
   def spawn_objects(self):
     camerad = Camerad()
-    # Simulator specific imports go here
     import carla  # pylint: disable=import-error
     def connect_carla_client(host: str, port: int):
       client = carla.Client(host, port)
@@ -639,9 +639,7 @@ class CarlaBridge(SimulatorBridge):
     self.params.put_bool("UbloxAvailable", True)
     self._simulation_objects.extend([imu, gps])
 
-    vc = carla.VehicleControl(throttle=0, steer=0, brake=0, reverse=False)
-
-    return CarlaWorld(world, vc, vehicle, camerad)
+    return CarlaWorld(world, vehicle, camerad)
 
 class MetaDriveBridge(SimulatorBridge):
   FRAMES_PER_TICK = 15
