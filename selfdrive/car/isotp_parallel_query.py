@@ -111,7 +111,7 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           continue
 
-        if updated and not (msg.rx_done or msg.tx_done):
+        if updated and not (msg.rx_done and msg.tx_done):
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
