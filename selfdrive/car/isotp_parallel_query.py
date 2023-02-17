@@ -121,9 +121,6 @@ class IsoTpParallelQuery:
         expected_response = self.response[counter]
         response_valid = dat[:len(expected_response)] == expected_response
 
-        if tx_addr == 0x743:
-          print('respval', response_valid)
-
         if response_valid:
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
