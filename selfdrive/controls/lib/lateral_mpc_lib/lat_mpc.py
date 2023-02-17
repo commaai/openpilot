@@ -4,7 +4,6 @@ import numpy as np
 
 from casadi import SX, vertcat, sin, cos
 from common.realtime import sec_since_boot
-# TODO scons won't recompile when T_IDXS changes
 from selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
