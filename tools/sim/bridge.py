@@ -182,6 +182,7 @@ def peripheral_state_function(exit_event: threading.Event):
       'current': 5678,
       'fanSpeedRpm': 1000
     }
+    Params().put_bool("ObdMultiplexingDisabled", True)
     pm.send('peripheralState', dat)
     time.sleep(0.5)
 
@@ -350,6 +351,7 @@ class SimulatorBridge(ABC):
       print("Dual Camera disabled")
     self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
     self.params.put_bool("DisengageOnAccelerator", True)
+    # self.params.put_bool("ExperimentalMode", True)
 
     self._args = arguments
     self._simulation_objects = []
@@ -712,20 +714,18 @@ class MetaDriveBridge(SimulatorBridge):
     setattr(ImageBuffer, "get_rgb_array", patch_get_rgb_array)
 
     # Simulation tends to be slow in the initial steps. This prevents lagging later
-    for _ in range(20):
-      env.step([1.0, 0.0])
+    for _ in range(30):
+      env.step([0.0, 1.0])
 
     return MetaDriveWorld(env, self.FRAMES_PER_TICK)
 
 if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
-  print("HELLO WORLD")
 
   try:
     simulator_bridge: SimulatorBridge
     if args.simulator == "metadrive":
-      print("STARTING METADRIVE BRIDGE")
       simulator_bridge = MetaDriveBridge(args)
     elif args.simulator == "carla":
       simulator_bridge = CarlaBridge(args)
