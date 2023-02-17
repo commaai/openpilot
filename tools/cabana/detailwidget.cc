@@ -86,13 +86,11 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(tabbar, &QTabBar::customContextMenuRequested, this, &DetailWidget::showTabBarContextMenu);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) {
-      setMessage(tabbar_ids[index]);
+      setMessage(tabbar->tabData(index).value<MessageId>());
     }
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, [this](int index) {
-    tabbar_ids.removeAt(index);
     tabbar->removeTab(index);
-    assert(tabbar_ids.size() == tabbar->count());
   });
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
@@ -103,14 +101,11 @@ void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
     QMenu menu(this);
     menu.addAction(tr("Close Other Tabs"));
     if (menu.exec(tabbar->mapToGlobal(pt))) {
-      tabbar_ids.move(index, 0);
       tabbar->moveTab(index, 0);
       tabbar->setCurrentIndex(0);
       while (tabbar->count() > 1) {
-        tabbar_ids.removeAt(1);
         tabbar->removeTab(1);
       }
-      assert(tabbar_ids.size() == tabbar->count());
     }
   }
 }
@@ -121,21 +116,25 @@ void DetailWidget::removeAll() {
   while (tabbar->count() > 0) {
     tabbar->removeTab(0);
   }
-  tabbar_ids.clear();
   tabbar->blockSignals(false);
   stacked_layout->setCurrentIndex(0);
 }
 
 void DetailWidget::setMessage(const MessageId &message_id) {
   msg_id = message_id;
-  int index = tabbar_ids.indexOf(*msg_id);
 
+  tabbar->blockSignals(true);
+  int index = tabbar->count() - 1;
+  for (/**/; index >= 0; --index) {
+    if (tabbar->tabData(index).value<MessageId>() == message_id) break;
+  }
   if (index == -1) {
-    tabbar_ids.append(*msg_id);
     index = tabbar->addTab(message_id.toString());
+    tabbar->setTabData(index, QVariant::fromValue(message_id));
     tabbar->setTabToolTip(index, msgName(message_id));
   }
-  assert(tabbar->count() == tabbar_ids.size());
+  tabbar->setCurrentIndex(index);
+  tabbar->blockSignals(false);
 
   setUpdatesEnabled(false);
 
@@ -144,7 +143,6 @@ void DetailWidget::setMessage(const MessageId &message_id) {
   history_log->setMessage(*msg_id);
 
   stacked_layout->setCurrentIndex(1);
-  tabbar->setCurrentIndex(index);
   refresh();
   splitter->setSizes({1, 2});
 
