@@ -111,7 +111,7 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           continue
 
-        if updated:
+        if updated and not (msg.rx_done or msg.tx_done):
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
@@ -120,6 +120,9 @@ class IsoTpParallelQuery:
         counter = request_counter[tx_addr]
         expected_response = self.response[counter]
         response_valid = dat[:len(expected_response)] == expected_response
+
+        if tx_addr == 0x743:
+          print('respval', response_valid)
 
         if response_valid:
           if counter + 1 < len(self.request):
