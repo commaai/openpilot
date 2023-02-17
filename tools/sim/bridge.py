@@ -28,7 +28,7 @@ from tools.sim.lib.can import can_function
 SCALE = 1
 W, H = 1928 // SCALE, 1208 // SCALE
 REPEAT_COUNTER = 5
-PRINT_DECIMATION = 5
+PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
 pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'accelerometer', 'gyroscope', 'can', "gpsLocationExternal"])
@@ -210,7 +210,7 @@ def gps_callback(gps, vehicle_state):
     "longitude": gps.longitude,
     "altitude": gps.altitude,
     "speed": vehicle_state.speed,
-    "source": log.GpsLocationData.SensorSource.wublox,
+    "source": log.GpsLocationData.SensorSource.ublox,
   }
 
   pm.send('gpsLocationExternal', dat)
