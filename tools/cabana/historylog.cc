@@ -22,14 +22,14 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   return {};
 }
 
-void HistoryLogModel::setMessage(const QString &message_id) {
+void HistoryLogModel::setMessage(const MessageId &message_id) {
   msg_id = message_id;
 }
 
 void HistoryLogModel::refresh() {
   beginResetModel();
   sigs.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
+  if (auto dbc_msg = dbc()->msg(*msg_id)) {
     sigs = dbc_msg->getSignals();
   }
   last_fetch_time = 0;
@@ -78,8 +78,8 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  if (!msg_id.isEmpty()) {
-    uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  if (msg_id) {
+    uint64_t current_time = (can->lastMessage(*msg_id).ts + can->routeStartTime()) * 1e9 + 1;
     auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
     if (!new_msgs.empty()) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
@@ -106,12 +106,11 @@ void HistoryLogModel::fetchMore(const QModelIndex &parent) {
 template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
-  const auto [src, address] = DBCManager::parseId(msg_id);
   QVector<double> values(sigs.size());
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (address == c.getAddress() && src == c.getSrc()) {
+        if (msg_id->address == c.getAddress() && msg_id->source == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
             values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));
@@ -136,7 +135,7 @@ template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
   auto events = can->events();
-  const auto freq = can->lastMessage(msg_id).freq;
+  const auto freq = can->lastMessage(*msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
   if (dynamic_mode) {
@@ -241,13 +240,13 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
 }
 
-void LogsWidget::setMessage(const QString &message_id) {
+void LogsWidget::setMessage(const MessageId &message_id) {
   model->setMessage(message_id);
   refresh();
 }
 
 void LogsWidget::refresh() {
-  if (model->msg_id.isEmpty()) return;
+  if (!model->msg_id) return;
 
   model->setFilter(0, "", nullptr);
   model->refresh();
