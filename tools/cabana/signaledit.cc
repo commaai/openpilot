@@ -280,11 +280,19 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 
 // SignalItemDelegate
 
-SignalItemDelegate::SignalItemDelegate(QObject *parent) {
+SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
   small_font.setPointSize(8);
+}
+
+QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QSize size = QStyledItemDelegate::sizeHint(option, index);
+  if (!index.parent().isValid() && index.column() == 0) {
+    size.rwidth() = std::min(((QWidget*)parent())->size().width() / 2, size.width() + color_label_width + 8);
+  }
+  return size;
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -298,7 +306,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    QRect rc{option.rect.left(), option.rect.top(), 18, option.rect.height()};
+    QRect rc{option.rect.left(), option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
     painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 3, 3);
@@ -353,7 +361,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
   filter_edit->setClearButtonEnabled(true);
-  filter_edit->setPlaceholderText(tr("filter signals by name"));
+  filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
   auto collapse_btn = new QToolButton();
@@ -371,7 +379,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
-  tree->header()->setSectionResizeMode(QHeaderView::Stretch);
+  tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);
   tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
 
