@@ -86,7 +86,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
   QRect space = painter->boundingRect(opt.rect, opt.displayAlignment, " ");
-  QRect pos = painter->boundingRect(opt.rect, opt.displayAlignment, "00");
+  QRect pos = painter->boundingRect(opt.rect, opt.displayAlignment, "00").adjusted(0, 0, 2, 0);
   pos.moveLeft(pos.x() + space.width());
 
   int m = space.width() / 2;
@@ -97,7 +97,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     if (i < colors.size()) {
       painter->fillRect(pos.marginsAdded(margins), colors[i]);
     }
-    painter->drawText(pos, opt.displayAlignment, byte_list[i]);
+    painter->drawText(pos, Qt::AlignCenter, byte_list[i]);
     pos.moveLeft(pos.right() + space.width());
   }
 }
