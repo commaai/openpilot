@@ -1,5 +1,6 @@
 import warnings
 import numpy as np
+import math
 import metadrive  # noqa: F401 pylint: disable=W0611
 import gym
 
@@ -21,7 +22,7 @@ class MetaDriveWorld(World):
     else:
       vc[1] = -brake_out
     if rk.frame % self.ticks_per_frame == 0:
-      if (rk.frame % self.ticks_per_frame * 2) == 0:
+      if (rk.frame % self.ticks_per_frame * 3) == 0:
         o, _, d, _ = self.env.step(vc)
         if d:
           print("!!!Episode terminated due to violation of safety!!!")
@@ -30,7 +31,7 @@ class MetaDriveWorld(World):
           for _ in range(300):
             rk.keep_time()
         
-        self.speed = o["state"][3] * self.ticks_per_frame * 2 # empirically derived
+        self.speed = o["state"][3] * math.sqrt(self.ticks_per_frame) * 10 # empirically derived
 
       img = self.env.vehicle.image_sensors["rgb_wide"].get_pixels_array(self.env.vehicle, False)
       self.yuv = self.camerad.img_to_yuv(img)

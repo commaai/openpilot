@@ -20,15 +20,16 @@ class TestMetaDriveIntegration(unittest.TestCase):
 
   def test_engage(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
-    self.processes.append(p_manager)
-    time.sleep(10.0)
-
-    sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
     sim_bridge = MetaDriveBridge(parse_args(["--ticks_per_frame", "20"]))
     p_bridge = sim_bridge.run(q, retries=10)
     self.processes.append(p_bridge)
+    time.sleep(10.0)
+
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    self.processes.append(p_manager)
+
+    sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
 
     max_time_per_step = 60
 
