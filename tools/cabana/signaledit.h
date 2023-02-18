@@ -85,7 +85,7 @@ public:
   QFont small_font;
 };
 
-class SignalView : public QWidget {
+class SignalView : public QFrame {
   Q_OBJECT
 
 public:

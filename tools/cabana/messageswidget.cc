@@ -9,6 +9,7 @@
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0 ,0, 0, 0);
 
   // message filter
   filter = new QLineEdit(this);

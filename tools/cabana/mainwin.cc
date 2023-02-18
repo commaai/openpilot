@@ -174,7 +174,7 @@ void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
+  progress_bar->setFixedSize({300, 16});
   progress_bar->setVisible(false);
   statusBar()->addWidget(new QLabel(tr("For Help,Press F1")));
   statusBar()->addPermanentWidget(progress_bar);

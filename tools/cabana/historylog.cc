@@ -189,7 +189,8 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
 
 // LogsWidget
 
-LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
+LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -219,8 +220,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(toolbar);
   QFrame *line = new QFrame(this);
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-  main_layout->addWidget(line);;
-
+  main_layout->addWidget(line);
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));

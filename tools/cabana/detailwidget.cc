@@ -25,13 +25,13 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   // message title
   QToolBar *toolbar = new QToolBar(this);
   toolbar->setIconSize({16, 16});
-  toolbar->addWidget(new QLabel("time:"));
   time_label = new QLabel(this);
-  time_label->setStyleSheet("font-weight:bold");
+  time_label->setToolTip(tr("Current time"));
+  time_label->setStyleSheet("QLabel{font-weight:bold;}");
   toolbar->addWidget(time_label);
   name_label = new ElidedLabel(this);
   name_label->setContentsMargins(5, 0, 5, 0);
-  name_label->setStyleSheet("font-weight:bold;");
+  name_label->setStyleSheet("QLabel{font-weight:bold;}");
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(name_label);
@@ -59,6 +59,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   splitter->setStretchFactor(1, 1);
 
   tab_widget = new QTabWidget(this);
+  tab_widget->setStyleSheet("QTabWidget::pane {border: none; margin-bottom: -2px;}");
   tab_widget->setTabPosition(QTabWidget::South);
   tab_widget->addTab(splitter, utils::icon("file-earmark-ruled"), "&Msg");
   tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");

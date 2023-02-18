@@ -345,7 +345,8 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
 
 // SignalView
 
-SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   // title bar
   QWidget *title_bar = new QWidget(this);
   title_bar->setAutoFillBackground(true);

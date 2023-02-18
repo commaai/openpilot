@@ -69,7 +69,7 @@ public:
   bool display_signals_mode = true;
 };
 
-class LogsWidget : public QWidget {
+class LogsWidget : public QFrame {
   Q_OBJECT
 
 public:

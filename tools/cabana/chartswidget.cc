@@ -18,8 +18,10 @@
 const int MAX_COLUMN_COUNT = 4;
 // ChartsWidget
 
-ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
+ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
@@ -43,6 +45,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider->setMaximumWidth(200);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
@@ -67,6 +70,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
