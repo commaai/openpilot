@@ -7,6 +7,7 @@
 #include <QTableWidget>
 
 #include "tools/cabana/dbcmanager.h"
+using namespace dbcmanager;
 
 class FindSimilarBitsDlg : public QDialog {
   Q_OBJECT
