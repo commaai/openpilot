@@ -143,7 +143,6 @@ void DetailWidget::setMessage(const MessageId &message_id) {
 
   stacked_layout->setCurrentIndex(1);
   refresh();
-  splitter->setSizes({1, 2});
 
   setUpdatesEnabled(true);
 }
