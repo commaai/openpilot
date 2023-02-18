@@ -40,7 +40,7 @@ def parse_args(add_args=None):
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
   parser.add_argument('--host', dest='host', type=str, default='127.0.0.1')
   parser.add_argument('--port', dest='port', type=int, default=2000)
-  parser.add_argument('--simulator', dest='simulator', type=str, default='metadrive')
+  parser.add_argument('--simulator', dest='simulator', type=str, default='carla')
   parser.add_argument('--ticks_per_frame', dest='ticks_per_frame', type=int, default=None)
 
   return parser.parse_args(add_args)
@@ -289,7 +289,7 @@ class SimulatorBridge(ABC):
     self.started = False
     signal.signal(signal.SIGTERM, self._on_shutdown)
     self._exit = threading.Event()
-  
+
   def _on_shutdown(self, signal, frame):
     self._keep_alive = False
 
@@ -317,7 +317,7 @@ class SimulatorBridge(ABC):
     finally:
       # Clean up resources in the opposite order they were created.
       self.close()
-  
+
   def _run(self, q: Queue):
     vehicle_state = VehicleState()
     self._vehicle_state = vehicle_state
