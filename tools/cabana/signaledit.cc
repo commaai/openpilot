@@ -48,9 +48,9 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    for (auto &s : msg->sigs) {
-      if (filter_str.isEmpty() || s.name.contains(filter_str, Qt::CaseInsensitive)) {
-        insertItem(root.get(), root->children.size(), &s);
+    for (auto s : msg->getSignals()) {
+      if (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive)) {
+        insertItem(root.get(), root->children.size(), s);
       }
     }
   }

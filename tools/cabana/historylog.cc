@@ -31,7 +31,7 @@ void HistoryLogModel::refresh() {
   beginResetModel();
   sigs.clear();
   if (auto dbc_msg = dbc()->msg(*msg_id)) {
-    sigs = dbc_msg->sigs;
+    sigs = dbc_msg->getSignals();
   }
   last_fetch_time = 0;
   has_more_data = true;
@@ -48,9 +48,9 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return show_signals ? sigs[section - 1].name : "Data";
+      return show_signals ? sigs[section - 1]->name : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(getColor(&sigs[section - 1]));
+      return QBrush(getColor(sigs[section - 1]));
     }
   }
   return {};
@@ -114,7 +114,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
         if (msg_id->address == c.getAddress() && msg_id->source == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
-            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), sigs[i]);
+            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sigs[i]);
           }
           if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
             auto &m = msgs.emplace_back();
@@ -255,8 +255,8 @@ void LogsWidget::refresh() {
   bool has_signal = model->sigs.size();
   if (has_signal) {
     signals_cb->clear();
-    for (auto &s : model->sigs) {
-      signals_cb->addItem(s.name);
+    for (auto s : model->sigs) {
+      signals_cb->addItem(s->name);
     }
   }
   value_edit->clear();

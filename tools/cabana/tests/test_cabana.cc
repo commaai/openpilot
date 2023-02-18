@@ -23,9 +23,11 @@ TEST_CASE("DBCManager::generateDBC") {
     auto &new_m = new_msgs.at(address);
     REQUIRE(m.name == new_m.name);
     REQUIRE(m.size == new_m.size);
-    REQUIRE(m.sigs.size() == new_m.sigs.size());
-    for (int i = 0; i < m.sigs.size(); ++i) {
-      REQUIRE(m.sigs[i] == new_m.sigs[i]);
+    REQUIRE(m.getSignals().size() == new_m.getSignals().size());
+    auto sigs = m.getSignals();
+    auto new_sigs = new_m.getSignals();
+    for (int i = 0; i < sigs.size(); ++i) {
+      REQUIRE(*sigs[i] == *new_sigs[i]);
     }
   }
 }
@@ -44,9 +46,9 @@ TEST_CASE("Parse can messages") {
       for (const auto &c : e->event.getCan()) {
         const auto msg = dbc.msg(c.getAddress());
         if (c.getSrc() == 0 && msg) {
-          for (auto &sig : msg->sigs) {
-            double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), sig);
-            values_1[{c.getAddress(), sig.name}].push_back(val);
+          for (auto sig : msg->getSignals()) {
+            double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
+            values_1[{c.getAddress(), sig->name}].push_back(val);
           }
         }
       }
