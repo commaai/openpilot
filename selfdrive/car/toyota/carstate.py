@@ -19,8 +19,6 @@ class CarState(CarStateBase):
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
     self.cluster_min_speed = CV.KPH_TO_MS / 2.
-    self.smartDsu = CP.openpilotLongitudinalControl and not CP.enableDsu and not (CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR))
-    self.gapAdjustCruisePrev = None
 
     # On cars with cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
     # the signal is zeroed to where the steering angle is at start.
@@ -85,18 +83,6 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
-
-    if self.smartDsu:
-      buttonEvents = []
-      fd_button = cp.vl["SDSU"]["FD_BUTTON"] == 1
-      update_button = self.gapAdjustCruisePrev is None or not self.gapAdjustCruisePrev == fd_button
-      if update_button:
-        event = car.CarState.ButtonEvent.new_message()
-        event.type = car.CarState.ButtonEvent.Type.gapAdjustCruise
-        event.pressed = fd_button
-        buttonEvents.append(event)
-        self.gapAdjustCruisePrev = fd_button
-      ret.buttonEvents = buttonEvents
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
@@ -239,7 +225,8 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
       checks.append(("GAS_SENSOR", 50))
 
-    if self.smartDsu:
+    smartDsu = CP.openpilotLongitudinalControl and not CP.enableDsu and not (CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR))
+    if smartDsu:
       signals.append(("FD_BUTTON", "SDSU"))
       checks.append(("SDSU", 33))
 
