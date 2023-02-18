@@ -43,7 +43,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setWhatsThis(R"(
     <b>Binary View</b><br/>
     <!-- TODO: add descprition here -->
-    Shortcuts:<br />
+    <span style="color:gray">Shortcuts</span><br />
     Delete Signal:
       <span style="background-color:lightGray;color:gray">&nbsp;x&nbsp;</span>,
       <span style="background-color:lightGray;color:gray">&nbsp;Backspace&nbsp;</span>,
@@ -53,7 +53,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
     Open chart:
       <span style="background-color:lightGray;color:gray">&nbsp;c&nbsp;</span>,
       <span style="background-color:lightGray;color:gray">&nbsp;p&nbsp;</span>,
-      <span style="background-color:lightGray;color:gray">&nbsp;g&nbsp;</span><br />
+      <span style="background-color:lightGray;color:gray">&nbsp;g&nbsp;</span>
   )");
 }
 
