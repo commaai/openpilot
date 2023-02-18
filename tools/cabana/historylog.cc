@@ -211,7 +211,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   h->addWidget(dynamic_mode = new QCheckBox(tr("Dynamic")), 0, Qt::AlignRight);
 
   display_type_cb->addItems({"Signal", "Hex"});
-  display_type_cb->setToolTip(tr("Dispaly signal value or raw hex value"));
+  display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
   comp_box->addItems({">", "=", "!=", "<"});
   value_edit->setClearButtonEnabled(true);
   value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
