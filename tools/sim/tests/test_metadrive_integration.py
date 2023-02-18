@@ -8,8 +8,8 @@ from multiprocessing import Queue
 
 from cereal import messaging
 from common.basedir import BASEDIR
-from tools.sim import run_bridge
-from tools.sim.run_bridge import MetaDriveBridge
+from tools.sim.bridge.common import parse_args
+from tools.sim.bridge.metadrive import MetaDriveBridge
 
 CI = "CI" in os.environ
 
@@ -26,7 +26,7 @@ class TestMetaDriveIntegration(unittest.TestCase):
 
     sm = messaging.SubMaster(['controlsState', 'carEvents', 'managerState'])
     q = Queue()
-    sim_bridge = MetaDriveBridge(run_bridge.parse_args(["--ticks_per_frame", "10"]))
+    sim_bridge = MetaDriveBridge(parse_args(["--ticks_per_frame", "10"]))
     p_bridge = sim_bridge.run(q, retries=10)
     self.processes.append(p_bridge)
 
