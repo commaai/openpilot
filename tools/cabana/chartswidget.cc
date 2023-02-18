@@ -438,12 +438,12 @@ void ChartView::manageSeries() {
 }
 
 void ChartView::resizeEvent(QResizeEvent *event) {
-  QChartView::resizeEvent(event);
   updatePlotArea(align_to);
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
   move_icon->setPos(11, 8);
+  QChartView::resizeEvent(event);
 }
 
 void ChartView::updatePlotArea(int left) {
@@ -452,7 +452,7 @@ void ChartView::updatePlotArea(int left) {
     align_to = left;
     background->setRect(r);
     chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
-    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
+    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 36, r.height() - 80));
     chart()->layout()->invalidate();
   }
 }
@@ -574,7 +574,7 @@ void ChartView::updateAxisY() {
 
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
-    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 20;  // left margin 20
+    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;  // left margin 15
     emit axisYLabelWidthChanged(y_label_width);
   }
 }
