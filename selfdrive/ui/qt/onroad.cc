@@ -492,6 +492,12 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
+float lerp(float a, float b, float t)
+{
+    return a + t * (b - a);
+}
+
+
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 
@@ -523,12 +529,16 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     // speed up: 120, slow down: 0
     end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
 
+    float saturation = lerp(0, 1, pow(std::abs(2 * acceleration_future), 2) / 3);
+    saturation = saturation > 1 ? 1. : saturation;
+    qDebug() << "saturation:" << saturation;
+
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., saturation, 0.40, 0.45));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., saturation, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., saturation, 0.68, 0.0));
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
