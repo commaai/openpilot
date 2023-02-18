@@ -1,5 +1,6 @@
 #include "tools/cabana/signaledit.h"
 
+#include <QDialogButtonBox>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -23,9 +24,9 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 }
 
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
-  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name.c_str(), .type = Item::Sig};
+  Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum", "Maximum", "Description"};
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -47,9 +48,9 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    for (auto &s : msg->getSignals()) {
-      if (filter_str.isEmpty() || QString::fromStdString(s->name).contains(filter_str, Qt::CaseInsensitive)) {
-        insertItem(root.get(), root->children.size(), s);
+    for (auto &s : msg->sigs) {
+      if (filter_str.isEmpty() || s.name.contains(filter_str, Qt::CaseInsensitive)) {
+        insertItem(root.get(), root->children.size(), &s);
       }
     }
   }
@@ -115,14 +116,25 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     const Item *item = getItem(index);
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
       if (index.column() == 0) {
-        return item->type == Item::Sig ? QString::fromStdString(item->sig->name) : item->title;
+        return item->type == Item::Sig ? item->sig->name : item->title;
       } else {
         switch (item->type) {
           case Item::Sig: return item->sig_val;
-          case Item::Name: return QString::fromStdString(item->sig->name);
+          case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
           case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
           case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::Unit: return item->sig->unit;
+          case Item::Comment: return item->sig->comment;
+          case Item::Min: return item->sig->min;
+          case Item::Max: return item->sig->max;
+          case Item::Desc: {
+            QString val_desc;
+            for (auto &[val, desc] : item->sig->val_desc) {
+              val_desc += QString("%1 \"%2\"").arg(val, desc);
+            }
+            return val_desc;
+          }
           default: break;
         }
       }
@@ -142,12 +154,17 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   Item *item = getItem(index);
   Signal s = *item->sig;
   switch (item->type) {
-    case Item::Name: s.name = value.toString().toStdString(); break;
+    case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
     case Item::Factor: s.factor = value.toDouble(); break;
+    case Item::Unit: s.unit = value.toString(); break;
+    case Item::Comment: s.comment = value.toString(); break;
+    case Item::Min: s.min = value.toString(); break;
+    case Item::Max: s.max = value.toString(); break;
+    case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
   bool ret = saveSignal(item->sig, s);
@@ -172,8 +189,8 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
 
 bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
   auto msg = dbc()->msg(msg_id);
-  if (s.name != origin_s->name && msg->sigs.count(s.name.c_str()) != 0) {
-    QString text = tr("There is already a signal with the same name '%1'").arg(s.name.c_str());
+  if (s.name != origin_s->name && msg->sig(s.name) != nullptr) {
+    QString text = tr("There is already a signal with the same name '%1'").arg(s.name);
     QMessageBox::warning(nullptr, tr("Failed to save signal"), text);
     return false;
   }
@@ -212,8 +229,8 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
 
   Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
-    sig.name = "NEW_SIGNAL_" + std::to_string(i);
-    if (msg->sigs.count(sig.name.c_str()) == 0) break;
+    sig.name = QString("NEW_SIGNAL_%1").arg(i);
+    if (msg->sig(sig.name) == nullptr) break;
   }
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
@@ -266,8 +283,8 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 SignalItemDelegate::SignalItemDelegate(QObject *parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
-  small_font.setPointSize(8);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  small_font.setPointSize(8);
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -304,7 +321,8 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset || item->type == SignalModel::Item::Factor) {
+  if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
+      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
     e->setValidator(index.row() == 0 ? name_validator : double_validator);
@@ -314,6 +332,13 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     spin->setFrame(false);
     spin->setRange(1, 64);
     return spin;
+  } else if (item->type == SignalModel::Item::Desc) {
+    ValueDescriptionDlg dlg(item->sig->val_desc, parent);
+    dlg.setWindowTitle(item->sig->name);
+    if (dlg.exec()) {
+      ((QAbstractItemModel *)index.model())->setData(index, QVariant::fromValue(dlg.val_desc));
+    }
+    return nullptr;
   }
   return QStyledItemDelegate::createEditor(parent, option, index);
 }
@@ -437,7 +462,7 @@ void SignalView::expandSignal(const Signal *sig) {
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton*>()[0];
+    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>()[0];
     bool chart_opened = charts->hasSignal(msg_id, item->sig);
     plot_btn->setChecked(chart_opened);
     plot_btn->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
@@ -458,4 +483,71 @@ void SignalView::signalHovered(const Signal *sig) {
 void SignalView::leaveEvent(QEvent *event) {
   emit highlight(nullptr);
   QWidget::leaveEvent(event);
+}
+
+// ValueDescriptionDlg
+
+ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent) : QDialog(parent) {
+  QHBoxLayout *toolbar_layout = new QHBoxLayout();
+  QPushButton *add = new QPushButton(utils::icon("plus"), "");
+  QPushButton *remove = new QPushButton(utils::icon("dash"), "");
+  remove->setEnabled(false);
+  toolbar_layout->addWidget(add);
+  toolbar_layout->addWidget(remove);
+  toolbar_layout->addStretch(0);
+
+  table = new QTableWidget(descriptions.size(), 2, this);
+  table->setItemDelegate(new Delegate(this));
+  table->setHorizontalHeaderLabels({"Value", "Description"});
+  table->horizontalHeader()->setStretchLastSection(true);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table->setSelectionMode(QAbstractItemView::SingleSelection);
+  table->setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::EditKeyPressed);
+  table->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+  int row = 0;
+  for (auto &[val, desc] : descriptions) {
+    table->setItem(row, 0, new QTableWidgetItem(val));
+    table->setItem(row, 1, new QTableWidgetItem(desc));
+    ++row;
+  }
+
+  auto btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addLayout(toolbar_layout);
+  main_layout->addWidget(table);
+  main_layout->addWidget(btn_box);
+  setMinimumWidth(500);
+
+  QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &ValueDescriptionDlg::save);
+  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  QObject::connect(add, &QPushButton::clicked, [this]() {
+    table->setRowCount(table->rowCount() + 1);
+    table->setItem(table->rowCount() - 1, 0, new QTableWidgetItem);
+    table->setItem(table->rowCount() - 1, 1, new QTableWidgetItem);
+  });
+  QObject::connect(remove, &QPushButton::clicked, [this]() { table->removeRow(table->currentRow()); });
+  QObject::connect(table, &QTableWidget::itemSelectionChanged, [=]() {
+    remove->setEnabled(table->currentRow() != -1);
+  });
+}
+
+void ValueDescriptionDlg::save() {
+  for (int i = 0; i < table->rowCount(); ++i) {
+    QString val = table->item(i, 0)->text().trimmed();
+    QString desc = table->item(i, 1)->text().trimmed();
+    if (!val.isEmpty() && !desc.isEmpty()) {
+      val_desc.push_back({val, desc});
+    }
+  }
+  QDialog::accept();
+}
+
+QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QLineEdit *edit = new QLineEdit(parent);
+  edit->setFrame(false);
+  if (index.column() == 0) {
+    edit->setValidator(new QIntValidator(edit));
+  }
+  return edit;
 }

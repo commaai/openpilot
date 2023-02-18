@@ -15,7 +15,7 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-
+using namespace dbcmanager;
 using namespace QtCharts;
 
 const int CHART_MIN_WIDTH = 300;

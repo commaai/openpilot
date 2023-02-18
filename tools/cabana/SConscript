@@ -17,6 +17,8 @@ qt_libs = ['qt_util'] + base_libs
 
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 cabana_env = qt_env.Clone()
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
+cabana_env['CXXFLAGS'] += [opendbc_path]
 
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
