@@ -13,6 +13,8 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // message filter
   filter = new QLineEdit(this);
+  QRegularExpression re("\\S+");
+  filter->setValidator(new QRegularExpressionValidator(re, this));
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
