@@ -531,14 +531,15 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
     float saturation = lerp(0, 1, pow(std::abs(2 * acceleration_future), 2) / 3);
     saturation = saturation > 1 ? 1. : saturation;
-    qDebug() << "saturation:" << saturation;
+    float lightness = lerp(0.9, 0.72, saturation);
+    qDebug() << "saturation:" << saturation << "lightness:" << lightness;
 
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., saturation, 0.40, 0.5));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., saturation, 0.72, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., saturation, 0.72, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., saturation, 0.62, 0.45));
+    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., saturation, lightness, 0.4));
+    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., saturation, lightness, 0.0));
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
