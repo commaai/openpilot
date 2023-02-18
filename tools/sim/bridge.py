@@ -1,7 +1,7 @@
 from multiprocessing import Queue
-from tools.sim.bridge.carla import CarlaBridge
-from tools.sim.bridge.metadrive import MetaDriveBridge
-from tools.sim.bridge.common import parse_args, SimulatorBridge
+from tools.sim.bridge.carla import CarlaBridge  # pylint: disable = no-name-in-module
+from tools.sim.bridge.metadrive import MetaDriveBridge  # pylint: disable = no-name-in-module
+from tools.sim.bridge.common import parse_args, SimulatorBridge  # pylint: disable = no-name-in-module
 from common.params import Params
 
 from typing import Any
