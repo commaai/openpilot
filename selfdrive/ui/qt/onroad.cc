@@ -543,14 +543,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
     qDebug() << right_points.length();
     for (int i = 0; i < right_points.length(); i++) {
-      const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+      const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
       float acceleration_future = 0;
-      if (i > acceleration.getZ().size()) {
+      if (i > acceleration.size()) {
         break;
       }
-//      if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[i];  // 2.5 seconds
-//      }
+      acceleration_future = acceleration[i];
       qDebug() << "Using acceleration:" << acceleration_future;
 
       // need to flip around so 0 is bottom of frame (not really, can also flip linear gradient above)
@@ -564,7 +562,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       start_hue = 60;
       // speed up: 120, slow down: 0
-      end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+      end_hue = fmax(fmin(start_hue + acceleration_future * 35, 148), 0);
 
       // FIXME: painter.drawPolygon can be slow if hue is not rounded
       end_hue = int(end_hue * 100 + 0.5) / 100;
