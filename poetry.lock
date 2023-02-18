@@ -1209,6 +1209,41 @@ setproctitle = ["setproctitle"]
 tornado = ["tornado (>=0.2)"]
 
 [[package]]
+name = "gym"
+version = "0.24.0"
+description = "Gym: A universal API for reinforcement learning environments"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+cloudpickle = ">=1.2.0"
+gym_notices = ">=0.0.4"
+importlib_metadata = {version = ">=4.8.0", markers = "python_version < \"3.10\""}
+numpy = ">=1.18.0"
+
+[package.extras]
+accept-rom-license = ["autorom[accept-rom-license] (>=0.4.2,<0.5.0)"]
+all = ["ale-py (>=0.7.5,<0.8.0)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "imageio (>=2.14.1)", "imageio (>=2.14.1)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "mujoco (==2.2.0)", "mujoco (==2.2.0)", "mujoco_py (>=2.1,<2.2)", "mujoco_py (>=2.1,<2.2)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)", "scipy (>=1.4.1)", "scipy (>=1.4.1)", "scipy (>=1.4.1)"]
+atari = ["ale-py (>=0.7.5,<0.8.0)"]
+box2d = ["box2d-py (==2.3.5)", "pygame (==2.1.0)"]
+classic-control = ["pygame (==2.1.0)"]
+mujoco = ["imageio (>=2.14.1)", "mujoco (==2.2.0)"]
+mujoco-py = ["mujoco_py (>=2.1,<2.2)"]
+noatari = ["box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "imageio (>=2.14.1)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "mujoco (==2.2.0)", "mujoco_py (>=2.1,<2.2)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)", "scipy (>=1.4.1)"]
+nomujoco = ["box2d-py (==2.3.5)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)"]
+other = ["lz4 (>=3.1.0)", "matplotlib (>=3.0)", "opencv-python (>=3.0)"]
+toy-text = ["pygame (==2.1.0)", "scipy (>=1.4.1)"]
+
+[[package]]
+name = "gym-notices"
+version = "0.0.8"
+description = "Notices for gym"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "h3"
 version = "3.7.4"
 description = "Hierarchical hexagonal geospatial indexing system"
@@ -2054,6 +2089,41 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "metadrive-simulator"
+version = "0.2.6.0"
+description = ""
+category = "dev"
+optional = false
+python-versions = ">=3.7, <3.10"
+develop = false
+
+[package.dependencies]
+gym = ">=0.20.0,<=0.24.0"
+lxml = "*"
+matplotlib = "*"
+numpy = ">=1.21.6,<=1.24.2"
+opencv-python = "*"
+panda3d = ">=1.10.8,<=1.10.13"
+panda3d-gltf = "*"
+panda3d-simplepbr = "*"
+pandas = "*"
+pillow = "*"
+protobuf = "3.20.1"
+psutil = "*"
+pygame = "*"
+pytest = "*"
+scipy = "*"
+seaborn = "*"
+tqdm = "*"
+yapf = "*"
+
+[package.source]
+type = "git"
+url = "https://github.com/jon-chuang/metadrive.git"
+reference = "jon/versioning-hack"
+resolved_reference = "2e6f00b53fab2e2d4806c1cbd0ba2b0610f19a04"
+
+[[package]]
 name = "mistune"
 version = "2.0.4"
 description = "A sane Markdown parser with useful plugins and renderers"
@@ -2569,6 +2639,22 @@ protobuf = "*"
 sympy = "*"
 
 [[package]]
+name = "opencv-python"
+version = "4.7.0.68"
+description = "Wrapper package for OpenCV python bindings."
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+numpy = [
+    {version = ">=1.21.0", markers = "python_version <= \"3.9\" and platform_system == \"Darwin\" and platform_machine == \"arm64\""},
+    {version = ">=1.17.0", markers = "python_version >= \"3.7\""},
+    {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
+    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\""},
+]
+
+[[package]]
 name = "opencv-python-headless"
 version = "4.5.5.64"
 description = "Wrapper package for OpenCV python bindings."
@@ -2634,6 +2720,40 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 pyparsing = ">=2.0.2,<3.0.5 || >3.0.5"
+
+[[package]]
+name = "panda3d"
+version = "1.10.13.post1"
+description = "Panda3D is a framework for 3D rendering and game development for Python and C++ programs."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "panda3d-gltf"
+version = "0.13"
+description = "glTF utilities for Panda3D"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+panda3d = ">=1.10.8"
+panda3d-simplepbr = ">=0.6"
+
+[[package]]
+name = "panda3d-simplepbr"
+version = "0.10"
+description = "A simple, lightweight PBR render pipeline for Panda3D"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+panda3d = ">=1.10.8"
+
+[package.extras]
+test = ["pylint (>=2.4.0,<2.5.0)", "pytest", "pytest-pylint"]
 
 [[package]]
 name = "pandas"
@@ -3663,6 +3783,22 @@ python-versions = ">=3.6"
 setuptools = "*"
 
 [[package]]
+name = "seaborn"
+version = "0.12.0"
+description = "Statistical data visualization"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+matplotlib = ">=3.1"
+numpy = ">=1.17"
+pandas = ">=0.25"
+
+[package.extras]
+stats = ["scipy (>=1.3)", "statsmodels (>=0.10)"]
+
+[[package]]
 name = "secretstorage"
 version = "3.3.3"
 description = "Python bindings to FreeDesktop.org Secret Service API"
@@ -4488,6 +4624,14 @@ python-versions = "*"
 cffi = ">=1.0"
 
 [[package]]
+name = "yapf"
+version = "0.32.0"
+description = "A formatter for Python code."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "yarl"
 version = "1.8.1"
 description = "Yet another URL library"
@@ -4567,7 +4711,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "9e9495c896e6fd0855803aeaf46513c6c22424b86be820759a8baf27d44e73ee"
+content-hash = "649cfa913690f1c1518274d25b25f479afe260aa2d0a7b1998ff43eee360d11c"
 
 [metadata.files]
 adal = [
@@ -5712,6 +5856,13 @@ gunicorn = [
     {file = "gunicorn-20.1.0-py3-none-any.whl", hash = "sha256:9dcc4547dbb1cb284accfb15ab5667a0e5d1881cc443e0677b4882a4067a807e"},
     {file = "gunicorn-20.1.0.tar.gz", hash = "sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8"},
 ]
+gym = [
+    {file = "gym-0.24.0.tar.gz", hash = "sha256:69f96424be40d23088be978b61f45c23911e2ccddafad08cf2fac608e8bd86e4"},
+]
+gym-notices = [
+    {file = "gym-notices-0.0.8.tar.gz", hash = "sha256:ad25e200487cafa369728625fe064e88ada1346618526102659b4640f2b4b911"},
+    {file = "gym_notices-0.0.8-py3-none-any.whl", hash = "sha256:e5f82e00823a166747b4c2a07de63b6560b1acb880638547e0cabf825a01e463"},
+]
 h3 = [
     {file = "h3-3.7.4-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:e61d3c6b1b66072f5b74d46dbee7df29daac6ce9738b9a6223a67dc577114515"},
     {file = "h3-3.7.4-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:960cd005b8817314d95fbaff3e848a72385df4e3c6c9703ff99b08581c8def69"},
@@ -6276,6 +6427,7 @@ mdurl = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
 ]
+metadrive-simulator = []
 mistune = [
     {file = "mistune-2.0.4-py2.py3-none-any.whl", hash = "sha256:182cc5ee6f8ed1b807de6b7bb50155df7b66495412836b9a74c8fbdfc75fe36d"},
     {file = "mistune-2.0.4.tar.gz", hash = "sha256:9ee0a66053e2267aba772c71e06891fa8f1af6d4b01d5e84e267b4570d4d9808"},
@@ -6640,6 +6792,15 @@ onnxruntime-gpu = [
     {file = "onnxruntime_gpu-1.12.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8e46d0724ce54c5908c5760037b78de741fbd48962b370c29ebc20e608b30eda"},
     {file = "onnxruntime_gpu-1.12.1-cp39-cp39-win_amd64.whl", hash = "sha256:fd919373be35b9ba54210688265df38ad5e19a530449385c40dab51da407345d"},
 ]
+opencv-python = [
+    {file = "opencv-python-4.7.0.68.tar.gz", hash = "sha256:9829e6efedde1d1b8419c5bd4d62d289ecbf44ae35b843c6da9e3cbcba1a9a8a"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-macosx_10_13_x86_64.whl", hash = "sha256:abc6adfa8694f71a4caffa922b279bd9d96954a37eee40b147f613c64310b411"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:86f4b60b9536948f16d2170ba3a9b22d3955a957dc61a9bc56e53692c6db2c7e"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6d1c993811f92ddd7919314ada7b9be1f23db1c73f1384915c834dee8549c0b9"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3a00e12546e5578f6bb7ed408c37fcfea533d74e9691cfaf40926f6b43295577"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-win32.whl", hash = "sha256:e770e9f653a0e5e72b973adb8213fae2df4642730ba1faf31e73a54287a4d5d4"},
+    {file = "opencv_python-4.7.0.68-cp37-abi3-win_amd64.whl", hash = "sha256:7a08f9d1f9dd52de63a7bb448ab7d6d4a1a85b767c2358501d968d1e4d95098d"},
+]
 opencv-python-headless = []
 osmium = [
     {file = "osmium-3.4.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7bf648744dadd3396040ed57332780272356fb4b87dbd17521ba9b8b91c6e665"},
@@ -6666,6 +6827,22 @@ osmnx = [
 packaging = [
     {file = "packaging-21.3-py3-none-any.whl", hash = "sha256:ef103e05f519cdc783ae24ea4e2e0f508a9c99b2d4969652eed6a2e1ea5bd522"},
     {file = "packaging-21.3.tar.gz", hash = "sha256:dd47c42927d89ab911e606518907cc2d3a1f38bbd026385970643f9c5b8ecfeb"},
+]
+panda3d = [
+    {file = "panda3d-1.10.13.post1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:447ae57766a44d43cd95edebf5ac54a84ae6f17bec6793346113ecdc5801f292"},
+    {file = "panda3d-1.10.13.post1-cp311-cp311-macosx_11_0_universal2.whl", hash = "sha256:cb1417a6604eda53bd3b22ea56e11ae83737522b12c56faa83542d593d1e4513"},
+    {file = "panda3d-1.10.13.post1-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:d049fd28bd858c9bd146e1ee91ba3d9cb61341577d4bf73f79ea46b18fa2236c"},
+    {file = "panda3d-1.10.13.post1-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:0564592ffe62a37e953b9e07c35ab8b3724dfaa340d0ed2a06c64a7324d854bb"},
+    {file = "panda3d-1.10.13.post1-cp311-cp311-win32.whl", hash = "sha256:e9d335c53241d65c6ab7af11520dca337e809d743f05b9325186b6677cffa507"},
+    {file = "panda3d-1.10.13.post1-cp311-cp311-win_amd64.whl", hash = "sha256:4ffb25f61e76046f1c0029bc8b74f7a41a0cba01f5be8672c8ba4371294936f1"},
+]
+panda3d-gltf = [
+    {file = "panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675"},
+    {file = "panda3d_gltf-0.13-py3-none-any.whl", hash = "sha256:02d1a980f447bb1895ff4b48c667f289ba78f07a28ef308d8839b665a621efe2"},
+]
+panda3d-simplepbr = [
+    {file = "panda3d-simplepbr-0.10.tar.gz", hash = "sha256:b6bd902671b02c8794eb60d8039f256a4115faef067c1368cc70147f8ed83a31"},
+    {file = "panda3d_simplepbr-0.10-py3-none-any.whl", hash = "sha256:c526a0fa5b2af8a2f16ee2837dcedbf5987ca917ee95699830675204bf765fb4"},
 ]
 pandas = [
     {file = "pandas-1.5.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:0a78e05ec09731c5b3bd7a9805927ea631fe6f6cb06f0e7c63191a9a778d52b4"},
@@ -7630,6 +7807,10 @@ scons = [
     {file = "SCons-4.4.0-py3-none-any.whl", hash = "sha256:cbbd73b83cf85f1aaaf986370359de1bbfd3af97a765cb3554734f6dcec734e1"},
     {file = "SCons-4.4.0.tar.gz", hash = "sha256:7703c4e9d2200b4854a31800c1dbd4587e1fa86e75f58795c740bcfa7eca7eaa"},
 ]
+seaborn = [
+    {file = "seaborn-0.12.0-py3-none-any.whl", hash = "sha256:cbeff3deef7c2515aa0af99b2c7e02dc5bf8b42c936a74d8e4b416905b549db0"},
+    {file = "seaborn-0.12.0.tar.gz", hash = "sha256:893f17292d8baca616c1578ddb58eb25c72d622f54fc5ee329c8207dc9b57b23"},
+]
 secretstorage = [
     {file = "SecretStorage-3.3.3-py3-none-any.whl", hash = "sha256:f356e6628222568e3af06f2eba8df495efa13b3b63081dafd4f7d9a7b7bc9f99"},
     {file = "SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77"},
@@ -8231,6 +8412,10 @@ xattr = [
     {file = "xattr-0.9.9-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5bc84ccec618b5aa089e7cee8b07fcc92d4069aac4053da604c8143a0d6b1381"},
     {file = "xattr-0.9.9-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:baeff3e5dda8ea7e9424cfaee51829f46afe3836c30d02f343f9049c685681ca"},
     {file = "xattr-0.9.9.tar.gz", hash = "sha256:09cb7e1efb3aa1b4991d6be4eb25b73dc518b4fe894f0915f5b0dcede972f346"},
+]
+yapf = [
+    {file = "yapf-0.32.0-py2.py3-none-any.whl", hash = "sha256:8fea849025584e486fd06d6ba2bed717f396080fd3cc236ba10cb97c4c51cf32"},
+    {file = "yapf-0.32.0.tar.gz", hash = "sha256:a3f5085d37ef7e3e004c4ba9f9b3e40c54ff1901cd111f05145ae313a7c67d1b"},
 ]
 yarl = [
     {file = "yarl-1.8.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:abc06b97407868ef38f3d172762f4069323de52f2b70d133d096a48d72215d28"},
