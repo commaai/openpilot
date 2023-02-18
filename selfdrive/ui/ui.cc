@@ -84,7 +84,7 @@ void update_model(UIState *s,
                   const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
   auto plan_position = plan.getPosition();
-  if (plan_position.getX().size() > 0){
+  if (plan_position.getX().size() < TRAJECTORY_SIZE){
     plan_position = model.getPosition();
   }
   float max_distance = std::clamp(plan_position.getX()[TRAJECTORY_SIZE - 1],
