@@ -6,8 +6,6 @@
 #include <QToolButton>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
 
 // DetailWidget
 
@@ -153,13 +151,13 @@ void DetailWidget::refresh() {
   if (!msg_id) return;
 
   QStringList warnings;
-  const DBCMsg *msg = dbc()->msg(*msg_id);
+  auto msg = dbc()->msg(*msg_id);
   if (msg) {
     if (msg->size != can->lastMessage(*msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
-      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name.c_str()));
+      warnings.push_back(tr("%1 has overlapping bits.").arg(s->name));
     }
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
