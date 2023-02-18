@@ -129,11 +129,11 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Min: return item->sig->min;
           case Item::Max: return item->sig->max;
           case Item::Desc: {
-            QString val_desc;
+            QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc += QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val, desc);
             }
-            return val_desc;
+            return val_desc.join(" ");
           }
           default: break;
         }
