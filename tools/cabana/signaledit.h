@@ -80,9 +80,11 @@ class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
   QFont small_font;
+  const int color_label_width = 18;
 };
 
 class SignalView : public QFrame {
