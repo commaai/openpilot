@@ -392,7 +392,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { expandSignal(sig); });
+  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { selectSignal(sig); });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -452,11 +452,12 @@ void SignalView::rowClicked(const QModelIndex &index) {
   }
 }
 
-void SignalView::expandSignal(const Signal *sig) {
+void SignalView::selectSignal(const Signal *sig, bool expand) {
   if (int row = model->signalRow(sig); row != -1) {
     auto idx = model->index(row, 0);
-    bool expand = !tree->isExpanded(idx);
-    tree->setExpanded(idx, expand);
+    if (expand) {
+      tree->setExpanded(idx, !tree->isExpanded(idx));
+    }
     tree->scrollTo(idx, QAbstractItemView::PositionAtTop);
     tree->setCurrentIndex(idx);
   }

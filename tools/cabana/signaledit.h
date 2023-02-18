@@ -93,7 +93,7 @@ public:
   void setMessage(const MessageId &id);
   void signalHovered(const Signal *sig);
   void updateChartState();
-  void expandSignal(const Signal *sig);
+  void selectSignal(const Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 
