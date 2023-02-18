@@ -127,6 +127,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
+  return;
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
     {cereal::ControlsState::AlertSize::SMALL, 271},
     {cereal::ControlsState::AlertSize::MID, 420},
@@ -492,6 +493,23 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
+static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
+  const float margin = 500.0f;
+  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
+
+  const vec3 pt = (vec3){{in_x, in_y, in_z}};
+  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
+  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+
+  // Project.
+  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
+  if (clip_region.contains(point)) {
+    *out = point;
+    return true;
+  }
+  return false;
+}
+
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 
@@ -511,24 +529,65 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, height(), 0, height() / 4);
+//  QLinearGradient bg(0, height(), 0, height() / 4);
+  QLinearGradient bg(0, height(), 0, 0);
   float start_hue, end_hue;
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
-    float acceleration_future = 0;
-    if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    QPointF out;
+
+    calib_frame_to_full_frame(s, 5, 0, 1.22, &out);
+    qDebug() << out;
+
+    int track_vertices_len = scene.track_vertices.length();
+    assert(track_vertices_len % 2 == 0);
+    QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
+    qDebug() << right_points.length();
+    for (int i = 0; i < right_points.length(); i++) {
+      const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+      float acceleration_future = 0;
+      if (i > acceleration.getZ().size()) {
+        break;
+      }
+//      if (acceleration.getZ().size() > 16) {
+      acceleration_future = acceleration.getX()[i];  // 2.5 seconds
+//      }
+      qDebug() << "Using acceleration:" << acceleration_future;
+
+      // need to flip around so 0 is bottom of frame (not really, can also flip linear gradient above)
+      float lin_grad_point = (height() - right_points[i].y()) / height();
+      qDebug() << right_points[i] << right_points[i].y() << lin_grad_point;
+      // Some points are out of frame
+      // TODO: tho maybe it makes sense to clip instead, so gradient is correct. or no clip/skip at all
+      if (lin_grad_point < 0) {
+        continue;
+      }
+
+      start_hue = 60;
+      // speed up: 120, slow down: 0
+      end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+
+      // FIXME: painter.drawPolygon can be slow if hue is not rounded
+      end_hue = int(end_hue * 100 + 0.5) / 100;
+      bg.setColorAt(lin_grad_point, QColor::fromHslF(end_hue / 360., 0.97, 0.56, 0.4));
+
     }
-    start_hue = 60;
-    // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+//    qDebug() << right_points;
 
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    end_hue = int(end_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+//    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
+//    float acceleration_future = 0;
+//    if (acceleration.getZ().size() > 16) {
+//      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+//    }
+//    start_hue = 60;
+//    // speed up: 120, slow down: 0
+//    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
+//
+//    // FIXME: painter.drawPolygon can be slow if hue is not rounded
+//    end_hue = int(end_hue * 100 + 0.5) / 100;
+//
+//    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+//    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+//    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
@@ -651,7 +710,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else if (v_ego > 15) {
       wide_cam_requested = false;
     }
-    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
+    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode() && false;
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
