@@ -225,6 +225,11 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
       checks.append(("GAS_SENSOR", 50))
 
+    smartDsu = CP.openpilotLongitudinalControl and not CP.enableDsu and not (CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR))
+    if smartDsu:
+      signals.append(("FD_BUTTON", "SDSU"))
+      checks.append(("SDSU", 33))
+
     if CP.enableBsm:
       signals += [
         ("L_ADJACENT", "BSM"),
