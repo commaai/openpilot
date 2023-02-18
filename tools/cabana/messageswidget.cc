@@ -94,9 +94,9 @@ void MessagesWidget::updateSuppressedButtons() {
 }
 
 void MessagesWidget::reset() {
+  current_msg_id = std::nullopt;
   model->reset();
   filter->clear();
-  current_msg_id = std::nullopt;
   updateSuppressedButtons();
 }
 
