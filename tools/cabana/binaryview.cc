@@ -126,6 +126,16 @@ void BinaryView::highlight(const Signal *sig) {
         emit model->dataChanged(index, index, {Qt::DisplayRole});
       }
     }
+
+    if (sig && underMouse()) {
+      QString tooltip = tr(R"(%1<br /><span style="color:gray;font-size:small">
+        Size:%2 LE:%3 SGD:%4</span>
+      )").arg(sig->name).arg(sig->size).arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+      QToolTip::showText(QCursor::pos(), tooltip, this, rect());
+    } else {
+      QToolTip::showText(QCursor::pos(), "", this, rect());
+    }
+
     hovered_sig = sig;
     emit signalHovered(hovered_sig);
   }
@@ -168,7 +178,6 @@ void BinaryView::highlightPosition(const QPoint &pos) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
-    QToolTip::showText(pos, sig ? sig->name : "", this, rect());
   }
 }
 
