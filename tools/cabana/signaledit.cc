@@ -458,7 +458,7 @@ void SignalView::expandSignal(const Signal *sig) {
     bool expand = !tree->isExpanded(idx);
     tree->setExpanded(idx, expand);
     tree->scrollTo(idx, QAbstractItemView::PositionAtTop);
-    if (expand) tree->setCurrentIndex(idx);
+    tree->setCurrentIndex(idx);
   }
 }
 
