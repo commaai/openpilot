@@ -492,8 +492,7 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-float lerp(float a, float b, float t)
-{
+float lerp(float a, float b, float t) {
     return a + t * (b - a);
 }
 
