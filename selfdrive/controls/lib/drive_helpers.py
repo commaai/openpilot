@@ -19,7 +19,6 @@ IMPERIAL_INCREMENT = 1.6  # should be CV.MPH_TO_KPH, but this causes rounding er
 MIN_SPEED = 1.0
 LAT_MPC_N = 32
 LON_MPC_N = 32
->>>>>>> 19623e0dc (interp plan)
 CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
 
