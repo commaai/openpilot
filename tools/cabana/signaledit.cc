@@ -58,7 +58,7 @@ void SignalModel::refresh() {
 }
 
 void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (!msgs || (msgs->contains(msg_id))) {
+  if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {

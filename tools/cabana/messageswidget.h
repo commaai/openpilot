@@ -6,7 +6,6 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QSet>
-#include <QStyledItemDelegate>
 #include <QTableView>
 
 #include "tools/cabana/dbcmanager.h"
