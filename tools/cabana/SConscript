@@ -1,6 +1,6 @@
 import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
-       'cereal', 'transformations', 'widgets', 'opendbc', 'asset_obj')
+       'cereal', 'transformations', 'widgets', 'opendbc')
 
 base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
@@ -20,11 +20,17 @@ cabana_env = qt_env.Clone()
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
+# build assets
+assets = "assets/assets.cc"
+assets_src = "assets/assets.qrc"
+cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
+
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 'dbcmanager.cc',
                                                'commands.cc', 'messageswidget.cc', 'route.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, asset_obj], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
+cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if arch == "Darwin":
   cabana_env.Execute('install_name_tool -change opendbc/can/libdbc.dylib @loader_path/../../opendbc/can/libdbc.dylib ./_cabana')
