@@ -127,7 +127,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
-  return;
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
     {cereal::ControlsState::AlertSize::SMALL, 271},
     {cereal::ControlsState::AlertSize::MID, 420},
@@ -716,7 +715,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else if (v_ego > 15) {
       wide_cam_requested = false;
     }
-    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode() && false;
+    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
