@@ -13,6 +13,15 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+static const QColor timeline_colors[] = {
+  [(int)TimelineType::None] = QColor(111, 143, 175),
+  [(int)TimelineType::Engaged] = QColor(0, 163, 108),
+  [(int)TimelineType::UserFlag] = Qt::magenta,
+  [(int)TimelineType::AlertInfo] = Qt::green,
+  [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
+  [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
+};
+
 inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -57,9 +66,23 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   setWhatsThis(tr(R"(
     <b>Video</b><br />
     <!-- TODO: add descprition here -->
-    Shortcuts:<br />
-    Pause/Resume: <span style="background-color:lightGray;color:gray"> space </span></br>
-  )"));
+    <span style="color:gray">Timeline color</span>
+    <table>
+    <tr><td><span style="color:%1;">■ </span>Disengaged </td>
+        <td><span style="color:%2;">■ </span>Engaged</td></tr>
+    <tr><td><span style="color:%3;">■ </span>User Flag </td>
+        <td><span style="color:%4;">■ </span>Info</td></tr>
+    <tr><td><span style="color:%5;">■ </span>Warning </td>
+        <td><span style="color:%6;">■ </span>Critical</td></tr>
+    </table>
+    <span style="color:gray">Shortcuts</span><br/>
+    Pause/Resume: <span style="background-color:lightGray;color:gray">&nbsp;space&nbsp;</span>
+  )").arg(timeline_colors[(int)TimelineType::None].name(),
+          timeline_colors[(int)TimelineType::Engaged].name(),
+          timeline_colors[(int)TimelineType::UserFlag].name(),
+          timeline_colors[(int)TimelineType::AlertInfo].name(),
+          timeline_colors[(int)TimelineType::AlertWarning].name(),
+          timeline_colors[(int)TimelineType::AlertCritical].name()));
 }
 
 QWidget *VideoWidget::createCameraWidget() {
@@ -212,17 +235,9 @@ void Slider::sliderChange(QAbstractSlider::SliderChange change) {
 }
 
 void Slider::paintEvent(QPaintEvent *ev) {
-  static const QColor colors[] = {
-    [(int)TimelineType::None] = QColor(111, 143, 175),
-    [(int)TimelineType::Engaged] = QColor(0, 163, 108),
-    [(int)TimelineType::UserFlag] = Qt::white,
-    [(int)TimelineType::AlertInfo] = Qt::green,
-    [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
-    [(int)TimelineType::AlertCritical] = QColor(199, 0, 57)};
-
   QPainter p(this);
   QRect r = rect().adjusted(0, 4, 0, -4);
-  p.fillRect(r, colors[(int)TimelineType::None]);
+  p.fillRect(r, timeline_colors[(int)TimelineType::None]);
   double min = minimum() / 1000.0;
   double max = maximum() / 1000.0;
   for (auto [begin, end, type] : timeline) {
@@ -230,7 +245,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
       continue;
     r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
     r.setRight(((std::min(max, (double)end) - min) / (max - min)) * width());
-    p.fillRect(r, colors[(int)type]);
+    p.fillRect(r, timeline_colors[(int)type]);
   }
 
   QStyleOptionSlider opt;

@@ -4,6 +4,8 @@
 #include <QUndoStack>
 
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class EditMsgCommand : public QUndoCommand {
 public:
@@ -25,7 +27,7 @@ public:
 
 private:
   const MessageId id;
-  DBCMsg message;
+  Msg message;
 };
 
 class AddSigCommand : public QUndoCommand {
