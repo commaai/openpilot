@@ -111,9 +111,9 @@ def create_clu11(packer, frame, clu11, button, CP):
 def create_lfahda_mfc(packer, enabled, CP, hda_set_speed=0):
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
-    "HDA_Active": 1 if hda_set_speed else 0,
+    #"HDA_Active": 1 if hda_set_speed else 0,
     "HDA_Icon_State": 2 if hda_set_speed else 0,
-    "HDA_VSetReq": hda_set_speed,
+    #"HDA_VSetReq": hda_set_speed,
   }
 
   bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
