@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+#include <QPixmapCache>
 #include <QDebug>
 
 #include <limits>
@@ -124,11 +125,16 @@ namespace utils {
 QPixmap icon(const QString &id) {
   static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
                            QApplication::style()->standardPalette().color(QPalette::Background).value();
-  QPixmap pm = bootstrapPixmap(id);
-  if (dark_theme) {
-    QPainter p(&pm);
-    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(pm.rect(), Qt::lightGray);
+  QPixmap pm;
+  QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
+  if (!QPixmapCache::find(key, &pm)) {
+    pm = bootstrapPixmap(id);
+    if (dark_theme) {
+      QPainter p(&pm);
+      p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+      p.fillRect(pm.rect(), Qt::lightGray);
+    }
+    QPixmapCache::insert(key, pm);
   }
   return pm;
 }

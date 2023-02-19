@@ -6,6 +6,7 @@
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QVector>
 
