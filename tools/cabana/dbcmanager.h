@@ -3,6 +3,7 @@
 #include <map>
 #include <QList>
 #include <QString>
+#include <QVariant>
 
 struct MessageId {
   uint8_t source;
