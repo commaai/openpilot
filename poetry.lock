@@ -1210,29 +1210,27 @@ tornado = ["tornado (>=0.2)"]
 
 [[package]]
 name = "gym"
-version = "0.24.0"
-description = "Gym: A universal API for reinforcement learning environments"
+version = "0.22.0"
+description = "Gym: A universal API for reinforcement learning environments."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 cloudpickle = ">=1.2.0"
 gym_notices = ">=0.0.4"
-importlib_metadata = {version = ">=4.8.0", markers = "python_version < \"3.10\""}
+importlib_metadata = {version = ">=4.10.0", markers = "python_version < \"3.10\""}
 numpy = ">=1.18.0"
 
 [package.extras]
 accept-rom-license = ["autorom[accept-rom-license] (>=0.4.2,<0.5.0)"]
-all = ["ale-py (>=0.7.5,<0.8.0)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "imageio (>=2.14.1)", "imageio (>=2.14.1)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "mujoco (==2.2.0)", "mujoco (==2.2.0)", "mujoco_py (>=2.1,<2.2)", "mujoco_py (>=2.1,<2.2)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)", "scipy (>=1.4.1)", "scipy (>=1.4.1)", "scipy (>=1.4.1)"]
-atari = ["ale-py (>=0.7.5,<0.8.0)"]
+all = ["ale-py (>=0.7.4,<0.8.0)", "box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "mujoco_py (>=1.50,<2.0)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)", "scipy (>=1.4.1)"]
+atari = ["ale-py (>=0.7.4,<0.8.0)"]
 box2d = ["box2d-py (==2.3.5)", "pygame (==2.1.0)"]
 classic-control = ["pygame (==2.1.0)"]
-mujoco = ["imageio (>=2.14.1)", "mujoco (==2.2.0)"]
-mujoco-py = ["mujoco_py (>=2.1,<2.2)"]
-noatari = ["box2d-py (==2.3.5)", "box2d-py (==2.3.5)", "imageio (>=2.14.1)", "lz4 (>=3.1.0)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "matplotlib (>=3.0)", "mujoco (==2.2.0)", "mujoco_py (>=2.1,<2.2)", "opencv-python (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)", "scipy (>=1.4.1)"]
-nomujoco = ["box2d-py (==2.3.5)", "lz4 (>=3.1.0)", "matplotlib (>=3.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)"]
-other = ["lz4 (>=3.1.0)", "matplotlib (>=3.0)", "opencv-python (>=3.0)"]
+mujoco = ["mujoco_py (>=1.50,<2.0)"]
+nomujoco = ["box2d-py (==2.3.5)", "lz4 (>=3.1.0)", "opencv-python (>=3.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "pygame (==2.1.0)", "scipy (>=1.4.1)"]
+other = ["lz4 (>=3.1.0)", "opencv-python (>=3.0)"]
 toy-text = ["pygame (==2.1.0)", "scipy (>=1.4.1)"]
 
 [[package]]
@@ -4711,7 +4709,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "649cfa913690f1c1518274d25b25f479afe260aa2d0a7b1998ff43eee360d11c"
+content-hash = "f9b173ceb766b5e4a53b2075d5a3ee303918f57c77c68b040c9cd68cd16d285d"
 
 [metadata.files]
 adal = [
@@ -5857,7 +5855,7 @@ gunicorn = [
     {file = "gunicorn-20.1.0.tar.gz", hash = "sha256:e0a968b5ba15f8a328fdfd7ab1fcb5af4470c28aaf7e55df02a99bc13138e6e8"},
 ]
 gym = [
-    {file = "gym-0.24.0.tar.gz", hash = "sha256:69f96424be40d23088be978b61f45c23911e2ccddafad08cf2fac608e8bd86e4"},
+    {file = "gym-0.22.0.tar.gz", hash = "sha256:339144c89951758187c378111919bc0e2f1695f9e9d9699e3f19279a6398148d"},
 ]
 gym-notices = [
     {file = "gym-notices-0.0.8.tar.gz", hash = "sha256:ad25e200487cafa369728625fe064e88ada1346618526102659b4640f2b4b911"},
