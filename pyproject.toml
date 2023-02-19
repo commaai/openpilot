@@ -145,7 +145,7 @@ jupyterlab = "^3.4.4"
 jupyterlab-vim = "^0.15.1"
 Markdown = "^3.4.1"
 msgpack-python = "^0.5.6"
-networkx = "~2.3"
+networkx = "~2.8"
 nvidia-ml-py3 = "^7.352.0"
 onnx2torch = "^1.5.4"
 onnxoptimizer = "^0.3.1"
@@ -172,6 +172,7 @@ triton = "^1.1.1"
 Werkzeug = "^2.1.2"
 zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "master" }
 omegaconf = "^2.3.0"
+osmnx = "==1.2.2"
 
 
 [build-system]

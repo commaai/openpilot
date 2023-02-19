@@ -211,7 +211,10 @@ def fake_driver_monitoring(exit_event: threading.Event):
   while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
     dat.driverStateV2.leftDriverData.faceProb = 1.0
+    dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
+    dat.driverStateV2.rightDriverData.faceProb = 1.0
     pm.send('driverStateV2', dat)
 
     # dmonitoringd output
