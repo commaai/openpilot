@@ -2,7 +2,7 @@
 from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, CAN_CANFD_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -44,8 +44,13 @@ class CarInterface(CarInterfaceBase):
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
+      # detect platforms with HKG CAN and CAN-FD definitions
+      if 0x50 in fingerprint[5]:
+        ret.flags |= HyundaiFlags.CAN_CANFD.value
+
       # Send LFA message on cars with HDA
-      if 0x485 in fingerprint[2]:
+      lfahda_bus = 6 if ret.flags & HyundaiFlags.CAN_CANFD.value else 2
+      if 0x485 in fingerprint[lfahda_bus]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
 
       # These cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
@@ -234,7 +239,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR | CAN_CANFD_CAR)
+      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR) and not (ret.flags & HyundaiFlags.CAN_CANFD)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -250,7 +255,7 @@ class CarInterface(CarInterfaceBase):
       bus = 5 if ret.flags & HyundaiFlags.CANFD_HDA2 else 4
       ret.enableBsm = 0x1e5 in fingerprint[bus]
     else:
-      bus = 4 if candidate in CAN_CANFD_CAR else 0
+      bus = 4 if ret.flags & HyundaiFlags.CAN_CANFD else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
@@ -264,7 +269,7 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CANFD_ALT_BUTTONS
       if ret.flags & HyundaiFlags.CANFD_CAMERA_SCC:
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
-    elif candidate in CAN_CANFD_CAR:
+    elif ret.flags & HyundaiFlags.CAN_CANFD:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                            get_safety_config(car.CarParams.SafetyModel.hyundai)]
       ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD

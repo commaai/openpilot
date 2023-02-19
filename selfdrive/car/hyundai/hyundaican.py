@@ -1,5 +1,5 @@
 import crcmod
-from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR, CAN_CANFD_CAR
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
@@ -99,12 +99,12 @@ def create_lkas11_new(packer, frame, apply_steer, steer_req,
 
   return packer.make_can_msg("LKAS11", 4, values)
 
-def create_clu11(packer, frame, clu11, button, car_fingerprint):
+def create_clu11(packer, frame, clu11, button, CP):
   values = clu11
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
-  bus = 2 if car_fingerprint in CAMERA_SCC_CAR else 4 if car_fingerprint in CAN_CANFD_CAR else 0
+  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("CLU11", bus, values)
 
 
