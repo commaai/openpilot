@@ -493,31 +493,14 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  const float margin = 500.0f;
-  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
-
-  const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
-
-  // Project.
-  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
-  if (clip_region.contains(point)) {
-    *out = point;
-    return true;
-  }
-  return false;
-}
-
 float lerp(float a, float b, float t) {
-    return a + t * (b - a);
+  return a + t * (b - a);
 }
 
 float interp1d(float value, float start_min, float start_max, float end_min, float end_max) {
-    value = std::max(start_min, std::min(start_max, value));
-    float factor = (value - start_min) / (start_max - start_min);
-    return end_min + factor * (end_max - end_min);
+  value = std::max(start_min, std::min(start_max, value));
+  float factor = (value - start_min) / (start_max - start_min);
+  return end_min + factor * (end_max - end_min);
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
@@ -543,10 +526,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient bg(0, height(), 0, 0);
   float start_hue, end_hue;
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    QPointF out;
-
-    calib_frame_to_full_frame(s, 5, 0, 1.22, &out);
-    qDebug() << out;
 
     int track_vertices_len = scene.track_vertices.length();
     assert(track_vertices_len % 2 == 0);
