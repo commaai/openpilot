@@ -2,6 +2,8 @@
 
 #include <map>
 #include <QList>
+#include <QMetaType>
+#include <QObject>
 #include <QString>
 
 struct MessageId {
