@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <optional>
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
@@ -9,6 +11,7 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class HeaderView : public QHeaderView {
 public:
@@ -22,7 +25,7 @@ class HistoryLogModel : public QAbstractTableModel {
 
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void updateState();
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
@@ -33,7 +36,6 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void updateColors();
   void refresh();
 
 public slots:
@@ -53,8 +55,8 @@ public:
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
-  QString msg_id;
-  HexColors hex_colors;
+  std::optional<MessageId> msg_id;
+  ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
@@ -62,7 +64,7 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  std::vector<const Signal*> sigs;
+  QList<Signal> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };
@@ -72,17 +74,16 @@ class LogsWidget : public QWidget {
 
 public:
   LogsWidget(QWidget *parent);
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
   void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
-
-signals:
-  void openChart(const QString &msg_id, const Signal *sig);
 
 private slots:
   void setFilter();
 
 private:
+  void refresh();
+
   QTableView *logs;
   HistoryLogModel *model;
   QCheckBox *dynamic_mode;

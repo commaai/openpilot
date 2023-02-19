@@ -204,7 +204,7 @@ def controlsd_rcv_callback(msg, CP, cfg, fsm):
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
     return [], False
-  elif CP.radarOffCan:
+  elif CP.radarUnavailable:
     return ["radarState", "liveTracks"], True
 
   radar_msgs = {"honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474],
@@ -292,7 +292,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan", "uiPlan"],
       "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
@@ -407,6 +407,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
   params.put_bool("UbloxAvailable", True)
+  params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
@@ -447,6 +448,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
+
+    # controlsd process configuration assume all routes are out of dashcam
+    params.put_bool("DashcamOverride", True)
 
 
 def python_replay_process(cfg, lr, fingerprint=None):
@@ -554,7 +558,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].start()
 
   try:
-    with Timeout(TIMEOUT):
+    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
       while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 

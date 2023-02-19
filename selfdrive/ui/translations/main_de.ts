@@ -312,18 +312,6 @@
         <source>Installing...</source>
         <translation>Installiere...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>Empfange Objekte: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>Unterschiede verarbeiten: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>Dateien aktualisieren: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -685,18 +673,6 @@ location set</source>
     <message>
         <source>Waiting for internet</source>
         <translation>Auf Internet warten</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Software zum installieren auswählen</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Spezifische Software</translation>
     </message>
     <message>
         <source>Enter URL</source>

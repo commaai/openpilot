@@ -619,7 +619,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 bool Localizer::is_gps_ok() {
-  return (this->kf->get_filter_time() - this->last_gps_msg) < 1.0;
+  return (this->kf->get_filter_time() - this->last_gps_msg) < 2.0;
 }
 
 bool Localizer::critical_services_valid(std::map<std::string, double> critical_services) {

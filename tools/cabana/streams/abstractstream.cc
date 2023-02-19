@@ -4,10 +4,12 @@ AbstractStream *can = nullptr;
 
 AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_live_streaming(is_live_streaming), QObject(parent) {
   can = this;
+  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
   QObject::connect(this, &AbstractStream::received, this, &AbstractStream::process, Qt::QueuedConnection);
+  QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
 }
 
-void AbstractStream::process(QHash<QString, CanData> *messages) {
+void AbstractStream::process(QHash<MessageId, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     can_msgs[it.key()] = it.value();
   }
@@ -18,31 +20,21 @@ void AbstractStream::process(QHash<QString, CanData> *messages) {
 }
 
 bool AbstractStream::updateEvent(const Event *event) {
-  static std::unique_ptr new_msgs = std::make_unique<QHash<QString, CanData>>();
-  static QHash<QString, HexColors> hex_colors;
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = currentSec();
-    if (counters_begin_sec == 0 || counters_begin_sec >= current_sec) {
-      new_msgs->clear();
-      counters.clear();
-      counters_begin_sec = current_sec;
-    }
-
-    auto can_events = event->event.getCan();
-    for (const auto &c : can_events) {
-      QString id = QString("%1:%2").arg(c.getSrc()).arg(c.getAddress(), 1, 16);
+    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    for (const auto &c : event->event.getCan()) {
+      MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
       CanData &data = (*new_msgs)[id];
       data.ts = current_sec;
-      data.src = c.getSrc();
-      data.address = c.getAddress();
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
-      if (double delta = (current_sec - counters_begin_sec); delta > 0) {
-        data.freq = data.count / delta;
-      }
-      data.colors = hex_colors[id].compute(data.dat, data.ts, data.freq);
+      data.freq = data.count / std::max(1.0, current_sec);
+      change_trackers[id].compute(data.dat, data.ts, data.freq);
+      data.colors = change_trackers[id].colors;
+      data.last_change_t = change_trackers[id].last_change_t;
+      data.bit_change_counts = change_trackers[id].bit_change_counts;
     }
 
     double ts = millis_since_boot();
@@ -52,9 +44,53 @@ bool AbstractStream::updateEvent(const Event *event) {
       prev_update_ts = ts;
       // use pointer to avoid data copy in queued connection.
       emit received(new_msgs.release());
-      new_msgs.reset(new QHash<QString, CanData>);
+      new_msgs.reset(new QHash<MessageId, CanData>);
       new_msgs->reserve(100);
     }
   }
   return true;
+}
+
+const CanData &AbstractStream::lastMessage(const MessageId &id) {
+  static CanData empty_data;
+  auto it = can_msgs.find(id);
+  return it != can_msgs.end() ? it.value() : empty_data;
+}
+
+void AbstractStream::updateLastMsgsTo(double sec) {
+  QHash<MessageId, CanData> last_msgs;
+  last_msgs.reserve(can_msgs.size());
+  double route_start_time = routeStartTime();
+  uint64_t last_ts = (sec + route_start_time) * 1e9;
+  auto evs = events();
+  auto last = std::upper_bound(evs->rbegin(), evs->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
+  for (auto it = last; it != evs->rend(); ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        auto &m = last_msgs[{.source = c.getSrc(), .address = c.getAddress()}];
+        if (++m.count == 1) {
+          m.ts = ((*it)->mono_time / 1e9) - route_start_time;
+          m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
+          m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
+          m.last_change_t = QVector<double>(m.dat.size(), m.ts);
+          m.bit_change_counts.resize(m.dat.size());
+        } else {
+          m.freq = m.count / std::max(1.0, m.ts);
+        }
+      }
+    }
+  }
+
+  // it is thread safe to update data here.
+  // updateEvent will not be called before replayStream::seekedTo return.
+  new_msgs->clear();
+  change_trackers.clear();
+  counters.clear();
+  can_msgs.clear();
+  for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {
+    can_msgs[it.key()] = it.value();
+    counters[it.key()] = it.value().count;
+  }
+  emit updated();
+  emit msgsReceived(&can_msgs);
 }

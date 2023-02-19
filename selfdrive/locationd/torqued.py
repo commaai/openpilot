@@ -35,7 +35,6 @@ MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
 ALLOWED_CARS = ['toyota', 'hyundai']
-ALLOWED_PLATFORMS = ['RAM 1500 5TH GEN']  # for adding individual platforms from a brand without torqued
 
 
 def slope2rot(slope):
@@ -114,7 +113,7 @@ class TorqueEstimator:
     self.offline_friction = 0.0
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
-    self.use_params = (CP.carName in ALLOWED_CARS) or (CP.carFingerprint in ALLOWED_PLATFORMS)
+    self.use_params = CP.carName in ALLOWED_CARS
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction

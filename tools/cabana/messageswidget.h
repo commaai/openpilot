@@ -1,11 +1,17 @@
 #pragma once
 
+#include <optional>
+
 #include <QAbstractTableModel>
 #include <QHeaderView>
-#include <QTableView>
+#include <QLineEdit>
+#include <QSet>
 #include <QStyledItemDelegate>
+#include <QTableView>
 
+#include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -18,9 +24,13 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterString(const QString &string);
-  void msgsReceived(const QHash<QString, CanData> *new_msgs = nullptr);
+  void msgsReceived(const QHash<MessageId, CanData> *new_msgs = nullptr);
   void sortMessages();
-  QStringList msgs;
+  void suppress();
+  void clearSuppress();
+  void reset();
+  QList<MessageId> msgs;
+  QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
   QString filter_str;
@@ -33,15 +43,21 @@ class MessagesWidget : public QWidget {
 
 public:
   MessagesWidget(QWidget *parent);
-  void selectMessage(const QString &message_id);
+  void selectMessage(const MessageId &message_id);
   QByteArray saveHeaderState() const { return table_widget->horizontalHeader()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return table_widget->horizontalHeader()->restoreState(state); }
+  void updateSuppressedButtons();
+  void reset();
 
 signals:
-  void msgSelectionChanged(const QString &message_id);
+  void msgSelectionChanged(const MessageId &message_id);
 
 protected:
   QTableView *table_widget;
-  QString current_msg_id;
+  std::optional<MessageId> current_msg_id;
+  QLineEdit *filter;
   MessageListModel *model;
+  QPushButton *suppress_add;
+  QPushButton *suppress_clear;
+
 };
