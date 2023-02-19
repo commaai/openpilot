@@ -108,7 +108,7 @@ def create_clu11(packer, frame, clu11, button, CP):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, car_fingerprint, hda_set_speed=0):
+def create_lfahda_mfc(packer, enabled, CP, hda_set_speed=0):
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Active": 1 if hda_set_speed else 0,
@@ -116,7 +116,7 @@ def create_lfahda_mfc(packer, enabled, car_fingerprint, hda_set_speed=0):
     "HDA_VSetReq": hda_set_speed,
   }
 
-  bus = 4 if car_fingerprint in CAN_CANFD_CAR else 0
+  bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("LFAHDA_MFC", bus, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override):
