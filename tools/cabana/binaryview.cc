@@ -107,7 +107,7 @@ void BinaryView::addShortcuts() {
   QObject::connect(shortcut_plot_c, &QShortcut::activated, shortcut_plot, &QShortcut::activated);
   QObject::connect(shortcut_plot, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      emit showChart(*model->msg_id, hovered_sig, true, false);
+      emit showChart(model->msg_id, hovered_sig, true, false);
     }
   });
 }
@@ -218,8 +218,6 @@ void BinaryView::setMessage(const MessageId &message_id) {
 }
 
 void BinaryView::refresh() {
-  if (!model->msg_id) return;
-
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
@@ -253,7 +251,7 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 void BinaryViewModel::refresh() {
   beginResetModel();
   items.clear();
-  if (auto dbc_msg = dbc()->msg(*msg_id)) {
+  if (auto dbc_msg = dbc()->msg(msg_id)) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     for (auto sig : dbc_msg->getSignals()) {
@@ -272,7 +270,7 @@ void BinaryViewModel::refresh() {
       }
     }
   } else {
-    row_count = can->lastMessage(*msg_id).dat.size();
+    row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
   endResetModel();
@@ -281,7 +279,7 @@ void BinaryViewModel::refresh() {
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-  const auto &last_msg = can->lastMessage(*msg_id);
+  const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
 
   // data size may changed.

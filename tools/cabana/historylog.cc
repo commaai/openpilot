@@ -30,7 +30,7 @@ void HistoryLogModel::setMessage(const MessageId &message_id) {
 void HistoryLogModel::refresh(bool fetch_message) {
   beginResetModel();
   sigs.clear();
-  if (auto dbc_msg = dbc()->msg(*msg_id)) {
+  if (auto dbc_msg = dbc()->msg(msg_id)) {
     sigs = dbc_msg->getSignals();
   }
   last_fetch_time = 0;
@@ -81,17 +81,15 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  if (msg_id) {
-    uint64_t current_time = (can->lastMessage(*msg_id).ts + can->routeStartTime()) * 1e9 + 1;
-    auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
-    if (!new_msgs.empty()) {
-      beginInsertRows({}, 0, new_msgs.size() - 1);
-      messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
-      endInsertRows();
-    }
-    has_more_data = new_msgs.size() >= batch_size;
-    last_fetch_time = current_time;
+  uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
+  if (!new_msgs.empty()) {
+    beginInsertRows({}, 0, new_msgs.size() - 1);
+    messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+    endInsertRows();
   }
+  has_more_data = new_msgs.size() >= batch_size;
+  last_fetch_time = current_time;
 }
 
 void HistoryLogModel::fetchMore(const QModelIndex &parent) {
@@ -113,7 +111,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (msg_id->address == c.getAddress() && msg_id->source == c.getSrc()) {
+        if (msg_id.address == c.getAddress() && msg_id.source == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
             values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sigs[i]);
@@ -138,7 +136,7 @@ template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
   auto events = can->events();
-  const auto freq = can->lastMessage(*msg_id).freq;
+  const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
   if (dynamic_mode) {
@@ -250,8 +248,6 @@ void LogsWidget::setMessage(const MessageId &message_id) {
 }
 
 void LogsWidget::refresh() {
-  if (!model->msg_id) return;
-
   model->setFilter(0, "", nullptr);
   model->refresh(isVisible());
   bool has_signal = model->sigs.size();

@@ -2,7 +2,6 @@
 
 #include <QDialogButtonBox>
 #include <QSplitter>
-#include <QStackedLayout>
 #include <QTabWidget>
 #include <QToolBar>
 
@@ -24,11 +23,6 @@ public:
   QSpinBox *size_spin;
 };
 
-class WelcomeWidget : public QWidget {
-public:
-  WelcomeWidget(QWidget *parent);
-};
-
 class DetailWidget : public QWidget {
   Q_OBJECT
 
@@ -36,7 +30,6 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &message_id);
   void refresh();
-  void removeAll();
   QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:
@@ -45,7 +38,7 @@ private:
   void removeMsg();
   void updateState(const QHash<MessageId, CanData> * msgs = nullptr);
 
-  std::optional<MessageId> msg_id;
+  MessageId msg_id;
   QLabel *time_label, *warning_icon, *warning_label;
   ElidedLabel *name_label;
   QWidget *warning_widget;
@@ -57,5 +50,18 @@ private:
   SignalView *signal_view;
   ChartsWidget *charts;
   QSplitter *splitter;
-  QStackedLayout *stacked_layout;
+};
+
+class CenterWidget : public QWidget {
+  Q_OBJECT
+public:
+  CenterWidget(ChartsWidget* charts, QWidget *parent);
+  void setMessage(const MessageId &msg_id);
+  void clear();
+
+private:
+  QWidget *createWelcomeWidget();
+  DetailWidget *detail_widget = nullptr;
+  QWidget *welcome_widget = nullptr;
+  ChartsWidget *charts;
 };

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <deque>
-#include <optional>
-
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
@@ -55,7 +53,7 @@ public:
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
-  std::optional<MessageId> msg_id;
+  MessageId msg_id;
   ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QApplication>
 #include <QList>
 #include <QSet>
@@ -50,7 +48,7 @@ public:
   };
   std::vector<Item> items;
 
-  std::optional<MessageId> msg_id;
+  MessageId msg_id;
   int row_count = 0;
   const int column_count = 9;
 };
