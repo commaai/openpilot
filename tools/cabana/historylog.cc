@@ -27,7 +27,7 @@ void HistoryLogModel::setMessage(const MessageId &message_id) {
   msg_id = message_id;
 }
 
-void HistoryLogModel::refresh() {
+void HistoryLogModel::refresh(bool fetch_message) {
   beginResetModel();
   sigs.clear();
   if (auto dbc_msg = dbc()->msg(*msg_id)) {
@@ -37,7 +37,9 @@ void HistoryLogModel::refresh() {
   has_more_data = true;
   messages.clear();
   hex_colors.clear();
-  updateState();
+  if (fetch_message) {
+    updateState();
+  }
   endResetModel();
 }
 
@@ -251,7 +253,7 @@ void LogsWidget::refresh() {
   if (!model->msg_id) return;
 
   model->setFilter(0, "", nullptr);
-  model->refresh();
+  model->refresh(isVisible());
   bool has_signal = model->sigs.size();
   if (has_signal) {
     signals_cb->clear();
@@ -276,4 +278,16 @@ void LogsWidget::setFilter() {
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
   model->refresh();
+}
+
+void LogsWidget::updateState() {
+  if (isVisible() && dynamic_mode->isChecked()) {
+    model->updateState();
+  }
+}
+
+void LogsWidget::showEvent(QShowEvent *event) {
+  if (dynamic_mode->isChecked() || model->canFetchMore({}) && model->rowCount() == 0) {
+    model->refresh();
+  }
 }

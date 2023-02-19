@@ -36,7 +36,7 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void refresh();
+  void refresh(bool fetch_message = true);
 
 public slots:
   void setDisplayType(int type);
@@ -75,8 +75,8 @@ class LogsWidget : public QFrame {
 public:
   LogsWidget(QWidget *parent);
   void setMessage(const MessageId &message_id);
-  void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
-  void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
+  void updateState();
+  void showEvent(QShowEvent *event) override;
 
 private slots:
   void setFilter();
