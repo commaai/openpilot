@@ -1,7 +1,6 @@
 from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import HyundaiFlags
 
-
 def get_e_can_bus(CP):
   # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
   # have a different harness than the HDA1 and non-HDA variants in order to split
