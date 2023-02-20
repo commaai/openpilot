@@ -381,7 +381,7 @@ class CarState(CarStateBase):
       checks.append(("LVR12", 100))
 
     bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD.value else 0
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus, enforce_checks=False)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -441,7 +441,7 @@ class CarState(CarStateBase):
         ]
 
     bus = 6 if CP.flags & HyundaiFlags.CAN_CANFD.value else 2
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus, enforce_checks=False)
 
   @staticmethod
   def get_can_parser_canfd(CP):
@@ -535,7 +535,7 @@ class CarState(CarStateBase):
         ("ACCELERATOR_BRAKE_ALT", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_e_can_bus(CP))
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_e_can_bus(CP), enforce_checks=False)
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
@@ -562,4 +562,4 @@ class CarState(CarStateBase):
         ("SCC_CONTROL", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6, enforce_checks=False)
