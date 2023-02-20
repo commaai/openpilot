@@ -9,6 +9,8 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/util.h"
+
 using namespace dbcmanager;
 
 class HeaderView : public QHeaderView {
@@ -88,4 +90,5 @@ private:
   QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;
   QWidget *filters_widget;
+  MessageBytesDelegate *delegate;
 };

@@ -5,8 +5,6 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/util.h"
-
 // HistoryLogModel
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
@@ -224,6 +222,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(line);
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
+  delegate = new MessageBytesDelegate(this);
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
@@ -231,7 +230,10 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
 
-  QObject::connect(display_type_cb, SIGNAL(activated(int)), model, SLOT(setDisplayType(int)));
+  QObject::connect(display_type_cb, qOverload<int>(&QComboBox::activated), [this](int index) {
+    logs->setItemDelegateForColumn(1, index == 1 ? delegate : nullptr);
+    model->setDisplayType(index);
+  });
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
@@ -257,6 +259,7 @@ void LogsWidget::refresh() {
       signals_cb->addItem(s->name);
     }
   }
+  logs->setItemDelegateForColumn(1, !has_signal || display_type_cb->currentIndex() == 1 ? delegate : nullptr);
   value_edit->clear();
   comp_box->setCurrentIndex(0);
   filters_widget->setVisible(has_signal);
