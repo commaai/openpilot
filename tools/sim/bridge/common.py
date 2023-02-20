@@ -277,7 +277,7 @@ class SimulatorBridge(ABC):
     if not arguments.dual_camera:
       print("Dual Camera disabled")
     self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
-    self.params.put_bool("DisengageOnAccelerator", True)
+    # self.params.put_bool("DisengageOnAccelerator", True)
     self.params.put_bool("ExperimentalMode", True)
     self.params.put_bool("ExperimentalLongitudinalEnabled", True)
 
@@ -317,6 +317,28 @@ class SimulatorBridge(ABC):
     finally:
       # Clean up resources in the opposite order they were created.
       self.close()
+
+  def close(self):
+    self.started = False
+    self._exit_event.set()
+
+    for s in self._simulation_objects:
+      try:
+        s.destroy()
+      except Exception as e:
+        print("Failed to destroy carla object", e)
+    for t in reversed(self._threads):
+      t.join()
+
+  def run(self, queue, retries=-1):
+    bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
+    bridge_p.start()
+    return bridge_p
+  
+  # Must return object of class `World`, after spawning objects into that world
+  @abstractmethod
+  def spawn_objects(self) -> World:
+    pass
 
   def _run(self, q: Queue):
     vehicle_state = VehicleState()
@@ -463,26 +485,3 @@ class SimulatorBridge(ABC):
         world.tick()
       rk.keep_time()
       self.started = True
-
-  def close(self):
-    self.started = False
-    self._exit_event.set()
-
-    for s in self._simulation_objects:
-      try:
-        s.destroy()
-      except Exception as e:
-        print("Failed to destroy carla object", e)
-    for t in reversed(self._threads):
-      t.join()
-
-  def run(self, queue, retries=-1):
-    bridge_p = Process(target=self.bridge_keep_alive, args=(queue, retries), daemon=True)
-    bridge_p.start()
-    return bridge_p
-  
-  # Must return object of class `World`, after spawning objects into that world
-  @abstractmethod
-  def spawn_objects(self) -> World:
-    pass
-

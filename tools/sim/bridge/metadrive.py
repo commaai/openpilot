@@ -1,10 +1,9 @@
 import warnings
 import numpy as np
 import math
-import metadrive  # noqa: F401 pylint: disable=W0611
-import gym
 
 from tools.sim.bridge.common import World, SimulatorBridge, Camerad, STEER_RATIO, W, H
+from tools.sim.bridge.utils import timer
 
 class MetaDriveWorld(World):
   def __init__(self, env, ticks_per_frame: float):
@@ -22,20 +21,21 @@ class MetaDriveWorld(World):
     else:
       vc[1] = -brake_out
     if rk.frame % self.ticks_per_frame == 0:
-      if (rk.frame % self.ticks_per_frame * 3) == 0:
-        o, _, d, _ = self.env.step(vc)
-        if d:
-          print("!!!Episode terminated due to violation of safety!!!")
-          self.env.reset()
-          self.env.step([0.0, 0.0])
-          for _ in range(300):
-            rk.keep_time()
-        
-        self.speed = o["state"][3] * math.sqrt(self.ticks_per_frame) * 10 # empirically derived
+      o, _, d, _ = timer("Step", lambda: self.env.step(vc))
+      if d:
+        print("!!!Episode terminated due to violation of safety!!!")
+        self.env.reset()
+        self.env.step([0.0, 0.0])
+        for _ in range(300):
+          rk.keep_time()
+      
+      self.speed = o["state"][3] * math.sqrt(self.ticks_per_frame) * 10 # empirically derived
 
-      img = self.env.vehicle.image_sensors["rgb_wide"].get_pixels_array(self.env.vehicle, False)
-      self.yuv = self.camerad.img_to_yuv(img)
-      self.camerad.cam_send_yuv_wide_road(self.yuv)
+      # if (rk.frame % (self.ticks_per_frame * 2)) == 0:
+      img = timer("pixel array", lambda: self.env.vehicle.image_sensors["rgb_wide"].get_pixels_array(self.env.vehicle, False))
+      self.yuv = timer("yuv kernel", lambda: self.camerad.img_to_yuv(img))
+      timer("send yuv", lambda: self.camerad.cam_send_yuv_wide_road(self.yuv))
+      # timer("send yuv", lambda: self.camerad.cam_send_yuv_wide_road(self.yuv))
 
   def get_velocity(self):
     return None
@@ -63,6 +63,14 @@ class MetaDriveBridge(SimulatorBridge):
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_objects(self):
+    # Lazily import as `metadrive-simulator`` is an optional install
+    import metadrive  # noqa: F401 pylint: disable=W0611, disable=import-error
+    import gym
+    from metadrive.constants import CamMask  # pylint: disable=import-error
+    from metadrive.component.vehicle_module.base_camera import BaseCamera  # pylint: disable=import-error
+    from metadrive.engine.engine_utils import engine_initialized  # pylint: disable=import-error
+    from metadrive.engine.core.image_buffer import ImageBuffer  # pylint: disable=import-error
+
     env = gym.make('MetaDrive-10env-v0', config=dict(offscreen_render=True))
 
     # config = dict(
@@ -83,10 +91,6 @@ class MetaDriveBridge(SimulatorBridge):
     # max_engine_force._replace(min=max_engine_force.min * 10)
 
     env.reset()
-    from metadrive.constants import CamMask
-    from metadrive.component.vehicle_module.base_camera import BaseCamera
-    from metadrive.engine.engine_utils import engine_initialized
-    from metadrive.engine.core.image_buffer import ImageBuffer
     class RGBCameraWide(BaseCamera):
       # shape(dim_1, dim_2)
       BUFFER_W = W  # dim 1
