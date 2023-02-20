@@ -191,7 +191,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Tucson 2023", "All", harness=Harness.hyundai_n),
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
-  CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", harness=Harness.hyundai_n),
+  CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-23", harness=Harness.hyundai_n),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
@@ -1597,9 +1597,11 @@ FW_VERSIONS = {
   CAR.SANTA_CRUZ_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-K5000         ',
+      b'\xf1\x00NX4__               1.01 1.00 99110-K5000         ',
     ],
   },
   CAR.KIA_SPORTAGE_5TH_GEN: {
