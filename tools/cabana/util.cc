@@ -86,7 +86,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   auto colors = index.data(Qt::UserRole).value<QVector<QColor>>();
   auto byte_list = index.data(Qt::DisplayRole).toString().split(" ");
   for (int i = 0; i < byte_list.size(); ++i) {
-    if (i < colors.size()) {
+    if (i < colors.size() && colors[i].alpha() > 0) {
       painter->fillRect(pos.marginsAdded(margins), colors[i]);
     }
     painter->drawText(pos, Qt::AlignCenter, byte_list[i]);
