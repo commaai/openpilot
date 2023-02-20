@@ -1,10 +1,17 @@
-Version 0.9.1 (2023-2-20)
+Version 0.9.2 (2023-03-XX)
 ========================
-* Adjust alert volume using ambient noise level
-* Removed driver monitoring timer resetting on interaction if face detected and distracted
+* Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+
+Version 0.9.1 (2023-02-23)
+========================
+* New driving model
+  * 30% improved height estimation resulting in better driving performance for tall cars
+* Driver monitoring: removed timer resetting on user interaction if distracted
 * UI updates
+  * Adjust alert volume using ambient noise level
   * Driver monitoring icon shows driver's head pose
   * German translation thanks to Vrabetz and CzokNorris!
+* Cadillac Escalade 2017 support thanks to rickygilleland!
 * Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
 * Genesis GV60 2023 support thanks to sunnyhaibin!
 * Hyundai Tucson 2022-23 support

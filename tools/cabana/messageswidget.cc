@@ -1,19 +1,17 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QApplication>
-#include <QFontDatabase>
 #include <QHBoxLayout>
-#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "tools/cabana/dbcmanager.h"
-
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0 ,0, 0, 0);
 
   // message filter
   filter = new QLineEdit(this);
+  QRegularExpression re("\\S+");
+  filter->setValidator(new QRegularExpressionValidator(re, this));
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
@@ -46,12 +44,17 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
-  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(current_msg_id); });
+  QObject::connect(model, &MessageListModel::modelReset, [this]() {
+    if (current_msg_id) {
+      selectMessage(*current_msg_id);
+    }
+  });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
-      if (model->msgs[current.row()] != current_msg_id) {
-        current_msg_id = model->msgs[current.row()];
-        emit msgSelectionChanged(current_msg_id);
+      auto &id = model->msgs[current.row()];
+      if (!current_msg_id || id != *current_msg_id) {
+        current_msg_id = id;
+        emit msgSelectionChanged(*current_msg_id);
       }
     }
   });
@@ -65,9 +68,18 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
 
   updateSuppressedButtons();
+
+  setWhatsThis(tr(R"(
+    <b>Message View</b><br/>
+    <!-- TODO: add descprition here -->
+    <span style="color:gray">Byte color</span><br />
+    <span style="color:gray;">■ </span> constant changing<br />
+    <span style="color:blue;">■ </span> increasing<br />
+    <span style="color:red;">■ </span> decreasing
+  )"));
 }
 
-void MessagesWidget::selectMessage(const QString &msg_id) {
+void MessagesWidget::selectMessage(const MessageId &msg_id) {
   if (int row = model->msgs.indexOf(msg_id); row != -1) {
     table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
@@ -84,9 +96,10 @@ void MessagesWidget::updateSuppressedButtons() {
 }
 
 void MessagesWidget::reset() {
+  current_msg_id = std::nullopt;
+  table_widget->selectionModel()->clear();
   model->reset();
   filter->clear();
-  current_msg_id = "";
   updateSuppressedButtons();
 }
 
@@ -106,35 +119,33 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case 0: return msgName(id);
-      case 1: return id;
+      case 1: return id.toString(); // TODO: put source and address in separate columns
       case 2: return can_data.freq;
       case 3: return can_data.count;
       case 4: return toHex(can_data.dat);
     }
   } else if (role == Qt::UserRole && index.column() == 4) {
-    QList<QVariant> colors;
-    colors.reserve(can_data.dat.size());
-    for (int i = 0; i < can_data.dat.size(); i++){
-      if (suppressed_bytes.contains({id, i})) {
-        colors.append(QColor(255, 255, 255, 0));
-      } else {
-        colors.append(i < can_data.colors.size() ? can_data.colors[i] : QColor(255, 255, 255, 0));
+    QVector<QColor> colors = can_data.colors;
+    if (!suppressed_bytes.empty()) {
+      for (int i = 0; i < colors.size(); i++) {
+        if (suppressed_bytes.contains({id, i})) {
+          colors[i] = QColor(255, 255, 255, 0);
+        }
       }
     }
-    return colors;
-
+    return QVariant::fromValue(colors);
   }
   return {};
 }
 
 void MessageListModel::setFilterString(const QString &string) {
-  auto contains = [](const QString &id, const QString &txt) {
+  auto contains = [](const MessageId &id, const QString &txt) {
     auto cs = Qt::CaseInsensitive;
-    if (id.contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
+    if (id.toString().contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
     // Search by signal name
     if (const auto msg = dbc()->msg(id)) {
-      for (auto &signal : msg->getSignals()) {
-        if (QString::fromStdString(signal->name).contains(txt, cs)) return true;
+      for (auto s : msg->getSignals()) {
+        if (s->name.contains(txt, cs)) return true;
       }
     }
     return false;
@@ -160,9 +171,7 @@ void MessageListModel::sortMessages() {
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      auto ll = DBCManager::parseId(l);
-      auto rr = DBCManager::parseId(r);
-      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
+      return sort_order == Qt::AscendingOrder ? l < r : l > r;
     });
   } else if (sort_column == 2) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
@@ -180,13 +189,12 @@ void MessageListModel::sortMessages() {
   endResetModel();
 }
 
-void MessageListModel::msgsReceived(const QHash<QString, CanData> *new_msgs) {
+void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
-  bool update_all = new_msgs->size() == can->can_msgs.size();
-  if (update_all || (filter_str.isEmpty() && msgs.size() != can->can_msgs.size())) {
+  if (filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
     msgs = can->can_msgs.keys();
   }
-  if (update_all || msgs.size() != prev_row_count) {
+  if (msgs.size() != prev_row_count) {
     sortMessages();
     return;
   }

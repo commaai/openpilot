@@ -292,7 +292,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan", "uiPlan"],
       "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
@@ -407,6 +407,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
   params.put_bool("UbloxAvailable", True)
+  params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
