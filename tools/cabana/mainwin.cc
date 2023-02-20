@@ -65,6 +65,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
 }
 
 void MainWindow::createActions() {
@@ -186,7 +187,28 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackIndexChanged(int index) {
+  int count = UndoStack::instance()->count();
+  if (count >= 0) {
+    QString command_text;
+    if (index == count) {
+      command_text = (count == prev_undostack_count ? "Redo " : "") + UndoStack::instance()->text(index - 1);
+    } else if (index < prev_undostack_index) {
+      command_text = tr("Undo %1").arg(UndoStack::instance()->text(index));
+    } else if (index > prev_undostack_index) {
+      command_text = tr("Redo %1").arg(UndoStack::instance()->text(index - 1));
+    }
+    statusBar()->showMessage(command_text, 2000);
+  }
+  prev_undostack_index = index;
+  prev_undostack_count = count;
+}
+
 void MainWindow::undoStackCleanChanged(bool clean) {
+  if (clean) {
+    prev_undostack_index = 0;
+    prev_undostack_count = 0;
+  }
   setWindowModified(!clean);
 }
 
