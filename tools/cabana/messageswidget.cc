@@ -44,11 +44,16 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
-  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(*current_msg_id); });
+  QObject::connect(model, &MessageListModel::modelReset, [this]() {
+    if (current_msg_id) {
+      selectMessage(*current_msg_id);
+    }
+  });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
-      if (model->msgs[current.row()] != *current_msg_id) {
-        current_msg_id = model->msgs[current.row()];
+      auto &id = model->msgs[current.row()];
+      if (!current_msg_id || id != *current_msg_id) {
+        current_msg_id = id;
         emit msgSelectionChanged(*current_msg_id);
       }
     }
@@ -91,9 +96,10 @@ void MessagesWidget::updateSuppressedButtons() {
 }
 
 void MessagesWidget::reset() {
+  current_msg_id = std::nullopt;
+  table_widget->selectionModel()->clear();
   model->reset();
   filter->clear();
-  current_msg_id = std::nullopt;
   updateSuppressedButtons();
 }
 
