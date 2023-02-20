@@ -9,7 +9,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QResizeEvent>
 #include <QShortcut>
+#include <QTextDocument>
 #include <QUndoView>
 #include <QVBoxLayout>
 #include <QWidgetAction>
@@ -20,13 +22,13 @@
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
-  if (main_win) emit main_win->showMessage(msg, 0);
+  if (main_win) emit main_win->showMessage(msg, 2000);
 }
 
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
-  detail_widget = new DetailWidget(charts_widget, this);
-  setCentralWidget(detail_widget);
+  center_widget = new CenterWidget(charts_widget, this);
+  setCentralWidget(center_widget);
   createActions();
   createStatusBar();
   createShortcuts();
@@ -43,7 +45,7 @@ MainWindow::MainWindow() : QMainWindow() {
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit showMessage(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 2000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
@@ -58,11 +60,12 @@ MainWindow::MainWindow() : QMainWindow() {
 
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
 }
 
 void MainWindow::createActions() {
@@ -125,6 +128,7 @@ void MainWindow::createActions() {
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
@@ -171,8 +175,9 @@ void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
+  progress_bar->setFixedSize({300, 16});
   progress_bar->setVisible(false);
+  statusBar()->addWidget(new QLabel(tr("For Help, Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
 }
 
@@ -182,7 +187,28 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackIndexChanged(int index) {
+  int count = UndoStack::instance()->count();
+  if (count >= 0) {
+    QString command_text;
+    if (index == count) {
+      command_text = (count == prev_undostack_count ? "Redo " : "") + UndoStack::instance()->text(index - 1);
+    } else if (index < prev_undostack_index) {
+      command_text = tr("Undo %1").arg(UndoStack::instance()->text(index));
+    } else if (index > prev_undostack_index) {
+      command_text = tr("Redo %1").arg(UndoStack::instance()->text(index - 1));
+    }
+    statusBar()->showMessage(command_text, 2000);
+  }
+  prev_undostack_index = index;
+  prev_undostack_count = count;
+}
+
 void MainWindow::undoStackCleanChanged(bool clean) {
+  if (clean) {
+    prev_undostack_index = 0;
+    prev_undostack_count = 0;
+  }
   setWindowModified(!clean);
 }
 
@@ -194,7 +220,7 @@ void MainWindow::DBCFileChanged() {
 void MainWindow::openRoute() {
   OpenRouteDialog dlg(this);
   if (dlg.exec()) {
-    detail_widget->removeAll();
+    center_widget->clear();
     charts_widget->removeAll();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
   } else if (dlg.failedToLoad()) {
@@ -421,4 +447,62 @@ void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg->show();
+}
+
+void MainWindow::onlineHelp() {
+  if (auto help = findChild<HelpOverlay*>()) {
+    help->close();
+  } else {
+    help = new HelpOverlay(this);
+    help->setGeometry(rect());
+    help->show();
+    help->raise();
+  }
+}
+
+// HelpOverlay
+HelpOverlay::HelpOverlay(MainWindow *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_NoSystemBackground, true);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose);
+  parent->installEventFilter(this);
+}
+
+void HelpOverlay::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.fillRect(rect(), QColor(0, 0, 0, 50));
+  MainWindow *parent = (MainWindow *)parentWidget();
+  drawHelpForWidget(painter, parent->findChild<MessagesWidget *>());
+  drawHelpForWidget(painter, parent->findChild<BinaryView *>());
+  drawHelpForWidget(painter, parent->findChild<SignalView *>());
+  drawHelpForWidget(painter, parent->findChild<ChartsWidget *>());
+  drawHelpForWidget(painter, parent->findChild<VideoWidget *>());
+}
+
+void HelpOverlay::drawHelpForWidget(QPainter &painter, QWidget *w) {
+  if (w && w->isVisible() && !w->whatsThis().isEmpty()) {
+    QPoint pt = mapFromGlobal(w->mapToGlobal(w->rect().center()));
+    if (rect().contains(pt)) {
+      QTextDocument document;
+      document.setHtml(w->whatsThis());
+      QSize doc_size = document.size().toSize();
+      QPoint topleft = {pt.x() - doc_size.width() / 2, pt.y() - doc_size.height() / 2};
+      painter.translate(topleft);
+      painter.fillRect(QRect{{0, 0}, doc_size}, palette().toolTipBase());
+      document.drawContents(&painter);
+      painter.translate(-topleft);
+    }
+  }
+}
+
+bool HelpOverlay::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == parentWidget() && event->type() == QEvent::Resize) {
+    QResizeEvent *resize_event = (QResizeEvent *)(event);
+    setGeometry(QRect{QPoint(0, 0), resize_event->size()});
+  }
+  return false;
+}
+
+void HelpOverlay::mouseReleaseEvent(QMouseEvent *event) {
+  close();
 }

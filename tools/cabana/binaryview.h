@@ -7,12 +7,16 @@
 #include <QTableView>
 
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class BinaryItemDelegate : public QStyledItemDelegate {
 public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
+  bool isSameColor(const QModelIndex &index, int dx, int dy) const;
+  void drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 
   QFont small_font, hex_font;
   QColor selection_color;
@@ -44,8 +48,7 @@ public:
   };
   std::vector<Item> items;
 
-  QString msg_id;
-  const DBCMsg *dbc_msg = nullptr;
+  MessageId msg_id;
   int row_count = 0;
   const int column_count = 9;
 };
@@ -55,7 +58,7 @@ class BinaryView : public QTableView {
 
 public:
   BinaryView(QWidget *parent = nullptr);
-  void setMessage(const QString &message_id);
+  void setMessage(const MessageId &message_id);
   void highlight(const Signal *sig);
   QSet<const Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
@@ -66,8 +69,12 @@ signals:
   void signalHovered(const Signal *sig);
   void addSignal(int start_bit, int size, bool little_endian);
   void resizeSignal(const Signal *sig, int from, int size);
+  void removeSignal(const Signal *sig);
+  void editSignal(const Signal *origin_s, Signal &s);
+  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
 
 private:
+  void addShortcuts();
   void refresh();
   std::tuple<int, int, bool> getSelection(QModelIndex index);
   void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags flags) override;

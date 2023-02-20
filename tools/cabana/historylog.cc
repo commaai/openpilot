@@ -5,7 +5,6 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
-
 // HistoryLogModel
 
 QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
@@ -17,16 +16,16 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
-    return ChangeTracker::toVariantList(m.colors);
+    return QVariant::fromValue(m.colors);
   }
   return {};
 }
 
-void HistoryLogModel::setMessage(const QString &message_id) {
+void HistoryLogModel::setMessage(const MessageId &message_id) {
   msg_id = message_id;
 }
 
-void HistoryLogModel::refresh() {
+void HistoryLogModel::refresh(bool fetch_message) {
   beginResetModel();
   sigs.clear();
   if (auto dbc_msg = dbc()->msg(msg_id)) {
@@ -36,7 +35,9 @@ void HistoryLogModel::refresh() {
   has_more_data = true;
   messages.clear();
   hex_colors.clear();
-  updateState();
+  if (fetch_message) {
+    updateState();
+  }
   endResetModel();
 }
 
@@ -47,7 +48,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return show_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
+      return show_signals ? sigs[section - 1]->name : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
       return QBrush(getColor(sigs[section - 1]));
     }
@@ -78,41 +79,40 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  if (!msg_id.isEmpty()) {
-    uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
-    auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
-    if ((has_more_data = !new_msgs.empty())) {
-      beginInsertRows({}, 0, new_msgs.size() - 1);
-      messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
-      endInsertRows();
-    }
-    last_fetch_time = current_time;
+  uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
+  if (!new_msgs.empty()) {
+    beginInsertRows({}, 0, new_msgs.size() - 1);
+    messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
+    endInsertRows();
   }
+  has_more_data = new_msgs.size() >= batch_size;
+  last_fetch_time = current_time;
 }
 
 void HistoryLogModel::fetchMore(const QModelIndex &parent) {
   if (!messages.empty()) {
     auto new_msgs = fetchData(messages.back().mono_time);
-    if ((has_more_data = !new_msgs.empty())) {
+    if (!new_msgs.empty()) {
       beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
       messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
       endInsertRows();
     }
+    has_more_data = new_msgs.size() >= batch_size;
   }
 }
 
 template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
-  const auto [src, address] = DBCManager::parseId(msg_id);
   QVector<double> values(sigs.size());
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (address == c.getAddress() && src == c.getSrc()) {
+        if (msg_id.address == c.getAddress() && msg_id.source == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
-            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));
+            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sigs[i]);
           }
           if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
             auto &m = msgs.emplace_back();
@@ -169,8 +169,8 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
     return time_col_size;
   } else {
     int default_size = qMax(100, (rect().width() - time_col_size.width()) / (model()->columnCount() - 1));
-    const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
+    QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text.replace(QChar('_'), ' '));
     QSize size = rect.size() + QSize{10, 6};
     return QSize{qMax(size.width(), default_size), size.height()};
   }
@@ -182,12 +182,13 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text);
+  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 
 // LogsWidget
 
-LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
+LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
@@ -207,7 +208,8 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   h->addStretch(0);
   h->addWidget(dynamic_mode = new QCheckBox(tr("Dynamic")), 0, Qt::AlignRight);
 
-  display_type_cb->addItems({"Signal Value", "Hex Value"});
+  display_type_cb->addItems({"Signal", "Hex"});
+  display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
   comp_box->addItems({">", "=", "!=", "<"});
   value_edit->setClearButtonEnabled(true);
   value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
@@ -217,10 +219,10 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(toolbar);
   QFrame *line = new QFrame(this);
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-  main_layout->addWidget(line);;
-
+  main_layout->addWidget(line);
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
+  delegate = new MessageBytesDelegate(this);
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
@@ -228,7 +230,10 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
 
-  QObject::connect(display_type_cb, SIGNAL(activated(int)), model, SLOT(setDisplayType(int)));
+  QObject::connect(display_type_cb, qOverload<int>(&QComboBox::activated), [this](int index) {
+    logs->setItemDelegateForColumn(1, index == 1 ? delegate : nullptr);
+    model->setDisplayType(index);
+  });
   QObject::connect(dynamic_mode, &QCheckBox::stateChanged, model, &HistoryLogModel::setDynamicMode);
   QObject::connect(signals_cb, SIGNAL(activated(int)), this, SLOT(setFilter()));
   QObject::connect(comp_box, SIGNAL(activated(int)), this, SLOT(setFilter()));
@@ -239,23 +244,22 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
 }
 
-void LogsWidget::setMessage(const QString &message_id) {
+void LogsWidget::setMessage(const MessageId &message_id) {
   model->setMessage(message_id);
   refresh();
 }
 
 void LogsWidget::refresh() {
-  if (model->msg_id.isEmpty()) return;
-
   model->setFilter(0, "", nullptr);
-  model->refresh();
+  model->refresh(isVisible());
   bool has_signal = model->sigs.size();
   if (has_signal) {
     signals_cb->clear();
     for (auto s : model->sigs) {
-      signals_cb->addItem(s->name.c_str());
+      signals_cb->addItem(s->name);
     }
   }
+  logs->setItemDelegateForColumn(1, !has_signal || display_type_cb->currentIndex() == 1 ? delegate : nullptr);
   value_edit->clear();
   comp_box->setCurrentIndex(0);
   filters_widget->setVisible(has_signal);
@@ -273,4 +277,16 @@ void LogsWidget::setFilter() {
   }
   model->setFilter(signals_cb->currentIndex(), value_edit->text(), cmp);
   model->refresh();
+}
+
+void LogsWidget::updateState() {
+  if (isVisible() && dynamic_mode->isChecked()) {
+    model->updateState();
+  }
+}
+
+void LogsWidget::showEvent(QShowEvent *event) {
+  if (dynamic_mode->isChecked() || model->canFetchMore({}) && model->rowCount() == 0) {
+    model->refresh();
+  }
 }
