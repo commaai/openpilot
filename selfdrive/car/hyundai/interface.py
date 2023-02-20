@@ -248,7 +248,7 @@ class CarInterface(CarInterfaceBase):
 
     # *** feature detection ***
     if candidate in CANFD_CAR:
-      ret.enableBsm = 0x1e5 in fingerprint[get_e_can_bus(ret.flags)]
+      ret.enableBsm = 0x1e5 in fingerprint[get_e_can_bus(ret)]
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
