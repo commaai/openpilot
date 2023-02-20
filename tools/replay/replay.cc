@@ -25,6 +25,13 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
       s.push_back(it.name);
     }
   }
+
+  if (!allow_list.empty()) {
+    // the following events are needed for replay to work properly.
+    allow_list.insert(cereal::Event::Which::INIT_DATA);
+    allow_list.insert(cereal::Event::Which::CAR_PARAMS);
+  }
+
   qDebug() << "services " << s;
   qDebug() << "loading route " << route;
 
@@ -107,9 +114,9 @@ void Replay::seekTo(double seconds, bool relative) {
     rInfo("seeking to %d s, segment %d", (int)seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    emit seekedTo(seconds);
     return isSegmentMerged(seg);
   });
-  emit seekedTo(seconds);
   queueSegment();
 }
 

@@ -126,6 +126,7 @@ if __name__ == "__main__":
       uds_client.security_access(ACCESS_TYPE_LEVEL_1.SEND_KEY, struct.pack("!I", key))  # type: ignore
     except (NegativeResponseError, MessageTimeoutError):
       print("Security access failed!")
+      print("Open the hood and retry (disables the \"diagnostic firewall\" on newer vehicles)")
       quit()
 
     try:

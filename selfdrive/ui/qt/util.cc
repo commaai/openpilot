@@ -2,11 +2,14 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QHash>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLayoutItem>
 #include <QStyleOption>
 #include <QPainterPath>
+#include <QTextStream>
+#include <QtXml/QDomDocument>
 
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -217,4 +220,38 @@ QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp) {
       (xv - xp[low]) * (fp[hi].alpha() - fp[low].alpha()) / (xp[hi] - xp[low]) + fp[low].alpha()
     );
   }
+}
+
+static QHash<QString, QByteArray> load_bootstrap_icons() {
+  QHash<QString, QByteArray> icons;
+
+  QFile f(":/bootstrap-icons.svg");
+  if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    QDomDocument xml;
+    xml.setContent(&f);
+    QDomNode n = xml.documentElement().firstChild();
+    while (!n.isNull()) {
+      QDomElement e = n.toElement();
+      if (!e.isNull() && e.hasAttribute("id")) {
+        QString svg_str;
+        QTextStream stream(&svg_str);
+        n.save(stream, 0);
+        svg_str.replace("<symbol", "<svg");
+        svg_str.replace("</symbol>", "</svg>");
+        icons[e.attribute("id")] = svg_str.toUtf8();
+      }
+      n = n.nextSibling();
+    }
+  }
+  return icons;
+}
+
+QPixmap bootstrapPixmap(const QString &id) {
+  static QHash<QString, QByteArray> icons = load_bootstrap_icons();
+
+  QPixmap pixmap;
+  if (auto it = icons.find(id); it != icons.end()) {
+    pixmap.loadFromData(it.value(), "svg");
+  }
+  return pixmap;
 }

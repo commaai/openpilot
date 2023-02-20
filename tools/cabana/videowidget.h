@@ -3,19 +3,24 @@
 #include <atomic>
 #include <mutex>
 
+#include <QHBoxLayout>
 #include <QFuture>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/canmessages.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class Slider : public QSlider {
   Q_OBJECT
 
 public:
   Slider(QWidget *parent);
+  ~Slider();
 
 private:
   void mousePressEvent(QMouseEvent *e) override;
@@ -35,7 +40,7 @@ private:
   QSize thumbnail_size = {};
 };
 
-class VideoWidget : public QFrame {
+class VideoWidget : public QWidget {
   Q_OBJECT
 
 public:
@@ -44,9 +49,14 @@ public:
 
 protected:
   void updateState();
+  void updatePlayBtnState();
+  void timeLabelClicked();
+  QWidget *createCameraWidget();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;
+  ElidedLabel *time_label;
+  QHBoxLayout *slider_layout;
   QPushButton *play_btn;
   Slider *slider;
 };
