@@ -6,7 +6,6 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QToolButton>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
@@ -93,9 +92,8 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
 }
 
 int SignalModel::signalRow(const Signal *sig) const {
-  auto &children = root->children;
-  for (int i = 0; i < children.size(); ++i) {
-    if (children[i]->sig == sig) return i;
+  for (int i = 0; i < root->children.size(); ++i) {
+    if (root->children[i]->sig == sig) return i;
   }
   return -1;
 }
@@ -297,7 +295,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item && !index.parent().isValid() && index.column() == 0) {
+  if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
@@ -367,11 +365,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
-  auto collapse_btn = new QToolButton();
-  collapse_btn->setIcon(utils::icon("dash-square"));
+  auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
-  collapse_btn->setAutoRaise(true);
-  collapse_btn->setToolTip(tr("Collapse All"));
   hl->addWidget(collapse_btn);
 
   // tree view
@@ -416,16 +411,6 @@ void SignalView::setMessage(const MessageId &id) {
 }
 
 void SignalView::rowsChanged() {
-  auto create_btn = [](const QString &id, const QString &tooltip) {
-    auto btn = new QToolButton();
-    btn->setIcon(utils::icon(id));
-    btn->setToolTip(tooltip);
-    btn->setAutoRaise(true);
-    return btn;
-  };
-
-  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-
   for (int i = 0; i < model->rowCount(); ++i) {
     auto index = model->index(i, 1);
     if (!tree->indexWidget(index)) {
@@ -434,8 +419,8 @@ void SignalView::rowsChanged() {
       h->setContentsMargins(0, 2, 0, 2);
       h->addStretch(1);
 
-      auto remove_btn = create_btn("x", tr("Remove signal"));
-      auto plot_btn = create_btn("graph-up", "");
+      auto remove_btn = toolButton("x", tr("Remove signal"));
+      auto plot_btn = toolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
       h->addWidget(remove_btn);
@@ -448,6 +433,7 @@ void SignalView::rowsChanged() {
       });
     }
   }
+  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
   updateChartState();
 }
 
@@ -475,10 +461,12 @@ void SignalView::selectSignal(const Signal *sig, bool expand) {
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>()[0];
     bool chart_opened = charts->hasSignal(msg_id, item->sig);
-    plot_btn->setChecked(chart_opened);
-    plot_btn->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
+    auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
+    if (buttons.size() > 0) {
+      buttons[0]->setChecked(chart_opened);
+      buttons[0]->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
+    }
     ++i;
   }
 }

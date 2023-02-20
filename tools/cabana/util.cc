@@ -130,3 +130,11 @@ QPixmap icon(const QString &id) {
   return pm;
 }
 }  // namespace utils
+
+QToolButton *toolButton(const QString &icon, const QString &tooltip) {
+  auto btn = new QToolButton();
+  btn->setIcon(utils::icon(icon));
+  btn->setToolTip(tooltip);
+  btn->setAutoRaise(true);
+  return btn;
+};

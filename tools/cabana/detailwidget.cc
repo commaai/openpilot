@@ -3,7 +3,6 @@
 #include <QFormLayout>
 #include <QMenu>
 #include <QMessageBox>
-#include <QToolButton>
 
 #include "tools/cabana/commands.h"
 
@@ -22,22 +21,22 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(tabbar);
 
   // message title
-  QToolBar *toolbar = new QToolBar(this);
-  toolbar->setIconSize({16, 16});
+  QHBoxLayout *title_layout = new QHBoxLayout();
+  title_layout->setContentsMargins(0, 6, 0, 0);
   time_label = new QLabel(this);
   time_label->setToolTip(tr("Current time"));
   time_label->setStyleSheet("QLabel{font-weight:bold;}");
-  toolbar->addWidget(time_label);
+  title_layout->addWidget(time_label);
   name_label = new ElidedLabel(this);
-  name_label->setContentsMargins(5, 0, 5, 0);
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(name_label);
-  toolbar->addAction(utils::icon("pencil"), "", this, &DetailWidget::editMsg)->setToolTip(tr("Edit Message"));
-  remove_msg_act = toolbar->addAction(utils::icon("x-lg"), "", this, &DetailWidget::removeMsg);
-  remove_msg_act->setToolTip(tr("Remove Message"));
-  main_layout->addWidget(toolbar);
+  title_layout->addWidget(name_label);
+  auto edit_btn = toolButton("pencil", tr("Edit Message"));
+  title_layout->addWidget(edit_btn);
+  remove_btn = toolButton("x-lg", tr("Remove Message"));
+  title_layout->addWidget(remove_btn);
+  main_layout->addLayout(title_layout);
 
   // warning
   warning_widget = new QWidget(this);
@@ -64,6 +63,8 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
+  QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
+  QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
   QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
@@ -83,9 +84,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
       setMessage(tabbar->tabData(index).value<MessageId>());
     }
   });
-  QObject::connect(tabbar, &QTabBar::tabCloseRequested, [this](int index) {
-    tabbar->removeTab(index);
-  });
+  QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
 }
 
@@ -141,7 +140,7 @@ void DetailWidget::refresh() {
   } else {
     warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
-  remove_msg_act->setEnabled(msg != nullptr);
+  remove_btn->setEnabled(msg != nullptr);
   name_label->setText(msgName(msg_id));
 
   if (!warnings.isEmpty()) {

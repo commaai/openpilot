@@ -3,7 +3,6 @@
 #include <QDialogButtonBox>
 #include <QSplitter>
 #include <QTabWidget>
-#include <QToolBar>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
@@ -44,7 +43,7 @@ private:
   QWidget *warning_widget;
   QTabBar *tabbar;
   QTabWidget *tab_widget;
-  QAction *remove_msg_act;
+  QToolButton *remove_btn;
   LogsWidget *history_log;
   BinaryView *binary_view;
   SignalView *signal_view;

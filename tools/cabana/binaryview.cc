@@ -289,33 +289,29 @@ void BinaryViewModel::updateState() {
     items.resize(row_count * column_count);
     endInsertRows();
   }
+
+  double max_f = 255.0;
+  double factor = 0.25;
+  double scaler = max_f / log2(1.0 + factor);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
-
+      auto &item = items[i * column_count + j];
+      item.val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
       // Bit update frequency based highlighting
-      bool has_signal = items[i * column_count + j].sigs.size() > 0;
-      double offset = has_signal ? 50 : 0;
-
-      double min_f = last_msg.bit_change_counts[i][7 - j] == 0 ? offset : offset + 25;
-      double max_f = 255.0;
-
-      double factor = 0.25;
-      double scaler = max_f / log2(1.0 + factor);
-
-      double alpha = std::clamp(offset + log2(1.0 + factor * (double)last_msg.bit_change_counts[i][7 - j] / (double)last_msg.count) * scaler, min_f, max_f);
-      items[i * column_count + j].bg_color.setAlpha(alpha);
+      double offset = !item.sigs.empty() ? 50 : 0;
+      auto n = last_msg.bit_change_counts[i][7 - j];
+      double min_f = n == 0 ? offset : offset + 25;
+      double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
+      item.bg_color.setAlpha(alpha);
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
     items[i * column_count + 8].val = hex;
     items[i * column_count + 8].bg_color = last_msg.colors[i];
   }
-  for (int i = binary.size(); i < row_count; ++i) {
-    for (int j = 0; j < column_count; ++j) {
-      items[i * column_count + j].val = "-";
-    }
+  for (int i = binary.size() * column_count; i < items.size(); ++i) {
+    items[i].val = "-";
   }
 
   for (int i = 0; i < items.size(); ++i) {

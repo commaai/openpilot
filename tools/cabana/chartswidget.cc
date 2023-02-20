@@ -11,7 +11,6 @@
 #include <QRubberBand>
 #include <QPushButton>
 #include <QToolBar>
-#include <QToolButton>
 #include <QToolTip>
 #include <QtConcurrent>
 
@@ -333,18 +332,12 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart);
   move_icon->setToolTip(tr("Drag and drop to combine charts"));
 
-  QToolButton *remove_btn = new QToolButton();
-  remove_btn->setIcon(utils::icon("x"));
-  remove_btn->setAutoRaise(true);
-  remove_btn->setToolTip(tr("Remove Chart"));
+  QToolButton *remove_btn = toolButton("x", tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
-  QToolButton *manage_btn = new QToolButton();
-  manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  manage_btn->setIcon(utils::icon("list"));
-  manage_btn->setAutoRaise(true);
+  QToolButton *manage_btn = toolButton("list", "");
   QMenu *menu = new QMenu(this);
   line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
   line_series_action->setCheckable(true);
