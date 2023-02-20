@@ -5,6 +5,7 @@
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/util.h"
 
 // HistoryLogModel
 
@@ -17,20 +18,20 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
   } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
-    return ChangeTracker::toVariantList(m.colors);
+    return QVariant::fromValue(m.colors);
   }
   return {};
 }
 
-void HistoryLogModel::setMessage(const QString &message_id) {
+void HistoryLogModel::setMessage(const MessageId &message_id) {
   msg_id = message_id;
 }
 
 void HistoryLogModel::refresh() {
   beginResetModel();
   sigs.clear();
-  if (auto dbc_msg = dbc()->msg(msg_id)) {
-    sigs = dbc_msg->getSignals();
+  if (auto dbc_msg = dbc()->msg(*msg_id)) {
+    sigs = dbc_msg->sigs;
   }
   last_fetch_time = 0;
   has_more_data = true;
@@ -47,9 +48,9 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return show_signals ? QString::fromStdString(sigs[section - 1]->name).replace('_', ' ') : "Data";
+      return show_signals ? sigs[section - 1].name : "Data";
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(getColor(sigs[section - 1]));
+      return QBrush(getColor(&sigs[section - 1]));
     }
   }
   return {};
@@ -78,14 +79,15 @@ void HistoryLogModel::setFilter(int sig_idx, const QString &value, std::function
 }
 
 void HistoryLogModel::updateState() {
-  if (!msg_id.isEmpty()) {
-    uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  if (msg_id) {
+    uint64_t current_time = (can->lastMessage(*msg_id).ts + can->routeStartTime()) * 1e9 + 1;
     auto new_msgs = dynamic_mode ? fetchData(current_time, last_fetch_time) : fetchData(0);
-    if ((has_more_data = !new_msgs.empty())) {
+    if (!new_msgs.empty()) {
       beginInsertRows({}, 0, new_msgs.size() - 1);
       messages.insert(messages.begin(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
       endInsertRows();
     }
+    has_more_data = new_msgs.size() >= batch_size;
     last_fetch_time = current_time;
   }
 }
@@ -93,26 +95,26 @@ void HistoryLogModel::updateState() {
 void HistoryLogModel::fetchMore(const QModelIndex &parent) {
   if (!messages.empty()) {
     auto new_msgs = fetchData(messages.back().mono_time);
-    if ((has_more_data = !new_msgs.empty())) {
+    if (!new_msgs.empty()) {
       beginInsertRows({}, messages.size(), messages.size() + new_msgs.size() - 1);
       messages.insert(messages.end(), std::move_iterator(new_msgs.begin()), std::move_iterator(new_msgs.end()));
       endInsertRows();
     }
+    has_more_data = new_msgs.size() >= batch_size;
   }
 }
 
 template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
-  const auto [src, address] = DBCManager::parseId(msg_id);
   QVector<double> values(sigs.size());
   for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
-        if (address == c.getAddress() && src == c.getSrc()) {
+        if (msg_id->address == c.getAddress() && msg_id->source == c.getSrc()) {
           const auto dat = c.getDat();
           for (int i = 0; i < sigs.size(); ++i) {
-            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *(sigs[i]));
+            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), sigs[i]);
           }
           if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
             auto &m = msgs.emplace_back();
@@ -134,7 +136,7 @@ template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
   auto events = can->events();
-  const auto freq = can->lastMessage(msg_id).freq;
+  const auto freq = can->lastMessage(*msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
   if (dynamic_mode) {
@@ -169,8 +171,8 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
     return time_col_size;
   } else {
     int default_size = qMax(100, (rect().width() - time_col_size.width()) / (model()->columnCount() - 1));
-    const QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
+    QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
+    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text.replace(QChar('_'), ' '));
     QSize size = rect.size() + QSize{10, 6};
     return QSize{qMax(size.width(), default_size), size.height()};
   }
@@ -182,7 +184,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text);
+  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 
 // LogsWidget
@@ -239,21 +241,21 @@ LogsWidget::LogsWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(can, &AbstractStream::eventsMerged, model, &HistoryLogModel::segmentsMerged);
 }
 
-void LogsWidget::setMessage(const QString &message_id) {
+void LogsWidget::setMessage(const MessageId &message_id) {
   model->setMessage(message_id);
   refresh();
 }
 
 void LogsWidget::refresh() {
-  if (model->msg_id.isEmpty()) return;
+  if (!model->msg_id) return;
 
   model->setFilter(0, "", nullptr);
   model->refresh();
   bool has_signal = model->sigs.size();
   if (has_signal) {
     signals_cb->clear();
-    for (auto s : model->sigs) {
-      signals_cb->addItem(s->name.c_str());
+    for (auto &s : model->sigs) {
+      signals_cb->addItem(s.name);
     }
   }
   value_edit->clear();

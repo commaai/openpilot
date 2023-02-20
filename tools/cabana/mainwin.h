@@ -54,6 +54,8 @@ protected:
   void setOption();
   void findSimilarBits();
   void undoStackCleanChanged(bool clean);
+  void undoStackIndexChanged(int index);
+  void onlineHelp();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
@@ -69,4 +71,19 @@ protected:
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
+  int prev_undostack_index = 0;
+  int prev_undostack_count = 0;
+  friend class OnlineHelp;
+};
+
+class HelpOverlay : public QWidget {
+  Q_OBJECT
+public:
+  HelpOverlay(MainWindow *parent);
+
+protected:
+  void drawHelpForWidget(QPainter &painter, QWidget *w);
+  void paintEvent(QPaintEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  bool eventFilter(QObject *obj, QEvent *event) override;
 };
