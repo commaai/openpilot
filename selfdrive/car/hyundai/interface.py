@@ -27,10 +27,6 @@ class CarInterface(CarInterfaceBase):
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    # detect platforms with HKG CAN and CAN-FD definitions
-    if 0x50 in fingerprint[5] and 0x420 in fingerprint[4]:
-      ret.flags |= HyundaiFlags.CAN_CANFD.value
-
     if candidate in CANFD_CAR and not (ret.flags & HyundaiFlags.CAN_CANFD.value):
       # detect HDA2 with ADAS Driving ECU
       if Ecu.adas in [fw.ecu for fw in car_fw]:
@@ -290,6 +286,10 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_HYBRID_GAS
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
+
+    # detect platforms with HKG CAN and CAN-FD definitions
+    if 0x50 in fingerprint[5] and 0x420 in fingerprint[4]:
+      ret.flags |= HyundaiFlags.CAN_CANFD.value
 
     if candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.flags |= HyundaiFlags.ALT_LIMITS.value
