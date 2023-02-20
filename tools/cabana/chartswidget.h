@@ -15,7 +15,7 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-
+using namespace dbcmanager;
 using namespace QtCharts;
 
 const int CHART_MIN_WIDTH = 300;
@@ -92,7 +92,7 @@ private:
   friend class ChartsWidget;
  };
 
-class ChartsWidget : public QWidget {
+class ChartsWidget : public QFrame {
   Q_OBJECT
 
 public:

@@ -31,10 +31,12 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       data.freq = data.count / std::max(1.0, current_sec);
-      change_trackers[id].compute(data.dat, data.ts, data.freq);
-      data.colors = change_trackers[id].colors;
-      data.last_change_t = change_trackers[id].last_change_t;
-      data.bit_change_counts = change_trackers[id].bit_change_counts;
+
+      auto &tracker = change_trackers[id];
+      tracker.compute(data.dat, data.ts, data.freq);
+      data.colors = tracker.colors;
+      data.last_change_t = tracker.last_change_t;
+      data.bit_change_counts = tracker.bit_change_counts;
     }
 
     double ts = millis_since_boot();
@@ -62,8 +64,9 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   last_msgs.reserve(can_msgs.size());
   double route_start_time = routeStartTime();
   uint64_t last_ts = (sec + route_start_time) * 1e9;
-  auto last = std::upper_bound(events()->rbegin(), events()->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
-  for (auto it = last; it != events()->rend(); ++it) {
+  auto evs = events();
+  auto last = std::upper_bound(evs->rbegin(), evs->rend(), last_ts, [](uint64_t ts, auto &e) { return e->mono_time < ts; });
+  for (auto it = last; it != evs->rend(); ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
       for (const auto &c : (*it)->event.getCan()) {
         auto &m = last_msgs[{.source = c.getSrc(), .address = c.getAddress()}];

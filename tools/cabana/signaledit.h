@@ -4,11 +4,10 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QStyledItemDelegate>
+#include <QTableWidget>
 #include <QTreeView>
 
 #include "tools/cabana/chartswidget.h"
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT
@@ -62,16 +61,33 @@ private:
   friend class SignalView;
 };
 
+class ValueDescriptionDlg : public QDialog {
+public:
+  ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent);
+  ValueDescription val_desc;
+
+private:
+  struct Delegate : public QStyledItemDelegate {
+    Delegate(QWidget *parent) : QStyledItemDelegate(parent) {}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  };
+
+  void save();
+  QTableWidget *table;
+};
+
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
   QFont small_font;
+  const int color_label_width = 18;
 };
 
-class SignalView : public QWidget {
+class SignalView : public QFrame {
   Q_OBJECT
 
 public:
@@ -79,7 +95,7 @@ public:
   void setMessage(const MessageId &id);
   void signalHovered(const Signal *sig);
   void updateChartState();
-  void expandSignal(const Signal *sig);
+  void selectSignal(const Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 

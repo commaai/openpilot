@@ -1,15 +1,14 @@
 #pragma once
 
-#include <optional>
-
 #include <QAbstractTableModel>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QSet>
-#include <QStyledItemDelegate>
 #include <QTableView>
 
+#include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+using namespace dbcmanager;
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
