@@ -65,7 +65,7 @@ class MetaDriveBridge(SimulatorBridge):
   def spawn_objects(self):
     # Lazily import as `metadrive-simulator`` is an optional install
     import metadrive  # noqa: F401 pylint: disable=W0611, disable=import-error
-    import gym
+    import gym  # pylint: disable=import-error
     from metadrive.constants import CamMask  # pylint: disable=import-error
     from metadrive.component.vehicle_module.base_camera import BaseCamera  # pylint: disable=import-error
     from metadrive.engine.engine_utils import engine_initialized  # pylint: disable=import-error
