@@ -1,8 +1,6 @@
 #pragma once
 
 #include <deque>
-#include <optional>
-
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
@@ -11,6 +9,8 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/util.h"
+
 using namespace dbcmanager;
 
 class HeaderView : public QHeaderView {
@@ -36,7 +36,7 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override {
     return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
   }
-  void refresh();
+  void refresh(bool fetch_message = true);
 
 public slots:
   void setDisplayType(int type);
@@ -55,7 +55,7 @@ public:
   std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
-  std::optional<MessageId> msg_id;
+  MessageId msg_id;
   ChangeTracker hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
@@ -64,19 +64,19 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  QList<Signal> sigs;
+  std::vector<const Signal *> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };
 
-class LogsWidget : public QWidget {
+class LogsWidget : public QFrame {
   Q_OBJECT
 
 public:
   LogsWidget(QWidget *parent);
   void setMessage(const MessageId &message_id);
-  void updateState() {if (dynamic_mode->isChecked()) model->updateState(); }
-  void showEvent(QShowEvent *event) override { if (dynamic_mode->isChecked()) model->refresh(); }
+  void updateState();
+  void showEvent(QShowEvent *event) override;
 
 private slots:
   void setFilter();
@@ -90,4 +90,5 @@ private:
   QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;
   QWidget *filters_widget;
+  MessageBytesDelegate *delegate;
 };

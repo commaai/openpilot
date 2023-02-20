@@ -38,8 +38,8 @@ RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : 
 void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
     dbc()->updateMsg(id, message.name, message.size);
-    for (auto &s : message.sigs)
-      dbc()->addSignal(id, s);
+    for (auto s : message.getSignals())
+      dbc()->addSignal(id, *s);
   }
 }
 
