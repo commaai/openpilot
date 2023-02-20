@@ -208,6 +208,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.ESCALADE_ESV:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
