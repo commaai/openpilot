@@ -64,6 +64,7 @@ class HyundaiFlags(IntFlag):
   USE_FCA = 256
   SP_ENHANCED_SCC = 512
   SP_CAN_LFA_BTN = 1024
+  SP_NAV_MSG = 2048
 
 
 class CAR:

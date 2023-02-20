@@ -49,6 +49,7 @@ class CarState(CarStateBase):
     self.escc_aeb_dec_cmd_act = 0
     self.escc_cmd_act = 0
     self.escc_aeb_dec_cmd = 0
+    self._speed_limit_clu = 0
 
   def update(self, cp, cp_cam):
     if self.CP.carFingerprint in CANFD_CAR:
@@ -174,6 +175,9 @@ class CarState(CarStateBase):
     self.cruise_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwState"])
     self.main_buttons.extend(cp.vl_all["CLU11"]["CF_Clu_CruiseSwMain"])
 
+    self._update_traffic_signals(self.CP, cp, cp_cam)
+    ret.cruiseState.speedLimit = self._calculate_speed_limit() * speed_conv
+
     return ret
 
   def update_canfd(self, cp, cp_cam):
@@ -247,7 +251,19 @@ class CarState(CarStateBase):
     if self.CP.flags & HyundaiFlags.CANFD_HDA2:
       self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
+    if self.CP.flags & HyundaiFlags.SP_NAV_MSG:
+      self._update_traffic_signals(self.CP, cp, cp_cam)
+      ret.cruiseState.speedLimit = self._calculate_speed_limit() * speed_factor
+
     return ret
+
+  def _update_traffic_signals(self, CP, cp, cp_cam):
+    speed_limit_clu_canfd = cp if self.CP.flags & HyundaiFlags.CANFD_HDA2 else cp_cam
+    self._speed_limit_clu = speed_limit_clu_canfd.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"] if CP.carFingerprint in CANFD_CAR else\
+                            cp.vl["Navi_HU"]["SpeedLim_Nav_Clu"]
+
+  def _calculate_speed_limit(self):
+    return self._speed_limit_clu if self._speed_limit_clu not in (0, 255) else 0
 
   @staticmethod
   def get_can_parser(CP):
@@ -404,6 +420,10 @@ class CarState(CarStateBase):
         ]
       checks.append(("ESCC", 50))
 
+    if CP.flags & HyundaiFlags.SP_NAV_MSG:
+      signals.append(("SpeedLim_Nav_Clu", "Navi_HU"))
+      checks.append(("Navi_HU", 5))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -554,6 +574,10 @@ class CarState(CarStateBase):
         ("ACCELERATOR_BRAKE_ALT", 100),
       ]
 
+    if CP.flags & HyundaiFlags.CANFD_HDA2 and CP.flags & HyundaiFlags.SP_NAV_MSG:
+      signals.append(("SPEED_LIMIT_1", "CLUSTER_SPEED_LIMIT"))
+      checks.append(("CLUSTER_SPEED_LIMIT", 10))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_e_can_bus(CP))
 
   @staticmethod
@@ -580,5 +604,9 @@ class CarState(CarStateBase):
       checks += [
         ("SCC_CONTROL", 50),
       ]
+
+    if not (CP.flags & HyundaiFlags.CANFD_HDA2) and CP.flags & HyundaiFlags.SP_NAV_MSG:
+      signals.append(("SPEED_LIMIT_1", "CLUSTER_SPEED_LIMIT"))
+      checks.append(("CLUSTER_SPEED_LIMIT", 10))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)
