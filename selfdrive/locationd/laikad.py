@@ -90,7 +90,9 @@ class Laikad:
   def cache_ephemeris(self, t: GPSTime):
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
       put_nonblocking(EPHEMERIS_CACHE, json.dumps(
-        {'version': CACHE_VERSION, 'last_fetch_navs_t': self.last_fetch_navs_t, 'navs': self.astro_dog.navs},
+        {'version': CACHE_VERSION, 'last_fetch_navs_t': self.last_fetch_navs_t, 'navs': self.astro_dog.navs,
+         # backward compatibility if old branch is checked out with new cache
+         'orbits': {}, 'nav': {}, 'last_fetch_orbits_t': None},
         cls=CacheSerializer))
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
