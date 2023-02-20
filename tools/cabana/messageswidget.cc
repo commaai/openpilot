@@ -1,17 +1,17 @@
 #include "tools/cabana/messageswidget.h"
 
-#include <QApplication>
-#include <QFontDatabase>
 #include <QHBoxLayout>
-#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0 ,0, 0, 0);
 
   // message filter
   filter = new QLineEdit(this);
+  QRegularExpression re("\\S+");
+  filter->setValidator(new QRegularExpressionValidator(re, this));
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
   main_layout->addWidget(filter);
@@ -44,11 +44,16 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
-  QObject::connect(model, &MessageListModel::modelReset, [this]() { selectMessage(*current_msg_id); });
+  QObject::connect(model, &MessageListModel::modelReset, [this]() {
+    if (current_msg_id) {
+      selectMessage(*current_msg_id);
+    }
+  });
   QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
-      if (model->msgs[current.row()] != *current_msg_id) {
-        current_msg_id = model->msgs[current.row()];
+      auto &id = model->msgs[current.row()];
+      if (!current_msg_id || id != *current_msg_id) {
+        current_msg_id = id;
         emit msgSelectionChanged(*current_msg_id);
       }
     }
@@ -67,10 +72,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
     <!-- TODO: add descprition here -->
-    Byte color: <br />
+    <span style="color:gray">Byte color</span><br />
     <span style="color:gray;">■ </span> constant changing<br />
     <span style="color:blue;">■ </span> increasing<br />
-    <span style="color:red;">■ </span> decreasing <br />
+    <span style="color:red;">■ </span> decreasing
   )"));
 }
 
@@ -91,9 +96,10 @@ void MessagesWidget::updateSuppressedButtons() {
 }
 
 void MessagesWidget::reset() {
+  current_msg_id = std::nullopt;
+  table_widget->selectionModel()->clear();
   model->reset();
   filter->clear();
-  current_msg_id = std::nullopt;
   updateSuppressedButtons();
 }
 
@@ -138,8 +144,8 @@ void MessageListModel::setFilterString(const QString &string) {
     if (id.toString().contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
     // Search by signal name
     if (const auto msg = dbc()->msg(id)) {
-      for (auto &signal : msg->sigs) {
-        if (signal.name.contains(txt, cs)) return true;
+      for (auto s : msg->getSignals()) {
+        if (s->name.contains(txt, cs)) return true;
       }
     }
     return false;

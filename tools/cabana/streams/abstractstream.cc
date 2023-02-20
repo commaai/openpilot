@@ -31,10 +31,12 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
       data.count = ++counters[id];
       data.freq = data.count / std::max(1.0, current_sec);
-      change_trackers[id].compute(data.dat, data.ts, data.freq);
-      data.colors = change_trackers[id].colors;
-      data.last_change_t = change_trackers[id].last_change_t;
-      data.bit_change_counts = change_trackers[id].bit_change_counts;
+
+      auto &tracker = change_trackers[id];
+      tracker.compute(data.dat, data.ts, data.freq);
+      data.colors = tracker.colors;
+      data.last_change_t = tracker.last_change_t;
+      data.bit_change_counts = tracker.bit_change_counts;
     }
 
     double ts = millis_since_boot();

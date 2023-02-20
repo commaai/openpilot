@@ -11,15 +11,16 @@
 #include <QRubberBand>
 #include <QPushButton>
 #include <QToolBar>
-#include <QToolButton>
 #include <QToolTip>
 #include <QtConcurrent>
 
 const int MAX_COLUMN_COUNT = 4;
 // ChartsWidget
 
-ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
+ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
@@ -43,6 +44,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider->setMaximumWidth(200);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
@@ -67,6 +69,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QWidget(parent) {
   charts_main_layout->addStretch(0);
 
   QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -329,18 +332,12 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart);
   move_icon->setToolTip(tr("Drag and drop to combine charts"));
 
-  QToolButton *remove_btn = new QToolButton();
-  remove_btn->setIcon(utils::icon("x"));
-  remove_btn->setAutoRaise(true);
-  remove_btn->setToolTip(tr("Remove Chart"));
+  QToolButton *remove_btn = toolButton("x", tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart);
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart->zValue() + 11);
 
-  QToolButton *manage_btn = new QToolButton();
-  manage_btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  manage_btn->setIcon(utils::icon("list"));
-  manage_btn->setAutoRaise(true);
+  QToolButton *manage_btn = toolButton("list", "");
   QMenu *menu = new QMenu(this);
   line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
   line_series_action->setCheckable(true);
@@ -434,12 +431,12 @@ void ChartView::manageSeries() {
 }
 
 void ChartView::resizeEvent(QResizeEvent *event) {
-  QChartView::resizeEvent(event);
   updatePlotArea(align_to);
   int x = event->size().width() - close_btn_proxy->size().width() - 11;
   close_btn_proxy->setPos(x, 8);
   manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
   move_icon->setPos(11, 8);
+  QChartView::resizeEvent(event);
 }
 
 void ChartView::updatePlotArea(int left) {
@@ -448,7 +445,7 @@ void ChartView::updatePlotArea(int left) {
     align_to = left;
     background->setRect(r);
     chart()->legend()->setGeometry(QRect(r.left(), r.top(), r.width(), 45));
-    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 22, r.height() - 80));
+    chart()->setPlotArea(QRect(align_to, r.top() + 45, r.width() - align_to - 36, r.height() - 80));
     chart()->layout()->invalidate();
   }
 }
@@ -570,7 +567,7 @@ void ChartView::updateAxisY() {
 
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
-    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 20;  // left margin 20
+    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;  // left margin 15
     emit axisYLabelWidthChanged(y_label_width);
   }
 }
@@ -887,10 +884,10 @@ void SeriesSelector::updateAvailableList(int index) {
   available_list->clear();
   MessageId msg_id = msgs_combo->itemData(index).value<MessageId>();
   auto selected_items = seletedItems();
-  for (auto &s : dbc()->msg(msg_id)->sigs) {
-    bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig=&s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
+  for (auto s : dbc()->msg(msg_id)->getSignals()) {
+    bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig=s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
     if (!is_selected) {
-      addItemToList(available_list, msg_id, &s);
+      addItemToList(available_list, msg_id, s);
     }
   }
 }

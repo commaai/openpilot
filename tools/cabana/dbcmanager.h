@@ -52,12 +52,16 @@ struct Signal {
 struct Msg {
   QString name;
   uint32_t size;
-  QList<Signal> sigs;
 
+  std::vector<const Signal*> getSignals() const;
   const Signal *sig(const QString &sig_name) const {
     auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
     return it != sigs.end() ? &(*it) : nullptr;
   }
+
+private:
+  QList<Signal> sigs;
+  friend class DBCManager;
 };
 
 class DBCManager : public QObject {

@@ -60,7 +60,7 @@ protected:
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   MessagesWidget *messages_widget;
-  DetailWidget *detail_widget;
+  CenterWidget *center_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;

@@ -6,7 +6,6 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QToolButton>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
@@ -48,9 +47,9 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    for (auto &s : msg->sigs) {
-      if (filter_str.isEmpty() || s.name.contains(filter_str, Qt::CaseInsensitive)) {
-        insertItem(root.get(), root->children.size(), &s);
+    for (auto s : msg->getSignals()) {
+      if (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive)) {
+        insertItem(root.get(), root->children.size(), s);
       }
     }
   }
@@ -58,7 +57,7 @@ void SignalModel::refresh() {
 }
 
 void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (!msgs || (msgs->contains(msg_id))) {
+  if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
@@ -93,9 +92,8 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
 }
 
 int SignalModel::signalRow(const Signal *sig) const {
-  auto &children = root->children;
-  for (int i = 0; i < children.size(); ++i) {
-    if (children[i]->sig == sig) return i;
+  for (int i = 0; i < root->children.size(); ++i) {
+    if (root->children[i]->sig == sig) return i;
   }
   return -1;
 }
@@ -129,11 +127,11 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Min: return item->sig->min;
           case Item::Max: return item->sig->max;
           case Item::Desc: {
-            QString val_desc;
+            QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc += QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val, desc);
             }
-            return val_desc;
+            return val_desc.join(" ");
           }
           default: break;
         }
@@ -280,16 +278,24 @@ void SignalModel::handleSignalRemoved(const Signal *sig) {
 
 // SignalItemDelegate
 
-SignalItemDelegate::SignalItemDelegate(QObject *parent) {
+SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
   small_font.setPointSize(8);
 }
 
+QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QSize size = QStyledItemDelegate::sizeHint(option, index);
+  if (!index.parent().isValid() && index.column() == 0) {
+    size.rwidth() = std::min(((QWidget*)parent())->size().width() / 2, size.width() + color_label_width + 8);
+  }
+  return size;
+}
+
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (item && !index.parent().isValid() && index.column() == 0) {
+  if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
@@ -298,7 +304,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    QRect rc{option.rect.left(), option.rect.top(), 18, option.rect.height()};
+    QRect rc{option.rect.left(), option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
     painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 3, 3);
@@ -345,22 +351,22 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
 
 // SignalView
 
-SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   // title bar
   QWidget *title_bar = new QWidget(this);
   title_bar->setAutoFillBackground(true);
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
+  QRegularExpression re("\\S+");
+  filter_edit->setValidator(new QRegularExpressionValidator(re, this));
   filter_edit->setClearButtonEnabled(true);
-  filter_edit->setPlaceholderText(tr("filter signals by name"));
+  filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
-  auto collapse_btn = new QToolButton();
-  collapse_btn->setIcon(utils::icon("dash-square"));
+  auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
-  collapse_btn->setAutoRaise(true);
-  collapse_btn->setToolTip(tr("Collapse All"));
   hl->addWidget(collapse_btn);
 
   // tree view
@@ -371,7 +377,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
-  tree->header()->setSectionResizeMode(QHeaderView::Stretch);
+  tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+  tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);
   tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
 
@@ -389,7 +396,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { expandSignal(sig); });
+  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { selectSignal(sig); });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -404,16 +411,6 @@ void SignalView::setMessage(const MessageId &id) {
 }
 
 void SignalView::rowsChanged() {
-  auto create_btn = [](const QString &id, const QString &tooltip) {
-    auto btn = new QToolButton();
-    btn->setIcon(utils::icon(id));
-    btn->setToolTip(tooltip);
-    btn->setAutoRaise(true);
-    return btn;
-  };
-
-  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-
   for (int i = 0; i < model->rowCount(); ++i) {
     auto index = model->index(i, 1);
     if (!tree->indexWidget(index)) {
@@ -422,8 +419,8 @@ void SignalView::rowsChanged() {
       h->setContentsMargins(0, 2, 0, 2);
       h->addStretch(1);
 
-      auto remove_btn = create_btn("x", tr("Remove signal"));
-      auto plot_btn = create_btn("graph-up", "");
+      auto remove_btn = toolButton("x", tr("Remove signal"));
+      auto plot_btn = toolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
       h->addWidget(remove_btn);
@@ -436,6 +433,7 @@ void SignalView::rowsChanged() {
       });
     }
   }
+  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
   updateChartState();
 }
 
@@ -449,23 +447,26 @@ void SignalView::rowClicked(const QModelIndex &index) {
   }
 }
 
-void SignalView::expandSignal(const Signal *sig) {
+void SignalView::selectSignal(const Signal *sig, bool expand) {
   if (int row = model->signalRow(sig); row != -1) {
     auto idx = model->index(row, 0);
-    bool expand = !tree->isExpanded(idx);
-    tree->setExpanded(idx, expand);
+    if (expand) {
+      tree->setExpanded(idx, !tree->isExpanded(idx));
+    }
     tree->scrollTo(idx, QAbstractItemView::PositionAtTop);
-    if (expand) tree->setCurrentIndex(idx);
+    tree->setCurrentIndex(idx);
   }
 }
 
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    auto plot_btn = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>()[0];
     bool chart_opened = charts->hasSignal(msg_id, item->sig);
-    plot_btn->setChecked(chart_opened);
-    plot_btn->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
+    auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
+    if (buttons.size() > 0) {
+      buttons[0]->setChecked(chart_opened);
+      buttons[0]->setToolTip(chart_opened ? tr("Close Plot") : tr("Show Plot\nSHIFT click to add to previous opened plot"));
+    }
     ++i;
   }
 }

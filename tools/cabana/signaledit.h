@@ -80,12 +80,14 @@ class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
   QFont small_font;
+  const int color_label_width = 18;
 };
 
-class SignalView : public QWidget {
+class SignalView : public QFrame {
   Q_OBJECT
 
 public:
@@ -93,7 +95,7 @@ public:
   void setMessage(const MessageId &id);
   void signalHovered(const Signal *sig);
   void updateChartState();
-  void expandSignal(const Signal *sig);
+  void selectSignal(const Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 
