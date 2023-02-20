@@ -120,7 +120,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-20"),
   CAR.CHR_TSS2: ToyotaCarInfo("Toyota C-HR 2021"),
   CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
-  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2022"),
+  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
