@@ -7,8 +7,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "tools/cabana/dbcmanager.h"
-
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
@@ -140,8 +138,8 @@ void MessageListModel::setFilterString(const QString &string) {
     if (id.toString().contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
     // Search by signal name
     if (const auto msg = dbc()->msg(id)) {
-      for (auto &signal : msg->getSignals()) {
-        if (QString::fromStdString(signal->name).contains(txt, cs)) return true;
+      for (auto &signal : msg->sigs) {
+        if (signal.name.contains(txt, cs)) return true;
       }
     }
     return false;

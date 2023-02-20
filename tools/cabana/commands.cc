@@ -36,7 +36,7 @@ RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : 
 void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
     dbc()->updateMsg(id, message.name, message.size);
-    for (auto &[name, s] : message.sigs)
+    for (auto &s : message.sigs)
       dbc()->addSignal(id, s);
   }
 }
@@ -50,31 +50,31 @@ void RemoveMsgCommand::redo() {
 
 AddSigCommand::AddSigCommand(const MessageId &id, const Signal &sig, QUndoCommand *parent)
     : id(id), signal(sig), QUndoCommand(parent) {
-  setText(QObject::tr("Add signal %1 to %2").arg(sig.name.c_str()).arg(id.address));
+  setText(QObject::tr("Add signal %1 to %2").arg(sig.name).arg(id.address));
 }
 
-void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name.c_str()); }
+void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name); }
 void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
 
 // RemoveSigCommand
 
 RemoveSigCommand::RemoveSigCommand(const MessageId &id, const Signal *sig, QUndoCommand *parent)
     : id(id), signal(*sig), QUndoCommand(parent) {
-  setText(QObject::tr("Remove signal %1 from %2").arg(signal.name.c_str()).arg(id.address));
+  setText(QObject::tr("Remove signal %1 from %2").arg(signal.name).arg(id.address));
 }
 
 void RemoveSigCommand::undo() { dbc()->addSignal(id, signal); }
-void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name.c_str()); }
+void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name); }
 
 // EditSignalCommand
 
 EditSignalCommand::EditSignalCommand(const MessageId &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
     : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
-  setText(QObject::tr("Edit signal %1").arg(old_signal.name.c_str()));
+  setText(QObject::tr("Edit signal %1").arg(old_signal.name));
 }
 
-void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name.c_str(), old_signal); }
-void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name.c_str(), new_signal); }
+void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name, old_signal); }
+void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name, new_signal); }
 
 namespace UndoStack {
 

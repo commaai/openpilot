@@ -459,7 +459,7 @@ void ChartView::updateTitle() {
   }
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
-    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name.c_str(), msgName(s.msg_id), s.msg_id.toString()));
+    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name, msgName(s.msg_id), s.msg_id.toString()));
   }
 }
 
@@ -672,7 +672,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
         value = QString::number(it->y());
         track_pts[i] = chart()->mapToPosition(*it);
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name.c_str(), value));
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name, value));
     }
     auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
     auto pt = (max == track_pts.end()) ? ev->pos() : *max;
@@ -887,7 +887,7 @@ void SeriesSelector::updateAvailableList(int index) {
   available_list->clear();
   MessageId msg_id = msgs_combo->itemData(index).value<MessageId>();
   auto selected_items = seletedItems();
-  for (auto &[name, s] : dbc()->msg(msg_id)->sigs) {
+  for (auto &s : dbc()->msg(msg_id)->sigs) {
     bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig=&s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
     if (!is_selected) {
       addItemToList(available_list, msg_id, &s);
@@ -896,7 +896,7 @@ void SeriesSelector::updateAvailableList(int index) {
 }
 
 void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const Signal *sig, bool show_msg_name) {
-  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name.c_str());
+  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name);
   if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
 
   QLabel *label = new QLabel(text);

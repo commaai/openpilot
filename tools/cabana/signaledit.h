@@ -4,11 +4,10 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QStyledItemDelegate>
+#include <QTableWidget>
 #include <QTreeView>
 
 #include "tools/cabana/chartswidget.h"
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT
@@ -60,6 +59,21 @@ private:
   QString filter_str;
   std::unique_ptr<Item> root;
   friend class SignalView;
+};
+
+class ValueDescriptionDlg : public QDialog {
+public:
+  ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent);
+  ValueDescription val_desc;
+
+private:
+  struct Delegate : public QStyledItemDelegate {
+    Delegate(QWidget *parent) : QStyledItemDelegate(parent) {}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  };
+
+  void save();
+  QTableWidget *table;
 };
 
 class SignalItemDelegate : public QStyledItemDelegate {
