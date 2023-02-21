@@ -22,6 +22,13 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   #                        CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
   #                        CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022,
   #                        CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020):
+  # CF_Lkas_FcwSysState - Optima: 0, Sonata: 1
+  # CF_Lkas_FcwOpt      - Optima: 0, Sonata: 2
+  # CF_Lkas_SysWarning  - Optima: 0, but may be used when stock camera sends an alert, Sonata: 0 disengaged, 15 engaged
+  # CF_Lkas_LdwsSysState- Optima: 0 SCC disengaged, 15 SCC engaged, Sonata: 1 SCC disengaged, 15 SCC engaged
+  # CF_Lkas_LdwsOpt_USM - Optima: (seemingly) always 3, Sonata: 2 SCC disengaged, 7 SCC engaged
+  # CF_Lkas_FcwOpt_USM  - Optima: (seemingly) always 0, Sonata: 1 SCC disengaged, 4 SCC engaged
+
   if lkas11["CF_Lkas_LdwsOpt_USM"] == 2:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
