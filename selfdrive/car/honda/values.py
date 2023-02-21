@@ -12,7 +12,6 @@ from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQuerie
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-
 class CarControllerParams:
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
@@ -45,11 +44,9 @@ class CarControllerParams:
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
-
 class HondaFlags(IntFlag):
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
-
 
 # Car button codes
 class CruiseButtons:
@@ -57,7 +54,6 @@ class CruiseButtons:
   DECEL_SET = 3
   CANCEL = 2
   MAIN = 1
-
 
 # See dbc files for info on values
 VISUAL_HUD = {
