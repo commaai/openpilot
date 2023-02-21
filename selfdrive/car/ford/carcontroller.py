@@ -47,7 +47,16 @@ class CarController:
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
         # apply limits to curvature and clip to signal range
-        apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
+        desired_curvature = actuators.curvature
+        if CS.out.vEgoRaw > 12:
+          # pointless to limit at low speeds due to lack of torque
+          # TODO: figure out a good way to ramp down limits such that we can cleanly match panda
+          actual_curvature = CS.out.yawRate / CS.out.vEgoRaw
+          desired_curvature = clip(desired_curvature,
+                                   actual_curvature + CarControllerParams.CURVATURE_DELTA_MAX,
+                                   actual_curvature - CarControllerParams.CURVATURE_DELTA_MAX)
+
+        apply_curvature = apply_std_steer_angle_limits(desired_curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
         apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
