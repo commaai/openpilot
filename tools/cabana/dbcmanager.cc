@@ -10,10 +10,6 @@
 
 namespace dbcmanager {
 
-void sortSignalsByAddress(QList<Signal> &sigs) {
-  std::sort(sigs.begin(), sigs.end(), [](auto &a, auto &b) { return a.start_bit < b.start_bit; });
-}
-
 bool DBCManager::open(const QString &dbc_file_name, QString *error) {
   QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, dbc_file_name);
   QFile file(opendbc_file_path);
@@ -83,27 +79,27 @@ QString DBCManager::generateDBC() {
   QString dbc_string, signal_comment, val_desc;
   for (auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
-    for (auto &sig : m.sigs) {
+    for (auto sig : m.getSignals()) {
       dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
-                        .arg(sig.name)
-                        .arg(sig.start_bit)
-                        .arg(sig.size)
-                        .arg(sig.is_little_endian ? '1' : '0')
-                        .arg(sig.is_signed ? '-' : '+')
-                        .arg(sig.factor, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig.offset, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig.min)
-                        .arg(sig.max)
-                        .arg(sig.unit);
-      if (!sig.comment.isEmpty()) {
-        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig.name).arg(sig.comment);
+                        .arg(sig->name)
+                        .arg(sig->start_bit)
+                        .arg(sig->size)
+                        .arg(sig->is_little_endian ? '1' : '0')
+                        .arg(sig->is_signed ? '-' : '+')
+                        .arg(sig->factor, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig->offset, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(sig->min)
+                        .arg(sig->max)
+                        .arg(sig->unit);
+      if (!sig->comment.isEmpty()) {
+        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig.val_desc.isEmpty()) {
-        QString text;
-        for (auto &[val, desc] : sig.val_desc) {
-          text += QString("%1 \"%2\"").arg(val, desc);
+      if (!sig->val_desc.isEmpty()) {
+        QStringList text;
+        for (auto &[val, desc] : sig->val_desc) {
+          text << QString("%1 \"%2\"").arg(val, desc);
         }
-        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig.name).arg(text);
+        val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig->name).arg(text.join(" "));
       }
     }
     dbc_string += "\n";
@@ -127,7 +123,6 @@ void DBCManager::addSignal(const MessageId &id, const Signal &sig) {
   if (auto m = const_cast<Msg *>(msg(id.address))) {
     m->sigs.push_back(sig);
     auto s = &m->sigs.last();
-    sortSignalsByAddress(m->sigs);
     emit signalAdded(id.address, s);
   }
 }
@@ -136,7 +131,6 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
   if (auto m = const_cast<Msg *>(msg(id))) {
     if (auto s = (Signal *)m->sig(sig_name)) {
       *s = sig;
-      sortSignalsByAddress(m->sigs);
       emit signalUpdated(s);
     }
   }
@@ -155,6 +149,16 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
 DBCManager *dbc() {
   static DBCManager dbc_manager(nullptr);
   return &dbc_manager;
+}
+
+// Msg
+
+std::vector<const Signal*> Msg::getSignals() const {
+  std::vector<const Signal*> ret;
+  ret.reserve(sigs.size());
+  for (auto &sig : sigs) ret.push_back(&sig);
+  std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
+  return ret;
 }
 
 // helper functions
@@ -246,7 +250,6 @@ bool dbcmanager::DBCManager::open(const QString &name, const QString &content, Q
         sig.offset = s.offset;
         sig.is_little_endian = s.is_little_endian;
       }
-      sortSignalsByAddress(m.sigs);
     }
     parseExtraInfo(content);
     name_ = name;

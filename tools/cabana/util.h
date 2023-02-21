@@ -6,7 +6,9 @@
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QStringBuilder>
 #include <QStyledItemDelegate>
+#include <QToolButton>
 #include <QVector>
 
 #include "tools/cabana/dbcmanager.h"
@@ -52,3 +54,5 @@ public:
 namespace utils {
 QPixmap icon(const QString &id);
 }
+
+QToolButton *toolButton(const QString &icon, const QString &tooltip);

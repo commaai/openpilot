@@ -27,8 +27,8 @@ void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const
 
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
-  detail_widget = new DetailWidget(charts_widget, this);
-  setCentralWidget(detail_widget);
+  center_widget = new CenterWidget(charts_widget, this);
+  setCentralWidget(center_widget);
   createActions();
   createStatusBar();
   createShortcuts();
@@ -60,11 +60,12 @@ MainWindow::MainWindow() : QMainWindow() {
 
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
 }
 
 void MainWindow::createActions() {
@@ -174,7 +175,7 @@ void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
+  progress_bar->setFixedSize({300, 16});
   progress_bar->setVisible(false);
   statusBar()->addWidget(new QLabel(tr("For Help, Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
@@ -186,7 +187,28 @@ void MainWindow::createShortcuts() {
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackIndexChanged(int index) {
+  int count = UndoStack::instance()->count();
+  if (count >= 0) {
+    QString command_text;
+    if (index == count) {
+      command_text = (count == prev_undostack_count ? "Redo " : "") + UndoStack::instance()->text(index - 1);
+    } else if (index < prev_undostack_index) {
+      command_text = tr("Undo %1").arg(UndoStack::instance()->text(index));
+    } else if (index > prev_undostack_index) {
+      command_text = tr("Redo %1").arg(UndoStack::instance()->text(index - 1));
+    }
+    statusBar()->showMessage(command_text, 2000);
+  }
+  prev_undostack_index = index;
+  prev_undostack_count = count;
+}
+
 void MainWindow::undoStackCleanChanged(bool clean) {
+  if (clean) {
+    prev_undostack_index = 0;
+    prev_undostack_count = 0;
+  }
   setWindowModified(!clean);
 }
 
@@ -198,7 +220,7 @@ void MainWindow::DBCFileChanged() {
 void MainWindow::openRoute() {
   OpenRouteDialog dlg(this);
   if (dlg.exec()) {
-    detail_widget->removeAll();
+    center_widget->clear();
     charts_widget->removeAll();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
   } else if (dlg.failedToLoad()) {

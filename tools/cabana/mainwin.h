@@ -54,12 +54,13 @@ protected:
   void setOption();
   void findSimilarBits();
   void undoStackCleanChanged(bool clean);
+  void undoStackIndexChanged(int index);
   void onlineHelp();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   MessagesWidget *messages_widget;
-  DetailWidget *detail_widget;
+  CenterWidget *center_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
@@ -70,6 +71,8 @@ protected:
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
+  int prev_undostack_index = 0;
+  int prev_undostack_count = 0;
   friend class OnlineHelp;
 };
 
