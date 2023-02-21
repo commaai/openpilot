@@ -3,13 +3,11 @@ from cereal import car
 from math import fabs
 from panda import Panda
 
-from common.numpy_fast import interp
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
-from selfdrive.controls.lib.drive_helpers import apply_center_deadzone
+from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -45,43 +43,6 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
-
-  @staticmethod
-  def torque_from_lateral_accel_bolt(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, vego, friction_compensation):
-    friction_interp = interp(
-      apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
-      [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
-      [-torque_params.friction, torque_params.friction]
-    )
-    friction = friction_interp if friction_compensation else 0.0
-    steer_torque = lateral_accel_value / torque_params.latAccelFactor
-
-    # TODO:
-    # 1. Learn the correction factors from data
-    # 2. Generalize the logic to other GM torque control platforms
-    steer_break_pts = [-1.0, -0.9, -0.75, -0.5, 0.0, 0.5, 0.75, 0.9, 1.0]
-    steer_lataccel_factors = [1.5, 1.15, 1.02, 1.0, 1.0, 1.0, 1.02, 1.15, 1.5]
-    steer_correction_factor = interp(
-      steer_torque,
-      steer_break_pts,
-      steer_lataccel_factors
-    )
-
-    vego_break_pts = [0.0, 10.0, 15.0, 20.0, 100.0]
-    vego_lataccel_factors = [1.5, 1.5, 1.25, 1.0, 1.0]
-    vego_correction_factor = interp(
-      vego,
-      vego_break_pts,
-      vego_lataccel_factors,
-    )
-
-    return (steer_torque + friction) / (steer_correction_factor * vego_correction_factor)
-
-  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint == CAR.BOLT_EUV:
-      return self.torque_from_lateral_accel_bolt
-    else:
-      return self.torque_from_lateral_accel_linear
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
@@ -227,7 +188,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
       tire_stiffness_factor = 1.0
-      ret.steerActuatorDelay = 0.12
+      ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.SILVERADO:
