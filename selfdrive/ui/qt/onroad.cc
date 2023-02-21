@@ -559,8 +559,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       // speed up: 120, slow down: 0
       end_hue = fmax(fmin(start_hue + acceleration_future * 35, 148), 0);
 
-      float saturation = lerp(0, 1, pow(std::abs(3 * acceleration_future), 2) / 3);
-//      float saturation = pow(std::abs(acceleration_future), 2);
+      float saturation = std::abs(acceleration_future);
       saturation = saturation > 1 ? 1. : saturation;
       float lightness = lerp(0.95, 0.62, saturation);
 //      lightness = lerp(0.56, 0.88, lin_grad_point);
