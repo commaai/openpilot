@@ -32,7 +32,6 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   verticalHeader()->setDefaultSectionSize(CELL_HEIGHT);
   horizontalHeader()->hide();
-  setFrameShape(QFrame::NoFrame);
   setShowGrid(false);
   setMouseTracking(true);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -44,17 +43,17 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   setWhatsThis(R"(
     <b>Binary View</b><br/>
     <!-- TODO: add descprition here -->
-    Shortcuts:<br />
+    <span style="color:gray">Shortcuts</span><br />
     Delete Signal:
-      <span style="background-color:lightGray;color:gray"> x </span>,
-      <span style="background-color:lightGray;color:gray"> Backspace </span>,
-      <span style="background-color:lightGray;color:gray"> Delete</span><br />
-    Change endianness: <span style="background-color:lightGray;color:gray"> e </span><br />
-    Change singedness: <span style="background-color:lightGray;color:gray"> s </span><br />
+      <span style="background-color:lightGray;color:gray">&nbsp;x&nbsp;</span>,
+      <span style="background-color:lightGray;color:gray">&nbsp;Backspace&nbsp;</span>,
+      <span style="background-color:lightGray;color:gray">&nbsp;Delete&nbsp;</span><br />
+    Change endianness: <span style="background-color:lightGray;color:gray">&nbsp;e&nbsp; </span><br />
+    Change singedness: <span style="background-color:lightGray;color:gray">&nbsp;s&nbsp;</span><br />
     Open chart:
-      <span style="background-color:lightGray;color:gray"> c </span>,
-      <span style="background-color:lightGray;color:gray"> p </span>,
-      <span style="background-color:lightGray;color:gray"> g </span><br />
+      <span style="background-color:lightGray;color:gray">&nbsp;c&nbsp;</span>,
+      <span style="background-color:lightGray;color:gray">&nbsp;p&nbsp;</span>,
+      <span style="background-color:lightGray;color:gray">&nbsp;g&nbsp;</span>
   )");
 }
 
@@ -108,14 +107,14 @@ void BinaryView::addShortcuts() {
   QObject::connect(shortcut_plot_c, &QShortcut::activated, shortcut_plot, &QShortcut::activated);
   QObject::connect(shortcut_plot, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      emit showChart(*model->msg_id, hovered_sig, true, false);
+      emit showChart(model->msg_id, hovered_sig, true, false);
     }
   });
 }
 
 QSize BinaryView::minimumSizeHint() const {
-  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH,
-          CELL_HEIGHT * std::min(model->rowCount(), 10)};
+  return {(horizontalHeader()->minimumSectionSize() + 1) * 9 + VERTICAL_HEADER_WIDTH + 2,
+          CELL_HEIGHT * std::min(model->rowCount(), 10) + 2};
 }
 
 void BinaryView::highlight(const Signal *sig) {
@@ -127,6 +126,16 @@ void BinaryView::highlight(const Signal *sig) {
         emit model->dataChanged(index, index, {Qt::DisplayRole});
       }
     }
+
+    if (sig && underMouse()) {
+      QString tooltip = tr(R"(%1<br /><span style="color:gray;font-size:small">
+        Size:%2 LE:%3 SGD:%4</span>
+      )").arg(sig->name).arg(sig->size).arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+      QToolTip::showText(QCursor::pos(), tooltip, this, rect());
+    } else {
+      QToolTip::showText(QCursor::pos(), "", this, rect());
+    }
+
     hovered_sig = sig;
     emit signalHovered(hovered_sig);
   }
@@ -169,7 +178,6 @@ void BinaryView::highlightPosition(const QPoint &pos) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
     const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
-    QToolTip::showText(pos, sig ? sig->name : "", this, rect());
   }
 }
 
@@ -210,8 +218,6 @@ void BinaryView::setMessage(const MessageId &message_id) {
 }
 
 void BinaryView::refresh() {
-  if (!model->msg_id) return;
-
   clearSelection();
   anchor_index = QModelIndex();
   resize_sig = nullptr;
@@ -245,26 +251,26 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 void BinaryViewModel::refresh() {
   beginResetModel();
   items.clear();
-  if (auto dbc_msg = dbc()->msg(*msg_id)) {
+  if (auto dbc_msg = dbc()->msg(msg_id)) {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
-    for (auto &sig : dbc_msg->sigs) {
-      auto [start, end] = getSignalRange(&sig);
+    for (auto sig : dbc_msg->getSignals()) {
+      auto [start, end] = getSignalRange(sig);
       for (int j = start; j <= end; ++j) {
-        int bit_index = sig.is_little_endian ? bigEndianBitIndex(j) : j;
+        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
         int idx = column_count * (bit_index / 8) + bit_index % 8;
         if (idx >= items.size()) {
-          qWarning() << "signal " << sig.name << "out of bounds.start_bit:" << sig.start_bit << "size:" << sig.size;
+          qWarning() << "signal " << sig->name << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
           break;
         }
-        if (j == start) sig.is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == end) sig.is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].bg_color = getColor(&sig);
-        items[idx].sigs.push_back(&sig);
+        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+        items[idx].bg_color = getColor(sig);
+        items[idx].sigs.push_back(sig);
       }
     }
   } else {
-    row_count = can->lastMessage(*msg_id).dat.size();
+    row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
   endResetModel();
@@ -273,7 +279,7 @@ void BinaryViewModel::refresh() {
 
 void BinaryViewModel::updateState() {
   auto prev_items = items;
-  const auto &last_msg = can->lastMessage(*msg_id);
+  const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
 
   // data size may changed.
@@ -283,33 +289,29 @@ void BinaryViewModel::updateState() {
     items.resize(row_count * column_count);
     endInsertRows();
   }
+
+  double max_f = 255.0;
+  double factor = 0.25;
+  double scaler = max_f / log2(1.0 + factor);
   char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
-      items[i * column_count + j].val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
-
+      auto &item = items[i * column_count + j];
+      item.val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
       // Bit update frequency based highlighting
-      bool has_signal = items[i * column_count + j].sigs.size() > 0;
-      double offset = has_signal ? 50 : 0;
-
-      double min_f = last_msg.bit_change_counts[i][7 - j] == 0 ? offset : offset + 25;
-      double max_f = 255.0;
-
-      double factor = 0.25;
-      double scaler = max_f / log2(1.0 + factor);
-
-      double alpha = std::clamp(offset + log2(1.0 + factor * (double)last_msg.bit_change_counts[i][7 - j] / (double)last_msg.count) * scaler, min_f, max_f);
-      items[i * column_count + j].bg_color.setAlpha(alpha);
+      double offset = !item.sigs.empty() ? 50 : 0;
+      auto n = last_msg.bit_change_counts[i][7 - j];
+      double min_f = n == 0 ? offset : offset + 25;
+      double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
+      item.bg_color.setAlpha(alpha);
     }
     hex[0] = toHex(binary[i] >> 4);
     hex[1] = toHex(binary[i] & 0xf);
     items[i * column_count + 8].val = hex;
     items[i * column_count + 8].bg_color = last_msg.colors[i];
   }
-  for (int i = binary.size(); i < row_count; ++i) {
-    for (int j = 0; j < column_count; ++j) {
-      items[i * column_count + j].val = "-";
-    }
+  for (int i = binary.size() * column_count; i < items.size(); ++i) {
+    items[i].val = "-";
   }
 
   for (int i = 0; i < items.size(); ++i) {

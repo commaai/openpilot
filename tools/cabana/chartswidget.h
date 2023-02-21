@@ -92,7 +92,7 @@ private:
   friend class ChartsWidget;
  };
 
-class ChartsWidget : public QWidget {
+class ChartsWidget : public QFrame {
   Q_OBJECT
 
 public:
