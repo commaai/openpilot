@@ -1,6 +1,6 @@
 import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
-       'cereal', 'transformations', 'widgets', 'opendbc')
+       'cereal', 'transformations', 'widgets')
 
 base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
@@ -15,8 +15,9 @@ else:
 
 qt_libs = ['qt_util'] + base_libs
 
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 cabana_env = qt_env.Clone()
+cabana_env["LIBPATH"] += ['../../opendbc/can']
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'libdbc_static', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
