@@ -587,10 +587,6 @@ trabalho definido</translation>
         <translation>Resetar Sistema</translation>
     </message>
     <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Solicitado reset do sistema. Confirme para apagar todo conteúdo e configurações. Aperte cancelar para continuar boot.</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
@@ -604,6 +600,10 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

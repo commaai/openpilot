@@ -583,10 +583,6 @@ location set</source>
         <translation>系統重置</translation>
     </message>
     <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>系統重置已觸發。請按確認刪除所有內容和設置。按取消恢復啟動。</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -600,6 +596,10 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

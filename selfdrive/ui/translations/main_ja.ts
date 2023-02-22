@@ -583,10 +583,6 @@ location set</source>
         <translation>システムを初期化</translation>
     </message>
     <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>システムの初期化をリクエストしました。「確認」ボタンを押すとデバイスが初期化されます。「キャンセル」ボタンを押すと起動を続行します。</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
@@ -600,6 +596,10 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

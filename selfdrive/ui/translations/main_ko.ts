@@ -583,10 +583,6 @@ location set</source>
         <translation>장치 초기화</translation>
     </message>
     <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>장치를 초기화 합니다. 확인버튼을 누르면 모든 내용과 설정이 초기화됩니다. 부팅을 재개하려면 취소를 누르세요.</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
@@ -600,6 +596,10 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

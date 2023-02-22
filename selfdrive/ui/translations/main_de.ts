@@ -585,10 +585,6 @@ location set</source>
         <translation>System auf Werkseinstellungen zurücksetzen</translation>
     </message>
     <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Zurücksetzen auf Werkseinstellungen wurde ausgewählt. Drücke Annehmen, um alle Inhalte und Einstellungen zu löschen. Drücke Abbrechen, um mit dem Starten des Gerätes fortzufahren.</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
@@ -602,6 +598,10 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
