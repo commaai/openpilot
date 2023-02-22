@@ -60,7 +60,7 @@ void Setup::download(QString url) {
   if (ret == CURLE_OK && res_status == 200 && is_elf(tmpfile)) {
     rename(tmpfile, "/tmp/installer");
 
-    FILE fp_url = fopen("/tmp/installer_url", "w");
+    FILE *fp_url = fopen("/tmp/installer_url", "w");
     fprintf(fp_url, "%s", url.toStdString().c_str());
     fclose(fp_url);
 
