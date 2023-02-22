@@ -329,35 +329,9 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   background->setPen(Qt::NoPen);
   background->setZValue(chart->zValue() - 1);
 
-  move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart);
-  move_icon->setToolTip(tr("Drag and drop to combine charts"));
-
-  QToolButton *remove_btn = toolButton("x", tr("Remove Chart"));
-  close_btn_proxy = new QGraphicsProxyWidget(chart);
-  close_btn_proxy->setWidget(remove_btn);
-  close_btn_proxy->setZValue(chart->zValue() + 11);
-
-  QToolButton *manage_btn = toolButton("list", "");
-  QMenu *menu = new QMenu(this);
-  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(SeriesType::Line); });
-  line_series_action->setCheckable(true);
-  line_series_action->setChecked(series_type == SeriesType::Line);
-  stepline_series_action = menu->addAction(tr("Step Line"), [this]() { setSeriesType(SeriesType::StepLine); });
-  stepline_series_action->setCheckable(true);
-  stepline_series_action->setChecked(series_type == SeriesType::StepLine);
-
-  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(SeriesType::Scatter); });
-  scatter_series_action->setCheckable(true);
-  scatter_series_action->setChecked(series_type == SeriesType::Scatter);
-  menu->addSeparator();
-  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
-  manage_btn->setMenu(menu);
-  manage_btn->setPopupMode(QToolButton::InstantPopup);
-  manage_btn_proxy = new QGraphicsProxyWidget(chart);
-  manage_btn_proxy->setWidget(manage_btn);
-  manage_btn_proxy->setZValue(chart->zValue() + 11);
-
   setChart(chart);
+
+  createToolButtons();
   setRenderHint(QPainter::Antialiasing);
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
@@ -366,6 +340,38 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &ChartView::msgRemoved);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &ChartView::msgUpdated);
+}
+
+void ChartView::createToolButtons() {
+  move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart());
+  move_icon->setToolTip(tr("Drag and drop to combine charts"));
+
+  QToolButton *remove_btn = toolButton("x", tr("Remove Chart"));
+  close_btn_proxy = new QGraphicsProxyWidget(chart());
+  close_btn_proxy->setWidget(remove_btn);
+  close_btn_proxy->setZValue(chart()->zValue() + 11);
+
+  auto add_series_action = [this](QMenu *menu, const QString &name, SeriesType type) {
+    auto act = menu->addAction(name, [=]() { setSeriesType(type); });
+    act->setCheckable(true);
+    act->setChecked(series_type == type);
+    return act;
+  };
+
+  QMenu *menu = new QMenu(this);
+  line_series_action = add_series_action(menu, tr("Line"), SeriesType::Line);
+  stepline_series_action = add_series_action(menu, tr("Step Line"), SeriesType::StepLine);
+  scatter_series_action = add_series_action(menu, tr("Scatter"), SeriesType::Scatter);
+  menu->addSeparator();
+  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
+
+  QToolButton *manage_btn = toolButton("list", "");
+  manage_btn->setMenu(menu);
+  manage_btn->setPopupMode(QToolButton::InstantPopup);
+  manage_btn_proxy = new QGraphicsProxyWidget(chart());
+  manage_btn_proxy->setWidget(manage_btn);
+  manage_btn_proxy->setZValue(chart()->zValue() + 11);
+
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
 }
 

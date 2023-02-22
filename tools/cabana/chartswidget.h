@@ -65,6 +65,7 @@ private slots:
   void signalRemoved(const Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
+  void createToolButtons();
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
