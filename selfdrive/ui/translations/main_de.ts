@@ -601,8 +601,8 @@ location set</source>
         <translation>Bestätigen</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>Datenpartition kann nicht geöffnet werden. Drücke Annehmen, um dein Gerät auf Werkseinstellungen zurückzusetzen.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
