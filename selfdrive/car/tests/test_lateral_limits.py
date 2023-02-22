@@ -24,10 +24,6 @@ JERK_MEAS_FRAMES = 0.5 / DT_CTRL
 
 # TODO: update the max measured lateral accel for these cars
 ABOVE_LIMITS_CARS = [
-  HYUNDAI.KONA_EV,
-  HYUNDAI.KONA_HEV,
-  HYUNDAI.KONA,
-  HYUNDAI.KONA_EV_2022,
 ]
 
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
