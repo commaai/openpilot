@@ -236,7 +236,7 @@ class CarState(CarStateBase):
       checks.append(("BSM", 1))
 
     if CP.carFingerprint in RADAR_ACC_CAR:
-      if not CP.flags | ToyotaFlags.RADAR_ACC_FILTER:
+      if not CP.flags & ToyotaFlags.RADAR_ACC_FILTER.value:
         signals += [
           ("ACC_TYPE", "ACC_CONTROL"),
         ]
