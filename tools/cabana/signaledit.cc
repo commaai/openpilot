@@ -61,16 +61,26 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
-      double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig);
-      item->sig_val = QString::number(value);
-      emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
+      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig));
+      if (value != item->sig_val) {
+        item->sig_val = value;
+        emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
+      }
       ++row;
     }
   }
 }
 
+SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
+  SignalModel::Item *item = nullptr;
+  if (index.isValid()) {
+    item = (SignalModel::Item *)index.internalPointer();
+  }
+  return item ? item : root.get();
+}
+
 int SignalModel::rowCount(const QModelIndex &parent) const {
-  if (parent.column() > 0) return 0;
+  if (parent.isValid() && parent.column() > 0) return 0;
 
   auto parent_item = getItem(parent);
   int row_count = parent_item->children.size();
@@ -99,14 +109,19 @@ int SignalModel::signalRow(const Signal *sig) const {
 }
 
 QModelIndex SignalModel::index(int row, int column, const QModelIndex &parent) const {
-  if (!hasIndex(row, column, parent)) return {};
-  return createIndex(row, column, getItem(parent)->children[row]);
+  if (parent.isValid() && parent.column() != 0) return {};
+
+  auto parent_item = getItem(parent);
+  if (parent_item && row < parent_item->children.size()) {
+    return createIndex(row, column, parent_item->children[row]);
+  }
+  return {};
 }
 
 QModelIndex SignalModel::parent(const QModelIndex &index) const {
   if (!index.isValid()) return {};
   Item *parent_item = getItem(index)->parent;
-  return parent_item == root.get() ? QModelIndex() : createIndex(parent_item->row(), 0, parent_item);
+  return !parent_item || parent_item == root.get() ? QModelIndex() : createIndex(parent_item->row(), 0, parent_item);
 }
 
 QVariant SignalModel::data(const QModelIndex &index, int role) const {
@@ -287,8 +302,8 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
   QSize size = QStyledItemDelegate::sizeHint(option, index);
-  if (!index.parent().isValid() && index.column() == 0) {
-    size.rwidth() = std::min(((QWidget*)parent())->size().width() / 2, size.width() + color_label_width + 8);
+  if (index.column() == 0 && !index.parent().isValid()) {
+    size.rwidth() = std::min(option.widget->size().width() / 2, size.width() + color_label_width + 8);
   }
   return size;
 }
@@ -355,7 +370,6 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   // title bar
   QWidget *title_bar = new QWidget(this);
-  title_bar->setAutoFillBackground(true);
   QHBoxLayout *hl = new QHBoxLayout(title_bar);
   hl->addWidget(signal_count_lb = new QLabel());
   filter_edit = new QLineEdit(this);
