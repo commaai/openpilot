@@ -20,6 +20,12 @@ using namespace QtCharts;
 
 const int CHART_MIN_WIDTH = 300;
 
+enum class SeriesType {
+  Line = 0,
+  StepLine,
+  Scatter
+};
+
 class ChartView : public QChartView {
   Q_OBJECT
 
@@ -29,7 +35,7 @@ public:
   bool hasSeries(const MessageId &msg_id, const Signal *sig) const;
   void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
-  void setSeriesType(QAbstractSeries::SeriesType type);
+  void setSeriesType(SeriesType type);
   void updatePlotArea(int left);
 
   struct SigItem {
@@ -37,7 +43,9 @@ public:
     const Signal *sig = nullptr;
     QXYSeries *series = nullptr;
     QVector<QPointF> vals;
+    QVector<QPointF> step_vals;
     uint64_t last_value_mono_time = 0;
+    QPointF track_pt{};
   };
 
 signals:
@@ -70,7 +78,7 @@ private:
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
-  QXYSeries *createSeries(QAbstractSeries::SeriesType type, QColor color);
+  QXYSeries *createSeries(SeriesType type, QColor color);
   void updateSeriesPoints();
   void removeIf(std::function<bool(const SigItem &)> predicate);
 
@@ -78,7 +86,6 @@ private:
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
-  QVector<QPointF> track_pts;
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
@@ -86,9 +93,10 @@ private:
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
-  QAbstractSeries::SeriesType series_type = QAbstractSeries::SeriesTypeLine;
+  SeriesType series_type = SeriesType::Line;
   QAction *line_series_action;
   QAction *scatter_series_action;
+  QAction *stepline_series_action;
   friend class ChartsWidget;
  };
 

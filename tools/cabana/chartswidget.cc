@@ -185,7 +185,7 @@ void ChartsWidget::settingChanged() {
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
-    c->setSeriesType(settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter);
+    c->setSeriesType((SeriesType)settings.chart_series_type);
   }
 }
 
@@ -313,7 +313,7 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 // ChartView
 
 ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
-  series_type = settings.chart_series_type == 0 ? QAbstractSeries::SeriesTypeLine : QAbstractSeries::SeriesTypeScatter;
+  series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
   axis_x = new QValueAxis(this);
@@ -339,12 +339,16 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
 
   QToolButton *manage_btn = toolButton("list", "");
   QMenu *menu = new QMenu(this);
-  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeLine); });
+  line_series_action = menu->addAction(tr("Line"), [this]() { setSeriesType(SeriesType::Line); });
   line_series_action->setCheckable(true);
-  line_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeLine);
-  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(QAbstractSeries::SeriesTypeScatter); });
+  line_series_action->setChecked(series_type == SeriesType::Line);
+  stepline_series_action = menu->addAction(tr("Step Line"), [this]() { setSeriesType(SeriesType::StepLine); });
+  stepline_series_action->setCheckable(true);
+  stepline_series_action->setChecked(series_type == SeriesType::StepLine);
+
+  scatter_series_action = menu->addAction(tr("Scatter"), [this]() { setSeriesType(SeriesType::Scatter); });
   scatter_series_action->setCheckable(true);
-  scatter_series_action->setChecked(series_type == QAbstractSeries::SeriesTypeScatter);
+  scatter_series_action->setChecked(series_type == SeriesType::Scatter);
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
   manage_btn->setMenu(menu);
@@ -480,7 +484,7 @@ void ChartView::updateSeriesPoints() {
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
 
-    if (series_type == QAbstractSeries::SeriesTypeScatter) {
+    if (series_type == SeriesType::Scatter) {
       ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 2, 8));
     } else {
       s.series->setPointsVisible(pixels_per_point > 20);
@@ -494,7 +498,9 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
     if (!sig || s.sig == sig) {
       if (clear) {
         s.vals.clear();
+        s.step_vals.clear();
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
+        s.step_vals.reserve(settings.max_cached_minutes * 60 * 100 * 2);
         s.last_value_mono_time = 0;
       }
       s.series->setColor(getColor(s.sig));
@@ -502,6 +508,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       struct Chunk {
         std::vector<Event *>::const_iterator first, second;
         QVector<QPointF> vals;
+        QVector<QPointF> step_vals;
       };
       // split into one minitue chunks
       QVector<Chunk> chunks;
@@ -514,6 +521,7 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
 
       QtConcurrent::blockingMap(chunks, [&](Chunk &chunk) {
         chunk.vals.reserve(60 * 100);  // 100 hz
+        chunk.step_vals.reserve(60 * 100 * 2);  // 100 hz
         double route_start_time = can->routeStartTime();
         for (auto it = chunk.first; it != chunk.second; ++it) {
           if ((*it)->which == cereal::Event::Which::CAN) {
@@ -523,6 +531,10 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
                 double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
                 double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
                 chunk.vals.push_back({ts, value});
+                if (!chunk.step_vals.empty()) {
+                  chunk.step_vals.push_back({ts, chunk.step_vals.back().y()});
+                }
+                chunk.step_vals.push_back({ts,value});
               }
             }
           }
@@ -530,11 +542,12 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       });
       for (auto &c : chunks) {
         s.vals.append(c.vals);
+        s.step_vals.append(c.step_vals);
       }
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
       }
-      s.series->replace(s.vals);
+      s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
     }
   }
   updateAxisY();
@@ -600,7 +613,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  track_pts.clear();
+  for (auto s : sigs) s.track_pt = {};
   scene()->update();
   QChartView::leaveEvent(event);
 }
@@ -656,26 +669,29 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
-  track_pts.clear();
+  for (auto s : sigs) s.track_pt = {};
+
   if (!is_zooming && plot_area.contains(ev->pos())) {
-    track_pts.resize(sigs.size());
     QStringList text_list;
     const double sec = chart()->mapToValue(ev->pos()).x();
-    for (int i = 0; i < sigs.size(); ++i) {
-      QString value = "--";
+    qreal x = -1;
+    for (auto &s : sigs) {
       // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(sigs[i].vals.rbegin(), sigs[i].vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != sigs[i].vals.rend() && it->x() >= axis_x->min()) {
-        value = QString::number(it->y());
-        track_pts[i] = chart()->mapToPosition(*it);
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        s.track_pt = chart()->mapToPosition(*it);
+        x = std::max(x, s.track_pt.x());
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>").arg(sigs[i].series->color().name(), sigs[i].sig->name, value));
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
+                              .arg(s.series->color().name(), s.sig->name,
+                                   s.track_pt.isNull() ? "--" : QString::number(s.track_pt.y())));
     }
-    auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
-    auto pt = (max == track_pts.end()) ? ev->pos() : *max;
-    text_list.push_front(QString::number(chart()->mapToValue(pt).x(), 'f', 3));
-    QPointF tooltip_pt(pt.x() + 12, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), pt.isNull() ? "" : text_list.join("<br />"), this, plot_area.toRect());
+    if (x < 0) {
+      x = ev->pos().x();
+    }
+    text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
+    QPointF tooltip_pt(x + 12, plot_area.top() - 20);
+    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), this, plot_area.toRect());
     scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   } else {
     QToolTip::hideText();
@@ -720,6 +736,7 @@ void ChartView::dropEvent(QDropEvent *event) {
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
+  // draw time line
   qreal x = chart()->mapToPosition(QPointF{cur_sec, 0}).x();
   x = std::clamp(x, chart()->plotArea().left(), chart()->plotArea().right());
   qreal y1 = chart()->plotArea().top() - 2;
@@ -727,17 +744,19 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
   painter->drawLine(QPointF{x, y1}, QPointF{x, y2});
 
-  auto max = std::max_element(track_pts.begin(), track_pts.end(), [](auto &a, auto &b) { return a.x() < b.x(); });
-  if (max != track_pts.end() && !max->isNull()) {
-    painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
-    painter->drawLine(QPointF{max->x(), y1}, QPointF{max->x(), y2});
-    painter->setPen(Qt::NoPen);
-    for (int i = 0; i < track_pts.size(); ++i) {
-      if (!track_pts[i].isNull() && i < sigs.size()) {
-        painter->setBrush(sigs[i].series->color().darker(125));
-        painter->drawEllipse(track_pts[i], 5.5, 5.5);
-      }
+  // draw track points
+  painter->setPen(Qt::NoPen);
+  qreal track_line_x = -1;
+  for (auto &s : sigs) {
+    if (!s.track_pt.isNull() && s.series->isVisible()) {
+      painter->setBrush(s.series->color().darker(125));
+      painter->drawEllipse(s.track_pt, 5.5, 5.5);
+      track_line_x = std::max(track_line_x, s.track_pt.x());
     }
+  }
+  if (track_line_x > 0) {
+    painter->setPen(QPen(Qt::darkGray, 1, Qt::DashLine));
+    painter->drawLine(QPointF{track_line_x, y1}, QPointF{track_line_x, y2});
   }
 
   // paint points. OpenGL mode lacks certain features (such as showing points)
@@ -754,11 +773,14 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   }
 }
 
-QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor color) {
+QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
   QXYSeries *series = nullptr;
-  if (type == QAbstractSeries::SeriesTypeLine) {
+  if (type == SeriesType::Line) {
     series = new QLineSeries(this);
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeRectangle);
+  } else if (type == SeriesType::StepLine) {
+    series = new QLineSeries(this);
+    chart()->legend()->setMarkerShape(QLegend::MarkerShapeFromSeries);
   } else {
     series = new QScatterSeries(this);
     chart()->legend()->setMarkerShape(QLegend::MarkerShapeCircle);
@@ -779,9 +801,10 @@ QXYSeries *ChartView::createSeries(QAbstractSeries::SeriesType type, QColor colo
   return series;
 }
 
-void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
-  line_series_action->setChecked(type == QAbstractSeries::SeriesTypeLine);
-  scatter_series_action->setChecked(type == QAbstractSeries::SeriesTypeScatter);
+void ChartView::setSeriesType(SeriesType type) {
+  line_series_action->setChecked(type == SeriesType::Line);
+  stepline_series_action->setChecked(type == SeriesType::StepLine);
+  scatter_series_action->setChecked(type == SeriesType::Scatter);
   if (type != series_type) {
     series_type = type;
     for (auto &s : sigs) {
@@ -790,7 +813,7 @@ void ChartView::setSeriesType(QAbstractSeries::SeriesType type) {
     }
     for (auto &s : sigs) {
       auto series = createSeries(series_type, getColor(s.sig));
-      series->replace(s.vals);
+      series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
       s.series = series;
     }
     updateSeriesPoints();
