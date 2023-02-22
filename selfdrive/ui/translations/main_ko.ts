@@ -575,10 +575,6 @@ location set</source>
         <translation>장치를 초기화 하시겠습니까?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>장치 초기화중...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>장치 초기화</translation>
     </message>
@@ -600,6 +596,11 @@ location set</source>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

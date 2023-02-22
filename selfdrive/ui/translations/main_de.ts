@@ -577,10 +577,6 @@ location set</source>
         <translation>Bist du sicher, dass du das Gerät auf Werkseinstellungen zurücksetzen möchtest?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Gerät wird zurückgesetzt...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>System auf Werkseinstellungen zurücksetzen</translation>
     </message>
@@ -602,6 +598,11 @@ location set</source>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

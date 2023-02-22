@@ -575,10 +575,6 @@ location set</source>
         <translation>初期化してもよろしいですか？</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>デバイスが初期化されます...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>システムを初期化</translation>
     </message>
@@ -600,6 +596,11 @@ location set</source>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

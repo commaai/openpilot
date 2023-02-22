@@ -579,10 +579,6 @@ trabalho definido</translation>
         <translation>Tem certeza que quer resetar seu dispositivo?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Resetando dispositivo...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>Resetar Sistema</translation>
     </message>
@@ -604,6 +600,11 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

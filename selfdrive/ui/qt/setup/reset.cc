@@ -28,7 +28,7 @@ void Reset::doErase() {
 }
 
 void Reset::startReset() {
-  body->setText(tr("Resetting device..."));
+  body->setText(tr("Resetting device...\nThis may take up to a minute."));
   rejectBtn->hide();
   rebootBtn->hide();
   confirmBtn->hide();

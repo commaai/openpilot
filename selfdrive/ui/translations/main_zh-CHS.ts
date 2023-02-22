@@ -573,10 +573,6 @@ location set</source>
         <translation>您确定要重置您的设备吗？</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>正在重置设备……</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>恢复出厂设置</translation>
     </message>
@@ -598,6 +594,11 @@ location set</source>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
