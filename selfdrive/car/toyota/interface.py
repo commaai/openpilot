@@ -204,6 +204,10 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
+    # if RADAR_ACC_CAR has smartDsu installed, use RADAR_ACC_FILTER to ignore ACC_CONTROL checks in carstate
+    if candidate in RADAR_ACC_CAR and smartDsu:
+      ret.flags |= ToyotaFlags.RADAR_ACC_FILTER.value
+
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
