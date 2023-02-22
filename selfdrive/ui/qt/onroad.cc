@@ -72,7 +72,7 @@ void OnroadWindow::updateState(const UIState &s) {
 
   if (bg != bgColor) {
     // repaint border
-    bg = bgColor;
+    bg = bg_colors[STATUS_ENGAGED];
     update();
   }
 }
@@ -127,22 +127,25 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
-  static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_heights = {
     {cereal::ControlsState::AlertSize::SMALL, 271},
     {cereal::ControlsState::AlertSize::MID, 420},
     {cereal::ControlsState::AlertSize::FULL, height()},
   };
-  int h = alert_sizes[alert.size];
-  QRect r = QRect(0, height() - h, width(), h);
+  int h = alert_heights[alert.size];
+
+  const int margin = 40;
+  QRect r = QRect(0 + margin, height() - h - margin, width() - margin*2, h);
 
   QPainter p(this);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
-  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   p.setBrush(QBrush(bg));
-  p.drawRect(r);
+  p.drawRoundedRect(r, 30, 30);
+
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   QLinearGradient g(0, r.y(), 0, r.bottom());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
