@@ -708,7 +708,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Ensure the entered URL is valid.</source>
+        <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

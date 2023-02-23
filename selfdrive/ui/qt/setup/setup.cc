@@ -310,7 +310,7 @@ QWidget * Setup::download_invalid_url(QLabel *url) {
 
   main_layout->addSpacing(60);
 
-  QLabel *body = new QLabel(tr("Ensure the entered URL is valid."));
+  QLabel *body = new QLabel(tr("No custom software found at this URL."));
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   body->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 100px;");
