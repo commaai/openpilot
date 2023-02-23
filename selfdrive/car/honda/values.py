@@ -150,6 +150,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  Car.HRV_2023_US: HondaCarInfo("Honda HR-V 2023", "All"),
 }
 
 HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -1522,6 +1523,15 @@ FW_VERSIONS = {
     (Ecu.srs, 0x18DA53F1, None): [
       b'77959-3V0-A820\x00\x00',
     ],
+    (Ecu.unknown, 0x18DAB3F1, None): [
+      b'36162-T38-A010\x00\x00',
+    ],
+    (Ecu.eps, 0x18DA30F1, None): [
+      b'39990-3W0-A030\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
+      b'78108-3V1-A220\x00\x00',
+    ]
   }
 }
 
