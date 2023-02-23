@@ -96,9 +96,6 @@ private:
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   SeriesType series_type = SeriesType::Line;
-  QAction *line_series_action;
-  QAction *scatter_series_action;
-  QAction *stepline_series_action;
   friend class ChartsWidget;
  };
 

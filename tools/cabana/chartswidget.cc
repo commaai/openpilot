@@ -1,5 +1,6 @@
 #include "tools/cabana/chartswidget.h"
 
+#include <QActionGroup>
 #include <QApplication>
 #include <QCompleter>
 #include <QDialogButtonBox>
@@ -347,17 +348,18 @@ void ChartView::createToolButtons() {
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
 
-  auto add_series_action = [this](QMenu *menu, const QString &name, SeriesType type) {
-    auto act = menu->addAction(name, [=]() { setSeriesType(type); });
-    act->setCheckable(true);
-    act->setChecked(series_type == type);
-    return act;
-  };
-
+  // series types
   QMenu *menu = new QMenu(this);
-  line_series_action = add_series_action(menu, tr("Line"), SeriesType::Line);
-  stepline_series_action = add_series_action(menu, tr("Step Line"), SeriesType::StepLine);
-  scatter_series_action = add_series_action(menu, tr("Scatter"), SeriesType::Scatter);
+  auto change_series_group = new QActionGroup(menu);
+  change_series_group->setExclusive(true);
+  QStringList types{tr("line"), tr("Step Line"), tr("Scatter")};
+  for (int i = 0; i < types.size(); ++i) {
+    QAction *act = new QAction(types[i], change_series_group);
+    act->setData(i);
+    act->setCheckable(true);
+    act->setChecked(i == (int)series_type);
+    menu->addAction(act);
+  }
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
 
@@ -369,6 +371,9 @@ void ChartView::createToolButtons() {
   manage_btn_proxy->setZValue(chart()->zValue() + 11);
 
   QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
+  QObject::connect(change_series_group, &QActionGroup::triggered, [this](QAction *action) {
+    setSeriesType((SeriesType)action->data().toInt());
+  });
 }
 
 void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
@@ -807,9 +812,6 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
 }
 
 void ChartView::setSeriesType(SeriesType type) {
-  line_series_action->setChecked(type == SeriesType::Line);
-  stepline_series_action->setChecked(type == SeriesType::StepLine);
-  scatter_series_action->setChecked(type == SeriesType::Scatter);
   if (type != series_type) {
     series_type = type;
     for (auto &s : sigs) {
