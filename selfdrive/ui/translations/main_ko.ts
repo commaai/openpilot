@@ -701,6 +701,14 @@ This may take up to a minute.</source>
         <source>Start over</source>
         <translation>다시 시작</translation>
     </message>
+    <message>
+        <source>Invalid Custom Software URL</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ensure the entered URL is valid.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>

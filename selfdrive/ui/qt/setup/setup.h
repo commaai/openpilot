@@ -1,8 +1,15 @@
 #pragma once
 
+#include <QLabel>
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
+
+enum Result {
+  ok,
+  notExecutable,
+  error,
+};
 
 class Setup : public QStackedWidget {
   Q_OBJECT
@@ -16,12 +23,14 @@ private:
   QWidget *network_setup();
   QWidget *downloading();
   QWidget *download_failed();
+  QWidget *invalid_url(QLabel *url);
 
   QWidget *failed_widget;
+  QWidget *invalid_url_widget;
   QWidget *downloading_widget;
 
 signals:
-  void finished(bool success);
+  void complete(const Result &result, const QString &url);
 
 public slots:
   void nextPage();

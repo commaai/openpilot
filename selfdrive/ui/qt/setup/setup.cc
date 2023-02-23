@@ -34,7 +34,7 @@ bool is_elf(char *fname) {
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
   if (!curl) {
-    emit finished(false);
+    emit complete(Result::error, url);
     return;
   }
 
@@ -57,16 +57,19 @@ void Setup::download(QString url) {
   int ret = curl_easy_perform(curl);
   long res_status = 0;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
-  if (ret == CURLE_OK && res_status == 200 && is_elf(tmpfile)) {
+
+  if (ret != CURLE_OK || res_status != 200) {
+    emit complete(Result::error, url);
+  } else if (!is_elf(tmpfile)) {
+    emit complete(Result::notExecutable, url);
+  } else {
     rename(tmpfile, "/tmp/installer");
 
     FILE *fp_url = fopen("/tmp/installer_url", "w");
     fprintf(fp_url, "%s", url.toStdString().c_str());
     fclose(fp_url);
 
-    emit finished(true);
-  } else {
-    emit finished(false);
+    emit complete(Result::ok, url);
   }
 
   curl_slist_free_all(list);
@@ -281,7 +284,62 @@ QWidget * Setup::download_failed() {
 
   widget->setStyleSheet(R"(
     QLabel {
-      margin-left: 117;
+      margin-left: 117px;
+    }
+  )");
+  return widget;
+}
+
+QWidget * Setup::invalid_url(QLabel *url) {
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 225, 55, 55);
+  main_layout->setSpacing(0);
+
+  QLabel *title = new QLabel(tr("Invalid Custom Software URL"));
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  main_layout->addSpacing(67);
+
+  url->setWordWrap(true);
+  url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  url->setStyleSheet("font-family: JetBrainsMono; font-size: 64px; font-weight: 400; margin-right: 100px;");
+  main_layout->addWidget(url);
+
+  main_layout->addSpacing(60);
+
+  QLabel *body = new QLabel(tr("Ensure the entered URL is valid."));
+  body->setWordWrap(true);
+  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  body->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 100px;");
+  main_layout->addWidget(body);
+
+  main_layout->addStretch();
+
+  // reboot + start over buttons
+  QHBoxLayout *blayout = new QHBoxLayout();
+  blayout->setSpacing(50);
+  main_layout->addLayout(blayout, 0);
+
+  QPushButton *reboot = new QPushButton(tr("Reboot device"));
+  reboot->setObjectName("navBtn");
+  blayout->addWidget(reboot);
+  QObject::connect(reboot, &QPushButton::clicked, this, [=]() {
+    Hardware::reboot();
+  });
+
+  QPushButton *restart = new QPushButton(tr("Start over"));
+  restart->setObjectName("navBtn");
+  restart->setProperty("primary", true);
+  blayout->addWidget(restart);
+  QObject::connect(restart, &QPushButton::clicked, this, [=]() {
+    setCurrentIndex(2);
+  });
+
+  widget->setStyleSheet(R"(
+    QLabel {
+      margin-left: 117px;
     }
   )");
   return widget;
@@ -312,13 +370,25 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   failed_widget = download_failed();
   addWidget(failed_widget);
 
-  QObject::connect(this, &Setup::finished, [=](bool success) {
-    // hide setup on success
-    qDebug() << "finished" << success;
-    if (success) {
-      QTimer::singleShot(3000, this, &QWidget::hide);
-    } else {
-      setCurrentWidget(failed_widget);
+  QLabel *url_label = new QLabel();
+  invalid_url_widget = invalid_url(url_label);
+  addWidget(invalid_url_widget);
+
+  QObject::connect(this, &Setup::complete, [=](const Result &result, const QString &url) {
+    qDebug() << "complete" << result << url;
+    switch (result) {
+      case Result::ok:
+        // hide setup on success
+        QTimer::singleShot(3000, this, &QWidget::hide);
+        break;
+      case Result::notExecutable:
+        url_label->setText(url);
+        setCurrentWidget(invalid_url_widget);
+        break;
+      case Result::error:
+      default:
+        setCurrentWidget(failed_widget);
+        break;
     }
   });
 
