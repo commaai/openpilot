@@ -62,6 +62,9 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     int row = 0;
     for (auto item : root->children) {
       QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig));
+      if (!item->sig->unit.isEmpty()){
+        value += " " + item->sig->unit;
+      }
       if (value != item->sig_val) {
         item->sig_val = value;
         emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
