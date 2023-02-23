@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <QApplication>
+#include <QFontDatabase>
 #include <QLabel>
 #include <QVBoxLayout>
 
@@ -304,7 +305,7 @@ QWidget * Setup::download_invalid_url(QLabel *url) {
 
   url->setWordWrap(true);
   url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  url->setStyleSheet("font-family: JetBrainsMono; font-size: 64px; font-weight: 400; margin-right: 100px;");
+  url->setStyleSheet("font-family: \"JetBrains Mono\"; font-size: 64px; font-weight: 400; margin-right: 100px;");
   main_layout->addWidget(url);
 
   main_layout->addSpacing(60);
@@ -391,6 +392,17 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
         break;
     }
   });
+
+  // load fonts
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-Black.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-Bold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-ExtraBold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-ExtraLight.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-Medium.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-Regular.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-SemiBold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/Inter-Thin.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/JetBrainsMono-Medium.ttf");
 
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
