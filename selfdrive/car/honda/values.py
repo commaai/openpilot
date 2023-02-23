@@ -95,6 +95,7 @@ class CAR:
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
+  HRV_2023_US = "HONDA HR-V 2023 US"
 
 
 class Footnote(Enum):
@@ -1502,6 +1503,20 @@ FW_VERSIONS = {
       b'37805-64D-P510\x00\x00',
     ],
   },
+  Car.HRV_2023_US: {
+    (Ecu.programmedFuelInjection, 0x18DA10F1, None): [
+      b'37805-6CT-A710\x00\x00',
+    ],
+    (Ecu.transmission, 0x18DA1EF1, None): [
+      b'28101-6EH-A010\x00\x00',
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None): [
+      b'38897-3W1-A010\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18DA2BF1, None): [
+      b'46114-3W0-A020\x00\x00',
+    ]
+  }
 }
 
 DBC = {
@@ -1527,6 +1542,7 @@ DBC = {
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
   CAR.CIVIC_2022: dbc_dict('honda_civic_ex_2022_can_generated', None),
+  CAR.HRV_2023_US: dbc_dict('honda_hrv_2023_us_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1539,6 +1555,6 @@ HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
                                 CAR.PILOT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022}
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_2023_US}
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}
 HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}
