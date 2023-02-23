@@ -20,11 +20,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   table_widget = new QTableView(this);
   model = new MessageListModel(this);
   table_widget->setModel(model);
-  table_widget->setItemDelegateForColumn(4, new MessageBytesDelegate(table_widget));
+  table_widget->setItemDelegateForColumn(5, new MessageBytesDelegate(table_widget));
   table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
   table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
   table_widget->setSortingEnabled(true);
   table_widget->sortByColumn(0, Qt::AscendingOrder);
+  table_widget->setColumnWidth(0, 150);
+  table_widget->setColumnWidth(1, 50);
+  table_widget->setColumnWidth(2, 50);
+  table_widget->setColumnWidth(3, 50);
   table_widget->horizontalHeader()->setStretchLastSection(true);
   table_widget->verticalHeader()->hide();
   main_layout->addWidget(table_widget);
@@ -108,7 +112,7 @@ void MessagesWidget::reset() {
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    return (QString[]){"Name", "ID", "Freq", "Count", "Bytes"}[section];
+    return (QString[]){"Name", "Bus", "ID", "Freq", "Count", "Bytes"}[section];
   return {};
 }
 
@@ -119,12 +123,13 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case 0: return msgName(id);
-      case 1: return id.toString(); // TODO: put source and address in separate columns
-      case 2: return can_data.freq;
-      case 3: return can_data.count;
-      case 4: return toHex(can_data.dat);
+      case 1: return id.source;
+      case 2: return QString::number(id.address, 16);;
+      case 3: return can_data.freq;
+      case 4: return can_data.count;
+      case 5: return toHex(can_data.dat);
     }
-  } else if (role == Qt::UserRole && index.column() == 4) {
+  } else if (role == Qt::UserRole && index.column() == 5) {
     QVector<QColor> colors = can_data.colors;
     if (!suppressed_bytes.empty()) {
       for (int i = 0; i < colors.size(); i++) {
@@ -171,15 +176,23 @@ void MessageListModel::sortMessages() {
     });
   } else if (sort_column == 1) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
-      return sort_order == Qt::AscendingOrder ? l < r : l > r;
+      auto ll = std::pair{l.source, l};
+      auto rr = std::pair{r.source, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == 2) {
+    std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
+      auto ll = std::pair{l.address, l};
+      auto rr = std::pair{r.address, r};
+      return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
+    });
+  } else if (sort_column == 3) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).freq, l};
       auto rr = std::pair{can->lastMessage(r).freq, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
-  } else if (sort_column == 3) {
+  } else if (sort_column == 4) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).count, l};
       auto rr = std::pair{can->lastMessage(r).count, r};
@@ -200,7 +213,7 @@ void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   }
   for (int i = 0; i < msgs.size(); ++i) {
     if (new_msgs->contains(msgs[i])) {
-      for (int col = 2; col < columnCount(); ++col)
+      for (int col = 3; col < columnCount(); ++col)
         emit dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
     }
   }
