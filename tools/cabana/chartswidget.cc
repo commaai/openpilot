@@ -679,6 +679,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     const double sec = chart()->mapToValue(ev->pos()).x();
     qreal x = -1;
     for (auto &s : sigs) {
+      if (!s.series->isVisible()) continue;
+
       // use reverse iterator to find last item <= sec.
       auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
