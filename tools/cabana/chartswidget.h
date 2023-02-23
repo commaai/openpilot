@@ -82,6 +82,7 @@ private:
   QXYSeries *createSeries(SeriesType type, QColor color);
   void updateSeriesPoints();
   void removeIf(std::function<bool(const SigItem &)> predicate);
+  inline void clearTrackPoints() { for (auto &s : sigs) s.track_pt = {}; }
 
   int y_label_width = 0;
   int align_to = 0;

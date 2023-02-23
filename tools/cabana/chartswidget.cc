@@ -616,7 +616,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  for (auto s : sigs) s.track_pt = {};
+  clearTrackPoints();
   scene()->update();
   QChartView::leaveEvent(event);
 }
@@ -672,7 +672,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
-  for (auto s : sigs) s.track_pt = {};
+  clearTrackPoints();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
     QStringList text_list;
