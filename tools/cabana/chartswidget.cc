@@ -542,8 +542,15 @@ void ChartView::updateAxisY() {
 
   double min = std::numeric_limits<double>::max();
   double max = std::numeric_limits<double>::lowest();
+  QString unit = sigs[0].sig->unit;
+
   for (auto &s : sigs) {
     if (!s.series->isVisible()) continue;
+
+    // Only show unit when all signals have the same unit
+    if (unit != s.sig->unit) {
+      unit.clear();
+    }
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
@@ -552,6 +559,8 @@ void ChartView::updateAxisY() {
       if (it->y() > max) max = it->y();
     }
   }
+  axis_y->setTitleText(unit);
+
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
 
@@ -563,7 +572,8 @@ void ChartView::updateAxisY() {
 
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
-    y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;  // left margin 15
+    int title_spacing = axis_y->titleText().isEmpty() ? 0 : 20;
+    y_label_width = title_spacing + qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;  // left margin 15
     axis_y->setLabelFormat(QString("%.%1f").arg(n));
     emit axisYLabelWidthChanged(y_label_width);
   }
