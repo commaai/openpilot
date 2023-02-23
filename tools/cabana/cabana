@@ -1,4 +1,0 @@
-#!/bin/sh
-cd "$(dirname "$0")"
-export LD_LIBRARY_PATH="../../opendbc/can:$LD_LIBRARY_PATH"
-exec ./_cabana "$@"
