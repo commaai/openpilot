@@ -20,6 +20,7 @@ void AbstractStream::process(QHash<MessageId, CanData> *messages) {
 }
 
 bool AbstractStream::updateEvent(const Event *event) {
+  std::lock_guard lk(new_msgs_lock);
   static double prev_update_ts = 0;
 
   if (event->which == cereal::Event::Which::CAN) {
@@ -83,15 +84,16 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     }
   }
 
-  // it is thread safe to update data here.
-  // updateEvent will not be called before replayStream::seekedTo return.
-  new_msgs->clear();
-  change_trackers.clear();
-  counters.clear();
-  can_msgs.clear();
-  for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {
-    can_msgs[it.key()] = it.value();
-    counters[it.key()] = it.value().count;
+  {
+    std::lock_guard lk(new_msgs_lock);
+    new_msgs->clear();
+    change_trackers.clear();
+    counters.clear();
+    can_msgs.clear();
+    for (auto it = last_msgs.cbegin(); it != last_msgs.cend(); ++it) {
+      can_msgs[it.key()] = it.value();
+      counters[it.key()] = it.value().count;
+    }
   }
   emit updated();
   emit msgsReceived(&can_msgs);

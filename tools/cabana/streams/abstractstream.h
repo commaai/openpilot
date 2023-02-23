@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <mutex>
 
 #include <QColor>
 #include <QHash>
@@ -64,6 +65,7 @@ protected:
   bool is_live_streaming = false;
   std::atomic<bool> processing = false;
   QHash<MessageId, uint32_t> counters;
+  std::mutex new_msgs_lock;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, ChangeTracker> change_trackers;
 };
