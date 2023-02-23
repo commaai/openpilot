@@ -371,7 +371,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   addWidget(error_widget);
 
   QLabel *url_label = new QLabel();
-  invalid_url_widget = invalid_url(url_label);
+  invalid_url_widget = download_invalid_url(url_label);
   addWidget(invalid_url_widget);
 
   QObject::connect(this, &Setup::finished, [=](const DownloadResult &result, const QString &url) {
@@ -387,7 +387,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
         break;
       case DownloadResult::error:
       default:
-        setCurrentWidget(failed_widget);
+        setCurrentWidget(error_widget);
         break;
     }
   });
