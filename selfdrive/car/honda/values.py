@@ -1506,6 +1506,9 @@ FW_VERSIONS = {
       b'37805-64D-P510\x00\x00',
       b'37805-6CT-A710\x00\x00',
     ],
+    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
+      b'46114-3W0-A020\x00\x00',
+    ],
   },
   CAR.HRV_2023: {
     (Ecu.eps, 0x18DA30F1, None): [
