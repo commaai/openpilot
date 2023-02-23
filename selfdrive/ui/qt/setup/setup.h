@@ -30,7 +30,7 @@ private:
   QWidget *downloading_widget;
 
 signals:
-  void complete(const DownloadResult &result, const QString &url);
+  void finished(const DownloadResult &result, const QString &url);
 
 public slots:
   void nextPage();
