@@ -549,7 +549,7 @@ void ChartView::updateAxisY() {
 
     // Only show unit when all signals have the same unit
     if (unit != s.sig->unit) {
-      unit = "";
+      unit.clear();
     }
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
