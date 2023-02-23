@@ -39,7 +39,7 @@ class TestLaikad(unittest.TestCase):
 
   def setUp(self):
     # ensure laikad cold start
-    Params().remove("LaikadEphemeris")
+    Params().remove("LaikadEphemerisV2")
     os.environ["LAIKAD_NO_INTERNET"] = "1"
     managed_processes['laikad'].start()
 
