@@ -242,7 +242,7 @@ QWidget * Setup::downloading() {
   return widget;
 }
 
-QWidget * Setup::download_error() {
+QWidget * Setup::download_failed() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
   main_layout->setContentsMargins(55, 225, 55, 55);
@@ -284,7 +284,7 @@ QWidget * Setup::download_error() {
 
   widget->setStyleSheet(R"(
     QLabel {
-      margin-left: 117px;
+      margin-left: 117;
     }
   )");
   return widget;
@@ -367,8 +367,8 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   downloading_widget = downloading();
   addWidget(downloading_widget);
 
-  error_widget = download_error();
-  addWidget(error_widget);
+  failed_widget = download_failed();
+  addWidget(failed_widget);
 
   QLabel *url_label = new QLabel();
   invalid_url_widget = download_invalid_url(url_label);
@@ -387,7 +387,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
         break;
       case DownloadResult::error:
       default:
-        setCurrentWidget(error_widget);
+        setCurrentWidget(failed_widget);
         break;
     }
   });
