@@ -1503,7 +1503,7 @@ FW_VERSIONS = {
       b'37805-64D-P510\x00\x00',
     ],
   },
-  Car.HRV_2023_US: {
+  CAR.HRV_2023_US: {
     (Ecu.programmedFuelInjection, 0x18DA10F1, None): [
       b'37805-6CT-A710\x00\x00',
     ],
