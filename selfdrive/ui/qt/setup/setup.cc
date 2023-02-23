@@ -304,7 +304,7 @@ QWidget * Setup::download_invalid_url(QLabel *url) {
 
   url->setWordWrap(true);
   url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  url->setStyleSheet("font-family: JetBrainsMono; font-size: 64px; font-weight: 400; margin-right: 100px;");
+  url->setStyleSheet("font-family: \"JetBrains Mono\"; font-size: 64px; font-weight: 400; margin-right: 100px;");
   main_layout->addWidget(url);
 
   main_layout->addSpacing(60);
