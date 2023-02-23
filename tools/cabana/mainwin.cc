@@ -63,9 +63,11 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
+  QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
 }
 
 void MainWindow::createActions() {
@@ -179,6 +181,9 @@ void MainWindow::createStatusBar() {
   progress_bar->setVisible(false);
   statusBar()->addWidget(new QLabel(tr("For Help, Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
+
+  statusBar()->addPermanentWidget(status_label = new QLabel(this));
+  updateStatus();
 }
 
 void MainWindow::createShortcuts() {
@@ -401,6 +406,18 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   } else {
     progress_bar->hide();
   }
+}
+
+void MainWindow::updateStatus() {
+  float cached_minutes = 0;
+  if (!can->liveStreaming()) {
+    if (auto events = can->events(); !events->empty()) {
+      cached_minutes = (events->back()->mono_time - events->front()->mono_time) / (1e9 * 60);
+    }
+  } else {
+    settings.max_cached_minutes = settings.max_cached_minutes;
+  }
+  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(cached_minutes, 0, 'f', 1).arg(settings.fps));
 }
 
 void MainWindow::dockCharts(bool dock) {
