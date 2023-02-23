@@ -34,7 +34,7 @@ bool is_elf(char *fname) {
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
   if (!curl) {
-    emit complete(Result::error, url);
+    emit complete(DownloadResult::error, url);
     return;
   }
 
@@ -59,9 +59,9 @@ void Setup::download(QString url) {
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
 
   if (ret != CURLE_OK || res_status != 200) {
-    emit complete(Result::error, url);
+    emit complete(DownloadResult::error, url);
   } else if (!is_elf(tmpfile)) {
-    emit complete(Result::notExecutable, url);
+    emit complete(DownloadResult::notExecutable, url);
   } else {
     rename(tmpfile, "/tmp/installer");
 
@@ -69,7 +69,7 @@ void Setup::download(QString url) {
     fprintf(fp_url, "%s", url.toStdString().c_str());
     fclose(fp_url);
 
-    emit complete(Result::ok, url);
+    emit complete(DownloadResult::ok, url);
   }
 
   curl_slist_free_all(list);
@@ -374,18 +374,18 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   invalid_url_widget = invalid_url(url_label);
   addWidget(invalid_url_widget);
 
-  QObject::connect(this, &Setup::complete, [=](const Result &result, const QString &url) {
+  QObject::connect(this, &Setup::complete, [=](const DownloadResult &result, const QString &url) {
     qDebug() << "complete" << result << url;
     switch (result) {
-      case Result::ok:
+      case DownloadResult::ok:
         // hide setup on success
         QTimer::singleShot(3000, this, &QWidget::hide);
         break;
-      case Result::notExecutable:
+      case DownloadResult::notExecutable:
         url_label->setText(url);
         setCurrentWidget(invalid_url_widget);
         break;
-      case Result::error:
+      case DownloadResult::error:
       default:
         setCurrentWidget(failed_widget);
         break;

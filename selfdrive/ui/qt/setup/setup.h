@@ -5,7 +5,7 @@
 #include <QString>
 #include <QWidget>
 
-enum Result {
+enum DownloadResult {
   ok,
   notExecutable,
   error,
@@ -30,7 +30,7 @@ private:
   QWidget *downloading_widget;
 
 signals:
-  void complete(const Result &result, const QString &url);
+  void complete(const DownloadResult &result, const QString &url);
 
 public slots:
   void nextPage();
