@@ -1519,6 +1519,9 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-3W0-A040\x00\x00',
     ],
+    (Ecu.srs, 0x18DA53F1, None): [
+      b'77959-3V0-A820\x00\x00',
+    ],
   }
 }
 
