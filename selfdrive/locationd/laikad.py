@@ -28,7 +28,7 @@ from selfdrive.locationd.models.gnss_kf import States as GStates
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
-EPHEMERIS_CACHE = 'LaikadEphemeris'
+EPHEMERIS_CACHE = 'LaikadEphemerisV2'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
