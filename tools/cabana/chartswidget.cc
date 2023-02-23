@@ -154,12 +154,10 @@ void ChartsWidget::updateState() {
     can->seekTo(zoomed_range.first);
   }
 
-  charts_layout->parentWidget()->setUpdatesEnabled(false);
   const auto &range = is_zoomed ? zoomed_range : display_range;
   for (auto c : charts) {
     c->updatePlot(cur_sec, range.first, range.second);
   }
-  charts_layout->parentWidget()->setUpdatesEnabled(true);
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
@@ -213,7 +211,6 @@ ChartView *ChartsWidget::createChart() {
 }
 
 void ChartsWidget::showChart(const MessageId &id, const Signal *sig, bool show, bool merge) {
-  setUpdatesEnabled(false);
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
     chart = merge && charts.size() > 0 ? charts.back() : createChart();
@@ -223,7 +220,6 @@ void ChartsWidget::showChart(const MessageId &id, const Signal *sig, bool show, 
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }
   updateToolBar();
-  setUpdatesEnabled(true);
 }
 
 void ChartsWidget::setColumnCount(int n) {
@@ -568,6 +564,7 @@ void ChartView::updateAxisY() {
     QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
     y_label_width = qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;  // left margin 15
+    axis_y->setLabelFormat(QString("%.%1f").arg(n));
     emit axisYLabelWidthChanged(y_label_width);
   }
 }

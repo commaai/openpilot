@@ -42,7 +42,7 @@ public:
   bool saveSignal(const Signal *origin_s, Signal &s);
   void resizeSignal(const Signal *sig, int start_bit, int size);
   void removeSignal(const Signal *sig);
-  inline Item *getItem(const QModelIndex &index) const { return index.isValid() ? (Item *)index.internalPointer() : root.get(); }
+  Item *getItem(const QModelIndex &index) const;
   int signalRow(const Signal *sig) const;
   void showExtraInfo(const QModelIndex &index);
 
