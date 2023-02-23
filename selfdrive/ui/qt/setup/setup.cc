@@ -53,6 +53,7 @@ void Setup::download(QString url) {
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_USERAGENT, (USER_AGENT + version).c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
 
   int ret = curl_easy_perform(curl);
   long res_status = 0;
