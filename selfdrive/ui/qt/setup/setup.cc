@@ -279,7 +279,7 @@ QWidget * Setup::download_error() {
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
   QObject::connect(restart, &QPushButton::clicked, this, [=]() {
-    setCurrentIndex(2);
+    setCurrentIndex(1);
   });
 
   widget->setStyleSheet(R"(
@@ -334,7 +334,7 @@ QWidget * Setup::download_invalid_url(QLabel *url) {
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
   QObject::connect(restart, &QPushButton::clicked, this, [=]() {
-    setCurrentIndex(2);
+    setCurrentIndex(1);
   });
 
   widget->setStyleSheet(R"(
