@@ -87,6 +87,7 @@ class CAR:
   FIT = "HONDA FIT 2018"
   FREED = "HONDA FREED 2020"
   HRV = "HONDA HRV 2019"
+  HRV_2023_NON_US = "HONDA HRV/VEZEL 2023 NON US"
   ODYSSEY = "HONDA ODYSSEY 2018"
   ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
   ACURA_RDX = "ACURA RDX 2018"
@@ -138,6 +139,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV_2023_NON_US: HondaCarInfo("Honda HR-V/VEZEL 2023 NON US", "All", video_link="https://youtu.be/1O1u9jzpKD0", harness=Harness.bosch_b),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -1402,6 +1404,32 @@ FW_VERSIONS = {
       b'78109-THW-A110\x00\x00',
     ],
   },
+  CAR.HRV_2023_NON_US {
+    (Ecu.eps, 0x18DA30F1, None): [
+      b'39990-3M0-G110\x00\x00',
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None): [
+      b'38897-3M0-M110\x00\x00',
+    ],
+    (Ecu.srs, 0x18DA53F1, None): [
+      b'77959-3M0-K840\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
+      b'78109-3M0-M310\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18DAB0F1, None): [
+      b'8S102-3M6-P030\x00\x00',
+    ],
+    (Ecu.vsa, 0x18DA28F1, None): [
+      b'57114-3M6-M010\x00\x00',
+    ],
+    (Ecu.transmission, 0x18DA1EF1, None): [
+      b'28101-6JC-M310\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18DA10F1, None): [
+      b'37805-6HZ-M630\x00\x00',
+    ],
+  },
   CAR.ACURA_ILX: {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TX6-A010\x00\x00',
@@ -1520,6 +1548,7 @@ DBC = {
   CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.FREED: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.HRV_2023_NON_US: dbc_dict('honda_civic_ex_2022_can_generated', None),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
@@ -1541,4 +1570,4 @@ HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_E
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
                CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022}
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}
-HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}
+HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022, CAR.HRV_2023_NON_US}
