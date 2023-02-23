@@ -242,7 +242,7 @@ QWidget * Setup::downloading() {
   return widget;
 }
 
-QWidget * Setup::download_failed() {
+QWidget * Setup::download_error() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
   main_layout->setContentsMargins(55, 225, 55, 55);
@@ -290,7 +290,7 @@ QWidget * Setup::download_failed() {
   return widget;
 }
 
-QWidget * Setup::invalid_url(QLabel *url) {
+QWidget * Setup::download_invalid_url(QLabel *url) {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
   main_layout->setContentsMargins(55, 225, 55, 55);
@@ -367,8 +367,8 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   downloading_widget = downloading();
   addWidget(downloading_widget);
 
-  failed_widget = download_failed();
-  addWidget(failed_widget);
+  error_widget = download_error();
+  addWidget(error_widget);
 
   QLabel *url_label = new QLabel();
   invalid_url_widget = invalid_url(url_label);

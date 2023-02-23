@@ -22,10 +22,10 @@ private:
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *downloading();
-  QWidget *download_failed();
-  QWidget *invalid_url(QLabel *url);
+  QWidget *download_error();
+  QWidget *download_invalid_url(QLabel *url);
 
-  QWidget *failed_widget;
+  QWidget *error_widget;
   QWidget *invalid_url_widget;
   QWidget *downloading_widget;
 
