@@ -6,10 +6,14 @@
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QStringBuilder>
 #include <QStyledItemDelegate>
+#include <QToolButton>
 #include <QVector>
 
-#include "opendbc/can/common_dbc.h"
+#include "tools/cabana/dbcmanager.h"
+using namespace dbcmanager;
+
 
 class ChangeTracker {
 public:
@@ -37,7 +41,7 @@ public:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 inline char toHex(uint value) { return "0123456789ABCDEF"[value & 0xF]; }
-QColor getColor(const Signal *sig);
+QColor getColor(const dbcmanager::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -50,3 +54,5 @@ public:
 namespace utils {
 QPixmap icon(const QString &id);
 }
+
+QToolButton *toolButton(const QString &icon, const QString &tooltip);

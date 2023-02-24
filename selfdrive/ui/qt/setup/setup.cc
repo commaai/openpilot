@@ -59,6 +59,11 @@ void Setup::download(QString url) {
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
   if (ret == CURLE_OK && res_status == 200 && is_elf(tmpfile)) {
     rename(tmpfile, "/tmp/installer");
+
+    FILE *fp_url = fopen("/tmp/installer_url", "w");
+    fprintf(fp_url, "%s", url.toStdString().c_str());
+    fclose(fp_url);
+
     emit finished(true);
   } else {
     emit finished(false);
