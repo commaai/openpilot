@@ -34,7 +34,7 @@ bool is_elf(char *fname) {
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
   if (!curl) {
-    emit finished(DownloadResult::error, url);
+    emit finished(url, tr("Something went wrong. Reboot the device."));
     return;
   }
 
@@ -59,9 +59,9 @@ void Setup::download(QString url) {
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &res_status);
 
   if (ret != CURLE_OK || res_status != 200) {
-    emit finished(DownloadResult::error, url);
+    emit finished(url, tr("Ensure the entered URL is valid, and the device’s internet connection is good."));
   } else if (!is_elf(tmpfile)) {
-    emit finished(DownloadResult::notExecutable, url);
+    emit finished(url, tr("No custom software found at this URL."));
   } else {
     rename(tmpfile, "/tmp/installer");
 
@@ -69,7 +69,7 @@ void Setup::download(QString url) {
     fprintf(fp_url, "%s", url.toStdString().c_str());
     fclose(fp_url);
 
-    emit finished(DownloadResult::ok, url);
+    emit finished(url);
   }
 
   curl_slist_free_all(list);
@@ -242,10 +242,10 @@ QWidget * Setup::downloading() {
   return widget;
 }
 
-QWidget * Setup::download_failed() {
+QWidget * Setup::download_failed(QLabel *url, QLabel *body) {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(55, 225, 55, 55);
+  main_layout->setContentsMargins(55, 185, 55, 55);
   main_layout->setSpacing(0);
 
   QLabel *title = new QLabel(tr("Download Failed"));
@@ -254,7 +254,13 @@ QWidget * Setup::download_failed() {
 
   main_layout->addSpacing(67);
 
-  QLabel *body = new QLabel(tr("Ensure the entered URL is valid, and the device’s internet connection is good."));
+  url->setWordWrap(true);
+  url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  url->setStyleSheet("font-family: \"JetBrains Mono\"; font-size: 56px; font-weight: 400; margin-right: 100px;");
+  main_layout->addWidget(url);
+
+  main_layout->addSpacing(48);
+
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   body->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 100px;");
@@ -290,61 +296,6 @@ QWidget * Setup::download_failed() {
   return widget;
 }
 
-QWidget * Setup::download_invalid_url(QLabel *url) {
-  QWidget *widget = new QWidget();
-  QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(55, 225, 55, 55);
-  main_layout->setSpacing(0);
-
-  QLabel *title = new QLabel(tr("Invalid Custom Software URL"));
-  title->setStyleSheet("font-size: 90px; font-weight: 500;");
-  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
-
-  main_layout->addSpacing(67);
-
-  url->setWordWrap(true);
-  url->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  url->setStyleSheet("font-family: \"JetBrains Mono\"; font-size: 64px; font-weight: 400; margin-right: 100px;");
-  main_layout->addWidget(url);
-
-  main_layout->addSpacing(60);
-
-  QLabel *body = new QLabel(tr("No custom software found at this URL."));
-  body->setWordWrap(true);
-  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  body->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 100px;");
-  main_layout->addWidget(body);
-
-  main_layout->addStretch();
-
-  // reboot + start over buttons
-  QHBoxLayout *blayout = new QHBoxLayout();
-  blayout->setSpacing(50);
-  main_layout->addLayout(blayout, 0);
-
-  QPushButton *reboot = new QPushButton(tr("Reboot device"));
-  reboot->setObjectName("navBtn");
-  blayout->addWidget(reboot);
-  QObject::connect(reboot, &QPushButton::clicked, this, [=]() {
-    Hardware::reboot();
-  });
-
-  QPushButton *restart = new QPushButton(tr("Start over"));
-  restart->setObjectName("navBtn");
-  restart->setProperty("primary", true);
-  blayout->addWidget(restart);
-  QObject::connect(restart, &QPushButton::clicked, this, [=]() {
-    setCurrentIndex(1);
-  });
-
-  widget->setStyleSheet(R"(
-    QLabel {
-      margin-left: 117px;
-    }
-  )");
-  return widget;
-}
-
 void Setup::prevPage() {
   setCurrentIndex(currentIndex() - 1);
 }
@@ -367,28 +318,20 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   downloading_widget = downloading();
   addWidget(downloading_widget);
 
-  failed_widget = download_failed();
+  QLabel *url_label = new QLabel();
+  QLabel *body_label = new QLabel();
+  failed_widget = download_failed(url_label, body_label);
   addWidget(failed_widget);
 
-  QLabel *url_label = new QLabel();
-  invalid_url_widget = download_invalid_url(url_label);
-  addWidget(invalid_url_widget);
-
-  QObject::connect(this, &Setup::finished, [=](const DownloadResult &result, const QString &url) {
-    qDebug() << "finished" << result << url;
-    switch (result) {
-      case DownloadResult::ok:
-        // hide setup on success
-        QTimer::singleShot(3000, this, &QWidget::hide);
-        break;
-      case DownloadResult::notExecutable:
-        url_label->setText(url);
-        setCurrentWidget(invalid_url_widget);
-        break;
-      case DownloadResult::error:
-      default:
-        setCurrentWidget(failed_widget);
-        break;
+  QObject::connect(this, &Setup::finished, [=](const QString &url, const QString &error) {
+    qDebug() << "finished" << url << error;
+    if (error.isEmpty()) {
+      // hide setup on success
+      QTimer::singleShot(3000, this, &QWidget::hide);
+    } else {
+      url_label->setText(url);
+      body_label->setText(error);
+      setCurrentWidget(failed_widget);
     }
   });
 

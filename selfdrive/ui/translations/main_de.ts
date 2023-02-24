@@ -704,11 +704,11 @@ This may take up to a minute.</source>
         <translation>Von neuem beginnen</translation>
     </message>
     <message>
-        <source>Invalid Custom Software URL</source>
+        <source>No custom software found at this URL.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No custom software found at this URL.</source>
+        <source>Something went wrong. Reboot the device.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

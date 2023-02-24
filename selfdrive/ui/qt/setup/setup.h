@@ -5,12 +5,6 @@
 #include <QString>
 #include <QWidget>
 
-enum DownloadResult {
-  ok,
-  notExecutable,
-  error,
-};
-
 class Setup : public QStackedWidget {
   Q_OBJECT
 
@@ -22,15 +16,13 @@ private:
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *downloading();
-  QWidget *download_failed();
-  QWidget *download_invalid_url(QLabel *url);
+  QWidget *download_failed(QLabel *url, QLabel *body);
 
   QWidget *failed_widget;
-  QWidget *invalid_url_widget;
   QWidget *downloading_widget;
 
 signals:
-  void finished(const DownloadResult &result, const QString &url);
+  void finished(const QString &url, const QString &error = "");
 
 public slots:
   void nextPage();
