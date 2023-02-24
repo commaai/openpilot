@@ -18,7 +18,6 @@ steering_presses = deque(maxlen=maxlen)
 curvatures = deque(maxlen=maxlen)
 lat_actives = deque(maxlen=maxlen)
 injecting = deque(maxlen=maxlen)
-cooldown_counter = cooldown_frames
 
 CS = None
 CC = None
@@ -45,7 +44,6 @@ for msg in tqdm(lr):
   elif msg.which() == 'controlsState':
     CoS = msg.controlsState
     curvatures.append(CoS.curvature)
-    cooldown_counter += 1
 
     if {maxlen} == {len(lat_actives), len(steering_presses), len(injecting)} and \
         all(lat_actives) and all(injecting) and steering_presses.count(True) < 10 and \
@@ -64,7 +62,6 @@ for msg in tqdm(lr):
       lat_actives.clear()
       steering_presses.clear()
       injecting.clear()
-      cooldown_counter = 0
 
 all_1s_curv_rates = np.array(all_1s_curv_rates)
 all_1s_curv_rates_speeds = np.array(all_1s_curv_rates_speeds)
