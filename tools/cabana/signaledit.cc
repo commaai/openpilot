@@ -338,6 +338,15 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
+  } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
+    // draw signal value
+    if (option.state & QStyle::State_Selected) {
+      painter->fillRect(option.rect, option.palette.highlight());
+    }
+    painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
+    QRect rc = option.rect.adjusted(0, 0, -70, 0);
+    auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
+    painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
