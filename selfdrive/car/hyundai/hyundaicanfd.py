@@ -24,7 +24,7 @@ def create_steering_messages(packer, CP, enabled, lat_active, apply_steer):
     "NEW_SIGNAL_2": 0,
   }
 
-  if CP.flags & HyundaiFlags.CANFD_HDA2:
+  if CP.flags & HyundaiFlags.CANFD_HDA2 or CP.flags & HyundaiFlags.CAN_CANFD:
     if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", 5, values))
     ret.append(packer.make_can_msg("LKAS", 4, values))

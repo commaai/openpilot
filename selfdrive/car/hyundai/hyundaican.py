@@ -77,47 +77,24 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   return packer.make_can_msg("LKAS11", 0, values)
 
-def create_lkas11_new(packer, frame, apply_steer, steer_req,
-                      torque_fault, lkas11, enabled, left_lane, right_lane, left_lane_depart, right_lane_depart):
-  values = lkas11
-  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
-  values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
-  values["CR_Lkas_StrToqReq"] = apply_steer
-  values["CF_Lkas_ActToi"] = steer_req
-  values["CF_Lkas_ToiFlt"] = torque_fault  # seems to allow actuation on CR_Lkas_StrToqReq
-  values["CF_Lkas_MsgCount"] = frame % 0xF
-  values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
-  values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
-
-  dat = packer.make_can_msg("LKAS11", 4, values)[2]
-
-  # CRC Checksum as seen on 2019 Hyundai Santa Fe
-  dat = dat[:6] + dat[7:8]
-  checksum = hyundai_checksum(dat)
-
-  values["CF_Lkas_Chksum"] = checksum
-
-  return packer.make_can_msg("LKAS11", 4, values)
 
 def create_clu11(packer, frame, clu11, button, CP):
   values = clu11
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
-  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
+  bus = 2 if CP.car_fingerprint in CAMERA_SCC_CAR else 5 if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, CP, hda_set_speed=0):
+def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
-    #"HDA_Active": 1 if hda_set_speed else 0,
+    "HDA_Active": 1 if hda_set_speed else 0,
     "HDA_Icon_State": 2 if hda_set_speed else 0,
-    #"HDA_VSetReq": hda_set_speed,
+    "HDA_VSetReq": hda_set_speed,
   }
-
-  bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
-  return packer.make_can_msg("LFAHDA_MFC", bus, values)
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override):
   commands = []

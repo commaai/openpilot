@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    if candidate in CANFD_CAR and not (ret.flags & HyundaiFlags.CAN_CANFD.value):
+    if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
       if Ecu.adas in [fw.ecu for fw in car_fw]:
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
@@ -44,9 +44,12 @@ class CarInterface(CarInterfaceBase):
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
+      # detect platforms with HKG CAN and CAN-FD definitions
+      if 0x50 in fingerprint[6] and 0x420 in fingerprint[5]:
+        ret.flags |= HyundaiFlags.CAN_CANFD.value
+
       # Send LFA message on cars with HDA
-      lfahda_bus = 6 if ret.flags & HyundaiFlags.CAN_CANFD.value else 2
-      if 0x485 in fingerprint[lfahda_bus]:
+      if 0x485 in fingerprint[2]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
 
       # These cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
@@ -254,11 +257,6 @@ class CarInterface(CarInterfaceBase):
       bus = 4 if ret.flags & HyundaiFlags.CAN_CANFD else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
-    #elif ret.flags & HyundaiFlags.CAN_CANFD:
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                         get_safety_config(car.CarParams.SafetyModel.hyundai)]
-    ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD
-
     # *** panda safety config ***
     if candidate in CANFD_CAR:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
@@ -274,6 +272,10 @@ class CarInterface(CarInterfaceBase):
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
+      elif ret.flags & HyundaiFlags.CAN_CANFD:
+        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
+                             get_safety_config(car.CarParams.SafetyModel.hyundai)]
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD
       else:
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
 
@@ -286,10 +288,6 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_HYBRID_GAS
     elif candidate in EV_CAR:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
-
-    # detect platforms with HKG CAN and CAN-FD definitions
-    if 0x50 in fingerprint[5] and 0x420 in fingerprint[4]:
-      ret.flags |= HyundaiFlags.CAN_CANFD.value
 
     if candidate in (CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022):
       ret.flags |= HyundaiFlags.ALT_LIMITS.value
