@@ -29,6 +29,7 @@ class CarControllerParams:
   # Curvature rate limits
   # The curvature signal is limited to ~0.003 m^-1/sec up by the EPS at all speeds
   # Limit to ~2 m/s^3 up, ~3 m/s^3 down at 75 mph
+  # Worst case, the low speed limits will allow 3.8 m/s^3 up, 4.9 m/s^3 down at 75 mph
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000175, 0.0001])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000225, 0.00015])
 
