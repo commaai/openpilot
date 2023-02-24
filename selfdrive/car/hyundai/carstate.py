@@ -382,7 +382,7 @@ class CarState(CarStateBase):
       signals.append(("CF_Lvr_Gear", "LVR12"))
       checks.append(("LVR12", 100))
 
-    bus = 5 if CP.flags & HyundaiFlags.CAN_CANFD.value else 0
+    bus = 1 if CP.flags & HyundaiFlags.CAN_CANFD.value else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
@@ -447,7 +447,7 @@ class CarState(CarStateBase):
       signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
       checks += [("CAM_0x2a4", 20)]
 
-    bus = 6 if CP.flags & HyundaiFlags.CAN_CANFD else 2
+    bus = 2 if CP.flags & HyundaiFlags.CAN_CANFD else 2
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)
 
   @staticmethod
