@@ -118,7 +118,7 @@ class CarController:
 
       # disable LFA on HDA2
       if self.frame % 5 == 0 and (hda2 or can_canfd):
-        can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CP, CS.cam_0x2a4))
+        can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, CS.cam_0x2a4))
 
       # LFA and HDA icons
       if self.frame % 5 == 0 and (not hda2 or hda2_long) and not can_canfd:

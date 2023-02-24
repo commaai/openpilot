@@ -83,7 +83,7 @@ def create_clu11(packer, frame, clu11, button, CP):
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
-  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else 1 if CP.flags & HyundaiFlags.CAN_CANFD else 0
+  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else 5 if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("CLU11", bus, values)
 
 

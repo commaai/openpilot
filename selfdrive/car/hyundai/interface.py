@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
       # detect platforms with HKG CAN and CAN-FD definitions
-      if 0x50 in fingerprint[2] and 0x420 in fingerprint[1]:
+      if 0x50 in fingerprint[6] and 0x420 in fingerprint[5]:
         ret.flags |= HyundaiFlags.CAN_CANFD.value
 
       # Send LFA message on cars with HDA
@@ -254,7 +254,7 @@ class CarInterface(CarInterfaceBase):
       bus = 5 if ret.flags & HyundaiFlags.CANFD_HDA2 else 4
       ret.enableBsm = 0x1e5 in fingerprint[bus]
     else:
-      bus = 1 if ret.flags & HyundaiFlags.CAN_CANFD else 0
+      bus = 5 if ret.flags & HyundaiFlags.CAN_CANFD else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
