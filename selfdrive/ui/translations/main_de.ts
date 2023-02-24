@@ -703,6 +703,14 @@ This may take up to a minute.</source>
         <source>Start over</source>
         <translation>Von neuem beginnen</translation>
     </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
