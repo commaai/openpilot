@@ -322,19 +322,22 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    QRect rc{option.rect.left(), option.rect.top(), color_label_width, option.rect.height()};
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+    QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
-    painter->drawRoundedRect(rc.adjusted(0, 2, 0, -2), 3, 3);
+    painter->drawRoundedRect(rc.adjusted(0, v_margin, 0, -v_margin), 3, 3);
     painter->setPen(item->highlight ? Qt::white : Qt::black);
     painter->setFont(small_font);
     painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
 
     // signal name
     painter->setFont(option.font);
-    painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
+    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     QString text = index.data(Qt::DisplayRole).toString();
-    QRect text_rect = option.rect.adjusted(rc.width() + 6, 0, 0, 0);
+    QRect text_rect = option.rect;
+    text_rect.setLeft(rc.right() + h_margin * 2);
     text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
@@ -343,7 +346,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
-    painter->setPen((option.state & QStyle::State_Selected ? option.palette.highlightedText() : option.palette.text()).color());
+    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     QRect rc = option.rect.adjusted(0, 0, -70, 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
@@ -442,8 +445,11 @@ void SignalView::rowsChanged() {
     if (!tree->indexWidget(index)) {
       QWidget *w = new QWidget(this);
       QHBoxLayout *h = new QHBoxLayout(w);
-      h->setContentsMargins(0, 2, 0, 2);
-      h->addStretch(1);
+      int v_margin = style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+      int h_margin = style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+      h->setContentsMargins(0, v_margin, -h_margin, v_margin);
+      h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
+      h->addStretch(0);
 
       auto remove_btn = toolButton("x", tr("Remove signal"));
       auto plot_btn = toolButton("graph-up", "");

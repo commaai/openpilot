@@ -25,11 +25,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
 
   // toolbar
   QToolBar *toolbar = new QToolBar(tr("Charts"), this);
-  toolbar->setIconSize({16, 16});
+  int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
+  toolbar->setIconSize({icon_size, icon_size});
 
   QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), tr("New Plot"));
   toolbar->addWidget(title_label = new QLabel());
-  title_label->setContentsMargins(0, 0, 12, 0);
+  title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
   QMenu *menu = new QMenu(this);
   for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
@@ -77,8 +78,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(charts_scroll);
 
   // init settings
-  use_dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
-                   QApplication::style()->standardPalette().color(QPalette::Background).value();
+  use_dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
+                   QApplication::palette().color(QPalette::Background).value();
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
@@ -322,7 +323,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->setMargins({0, 0, 0, 0});
 
   background = new QGraphicsRectItem(chart);
-  background->setBrush(Qt::white);
+  background->setBrush(QApplication::palette().color(QPalette::Base));
   background->setPen(Qt::NoPen);
   background->setZValue(chart->zValue() - 1);
 
@@ -443,10 +444,12 @@ void ChartView::manageSeries() {
 
 void ChartView::resizeEvent(QResizeEvent *event) {
   updatePlotArea(align_to);
-  int x = event->size().width() - close_btn_proxy->size().width() - 11;
-  close_btn_proxy->setPos(x, 8);
-  manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - 5, 8);
-  move_icon->setPos(11, 8);
+  int top_margin = style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+  int spacing = style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
+  int x = event->size().width() - close_btn_proxy->size().width() - style()->pixelMetric(QStyle::PM_LayoutRightMargin);
+  close_btn_proxy->setPos(x, top_margin);
+  manage_btn_proxy->setPos(x - manage_btn_proxy->size().width() - spacing, top_margin);
+  move_icon->setPos(style()->pixelMetric(QStyle::PM_LayoutLeftMargin), top_margin);
   QChartView::resizeEvent(event);
 }
 
