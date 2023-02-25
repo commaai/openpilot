@@ -1,6 +1,7 @@
 Version 0.9.2 (2023-03-XX)
 ========================
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* Honda HR-V Vezel 2023 non US support thanks to Alex Takeda!
 
 Version 0.9.1 (2023-02-23)
 ========================

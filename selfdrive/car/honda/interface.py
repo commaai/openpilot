@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
       tire_stiffness_factor = 1.
 
-    elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CIVIC_2022, CAR.HRV_2023_NON_US):
+    elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CIVIC_2022):
       ret.mass = CivicParams.MASS
       ret.wheelbase = CivicParams.WHEELBASE
       ret.centerToFront = CivicParams.CENTER_TO_FRONT
@@ -202,6 +202,15 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
       ret.wheelSpeedFactor = 1.025
+    
+    elif candidate == CAR.HRV_2023_NON_US:
+      ret.mass = 1305. + STD_CARGO_KG
+      ret.wheelbase = 2.61
+      ret.centerToFront = ret.wheelbase * 0.41
+      ret.steerRatio = 15.38
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.5
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]      
 
     elif candidate == CAR.ACURA_RDX:
       ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG
