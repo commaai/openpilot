@@ -42,7 +42,6 @@ assets_src = "#selfdrive/assets/assets.qrc"
 qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
 asset_obj = qt_env.Object("assets", assets)
-Export('asset_obj')
 
 # build soundd
 qt_env.Program("soundd/_soundd", ["soundd/main.cc", "soundd/sound.cc"], LIBS=qt_libs)

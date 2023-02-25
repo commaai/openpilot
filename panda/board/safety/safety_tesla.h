@@ -1,12 +1,12 @@
 const SteeringLimits TESLA_STEERING_LIMITS = {
   .angle_deg_to_can = 10,
   .angle_rate_up_lookup = {
-    {2., 7., 17.},
-    {5., .8, .25}
+    {0., 5., 15.},
+    {5., .8, .15}
   },
   .angle_rate_down_lookup = {
-    {2., 7., 17.},
-    {5., 3.5, .8}
+    {0., 5., 15.},
+    {5., 3.5, .4}
   },
 };
 

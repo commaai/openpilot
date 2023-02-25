@@ -1,6 +1,3 @@
-#define RCC_BDCR_OPTIONS_LSE (RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_0 | RCC_BDCR_LSEON)
-#define RCC_BDCR_OPTIONS_LSI (RCC_BDCR_RTCEN | RCC_BDCR_RTCSEL_1)
-
 #define YEAR_OFFSET 2000U
 
 typedef struct __attribute__((packed)) timestamp_t {
@@ -19,39 +16,6 @@ uint8_t to_bcd(uint16_t value){
 
 uint16_t from_bcd(uint8_t value){
   return (((value & 0xF0U) >> 4U) * 10U) + (value & 0x0FU);
-}
-
-void rtc_init(void){
-  uint32_t bdcr_opts = 0U;
-  uint32_t bdcr_mask = 0U;
-  if (current_board->has_rtc_battery) {
-    bdcr_opts = RCC_BDCR_OPTIONS_LSE;
-    bdcr_mask = RCC_BDCR_MASK_LSE;
-  } else {
-    bdcr_opts = RCC_BDCR_OPTIONS_LSI;
-    bdcr_mask = RCC_BDCR_MASK_LSI;
-    RCC->CSR |= RCC_CSR_LSION;
-    while((RCC->CSR & RCC_CSR_LSIRDY) == 0){}
-  }
-
-  // Initialize RTC module and clock if not done already.
-  if((RCC->BDCR & bdcr_mask) != bdcr_opts){
-    print("Initializing RTC\n");
-    // Reset backup domain
-    register_set_bits(&(RCC->BDCR), RCC_BDCR_BDRST);
-
-    // Disable write protection
-    disable_bdomain_protection();
-
-    // Clear backup domain reset
-    register_clear_bits(&(RCC->BDCR), RCC_BDCR_BDRST);
-
-    // Set RTC options
-    register_set(&(RCC->BDCR), bdcr_opts, bdcr_mask);
-
-    // Enable write protection
-    enable_bdomain_protection();
-  }
 }
 
 void rtc_set_time(timestamp_t time){
