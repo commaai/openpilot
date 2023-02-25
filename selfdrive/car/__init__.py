@@ -115,7 +115,7 @@ def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torq
 
 def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   # pick angle rate limits based on wind up/down
-  steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
+  steer_up = apply_angle_last * apply_angle >= 0. and abs(apply_angle) > abs(apply_angle_last)
   rate_limits = LIMITS.ANGLE_RATE_LIMIT_UP if steer_up else LIMITS.ANGLE_RATE_LIMIT_DOWN
 
   angle_rate_lim = interp(v_ego, rate_limits.speed_bp, rate_limits.angle_v)

@@ -28,8 +28,9 @@ class CarControllerParams:
 
   # Curvature rate limits
   # TODO: unify field names used by curvature and angle control cars
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.005, 0.00056, 0.0002])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.008, 0.00089, 0.00032])
+  # ~2 m/s^3 up, ~-3 m/s^3 down
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.004, 0.00044, 0.00016])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.006, 0.00066, 0.00024])
   CURVATURE_DELTA_MAX = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
   ACCEL_MAX = 2.0               # m/s^s max acceleration

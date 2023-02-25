@@ -317,9 +317,9 @@ def modeld_lagging_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
 
 def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  text = "Cruise Mode Disabled"
+  text = "Enable Adaptive Cruise to Engage"
   if CP.carName == "honda":
-    text = "Main Switch Off"
+    text = "Enable Main Switch to Engage"
   return NoEntryAlert(text)
 
 

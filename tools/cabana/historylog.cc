@@ -48,7 +48,15 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
       if (section == 0) {
         return "Time";
       }
-      return show_signals ? sigs[section - 1]->name : "Data";
+      if (show_signals) {
+        QString name = sigs[section - 1]->name;
+        if (!sigs[section - 1]->unit.isEmpty()) {
+          name += QString(" (%1)").arg(sigs[section - 1]->unit);
+        }
+        return name;
+      } else {
+        return "Data";
+      }
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
       return QBrush(getColor(sigs[section - 1]));
     }

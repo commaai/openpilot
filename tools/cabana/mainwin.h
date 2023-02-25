@@ -56,6 +56,7 @@ protected:
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
+  void updateStatus();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
@@ -65,6 +66,7 @@ protected:
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
+  QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
   QSplitter *video_splitter;;
   QString current_file = "";
