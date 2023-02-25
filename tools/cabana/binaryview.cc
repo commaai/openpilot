@@ -293,7 +293,6 @@ void BinaryViewModel::updateState() {
   double max_f = 255.0;
   double factor = 0.25;
   double scaler = max_f / log2(1.0 + factor);
-  char hex[3] = {'\0'};
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
@@ -305,9 +304,7 @@ void BinaryViewModel::updateState() {
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
       item.bg_color.setAlpha(alpha);
     }
-    hex[0] = toHex(binary[i] >> 4);
-    hex[1] = toHex(binary[i] & 0xf);
-    items[i * column_count + 8].val = hex;
+    items[i * column_count + 8].val = toHex(binary[i]);
     items[i * column_count + 8].bg_color = last_msg.colors[i];
   }
   for (int i = binary.size() * column_count; i < items.size(); ++i) {
@@ -375,7 +372,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         bg.setAlpha(std::max(50, bg.alpha()));
       }
       painter->fillRect(option.rect, bg);
-      painter->setPen(Qt::black);
+      painter->setPen(option.palette.color(QPalette::Text));
     }
   }
 

@@ -58,6 +58,11 @@ MainWindow::MainWindow() : QMainWindow() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
 
+  setStyleSheet(QString(R"(QMainWindow::separator {
+    width: %1px; /* when vertical */
+    height: %1px; /* when horizontal */
+  })").arg(style()->pixelMetric(QStyle::PM_SplitterWidth)));
+
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
