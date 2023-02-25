@@ -27,7 +27,7 @@ class CarControllerParams:
   STEER_DRIVER_ALLOWANCE = 1.0  # Driver intervention threshold, Nm
 
   # Curvature rate limits
-  # The curvature signal is limited to ~0.003 m^-1/sec up by the EPS at all speeds
+  # The curvature signal is limited to 0.003 to 0.009 m^-1/sec by the EPS depending on speed and direction
   # Limit to ~2 m/s^3 up, ~3 m/s^3 down at 75 mph
   # Worst case, the low speed limits will allow 4.3 m/s^3 up, 4.9 m/s^3 down at 75 mph
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.0002, 0.0001])
