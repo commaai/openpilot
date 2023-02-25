@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs, erf
+from math import fabs, exp  # , erf
 from panda import Panda
 
 from common.conversions import Conversions as CV
@@ -54,8 +54,14 @@ class CarInterface(CarInterfaceBase):
       [-torque_params.friction, torque_params.friction]
     )
     friction = friction_interp if friction_compensation else 0.0
-    a, b, c, _ = [1.589957242826664, 0.4335237771434789, 0.20701994923698716, 0.007771162911547703]
-    steer_torque = (erf(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+
+    def sig(val):
+      return 1 / (1 + exp(-val)) - 0.5
+
+    # a, b, c, _ = [1.589957242826664, 0.4335237771434789, 0.20701994923698716, 0.007771162911547703]  # weights for erf based ff
+    # steer_torque = (erf(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights for sigmoid based ff
+    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
     return steer_torque + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
