@@ -15,8 +15,10 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
     return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
-  } else if (role == Qt::UserRole && index.column() == 1 && !show_signals) {
+  } else if (role == ColorsRole) {
     return QVariant::fromValue(m.colors);
+  } else if (role == BytesRole) {
+    return m.data;
   }
   return {};
 }

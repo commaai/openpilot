@@ -71,26 +71,26 @@ void ChangeTracker::clear() {
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  byte_width = QFontMetrics(fixed_font).width("00 ");
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto colors = index.data(ColorsRole).value<QVector<QColor>>();
+  auto byte_list = index.data(BytesRole).toByteArray();
+
+  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
+
   auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
-  int space = painter->boundingRect(option.rect, option.displayAlignment, " ").width();
-  QRect pos = painter->boundingRect(option.rect, option.displayAlignment, "00").adjusted(0, 0, 2, 0);
-  pos.moveLeft(pos.x() + space);
-  int m = space / 2;
-  const QMargins margins(m, m, m, m);
-
-  auto colors = index.data(Qt::UserRole).value<QVector<QColor>>();
-  auto byte_list = index.data(Qt::DisplayRole).toString().split(" ");
   for (int i = 0; i < byte_list.size(); ++i) {
     if (i < colors.size() && colors[i].alpha() > 0) {
-      painter->fillRect(pos.marginsAdded(margins), colors[i]);
+      painter->fillRect(rc, colors[i]);
     }
-    painter->drawText(pos, Qt::AlignCenter, byte_list[i]);
-    pos.moveLeft(pos.right() + space);
+    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
+    rc.moveLeft(rc.right() + 1);
   }
 }
 
@@ -114,8 +114,8 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
-                           QApplication::style()->standardPalette().color(QPalette::Background).value();
+  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
+                           QApplication::palette().color(QPalette::Background).value();
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -138,3 +138,13 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   btn->setAutoRaise(true);
   return btn;
 };
+
+
+QString toHex(uint8_t byte) {
+  static std::array<QString, 256> hex = []() {
+    std::array<QString, 256> ret;
+    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
+    return ret;
+  }();
+  return hex[byte];
+}

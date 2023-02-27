@@ -129,7 +129,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       case 4: return can_data.count;
       case 5: return toHex(can_data.dat);
     }
-  } else if (role == Qt::UserRole && index.column() == 5) {
+  } else if (role == ColorsRole) {
     QVector<QColor> colors = can_data.colors;
     if (!suppressed_bytes.empty()) {
       for (int i = 0; i < colors.size(); i++) {
@@ -139,6 +139,8 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       }
     }
     return QVariant::fromValue(colors);
+  } else if (role == BytesRole) {
+    return can_data.dat;
   }
   return {};
 }
