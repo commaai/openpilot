@@ -1,12 +1,24 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_angle_limits
+from selfdrive.car import apply_std_steer_angle_limits, apply_dist_to_meas_limits
 from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+
+
+def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego, LIMITS):
+  apply_curvature = round(apply_curvature * LIMITS.CURVATURE_TO_CAN)
+  apply_curvature_last = round(apply_curvature_last * LIMITS.CURVATURE_TO_CAN)
+  current_curvature = round(current_curvature * LIMITS.CURVATURE_TO_CAN)
+
+  angle_rate_lim_up = interp(v_ego, LIMITS.ANGLE_RATE_LIMIT_UP.speed_bp, LIMITS.ANGLE_RATE_LIMIT_UP.angle_v)
+  angle_rate_lim_down = interp(v_ego, LIMITS.ANGLE_RATE_LIMIT_DOWN.speed_bp, LIMITS.ANGLE_RATE_LIMIT_DOWN.angle_v)
+
+  return apply_dist_to_meas_limits(apply_curvature, apply_curvature_last, current_curvature,
+                                   angle_rate_lim_up, angle_rate_lim_down, LIMITS.CURVATURE_ERROR, LIMITS.CURVATURE_MAX)
 
 
 class CarController:
@@ -48,6 +60,7 @@ class CarController:
       if CC.latActive:
         # apply limits to curvature and clip to signal range
         apply_curvature = actuators.curvature
+        apply_ford_curvature_limits
         if CS.out.vEgoRaw > 12:
           # pointless to limit at low speeds due to lack of torque
           # TODO: figure out a good way to ramp down limits such that we can cleanly match panda
