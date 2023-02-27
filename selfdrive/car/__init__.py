@@ -93,24 +93,32 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
   return int(round(float(apply_torque)))
 
 
-def apply_dist_to_meas_limits(val, val_last, val_meas, LIMITS):
+def apply_dist_to_meas_limits(val, val_last, val_meas,
+                              STEER_DELTA_UP, STEER_DELTA_DOWN,
+                              STEER_ERROR_MAX, STEER_MAX):
   # limits due to comparison of commanded val VS measured val (torque/angle/curvature)
-  max_lim = min(max(val_meas + LIMITS.STEER_ERROR_MAX, LIMITS.STEER_ERROR_MAX), LIMITS.STEER_MAX)
-  min_lim = max(min(val_meas - LIMITS.STEER_ERROR_MAX, -LIMITS.STEER_ERROR_MAX), -LIMITS.STEER_MAX)
+  max_lim = min(max(val_meas + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
+  min_lim = max(min(val_meas - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
 
   val = clip(val, min_lim, max_lim)
 
   # slow rate if val increases in magnitude
   if val_last > 0:
     val = clip(val,
-               max(val_last - LIMITS.STEER_DELTA_DOWN, -LIMITS.STEER_DELTA_UP),
-               val_last + LIMITS.STEER_DELTA_UP)
+               max(val_last - STEER_DELTA_DOWN, -STEER_DELTA_UP),
+               val_last + STEER_DELTA_UP)
   else:
     val = clip(val,
-               val_last - LIMITS.STEER_DELTA_UP,
-               min(val_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
+               val_last - STEER_DELTA_UP,
+               min(val_last + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
   return int(round(float(val)))
+
+
+def apply_steer_torque_error_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
+  return apply_dist_to_meas_limits(apply_torque, apply_torque_last, motor_torque,
+                                   LIMITS.STEER_DELTA_UP, LIMITS.STEER_DELTA_DOWN,
+                                   LIMITS.STEER_ERROR_MAX, LIMITS.STEER_MAX)
 
 
 def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
