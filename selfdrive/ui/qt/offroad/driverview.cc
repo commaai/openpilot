@@ -27,7 +27,7 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidget(parent) {
-  face_img = loadPixmap("../assets/img_driver_face.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::showEvent(QShowEvent* event) {
