@@ -552,7 +552,12 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       });
       for (auto &c : chunks) {
         s.vals.append(c.vals);
-        s.step_vals.append(c.step_vals);
+        if (!c.step_vals.empty()) {
+          if (!s.step_vals.empty()) {
+            s.step_vals.append({c.step_vals.first().x(), s.step_vals.back().y()});
+          }
+          s.step_vals.append(c.step_vals);
+        }
       }
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
