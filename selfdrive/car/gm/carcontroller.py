@@ -3,7 +3,7 @@ from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_torque_limits
+from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 
@@ -73,7 +73,7 @@ class CarController:
 
       if CC.latActive:
         new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-        apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
       else:
         apply_steer = 0
 
