@@ -403,7 +403,7 @@ location set</source>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>GPS를 기다리는 중</translation>
+        <translation>GPS 수신중 입니다</translation>
     </message>
 </context>
 <context>
@@ -592,16 +592,17 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>데이터 파티션을 마운트할 수 없습니다. 파티션이 손상되었을 수 있습니다. 장치를 초기화하려면 확인을 누르세요.</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 콘텐츠와 설정을 지우려면 확인을 누르세요. 부팅을 재개하려면 취소를 누르세요.</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
+        <translation>장치 초기화 중...
+최대 1분이 소요될 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -702,12 +703,12 @@ This may take up to a minute.</source>
         <translation>다시 시작</translation>
     </message>
     <message>
-        <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation>문제가 발생했습니다. 장치를 재부팅하세요.</translation>
     </message>
     <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
+        <source>No custom software found at this URL.</source>
+        <translation>이 URL에서 커스텀 소프트웨어를 찾을 수 없습니다.</translation>
     </message>
 </context>
 <context>
