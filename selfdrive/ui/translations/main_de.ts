@@ -577,16 +577,8 @@ location set</source>
         <translation>Bist du sicher, dass du das Gerät auf Werkseinstellungen zurücksetzen möchtest?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Gerät wird zurückgesetzt...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>System auf Werkseinstellungen zurücksetzen</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Zurücksetzen auf Werkseinstellungen wurde ausgewählt. Drücke Annehmen, um alle Inhalte und Einstellungen zu löschen. Drücke Abbrechen, um mit dem Starten des Gerätes fortzufahren.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -601,8 +593,17 @@ location set</source>
         <translation>Bestätigen</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>Datenpartition kann nicht geöffnet werden. Drücke Annehmen, um dein Gerät auf Werkseinstellungen zurückzusetzen.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -701,6 +702,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>Von neuem beginnen</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -4,7 +4,7 @@ Version 0.9.2 (2023-03-XX)
 * Hyundai Palisade 2023 support thanks to sunnyhaibin!
 * Kia Telluride 2023 support thanks to sunnyhaibin!
 
-Version 0.9.1 (2023-02-23)
+Version 0.9.1 (2023-02-28)
 ========================
 * New driving model
   * 30% improved height estimation resulting in better driving performance for tall cars
