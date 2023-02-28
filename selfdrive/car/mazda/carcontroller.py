@@ -1,6 +1,6 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_torque_limits
+from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.mazda import mazdacan
 from selfdrive.car.mazda.values import CarControllerParams, Buttons
 
@@ -23,8 +23,8 @@ class CarController:
     if CC.latActive:
       # calculate steer and also set limits due to driver torque
       new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
-      apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
-                                                  CS.out.steeringTorque, CarControllerParams)
+      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last,
+                                                     CS.out.steeringTorque, CarControllerParams)
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid

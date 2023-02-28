@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
+#include <QPixmapCache>
 #include <QDebug>
 
 #include <limits>
@@ -70,35 +71,26 @@ void ChangeTracker::clear() {
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+  byte_width = QFontMetrics(fixed_font).width("00 ");
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QStyleOptionViewItemV4 opt = option;
-  initStyleOption(&opt, index);
+  auto colors = index.data(ColorsRole).value<QVector<QColor>>();
+  auto byte_list = index.data(BytesRole).toByteArray();
 
-  auto byte_list = opt.text.split(" ");
-  if (byte_list.size() <= 1) {
-    QStyledItemDelegate::paint(painter, option, index);
-    return;
-  }
+  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
 
   auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
-  QRect space = painter->boundingRect(opt.rect, opt.displayAlignment, " ");
-  QRect pos = painter->boundingRect(opt.rect, opt.displayAlignment, "00");
-  pos.moveLeft(pos.x() + space.width());
-
-  int m = space.width() / 2;
-  const QMargins margins(m, m, m, m);
-
-  auto colors = index.data(Qt::UserRole).value<QVector<QColor>>();
   for (int i = 0; i < byte_list.size(); ++i) {
-    if (i < colors.size()) {
-      painter->fillRect(pos.marginsAdded(margins), colors[i]);
+    if (i < colors.size() && colors[i].alpha() > 0) {
+      painter->fillRect(rc, colors[i]);
     }
-    painter->drawText(pos, opt.displayAlignment, byte_list[i]);
-    pos.moveLeft(pos.right() + space.width());
+    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
+    rc.moveLeft(rc.right() + 1);
   }
 }
 
@@ -106,7 +98,7 @@ QColor getColor(const Signal *sig) {
   float h = 19 * (float)sig->lsb / 64.0;
   h = fmod(h, 1.0);
 
-  size_t hash = qHash(QString::fromStdString(sig->name));
+  size_t hash = qHash(sig->name);
   float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
   float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
 
@@ -122,14 +114,37 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::style()->standardPalette().color(QPalette::WindowText).value() >
-                           QApplication::style()->standardPalette().color(QPalette::Background).value();
-  QPixmap pm = bootstrapPixmap(id);
-  if (dark_theme) {
-    QPainter p(&pm);
-    p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-    p.fillRect(pm.rect(), Qt::lightGray);
+  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
+                           QApplication::palette().color(QPalette::Background).value();
+  QPixmap pm;
+  QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
+  if (!QPixmapCache::find(key, &pm)) {
+    pm = bootstrapPixmap(id);
+    if (dark_theme) {
+      QPainter p(&pm);
+      p.setCompositionMode(QPainter::CompositionMode_SourceIn);
+      p.fillRect(pm.rect(), Qt::lightGray);
+    }
+    QPixmapCache::insert(key, pm);
   }
   return pm;
 }
 }  // namespace utils
+
+QToolButton *toolButton(const QString &icon, const QString &tooltip) {
+  auto btn = new QToolButton();
+  btn->setIcon(utils::icon(icon));
+  btn->setToolTip(tooltip);
+  btn->setAutoRaise(true);
+  return btn;
+};
+
+
+QString toHex(uint8_t byte) {
+  static std::array<QString, 256> hex = []() {
+    std::array<QString, 256> ret;
+    for (int i = 0; i < 256; ++i) ret[i] = QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper();
+    return ret;
+  }();
+  return hex[byte];
+}

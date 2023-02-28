@@ -73,7 +73,7 @@ def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> Dict[str, st
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
 
-def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
+def apply_driver_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
 
   # limits due to driver torque
   driver_max_torque = LIMITS.STEER_MAX + (LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
@@ -93,29 +93,37 @@ def apply_std_steer_torque_limits(apply_torque, apply_torque_last, driver_torque
   return int(round(float(apply_torque)))
 
 
-def apply_toyota_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
-  # limits due to comparison of commanded torque VS motor reported torque
-  max_lim = min(max(motor_torque + LIMITS.STEER_ERROR_MAX, LIMITS.STEER_ERROR_MAX), LIMITS.STEER_MAX)
-  min_lim = max(min(motor_torque - LIMITS.STEER_ERROR_MAX, -LIMITS.STEER_ERROR_MAX), -LIMITS.STEER_MAX)
+def apply_dist_to_meas_limits(val, val_last, val_meas,
+                              STEER_DELTA_UP, STEER_DELTA_DOWN,
+                              STEER_ERROR_MAX, STEER_MAX):
+  # limits due to comparison of commanded val VS measured val (torque/angle/curvature)
+  max_lim = min(max(val_meas + STEER_ERROR_MAX, STEER_ERROR_MAX), STEER_MAX)
+  min_lim = max(min(val_meas - STEER_ERROR_MAX, -STEER_ERROR_MAX), -STEER_MAX)
 
-  apply_torque = clip(apply_torque, min_lim, max_lim)
+  val = clip(val, min_lim, max_lim)
 
-  # slow rate if steer torque increases in magnitude
-  if apply_torque_last > 0:
-    apply_torque = clip(apply_torque,
-                        max(apply_torque_last - LIMITS.STEER_DELTA_DOWN, -LIMITS.STEER_DELTA_UP),
-                        apply_torque_last + LIMITS.STEER_DELTA_UP)
+  # slow rate if val increases in magnitude
+  if val_last > 0:
+    val = clip(val,
+               max(val_last - STEER_DELTA_DOWN, -STEER_DELTA_UP),
+               val_last + STEER_DELTA_UP)
   else:
-    apply_torque = clip(apply_torque,
-                        apply_torque_last - LIMITS.STEER_DELTA_UP,
-                        min(apply_torque_last + LIMITS.STEER_DELTA_DOWN, LIMITS.STEER_DELTA_UP))
+    val = clip(val,
+               val_last - STEER_DELTA_UP,
+               min(val_last + STEER_DELTA_DOWN, STEER_DELTA_UP))
 
-  return int(round(float(apply_torque)))
+  return float(val)
+
+
+def apply_meas_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
+  return int(round(apply_dist_to_meas_limits(apply_torque, apply_torque_last, motor_torque,
+                                             LIMITS.STEER_DELTA_UP, LIMITS.STEER_DELTA_DOWN,
+                                             LIMITS.STEER_ERROR_MAX, LIMITS.STEER_MAX)))
 
 
 def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   # pick angle rate limits based on wind up/down
-  steer_up = apply_angle_last * apply_angle > 0. and abs(apply_angle) > abs(apply_angle_last)
+  steer_up = apply_angle_last * apply_angle >= 0. and abs(apply_angle) > abs(apply_angle_last)
   rate_limits = LIMITS.ANGLE_RATE_LIMIT_UP if steer_up else LIMITS.ANGLE_RATE_LIMIT_DOWN
 
   angle_rate_lim = interp(v_ego, rate_limits.speed_bp, rate_limits.angle_v)
