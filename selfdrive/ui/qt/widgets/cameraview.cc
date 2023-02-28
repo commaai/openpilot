@@ -241,22 +241,17 @@ void CameraWidget::paintGL() {
   std::lock_guard lk(frame_lock);
   if (frames.empty()) return;
 
-  int frame_idx = frames.size() - 1;
-
-  // Always draw latest frame until sync logic is more stable
-  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-  //   if (frames[frame_idx].first == draw_frame_id) break;
-  // }
-
+  draw_frame_id = std::clamp(draw_frame_id, frames.front().first, frames.back().first);
   // Log duplicate/dropped frames
-  if (frames[frame_idx].first == prev_frame_id) {
-    qDebug() << "Drawing same frame twice" << frames[frame_idx].first;
-  } else if (frames[frame_idx].first != prev_frame_id + 1) {
-    qDebug() << "Skipped frame" << frames[frame_idx].first;
+  if (draw_frame_id == prev_frame_id) {
+    qDebug() << "Drawing same frame twice" << draw_frame_id;
+  } else if (draw_frame_id != prev_frame_id + 1) {
+    qDebug() << "Skipped frame" << draw_frame_id;
   }
-  prev_frame_id = frames[frame_idx].first;
-  VisionBuf *frame = frames[frame_idx].second;
-  assert(frame != nullptr);
+  auto it = std::find_if(frames.rbegin(), frames.rend(), [=](auto &f) {return f.first == draw_frame_id;});
+  assert(it != frames.rend());
+  prev_frame_id = draw_frame_id;
+  VisionBuf *frame = it->second;
 
   updateFrameMat();
 
@@ -347,7 +342,11 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraWidget::vipcFrameReceived() {
-  update();
+  std::lock_guard lk(frame_lock);
+  if (frames.empty()) return;
+
+  draw_frame_id = frames.back().first;;
+  repaint();
 }
 
 void CameraWidget::vipcThread() {
@@ -377,7 +376,7 @@ void CameraWidget::vipcThread() {
       {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
-        while (frames.size() > FRAME_BUFFER_SIZE) {
+        while (frames.size() > YUV_BUFFER_COUNT) {
           frames.pop_front();
         }
       }
