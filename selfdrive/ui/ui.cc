@@ -278,6 +278,13 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
+void UIState::setDriverViewEnabled(bool enabled) {
+  driver_view_enabled = enabled;
+  Params().putBool("IsDriverViewEnabled", enabled);
+}
+
+// Device
+
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   setAwake(true);
   resetInteractiveTimout();
@@ -303,7 +310,8 @@ void Device::setAwake(bool on) {
 }
 
 void Device::resetInteractiveTimout() {
-  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
+  int timeout = (uiState()->driverViewEnabled() || !ignition_on ? 30 : 10);
+  interactive_timeout = timeout * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
