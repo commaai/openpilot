@@ -620,15 +620,6 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   painter.restore();
 }
 
-void AnnotatedCameraWidget::vipcFrameReceived() {
-  std::lock_guard lk(frame_lock);
-  if (frames.empty()) return;
-
-  const cereal::ModelDataV2::Reader &model = (*(uiState()->sm))["modelV2"].getModelV2();
-  draw_frame_id = model.getFrameId();
-  repaint();
-}
-
 void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
@@ -673,6 +664,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
+    CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }
 
