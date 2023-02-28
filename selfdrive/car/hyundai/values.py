@@ -183,7 +183,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.PALISADE_2023: [
     HyundaiCarInfo("Hyundai Palisade 2023", "All", harness=Harness.hyundai_n),
-    HyundaiCarInfo("Kia Telluride 2023", "All", harness=Harness.hyundai_l),
+    HyundaiCarInfo("Kia Telluride 2023", "All", harness=Harness.hyundai_p),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
