@@ -1,7 +1,7 @@
 import math
 
 from cereal import car, log
-from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
 
 SteerControlType = car.CarParams.SteerControlType
@@ -35,7 +35,7 @@ class LatControlPID(LatControl):
 
     pid_log.steeringAngleDesiredDeg = angle_steers_des
     pid_log.angleError = error
-    if CS.vEgo < MIN_STEER_SPEED or not active:
+    if not active:
       output_steer = 0.0
       pid_log.active = False
       self.pid.reset()

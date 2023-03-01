@@ -21,6 +21,7 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
+  VIDEO = "Video"
 
 
 class Star(Enum):
@@ -125,20 +126,11 @@ class CarInfo:
   harness: Enum = Harness.none
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
-    # TODO: set all the min steer speeds in carParams and remove this
-    if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
-    else:
-      self.min_steer_speed = CP.minSteerSpeed
-
-    # TODO: set all the min enable speeds in carParams correctly and remove this
-    if self.min_enable_speed is None:
-      self.min_enable_speed = CP.minEnableSpeed
-
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
 
+    # longitudinal column
     op_long = "Stock"
     if CP.openpilotLongitudinalControl and not CP.enableDsu:
       op_long = "openpilot"
@@ -149,6 +141,23 @@ class CarInfo:
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
 
+    # min steer & enable speed columns
+    # TODO: set all the min steer speeds in carParams and remove this
+    if self.min_steer_speed is not None:
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+    else:
+      self.min_steer_speed = CP.minSteerSpeed
+
+    # TODO: set all the min enable speeds in carParams correctly and remove this
+    if self.min_enable_speed is None:
+      self.min_enable_speed = CP.minEnableSpeed
+
+    # harness column
+    harness_col = self.harness.value
+    if self.harness is not Harness.none:
+      model_years = self.model + (' ' + self.years if self.years else '')
+      harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -158,7 +167,8 @@ class CarInfo:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
-      Column.HARNESS: self.harness.value,
+      Column.HARNESS: harness_col,
+      Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
     # Set steering torque star from max lateral acceleration
@@ -194,6 +204,13 @@ class CarInfo:
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
 
+      # experimental mode
+      exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
+      if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
+        sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
+      else:
+        sentence_builder += f" {exp_link}, with traffic light and stop sign handling, is not currently available for this car, but may be added in a future software update."
+
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
@@ -202,12 +219,14 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  def get_column(self, column: Column, star_icon: str, footnote_tag: str) -> str:
+  def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
     elif column == Column.MODEL and len(self.years):
       item += f" {self.years}"
+    elif column == Column.VIDEO and len(item) > 0:
+      item = video_icon.format(item)
 
     footnotes = get_footnotes(self.footnotes, column)
     if len(footnotes):

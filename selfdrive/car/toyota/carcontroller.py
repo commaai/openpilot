@@ -1,7 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_std_steer_angle_limits, apply_toyota_steer_torque_limits, \
-                          create_gas_interceptor_command, make_can_msg
+from selfdrive.car import apply_std_steer_angle_limits, apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -45,7 +44,7 @@ class CarController:
     self.gas = 0
     self.accel = 0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
@@ -75,7 +74,7 @@ class CarController:
     if self.CP.steerControlType != SteerControlType.angle:
       # - steer torque
       new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
+      apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
     else:
       # - steer angle
       # angle command is in terms of the torque sensor angle (may or may not have an offset)
@@ -183,7 +182,7 @@ class CarController:
         # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
         send_ui = True
 
-      if self.frame % 100 == 0 or send_ui:
+      if self.frame % 20 == 0 or send_ui:
         can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
                                            hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))

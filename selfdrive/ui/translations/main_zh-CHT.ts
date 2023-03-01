@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>安裝中…</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>接收對象： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>分析差異： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>更新檔案： </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -587,16 +575,8 @@ location set</source>
         <translation>您確定要重置你的設備嗎？</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>重置設備中…</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>系統重置</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>系統重置已觸發。請按確認刪除所有內容和設置。按取消恢復啟動。</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -611,8 +591,17 @@ location set</source>
         <translation>確認</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>無法掛載數據分區。請按確認重置您的設備。</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -685,18 +674,6 @@ location set</source>
         <translation>連接至網路中</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>選擇要安裝的軟體</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>行車記錄器</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>定制的軟體</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>輸入網址</translation>
     </message>
@@ -723,6 +700,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>重新開始</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1018,14 +1003,6 @@ location set</source>
         <translation>在本車輛中，openpilot預設將使用原車內建的ACC系統，而非openpilot縱向控制。開啟此開關來啟用openpilot縱向控制，使用此選項時建議一併啟用實驗模式。</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car, since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow experimental mode.</source>
-        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
     </message>
@@ -1044,6 +1021,22 @@ location set</source>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
 </context>
 <context>

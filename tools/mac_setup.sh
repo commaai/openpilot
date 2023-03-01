@@ -52,13 +52,8 @@ brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
+cask "gcc-arm-embedded"
 EOS
-
-# Install gcc-arm-embedded 10.3-2021.10. 11.x is broken on M1 Macs with Xcode 13.3~
-brew uninstall gcc-arm-embedded || true
-curl -L https://github.com/Homebrew/homebrew-cask/raw/d407663b8017a0a062c7fc0b929faf2e16abd1ff/Casks/gcc-arm-embedded.rb > /tmp/gcc-arm-embedded.rb
-brew install --cask /tmp/gcc-arm-embedded.rb
-rm /tmp/gcc-arm-embedded.rb
 
 echo "[ ] finished brew install t=$SECONDS"
 

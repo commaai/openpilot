@@ -57,11 +57,16 @@ class Request:
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
+  # FW responses from these queries will not be used for fingerprinting
+  logging: bool = False
+  # These requests are done once OBD multiplexing is disabled, after all others
+  non_obd: bool = False
 
 
 @dataclass
 class FwQueryConfig:
   requests: List[Request]
+  # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
