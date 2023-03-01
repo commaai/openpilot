@@ -1656,33 +1656,12 @@ FW_VERSIONS = {
     ],
   },
   CAR.PALISADE_2023: {
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
-      b'\xf1\x8799110S8150\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
-    ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00LX ESC \x0e 101"\x02& 58910-S8700',
-      b'\xf1\x8758910-S8700\xf1\x00LX ESC \x0e 101"\x02& 58910-S8700',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81640T3051\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00LXP MDPS C 1.00 1.00 56310-S8620 4LXPC100',
-    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.04 99211-S8150 220622',
     ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00bcsh8p55  U992\x00\x00\x00\x00\x00\x00SLXTG38NSB\xd0\x01\xcd\xb1',
-      b'\xf1\x87LDNVFN170000KF55\xa9\x99\x89\x98\x87www\x89\x99\x98\x99\x98\x88\x89\x88\x88\x88\x88\x88u\x8f\xf8\xffz\x99\xaf\xff\x00\xe3\xf1\x81U992\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p55  U992\x00\x00\x00\x00\x00\x00SLXTG38NSB\xd0\x01\xcd\xb1',
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
     ],
-    (Ecu.adas, 0x730, None): [
-      b'\xf1\x00LX2 ADRV 1.00 1.00 220314',
-    ],
-    (Ecu.cornerRadar, 0x7B7, None): [
-      b'\xf1\x00LX2 BCW RR 1.00 , 1.00 (x\x053"\x01\x95\x00\x07',
-    ]
   },
 }
 
