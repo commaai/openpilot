@@ -96,8 +96,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                           stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
 }
 
 CameraWidget::~CameraWidget() {
@@ -165,6 +167,7 @@ void CameraWidget::initializeGL() {
 void CameraWidget::showEvent(QShowEvent *event) {
   if (!vipc_thread) {
     clearFrames();
+    available_streams.clear();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
@@ -179,6 +182,10 @@ void CameraWidget::stopVipcThread() {
     vipc_thread->wait();
     vipc_thread = nullptr;
   }
+}
+
+void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
+  available_streams = streams;
 }
 
 void CameraWidget::updateFrameMat() {
@@ -365,6 +372,13 @@ void CameraWidget::vipcThread() {
     active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
+      auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      if (streams.empty()) {
+        QThread::msleep(100);
+        continue;
+      }
+      emit vipcAvailableStreamsUpdated(streams);
+
       clearFrames();
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);

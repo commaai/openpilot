@@ -645,8 +645,9 @@ void AnnotatedCameraWidget::paintGL() {
     }
 
     // Wide or narrow cam dependent on speed
+    bool wide_cam_only = available_streams.size() == 1 && available_streams.count(VISION_STREAM_WIDE_ROAD);
     float v_ego = sm["carState"].getCarState().getVEgo();
-    if ((v_ego < 10) || s->wide_cam_only) {
+    if ((v_ego < 10) || wide_cam_only) {
       wide_cam_requested = true;
     } else if (v_ego > 15) {
       wide_cam_requested = false;
