@@ -591,10 +591,13 @@ void ChartView::updateAxisY() {
       if (it->y() > max) max = it->y();
     }
   }
-  axis_y->setTitleText(unit);
-
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
+
+  if (axis_y->titleText() != unit) {
+    axis_y->setTitleText(unit);
+    y_label_width = 0;// recalc width
+  }
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
