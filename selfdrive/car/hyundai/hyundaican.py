@@ -90,14 +90,6 @@ def create_lkas11_new(packer, frame, apply_steer, steer_req,
   values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
   values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
 
-  dat = packer.make_can_msg("LKAS11", 4, values)[2]
-
-  # CRC Checksum as seen on 2019 Hyundai Santa Fe
-  dat = dat[:6] + dat[7:8]
-  checksum = hyundai_checksum(dat)
-
-  values["CF_Lkas_Chksum"] = checksum
-
   return packer.make_can_msg("LKAS11", 4, values)
 
 
