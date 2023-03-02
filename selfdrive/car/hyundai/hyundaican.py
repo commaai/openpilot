@@ -80,16 +80,23 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
 def create_lkas11_new(packer, frame, apply_steer, steer_req,
                       torque_fault, lkas11, enabled, left_lane, right_lane, left_lane_depart, right_lane_depart):
-  values = {
-    "CF_Lkas_LdwsLHWarning": left_lane_depart,
-    "CF_Lkas_LdwsRHWarning": right_lane_depart,
-    "CR_Lkas_StrToqReq": apply_steer,
-    "CF_Lkas_ActToi": steer_req,
-    "CF_Lkas_ToiFlt": torque_fault,  # seems to allow actuation on CR_Lkas_StrToqReq
-    "CF_Lkas_MsgCount": frame % 0xF,
-    "CF_Lkas_LdwsActivemode": int(left_lane) + (int(right_lane) << 1),
-    "CF_Lkas_FcwOpt_USM": 2 if enabled else 1,
-  }
+  values = lkas11
+  values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
+  values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
+  values["CR_Lkas_StrToqReq"] = apply_steer
+  values["CF_Lkas_ActToi"] = steer_req
+  values["CF_Lkas_ToiFlt"] = torque_fault  # seems to allow actuation on CR_Lkas_StrToqReq
+  values["CF_Lkas_MsgCount"] = frame % 0xF
+  values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
+  values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
+
+  dat = packer.make_can_msg("LKAS11", 4, values)[2]
+
+  # CRC Checksum as seen on 2019 Hyundai Santa Fe
+  dat = dat[:6] + dat[7:8]
+  checksum = hyundai_checksum(dat)
+
+  values["CF_Lkas_Chksum"] = checksum
 
   return packer.make_can_msg("LKAS11", 4, values)
 
