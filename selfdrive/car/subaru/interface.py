@@ -102,7 +102,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unknown car: {candidate}")
 
     # longitudinal
-    ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS)
+    ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 + PREGLOBAL_CARS)
     if experimental_long and ret.experimentalLongitudinalAvailable:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
