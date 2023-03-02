@@ -1,6 +1,8 @@
 Version 0.9.2 (2023-03-XX)
 ========================
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* Hyundai Palisade (without HDA II) 2023 support thanks to sunnyhaibin!
+* Kia Telluride (without HDA II) 2023 support thanks to sunnyhaibin!
 
 Version 0.9.1 (2023-02-28)
 ========================

@@ -62,6 +62,7 @@ class HyundaiFlags(IntFlag):
   CANFD_ALT_GEARS_2 = 64
   SEND_LFA = 128
   USE_FCA = 256
+  CAN_CANFD = 512
 
 
 class CAR:
@@ -88,6 +89,7 @@ class CAR:
   SONATA_LF = "HYUNDAI SONATA 2019"
   TUCSON = "HYUNDAI TUCSON 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
+  PALISADE_2023 = "HYUNDAI PALISADE 2023"
   VELOSTER = "HYUNDAI VELOSTER 2019"
   SONATA_HYBRID = "HYUNDAI SONATA HYBRID 2021"
   IONIQ_5 = "HYUNDAI IONIQ 5 2022"
@@ -178,6 +180,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.PALISADE: [
     HyundaiCarInfo("Hyundai Palisade 2020-22", "All", "https://youtu.be/TAnDqjF4fDY?t=456", harness=Harness.hyundai_h),
     HyundaiCarInfo("Kia Telluride 2020-22", "All", harness=Harness.hyundai_h),
+  ],
+  CAR.PALISADE_2023: [
+    HyundaiCarInfo("Hyundai Palisade (without HDA II) 2023", "All", harness=Harness.hyundai_a),
+    HyundaiCarInfo("Kia Telluride (without HDA II) 2023", "All", harness=Harness.hyundai_l),
   ],
   CAR.VELOSTER: HyundaiCarInfo("Hyundai Veloster 2019-20", min_enable_speed=5. * CV.MPH_TO_MS, harness=Harness.hyundai_e),
   CAR.SONATA_HYBRID: HyundaiCarInfo("Hyundai Sonata Hybrid 2020-22", "All", harness=Harness.hyundai_a),
@@ -1649,10 +1655,21 @@ FW_VERSIONS = {
       b'\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
     ],
   },
+  CAR.PALISADE_2023: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.04 99211-S8150 220622',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9150 220708',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
+      b'\xf1\x00ON__ SCC -----      1.00 1.01 99110-S9150         ',
+      b'\xf1\x00LX2_ SCC FHCUP      1.00 1.01 99110-S8150         ',
+    ],
+  },
 }
 
 CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.KIA_K5_HEV_2020],
+  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.SANTA_FE_HEV_2022, CAR.SANTA_FE_PHEV_2022, CAR.KIA_K5_HEV_2020, CAR.PALISADE_2023],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
 }
 
@@ -1735,4 +1752,5 @@ DBC = {
   CAR.GENESIS_GV60_EV_1ST_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_SORENTO_4TH_GEN: dbc_dict('hyundai_canfd', None),
   CAR.KIA_NIRO_HEV_2ND_GEN: dbc_dict('hyundai_canfd', None),
+  CAR.PALISADE_2023: dbc_dict('hyundai_palisade_2023', None),
 }
