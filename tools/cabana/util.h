@@ -1,20 +1,27 @@
 #pragma once
 
+#include <array>
+
 #include <QByteArray>
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QStringBuilder>
 #include <QStyledItemDelegate>
+#include <QToolButton>
 #include <QVector>
+
+#include "tools/cabana/dbcmanager.h"
+using namespace dbcmanager;
 
 class ChangeTracker {
 public:
   void compute(const QByteArray &dat, double ts, uint32_t freq);
-  static QList<QVariant> toVariantList(const QVector<QColor> &colors);
   void clear();
 
   QVector<double> last_change_t;
   QVector<QColor> colors;
+  QVector<std::array<uint32_t, 8>> bit_change_counts;
 
 private:
   const int periodic_threshold = 10;
@@ -23,21 +30,23 @@ private:
   QByteArray prev_dat;
 };
 
+enum {
+  ColorsRole = Qt::UserRole + 1,
+  BytesRole = Qt::UserRole + 2
+};
+
 class MessageBytesDelegate : public QStyledItemDelegate {
   Q_OBJECT
 public:
   MessageBytesDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QFont fixed_font;
+  int byte_width;
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
-inline char toHex(uint value) { return "0123456789ABCDEF"[value & 0xF]; }
-inline const QString &getColor(int i) {
-  // TODO: add more colors
-  static const QString SIGNAL_COLORS[] = {"#9FE2BF", "#40E0D0", "#6495ED", "#CCCCFF", "#FF7F50", "#FFBF00"};
-  return SIGNAL_COLORS[i % std::size(SIGNAL_COLORS)];
-}
+QString toHex(uint8_t byte);
+QColor getColor(const dbcmanager::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -50,3 +59,5 @@ public:
 namespace utils {
 QPixmap icon(const QString &id);
 }
+
+QToolButton *toolButton(const QString &icon, const QString &tooltip);

@@ -1,7 +1,5 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include "tools/cabana/dbcmanager.h"
-
 ReplayStream::ReplayStream(uint32_t replay_flags, QObject *parent) : replay_flags(replay_flags), AbstractStream(parent, false) {
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);

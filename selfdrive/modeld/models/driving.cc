@@ -200,7 +200,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
 }
 
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z) {
   xyzt.setT(to_kj_array_ptr(t));
   xyzt.setX(to_kj_array_ptr(x));
@@ -209,7 +209,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
 }
 
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
                const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
   fill_xyzt(xyzt, t, x, y, z);

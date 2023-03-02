@@ -32,7 +32,8 @@ class TestCarInterfaces(unittest.TestCase):
 
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.wheelbase, 0)
-    self.assertGreater(car_params.centerToFront, 0)
+    # centerToFront is center of gravity to front wheels, assert a reasonable range
+    self.assertTrue(car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     # Longitudinal sanity checks
@@ -59,15 +60,15 @@ class TestCarInterfaces(unittest.TestCase):
     CC = car.CarControl.new_message()
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     CC = car.CarControl.new_message()
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface

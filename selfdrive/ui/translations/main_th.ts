@@ -311,18 +311,6 @@
         <source>Installing...</source>
         <translation>กำลังติดตั้ง...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>กำลังรับข้อมูล: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>การแก้ไขเดลต้า: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>กำลังอัปเดตไฟล์: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -587,16 +575,8 @@ location set</source>
         <translation>คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตอุปกรณ์?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>กำลังรีเซ็ตอุปกรณ์...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>รีเซ็ตระบบ</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>มีการสั่งรีเซ็ตระบบ กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตเข้าระบบตามปกติ</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -611,8 +591,18 @@ location set</source>
         <translation>ยืนยัน</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูล กดยืนยันเพื่อรีเซ็ตอุปกรณ์ของคุณ</translation>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation>กำลังรีเซ็ตอุปกรณ์...
+อาจใช้เวลาถึงหนึ่งนาที</translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตต่อ</translation>
+    </message>
+    <message>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูลได้ พาร์ติชั่นอาจเสียหาย กดยืนยันเพื่อลบและรีเซ็ตอุปกรณ์ของคุณ</translation>
     </message>
 </context>
 <context>
@@ -685,18 +675,6 @@ location set</source>
         <translation>กำลังรอสัญญาณอินเตอร์เน็ต</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>เลือกซอฟต์แวร์ที่จะติดตั้ง</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>กล้องติดรถยนต์</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>ซอฟต์แวร์ที่กำหนดเอง</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>ป้อน URL</translation>
     </message>
@@ -723,6 +701,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>เริ่มต้นใหม่</translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation>มีบางอย่างผิดพลาด รีบูตอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation>ไม่พบซอฟต์แวร์ที่กำหนดเองที่ URL นี้</translation>
     </message>
 </context>
 <context>

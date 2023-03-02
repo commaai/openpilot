@@ -4,11 +4,10 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QStyledItemDelegate>
+#include <QTableWidget>
 #include <QTreeView>
 
 #include "tools/cabana/chartswidget.h"
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT
@@ -37,13 +36,13 @@ public:
   QModelIndex parent(const QModelIndex &index) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
-  void setMessage(const QString &id);
+  void setMessage(const MessageId &id);
   void setFilter(const QString &txt);
   void addSignal(int start_bit, int size, bool little_endian);
   bool saveSignal(const Signal *origin_s, Signal &s);
   void resizeSignal(const Signal *sig, int start_bit, int size);
   void removeSignal(const Signal *sig);
-  inline Item *getItem(const QModelIndex &index) const { return index.isValid() ? (Item *)index.internalPointer() : root.get(); }
+  Item *getItem(const QModelIndex &index) const;
   int signalRow(const Signal *sig) const;
   void showExtraInfo(const QModelIndex &index);
 
@@ -54,42 +53,61 @@ private:
   void handleSignalRemoved(const Signal *sig);
   void handleMsgChanged(uint32_t address);
   void refresh();
-  void updateState(const QHash<QString, CanData> *msgs);
+  void updateState(const QHash<MessageId, CanData> *msgs);
 
-  QString msg_id;
+  MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
   friend class SignalView;
+};
+
+class ValueDescriptionDlg : public QDialog {
+public:
+  ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent);
+  ValueDescription val_desc;
+
+private:
+  struct Delegate : public QStyledItemDelegate {
+    Delegate(QWidget *parent) : QStyledItemDelegate(parent) {}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  };
+
+  void save();
+  QTableWidget *table;
 };
 
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
   SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
+  QFont small_font;
+  const int color_label_width = 18;
 };
 
-class SignalView : public QWidget {
+class SignalView : public QFrame {
   Q_OBJECT
 
 public:
   SignalView(ChartsWidget *charts, QWidget *parent);
-  void setMessage(const QString &id);
+  void setMessage(const MessageId &id);
   void signalHovered(const Signal *sig);
   void updateChartState();
-  void expandSignal(const Signal *sig);
+  void selectSignal(const Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 
 signals:
   void highlight(const Signal *sig);
-  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
+  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
 
 private:
   void rowsChanged();
+  void leaveEvent(QEvent *event);
 
-  QString msg_id;
+  MessageId msg_id;
   QTreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
