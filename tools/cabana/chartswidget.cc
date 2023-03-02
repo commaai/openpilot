@@ -552,7 +552,12 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       });
       for (auto &c : chunks) {
         s.vals.append(c.vals);
-        s.step_vals.append(c.step_vals);
+        if (!c.step_vals.empty()) {
+          if (!s.step_vals.empty()) {
+            s.step_vals.append({c.step_vals.first().x(), s.step_vals.back().y()});
+          }
+          s.step_vals.append(c.step_vals);
+        }
       }
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
@@ -586,10 +591,13 @@ void ChartView::updateAxisY() {
       if (it->y() > max) max = it->y();
     }
   }
-  axis_y->setTitleText(unit);
-
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
+
+  if (axis_y->titleText() != unit) {
+    axis_y->setTitleText(unit);
+    y_label_width = 0;// recalc width
+  }
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
