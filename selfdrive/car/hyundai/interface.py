@@ -45,8 +45,8 @@ class CarInterface(CarInterfaceBase):
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
-      # detect platforms with HKG CAN and CAN-FD definitions
-      if 0x50 in fingerprint[6] and 0x420 in fingerprint[5]:
+      # detect HDA2 with CAN and CAN-FD definitions with ADAS Driving ECU
+      if Ecu.adas in [fw.ecu for fw in car_fw]:
         ret.flags |= HyundaiFlags.CAN_CANFD_HDA2.value
 
       # Send LFA message on cars with HDA
