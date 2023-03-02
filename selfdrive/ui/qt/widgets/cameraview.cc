@@ -374,7 +374,7 @@ void CameraWidget::vipcThread() {
       {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
-        while (frames.size() > YUV_BUFFER_COUNT) {
+        while (frames.size() > FRAME_BUFFER_SIZE) {
           frames.pop_front();
         }
       }
