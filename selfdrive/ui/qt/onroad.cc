@@ -540,7 +540,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
       float acceleration_future = 0;
-      if (i > acceleration.size()) {
+      if (i >= acceleration.size()) {
         break;
       }
       acceleration_future = acceleration[i];
