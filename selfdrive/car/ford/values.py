@@ -32,7 +32,6 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.004, 0.00044, 0.00016])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.006, 0.00066, 0.00024])
   CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
-  CURVATURE_TO_CAN = 50000  # 1 / (2e-5) rad to can
 
   ACCEL_MAX = 2.0               # m/s^s max acceleration
   ACCEL_MIN = -3.5              # m/s^s max deceleration
