@@ -254,6 +254,7 @@ void CameraWidget::paintGL() {
   } else if (frame_id != prev_frame_id + 1) {
     qDebug() << "Skipped frame" << frame_id;
   }
+  prev_frame_id = frame_id;
 
   updateFrameMat();
 
