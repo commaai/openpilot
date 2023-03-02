@@ -72,7 +72,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5533
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
 
-    elif candidate in (CAR.CHR, CAR.CHRH):
+    elif candidate in (CAR.CHR, CAR.CHRH, CAR.CHR_TSS2, CAR.CHRH_TSS2):
       stop_and_go = True
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
@@ -225,6 +225,8 @@ class CarInterface(CarInterfaceBase):
       tune.kiBP = [0., 5., 12., 20., 27.]
       tune.kiV = [.35, .23, .20, .17, .1]
       if candidate in TSS2_CAR:
+        ret.vEgoStopping = 0.25
+        ret.vEgoStarting = 0.25
         ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
     else:
       tune.kpBP = [0., 5., 35.]
@@ -261,5 +263,5 @@ class CarInterface(CarInterfaceBase):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

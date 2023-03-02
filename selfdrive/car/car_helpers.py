@@ -8,7 +8,7 @@ from system.version import is_comma_remote, is_tested_branch
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, match_fw_to_car, get_present_ecus
+from selfdrive.car.fw_versions import disable_obd_multiplexing, get_fw_versions_ordered, match_fw_to_car, get_present_ecus
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -99,7 +99,7 @@ def fingerprint(logcan, sendcan, num_pandas):
     else:
       cloudlog.warning("Getting VIN & FW versions")
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
-      ecu_rx_addrs = get_present_ecus(logcan, sendcan)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
@@ -113,7 +113,10 @@ def fingerprint(logcan, sendcan, num_pandas):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
     vin = VIN_UNKNOWN
   cloudlog.warning("VIN %s", vin)
-  Params().put("CarVin", vin)
+
+  params = Params()
+  params.put("CarVin", vin)
+  disable_obd_multiplexing(params)
 
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
@@ -173,17 +176,15 @@ def fingerprint(logcan, sendcan, num_pandas):
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
-def get_car(logcan, sendcan, num_pandas=1):
+def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
     candidate = "mock"
 
-  experimental_long = Params().get_bool("ExperimentalLongitudinalEnabled")
-
   CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long)
+  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source

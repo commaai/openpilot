@@ -14,12 +14,18 @@ public:
   void load();
 
   int fps = 10;
-  int can_msg_log_size = 50;
-  int cached_segment_limit = 3;
+  int max_cached_minutes = 5;
   int chart_height = 200;
-  int max_chart_x_range = 3 * 60; // 3 minutes
+  int chart_column_count = 1;
+  int chart_range = 3 * 60; // e minutes
+  int chart_series_type = 0;
   QString last_dir;
-  QByteArray splitter_state;
+  QString last_route_dir;
+  QByteArray geometry;
+  QByteArray video_splitter_state;
+  QByteArray window_state;
+  QStringList recent_files;
+  QByteArray message_header_state;
 
 signals:
   void changed();
@@ -32,10 +38,9 @@ public:
   SettingsDlg(QWidget *parent);
   void save();
   QSpinBox *fps;
-  QSpinBox *log_size ;
-  QSpinBox *cached_segment;
+  QSpinBox *cached_minutes;
   QSpinBox *chart_height;
-  QSpinBox *max_chart_x_range;
+  QComboBox *chart_series_type;
 };
 
 extern Settings settings;

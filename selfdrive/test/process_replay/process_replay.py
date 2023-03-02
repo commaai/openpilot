@@ -180,7 +180,7 @@ def fingerprint(msgs, fsm, can_sock, fingerprint):
 def get_car_params(msgs, fsm, can_sock, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
-    CP = CarInterface.get_params(fingerprint)
+    CP = CarInterface.get_non_essential_params(fingerprint)
   else:
     can = FakeSocket(wait=False)
     sendcan = FakeSocket(wait=False)
@@ -188,7 +188,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan)
+    _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
   Params().put("CarParams", CP.to_bytes())
 
 
@@ -204,7 +204,7 @@ def controlsd_rcv_callback(msg, CP, cfg, fsm):
 def radar_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() != "can":
     return [], False
-  elif CP.radarOffCan:
+  elif CP.radarUnavailable:
     return ["radarState", "liveTracks"], True
 
   radar_msgs = {"honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474],
@@ -251,8 +251,10 @@ def ublox_rcv_callback(msg):
 def laika_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
+  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
+    return ["gnssMeasurements"], True
   else:
-    return [], True
+    return [], False
 
 
 CONFIGS = [
@@ -290,7 +292,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan", "uiPlan"],
       "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
@@ -362,22 +364,9 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="laikad",
-    subtest_name="Offline",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
-      "clocks": []
-    },
-    ignore=["logMonoTime"],
-    init_callback=get_car_params,
-    should_recv_callback=laika_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
-    environ={"LAIKAD_NO_INTERNET": "1"},
-  ),
-  ProcessConfig(
-    proc_name="laikad",
-    pub_sub={
-      "ubloxGnss": ["gnssMeasurements"],
+      "qcomGnss": ["gnssMeasurements"],
       "clocks": []
     },
     ignore=["logMonoTime"],
@@ -418,6 +407,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
   params.put_bool("UbloxAvailable", True)
+  params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
@@ -459,6 +449,9 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
+    # controlsd process configuration assume all routes are out of dashcam
+    params.put_bool("DashcamOverride", True)
+
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -473,6 +466,12 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+
+  # laikad needs decision between submaster ubloxGnss and qcomGnss, prio given to ubloxGnss
+  if cfg.proc_name == "laikad":
+    args = (*args, not any(m.which() == "ubloxGnss" for m in pub_msgs))
+    service = "qcomGnss" if args[2] else "ubloxGnss"
+    pub_msgs = [m for m in pub_msgs if m.which() == service or m.which() == 'clocks']
 
   controlsState = None
   initialized = False
@@ -559,7 +558,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].start()
 
   try:
-    with Timeout(TIMEOUT):
+    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
       while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
@@ -573,7 +572,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
         resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
         for s in resp_sockets:
-          response = messaging.recv_one(sockets[s])
+          response = messaging.recv_one_retry(sockets[s])
 
           if response is None:
             print(f"Warning, no response received {i}")
