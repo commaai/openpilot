@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
     else:
       # detect platforms with HKG CAN and CAN-FD definitions
       if 0x50 in fingerprint[6] and 0x420 in fingerprint[5]:
-        ret.flags |= HyundaiFlags.CAN_CANFD.value
+        ret.flags |= HyundaiFlags.CAN_CANFD_HDA2.value
 
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[2]:
@@ -239,7 +239,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.longitudinalTuning.kpV = [0.5]
       ret.longitudinalTuning.kiV = [0.0]
-      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR) and not (ret.flags & HyundaiFlags.CAN_CANFD)
+      ret.experimentalLongitudinalAvailable = candidate not in (LEGACY_SAFETY_MODE_CAR | CAMERA_SCC_CAR) and not (ret.flags & HyundaiFlags.CAN_CANFD_HDA2)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -254,7 +254,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in CANFD_CAR:
       ret.enableBsm = 0x1e5 in fingerprint[get_e_can_bus(ret)]
     else:
-      bus = 5 if ret.flags & HyundaiFlags.CAN_CANFD else 0
+      bus = 5 if ret.flags & HyundaiFlags.CAN_CANFD_HDA2 else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
@@ -272,10 +272,10 @@ class CarInterface(CarInterfaceBase):
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
-      elif ret.flags & HyundaiFlags.CAN_CANFD:
+      elif ret.flags & HyundaiFlags.CAN_CANFD_HDA2:
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
                              get_safety_config(car.CarParams.SafetyModel.hyundai)]
-        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD
+        ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD_HDA2
       else:
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]
 
