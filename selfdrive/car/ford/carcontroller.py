@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_std_steer_angle_limits, apply_dist_to_meas_limits
+from selfdrive.car import apply_dist_to_meas_limits
 from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
@@ -13,6 +13,7 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
   angle_rate_lim_up = interp(v_ego, LIMITS.ANGLE_RATE_LIMIT_UP.speed_bp, LIMITS.ANGLE_RATE_LIMIT_UP.angle_v)
   angle_rate_lim_down = interp(v_ego, LIMITS.ANGLE_RATE_LIMIT_DOWN.speed_bp, LIMITS.ANGLE_RATE_LIMIT_DOWN.angle_v)
 
+  # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
   curvature_error = LIMITS.CURVATURE_ERROR if v_ego > 12 else LIMITS.CURVATURE_MAX
 
   return apply_dist_to_meas_limits(apply_curvature, apply_curvature_last, current_curvature,
@@ -57,19 +58,9 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
-        # apply limits to curvature and clip to signal range
-        apply_curvature = actuators.curvature
-        apply_ford_curvature_limits
-        if CS.out.vEgoRaw > 12:
-          # pointless to limit at low speeds due to lack of torque
-          # TODO: figure out a good way to ramp down limits such that we can cleanly match panda
-          actual_curvature = CS.out.yawRate / CS.out.vEgoRaw
-          apply_curvature = clip(apply_curvature,
-                                 actual_curvature - CarControllerParams.CURVATURE_DELTA_MAX,
-                                 actual_curvature + CarControllerParams.CURVATURE_DELTA_MAX)
-
-        apply_curvature = apply_std_steer_angle_limits(apply_curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
-        apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
+        current_curvature = CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
+        # apply driver torque blending, rate limits, and max curvature limits
+        apply_curvature = apply_ford_curvature_limits(actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgo, CarControllerParams)
       else:
         apply_curvature = 0.
 
