@@ -203,7 +203,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
       ret.wheelSpeedFactor = 1.025
     
-    elif candidate == CAR.HRV_2023_NON_US:
+    elif candidate == CAR.HRV_2023:
       ret.mass = 1305. + STD_CARGO_KG
       ret.wheelbase = 2.61
       ret.centerToFront = ret.wheelbase * 0.41
