@@ -1658,9 +1658,11 @@ FW_VERSIONS = {
   CAR.PALISADE_2023: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.04 99211-S8150 220622',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9150 220708',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
+      b'\xf1\x00ON__ SCC -----      1.00 1.01 99110-S9150         ',
     ],
   },
 }
