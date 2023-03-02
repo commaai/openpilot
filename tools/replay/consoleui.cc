@@ -165,7 +165,10 @@ void ConsoleUI::updateStatus() {
   sm.update(0);
 
   if (status != Status::Paused) {
-    status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
+    auto events = replay->events();
+    uint64_t current_mono_time = replay->routeStartTime() + replay->currentSeconds() * 1e9;
+    bool playing = !events->empty() && events->back()->mono_time > current_mono_time;
+    status = playing ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
