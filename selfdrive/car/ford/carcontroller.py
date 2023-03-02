@@ -58,7 +58,7 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
-        current_curvature = CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
+        current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
         # apply driver torque blending, rate limits, and max curvature limits
         apply_curvature = apply_ford_curvature_limits(actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgo, CarControllerParams)
       else:
