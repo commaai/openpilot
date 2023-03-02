@@ -708,14 +708,16 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       if (!s.series->isVisible()) continue;
 
       // use reverse iterator to find last item <= sec.
+      double value = 0;
       auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = it->y();
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
       text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
                               .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(s.track_pt.y())));
+                                   s.track_pt.isNull() ? "--" : QString::number(value)));
     }
     if (x < 0) {
       x = ev->pos().x();
@@ -779,7 +781,7 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(Qt::NoPen);
   qreal track_line_x = -1;
   for (auto &s : sigs) {
-    if (!s.track_pt.isNull() && s.series->isVisible()) {
+    if (!s.track_pt.isNull() && s.series->isVisible()) {  
       painter->setBrush(s.series->color().darker(125));
       painter->drawEllipse(s.track_pt, 5.5, 5.5);
       track_line_x = std::max(track_line_x, s.track_pt.x());
