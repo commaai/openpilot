@@ -193,10 +193,10 @@ class Laikad:
     elif self.is_good_report(gnss_msg):
 
       week, tow, new_meas = self.read_report(gnss_msg)
+      self.gps_week = week
       if len(new_meas) == 0:
         return None
 
-      self.gps_week = week
       t = gnss_mono_time * 1e-9
       if week > 0:
         self.got_first_gnss_msg = True
