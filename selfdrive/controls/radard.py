@@ -95,7 +95,6 @@ class RadarD():
 
     self.tracks = defaultdict(dict)
     self.kalman_params = KalmanParams(CP.radarTimeStep)
-    self.radar_ts = CP.radarTimeStep
 
     # v_ego
     self.v_ego = 0.
