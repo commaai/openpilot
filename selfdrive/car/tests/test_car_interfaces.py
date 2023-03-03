@@ -76,10 +76,10 @@ class TestCarInterfaces(unittest.TestCase):
     assert radar_interface
 
     # Run radar interface once
-    radar_interface.update([])
+    radar_interface.update([], 0.0)
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
-      radar_interface._update([radar_interface.trigger_msg])
+      radar_interface._update([radar_interface.trigger_msg], 0.0)
 
 if __name__ == "__main__":
   unittest.main()

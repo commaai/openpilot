@@ -168,7 +168,7 @@ class TestCarModelBase(unittest.TestCase):
 
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs):
-      rr = RI.update((msg.as_builder().to_bytes(),))
+      rr = RI.update((msg.as_builder().to_bytes(),), 0.0)
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
