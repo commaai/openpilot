@@ -57,7 +57,6 @@ class RadarInterface(RadarInterfaceBase):
         self.RADAR_A_MSGS = list(range(0x210, 0x220))
         self.RADAR_B_MSGS = list(range(0x220, 0x230))
 
-      self.valid_cnt = {key: 0 for key in self.RADAR_A_MSGS}
       self.rcp = _create_radar_can_parser(CP.carFingerprint)
 
     self.trigger_msg = self.RADAR_B_MSGS[-1]
@@ -135,7 +134,6 @@ class RadarInterface(RadarInterfaceBase):
         track_id = int(cpt['ID'])
         if track_id != 0x3f and cpt['LONG_DIST'] > 0:
           updated_ids.add(track_id)
-          self.valid_cnt[track_id] = min(self.valid_cnt[track_id] + 1, int(1.0 / self.radar_ts))
 
           # new track or staled track
           if track_id not in self.pts or (not self.pts[track_id].measured):
@@ -153,7 +151,6 @@ class RadarInterface(RadarInterfaceBase):
 
     for track_id in list(self.pts):
       if track_id not in updated_ids:
-        self.valid_cnt[track_id] = 0
         del self.pts[track_id]
 
     ret.points = list(self.pts.values())
