@@ -521,7 +521,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-//  QLinearGradient bg(0, height(), 0, height() / 4);
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
@@ -540,7 +539,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       acceleration_future = acceleration[i];
       qDebug() << "Using acceleration:" << acceleration_future;
 
-      // need to flip so 0 is bottom of frame (not really, can also flip linear gradient above)
+      // flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
       qDebug() << right_points[i] << right_points[i].y() << lin_grad_point;
       // Some points are out of frame
@@ -555,10 +554,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float saturation = std::abs(acceleration_future * 1.5);
       saturation = saturation > 1 ? 1. : saturation;
       float lightness = lerp(0.95, 0.62, saturation);
-//      lightness = lerp(0.56, 0.88, lin_grad_point);
-//      float alpha_lerp = (lin_grad_point - 0.5) * 2;  // ramp alpha down from 0.4 when point reached 0.5
-//      float alpha = lerp(0.4, 0, alpha_lerp > 0 ? alpha_lerp : 0);
-      float alpha = interp1d(lin_grad_point, 0.375, 0.625, 0.4, 0.0);  // matches behavior before for alpha fade
+      float alpha = interp1d(lin_grad_point, 0.75/2.0, 0.75, 0.4, 0.0);  // matches behavior before for alpha fade
       qDebug() << "saturation:" << saturation << "lightness:" << lightness << "alpha:" << alpha;
 
       // FIXME: painter.drawPolygon can be slow if hue is not rounded
