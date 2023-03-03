@@ -310,7 +310,7 @@ void Device::setAwake(bool on) {
 }
 
 void Device::resetInteractiveTimout() {
-  int timeout = (uiState()->driverViewEnabled() || !ignition_on ? 30 : 10);
+  int timeout = ignition_on ? 10 : (uiState()->driverViewEnabled() ? 60: 30);
   interactive_timeout = timeout * UI_FREQ;
 }
 
