@@ -397,6 +397,19 @@ class CarState(CarStateBase):
     ]
     if CP.flags & HyundaiFlags.CAN_CANFD.value:
       signals += [
+        ("CF_Lkas_ActToi", "LKAS11"),
+        ("CF_Lkas_Chksum", "LKAS11"),
+        ("CF_Lkas_MsgCount", "LKAS11"),
+        ("CF_Lkas_ToiFlt", "LKAS11"),
+        ("CR_Lkas_StrToqReq", "LKAS11"),
+        ("NEW_SIGNAL_1", "LKAS11"),
+        ("NEW_SIGNAL_2", "LKAS11"),
+        ("NEW_SIGNAL_3", "LKAS11"),
+        ("NEW_SIGNAL_4", "LKAS11"),
+        ("NEW_SIGNAL_5", "LKAS11"),
+      ]
+    else:
+      signals += [
         ("CF_Lkas_LdwsSysState", "LKAS11"),
         ("CF_Lkas_SysWarning", "LKAS11"),
         ("CF_Lkas_HbaLamp", "LKAS11"),
@@ -408,8 +421,6 @@ class CarState(CarStateBase):
         ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
         ("CF_Lkas_FusionState", "LKAS11"),
         ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
-        ("CF_Lkas_Chksum", "LKAS11"),
-        ("CF_Lkas_MsgCount", "LKAS11"),
       ]
     checks = [
       ("LKAS11", 100)
