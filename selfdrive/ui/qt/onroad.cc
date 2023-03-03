@@ -530,12 +530,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     assert(track_vertices_len % 2 == 0);
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
     qDebug() << right_points.length();
-    float max_gradient_point = 1.0;
-    if (right_points.length() > 0) {
-//      bg.setFinalStop(right_points[right_points.length() - 1]);
-      max_gradient_point = (height() - right_points[right_points.length() - 1].y()) / height();
-      qDebug() << "max_gradient_point:" << max_gradient_point;
-    }
+
 //    float gradient_height = bg.finalStop().y();
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
@@ -565,7 +560,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 //      lightness = lerp(0.56, 0.88, lin_grad_point);
 //      float alpha_lerp = (lin_grad_point - 0.5) * 2;  // ramp alpha down from 0.4 when point reached 0.5
 //      float alpha = lerp(0.4, 0, alpha_lerp > 0 ? alpha_lerp : 0);
-//      float alpha = interp1d(lin_grad_point, max_gradient_point / 2., max_gradient_point, 0.4, 0.0);  // looks cool, but fades off too early
       float alpha = interp1d(lin_grad_point, 0.375, 0.625, 0.4, 0.0);  // matches behavior before for alpha fade
       qDebug() << "saturation:" << saturation << "lightness:" << lightness << "alpha:" << alpha;
 
