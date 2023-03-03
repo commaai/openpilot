@@ -158,12 +158,10 @@ class CarController:
               self.last_button_frame = self.frame
     else:
       if self.CP.flags & HyundaiFlags.CAN_CANFD:
-        if self.lkas11_cnt != CS.lkas11["CF_Lkas_MsgCount"]:
-          can_sends.append(hyundaican.create_lkas11_new(self.packer, self.frame, apply_steer, lat_active,
-                                                        torque_fault, CS.lkas11, CC.enabled,
-                                                        hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                        left_lane_warning, right_lane_warning))
-          self.lkas11_cnt = CS.lkas11["CF_Lkas_MsgCount"]
+        can_sends.append(hyundaican.create_lkas11_new(self.packer, self.frame, apply_steer, lat_active,
+                                                      torque_fault, CS.lkas11, CC.enabled,
+                                                      hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                      left_lane_warning, right_lane_warning))
       else:
         can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
