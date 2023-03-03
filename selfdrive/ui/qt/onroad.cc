@@ -562,8 +562,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float saturation = std::abs(acceleration_future * 1.5);
       saturation = saturation > 1 ? 1. : saturation;
       float lightness = lerp(0.95, 0.68, saturation);
-      // TODO: this makes the path have that brighter appearance near beginning and adds depth. might be too much tho
-      lightness *= interp1d(lin_grad_point, 0, 0.5 * 0.75, 0.8, 1.0);
 //      lightness = lerp(0.56, 0.88, lin_grad_point);
 //      float alpha_lerp = (lin_grad_point - 0.5) * 2;  // ramp alpha down from 0.4 when point reached 0.5
 //      float alpha = lerp(0.4, 0, alpha_lerp > 0 ? alpha_lerp : 0);
