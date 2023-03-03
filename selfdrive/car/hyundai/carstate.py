@@ -408,6 +408,8 @@ class CarState(CarStateBase):
         ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
         ("CF_Lkas_FusionState", "LKAS11"),
         ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
+        ("CF_Lkas_Chksum", "LKAS11"),
+        ("CF_Lkas_MsgCount", "LKAS11"),
       ]
     checks = [
       ("LKAS11", 100)
