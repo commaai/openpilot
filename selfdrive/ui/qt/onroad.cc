@@ -561,7 +561,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       float saturation = std::abs(acceleration_future * 1.5);
       saturation = saturation > 1 ? 1. : saturation;
-      float lightness = lerp(0.95, 0.68, saturation);
+      float lightness = lerp(0.95, 0.62, saturation);
 //      lightness = lerp(0.56, 0.88, lin_grad_point);
 //      float alpha_lerp = (lin_grad_point - 0.5) * 2;  // ramp alpha down from 0.4 when point reached 0.5
 //      float alpha = lerp(0.4, 0, alpha_lerp > 0 ? alpha_lerp : 0);
@@ -698,7 +698,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else if (v_ego > 15) {
       wide_cam_requested = false;
     }
-    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
+    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode() && false;
     // TODO: also detect when ecam vision stream isn't available
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
