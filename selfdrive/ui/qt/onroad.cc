@@ -523,7 +523,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path
 //  QLinearGradient bg(0, height(), 0, height() / 4);
   QLinearGradient bg(0, height(), 0, 0);
-  float start_hue, end_hue;
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
     int track_vertices_len = scene.track_vertices.length();
@@ -550,9 +549,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         continue;
       }
 
-      start_hue = 60;
       // speed up: 120, slow down: 0
-      end_hue = fmax(fmin(start_hue + acceleration_future * 35, 120), 0);
+      float end_hue = fmax(fmin(60 + acceleration_future * 35, 120), 0);
 
       float saturation = std::abs(acceleration_future * 1.5);
       saturation = saturation > 1 ? 1. : saturation;
