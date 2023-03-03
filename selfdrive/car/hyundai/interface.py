@@ -49,8 +49,9 @@ class CarInterface(CarInterfaceBase):
       if 0x2a4 in fingerprint[5]:
         ret.flags |= HyundaiFlags.CAN_CANFD.value
 
+      lfa_bus = 6 if ret.flags & HyundaiFlags.CAN_CANFD else 2
       # Send LFA message on cars with HDA
-      if 0x485 in fingerprint[2]:
+      if 0x485 in fingerprint[lfa_bus]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
 
       # These cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
