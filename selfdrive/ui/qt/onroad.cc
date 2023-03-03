@@ -524,18 +524,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
+    double t = millis_since_boot();
     int track_vertices_len = scene.track_vertices.length();
     assert(track_vertices_len % 2 == 0);
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
-    qDebug() << right_points.length();
 
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
       if (i >= acceleration.size()) break;
-      double t = millis_since_boot();
-      double dt = millis_since_boot() - t;
-      qDebug() << "Took" << dt << "ms to get accel";
-      qDebug() << "Using acceleration:" << acceleration[i];
 
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) {
@@ -544,7 +540,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
       // flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
-      qDebug() << right_points[i] << right_points[i].y() << lin_grad_point;
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
@@ -552,17 +547,22 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       path_hue = int(path_hue * 100 + 0.5) / 100;
 
       float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-      float lightness = lerp(0.95, 0.62, saturation);  // lighter when grey
-      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches behavior before for alpha fade
-      qDebug() << "saturation:" << saturation << "lightness:" << lightness << "alpha:" << alpha;
-
-      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+      float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
+      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
+      UNUSED(alpha);
+      UNUSED(lightness);
+//      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
     }
+    double dt = millis_since_boot() - t;
+    qDebug() << "Took" << dt << "ms to draw path";
 
   } else {
+    double t = millis_since_boot();
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+    double dt = millis_since_boot() - t;
+    qDebug() << "Took" << dt << "ms to draw chill path";
   }
 
   painter.setBrush(bg);
