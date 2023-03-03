@@ -225,7 +225,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
         "trackId": ids,
         "dRel": float(tracks[ids].dRel),
         "yRel": float(tracks[ids].yRel),
-        "vRel": float(tracks[ids].vRel) if math.isnan(float(tracks[ids].vAbs)) else float(tracks[ids].vAbs) - self.v_ego,
+        "vRel": float(tracks[ids].vRel) if math.isnan(float(tracks[ids].vAbs)) else float(tracks[ids].vAbs) - RD.v_ego,
       }
     pm.send('liveTracks', dat)
 
