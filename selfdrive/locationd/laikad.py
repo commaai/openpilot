@@ -97,19 +97,25 @@ class Laikad:
 
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
-      min_measurements = 7 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 6
-      position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
+      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
+      position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
-      #TODO median abs residual is decent estimate of std, can be improved with measurements stds and/or DOP
-      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
-      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
+
+      position_std_residual = np.median(np.abs(pr_residuals))
+      position_std = np.median(np.abs(pos_std))/10
+      position_std = max(position_std_residual, position_std) * np.ones(3)
+
+      velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
       if len(velocity_solution) < 3:
         return None
-
       velocity_estimate = velocity_solution[:3]
-      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
+
+      velocity_std_residual = np.median(np.abs(prr_residuals))
+      velocity_std = np.median(np.abs(vel_std))/10
+      velocity_std = max(velocity_std, velocity_std_residual) * np.ones(3)
+
       return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):
@@ -187,10 +193,10 @@ class Laikad:
     elif self.is_good_report(gnss_msg):
 
       week, tow, new_meas = self.read_report(gnss_msg)
+      self.gps_week = week
       if len(new_meas) == 0:
         return None
 
-      self.gps_week = week
       t = gnss_mono_time * 1e-9
       if week > 0:
         self.got_first_gnss_msg = True
