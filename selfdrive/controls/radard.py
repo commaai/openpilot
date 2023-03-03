@@ -90,11 +90,11 @@ def get_lead(v_ego, ready, clusters, lead_msg, low_speed_override=True):
 
 
 class RadarD():
-  def __init__(self, CP, delay=0):
+  def __init__(self, radar_ts, delay=0):
     self.current_time = 0
 
     self.tracks = defaultdict(dict)
-    self.kalman_params = KalmanParams(CP.radarTimeStep)
+    self.kalman_params = KalmanParams(radar_ts)
 
     # v_ego
     self.v_ego = 0.
@@ -199,7 +199,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   RI = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP, RI.delay)
+  RD = RadarD(CP.radarTimeStep, RI.delay)
 
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
