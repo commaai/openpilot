@@ -241,7 +241,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
   CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
-  CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
+  CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19, 2022"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020", footnotes=[Footnote.VW_MQB_A0]),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-22"),
   CAR.SKODA_OCTAVIA_MK3: [
