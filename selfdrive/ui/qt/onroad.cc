@@ -529,39 +529,34 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
     qDebug() << right_points.length();
 
-//    float gradient_height = bg.finalStop().y();
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-      float acceleration_future = 0;
-      if (i >= acceleration.size()) {
-        break;
+      if (i >= acceleration.size()) break;
+      double t = millis_since_boot();
+      double dt = millis_since_boot() - t;
+      qDebug() << "Took" << dt << "ms to get accel";
+      qDebug() << "Using acceleration:" << acceleration[i];
+
+      // Some points are out of frame
+      if (right_points[i].y() < 0 || right_points[i].y() > height()) {
+        continue;
       }
-      acceleration_future = acceleration[i];
-      qDebug() << "Using acceleration:" << acceleration_future;
 
       // flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
       qDebug() << right_points[i] << right_points[i].y() << lin_grad_point;
-      // Some points are out of frame
-      // TODO: tho maybe it makes sense to clip instead, so gradient is correct. or no clip/skip at all
-      if (lin_grad_point < 0) {
-        continue;
-      }
 
       // speed up: 120, slow down: 0
-      float end_hue = fmax(fmin(60 + acceleration_future * 35, 120), 0);
+      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
+      // FIXME: painter.drawPolygon can be slow if hue is not rounded
+      path_hue = int(path_hue * 100 + 0.5) / 100;
 
-      float saturation = std::abs(acceleration_future * 1.5);
-      saturation = saturation > 1 ? 1. : saturation;
-      float lightness = lerp(0.95, 0.62, saturation);
-      float alpha = interp1d(lin_grad_point, 0.75/2.0, 0.75, 0.4, 0.0);  // matches behavior before for alpha fade
+      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+      float lightness = lerp(0.95, 0.62, saturation);  // lighter when grey
+      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches behavior before for alpha fade
       qDebug() << "saturation:" << saturation << "lightness:" << lightness << "alpha:" << alpha;
 
-      // FIXME: painter.drawPolygon can be slow if hue is not rounded
-      end_hue = int(end_hue * 100 + 0.5) / 100;
-//      bg.setColorAt(lin_grad_point, QColor::fromHslF(end_hue / 360., 0.97, 0.56, 0.4));
-      bg.setColorAt(lin_grad_point, QColor::fromHslF(end_hue / 360., saturation, lightness, alpha));
-
+      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
     }
 
   } else {
