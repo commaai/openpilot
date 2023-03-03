@@ -372,6 +372,7 @@ void CameraWidget::vipcThread() {
     active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
+      clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
       if (streams.empty()) {
         QThread::msleep(100);
@@ -379,7 +380,6 @@ void CameraWidget::vipcThread() {
       }
       emit vipcAvailableStreamsUpdated(streams);
 
-      clearFrames();
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);
         continue;
