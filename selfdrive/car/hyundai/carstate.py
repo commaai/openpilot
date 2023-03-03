@@ -149,6 +149,8 @@ class CarState(CarStateBase):
 
     # save the entire LKAS11 and CLU11
     self.lkas11 = copy.copy(cp_cam.vl["LKAS11"])
+    if self.CP.flags & HyundaiFlags.CAN_CANFD.value:
+      self.lfahda_mfc = copy.copy(cp_cam.vl["LFAHDA_MFC"])
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
     self.prev_cruise_buttons = self.cruise_buttons[-1]
@@ -452,6 +454,22 @@ class CarState(CarStateBase):
           ("CF_VSM_Warn", "SCC12"),
           ("CF_VSM_DecCmdAct", "SCC12"),
         ]
+
+    if CP.flags & HyundaiFlags.CAN_CANFD.value:
+      signals += [
+        ("CHECKSUM", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_1", "LFAHDA_MFC"),
+        ("COUNTER", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_2", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_3", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_4", "LFAHDA_MFC"),
+        ("HDA_Icon_State", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_5", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_6", "LFAHDA_MFC"),
+        ("LFA_Icon_State", "LFAHDA_MFC"),
+        ("NEW_SIGNAL_7", "LFAHDA_MFC"),
+      ]
+      checks.append(("LFAHDA_MFC", 20))
 
     bus = 6 if CP.flags & HyundaiFlags.CAN_CANFD else 2
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus)

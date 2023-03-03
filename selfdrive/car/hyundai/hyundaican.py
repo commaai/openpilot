@@ -101,13 +101,12 @@ def create_clu11(packer, frame, clu11, button, CP):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, CP, hda_set_speed=0):
-  values = {
-    "LFA_Icon_State": 2 if enabled else 0,
-    #"HDA_Active": 1 if hda_set_speed else 0,
-    "HDA_Icon_State": 2 if hda_set_speed else 0,
-    #"HDA_VSetReq": hda_set_speed,
-  }
+def create_lfahda_mfc(packer, enabled, CP, lfahda_mfc, hda_set_speed=0):
+  values = lfahda_mfc
+  values["LFA_Icon_State"] = 2 if enabled else 0
+  #"HDA_Active": 1 if hda_set_speed else 0,
+  values["HDA_Icon_State"] = 2 if hda_set_speed else 0
+  #"HDA_VSetReq": hda_set_speed,
 
   bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
   return packer.make_can_msg("LFAHDA_MFC", bus, values)
