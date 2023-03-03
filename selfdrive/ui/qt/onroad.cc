@@ -521,10 +521,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
+  double t = millis_since_boot();
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
-    double t = millis_since_boot();
     int track_vertices_len = scene.track_vertices.length();
     assert(track_vertices_len % 2 == 0);
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
@@ -549,24 +549,21 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
       float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
       float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
-      (void(alpha));
-      (void(lightness));
-//      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+//      (void(alpha));
+//      (void(lightness));
+      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
     }
-    double dt = millis_since_boot() - t;
-    qDebug() << "Took" << dt << "ms to draw path";
 
   } else {
-    double t = millis_since_boot();
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
     bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
-    double dt = millis_since_boot() - t;
-    qDebug() << "Took" << dt << "ms to draw chill path";
   }
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
+  double dt = millis_since_boot() - t;
+  qDebug() << "Took" << dt << "ms to draw path";
 
   painter.restore();
 }
