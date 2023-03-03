@@ -114,23 +114,34 @@ def create_clu11(packer, frame, clu11, button, CP):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, frame, enabled, CP, lfahda_mfc, hda_set_speed=0):
-  bus = 4 if CP.flags & HyundaiFlags.CAN_CANFD else 0
-  values = lfahda_mfc
-  values["LFA_Icon_State"] = 2 if enabled else 0
-  #"HDA_Active": 1 if hda_set_speed else 0,
-  values["HDA_Icon_State"] = 2 if hda_set_speed else 0
-  #"HDA_VSetReq": hda_set_speed,
-  values["COUNTER"] = frame % 0xF
+def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
+  values = {
+    "LFA_Icon_State": 2 if enabled else 0,
+    "HDA_Active": 1 if hda_set_speed else 0,
+    "HDA_Icon_State": 2 if hda_set_speed else 0,
+    "HDA_VSetReq": hda_set_speed,
+  }
+  return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-  dat = packer.make_can_msg("LFAHDA_MFC", bus, values)[2]
+
+def create_lfahda_mfc_new(packer, frame, enabled, lfahda_mfc):
+  values = lfahda_mfc
+  values.update({
+    "LFA_Icon_State": 2 if enabled else 0,
+    "HDA_Icon_State": 2 if enabled else 0,
+    "COUNTER": frame % 0xF
+  })
+
+  dat = packer.make_can_msg("LFAHDA_MFC", 4, values)[2]
 
   dat = dat[:6] + dat[7:8]
   checksum = hyundai_checksum(dat)
 
-  values["CHECKSUM"] = checksum
+  values.update({
+    "CHECKSUM": checksum,
+  })
 
-  return packer.make_can_msg("LFAHDA_MFC", bus, values)
+  return packer.make_can_msg("LFAHDA_MFC", 4, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override):
   commands = []

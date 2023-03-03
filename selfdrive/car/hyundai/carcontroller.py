@@ -187,7 +187,10 @@ class CarController:
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
-        can_sends.append(hyundaican.create_lfahda_mfc(self.packer, self.frame, CC.enabled, self.CP, CS.lfahda_mfc))
+        if self.CP.flags & HyundaiFlags.CAN_CANFD:
+          can_sends.append(hyundaican.create_lfahda_mfc_new(self.packer, self.frame, CC.enabled, CS.lfahda_mfc))
+        else:
+          can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled, self.CP))
 
       # 5 Hz ACC options
       if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
