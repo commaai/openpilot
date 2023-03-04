@@ -492,10 +492,6 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-float lerp(float a, float b, float t) {
-  return a + t * (b - a);
-}
-
 float interp1d(float value, float start_min, float start_max, float end_min, float end_max) {
   value = std::max(start_min, std::min(start_max, value));
   float factor = (value - start_min) / (start_max - start_min);
