@@ -194,6 +194,8 @@ void MainWindow::createStatusBar() {
 void MainWindow::createShortcuts() {
   auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
   QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
   // TODO: add more shortcuts here.
 }
 
@@ -479,6 +481,19 @@ void MainWindow::onlineHelp() {
     help->setGeometry(rect());
     help->show();
     help->raise();
+  }
+}
+
+void MainWindow::toggleFullScreen() {
+  if (isFullScreen()) {
+    menuBar()->show();
+    statusBar()->show();
+    showNormal();
+    showMaximized();
+  } else {
+    menuBar()->hide();
+    statusBar()->hide();
+    showFullScreen();
   }
 }
 
