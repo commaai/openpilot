@@ -129,6 +129,8 @@ def create_lfahda_mfc_new(packer, frame, enabled, lfahda_mfc):
   values.update({
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Icon_State": 2 if enabled else 0,
+    "NEW_SIGNAL_3": 0,  # Possibly error on cluster
+    "NEW_SIGNAL_4": 0,  # Possibly error on cluster
     "COUNTER": frame % 0xF
   })
 
