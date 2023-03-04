@@ -188,7 +188,7 @@ class TestOnroad(unittest.TestCase):
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
-  def test_qlog_size(self):
+  def test_qlog_size_sane(self):
     total_size = sum(len(m.as_builder().to_bytes()) for m in self.qlr)
     self.assertLess(total_size, 3e6)
 
