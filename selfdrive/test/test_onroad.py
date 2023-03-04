@@ -176,6 +176,7 @@ class TestOnroad(unittest.TestCase):
 
     # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
+    cls.qlr = list(LogReader(os.path.join(str(cls.segments[1]), "qlog")))
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -186,6 +187,10 @@ class TestOnroad(unittest.TestCase):
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
+  def test_qlog_size(self):
+    total_size = sum(len(m.as_builder().to_bytes()) for m in self.qlr)
+    self.assertLess(total_size, 3e6)
 
   def test_ui_timings(self):
     result = "\n"
