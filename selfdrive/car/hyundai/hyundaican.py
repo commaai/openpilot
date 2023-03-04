@@ -6,16 +6,26 @@ hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
-                  left_lane_depart, right_lane_depart):
+                  left_lane_depart, right_lane_depart, CP):
+  can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
+  bus = 4 if can_canfd else 0
+
   values = lkas11
-  values["CF_Lkas_LdwsSysState"] = sys_state
-  values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_ToiFlt"] = torque_fault  # seems to allow actuation on CR_Lkas_StrToqReq
-  values["CF_Lkas_MsgCount"] = frame % 0x10
+  values["CF_Lkas_MsgCount"] = frame % (0xF if can_canfd else 0x10)
+
+  if can_canfd:
+    values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
+    values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
+    values["NEW_SIGNAL_1"] = 0
+    values["NEW_SIGNAL_5"] = 100
+  else:
+    values["CF_Lkas_LdwsSysState"] = sys_state
+    values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
 
   if car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
@@ -60,11 +70,11 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
 
-  dat = packer.make_can_msg("LKAS11", 0, values)[2]
+  dat = packer.make_can_msg("LKAS11", bus, values)[2]
 
   if car_fingerprint in CHECKSUM["crc8"]:
     # CRC Checksum as seen on 2019 Hyundai Santa Fe
-    dat = dat[:6] + dat[7:8]
+    dat = dat[1:8] if can_canfd else dat[:6] + dat[7:8]
     checksum = hyundai_checksum(dat)
   elif car_fingerprint in CHECKSUM["6B"]:
     # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
@@ -75,35 +85,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   values["CF_Lkas_Chksum"] = checksum
 
-  return packer.make_can_msg("LKAS11", 0, values)
-
-
-def create_lkas11_new(packer, frame, apply_steer, steer_req,
-                      torque_fault, lkas11, enabled, left_lane, right_lane, left_lane_depart, right_lane_depart):
-  values = lkas11
-  values.update({
-    "CF_Lkas_LdwsLHWarning": left_lane_depart,
-    "CF_Lkas_LdwsRHWarning": right_lane_depart,
-    "CR_Lkas_StrToqReq": apply_steer,
-    "CF_Lkas_ActToi": steer_req,
-    "CF_Lkas_ToiFlt": torque_fault,  # seems to allow actuation on CR_Lkas_StrToqReq
-    "CF_Lkas_LdwsActivemode": int(left_lane) + (int(right_lane) << 1),
-    "CF_Lkas_FcwOpt_USM": 2 if enabled else 1,
-    "NEW_SIGNAL_1": 0,
-    "NEW_SIGNAL_5": 100,
-    "CF_Lkas_MsgCount": frame % 0xF,
-  })
-
-  dat = packer.make_can_msg("LKAS11", 4, values)[2]
-
-  # CRC Checksum
-  checksum = hyundai_checksum(dat[1:8])
-
-  values.update({
-    "CF_Lkas_Chksum": checksum,
-  })
-
-  return packer.make_can_msg("LKAS11", 4, values)
+  return packer.make_can_msg("LKAS11", bus, values)
 
 
 def create_clu11(packer, frame, clu11, button, CP):
@@ -115,33 +97,30 @@ def create_clu11(packer, frame, clu11, button, CP):
   return packer.make_can_msg("CLU11", bus, values)
 
 
-def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
-  values = {
-    "LFA_Icon_State": 2 if enabled else 0,
-    "HDA_Active": 1 if hda_set_speed else 0,
-    "HDA_Icon_State": 2 if hda_set_speed else 0,
-    "HDA_VSetReq": hda_set_speed,
-  }
-  return packer.make_can_msg("LFAHDA_MFC", 0, values)
+def create_lfahda_mfc(packer, frame, enabled, CP):
+  can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
+  bus = 4 if can_canfd else 0
 
-
-def create_lfahda_mfc_new(packer, frame, enabled, lfahda_mfc):
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Icon_State": 2 if enabled else 0,
-    "COUNTER": frame % 0xF
   }
 
-  dat = packer.make_can_msg("LFAHDA_MFC", 4, values)[2]
+  if can_canfd:
+    values.update({
+      "COUNTER": frame % 0xF
+    })
 
-  # CRC Checksum
-  checksum = hyundai_checksum(dat[1:8])
+    dat = packer.make_can_msg("LFAHDA_MFC", bus, values)[2]
 
-  values.update({
-    "CHECKSUM": checksum,
-  })
+    # CRC Checksum
+    checksum = hyundai_checksum(dat[1:8])
 
-  return packer.make_can_msg("LFAHDA_MFC", 4, values)
+    values.update({
+      "CHECKSUM": checksum,
+    })
+
+  return packer.make_can_msg("LFAHDA_MFC", bus, values)
 
 def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override):
   commands = []

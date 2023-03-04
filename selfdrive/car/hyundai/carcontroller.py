@@ -157,16 +157,10 @@ class CarController:
                 can_sends.append(hyundaicanfd.create_buttons(self.packer, self.CP, CS.buttons_counter+1, Buttons.RES_ACCEL))
               self.last_button_frame = self.frame
     else:
-      if self.CP.flags & HyundaiFlags.CAN_CANFD:
-        can_sends.append(hyundaican.create_lkas11_new(self.packer, self.frame, apply_steer, lat_active,
-                                                      torque_fault, CS.lkas11, CC.enabled,
-                                                      hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                      left_lane_warning, right_lane_warning))
-      else:
-        can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
+      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, lat_active,
                                                   torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                   hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                  left_lane_warning, right_lane_warning))
+                                                  left_lane_warning, right_lane_warning, self.CP))
 
       if not self.CP.openpilotLongitudinalControl:
         if CC.cruiseControl.cancel:
@@ -187,10 +181,7 @@ class CarController:
 
       # 20 Hz LFA MFA message
       if self.frame % 5 == 0 and self.CP.flags & HyundaiFlags.SEND_LFA.value:
-        if self.CP.flags & HyundaiFlags.CAN_CANFD:
-          can_sends.append(hyundaican.create_lfahda_mfc_new(self.packer, self.frame, CC.enabled, CS.lfahda_mfc))
-        else:
-          can_sends.append(hyundaican.create_lfahda_mfc(self.packer, CC.enabled, self.CP))
+        can_sends.append(hyundaican.create_lfahda_mfc(self.packer, self.frame, CC.enabled, self.CP))
 
       # 5 Hz ACC options
       if self.frame % 20 == 0 and self.CP.openpilotLongitudinalControl:
