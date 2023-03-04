@@ -1,4 +1,4 @@
-from common.numpy_fast import mean
+from common.numpy_fast import mean, clip
 from common.kalman.simple_kalman import KF1D
 
 
@@ -130,15 +130,17 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, model_v_ego):
+    v_ego_error_factor = clip(v_ego / (model_v_ego + 1e-3), 0.7, 1.3)
+    lead_v_pred = lead_msg.v[0] * v_ego_error_factor
     return {
       "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
-      "vRel": float(lead_msg.v[0] - v_ego),
-      "vLead": float(lead_msg.v[0]),
-      "vLeadK": float(lead_msg.v[0]),
-      "aLeadK": float(0),
-      "aLeadTau": _LEAD_ACCEL_TAU,
+      "vRel": float(lead_v_pred - v_ego),
+      "vLead": float(lead_v_pred),
+      "vLeadK": float(lead_v_pred),
+      "aLeadK": float(lead_msg.a),
+      "aLeadTau": 0.3,
       "fcw": False,
       "modelProb": float(lead_msg.prob),
       "radar": False,
