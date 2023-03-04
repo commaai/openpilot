@@ -94,8 +94,8 @@ def create_lkas11_new(packer, frame, apply_steer, steer_req,
 
   dat = packer.make_can_msg("LKAS11", 4, values)[2]
 
-  # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
-  checksum = sum(dat[:6]) % 256
+  # CRC Checksum
+  checksum = hyundai_checksum(dat[1:8])
 
   values.update({
     "CF_Lkas_Chksum": checksum,
@@ -133,8 +133,8 @@ def create_lfahda_mfc_new(packer, frame, enabled, lfahda_mfc):
 
   dat = packer.make_can_msg("LFAHDA_MFC", 4, values)[2]
 
-  # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
-  checksum = sum(dat[:6]) % 256
+  # CRC Checksum
+  checksum = hyundai_checksum(dat[1:8])
 
   values.update({
     "CHECKSUM": checksum,
