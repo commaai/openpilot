@@ -368,10 +368,12 @@ FW_VERSIONS = {
       b'57114-TWA-A050\x00\x00',
       b'57114-TWA-A530\x00\x00',
       b'57114-TWA-B520\x00\x00',
+      b'57114-TWB-H030\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TWA-A440\x00\x00',
       b'77959-TWA-L420\x00\x00',
+      b'77959-TWB-H220\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TWA-A010\x00\x00',
@@ -385,6 +387,7 @@ FW_VERSIONS = {
       b'78109-TWA-A230\x00\x00',
       b'78109-TWA-L010\x00\x00',
       b'78109-TWA-L210\x00\x00',
+      b'78109-TWA-H210\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TWA-A910\x00\x00',
@@ -396,16 +399,19 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TWA-A070\x00\x00',
       b'36161-TWA-A330\x00\x00',
+      b'36161-TWB-H040\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TWA-A070\x00\x00',
       b'36802-TWA-A080\x00\x00',
       b'36802-TWA-A330\x00\x00',
+      b'36802-TWB-H060\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A340\x00\x00',
+      b'39990-TWB-H120\x00\x00',
     ],
   },
   CAR.CIVIC: {
