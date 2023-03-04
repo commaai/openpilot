@@ -83,13 +83,15 @@ def create_lkas11_new(packer, frame, apply_steer, steer_req,
                       torque_fault, lkas11, enabled, left_lane, right_lane, left_lane_depart, right_lane_depart):
   values = lkas11
   values.update({
-    #"CF_Lkas_LdwsLHWarning": left_lane_depart,
-    #"CF_Lkas_LdwsRHWarning": right_lane_depart,
+    "CF_Lkas_LdwsLHWarning": left_lane_depart,
+    "CF_Lkas_LdwsRHWarning": right_lane_depart,
     "CR_Lkas_StrToqReq": apply_steer,
     "CF_Lkas_ActToi": steer_req,
     "CF_Lkas_ToiFlt": torque_fault,  # seems to allow actuation on CR_Lkas_StrToqReq
-    #"CF_Lkas_LdwsActivemode": int(left_lane) + (int(right_lane) << 1),
+    "CF_Lkas_LdwsActivemode": int(left_lane) + (int(right_lane) << 1),
     "CF_Lkas_FcwOpt_USM": 2 if enabled else 1,
+    "NEW_SIGNAL_1": 0,
+    "NEW_SIGNAL_5": 100,
     "CF_Lkas_MsgCount": frame % 0xF,
   })
 
@@ -125,14 +127,11 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
 
 
 def create_lfahda_mfc_new(packer, frame, enabled, lfahda_mfc):
-  values = lfahda_mfc
-  values.update({
+  values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Icon_State": 2 if enabled else 0,
-    "NEW_SIGNAL_3": 0,  # Possibly error on cluster
-    "NEW_SIGNAL_4": 0,  # Possibly error on cluster
     "COUNTER": frame % 0xF
-  })
+  }
 
   dat = packer.make_can_msg("LFAHDA_MFC", 4, values)[2]
 

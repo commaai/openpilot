@@ -409,6 +409,8 @@ class CarState(CarStateBase):
         ("NEW_SIGNAL_3", "LKAS11"),
         ("NEW_SIGNAL_4", "LKAS11"),
         ("NEW_SIGNAL_5", "LKAS11"),
+        ("NEW_SIGNAL_6", "LKAS11"),
+        ("NEW_SIGNAL_7", "LKAS11"),
       ]
     else:
       signals += [
