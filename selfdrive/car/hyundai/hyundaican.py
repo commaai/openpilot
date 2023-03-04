@@ -2,7 +2,7 @@ import crcmod
 from selfdrive.car.hyundai.values import HyundaiFlags, CAR, CHECKSUM, CAMERA_SCC_CAR
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
-hyundai_checksum_can_canfd = crcmod.mkCrcFun(0x1D, initCrc=0x0, rev=False, xorOut=0xA)
+hyundai_checksum_can_canfd = crcmod.mkCrcFun(0x11D, initCrc=0x0, rev=False, xorOut=0xA)
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
