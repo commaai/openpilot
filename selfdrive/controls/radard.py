@@ -113,7 +113,8 @@ class RadarD():
 
     ar_pts = {}
     for pt in rr.points:
-      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
+      vRel = pt.vRel if math.isnan(pt.vAbs) else pt.vAbs - self.v_ego
+      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, vRel, pt.measured]
 
     # *** remove missing points from meta data ***
     for ids in list(self.tracks.keys()):
@@ -224,7 +225,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
         "trackId": ids,
         "dRel": float(tracks[ids].dRel),
         "yRel": float(tracks[ids].yRel),
-        "vRel": float(tracks[ids].vRel) if math.isnan(float(tracks[ids].vAbs)) else float(tracks[ids].vAbs) - RD.v_ego,
+        "vRel": float(tracks[ids].vRel),
       }
     pm.send('liveTracks', dat)
 
