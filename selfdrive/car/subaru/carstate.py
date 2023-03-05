@@ -69,7 +69,6 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
-
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -80,7 +79,7 @@ class CarState(CarStateBase):
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       ret.stockAeb = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 5) or \
                      (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert_Msg"] == 6) or ret.stockFcw
-      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
       self.aeb = cp_es_brake.vl["ES_Brake"]["Cruise_Brake_Active"]
