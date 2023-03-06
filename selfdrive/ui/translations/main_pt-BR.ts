@@ -579,16 +579,8 @@ trabalho definido</translation>
         <translation>Tem certeza que quer resetar seu dispositivo?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Resetando dispositivo...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>Resetar Sistema</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Solicitado reset do sistema. Confirme para apagar todo conteúdo e configurações. Aperte cancelar para continuar boot.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -603,8 +595,17 @@ trabalho definido</translation>
         <translation>Confirmar</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>Não foi possível montar a partição de dados. Pressione confirmar para resetar seu dispositivo.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -703,6 +704,14 @@ trabalho definido</translation>
     <message>
         <source>Start over</source>
         <translation>Inicializar</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

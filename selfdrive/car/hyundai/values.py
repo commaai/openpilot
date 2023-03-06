@@ -191,7 +191,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Tucson 2023", "All", harness=Harness.hyundai_n),
   ],
   CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
-  CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2021-22", harness=Harness.hyundai_n),
+  CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", harness=Harness.hyundai_n),
 
   # Kia
   CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
@@ -512,7 +512,6 @@ FW_VERSIONS = {
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
       b'\xf1\x00DN89110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     ',
       b'\xf1\x8799110L0000\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
-      b'\xf1\x8799110L0000\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00DN ESC \x07 106 \x07\x01 58910-L0100',
@@ -525,7 +524,6 @@ FW_VERSIONS = {
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 106 \x07\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100',
-      b'\xf1\x8758910-L0300\xf1\x00DN ESC \x03 100 \x08\x01 58910-L0300',
       b'\xf1\x00DN ESC \x06 106 \x07\x01 58910-L0100',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -587,6 +585,7 @@ FW_VERSIONS = {
       b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB4\x00\x00\x00\x00\x00\x00g!l[',
       b'\xf1\x00T02601BL  T02730A1  VDN8T25XXX730NS5\xf7_\x92\xf5',
       b'\xf1\x00T02601BL  T02832A1  VDN8T25XXX832NS8G\x0e\xfeE',
+      b'\xf1\x00T02601BL  T02900A1  VDN8T25XXX900NSCF\xe4!Y',
       b'\xf1\x87954A02N060\x00\x00\x00\x00\x00\xf1\x81T02730A1  \xf1\x00T02601BL  T02730A1  VDN8T25XXX730NS5\xf7_\x92\xf5',
       b'\xf1\x87SAKFBA2926554GJ2VefVww\x87xwwwww\x88\x87xww\x87wTo\xfb\xffvUo\xff\x8d\x16\xf1\x81U903\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
       b'\xf1\x87SAKFBA3030524GJ2UVugww\x97yx\x88\x87\x88vw\x87gww\x87wto\xf9\xfffUo\xff\xa2\x0c\xf1\x81U903\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
@@ -751,7 +750,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x8799110S1500\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
-      b'\xf1\x8799110S1500\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.abs, 0x7d1, None): [
@@ -785,6 +783,7 @@ FW_VERSIONS = {
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.01 99211-S2500 210205',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00T02601BL  T02900A1  VTMPT25XXX900NSA\xf3\xf4Uj',
       b'\xf1\x87SDMXCA9087684GN1VfvgUUeVwwgwwwwwffffU?\xfb\xff\x97\x88\x7f\xff+\xa4\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
       b'\xf1\x87SDMXCA8653204GN1EVugEUuWwwwwww\x87wwwwwv/\xfb\xff\xa8\x88\x9f\xff\xa5\x9c\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
@@ -1566,6 +1565,7 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.02 99211-GI010 211206',
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.03 99211-GI010 220401',
     ],
   },
   CAR.TUCSON_4TH_GEN: {
@@ -1597,9 +1597,11 @@ FW_VERSIONS = {
   CAR.SANTA_CRUZ_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-K5000         ',
+      b'\xf1\x00NX4__               1.01 1.00 99110-K5000         ',
     ],
   },
   CAR.KIA_SPORTAGE_5TH_GEN: {
