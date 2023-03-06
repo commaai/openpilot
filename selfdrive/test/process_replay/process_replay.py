@@ -449,9 +449,6 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
-    # controlsd process configuration assume all routes are out of dashcam
-    params.put_bool("DashcamOverride", True)
-
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
