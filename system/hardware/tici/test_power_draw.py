@@ -60,7 +60,7 @@ class TestPowerDraw(unittest.TestCase):
     manager_cleanup()
 
     tab = []
-    tab.append(['process', 'expected', 'current'])
+    tab.append(['process', 'expected (W)', 'current (W)'])
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
