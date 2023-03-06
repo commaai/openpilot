@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 from tools.sim.bridge.common import World, SimulatorBridge, Camerad, STEER_RATIO, W, H
 from tools.sim.bridge.utils import timer
@@ -22,13 +23,14 @@ class MetaDriveWorld(World):
       if d:
         # Pass for now as the early termination can be a little disorienting
         pass
+        # env.render(text={"!!!Episode terminated due to violation of safety!!!"})
         # print("!!!Episode terminated due to violation of safety!!!")
         # self.env.reset()
         # self.env.step([0.0, 0.0])
         # for _ in range(300):
         #   rk.keep_time()
 
-      self.speed = o["state"][3] * 75 # empirically derived
+      self.speed = o["state"][3] * 35 # empirically derived
 
       img = timer("pixel array: wide", lambda: self.env.vehicle.image_sensors["rgb_wide"].get_pixels_array(self.env.vehicle, False))
       yuv = timer("yuv kernel: wide", lambda: self.camerad.img_to_yuv(img))
@@ -47,7 +49,7 @@ class MetaDriveWorld(World):
 
   def get_steer_correction(self) -> float:
     # max_steer_angle = 75 / self.ticks_per_frame
-    max_steer_angle = 8
+    max_steer_angle = 30 / math.sqrt(self.ticks_per_frame)
     return max_steer_angle * STEER_RATIO * -1
   
   def tick(self):
@@ -60,16 +62,18 @@ class MetaDriveBridge(SimulatorBridge):
   def __init__(self, args):
     if args.ticks_per_frame:
       self.TICKS_PER_FRAME = args.ticks_per_frame
+    self.should_render = args.high_quality
+      
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_world(self):
     # Lazily import as `metadrive-simulator` is an optional install
     import metadrive  # noqa: F401 pylint: disable=W0611, disable=import-error
-    import gym  # pylint: disable=import-error
     from metadrive.constants import CamMask  # pylint: disable=import-error
     from metadrive.component.vehicle_module.base_camera import BaseCamera  # pylint: disable=import-error
     from metadrive.engine.engine_utils import engine_initialized  # pylint: disable=import-error
     from metadrive.engine.core.image_buffer import ImageBuffer  # pylint: disable=import-error
+    from metadrive.tests.test_functionality.test_object_collision_detection import ComplexEnv
 
     # remove use of `to(dtype=uint8)`
     def get_pixels_array_patched(self, base_object, clip=True):
@@ -77,17 +81,17 @@ class MetaDriveBridge(SimulatorBridge):
       return type(self)._singleton.get_rgb_array()
     setattr(BaseCamera, "get_pixels_array", get_pixels_array_patched)
 
-    config = dict(
-      # camera_dist=3.0,
-      # camera_height=1.0,
-      # use_render=True,
-      vehicle_config=dict(
-        # enable_reverse=True,
-        # image_source="rgb_wide",
-        rgb_camera=(1,1)
-      ),
-      offscreen_render=True,
-    )
+    # config = dict(
+    #   # camera_dist=3.0,
+    #   # camera_height=1.0,
+    #   # use_render=True,
+    #   vehicle_config=dict(
+    #     # enable_reverse=True,
+    #     # image_source="rgb_wide",
+    #     rgb_camera=(1,1)
+    #   ),
+    #   offscreen_render=True,
+    # )
 
     # from metadrive.utils.space import VehicleParameterSpace
     # from metadrive.component.vehicle.vehicle_type import DefaultVehicle
@@ -95,7 +99,8 @@ class MetaDriveBridge(SimulatorBridge):
     # max_engine_force._replace(max=max_engine_force.max * 10)
     # max_engine_force._replace(min=max_engine_force.min * 10)
 
-    env = gym.make('MetaDrive-10env-v0', config=config)
+    # env = gym.make('MetaDrive-10env-v0', config=config)
+    env = ComplexEnv(dict(use_render=self.should_render, offscreen_render=True, vehicle_config=dict(enable_reverse=True, rgb_camera=(1, 1))))
 
     env.reset()
     class RGBCameraWide(BaseCamera):
@@ -155,5 +160,6 @@ class MetaDriveBridge(SimulatorBridge):
     # Simulation tends to be slow in the initial steps. This prevents lagging later
     for _ in range(30):
       env.step([0.0, 1.0])
+      env.render(text={"Switch perspective": "Q or B", "Reset Episode": "R"})
 
     return MetaDriveWorld(env, self.TICKS_PER_FRAME)

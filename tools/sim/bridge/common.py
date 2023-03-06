@@ -379,7 +379,7 @@ class SimulatorBridge(ABC):
       world.tick()
 
     # loop
-    rk = Ratekeeper(100, None)
+    rk = Ratekeeper(100, print_delay_threshold=None)
 
     while self._keep_alive:
       # 1. Read the throttle, steer and brake from op or manual controls
