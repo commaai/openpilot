@@ -43,8 +43,8 @@ class CarControllerParams:
     # these cars have significantly more torque than most HKG; limit to 70% of max
     elif CP.flags & HyundaiFlags.ALT_LIMITS:
       self.STEER_MAX = 270
-      self.STEER_DELTA_UP = 2
-      self.STEER_DELTA_DOWN = 3
+      self.STEER_DELTA_UP = 3
+      self.STEER_DELTA_DOWN = 5
 
     elif CP.flags & HyundaiFlags.CAN_CANFD:
       self.STEER_MAX = 384
