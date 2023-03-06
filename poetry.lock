@@ -596,7 +596,7 @@ test = ["pytest-cov"]
 name = "cloudpickle"
 version = "2.2.0"
 description = "Extended pickling support for Python objects"
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 
@@ -1212,7 +1212,7 @@ tornado = ["tornado (>=0.2)"]
 name = "gym"
 version = "0.22.0"
 description = "Gym: A universal API for reinforcement learning environments."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 
@@ -1237,7 +1237,7 @@ toy-text = ["pygame (==2.1.0)", "scipy (>=1.4.1)"]
 name = "gym-notices"
 version = "0.0.8"
 description = "Notices for gym"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -4713,7 +4713,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "ac1370cec835f855882acafd004c381bdcaccbba8a47f9613b95a97c8c551f77"
+content-hash = "f74cc0c8f4be5c8a6ec9c87da11f518fb5fbfb72f2ac24079e89bc706cbafb7f"
 
 [metadata.files]
 adal = [
