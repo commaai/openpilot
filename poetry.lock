@@ -596,7 +596,7 @@ test = ["pytest-cov"]
 name = "cloudpickle"
 version = "2.2.0"
 description = "Extended pickling support for Python objects"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1212,7 +1212,7 @@ tornado = ["tornado (>=0.2)"]
 name = "gym"
 version = "0.22.0"
 description = "Gym: A universal API for reinforcement learning environments."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 
@@ -1237,7 +1237,7 @@ toy-text = ["pygame (==2.1.0)", "scipy (>=1.4.1)"]
 name = "gym-notices"
 version = "0.0.8"
 description = "Notices for gym"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -2088,15 +2088,15 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "metadrive-simulator"
-version = "0.2.6.0"
+version = "0.2.7.0"
 description = ""
 category = "dev"
 optional = false
-python-versions = ">=3.7, <3.10"
+python-versions = ">=3.6, <3.12"
 develop = false
 
 [package.dependencies]
-gym = ">=0.20.0,<=0.24.0"
+gym = ">=0.20.0,<0.23.0 || >=0.25.0,<0.26.0"
 lxml = "*"
 matplotlib = "*"
 numpy = ">=1.21.6,<=1.24.2"
@@ -2115,11 +2115,15 @@ seaborn = "*"
 tqdm = "*"
 yapf = "*"
 
+[package.extras]
+cuda = ["PyOpenGL (==3.1.6)", "PyOpenGL-accelerate (==3.1.6)", "cuda-python (==12.0.0)", "glfw", "pyrr (==0.10.3)"]
+nuplan = ["bokeh (==2.4)", "hydra", "nuplan-devkit (==1.0.0)"]
+
 [package.source]
 type = "git"
-url = "https://github.com/jon-chuang/metadrive.git"
-reference = "jon/versioning-hack"
-resolved_reference = "2e6f00b53fab2e2d4806c1cbd0ba2b0610f19a04"
+url = "https://github.com/metadriverse/metadrive.git"
+reference = "bfb5d771e2424a687eb07ba5069612d5c8988cf5"
+resolved_reference = "bfb5d771e2424a687eb07ba5069612d5c8988cf5"
 
 [[package]]
 name = "mistune"
@@ -4709,7 +4713,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "f9b173ceb766b5e4a53b2075d5a3ee303918f57c77c68b040c9cd68cd16d285d"
+content-hash = "ac1370cec835f855882acafd004c381bdcaccbba8a47f9613b95a97c8c551f77"
 
 [metadata.files]
 adal = [
