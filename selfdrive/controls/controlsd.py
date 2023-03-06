@@ -112,9 +112,6 @@ class Controls:
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    if self.CP.dashcamOnly and self.params.get_bool("DashcamOverride"):
-      self.CP.dashcamOnly = False
-
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
