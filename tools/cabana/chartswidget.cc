@@ -562,6 +562,9 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
       }
+      if (!can->liveStreaming()) {
+        s.segment_tree.build(s.vals);
+      }
       s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
     }
   }
@@ -586,9 +589,15 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
-    for (auto it = first; it != last; ++it) {
-      if (it->y() < min) min = it->y();
-      if (it->y() > max) max = it->y();
+    if (can->liveStreaming()) {
+      for (auto it = first; it != last; ++it) {
+        if (it->y() < min) min = it->y();
+        if (it->y() > max) max = it->y();
+      }
+    } else {
+      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
+      min = std::min(min, min_y);
+      max = std::max(max, max_y);
     }
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
@@ -781,7 +790,7 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(Qt::NoPen);
   qreal track_line_x = -1;
   for (auto &s : sigs) {
-    if (!s.track_pt.isNull() && s.series->isVisible()) {  
+    if (!s.track_pt.isNull() && s.series->isVisible()) {
       painter->setBrush(s.series->color().darker(125));
       painter->drawEllipse(s.track_pt, 5.5, 5.5);
       track_line_x = std::max(track_line_x, s.track_pt.x());
