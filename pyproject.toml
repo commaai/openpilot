@@ -21,6 +21,7 @@ flake8 = "^4.0.1"
 Flask = "^2.1.2"
 future-fstrings = "^1.2.0"  # for acados
 gunicorn = "^20.1.0"
+gym = ">=0.20.0, <=0.24.0"
 hatanaka = "==2.4"
 hexdump = "^3.3"
 Jinja2 = "^3.1.2"
@@ -174,7 +175,6 @@ zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "mas
 omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
 panda3d = ">1.10.8, <=1.10.13"
-gym = ">=0.20.0, <=0.24.0"
 metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="bfb5d771e2424a687eb07ba5069612d5c8988cf5" }
 
 [build-system]
