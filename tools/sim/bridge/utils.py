@@ -1,7 +1,7 @@
 from typing import Any
 import timeit
 
-TIMER_ENABLED = True
+TIMER_ENABLED = False
 
 if TIMER_ENABLED:
   def timer(name: str, f) -> Any:

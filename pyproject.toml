@@ -175,7 +175,7 @@ omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
 panda3d = ">1.10.8, <=1.10.13"
 gym = ">=0.20.0, <=0.24.0"
-metadrive-simulator = { git = "https://github.com/jon-chuang/metadrive.git", branch = "jon/versioning-hack" }
+metadrive-simulator = { git = "https://github.com/metadriverse/metadrive.git", rev ="bfb5d771e2424a687eb07ba5069612d5c8988cf5" }
 
 [build-system]
 requires = ["poetry-core"]

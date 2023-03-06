@@ -34,7 +34,9 @@ sm = messaging.SubMaster(['carControl', 'controlsState'])
 def parse_args(add_args=None):
   parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
   parser.add_argument('--joystick', action='store_true')
+  # TODO(jon-chuang): Multiplex the default based on detection of `CUDA` or `ROCm`
   parser.add_argument('--high_quality', action='store_true')
+  # TODO(jon-chuang): Multiplex the default based on detection of `CUDA` or `ROCm`
   parser.add_argument('--dual_camera', action='store_true')
   parser.add_argument('--town', type=str, default='Town04_Opt')
   parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, default=16)
@@ -98,6 +100,10 @@ class Camerad:
     self._send_yuv(yuv, self.frame_wide_id, 'wideRoadCameraState', VisionStreamType.VISION_STREAM_WIDE_ROAD)
     self.frame_wide_id += 1
 
+  def cam_send_yuv_road(self, yuv):
+    self._send_yuv(yuv, self.frame_road_id, 'roadCameraState', VisionStreamType.VISION_STREAM_ROAD)
+    self.frame_road_id += 1
+
   def cam_send_yuv_wide_road(self, yuv):
     self._send_yuv(yuv, self.frame_wide_id, 'wideRoadCameraState', VisionStreamType.VISION_STREAM_WIDE_ROAD)
     self.frame_wide_id += 1
@@ -108,7 +114,7 @@ class Camerad:
     rgb = np.reshape(img, (H, W * 3))
     rgb_cl = cl_array.to_device(self.queue, rgb)
     yuv_cl = cl_array.empty_like(rgb_cl)
-    self.krnl(self.queue, (np.int32(self.Wdiv4), np.int32(self.Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
+    self.krnl(self.queue, (self.Wdiv4, self.Hdiv4), None, rgb_cl.data, yuv_cl.data).wait()
     yuv = np.resize(yuv_cl.get(), rgb.size // 2)
     return yuv.data.tobytes()
   
@@ -277,9 +283,9 @@ class SimulatorBridge(ABC):
     if not arguments.dual_camera:
       print("Dual Camera disabled")
     self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
-    # self.params.put_bool("DisengageOnAccelerator", True)
+    self.params.put_bool("DisengageOnAccelerator", True)
     self.params.put_bool("ExperimentalMode", True)
-    self.params.put_bool("ExperimentalLongitudinalEnabled", True)
+    # self.params.put_bool("ExperimentalLongitudinalEnabled", True)
 
     self._args = arguments
     self._simulation_objects = []
@@ -337,13 +343,13 @@ class SimulatorBridge(ABC):
   
   # Must return object of class `World`, after spawning objects into that world
   @abstractmethod
-  def spawn_objects(self) -> World:
+  def spawn_world(self) -> World:
     pass
 
   def _run(self, q: Queue):
     vehicle_state = VehicleState()
     self._vehicle_state = vehicle_state
-    world = self.spawn_objects()
+    world = self.spawn_world()
 
     # launch fake car threads
     self._threads.append(threading.Thread(target=panda_state_function, args=(vehicle_state, self._exit_event,)))
@@ -368,8 +374,12 @@ class SimulatorBridge(ABC):
     brake_manual_multiplier = 0.7  # keyboard signal is always 1
     steer_manual_multiplier = 45 * STEER_RATIO  # keyboard signal is always 1
 
+    # Simulation tends to be slow in the initial steps. This prevents lagging later
+    for _ in range(20):
+      world.tick()
+
     # loop
-    rk = Ratekeeper(100, print_delay_threshold=0.05)
+    rk = Ratekeeper(100, None)
 
     while self._keep_alive:
       # 1. Read the throttle, steer and brake from op or manual controls

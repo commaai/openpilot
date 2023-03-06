@@ -32,7 +32,7 @@ class CarlaWorld(World):
 class CarlaBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def spawn_objects(self):
+  def spawn_world(self):
     camerad = Camerad()
     import carla  # pylint: disable=import-error
     def connect_carla_client(host: str, port: int):

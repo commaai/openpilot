@@ -13,6 +13,8 @@ if __name__ == "__main__":
   try:
     simulator_bridge: SimulatorBridge
     if args.simulator == "metadrive":
+      if args.dual_camera:
+        raise AssertionError("Dual camera not supported in MetaDrive simulator for now")
       simulator_bridge = MetaDriveBridge(args)
     elif args.simulator == "carla":
       simulator_bridge = CarlaBridge(args)
