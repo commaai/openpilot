@@ -85,6 +85,7 @@ public:
   QValidator *name_validator, *double_validator;
   QFont small_font;
   const int color_label_width = 18;
+  mutable QHash<QString, int> width_cache;
 };
 
 class SignalView : public QFrame {

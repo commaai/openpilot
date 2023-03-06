@@ -1,7 +1,7 @@
 #include "tools/cabana/signaledit.h"
 
+#include <QApplication>
 #include <QDialogButtonBox>
-#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMessageBox>
@@ -304,11 +304,17 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 }
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QSize size = QStyledItemDelegate::sizeHint(option, index);
-  if (index.column() == 0 && !index.parent().isValid()) {
-    size.rwidth() = std::min(option.widget->size().width() / 2, size.width() + color_label_width + 8);
+  int width = option.widget->size().width() / 2;
+  if (index.column() == 0) {
+    auto text = index.data(Qt::DisplayRole).toString();
+    auto it = width_cache.find(text);
+    if (it == width_cache.end()) {
+      int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
+      it = width_cache.insert(text, option.fontMetrics.width(text) + spacing);
+    }
+    width = std::min(width, it.value());
   }
-  return size;
+  return {width, QApplication::fontMetrics().height()};
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -508,7 +514,7 @@ void SignalView::signalHovered(const Signal *sig) {
   for (int i = 0; i < children.size(); ++i) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {
-      emit model->dataChanged(model->index(i, 0), model->index(i, 0));
+      emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
     }
   }
 }
