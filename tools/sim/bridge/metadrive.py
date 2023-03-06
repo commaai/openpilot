@@ -44,7 +44,9 @@ class MetaDriveWorld(World):
     return self.speed
 
   def get_steer_correction(self) -> float:
-    max_steer_angle = 75 / self.ticks_per_frame
+    # max_steer_angle = 75 / self.ticks_per_frame
+    # max_steer_angle = 200 / self.ticks_per_frame
+    max_steer_angle = 5
     return max_steer_angle * STEER_RATIO * -1
   
   def tick(self):
@@ -63,7 +65,7 @@ class MetaDriveBridge(SimulatorBridge):
     super(MetaDriveBridge, self).__init__(args)
 
   def spawn_objects(self):
-    # Lazily import as `metadrive-simulator`` is an optional install
+    # Lazily import as `metadrive-simulator` is an optional install
     import metadrive  # noqa: F401 pylint: disable=W0611, disable=import-error
     import gym  # pylint: disable=import-error
     from metadrive.constants import CamMask  # pylint: disable=import-error
