@@ -557,7 +557,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
   double dt = millis_since_boot() - t;
-  qDebug() << "Took" << dt << "ms to draw path";
+//  qDebug() << "Took" << dt << "ms to draw path";
 
   painter.restore();
 }
