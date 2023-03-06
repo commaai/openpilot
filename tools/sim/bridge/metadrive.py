@@ -73,7 +73,7 @@ class MetaDriveBridge(SimulatorBridge):
     from metadrive.component.vehicle_module.base_camera import BaseCamera  # pylint: disable=import-error
     from metadrive.engine.engine_utils import engine_initialized  # pylint: disable=import-error
     from metadrive.engine.core.image_buffer import ImageBuffer  # pylint: disable=import-error
-    from metadrive.tests.test_functionality.test_object_collision_detection import ComplexEnv
+    from metadrive.tests.test_functionality.test_object_collision_detection import ComplexEnv  # pylint: disable=import-error
 
     # remove use of `to(dtype=uint8)`
     def get_pixels_array_patched(self, base_object, clip=True):
