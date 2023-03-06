@@ -139,7 +139,7 @@ class Cluster():
       "vRel": float(lead_v_pred - v_ego),
       "vLead": float(lead_v_pred),
       "vLeadK": float(lead_v_pred),
-      "aLeadK": float(lead_msg.a),
+      "aLeadK": float(0),
       "aLeadTau": 0.3,
       "fcw": False,
       "modelProb": float(lead_msg.prob),
