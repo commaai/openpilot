@@ -3,7 +3,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-from selfdrive.test.helpers import with_processes
+#from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
 
@@ -23,7 +23,6 @@ class TestPandad(unittest.TestCase):
     if not sm.updated['peripheralState']:
       raise Exception("boardd failed to start")
 
-  @with_processes(['pandad'])
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
     time.sleep(1)
