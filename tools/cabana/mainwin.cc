@@ -58,14 +58,21 @@ MainWindow::MainWindow() : QMainWindow() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
 
+  setStyleSheet(QString(R"(QMainWindow::separator {
+    width: %1px; /* when vertical */
+    height: %1px; /* when horizontal */
+  })").arg(style()->pixelMetric(QStyle::PM_SplitterWidth)));
+
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
+  QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
 }
 
 void MainWindow::createActions() {
@@ -179,11 +186,16 @@ void MainWindow::createStatusBar() {
   progress_bar->setVisible(false);
   statusBar()->addWidget(new QLabel(tr("For Help, Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
+
+  statusBar()->addPermanentWidget(status_label = new QLabel(this));
+  updateStatus();
 }
 
 void MainWindow::createShortcuts() {
   auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
   QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
   // TODO: add more shortcuts here.
 }
 
@@ -403,6 +415,18 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   }
 }
 
+void MainWindow::updateStatus() {
+  float cached_minutes = 0;
+  if (!can->liveStreaming()) {
+    if (auto events = can->events(); !events->empty()) {
+      cached_minutes = (events->back()->mono_time - events->front()->mono_time) / (1e9 * 60);
+    }
+  } else {
+    settings.max_cached_minutes = settings.max_cached_minutes;
+  }
+  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(cached_minutes, 0, 'f', 1).arg(settings.fps));
+}
+
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
@@ -457,6 +481,19 @@ void MainWindow::onlineHelp() {
     help->setGeometry(rect());
     help->show();
     help->raise();
+  }
+}
+
+void MainWindow::toggleFullScreen() {
+  if (isFullScreen()) {
+    menuBar()->show();
+    statusBar()->show();
+    showNormal();
+    showMaximized();
+  } else {
+    menuBar()->hide();
+    statusBar()->hide();
+    showFullScreen();
   }
 }
 

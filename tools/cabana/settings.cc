@@ -65,7 +65,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
 
   chart_series_type = new QComboBox(this);
-  chart_series_type->addItems({tr("Line"), tr("Scatter")});
+  chart_series_type->addItems({tr("Line"), tr("Step Line"), tr("Scatter")});
   chart_series_type->setCurrentIndex(settings.chart_series_type);
   form_layout->addRow(tr("Chart Default Series Type"), chart_series_type);
 

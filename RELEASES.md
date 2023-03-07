@@ -3,7 +3,7 @@ Version 0.9.2 (2023-03-XX)
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
 * Honda HR-V 2023 support thanks to Takeda!
 
-Version 0.9.1 (2023-02-23)
+Version 0.9.1 (2023-02-28)
 ========================
 * New driving model
   * 30% improved height estimation resulting in better driving performance for tall cars
