@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 237 Supported Cars
+# 238 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -161,6 +161,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Subaru|Outback 2020-22|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Outback 2020-22">Subaru B</a>||
 |Subaru|XV 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=XV 2018-19">Subaru A</a>|<a href="https://youtu.be/Agww7oE1k-s?t=26" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Subaru|XV 2020-21|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=XV 2020-21">Subaru A</a>||
+|Škoda|Fabia 2022-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Škoda&model=Fabia 2022-23">J533</a>[<sup>10</sup>](#footnotes)||
 |Škoda|Kamiq 2021[<sup>7</sup>](#footnotes)|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Škoda&model=Kamiq 2021">J533</a>[<sup>10</sup>](#footnotes)||
 |Škoda|Karoq 2019-21|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Škoda&model=Karoq 2019-21">J533</a>||
 |Škoda|Kodiaq 2018-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Škoda&model=Kodiaq 2018-19">J533</a>||
