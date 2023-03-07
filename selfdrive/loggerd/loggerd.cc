@@ -25,7 +25,7 @@ void logger_rotate(LoggerdState *s) {
 
 void rotate_if_needed(LoggerdState *s) {
   // all encoders ready, trigger rotation
-  bool all_ready = s->ready_to_rotate == s->max_waiting;
+  bool all_ready = s->max_waiting > 0 && s->ready_to_rotate == s->max_waiting;
 
   // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
   bool timed_out = false;
@@ -77,6 +77,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   if (!re.seen_first_packet) {
     re.seen_first_packet = true;
     re.encoderd_segment_offset = idx.getSegmentNum();
+    ++s->max_waiting;
     LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
@@ -211,13 +212,7 @@ void loggerd_thread() {
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
-  // init encoders
   s.last_camera_seen_tms = millis_since_boot();
-  for (const auto &cam : cameras_logged) {
-    s.max_waiting++;
-    if (cam.has_qcamera) { s.max_waiting++; }
-  }
-
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
   while (!do_exit) {
