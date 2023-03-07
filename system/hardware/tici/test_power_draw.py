@@ -3,6 +3,7 @@ import unittest
 import time
 import math
 from dataclasses import dataclass
+from tabulate import tabulate
 
 from system.hardware import HARDWARE, TICI
 from system.hardware.tici.power_monitor import get_power
@@ -58,15 +59,16 @@ class TestPowerDraw(unittest.TestCase):
 
     manager_cleanup()
 
-    print("-"*35)
-    print(f"Baseline {baseline:.2f}W\n")
+    tab = []
+    tab.append(['process', 'expected (W)', 'current (W)'])
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
-      print(f"{proc.name.ljust(20)} {expected:.2f}W  {cur:.2f}W")
+      tab.append([proc.name, round(expected, 2), round(cur, 2)])
       with self.subTest(proc=proc.name):
         self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
-    print("-"*35)
+    print(tabulate(tab))
+    print(f"Baseline {baseline:.2f}W\n")
 
 
 if __name__ == "__main__":
