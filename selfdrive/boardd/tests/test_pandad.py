@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+import time
+import unittest
+
+import cereal.messaging as messaging
+from selfdrive.test.helpers import with_processes
+from selfdrive.manager.process_config import managed_processes
+from system.hardware import HARDWARE
+
+
+class TestPandad(unittest.TestCase):
+
+  def tearDown(self):
+    managed_processes['pandad'].stop()
+
+  def _wait_for_boardd(self):
+    sm = messaging.SubMaster(['peripheralState'])
+    for _ in range(30):
+      sm.update(1000)
+      if sm.updated['peripheralState']:
+        break
+
+    if not sm.updated['peripheralState']:
+      raise Exception("boardd failed to start")
+
+  @with_processes(['pandad'])
+  def test_in_dfu(self):
+    HARDWARE.recover_internal_panda()
+    time.sleep(1)
+
+    managed_processes['pandad'].start()
+    self._wait_for_boardd()
+
+
+if __name__ == "__main__":
+  unittest.main()
