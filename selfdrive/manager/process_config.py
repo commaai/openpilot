@@ -34,8 +34,8 @@ procs = [
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
-  NativeProcess("encoderd", "selfdrive/loggerd", ["./encoderd"]),
-  NativeProcess("loggerd", "selfdrive/loggerd", ["./loggerd"], onroad=False, callback=logging),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
+  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("mapsd", "selfdrive/navd", ["./map_renderer"], enabled=False),
   NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"], enabled=False),
@@ -47,7 +47,7 @@ procs = [
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
   PythonProcess("torqued", "selfdrive.locationd.torqued"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
-  PythonProcess("deleter", "selfdrive.loggerd.deleter", offroad=True),
+  PythonProcess("deleter", "system.loggerd.deleter", offroad=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
   PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI),
@@ -61,7 +61,7 @@ procs = [
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad=True),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, offroad=True),
   PythonProcess("updated", "selfdrive.updated", enabled=not PC, onroad=False, offroad=True),
-  PythonProcess("uploader", "selfdrive.loggerd.uploader", offroad=True),
+  PythonProcess("uploader", "system.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
   # debug procs

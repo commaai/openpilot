@@ -5,7 +5,7 @@ import random
 import tempfile
 import unittest
 
-import selfdrive.loggerd.uploader as uploader
+import system.loggerd.uploader as uploader
 
 def create_random_file(file_path, size_mb, lock=False):
   try:

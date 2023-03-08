@@ -11,8 +11,8 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-#include "selfdrive/loggerd/encoder/encoder.h"
-#include "selfdrive/loggerd/loggerd.h"
+#include "system/loggerd/encoder/encoder.h"
+#include "system/loggerd/loggerd.h"
 
 class FfmpegEncoder : public VideoEncoder {
  public:

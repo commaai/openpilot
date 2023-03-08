@@ -3,7 +3,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
-#include "selfdrive/loggerd/logger.h"
+#include "system/loggerd/logger.h"
 
 
 static kj::Array<capnp::word> build_boot_log() {

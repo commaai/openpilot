@@ -1,6 +1,6 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
+#include "system/loggerd/encoder/ffmpeg_encoder.h"
 
 #include <fcntl.h>
 #include <unistd.h>
