@@ -8,7 +8,7 @@ import traceback
 from typing import List, Tuple, Union
 
 import cereal.messaging as messaging
-import selfdrive.sentry as sentry
+import system.sentry as sentry
 from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow

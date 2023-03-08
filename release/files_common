@@ -64,8 +64,8 @@ tools/replay/*.cc
 tools/replay/*.h
 
 selfdrive/__init__.py
-selfdrive/sentry.py
-selfdrive/tombstoned.py
+system.sentry.py
+system.tombstoned.py
 selfdrive/updated.py
 selfdrive/rtshield.py
 selfdrive/statsd.py

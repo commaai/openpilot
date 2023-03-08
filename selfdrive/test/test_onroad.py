@@ -43,7 +43,7 @@ PROCS = {
   "system.logmessaged": 0.2,
   "./clocksd": 0.02,
   "./ubloxd": 0.02,
-  "selfdrive.tombstoned": 0,
+  "system.tombstoned": 0,
   "./logcatd": 0,
 }
 
