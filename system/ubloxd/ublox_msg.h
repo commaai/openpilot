@@ -9,9 +9,9 @@
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
-#include "selfdrive/locationd/generated/gps.h"
-#include "selfdrive/locationd/generated/glonass.h"
-#include "selfdrive/locationd/generated/ubx.h"
+#include "system/ubloxd/generated/gps.h"
+#include "system/ubloxd/generated/glonass.h"
+#include "system/ubloxd/generated/ubx.h"
 
 using namespace std::string_literals;
 
