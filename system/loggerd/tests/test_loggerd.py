@@ -15,7 +15,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.loggerd.config import ROOT
+from system.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from system.version import get_version
 from tools.lib.logreader import LogReader
@@ -51,7 +51,7 @@ class TestLoggerd(unittest.TestCase):
 
   def _gen_bootlog(self):
     with Timeout(5):
-      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "selfdrive/loggerd"), encoding='utf-8')
+      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"), encoding='utf-8')
 
     log_fn = self._get_log_fn(out)
 
