@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "selfdrive/sensord/sensors/bmx055_accel.h"
+#include "system/sensord/sensors/bmx055_accel.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
 
