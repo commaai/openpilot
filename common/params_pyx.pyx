@@ -16,7 +16,7 @@ cdef extern from "common/params.h":
   cdef cppclass c_Params "Params":
     c_Params(string) nogil
     string get(string, bool) nogil
-    bool getBool(string) nogil
+    bool getBool(string, bool) nogil
     int remove(string) nogil
     int put(string, string) nogil
     int putBool(string, bool) nogil
@@ -68,11 +68,11 @@ cdef class Params:
 
     return val if encoding is None else val.decode(encoding)
 
-  def get_bool(self, key):
+  def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
     cdef bool r
     with nogil:
-      r = self.p.getBool(k)
+      r = self.p.getBool(k, block)
     return r
 
   def put(self, key, dat):

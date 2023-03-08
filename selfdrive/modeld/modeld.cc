@@ -15,6 +15,7 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/modeld/models/driving.h"
+#include "selfdrive/modeld/models/nav.h"
 
 
 ExitHandler do_exit;
@@ -35,7 +36,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
      0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
      2.19780220e-03,  4.11497335e-19, -5.62637363e-01,
     -6.66298828e-20,  2.19780220e-03, -3.33626374e-01).finished();
-  
+
   static const auto view_from_device = (Eigen::Matrix<float, 3, 3>() <<
      0.0,  1.0,  0.0,
      0.0,  0.0,  1.0,
@@ -72,6 +73,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
   bool live_calib_seen = false;
+  float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
+  float nav_features[NAV_FEATURE_LEN] = {0};
 
   VisionBuf *buf_main = nullptr;
   VisionBuf *buf_extra = nullptr;
@@ -151,7 +154,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     }
 
     double mt1 = millis_since_boot();
-    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, prepare_only);
+    ModelOutput *model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 

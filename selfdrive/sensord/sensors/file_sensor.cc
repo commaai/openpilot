@@ -2,8 +2,7 @@
 
 #include <string>
 
-FileSensor::FileSensor(std::string filename) : file(filename) {
-}
+FileSensor::FileSensor(std::string filename) : file(filename) {}
 
 int FileSensor::init() {
   return file.is_open() ? 0 : 1;

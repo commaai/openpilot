@@ -15,9 +15,9 @@ runs:
     # build cache
     - id: date
       shell: bash
-      run: echo "::set-output name=date::$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d')"
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - shell: bash
-      run: echo "${{ steps.date.outputs.date }}"
+      run: echo "$CACHE_COMMIT_DATE"
     - shell: bash
       run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
       if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
@@ -27,9 +27,9 @@ runs:
       uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
       with:
         path: /tmp/scons_cache
-        key: scons-${{ steps.date.outputs.date }}-${{ github.sha }}
+        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ steps.date.outputs.date }}-
+          scons-${{ env.CACHE_COMMIT_DATE }}-
           scons-
 
     # build our docker image

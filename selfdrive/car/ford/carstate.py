@@ -14,13 +14,13 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
-      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"]
+      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
     # car speed
-    ret.vEgoRaw = cp.vl["EngVehicleSpThrottle2"]["Veh_V_ActlEng"] * CV.KPH_TO_MS
+    ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.yawRate = cp.vl["Yaw_Data_FD1"]["VehYaw_W_Actl"]
     ret.standstill = cp.vl["DesiredTorqBrk"]["VehStop_D_Stat"] == 1
@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     # steering wheel
     ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
-    ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
+    ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     # ret.espDisabled = False  # TODO: find traction control signal
@@ -51,7 +51,7 @@ class CarState(CarStateBase):
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
-      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"], None)
+      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"])
       ret.gearShifter = self.parse_gear_shifter(gear)
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
@@ -85,8 +85,6 @@ class CarState(CarStateBase):
     # Stock values from IPMA so that we can retain some stock functionality
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
-    # Use stock sensor values
-    self.yaw_data = cp.vl["Yaw_Data_FD1"]
 
     return ret
 
@@ -94,7 +92,7 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
-      ("Veh_V_ActlEng", "EngVehicleSpThrottle2"),            # ABS vehicle speed (kph)
+      ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
       ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
       ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
       ("PrkBrkStatus", "DesiredTorqBrk"),                    # ABS park brake status
@@ -120,7 +118,7 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
-      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthrough the remaining buttons
       ("WiprFront_D_Stat", "Steering_Data_FD1"),
       ("LghtAmb_D_Sns", "Steering_Data_FD1"),
       ("AccButtnGapDecPress", "Steering_Data_FD1"),
@@ -156,7 +154,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("EngVehicleSpThrottle2", 50),
+      ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
       ("EngVehicleSpThrottle", 100),
@@ -173,7 +171,7 @@ class CarState(CarStateBase):
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [
-        ("TrnGear_D_RqDrv", "Gear_Shift_by_Wire_FD1"),       # GWM transmission gear position
+        ("TrnRng_D_RqGsm", "Gear_Shift_by_Wire_FD1"),        # GWM transmission gear position
       ]
       checks += [
         ("Gear_Shift_by_Wire_FD1", 10),

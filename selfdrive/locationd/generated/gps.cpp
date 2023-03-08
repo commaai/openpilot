@@ -274,9 +274,9 @@ gps_t::tlm_t::tlm_t(kaitai::kstream* p__io, gps_t* p__parent, gps_t* p__root) : 
 }
 
 void gps_t::tlm_t::_read() {
-    m_magic = m__io->read_bytes(1);
-    if (!(magic() == std::string("\x8B", 1))) {
-        throw kaitai::validation_not_equal_error<std::string>(std::string("\x8B", 1), magic(), _io(), std::string("/types/tlm/seq/0"));
+    m_preamble = m__io->read_bytes(1);
+    if (!(preamble() == std::string("\x8B", 1))) {
+        throw kaitai::validation_not_equal_error<std::string>(std::string("\x8B", 1), preamble(), _io(), std::string("/types/tlm/seq/0"));
     }
     m_tlm = m__io->read_bits_int_be(14);
     m_integrity_status = m__io->read_bits_int_be(1);

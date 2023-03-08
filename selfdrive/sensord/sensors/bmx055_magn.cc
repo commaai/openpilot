@@ -66,8 +66,6 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
 BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Magn::init() {
-  int ret;
-  uint8_t buffer[1];
   uint8_t trim_x1y1[2] = {0};
   uint8_t trim_x2y2[2] = {0};
   uint8_t trim_xy1xy2[2] = {0};
@@ -78,23 +76,16 @@ int BMX055_Magn::init() {
   uint8_t trim_xyz1[2] = {0};
 
   // suspend -> sleep
-  ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
+  int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
   if(ret < 0) {
     LOGE("Enabling power failed: %d", ret);
     goto fail;
   }
   util::sleep_for(5); // wait until the chip is powered on
 
-  // read chip ID
-  ret = read_register(BMX055_MAGN_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
+  ret = verify_chip_id(BMX055_MAGN_I2C_REG_ID, {BMX055_MAGN_CHIP_ID});
+  if (ret == -1) {
     goto fail;
-  }
-
-  if(buffer[0] != BMX055_MAGN_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_MAGN_CHIP_ID);
-    return -1;
   }
 
   // Load magnetometer trim
@@ -223,7 +214,7 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 }
 
 
-bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
+bool BMX055_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
@@ -233,6 +224,8 @@ bool BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
 
   bool parsed = parse_xyz(buffer, &_x, &_y, &z);
   if (parsed) {
+
+    auto event = msg.initEvent().initMagnetometer();
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
     event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);

@@ -40,6 +40,9 @@ public:
 private:
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
+  ToggleControl* roamingToggle;
+  ButtonControl* editApnButton;
+  ToggleControl* meteredToggle;
   WifiManager* wifi = nullptr;
   Params params;
 

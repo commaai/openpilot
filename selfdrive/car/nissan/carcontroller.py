@@ -1,6 +1,6 @@
 from cereal import car
-from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
+from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.nissan import nissancan
 from selfdrive.car.nissan.values import CAR, CarControllerParams
 
@@ -14,11 +14,11 @@ class CarController:
     self.frame = 0
 
     self.lkas_max_torque = 0
-    self.last_angle = 0
+    self.apply_angle_last = 0
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
@@ -28,18 +28,11 @@ class CarController:
     ### STEER ###
     lkas_hud_msg = CS.lkas_hud_msg
     lkas_hud_info_msg = CS.lkas_hud_info_msg
-    apply_angle = actuators.steeringAngleDeg
-
     steer_hud_alert = 1 if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
     if CC.latActive:
       # windup slower
-      if self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle):
-        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_V)
-      else:
-        angle_rate_lim = interp(CS.out.vEgo, CarControllerParams.ANGLE_DELTA_BP, CarControllerParams.ANGLE_DELTA_VU)
-
-      apply_angle = clip(apply_angle, self.last_angle - angle_rate_lim, self.last_angle + angle_rate_lim)
+      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams)
 
       # Max torque from driver before EPS will give up and not apply torque
       if not bool(CS.out.steeringPressed):
@@ -57,7 +50,7 @@ class CarController:
       apply_angle = CS.out.steeringAngleDeg
       self.lkas_max_torque = 0
 
-    self.last_angle = apply_angle
+    self.apply_angle_last = apply_angle
 
     if self.CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA) and pcm_cancel_cmd:
       can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg))

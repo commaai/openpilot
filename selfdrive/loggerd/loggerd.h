@@ -10,6 +10,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"

@@ -8,20 +8,8 @@
 MMC5603NJ_Magn::MMC5603NJ_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
 int MMC5603NJ_Magn::init() {
-  int ret = 0;
-  uint8_t buffer[1];
-
-  ret = read_register(MMC5603NJ_I2C_REG_ID, buffer, 1);
-  if(ret < 0) {
-    LOGE("Reading chip ID failed: %d", ret);
-    goto fail;
-  }
-
-  if(buffer[0] != MMC5603NJ_CHIP_ID) {
-    LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], MMC5603NJ_CHIP_ID);
-    ret = -1;
-    goto fail;
-  }
+  int ret = verify_chip_id(MMC5603NJ_I2C_REG_ID, {MMC5603NJ_CHIP_ID});
+  if (ret == -1) return -1;
 
   // Set 100 Hz
   ret = set_register(MMC5603NJ_I2C_REG_ODR, 100);
@@ -79,8 +67,7 @@ fail:
   return ret;
 }
 
-bool MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
-
+bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
   int len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
@@ -91,6 +78,7 @@ bool MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   float y = read_20_bit(buffer[7], buffer[3], buffer[2]) * scale;
   float z = read_20_bit(buffer[8], buffer[5], buffer[4]) * scale;
 
+  auto event = msg.initEvent().initMagnetometer();
   event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
   event.setVersion(1);
   event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);

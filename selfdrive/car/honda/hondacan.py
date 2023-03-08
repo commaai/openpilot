@@ -13,7 +13,8 @@ def get_pt_bus(car_fingerprint):
 
 
 def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
-  if radar_disabled:
+  no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
+  if radar_disabled or no_radar:
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
@@ -104,13 +105,13 @@ def create_bosch_supplemental_1(packer, car_fingerprint):
 def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, lkas_hud):
   commands = []
   bus_pt = get_pt_bus(CP.carFingerprint)
-  radar_disabled = CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl
+  radar_disabled = CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl
   bus_lkas = get_lkas_cmd_bus(CP.carFingerprint, radar_disabled)
 
   if CP.openpilotLongitudinalControl:
     acc_hud_values = {
       'CRUISE_SPEED': hud.v_cruise,
-      'ENABLE_MINI_CAR': 1,
+      'ENABLE_MINI_CAR': 1 if enabled else 0,
       'HUD_DISTANCE': 0,  # max distance setting on display
       'IMPERIAL_UNIT': int(not is_metric),
       'HUD_LEAD': 2 if enabled and hud.lead_visible else 1 if enabled else 0,
@@ -153,7 +154,7 @@ def create_ui_commands(packer, CP, enabled, pcm_speed, hud, is_metric, acc_hud, 
   else:
     commands.append(packer.make_can_msg('LKAS_HUD', bus_lkas, lkas_hud_values))
 
-  if radar_disabled and CP.carFingerprint in HONDA_BOSCH:
+  if radar_disabled:
     radar_hud_values = {
       'CMBS_OFF': 0x01,
       'SET_TO_1': 0x01,

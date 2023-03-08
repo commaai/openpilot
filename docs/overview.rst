@@ -77,3 +77,4 @@ tools
    Simulator <tools/sim/README.md>
    tools/ssh/README.md
    Webcam <tools/webcam/README.md>
+   tools/cabana/README.md

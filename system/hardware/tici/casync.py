@@ -86,6 +86,7 @@ class RemoteChunkReader(ChunkReader):
 def parse_caibx(caibx_path: str) -> List[Chunk]:
   """Parses the chunks from a caibx file. Can handle both local and remote files.
   Returns a list of chunks with hash, offset and length"""
+  caibx: io.BufferedIOBase
   if os.path.isfile(caibx_path):
     caibx = open(caibx_path, 'rb')
   else:
