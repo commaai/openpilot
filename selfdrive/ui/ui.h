@@ -182,6 +182,7 @@ private:
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
+  bool driver_view_enabled = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
   QFuture<void> brightness_future;

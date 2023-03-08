@@ -344,10 +344,11 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  bool reset_timeout = (!s.scene.ignition && ignition_on) || (s.driverViewEnabled() && !driver_view_enabled);
   ignition_on = s.scene.ignition;
+  driver_view_enabled = s.driverViewEnabled();
 
-  if (ignition_just_turned_off) {
+  if (reset_timeout) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();
