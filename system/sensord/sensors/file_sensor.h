@@ -4,7 +4,7 @@
 #include <string>
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/sensord/sensors/sensor.h"
+#include "system/sensord/sensors/sensor.h"
 
 class FileSensor : public Sensor {
 protected:

@@ -3,7 +3,7 @@
 #include <string>
 
 #include "common/timing.h"
-#include "selfdrive/sensord/sensors/constants.h"
+#include "system/sensord/sensors/constants.h"
 
 LightSensor::LightSensor(std::string filename) : FileSensor(filename) {}
 
