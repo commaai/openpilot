@@ -577,13 +577,14 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/accel/opencl/*
-tinygrad_repo/tinygrad/llops/ops_opencl.py
 tinygrad_repo/openpilot/compile.py
 tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
-tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/codegen/ast.py
+tinygrad_repo/tinygrad/codegen/gpu.py
 tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/runtime/ops_gpu.py
+tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py

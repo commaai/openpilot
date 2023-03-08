@@ -161,6 +161,7 @@ pipeline {
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
               ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
+              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
             ])
           }
         }

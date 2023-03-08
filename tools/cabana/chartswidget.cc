@@ -562,6 +562,9 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
       }
+      if (!can->liveStreaming()) {
+        s.segment_tree.build(s.vals);
+      }
       s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
     }
   }
@@ -586,15 +589,24 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
-    for (auto it = first; it != last; ++it) {
-      if (it->y() < min) min = it->y();
-      if (it->y() > max) max = it->y();
+    if (can->liveStreaming()) {
+      for (auto it = first; it != last; ++it) {
+        if (it->y() < min) min = it->y();
+        if (it->y() > max) max = it->y();
+      }
+    } else {
+      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
+      min = std::min(min, min_y);
+      max = std::max(max, max_y);
     }
   }
-  axis_y->setTitleText(unit);
-
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
+
+  if (axis_y->titleText() != unit) {
+    axis_y->setTitleText(unit);
+    y_label_width = 0;// recalc width
+  }
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
   auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
@@ -705,14 +717,16 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       if (!s.series->isVisible()) continue;
 
       // use reverse iterator to find last item <= sec.
+      double value = 0;
       auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = it->y();
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
       text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
                               .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(s.track_pt.y())));
+                                   s.track_pt.isNull() ? "--" : QString::number(value)));
     }
     if (x < 0) {
       x = ev->pos().x();

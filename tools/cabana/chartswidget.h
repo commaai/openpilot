@@ -46,6 +46,7 @@ public:
     QVector<QPointF> step_vals;
     uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
+    SegmentTree segment_tree;
   };
 
 signals:
