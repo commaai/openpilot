@@ -183,7 +183,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
     gps_t subframe(&stream);
 
     int subframe_id = subframe.how()->subframe_id();
-    if (subframe_id > 3) {
+    if (subframe_id > 3 || subframe_id < 1) {
       // dont parse almanac subframes
       return kj::Array<capnp::word>();
     }
@@ -283,7 +283,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     glonass_t gl_string(&stream);
 
     int string_number = gl_string.string_number();
-    if (string_number > 5 || gl_string.idle_chip()) {
+    if (string_number < 1 || string_number > 5 || gl_string.idle_chip()) {
       // dont parse non immediate data, idle_chip == 0
       return kj::Array<capnp::word>();
     }
