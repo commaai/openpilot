@@ -159,7 +159,7 @@ pipeline {
               ["test power draw", "python system/hardware/tici/test_power_draw.py"],
               ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-              ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
+              ["test pigeond", "python system/sensord/tests/test_pigeond.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
               ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
             ])
@@ -193,11 +193,11 @@ pipeline {
           steps {
             phone_steps("tici-lsmc", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
             ])
             phone_steps("tici-bmx-lsm", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
             ])
           }
         }

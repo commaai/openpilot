@@ -4,7 +4,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-import selfdrive.sensord.pigeond as pd
+import system.sensord.pigeond as pd
 
 from common.params import Params
 from system.hardware import TICI

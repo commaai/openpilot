@@ -15,8 +15,8 @@ from common.gpio import gpio_init, gpio_set
 from laika.gps_time import GPSTime
 from system.hardware.tici.pins import GPIO
 from system.swaglog import cloudlog
-from selfdrive.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from selfdrive.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
+from system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
+from system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
                                               gps_measurement_report, gps_measurement_report_sv,
                                               glonass_measurement_report, glonass_measurement_report_sv,
                                               oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
