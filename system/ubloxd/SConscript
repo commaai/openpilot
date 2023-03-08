@@ -10,11 +10,11 @@ if GetOption('kaitai'):
   glonass = env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
 
   # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
-  patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
-  env.Depends(patch, glonass)
+  #patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
+  #env.Depends(patch, glonass)
 
 glonass_obj = env.Object('generated/glonass.cpp')
 env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  glonass_obj], LIBS=loc_libs)
 
-#if GetOption('test'):
-#  env.Program("test/test_glonass_runner", ['test/test_glonass_runner.cc', 'test/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])
+if GetOption('test'):
+  env.Program("tests/test_glonass_runner", ['tests/test_glonass_runner.cc', 'tests/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])
