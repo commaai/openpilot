@@ -2,6 +2,7 @@
 #include "selfdrive/loggerd/video_writer.h"
 
 ExitHandler do_exit;
+struct RemoteEncoder;
 
 struct LoggerdState {
   LoggerState logger = {};
@@ -11,6 +12,7 @@ struct LoggerdState {
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   int max_waiting = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
+  std::unordered_map<std::string, std::unique_ptr<RemoteEncoder>> encoders;
 };
 
 void logger_rotate(LoggerdState *s) {
@@ -48,6 +50,12 @@ void rotate_if_needed(LoggerdState *s) {
 }
 
 struct RemoteEncoder {
+  RemoteEncoder(const std::string &name);
+
+  const std::string name;
+  LogCameraInfo cam_info = {};
+  cereal::EncodeData::Reader (cereal::Event::Reader::*getEncodeData)() const;
+  void (cereal::Event::Builder::*setEncodeIdx)(cereal::EncodeIndex::Reader);
   std::unique_ptr<VideoWriter> writer;
   int encoderd_segment_offset;
   int current_segment = -1;
@@ -58,18 +66,33 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
-    ((name == "wideRoadEncodeData") ? cameras_logged[2] :
-    ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+RemoteEncoder::RemoteEncoder(const std::string &name) : name(name) {
+  if (name == "roadEncodeData") {
+    cam_info = cameras_logged[0];
+    getEncodeData = &cereal::Event::Reader::getRoadEncodeData;
+    setEncodeIdx = &cereal::Event::Builder::setRoadEncodeIdx;
+  } else if (name == "driverEncodeData") {
+    cam_info = cameras_logged[1];
+    getEncodeData = &cereal::Event::Reader::getDriverEncodeData;
+    setEncodeIdx = &cereal::Event::Builder::setDriverEncodeIdx;
+  } else if (name == "wideRoadEncodeData") {
+    cam_info = cameras_logged[2];
+    getEncodeData = &cereal::Event::Reader::getWideRoadEncodeData;
+    setEncodeIdx = &cereal::Event::Builder::setWideRoadEncodeIdx;
+  } else {
+    cam_info = qcam_info;
+    getEncodeData = &cereal::Event::Reader::getQRoadEncodeData;
+    setEncodeIdx = &cereal::Event::Builder::setQRoadEncodeIdx;
+  }
+}
+
+int handle_encoder_msg(LoggerdState *s, Message *msg, struct RemoteEncoder &re) {
   int bytes_count = 0;
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
-    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  const auto edata = (event.*re.getEncodeData)();
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
@@ -77,7 +100,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   if (!re.seen_first_packet) {
     re.seen_first_packet = true;
     re.encoderd_segment_offset = idx.getSegmentNum();
-    LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
+    LOGD("%s: has encoderd offset %d", re.name.c_str(), re.encoderd_segment_offset);
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
@@ -95,7 +118,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg: re.q) {
-          bytes_count += handle_encoder_msg(s, qmsg, name, re);
+          bytes_count += handle_encoder_msg(s, qmsg, re);
         }
         re.q.clear();
       }
@@ -107,14 +130,14 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         // only create on iframe
         if (re.dropped_frames) {
           // this should only happen for the first segment, maybe
-          LOGW("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
+          LOGW("%s: dropped %d non iframe packets before init", re.name.c_str(), re.dropped_frames);
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (cam_info.record) {
+        if (re.cam_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+            re.cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            re.cam_info.frame_width, re.cam_info.frame_height, re.cam_info.fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -142,10 +165,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
-    if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
-    if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
-    if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
-    if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+    (evt.*re.setEncodeIdx)(idx);
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
@@ -159,13 +179,13 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%d for %s",
         s->rotate_segment.load(), offset_segment_num,
-        s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+        s->ready_to_rotate.load(), s->max_waiting, re.name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d re.encoderd_segment_offset:%d",
-      name.c_str(), idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
+      re.name.c_str(), idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
     re.encoderd_segment_offset = -s->rotate_segment.load();
@@ -173,6 +193,14 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   }
 
   return bytes_count;
+}
+
+int handle_encoder_msg(LoggerdState *s, Message *msg, const std::string &name) {
+  auto &re = s->encoders[name];
+  if (!re) {
+    re.reset(new RemoteEncoder(name));
+  }
+  return handle_encoder_msg(s, msg, *re);
 }
 
 void loggerd_thread() {
@@ -183,8 +211,6 @@ void loggerd_thread() {
     bool encoder;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
-  std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
-
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
 
@@ -234,7 +260,7 @@ void loggerd_thread() {
 
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+          bytes_count += handle_encoder_msg(&s, msg, qs.name);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
