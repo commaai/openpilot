@@ -276,6 +276,7 @@ selfdrive/loggerd/uploader.py
 selfdrive/loggerd/deleter.py
 selfdrive/loggerd/xattr_cache.py
 
+system/sensord/.gitignore
 system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
