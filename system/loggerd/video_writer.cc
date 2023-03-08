@@ -2,7 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 
-#include "selfdrive/loggerd/video_writer.h"
+#include "system/loggerd/video_writer.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 

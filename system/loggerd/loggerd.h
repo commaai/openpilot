@@ -23,13 +23,13 @@
 #include "common/util.h"
 #include "system/hardware/hw.h"
 
-#include "selfdrive/loggerd/encoder/encoder.h"
-#include "selfdrive/loggerd/logger.h"
+#include "system/loggerd/encoder/encoder.h"
+#include "system/loggerd/logger.h"
 #ifdef QCOM2
-#include "selfdrive/loggerd/encoder/v4l_encoder.h"
+#include "system/loggerd/encoder/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else
-#include "selfdrive/loggerd/encoder/ffmpeg_encoder.h"
+#include "system/loggerd/encoder/ffmpeg_encoder.h"
 #define Encoder FfmpegEncoder
 #endif
 

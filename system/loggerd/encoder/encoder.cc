@@ -1,5 +1,5 @@
 #include <cassert>
-#include "selfdrive/loggerd/encoder/encoder.h"
+#include "system/loggerd/encoder/encoder.h"
 
 VideoEncoder::~VideoEncoder() {}
 

@@ -1,5 +1,5 @@
-#include "selfdrive/loggerd/loggerd.h"
-#include "selfdrive/loggerd/video_writer.h"
+#include "system/loggerd/loggerd.h"
+#include "system/loggerd/video_writer.h"
 
 ExitHandler do_exit;
 

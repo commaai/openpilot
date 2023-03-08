@@ -7,7 +7,7 @@
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc.h"
 #include "common/queue.h"
-#include "selfdrive/loggerd/video_writer.h"
+#include "system/loggerd/video_writer.h"
 #include "system/camerad/cameras/camera_common.h"
 
 #define V4L2_BUF_FLAG_KEYFRAME 8
