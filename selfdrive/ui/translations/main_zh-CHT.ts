@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 需要將裝置固定在左右偏差 4° 以內，朝上偏差 5° 以内或朝下偏差 8° 以内。鏡頭在後台會持續自動校準，很少有需要重置的情况。</translation>
+        <translation>openpilot 需要將設備固定在左右偏差 4° 以內，朝上偏差 5° 以内或朝下偏差 8° 以内。鏡頭在後台會持續自動校準，很少有需要重置的情况。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -601,7 +601,7 @@ location set</source>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation>裝置重置中 此過程可能需要幾分鐘</translation>
+        <translation>設備重置中 此過程可能需要幾分鐘</translation>
     </message>
 </context>
 <context>
