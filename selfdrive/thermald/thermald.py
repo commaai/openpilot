@@ -18,7 +18,7 @@ from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, TICI, AGNOS
-from selfdrive.loggerd.config import get_available_percent
+from system.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
