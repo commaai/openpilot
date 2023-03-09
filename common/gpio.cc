@@ -1,5 +1,20 @@
 #include "common/gpio.h"
 
+#ifdef __APPLE__
+int gpio_init(int pin_nr, bool output) {
+  return 0;
+}
+
+int gpio_set(int pin_nr, bool high) {
+  return 0;
+}
+
+int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int pin_nr) {
+  return 0;
+}
+
+#else
+
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -63,3 +78,5 @@ int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int p
   close(fd);
   return rq.fd;
 }
+
+#endif

@@ -16,10 +16,13 @@ public:
   static int get_voltage() { return 0; };
   static int get_current() { return 0; };
 
+  static std::string get_serial() { return "cccccc"; }
+
   static void reboot() {}
   static void poweroff() {}
   static void set_brightness(int percent) {}
   static void set_display_power(bool on) {}
+  static void set_volume(float volume) {}
 
   static bool get_ssh_enabled() { return false; }
   static void set_ssh_enabled(bool enabled) {}

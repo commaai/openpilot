@@ -15,7 +15,6 @@ RUN mkdir -p $HOME/openpilot
 COPY SConstruct $HOME/openpilot/
 
 COPY ./third_party $HOME/openpilot/third_party
-COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./laika $HOME/openpilot/laika

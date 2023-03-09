@@ -1,5 +1,6 @@
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.tesla.teslacan import TeslaCAN
 from selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams
 
@@ -8,12 +9,12 @@ class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.frame = 0
-    self.last_angle = 0
+    self.apply_angle_last = 0
     self.packer = CANPacker(dbc_name)
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
@@ -24,20 +25,15 @@ class CarController:
     lkas_enabled = CC.latActive and not hands_on_fault
 
     if lkas_enabled:
-      apply_angle = actuators.steeringAngleDeg
-
       # Angular rate limit based on speed
-      steer_up = self.last_angle * apply_angle > 0. and abs(apply_angle) > abs(self.last_angle)
-      rate_limit = CarControllerParams.RATE_LIMIT_UP if steer_up else CarControllerParams.RATE_LIMIT_DOWN
-      max_angle_diff = interp(CS.out.vEgo, rate_limit.speed_points, rate_limit.max_angle_diff_points)
-      apply_angle = clip(apply_angle, self.last_angle - max_angle_diff, self.last_angle + max_angle_diff)
+      apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams)
 
       # To not fault the EPS
       apply_angle = clip(apply_angle, CS.out.steeringAngleDeg - 20, CS.out.steeringAngleDeg + 20)
     else:
       apply_angle = CS.out.steeringAngleDeg
 
-    self.last_angle = apply_angle
+    self.apply_angle_last = apply_angle
     can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, self.frame))
 
     # Longitudinal control (in sync with stock message, about 40Hz)

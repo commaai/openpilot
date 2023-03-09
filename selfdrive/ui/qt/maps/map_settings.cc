@@ -115,7 +115,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
-  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
+  connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
+    stack->setCurrentIndex(prime_type ? 0 : 1);
+  });
 
   QVBoxLayout *wrapper = new QVBoxLayout(this);
   wrapper->addWidget(stack);
@@ -194,7 +196,6 @@ void MapPanel::parseResponse(const QString &response, bool success) {
 }
 
 void MapPanel::refresh() {
-  stack->setCurrentIndex(uiState()->prime_type ? 0 : 1);
   if (cur_destinations == prev_destinations) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());

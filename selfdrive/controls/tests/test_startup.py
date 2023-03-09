@@ -72,6 +72,7 @@ class TestStartup(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
+    params.put_bool("ObdMultiplexingDisabled", True)
 
     # Build capnn version of FW array
     if fw_versions is not None:
@@ -93,6 +94,9 @@ class TestStartup(unittest.TestCase):
       params.put("CarParamsCache", cp.to_bytes())
 
     time.sleep(2) # wait for controlsd to be ready
+
+    pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
+    time.sleep(0.1)
 
     msg = messaging.new_message('pandaStates', 1)
     msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno

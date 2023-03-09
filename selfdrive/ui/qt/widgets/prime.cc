@@ -312,11 +312,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
 
   QJsonObject json = doc.object();
   int prime_type = json["prime_type"].toInt();
-
-  if (uiState()->prime_type != prime_type) {
-    uiState()->prime_type = prime_type;
-    Params().put("PrimeType", std::to_string(prime_type));
-  }
+  uiState()->prime_type = prime_type;
 
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);

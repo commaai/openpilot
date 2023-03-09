@@ -7,6 +7,7 @@ get interrupts in a 2kHz rate.
 
 import argparse
 import sys
+import numpy as np
 from collections import defaultdict
 
 from tools.lib.logreader import LogReader
@@ -23,28 +24,22 @@ def parseEvents(log_reader):
   lsm_data = defaultdict(list)
 
   for m in log_reader:
-    # only sensorEvents
-    if m.which() != 'sensorEvents':
+    if m.which() not in ['accelerometer', 'gyroscope']:
       continue
 
-    for se in m.sensorEvents:
-      # convert data to dictionary
-      d = se.to_dict()
+    d = getattr(m, m.which()).to_dict()
 
-      if d["timestamp"] == 0:
-        continue # empty event?
+    if d["source"] == SRC_BMX and "acceleration" in d:
+      bmx_data["accel"].append(d["timestamp"] / 1e9)
 
-      if d["source"] == SRC_BMX and "acceleration" in d:
-        bmx_data["accel"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_BMX and "gyroUncalibrated" in d:
+      bmx_data["gyro"].append(d["timestamp"] / 1e9)
 
-      if d["source"] == SRC_BMX and "gyroUncalibrated" in d:
-        bmx_data["gyro"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_LSM and "acceleration" in d:
+      lsm_data["accel"].append(d["timestamp"] / 1e9)
 
-      if d["source"] == SRC_LSM and "acceleration" in d:
-        lsm_data["accel"].append(d["timestamp"] / 1e9)
-
-      if d["source"] == SRC_LSM and "gyroUncalibrated" in d:
-        lsm_data["gyro"].append(d["timestamp"] / 1e9)
+    if d["source"] == SRC_LSM and "gyroUncalibrated" in d:
+      lsm_data["gyro"].append(d["timestamp"] / 1e9)
 
   return bmx_data, lsm_data
 
@@ -54,11 +49,7 @@ def cleanData(data):
     return [], []
 
   data.sort()
-  prev = data[0]
-  diffs = []
-  for v in data[1:]:
-    diffs.append(v - prev)
-    prev = v
+  diffs = np.diff(data)
   return data, diffs
 
 
@@ -118,4 +109,3 @@ if __name__ == "__main__":
 
   print("check plot...")
   plt.show()
-

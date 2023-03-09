@@ -50,7 +50,7 @@ public:
   bool isKnownConnection(const QString &ssid);
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
-  void updateGsmSettings(bool roaming, QString apn);
+  void updateGsmSettings(bool roaming, QString apn, bool metered);
   void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
 
   // Tethering functions

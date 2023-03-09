@@ -2,14 +2,13 @@
 from cereal import car
 from panda import Panda
 from selfdrive.car.tesla.values import CANBUS, CAR
-from selfdrive.car import STD_CARGO_KG, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "tesla"
 
     # There is no safe way to do steer blending with user torque,
@@ -24,7 +23,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [0]
     ret.longitudinalTuning.kiBP = [0]
     ret.longitudinalTuning.kiV = [0]
-    ret.stopAccel = 0.0
     ret.longitudinalActuatorDelayUpperBound = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
 
@@ -51,9 +49,6 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"Unsupported car: {candidate}")
 
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
-
     return ret
 
   def _update(self, c):
@@ -63,5 +58,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

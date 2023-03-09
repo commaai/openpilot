@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import traceback
 from collections import defaultdict
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
+from common.params import Params
 from selfdrive.car.ecu_addrs import get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
@@ -30,10 +30,9 @@ def chunks(l, n=128):
 def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    if filter_brand is None or fw.brand == filter_brand:
-      addr = fw.address
+    if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
-      fw_versions_dict[(addr, sub_addr)].add(fw.fwVersion)
+      fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
 
 
@@ -91,7 +90,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict):
+def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -147,12 +146,16 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan):
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
   queries = list()
   parallel_queries = list()
   responses = set()
 
   for brand, r in REQUESTS:
+    # Skip query if no panda available
+    if r.bus > num_pandas * 4 - 1:
+      continue
+
     for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in brand_versions:
         # Only query ecus in whitelist if whitelist is not empty
@@ -172,7 +175,7 @@ def get_present_ecus(logcan, sendcan):
 
   queries.insert(0, parallel_queries)
 
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
+  ecu_responses = set()
   for query in queries:
     ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
@@ -195,25 +198,48 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
-def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, debug=False, progress=False):
+def disable_obd_multiplexing(params):
+  if not params.get_bool("ObdMultiplexingDisabled"):
+    params.put_bool("FirmwareObdQueryDone", True)
+
+    cloudlog.warning("Waiting for OBD multiplexing to be disabled")
+    params.get_bool("ObdMultiplexingDisabled", block=True)
+    cloudlog.warning("OBD multiplexing disabled")
+
+
+def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
+  matched_brand: Optional[str] = None
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
-    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, debug=debug, progress=progress)
+    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
+      matched_brand = brand
       break
+
+  disable_obd_multiplexing(Params())
+
+  # Do non-OBD queries for matched brand, or all if no match is found
+  for brand in FW_QUERY_CONFIGS.keys():
+    if brand == matched_brand or matched_brand is None:
+      all_car_fw.extend(get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, obd_multiplexed=False, debug=debug, progress=progress))
 
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, debug=False, progress=False):
+def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexed=True, debug=False, progress=False):
   versions = VERSIONS.copy()
+
+  # Each brand can define extra ECUs to query for data collection
+  for brand, config in FW_QUERY_CONFIGS.items():
+    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
+
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 
@@ -224,14 +250,18 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
+  logging_addrs = []
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
-    for c in brand_versions.values():
-      for ecu_type, addr, sub_addr in c.keys():
+    for candidate, ecu in brand_versions.items():
+      for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
+
+        if a not in logging_addrs and candidate == "debug":
+          logging_addrs.append(a)
 
         if sub_addr is None:
           if a not in parallel_addrs:
@@ -248,29 +278,38 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, r in requests:
+        # Skip query if no panda available
+        if r.bus > num_pandas * 4 - 1:
+          continue
+        # Or if request is not designated for current multiplexing mode
+        elif r.non_obd == obd_multiplexed:
+          continue
+
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (addr, rx_addr), version in query.get_data(timeout).items():
+            for (tx_addr, sub_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
-              f.ecu = ecu_types.get((brand, addr[0], addr[1]), Ecu.unknown)
+              ecu_key = (brand, tx_addr, sub_addr)
+              f.ecu = ecu_types.get(ecu_key, Ecu.unknown)
               f.fwVersion = version
-              f.address = addr[0]
-              f.responseAddress = rx_addr
+              f.address = tx_addr
+              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
               f.request = r.request
               f.brand = brand
               f.bus = r.bus
+              f.logging = r.logging or ecu_key in logging_addrs
 
-              if addr[1] is not None:
-                f.subAddress = addr[1]
+              if sub_addr is not None:
+                f.subAddress = sub_addr
 
               car_fw.append(f)
         except Exception:
-          cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
+          cloudlog.exception("FW query exception")
 
   return car_fw
 
@@ -288,6 +327,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   logcan = messaging.sub_sock('can')
+  pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
   extra: Any = None
@@ -301,16 +341,17 @@ if __name__ == "__main__":
     extra = {"any": {"debug": extra}}
 
   time.sleep(1.)
+  num_pandas = len(messaging.recv_one_retry(pandaStates_sock).pandaStates)
 
   t = time.time()
   print("Getting vin...")
-  addr, vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
-  print(f'TX: {hex(addr)}, RX: {hex(vin_rx_addr)}, VIN: {vin}')
+  vin_rx_addr, vin = get_vin(logcan, sendcan, 1, retry=10, debug=args.debug)
+  print(f'RX: {hex(vin_rx_addr)}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers)
 
   print()
