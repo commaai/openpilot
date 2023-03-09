@@ -669,13 +669,15 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
       return;
     }
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    // Save current playback state when scrubbing
-    resume_after_scrub = !can->isPaused();
-    if (resume_after_scrub) {
-      can->pause(true);
-    }
+    if (!can->liveStreaming()) {
+      // Save current playback state when scrubbing
+      resume_after_scrub = !can->isPaused();
+      if (resume_after_scrub) {
+        can->pause(true);
+      }
 
-    is_scrubbing = true;
+      is_scrubbing = true;
+    }
   } else {
     QChartView::mousePressEvent(event);
   }
