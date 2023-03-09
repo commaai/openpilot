@@ -668,6 +668,16 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     if (dropAction == Qt::MoveAction) {
       return;
     }
+  } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    if (!can->liveStreaming()) {
+      // Save current playback state when scrubbing
+      resume_after_scrub = !can->isPaused();
+      if (resume_after_scrub) {
+        can->pause(true);
+      }
+
+      is_scrubbing = true;
+    }
   } else {
     QChartView::mousePressEvent(event);
   }
@@ -701,9 +711,25 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   } else {
     QGraphicsView::mouseReleaseEvent(event);
   }
+
+  // Resume playback if we were scrubbing
+  is_scrubbing = false;
+  if (resume_after_scrub) {
+    can->pause(false);
+    resume_after_scrub = false;
+  }
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
+  // Scrubbing
+  if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    double t = chart()->mapToValue({(double)ev->x(), (double)ev->y()}).x();
+    // Prevent seeking past the end of the route
+    t = std::clamp(t, 0., can->totalSeconds());
+    can->seekTo(t);
+    return;
+  }
+
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
