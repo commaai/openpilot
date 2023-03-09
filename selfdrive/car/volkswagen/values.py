@@ -129,6 +129,7 @@ class CAR:
   AUDI_Q3_MK2 = "AUDI Q3 2ND GEN"                   # Chassis 8U/F3/FS, Mk2 Audi Q3 and variants
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"               # Chassis 5F, Mk3 SEAT Leon and variants
+  SKODA_FABIA_MK4 = "SKODA FABIA 4TH GEN"           # Chassis PJ, Mk4 Skoda Fabia
   SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"           # Chassis NW, Mk1 Skoda Kamiq
   SKODA_KAROQ_MK1 = "SKODA KAROQ 1ST GEN"           # Chassis NU, Mk1 Skoda Karoq
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"         # Chassis NS, Mk1 Skoda Kodiaq
@@ -239,9 +240,10 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2019-23"),
   CAR.SEAT_ATECA_MK1: VWCarInfo("SEAT Ateca 2018"),
   CAR.SEAT_LEON_MK3: VWCarInfo("SEAT Leon 2014-20"),
+  CAR.SKODA_FABIA_MK4: VWCarInfo("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0]),
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
   CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
-  CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2018-19"),
+  CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2017-23"),
   CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020", footnotes=[Footnote.VW_MQB_A0]),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-22"),
   CAR.SKODA_OCTAVIA_MK3: [
@@ -1009,6 +1011,23 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },
+  CAR.SKODA_FABIA_MK4: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018CF\xf1\x891905',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300051M \xf1\x891936',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875QF959655AT\xf1\x890755\xf1\x82\x1311110011110011111100110200--1111120749',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x872Q1909144S \xf1\x896042',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
+    ],
+  },
   CAR.SKODA_KAMIQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705C906032M \xf1\x891333',
@@ -1052,17 +1071,20 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027DD\xf1\x893123',
       b'\xf1\x8704L906026DE\xf1\x895418',
+      b'\xf1\x8704L906026EJ\xf1\x893661',
       b'\xf1\x8704L906026HT\xf1\x893617',
       b'\xf1\x875NA907115E \xf1\x890003',
       b'\xf1\x875NA907115E \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870D9300043  \xf1\x895202',
+      b'\xf1\x870DL300011N \xf1\x892014',
       b'\xf1\x870DL300012M \xf1\x892107',
       b'\xf1\x870DL300012N \xf1\x892110',
       b'\xf1\x870DL300013G \xf1\x892119',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655AP\xf1\x890306\xf1\x82\r11110011110011421111314211',
       b'\xf1\x873Q0959655BJ\xf1\x890703\xf1\x82\x0e1213001211001205212111052100',
       b'\xf1\x873Q0959655BK\xf1\x890703\xf1\x82\x0e1213001211001244212111442100',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e1213001211001205212112052100',
@@ -1077,6 +1099,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572Q \xf1\x890342',
       b'\xf1\x872Q0907572R \xf1\x890372',
+      b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x872Q0907572AA\xf1\x890396',
     ],
   },

@@ -97,6 +97,8 @@ private:
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   SeriesType series_type = SeriesType::Line;
+  bool is_scrubbing = false;
+  bool resume_after_scrub = false;
   friend class ChartsWidget;
  };
 
