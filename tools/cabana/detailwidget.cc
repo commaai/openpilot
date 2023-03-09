@@ -194,7 +194,7 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
   form_layout->addRow(tr("Size"), size_spin);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  btn_box->button(QDialogButtonBox::Ok)->setEnabled(false);
+  validateName(name_edit->text());
   form_layout->addRow(btn_box);
 
   setFixedWidth(parent->width() * 0.9);
@@ -204,9 +204,9 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
 }
 
 void EditMessageDialog::validateName(const QString &text) {
-  bool valid = false;
+  bool valid = text.compare(UNTITLED, Qt::CaseInsensitive) != 0;
   error_label->setVisible(false);
-  if (!text.isEmpty() && text != original_name && text.compare(UNTITLED, Qt::CaseInsensitive) != 0) {
+  if (!text.isEmpty() && valid && text != original_name) {
     valid = std::none_of(dbc()->messages().begin(), dbc()->messages().end(),
                          [&text](auto &m) { return m.second.name == text; });
     if (!valid) {
