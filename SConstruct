@@ -398,6 +398,7 @@ SConscript([
   'system/camerad/SConscript',
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
+  'system/ubloxd/SConscript',
 ])
 if arch != "Darwin":
   SConscript(['system/logcatd/SConscript'])

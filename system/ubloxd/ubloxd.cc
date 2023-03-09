@@ -5,7 +5,7 @@
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-#include "selfdrive/locationd/ublox_msg.h"
+#include "system/ubloxd/ublox_msg.h"
 
 ExitHandler do_exit;
 using namespace ublox;
