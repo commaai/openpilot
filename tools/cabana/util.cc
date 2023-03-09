@@ -170,6 +170,8 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   btn->setIcon(utils::icon(icon));
   btn->setToolTip(tooltip);
   btn->setAutoRaise(true);
+  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
+  btn->setIconSize({metric, metric});
   return btn;
 };
 
