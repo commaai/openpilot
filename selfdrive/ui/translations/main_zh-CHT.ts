@@ -703,7 +703,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation>定制的軟體</translation>
+        <translation>無法在此URL找到定制的軟體</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
