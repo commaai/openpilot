@@ -11,8 +11,7 @@
 #include <QToolButton>
 #include <QVector>
 
-#include "tools/cabana/dbcmanager.h"
-using namespace dbcmanager;
+#include "tools/cabana/dbc.h"
 
 class ChangeTracker {
 public:
@@ -59,7 +58,7 @@ public:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const dbcmanager::Signal *sig);
+QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT

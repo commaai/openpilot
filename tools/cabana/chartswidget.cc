@@ -189,7 +189,7 @@ void ChartsWidget::settingChanged() {
   }
 }
 
-ChartView *ChartsWidget::findChart(const MessageId &id, const Signal *sig) {
+ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *sig) {
   for (auto c : charts)
     if (c->hasSeries(id, sig)) return c;
   return nullptr;
@@ -212,7 +212,7 @@ ChartView *ChartsWidget::createChart() {
   return chart;
 }
 
-void ChartsWidget::showChart(const MessageId &id, const Signal *sig, bool show, bool merge) {
+void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge) {
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
     chart = merge && charts.size() > 0 ? charts.back() : createChart();
@@ -377,7 +377,7 @@ void ChartView::createToolButtons() {
   });
 }
 
-void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
+void ChartView::addSeries(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSeries(msg_id, sig)) return;
 
   QXYSeries *series = createSeries(series_type, getColor(sig));
@@ -388,7 +388,7 @@ void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
   emit seriesAdded(msg_id, sig);
 }
 
-bool ChartView::hasSeries(const MessageId &msg_id, const Signal *sig) const {
+bool ChartView::hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
@@ -413,7 +413,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   }
 }
 
-void ChartView::signalUpdated(const Signal *sig) {
+void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
     // TODO: don't update series if only name changed.
@@ -502,7 +502,7 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
+void ChartView::updateSeries(const cabana::Signal *sig, const std::vector<Event *> *events, bool clear) {
   events = events ? events : can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
@@ -980,7 +980,7 @@ void SeriesSelector::updateAvailableList(int index) {
   }
 }
 
-void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const Signal *sig, bool show_msg_name) {
+void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
   QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name);
   if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
 

@@ -15,7 +15,6 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 using namespace QtCharts;
 
 const int CHART_MIN_WIDTH = 300;
@@ -31,16 +30,16 @@ class ChartView : public QChartView {
 
 public:
   ChartView(QWidget *parent = nullptr);
-  void addSeries(const MessageId &msg_id, const Signal *sig);
-  bool hasSeries(const MessageId &msg_id, const Signal *sig) const;
-  void updateSeries(const Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
+  void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
+  bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
+  void updateSeries(const cabana::Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left);
 
   struct SigItem {
     MessageId msg_id;
-    const Signal *sig = nullptr;
+    const cabana::Signal *sig = nullptr;
     QXYSeries *series = nullptr;
     QVector<QPointF> vals;
     QVector<QPointF> step_vals;
@@ -50,8 +49,8 @@ public:
   };
 
 signals:
-  void seriesRemoved(const MessageId &id, const Signal *sig);
-  void seriesAdded(const MessageId &id, const Signal *sig);
+  void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
+  void seriesAdded(const MessageId &id, const cabana::Signal *sig);
   void zoomIn(double min, double max);
   void zoomReset();
   void remove();
@@ -59,11 +58,11 @@ signals:
 
 private slots:
   void msgUpdated(uint32_t address);
-  void signalUpdated(const Signal *sig);
+  void signalUpdated(const cabana::Signal *sig);
   void manageSeries();
   void handleMarkerClicked();
   void msgRemoved(uint32_t address) { removeIf([=](auto &s) { return s.msg_id.address == address; }); }
-  void signalRemoved(const Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
+  void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
   void createToolButtons();
@@ -107,8 +106,8 @@ class ChartsWidget : public QFrame {
 
 public:
   ChartsWidget(QWidget *parent = nullptr);
-  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
-  inline bool hasSignal(const MessageId &id, const Signal *sig) { return findChart(id, sig) != nullptr; }
+  void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
+  inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
 
 public slots:
   void setColumnCount(int n);
@@ -134,7 +133,7 @@ private:
   void updateLayout();
   void settingChanged();
   bool eventFilter(QObject *obj, QEvent *event) override;
-  ChartView *findChart(const MessageId &id, const Signal *sig);
+  ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
   QLabel *title_label;
   QLabel *range_lb;
@@ -160,18 +159,18 @@ private:
 class SeriesSelector : public QDialog {
 public:
   struct ListItem : public QListWidgetItem {
-    ListItem(const MessageId &msg_id, const Signal *sig, QListWidget *parent) : msg_id(msg_id), sig(sig), QListWidgetItem(parent) {}
+    ListItem(const MessageId &msg_id, const cabana::Signal *sig, QListWidget *parent) : msg_id(msg_id), sig(sig), QListWidgetItem(parent) {}
     MessageId msg_id;
-    const Signal *sig;
+    const cabana::Signal *sig;
   };
 
   SeriesSelector(QString title, QWidget *parent);
   QList<ListItem *> seletedItems();
-  inline void addSelected(const MessageId &id, const Signal *sig) { addItemToList(selected_list, id, sig, true); }
+  inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig, true); }
 
 private:
   void updateAvailableList(int index);
-  void addItemToList(QListWidget *parent, const MessageId id, const Signal *sig, bool show_msg_name = false);
+  void addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name = false);
   void add(QListWidgetItem *item);
   void remove(QListWidgetItem *item);
 

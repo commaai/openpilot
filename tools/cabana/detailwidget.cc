@@ -68,7 +68,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
-  QObject::connect(binary_view, &BinaryView::signalClicked, [this](const Signal *s) { signal_view->selectSignal(s, true); });
+  QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
   QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
   QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
