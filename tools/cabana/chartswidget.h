@@ -138,7 +138,7 @@ private:
 
   QLabel *title_label;
   QLabel *range_lb;
-  QSlider *range_slider;
+  LogSlider *range_slider;
   QAction *range_lb_action;
   QAction *range_slider_action;
   bool docking = true;
