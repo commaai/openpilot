@@ -214,6 +214,7 @@ void MainWindow::undoStackIndexChanged(int index) {
   }
   prev_undostack_index = index;
   prev_undostack_count = count;
+  autoSave();
 }
 
 void MainWindow::undoStackCleanChanged(bool clean) {
@@ -255,7 +256,18 @@ void MainWindow::openFile() {
 
 void MainWindow::loadFile(const QString &fn) {
   if (!fn.isEmpty()) {
-    QFile file(fn);
+    QString dbc_fn = fn;
+
+    // Prompt user to load auto saved file if it exists.
+    if (QFile::exists(fn + AUTO_SAVE_EXTENSION)) {
+      auto ret = QMessageBox::question(this, tr("Auto saved DBC found"), tr("Auto saved DBC file from previous session found. Do you want to load it instead?"));
+      if (ret == QMessageBox::Yes) {
+        dbc_fn += AUTO_SAVE_EXTENSION;
+        UndoStack::instance()->resetClean(); // Force user to save on close so the auto saved file is not lost
+      }
+    }
+
+    QFile file(dbc_fn);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
@@ -340,7 +352,23 @@ void MainWindow::save() {
   }
 }
 
+void MainWindow::autoSave() {
+  if (!current_file.isEmpty() && !UndoStack::instance()->isClean()) {
+    QFile file(current_file + AUTO_SAVE_EXTENSION);
+    if (file.open(QIODevice::WriteOnly)) {
+      file.write(dbc()->generateDBC().toUtf8());
+    }
+  }
+}
+
+void MainWindow::cleanupAutoSaveFile() {
+  if (!current_file.isEmpty()) {
+    QFile::remove(current_file + AUTO_SAVE_EXTENSION);
+  }
+}
+
 void MainWindow::saveFile(const QString &fn) {
+  cleanupAutoSaveFile();
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(dbc()->generateDBC().toUtf8());
@@ -445,6 +473,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  cleanupAutoSaveFile();
   remindSaveChanges();
 
   main_win = nullptr;
