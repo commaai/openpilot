@@ -236,8 +236,9 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
 
 void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
-  for (int i = 1; !msg; ++i) {
-    QString name = QString("NEW_MSG_%1").arg(i);
+  for (int i = 0; !msg; ++i) {
+    QString name = QString("NEW_MSG_") + QString::number(msg_id.address, 16).toUpper();
+    if (i > 0) name += QString("_%1").arg(i);
     if (std::none_of(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; })) {
       UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
       msg = dbc()->msg(msg_id);
