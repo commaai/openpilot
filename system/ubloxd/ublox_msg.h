@@ -86,7 +86,7 @@ namespace ublox {
 
 class UbloxMsgParser {
   public:
-    bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
+    bool add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
     inline void reset() {bytes_in_parse_buf = 0;}
     inline int needed_bytes();
     inline std::string data() {return std::string((const char*)msg_parse_buf, bytes_in_parse_buf);}
@@ -109,6 +109,7 @@ class UbloxMsgParser {
 
     std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
 
+    float last_log_time = 0.0;
     size_t bytes_in_parse_buf = 0;
     uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];
 
@@ -119,5 +120,6 @@ class UbloxMsgParser {
        {11, 64}, {12, 128}, {13, 256}, {14, 512}, {15, 1024}};
 
     std::unordered_map<int, std::unordered_map<int, std::string>> glonass_strings;
-    std::unordered_map<int, int> glonass_superframes;
+    std::unordered_map<int, std::unordered_map<int, long>> glonass_string_times;
+    std::unordered_map<int, std::unordered_map<int, int>> glonass_string_superframes;
 };

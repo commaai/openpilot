@@ -81,7 +81,8 @@ inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
   return year;
 }
 
-bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
+bool UbloxMsgParser::add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
+  last_log_time = log_time;
   int needed = needed_bytes();
   if(needed > 0) {
     bytes_consumed = std::min((uint32_t)needed, incoming_data_len );
@@ -266,12 +267,8 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 }
 
 kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg) {
-  if (msg->sv_id() == 255) {
-    // data can be decoded before identifying the SV number, in this case 255
-    // is returned, which means "unknown"  (ublox p32)
-    return kj::Array<capnp::word>();
-  }
-
+  // This parser assumes that no 2 satellites of the same frequency
+  // can be in view at the same time
   auto body = *msg->body();
   assert(body.size() == 4);
   {
@@ -284,23 +281,48 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
     kaitai::kstream stream(string_data);
     glonass_t gl_string(&stream);
-
     int string_number = gl_string.string_number();
     if (string_number < 1 || string_number > 5 || gl_string.idle_chip()) {
       // dont parse non immediate data, idle_chip == 0
       return kj::Array<capnp::word>();
     }
 
-    // immediate data is the same within one superframe
-    if (glonass_superframes[msg->sv_id()] != gl_string.superframe_number()) {
-      glonass_strings[msg->sv_id()].clear();
-      glonass_superframes[msg->sv_id()] = gl_string.superframe_number();
+    // Check if new string either has same superframe_id or log transmission times make sense
+    bool superframe_unknown = false;
+    bool needs_clear = false;
+    for (int i = 1; i <= 5; i++) {
+      if (glonass_strings[msg->freq_id()].find(i) == glonass_strings[msg->freq_id()].end())
+        continue;
+      if (glonass_string_superframes[msg->freq_id()][i] == 0 || gl_string.superframe_number() == 0) {
+        superframe_unknown = true;
+      }
+      else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
+        needs_clear = true;
+      }
+      // Check if string times add up to being from the same frame
+      // If superframe is known this is redundant
+      // Strings are sent 2s apart and frames are 30s apart
+      if (superframe_unknown &&
+          std::abs((glonass_string_times[msg->freq_id()][i] - 2.0 * i) - (last_log_time - 2.0 * string_number)) > 10)
+        needs_clear = true;
     }
-    glonass_strings[msg->sv_id()][string_number] = string_data;
+    if (needs_clear) {
+      glonass_strings[msg->freq_id()].clear();
+      glonass_string_superframes[msg->freq_id()].clear();
+      glonass_string_times[msg->freq_id()].clear();
+    }
+    glonass_strings[msg->freq_id()][string_number] = string_data;
+    glonass_string_superframes[msg->freq_id()][string_number] = gl_string.superframe_number();
+    glonass_string_times[msg->freq_id()][string_number] = last_log_time;
+  }
+  if (msg->sv_id() == 255) {
+    // data can be decoded before identifying the SV number, in this case 255
+    // is returned, which means "unknown"  (ublox p32)
+    return kj::Array<capnp::word>();
   }
 
   // publish if strings 1-5 have been collected
-  if (glonass_strings[msg->sv_id()].size() != 5) {
+  if (glonass_strings[msg->freq_id()].size() != 5) {
     return kj::Array<capnp::word>();
   }
 
@@ -311,7 +333,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 1
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][1]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][1]);
     glonass_t gl_stream(&stream);
     glonass_t::string_1_t* data = static_cast<glonass_t::string_1_t*>(gl_stream.data());
 
@@ -324,7 +346,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 2
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][2]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][2]);
     glonass_t gl_stream(&stream);
     glonass_t::string_2_t* data = static_cast<glonass_t::string_2_t*>(gl_stream.data());
 
@@ -338,7 +360,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 3
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][3]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][3]);
     glonass_t gl_stream(&stream);
     glonass_t::string_3_t* data = static_cast<glonass_t::string_3_t*>(gl_stream.data());
 
@@ -352,7 +374,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 4
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][4]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][4]);
     glonass_t gl_stream(&stream);
     glonass_t::string_4_t* data = static_cast<glonass_t::string_4_t*>(gl_stream.data());
 
@@ -370,7 +392,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 5
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][5]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][5]);
     glonass_t gl_stream(&stream);
     glonass_t::string_5_t* data = static_cast<glonass_t::string_5_t*>(gl_stream.data());
 
@@ -399,7 +421,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setSecond((eph.getTk() & 0x1) * 30);
   }
 
-  glonass_strings[msg->sv_id()].clear();
+  glonass_strings[msg->freq_id()].clear();
   return capnp::messageToFlatArray(msg_builder);
 }
 
