@@ -30,6 +30,7 @@ public:
     auto it = msgs.find(address);
     return it != msgs.end() ? &it->second : nullptr;
   }
+  QStringList signalNames();
 
 signals:
   void signalAdded(uint32_t address, const cabana::Signal *sig);

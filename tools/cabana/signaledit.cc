@@ -1,6 +1,7 @@
 #include "tools/cabana/signaledit.h"
 
 #include <QApplication>
+#include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -368,6 +369,14 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
     e->setValidator(index.row() == 0 ? name_validator : double_validator);
+
+    if (item->type == SignalModel::Item::Name) {
+      QCompleter *completer = new QCompleter(dbc()->signalNames());
+      completer->setCaseSensitivity(Qt::CaseInsensitive);
+      completer->setFilterMode(Qt::MatchContains);
+      e->setCompleter(completer);
+    }
+
     return e;
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);

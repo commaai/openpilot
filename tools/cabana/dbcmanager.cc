@@ -178,6 +178,19 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
+QStringList DBCManager::signalNames() {
+  // Used for autocompletion
+  QStringList ret;
+  for (auto const& [_, msg] : msgs) {
+    for (auto sig: msg.getSignals()) {
+      ret << sig->name;
+    }
+  }
+  ret.sort();
+  ret.removeDuplicates();
+  return ret;
+}
+
 DBCManager *dbc() {
   static DBCManager dbc_manager(nullptr);
   return &dbc_manager;
