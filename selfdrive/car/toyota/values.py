@@ -115,12 +115,12 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.AVALONH_TSS2: ToyotaCarInfo("Toyota Avalon Hybrid 2022"),
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
-  CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-22", footnotes=[Footnote.CAMRY]),
+  CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-23"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-20"),
   CAR.CHR_TSS2: ToyotaCarInfo("Toyota C-HR 2021"),
-  CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-19"),
-  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2022"),
+  CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
+  CAR.CHRH_TSS2: ToyotaCarInfo("Toyota C-HR Hybrid 2021-22"),
   CAR.COROLLA: ToyotaCarInfo("Toyota Corolla 2017-19"),
   CAR.COROLLA_TSS2: [
     ToyotaCarInfo("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
@@ -712,6 +712,7 @@ FW_VERSIONS = {
       b'8646FF404000    ',
       b'8646FF406000    ',
       b'8646FF407000    ',
+      b'8646FF407100    ',
     ],
   },
   CAR.CHRH_TSS2: {
@@ -1726,6 +1727,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
       b'\x018966378B3000\x00\x00\x00\x00',
+      b'\x018966378B4100\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
       b'\x018966378B2000\x00\x00\x00\x00',
     ],

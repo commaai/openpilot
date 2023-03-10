@@ -13,6 +13,7 @@ from functools import wraps
 from typing import Optional
 from itertools import accumulate
 
+from .base import BaseHandle
 from .constants import McuType
 from .dfu import PandaDFU
 from .isotp import isotp_send, isotp_recv
@@ -25,11 +26,11 @@ __version__ = '0.0.10'
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, format='%(message)s')
 
-
 USBPACKET_MAX_SIZE = 0x40
 CANPACKET_HEAD_SIZE = 0x6
 DLC_TO_LEN = [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
 LEN_TO_DLC = {length: dlc for (dlc, length) in enumerate(DLC_TO_LEN)}
+
 
 def calculate_checksum(data):
   res = 0
@@ -224,10 +225,11 @@ class Panda:
   FLAG_GM_HW_CAM_LONG = 2
 
   def __init__(self, serial: Optional[str] = None, claim: bool = True, disable_checks: bool = True):
-    self._serial = serial
+    self._connect_serial = serial
     self._disable_checks = disable_checks
 
-    self._handle = None
+    self._handle: BaseHandle
+    self._handle_open = False
     self.can_rx_overflow_buffer = b''
 
     # connect and set mcu type
@@ -243,18 +245,17 @@ class Panda:
     self.close()
 
   def close(self):
-    self._handle.close()
-    self._handle = None
+    if self._handle_open:
+      self._handle.close()
+      self._handle_open = False
 
   def connect(self, claim=True, wait=False):
-    if self._handle is not None:
-      self.close()
-    self._handle = None
+    self.close()
 
     # try USB first, then SPI
-    self._handle, serial, self.bootstub, bcd = self.usb_connect(self._serial, claim=claim, wait=wait)
+    self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim, wait=wait)
     if self._handle is None:
-      self._handle, serial, self.bootstub, bcd = self.spi_connect(self._serial)
+      self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
 
     if self._handle is None:
       raise Exception("failed to connect to panda")
@@ -277,6 +278,8 @@ class Panda:
     self._assume_f4_mcu = (self._bcd_hw_type is None) and missing_hw_type_endpoint
 
     self._serial = serial
+    self._connect_serial = serial
+    self._handle_open = True
     self._mcu_type = self.get_mcu_type()
     self.health_version, self.can_version, self.can_health_version = self.get_packets_versions()
     logging.debug("connected")
@@ -291,20 +294,22 @@ class Panda:
     # get UID to confirm slave is present and up
     handle = None
     spi_serial = None
+    bootstub = None
     try:
       handle = PandaSpiHandle()
-      dat = handle.controlRead(Panda.REQUEST_IN, 0xc3, 0, 0, 12)
+      dat = handle.controlRead(Panda.REQUEST_IN, 0xc3, 0, 0, 12, timeout=100)
       spi_serial = binascii.hexlify(dat).decode()
+      bootstub = Panda.flasher_present(handle)
     except PandaSpiException:
       pass
 
     # no connection or wrong panda
-    if spi_serial is None or (serial is not None and (spi_serial != serial)):
+    if None in (spi_serial, bootstub) or (serial is not None and (spi_serial != serial)):
       handle = None
       spi_serial = None
+      bootstub = False
 
-    # TODO: detect bootstub
-    return handle, spi_serial, False, None
+    return handle, spi_serial, bootstub, None
 
   @staticmethod
   def usb_connect(serial, claim=True, wait=False):
@@ -396,7 +401,7 @@ class Panda:
       self.reconnect()
 
   def reconnect(self):
-    if self._handle is not None:
+    if self._handle_open:
       self.close()
       time.sleep(1.0)
 
@@ -419,12 +424,16 @@ class Panda:
       raise Exception("reconnect failed")
 
   @staticmethod
+  def flasher_present(handle: BaseHandle) -> bool:
+    fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
+    return fr[4:8] == b"\xde\xad\xd0\x0d"
+
+  @staticmethod
   def flash_static(handle, code, mcu_type):
     assert mcu_type is not None, "must set valid mcu_type to flash"
 
     # confirm flasher is present
-    fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
-    assert fr[4:8] == b"\xde\xad\xd0\x0d"
+    assert Panda.flasher_present(handle)
 
     # determine sectors to erase
     apps_sectors_cumsum = accumulate(mcu_type.config.sector_sizes[1:])
@@ -504,6 +513,11 @@ class Panda:
       if timeout is not None and (time.monotonic() - t_start) > timeout:
         return False
     return True
+
+  def up_to_date(self) -> bool:
+    current = self.get_signature()
+    expected = Panda.get_signature_from_firmware(self.get_mcu_type().config.app_path)
+    return (current == expected)
 
   def call_control_api(self, msg):
     self._handle.controlWrite(Panda.REQUEST_OUT, msg, 0, 0, b'')
@@ -596,7 +610,7 @@ class Panda:
     f.seek(-128, 2)  # Seek from end of file
     return f.read(128)
 
-  def get_signature(self):
+  def get_signature(self) -> bytes:
     part_1 = self._handle.controlRead(Panda.REQUEST_IN, 0xd3, 0, 0, 0x40)
     part_2 = self._handle.controlRead(Panda.REQUEST_IN, 0xd4, 0, 0, 0x40)
     return bytes(part_1 + part_2)

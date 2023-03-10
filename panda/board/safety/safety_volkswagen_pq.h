@@ -100,7 +100,7 @@ static const addr_checks* volkswagen_pq_init(uint16_t param) {
 static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &volkswagen_pq_rx_checks,
-                                volkswagen_pq_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter);
+                                volkswagen_pq_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter, NULL);
 
   if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);

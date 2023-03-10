@@ -580,9 +580,9 @@ def parse_qcom_ephem(qcom_poly, current_week):
   t0 = data.t0
   # fix glonass time
   prn = get_prn_from_nmea_id(svId)
-  if prn == 'GLONASS':
+  if prn[0] == 'R':
     # TODO should handle leap seconds better
-    epoch = GPSTime(current_week, (t0 + 3*SECS_IN_WEEK) % (SECS_IN_WEEK) + 18)
+    epoch = GPSTime(current_week, (t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + 18)
   else:
     epoch = GPSTime(current_week, t0)
   poly_data = {}

@@ -2,6 +2,8 @@
 uint32_t *prog_ptr = NULL;
 bool unlocked = false;
 
+void spi_init(void);
+
 #ifdef uart_ring
 void debug_ring_callback(uart_ring *ring) {}
 #endif
@@ -40,6 +42,11 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       if (flash_erase_sector(sec, unlocked)) {
         resp[1] = 0xff;
       }
+      break;
+    // **** 0xc1: get hardware type
+    case 0xc1:
+      resp[0] = hw_type;
+      resp_len = 1;
       break;
     // **** 0xc3: fetch MCU UID
     case 0xc3:
@@ -288,6 +295,12 @@ void soft_flasher_start(void) {
 
   // enable USB
   usb_init();
+
+  // enable SPI
+  if (current_board->has_spi) {
+    gpio_spi_init();
+    spi_init();
+  }
 
   // green LED on for flashing
   current_board->set_led(LED_GREEN, 1);

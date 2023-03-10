@@ -575,16 +575,8 @@ location set</source>
         <translation>您確定要重置你的設備嗎？</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>重置設備中…</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>系統重置</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>系統重置已觸發。請按確認刪除所有內容和設置。按取消恢復啟動。</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -599,8 +591,17 @@ location set</source>
         <translation>確認</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>無法掛載數據分區。請按確認重置您的設備。</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -699,6 +700,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>重新開始</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -180,7 +180,7 @@ static int chrysler_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &chrysler_rx_checks,
                                  chrysler_get_checksum, chrysler_compute_checksum,
-                                 chrysler_get_counter);
+                                 chrysler_get_counter, NULL);
 
   const int bus = GET_BUS(to_push);
   const int addr = GET_ADDR(to_push);

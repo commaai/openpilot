@@ -56,7 +56,7 @@ void fake_siren_init(void) {
   register_set(&DMA1_Stream1->M0AR, (uint32_t) fake_siren_lut, 0xFFFFFFFFU);
   register_set(&DMA1_Stream1->PAR, (uint32_t) &(DAC1->DHR8R1), 0xFFFFFFFFU);
   DMA1_Stream1->NDTR = sizeof(fake_siren_lut);
-  register_set(&DMA1_Stream1->FCR, 0U, 0xFFFFFFFFU);
+  register_set(&DMA1_Stream1->FCR, 0U, 0x00000083U);
   DMA1_Stream1->CR = (0b11 << DMA_SxCR_PL_Pos);
   DMA1_Stream1->CR |= DMA_SxCR_MINC | DMA_SxCR_CIRC | (1 << DMA_SxCR_DIR_Pos);
 

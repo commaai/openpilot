@@ -62,11 +62,7 @@ void tres_init(void) {
   uart_init(&uart_ring_som_debug, 115200);
 
   // SPI init
-  set_gpio_alternate(GPIOE, 11, GPIO_AF5_SPI4);
-  set_gpio_alternate(GPIOE, 12, GPIO_AF5_SPI4);
-  set_gpio_alternate(GPIOE, 13, GPIO_AF5_SPI4);
-  set_gpio_alternate(GPIOE, 14, GPIO_AF5_SPI4);
-  register_set_bits(&(GPIOE->OSPEEDR), GPIO_OSPEEDR_OSPEED11 | GPIO_OSPEEDR_OSPEED12 | GPIO_OSPEEDR_OSPEED13 | GPIO_OSPEEDR_OSPEED14);
+  gpio_spi_init();
 
   // fan setup
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
