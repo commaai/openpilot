@@ -56,6 +56,10 @@ SUPPORTED_FW_VERSIONS = {
   b"TM__ SCC F-CUP      1.00 1.00 99110-S1210\x19\x01%\x168    ": ConfigValues(
     default_config=b"\x00\x00\x00\x01\x00\x00",
     tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
+  # 2019 GENESIS G70
+  b'IK__ SCC F-CUP      1.00 1.01 96400-G9100\x17\x12\x19\x14\x07    ': ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
 }
 
 if __name__ == "__main__":
