@@ -22,7 +22,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalModel::updateState);
 }
 
-void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig) {
+void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
   QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
@@ -104,7 +104,7 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
   return flags;
 }
 
-int SignalModel::signalRow(const Signal *sig) const {
+int SignalModel::signalRow(const cabana::Signal *sig) const {
   for (int i = 0; i < root->children.size(); ++i) {
     if (root->children[i]->sig == sig) return i;
   }
@@ -168,7 +168,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   if (role != Qt::EditRole && role != Qt::CheckStateRole) return false;
 
   Item *item = getItem(index);
-  Signal s = *item->sig;
+  cabana::Signal s = *item->sig;
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
@@ -203,7 +203,7 @@ void SignalModel::showExtraInfo(const QModelIndex &index) {
   }
 }
 
-bool SignalModel::saveSignal(const Signal *origin_s, Signal &s) {
+bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) {
   auto msg = dbc()->msg(msg_id);
   if (s.name != origin_s->name && msg->sig(s.name) != nullptr) {
     QString text = tr("There is already a signal with the same name '%1'").arg(s.name);
@@ -243,7 +243,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     }
   }
 
-  Signal sig = {.is_little_endian = little_endian, .factor = 1};
+  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1};
   for (int i = 1; /**/; ++i) {
     sig.name = QString("NEW_SIGNAL_%1").arg(i);
     if (msg->sig(sig.name) == nullptr) break;
@@ -252,13 +252,13 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
 
-void SignalModel::resizeSignal(const Signal *sig, int start_bit, int size) {
-  Signal s = *sig;
+void SignalModel::resizeSignal(const cabana::Signal *sig, int start_bit, int size) {
+  cabana::Signal s = *sig;
   updateSigSizeParamsFromRange(s, start_bit, size);
   saveSignal(sig, s);
 }
 
-void SignalModel::removeSignal(const Signal *sig) {
+void SignalModel::removeSignal(const cabana::Signal *sig) {
   UndoStack::push(new RemoveSigCommand(msg_id, sig));
 }
 
@@ -268,7 +268,7 @@ void SignalModel::handleMsgChanged(uint32_t address) {
   }
 }
 
-void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
+void SignalModel::handleSignalAdded(uint32_t address, const cabana::Signal *sig) {
   if (address == msg_id.address) {
     int i = 0;
     for (; i < root->children.size(); ++i) {
@@ -280,13 +280,13 @@ void SignalModel::handleSignalAdded(uint32_t address, const Signal *sig) {
   }
 }
 
-void SignalModel::handleSignalUpdated(const Signal *sig) {
+void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   }
 }
 
-void SignalModel::handleSignalRemoved(const Signal *sig) {
+void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     beginRemoveRows({}, row, row);
     delete root->children.takeAt(row);
@@ -431,7 +431,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const Signal *sig) { selectSignal(sig); });
+  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const cabana::Signal *sig) { selectSignal(sig); });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -485,7 +485,7 @@ void SignalView::rowClicked(const QModelIndex &index) {
   }
 }
 
-void SignalView::selectSignal(const Signal *sig, bool expand) {
+void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
   if (int row = model->signalRow(sig); row != -1) {
     auto idx = model->index(row, 0);
     if (expand) {
@@ -509,7 +509,7 @@ void SignalView::updateChartState() {
   }
 }
 
-void SignalView::signalHovered(const Signal *sig) {
+void SignalView::signalHovered(const cabana::Signal *sig) {
   auto &children = model->root->children;
   for (int i = 0; i < children.size(); ++i) {
     bool highlight = children[i]->sig == sig;

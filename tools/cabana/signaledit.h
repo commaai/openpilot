@@ -21,7 +21,7 @@ public:
     Item *parent = nullptr;
     QList<Item *> children;
 
-    const Signal *sig = nullptr;
+    const cabana::Signal *sig = nullptr;
     QString title;
     bool highlight = false;
     bool extra_expanded = false;
@@ -39,18 +39,18 @@ public:
   void setMessage(const MessageId &id);
   void setFilter(const QString &txt);
   void addSignal(int start_bit, int size, bool little_endian);
-  bool saveSignal(const Signal *origin_s, Signal &s);
-  void resizeSignal(const Signal *sig, int start_bit, int size);
-  void removeSignal(const Signal *sig);
+  bool saveSignal(const cabana::Signal *origin_s, cabana::Signal &s);
+  void resizeSignal(const cabana::Signal *sig, int start_bit, int size);
+  void removeSignal(const cabana::Signal *sig);
   Item *getItem(const QModelIndex &index) const;
-  int signalRow(const Signal *sig) const;
+  int signalRow(const cabana::Signal *sig) const;
   void showExtraInfo(const QModelIndex &index);
 
 private:
-  void insertItem(SignalModel::Item *parent_item, int pos, const Signal *sig);
-  void handleSignalAdded(uint32_t address, const Signal *sig);
-  void handleSignalUpdated(const Signal *sig);
-  void handleSignalRemoved(const Signal *sig);
+  void insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig);
+  void handleSignalAdded(uint32_t address, const cabana::Signal *sig);
+  void handleSignalUpdated(const cabana::Signal *sig);
+  void handleSignalRemoved(const cabana::Signal *sig);
   void handleMsgChanged(uint32_t address);
   void refresh();
   void updateState(const QHash<MessageId, CanData> *msgs);
@@ -94,15 +94,15 @@ class SignalView : public QFrame {
 public:
   SignalView(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &id);
-  void signalHovered(const Signal *sig);
+  void signalHovered(const cabana::Signal *sig);
   void updateChartState();
-  void selectSignal(const Signal *sig, bool expand = false);
+  void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
 
 signals:
-  void highlight(const Signal *sig);
-  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
+  void highlight(const cabana::Signal *sig);
+  void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 
 private:
   void rowsChanged();

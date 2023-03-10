@@ -97,7 +97,7 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  auto dbc_names = dbc()->allDBCNames();
+  auto dbc_names = allDBCNames();
   std::sort(dbc_names.begin(), dbc_names.end());
   for (const auto &name : dbc_names) {
     load_opendbc_menu->addAction(QString::fromStdString(name), this, &MainWindow::openOpendbcFile);
