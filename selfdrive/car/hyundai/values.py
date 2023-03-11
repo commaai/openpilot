@@ -1555,12 +1555,6 @@ FW_VERSIONS = {
     ],
   },
   CAR.IONIQ_5: {
-    (Ecu.adas, 0x730, None): [
-      b'\xf1\x00NE1 ADRV 1.00 1.06 220329',
-    ],
-    (Ecu.cornerRadar, 0x7b7, None): [
-      b'\xf1\x00NE  BCW RR 1.00 , 1.01 (v\x12U"\x00y\x02Y',
-    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
       b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
