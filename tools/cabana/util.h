@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 
 #include <QByteArray>
 #include <QColor>
@@ -28,6 +29,23 @@ private:
   const float fade_time = 2.0;
   QByteArray prev_dat;
 };
+
+class LogSlider : public QSlider {
+  Q_OBJECT
+
+public:
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+
+  void setRange(double min, double max) { QSlider::setRange(logScale(min), logScale(max)); }
+  int value() const { return invLogScale(QSlider::value()); }
+  void setValue(int value) { QSlider::setValue(logScale(value)); }
+
+private:
+  double factor;
+  int logScale(int value) const { return factor * std::log10(value); }
+  int invLogScale(int value) const { return std::pow(10, value / factor); }
+};
+
 
 enum {
   ColorsRole = Qt::UserRole + 1,

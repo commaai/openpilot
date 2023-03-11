@@ -14,7 +14,7 @@ public:
   void load();
 
   int fps = 10;
-  int max_cached_minutes = 5;
+  int max_cached_minutes = 30;
   int chart_height = 200;
   int chart_column_count = 1;
   int chart_range = 3 * 60; // e minutes

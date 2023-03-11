@@ -45,7 +45,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   toolbar->addWidget(stretch_label);
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
-  range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider = new LogSlider(1000, Qt::Horizontal, this);
   range_slider->setMaximumWidth(200);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
@@ -163,7 +163,7 @@ void ChartsWidget::updateState() {
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
-  max_chart_range = settings.chart_range = value;
+  max_chart_range = settings.chart_range = range_slider->value();
   updateToolBar();
   updateState();
 }
