@@ -181,12 +181,12 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.KIA_EV6:
       ret.mass = 2055 + STD_CARGO_KG
       ret.wheelbase = 2.9
-      ret.steerRatio = 16.
+      ret.steerRatio = 14.25 # https://www.kiamedia.com/us/en/models/ev6/2022/specifications
       tire_stiffness_factor = 0.65
     elif candidate == CAR.IONIQ_5:
       ret.mass = 2012 + STD_CARGO_KG
       ret.wheelbase = 3.0
-      ret.steerRatio = 16.
+      ret.steerRatio = 14.26 # https://www.hyundainews.com/assets/documents/original/48175-2022Ioniq5ProductGuidespecs090821.pdf
       tire_stiffness_factor = 0.65
     elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
       ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
@@ -209,19 +209,19 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.1
       ret.mass = 1640.0 + STD_CARGO_KG
       ret.wheelbase = 2.84
-      ret.steerRatio = 13.56
+      ret.steerRatio = 11.8 #https://www.conceptcarz.com/s31009/genesis-g70.aspx
     elif candidate == CAR.GENESIS_G70_2020:
       ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
-      ret.steerRatio = 12.9
+      ret.steerRatio = 11.8 
     elif candidate == CAR.GENESIS_GV70_1ST_GEN:
       ret.mass = 1950. + STD_CARGO_KG
       ret.wheelbase = 2.87
-      ret.steerRatio = 14.6
+      ret.steerRatio = 13.90 #https://www.genesis.com/content/dam/genesis-p2/au/assets/models/gv70/specs/documents/Genesis_GV70_MY23_Spec_Sheet.pdf
     elif candidate == CAR.GENESIS_G80:
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
-      ret.steerRatio = 16.5
+      ret.steerRatio = 11.2 #https://www.genesis.com/content/dam/genesis-p2/au/assets/models/g80/specs/documents/Genesis_New-G80_Specs-Table_2020.pdf
     elif candidate == CAR.GENESIS_G90:
       ret.mass = 2200
       ret.wheelbase = 3.15
