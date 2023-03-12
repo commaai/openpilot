@@ -35,7 +35,7 @@ def _create_radar_acc_tssp_can_parser(car_fingerprint):
   msg_n = len(RADAR_A_MSGS)
   signals = list(zip(['ID'] * msg_n + ['LONG_DIST'] * msg_n + ['LAT_DIST'] * msg_n + ['SPEED'] * msg_n +
                     ['LAT_SPEED'] * msg_n, RADAR_A_MSGS * 5))
-  checks = list(zip(RADAR_A_MSGS, [15] * msg_n))
+  checks = list(zip(RADAR_A_MSGS, [10] * msg_n))
   return CANParser(DBC[car_fingerprint]['radar'], signals, checks, 1)
 
 class RadarInterface(RadarInterfaceBase):
