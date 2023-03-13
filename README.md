@@ -111,7 +111,7 @@ Directory Structure
         ├── loggerd         # Logger and uploader of car data
         ├── proclogd        # Logs information from /proc
         ├── sensord         # IMU interface code
-        └── ubloxd          # Acquires GNSS data
+        └── ubloxd          # u-blox GNSS module interface code
     └── selfdrive           # Code needed to drive the car
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
