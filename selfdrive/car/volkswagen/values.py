@@ -36,7 +36,7 @@ class CarControllerParams:
 
     if CP.carFingerprint in PQ_CARS:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
-      self.ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
+      self.ACC_HUD_STEP = 4               # ACC_GRA_Anzeige frequency 25Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
