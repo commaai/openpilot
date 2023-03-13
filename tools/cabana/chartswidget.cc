@@ -45,7 +45,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   toolbar->addWidget(stretch_label);
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
-  range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider = new LogSlider(1000, Qt::Horizontal, this);
   range_slider->setMaximumWidth(200);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
@@ -163,7 +163,7 @@ void ChartsWidget::updateState() {
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
-  max_chart_range = settings.chart_range = value;
+  max_chart_range = settings.chart_range = range_slider->value();
   updateToolBar();
   updateState();
 }
@@ -189,7 +189,7 @@ void ChartsWidget::settingChanged() {
   }
 }
 
-ChartView *ChartsWidget::findChart(const MessageId &id, const Signal *sig) {
+ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *sig) {
   for (auto c : charts)
     if (c->hasSeries(id, sig)) return c;
   return nullptr;
@@ -212,7 +212,7 @@ ChartView *ChartsWidget::createChart() {
   return chart;
 }
 
-void ChartsWidget::showChart(const MessageId &id, const Signal *sig, bool show, bool merge) {
+void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge) {
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
     chart = merge && charts.size() > 0 ? charts.back() : createChart();
@@ -377,7 +377,7 @@ void ChartView::createToolButtons() {
   });
 }
 
-void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
+void ChartView::addSeries(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSeries(msg_id, sig)) return;
 
   QXYSeries *series = createSeries(series_type, getColor(sig));
@@ -388,7 +388,7 @@ void ChartView::addSeries(const MessageId &msg_id, const Signal *sig) {
   emit seriesAdded(msg_id, sig);
 }
 
-bool ChartView::hasSeries(const MessageId &msg_id, const Signal *sig) const {
+bool ChartView::hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
@@ -413,7 +413,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   }
 }
 
-void ChartView::signalUpdated(const Signal *sig) {
+void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
     // TODO: don't update series if only name changed.
@@ -502,7 +502,7 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *events, bool clear) {
+void ChartView::updateSeries(const cabana::Signal *sig, const std::vector<Event *> *events, bool clear) {
   events = events ? events : can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
@@ -562,6 +562,9 @@ void ChartView::updateSeries(const Signal *sig, const std::vector<Event *> *even
       if (events->size()) {
         s.last_value_mono_time = events->back()->mono_time;
       }
+      if (!can->liveStreaming()) {
+        s.segment_tree.build(s.vals);
+      }
       s.series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
     }
   }
@@ -586,9 +589,15 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
-    for (auto it = first; it != last; ++it) {
-      if (it->y() < min) min = it->y();
-      if (it->y() > max) max = it->y();
+    if (can->liveStreaming()) {
+      for (auto it = first; it != last; ++it) {
+        if (it->y() < min) min = it->y();
+        if (it->y() > max) max = it->y();
+      }
+    } else {
+      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
+      min = std::min(min, min_y);
+      max = std::max(max, max_y);
     }
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
@@ -659,6 +668,16 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     if (dropAction == Qt::MoveAction) {
       return;
     }
+  } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    if (!can->liveStreaming()) {
+      // Save current playback state when scrubbing
+      resume_after_scrub = !can->isPaused();
+      if (resume_after_scrub) {
+        can->pause(true);
+      }
+
+      is_scrubbing = true;
+    }
   } else {
     QChartView::mousePressEvent(event);
   }
@@ -692,9 +711,27 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
   } else {
     QGraphicsView::mouseReleaseEvent(event);
   }
+
+  // Resume playback if we were scrubbing
+  is_scrubbing = false;
+  if (resume_after_scrub) {
+    can->pause(false);
+    resume_after_scrub = false;
+  }
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
+  // Scrubbing
+  if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    if (chart()->plotArea().contains(ev->pos())) {
+      double t = chart()->mapToValue(ev->pos()).x();
+      // Prevent seeking past the end of the route
+      t = std::clamp(t, 0., can->totalSeconds());
+      can->seekTo(t);
+    }
+    return;
+  }
+
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
   const auto plot_area = chart()->plotArea();
@@ -708,14 +745,16 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
       if (!s.series->isVisible()) continue;
 
       // use reverse iterator to find last item <= sec.
+      double value = 0;
       auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = it->y();
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
       text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
                               .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(s.track_pt.y())));
+                                   s.track_pt.isNull() ? "--" : QString::number(value)));
     }
     if (x < 0) {
       x = ev->pos().x();
@@ -943,7 +982,7 @@ void SeriesSelector::updateAvailableList(int index) {
   }
 }
 
-void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const Signal *sig, bool show_msg_name) {
+void SeriesSelector::addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
   QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name);
   if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
 

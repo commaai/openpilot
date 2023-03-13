@@ -89,10 +89,11 @@ void LiveStream::removeExpiredEvents() {
 }
 
 const std::vector<Event *> *LiveStream::events() const {
-  events_vector.clear();
   std::lock_guard lk(lock);
-  events_vector.reserve(can_events.size());
-  std::copy(can_events.begin(), can_events.end(), std::back_inserter(events_vector));
+  if (events_vector.capacity() <= can_events.size()) {
+    events_vector.reserve(can_events.size() * 2);
+  }
+  events_vector.assign(can_events.begin(), can_events.end());
   return &events_vector;
 }
 

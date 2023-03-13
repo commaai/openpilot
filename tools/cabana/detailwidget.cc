@@ -68,7 +68,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
   QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
-  QObject::connect(binary_view, &BinaryView::signalClicked, [this](const Signal *s) { signal_view->selectSignal(s, true); });
+  QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
   QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
   QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
@@ -194,7 +194,7 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
   form_layout->addRow(tr("Size"), size_spin);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  btn_box->button(QDialogButtonBox::Ok)->setEnabled(false);
+  validateName(name_edit->text());
   form_layout->addRow(btn_box);
 
   setFixedWidth(parent->width() * 0.9);
@@ -204,9 +204,9 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
 }
 
 void EditMessageDialog::validateName(const QString &text) {
-  bool valid = false;
+  bool valid = text.compare(UNTITLED, Qt::CaseInsensitive) != 0;
   error_label->setVisible(false);
-  if (!text.isEmpty() && text != original_name && text.compare(UNTITLED, Qt::CaseInsensitive) != 0) {
+  if (!text.isEmpty() && valid && text != original_name) {
     valid = std::none_of(dbc()->messages().begin(), dbc()->messages().end(),
                          [&text](auto &m) { return m.second.name == text; });
     if (!valid) {
