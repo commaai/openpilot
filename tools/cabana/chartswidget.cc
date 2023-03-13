@@ -723,10 +723,12 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   // Scrubbing
   if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    double t = chart()->mapToValue({(double)ev->x(), (double)ev->y()}).x();
-    // Prevent seeking past the end of the route
-    t = std::clamp(t, 0., can->totalSeconds());
-    can->seekTo(t);
+    if (chart()->plotArea().contains(ev->pos())) {
+      double t = chart()->mapToValue(ev->pos()).x();
+      // Prevent seeking past the end of the route
+      t = std::clamp(t, 0., can->totalSeconds());
+      can->seekTo(t);
+    }
     return;
   }
 
