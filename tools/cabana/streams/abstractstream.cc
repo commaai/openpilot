@@ -1,5 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
-
+#include <QTimer>
 #include <QtConcurrent>
 
 AbstractStream *can = nullptr;
@@ -115,6 +115,8 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       m.value().freq = m.value().count / std::max(1.0, m.value().ts);
     }
   }
-  emit updated();
-  emit msgsReceived(&can_msgs);
+  QTimer::singleShot(0, [this]() {
+    emit updated();
+    emit msgsReceived(&can_msgs);
+  });
 }
