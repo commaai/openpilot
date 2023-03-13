@@ -667,7 +667,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    CameraWidget::setFrameId(model.getFrameId());
+    CameraWidget::setFrameId(sm["uiPlan"].getUiPlan().getFrameId());
     CameraWidget::paintGL();
   }
 
