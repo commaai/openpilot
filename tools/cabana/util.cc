@@ -184,3 +184,13 @@ QString toHex(uint8_t byte) {
   }();
   return hex[byte];
 }
+
+int num_decimals(double num) {
+   const QString string = QString::number(num);
+   const QStringList split = string.split('.');
+   if (split.size() == 1) {
+     return 0;
+   } else {
+     return split[1].size();
+   }
+ }
