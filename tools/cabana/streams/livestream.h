@@ -32,7 +32,6 @@ protected:
   std::atomic<uint64_t> current_ts = 0;
   std::atomic<float> speed_ = 1;
   std::atomic<bool> pause_ = false;
-  uint64_t last_update_event_ts = 0;
   uint64_t last_update_ts = 0;
 
   const QString zmq_address;
