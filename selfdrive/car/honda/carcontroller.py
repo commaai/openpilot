@@ -124,7 +124,7 @@ class CarController:
     self.brake = 0.0
     self.last_steer = 0.0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH if hud_control.speedVisible else 255

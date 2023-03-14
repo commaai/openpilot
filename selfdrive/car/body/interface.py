@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeedFactor = SPEED_FROM_RPM
     ret.centerToFront = ret.wheelbase * 0.44
 
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
@@ -43,5 +43,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

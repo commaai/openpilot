@@ -14,7 +14,7 @@ class CarController:
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     pcm_cancel_cmd = CC.cruiseControl.cancel
 

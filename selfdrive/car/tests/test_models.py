@@ -149,7 +149,7 @@ class TestCarModelBase(unittest.TestCase):
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-      self.CI.apply(CC)
+      self.CI.apply(CC, msg.logMonoTime)
 
       if CS.canValid:
         can_valid = True

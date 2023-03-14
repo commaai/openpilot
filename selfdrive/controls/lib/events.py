@@ -230,7 +230,7 @@ def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   return StartupAlert("WARNING: This branch is not tested", branch, alert_status=AlertStatus.userPrompt)
 
 def below_engage_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  return NoEntryAlert(f"Speed Below {get_display_speed(CP.minEnableSpeed, metric)}")
+  return NoEntryAlert(f"Drive above {get_display_speed(CP.minEnableSpeed, metric)} to engage")
 
 
 def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
@@ -292,7 +292,7 @@ def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   rpy = sm['liveCalibration'].rpyCalib
   yaw = math.degrees(rpy[2] if len(rpy) == 3 else math.nan)
   pitch = math.degrees(rpy[1] if len(rpy) == 3 else math.nan)
-  angles = f"Pitch: {pitch:.1f}°, Yaw: {yaw:.1f}°"
+  angles = f"Remount Device (Pitch: {pitch:.1f}°, Yaw: {yaw:.1f}°)"
   return NormalPermanentAlert("Calibration Invalid", angles)
 
 
@@ -317,9 +317,9 @@ def modeld_lagging_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
 
 def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  text = "Cruise Mode Disabled"
+  text = "Enable Adaptive Cruise to Engage"
   if CP.carName == "honda":
-    text = "Main Switch Off"
+    text = "Enable Main Switch to Engage"
   return NoEntryAlert(text)
 
 
@@ -729,8 +729,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.espDisabled: {
-    ET.SOFT_DISABLE: soft_disable_alert("ESP Off"),
-    ET.NO_ENTRY: NoEntryAlert("ESP Off"),
+    ET.SOFT_DISABLE: soft_disable_alert("Electronic Stability Control Disabled"),
+    ET.NO_ENTRY: NoEntryAlert("Electronic Stability Control Disabled"),
   },
 
   EventName.lowBattery: {

@@ -17,7 +17,7 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_ephem, parse_qcom_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_gps_ephem, convert_ublox_glonass_ephem, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
@@ -28,7 +28,7 @@ from selfdrive.locationd.models.gnss_kf import States as GStates
 from system.swaglog import cloudlog
 
 MAX_TIME_GAP = 10
-EPHEMERIS_CACHE = 'LaikadEphemeris'
+EPHEMERIS_CACHE = 'LaikadEphemerisV2'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
@@ -97,19 +97,25 @@ class Laikad:
 
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
-      min_measurements = 7 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 6
-      position_solution, pr_residuals = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
+      min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
+      position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
-      #TODO median abs residual is decent estimate of std, can be improved with measurements stds and/or DOP
-      position_std = np.median(np.abs(pr_residuals)) * np.ones(3)
-      velocity_solution, prr_residuals = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
+
+      position_std_residual = np.median(np.abs(pr_residuals))
+      position_std = np.median(np.abs(pos_std))/10
+      position_std = max(position_std_residual, position_std) * np.ones(3)
+
+      velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
       if len(velocity_solution) < 3:
         return None
-
       velocity_estimate = velocity_solution[:3]
-      velocity_std = np.median(np.abs(prr_residuals)) * np.ones(3)
+
+      velocity_std_residual = np.median(np.abs(prr_residuals))
+      velocity_std = np.median(np.abs(vel_std))/10
+      velocity_std = max(velocity_std, velocity_std_residual) * np.ones(3)
+
       return position_estimate, position_std, velocity_estimate, velocity_std
 
   def is_good_report(self, gnss_msg):
@@ -139,17 +145,22 @@ class Laikad:
     if self.use_qcom:
       return gnss_msg.which() == 'drSvPoly'
     else:
-      return gnss_msg.which() == 'ephemeris'
+      return gnss_msg.which() in ('ephemeris', 'glonassEphemeris')
 
   def read_ephemeris(self, gnss_msg):
-    # TODO this only works on GLONASS
     if self.use_qcom:
       # TODO this is not robust to gps week rollover
       if self.gps_week is None:
         return
       ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
     else:
-      ephem = convert_ublox_ephem(gnss_msg.ephemeris)
+      if gnss_msg.which() == 'ephemeris':
+        ephem = convert_ublox_gps_ephem(gnss_msg.ephemeris)
+      elif gnss_msg.which() == 'glonassEphemeris':
+        ephem = convert_ublox_glonass_ephem(gnss_msg.glonassEphemeris)
+      else:
+        cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
+        return
     self.astro_dog.add_navs({ephem.prn: [ephem]})
     self.cache_ephemeris(t=ephem.epoch)
 
@@ -182,10 +193,10 @@ class Laikad:
     elif self.is_good_report(gnss_msg):
 
       week, tow, new_meas = self.read_report(gnss_msg)
+      self.gps_week = week
       if len(new_meas) == 0:
         return None
 
-      self.gps_week = week
       t = gnss_mono_time * 1e-9
       if week > 0:
         self.got_first_gnss_msg = True
@@ -410,8 +421,13 @@ def main(sm=None, pm=None, qc=None):
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
+  # disable until set as main gps source, to better analyze startup time
+  use_internet = False #"LAIKAD_NO_INTERNET" not in os.environ
+
   replay = "REPLAY" in os.environ
-  use_internet = "LAIKAD_NO_INTERNET" not in os.environ
+  if replay or "CI" in os.environ:
+    use_internet = True
+
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:

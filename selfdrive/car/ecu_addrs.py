@@ -87,5 +87,5 @@ if __name__ == "__main__":
   for addr, subaddr, bus in ecu_addrs:
     msg = f"  0x{hex(addr)}"
     if subaddr is not None:
-      msg += f" (sub-address: 0x{hex(subaddr)})"
+      msg += f" (sub-address: {hex(subaddr)})"
     print(msg)

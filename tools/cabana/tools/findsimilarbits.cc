@@ -20,10 +20,10 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   bus_combo = new QComboBox(this);
   QSet<uint8_t> bus_set;
   for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
-    bus_set << DBCManager::parseId(it.key()).first;
+    bus_set << it.key().source;
   }
   for (uint8_t bus : bus_set) {
-    bus_combo->addItem(QString::number(bus));
+    bus_combo->addItem(QString::number(bus), bus);
   }
   bus_combo->model()->sort(0);
   bus_combo->setCurrentIndex(0);
@@ -69,9 +69,11 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
 
   setMinimumSize({700, 500});
   QObject::connect(search_btn, &QPushButton::clicked, this, &FindSimilarBitsDlg::find);
+
   QObject::connect(table, &QTableWidget::doubleClicked, [this](const QModelIndex &index) {
     if (index.isValid()) {
-      emit openMessage(bus_combo->currentText() + ":" + table->item(index.row(), 0)->text());
+      MessageId msg_id = {.source = (uint8_t)bus_combo->currentData().toUInt(), .address = table->item(index.row(), 0)->text().toUInt(0, 16)};
+      emit openMessage(msg_id);
     }
   });
 }

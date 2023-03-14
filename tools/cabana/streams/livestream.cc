@@ -8,7 +8,7 @@ LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address),
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
-  stream_thread->start();
+  QTimer::singleShot(0, [this]() { stream_thread->start(); });
 }
 
 LiveStream::~LiveStream() {
@@ -45,9 +45,6 @@ void LiveStream::streamThread() {
 }
 
 void LiveStream::handleEvent(Event *evt) {
-  std::lock_guard lk(lock);
-  can_events.push_back(evt);
-
   current_ts = evt->mono_time;
   if (start_ts == 0 || current_ts < start_ts) {
     if (current_ts < start_ts) {
@@ -57,6 +54,8 @@ void LiveStream::handleEvent(Event *evt) {
     emit streamStarted();
   }
 
+  std::lock_guard lk(lock);
+  can_events.push_back(evt);
   if (!pause_) {
     if (speed_ < 1 && last_update_ts > 0) {
       auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) {
@@ -90,10 +89,11 @@ void LiveStream::removeExpiredEvents() {
 }
 
 const std::vector<Event *> *LiveStream::events() const {
-  events_vector.clear();
   std::lock_guard lk(lock);
-  events_vector.reserve(can_events.size());
-  std::copy(can_events.begin(), can_events.end(), std::back_inserter(events_vector));
+  if (events_vector.capacity() <= can_events.size()) {
+    events_vector.reserve(can_events.size() * 2);
+  }
+  events_vector.assign(can_events.begin(), can_events.end());
   return &events_vector;
 }
 

@@ -16,6 +16,8 @@ public:
   static int get_voltage() { return 0; };
   static int get_current() { return 0; };
 
+  static std::string get_serial() { return "cccccc"; }
+
   static void reboot() {}
   static void poweroff() {}
   static void set_brightness(int percent) {}

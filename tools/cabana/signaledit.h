@@ -1,59 +1,116 @@
 #pragma once
 
-#include <QComboBox>
+#include <QAbstractItemModel>
 #include <QLabel>
 #include <QLineEdit>
-#include <QSpinBox>
-#include <QToolButton>
+#include <QStyledItemDelegate>
+#include <QTableWidget>
+#include <QTreeView>
 
-#include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/chartswidget.h"
 
-class SignalForm : public QWidget {
+class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
-  SignalForm(QWidget *parent);
-  void textBoxEditingFinished();
+  struct Item {
+    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, ExtraInfo, Unit, Comment, Min, Max, Desc };
+    ~Item() { qDeleteAll(children); }
+    inline int row() { return parent->children.indexOf(this); }
 
-  QLineEdit *name, *unit, *comment, *val_desc, *offset, *factor, *min_val, *max_val;
-  QSpinBox *size;
-  QComboBox *sign, *endianness;
-  QToolButton *expand_btn;
+    Type type = Type::Root;
+    Item *parent = nullptr;
+    QList<Item *> children;
 
-signals:
-  void changed();
+    const cabana::Signal *sig = nullptr;
+    QString title;
+    bool highlight = false;
+    bool extra_expanded = false;
+    QString sig_val = "-";
+  };
+
+  SignalModel(QObject *parent);
+  int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 2; }
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
+  QModelIndex parent(const QModelIndex &index) const override;
+  Qt::ItemFlags flags(const QModelIndex &index) const override;
+  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
+  void setMessage(const MessageId &id);
+  void setFilter(const QString &txt);
+  void addSignal(int start_bit, int size, bool little_endian);
+  bool saveSignal(const cabana::Signal *origin_s, cabana::Signal &s);
+  void resizeSignal(const cabana::Signal *sig, int start_bit, int size);
+  void removeSignal(const cabana::Signal *sig);
+  Item *getItem(const QModelIndex &index) const;
+  int signalRow(const cabana::Signal *sig) const;
+  void showExtraInfo(const QModelIndex &index);
+
+private:
+  void insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig);
+  void handleSignalAdded(uint32_t address, const cabana::Signal *sig);
+  void handleSignalUpdated(const cabana::Signal *sig);
+  void handleSignalRemoved(const cabana::Signal *sig);
+  void handleMsgChanged(uint32_t address);
+  void refresh();
+  void updateState(const QHash<MessageId, CanData> *msgs);
+
+  MessageId msg_id;
+  QString filter_str;
+  std::unique_ptr<Item> root;
+  friend class SignalView;
 };
 
-class SignalEdit : public QWidget {
+class ValueDescriptionDlg : public QDialog {
+public:
+  ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent);
+  ValueDescription val_desc;
+
+private:
+  struct Delegate : public QStyledItemDelegate {
+    Delegate(QWidget *parent) : QStyledItemDelegate(parent) {}
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  };
+
+  void save();
+  QTableWidget *table;
+};
+
+class SignalItemDelegate : public QStyledItemDelegate {
+public:
+  SignalItemDelegate(QObject *parent);
+  void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QValidator *name_validator, *double_validator;
+  QFont small_font;
+  const int color_label_width = 18;
+  mutable QHash<QString, int> width_cache;
+};
+
+class SignalView : public QFrame {
   Q_OBJECT
 
 public:
-  SignalEdit(int index, QWidget *parent = nullptr);
-  void setSignal(const QString &msg_id, const Signal *sig);
-  void setChartOpened(bool opened);
-  void signalHovered(const Signal *sig);
-  void updateForm(bool show);
-  const Signal *sig = nullptr;
-  SignalForm *form = nullptr;
-  QString msg_id;
+  SignalView(ChartsWidget *charts, QWidget *parent);
+  void setMessage(const MessageId &id);
+  void signalHovered(const cabana::Signal *sig);
+  void updateChartState();
+  void selectSignal(const cabana::Signal *sig, bool expand = false);
+  void rowClicked(const QModelIndex &index);
+  SignalModel *model = nullptr;
 
 signals:
-  void highlight(const Signal *sig);
-  void showChart(const QString &name, const Signal *sig, bool show, bool merge);
-  void remove(const Signal *sig);
-  void save(const Signal *sig, const Signal &new_sig);
-  void showFormClicked(const Signal *sig);
+  void highlight(const cabana::Signal *sig);
+  void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 
-protected:
-  void enterEvent(QEvent *event) override;
-  void leaveEvent(QEvent *event) override;
-  void saveSignal();
+private:
+  void rowsChanged();
+  void leaveEvent(QEvent *event);
 
-  ElidedLabel *title;
-  QLabel *color_label;
-  QLabel *icon;
-  int form_idx = 0;
-  QColor bg_color;
-  QToolButton *plot_btn;
+  MessageId msg_id;
+  QTreeView *tree;
+  QLineEdit *filter_edit;
+  ChartsWidget *charts;
+  QLabel *signal_count_lb;
 };
