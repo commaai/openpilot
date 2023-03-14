@@ -37,6 +37,7 @@ class Harness(Enum):
   toyota = "Toyota"
   subaru_a = "Subaru A"
   subaru_b = "Subaru B"
+  subaru_d = "Subaru D"
   fca = "FCA"
   ram = "Ram"
   vw = "VW"
