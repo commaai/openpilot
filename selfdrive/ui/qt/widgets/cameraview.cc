@@ -375,6 +375,7 @@ void CameraWidget::vipcThread() {
       clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
       if (streams.empty()) {
+        qWarning() << "VisionIPC connected, but no streams available";
         QThread::msleep(100);
         continue;
       }
