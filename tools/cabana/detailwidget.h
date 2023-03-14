@@ -15,6 +15,7 @@ public:
   EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent);
   void validateName(const QString &text);
 
+  MessageId msg_id;
   QString original_name;
   QDialogButtonBox *btn_box;
   QLineEdit *name_edit;

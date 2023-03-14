@@ -14,11 +14,14 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 0) {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
+    int i = index.column() - 1;
+    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
   } else if (role == ColorsRole) {
     return QVariant::fromValue(m.colors);
   } else if (role == BytesRole) {
     return m.data;
+  } else if (role == Qt::TextAlignmentRole) {
+    return Qt::AlignRight;
   }
   return {};
 }
@@ -235,7 +238,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   delegate = new MessageBytesDelegate(this);
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
-  logs->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
+  logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);

@@ -180,7 +180,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
+    cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
     candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]

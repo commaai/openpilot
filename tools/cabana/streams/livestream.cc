@@ -45,12 +45,11 @@ void LiveStream::streamThread() {
 }
 
 void LiveStream::handleEvent(Event *evt) {
-  current_ts = evt->mono_time;
-  if (start_ts == 0 || current_ts < start_ts) {
-    if (current_ts < start_ts) {
+  if (start_ts == 0 || evt->mono_time < start_ts) {
+    if (evt->mono_time < start_ts) {
       qDebug() << "stream is looping back to old time stamp";
     }
-    start_ts = current_ts.load();
+    start_ts = current_ts = evt->mono_time;
     emit streamStarted();
   }
 
@@ -58,19 +57,19 @@ void LiveStream::handleEvent(Event *evt) {
   can_events.push_back(evt);
   if (!pause_) {
     if (speed_ < 1 && last_update_ts > 0) {
-      auto it = std::upper_bound(can_events.begin(), can_events.end(), last_update_event_ts, [](uint64_t ts, auto &e) {
+      auto it = std::upper_bound(can_events.cbegin(), can_events.cend(), current_ts, [](uint64_t ts, auto &e) {
         return ts < e->mono_time;
       });
+      if (it != can_events.cend()) {
+        bool skip = (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - current_ts) / speed_;
+        if (skip) return;
 
-      if (it != can_events.end() &&
-          (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - last_update_event_ts) / speed_) {
-        return;
+        evt = *it;
       }
-      evt = (*it);
     }
-    updateEvent(evt);
-    last_update_event_ts = evt->mono_time;
+    current_ts = evt->mono_time;
     last_update_ts = nanos_since_boot();
+    updateEvent(evt);
   }
 }
 
