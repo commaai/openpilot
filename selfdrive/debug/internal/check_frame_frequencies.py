@@ -30,7 +30,7 @@ if __name__ == "__main__":
           diffs[state].append((sm[state].timestampSof - prev_sof[state]) / 1e9)
         prev_sof[state] = sm[state].timestampSof
 
-    if time.monotonic() - st > 5:
+    if time.monotonic() - st > 10:
       for state in camera_states:
         values = diffs[state]
         ref = 0.05
@@ -39,4 +39,3 @@ if __name__ == "__main__":
 
       print()
       st = time.monotonic()
-    
