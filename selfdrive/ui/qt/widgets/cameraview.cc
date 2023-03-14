@@ -167,7 +167,6 @@ void CameraWidget::initializeGL() {
 void CameraWidget::showEvent(QShowEvent *event) {
   if (!vipc_thread) {
     clearFrames();
-    available_streams.clear();
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
     connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
@@ -415,4 +414,5 @@ void CameraWidget::vipcThread() {
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   frames.clear();
+  available_streams.clear();
 }
