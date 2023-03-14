@@ -144,19 +144,31 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
   auto &m = msgs[id.address];
   m.name = name;
   m.size = size;
-  emit msgUpdated(id.address);
+
+  // This DBC applies to all active sources, emit for every source
+  for (uint8_t source : sources) {
+    emit msgUpdated({.source = source, .address = id.address});
+  }
 }
 
 void DBCManager::removeMsg(const MessageId &id) {
   msgs.erase(id.address);
-  emit msgRemoved(id.address);
+
+  // This DBC applies to all active sources, emit for every source
+  for (uint8_t source : sources) {
+    emit msgRemoved({.source = source, .address = id.address});
+  }
 }
 
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
     m->sigs.push_back(sig);
     auto s = &m->sigs.last();
-    emit signalAdded(id.address, s);
+
+    // This DBC applies to all active sources, emit for every source
+    for (uint8_t source : sources) {
+      emit signalAdded({.source = source, .address = id.address}, s);
+    }
   }
 }
 
@@ -190,6 +202,10 @@ QStringList DBCManager::signalNames() {
   ret.sort();
   ret.removeDuplicates();
   return ret;
+}
+
+void DBCManager::updateSources(const QSet<uint8_t> &s) {
+  sources = s;
 }
 
 DBCManager *dbc() {

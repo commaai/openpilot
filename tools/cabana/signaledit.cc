@@ -239,8 +239,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   for (int i = 0; !msg; ++i) {
     QString name = QString("NEW_MSG_") + QString::number(msg_id.address, 16).toUpper();
-    if (i > 0) name += QString("_%1").arg(i);
-    if (std::none_of(dbc()->messages().begin(), dbc()->messages().end(), [&](auto &m) { return m.second.name == name; })) {
+    if (!dbc()->msg(msg_id.source, name)) {
       UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
       msg = dbc()->msg(msg_id);
     }
@@ -265,14 +264,14 @@ void SignalModel::removeSignal(const cabana::Signal *sig) {
   UndoStack::push(new RemoveSigCommand(msg_id, sig));
 }
 
-void SignalModel::handleMsgChanged(uint32_t address) {
-  if (address == msg_id.address) {
+void SignalModel::handleMsgChanged(MessageId id) {
+  if (id == msg_id) {
     refresh();
   }
 }
 
-void SignalModel::handleSignalAdded(uint32_t address, const cabana::Signal *sig) {
-  if (address == msg_id.address) {
+void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
+  if (id == msg_id) {
     int i = 0;
     for (; i < root->children.size(); ++i) {
       if (sig->start_bit < root->children[i]->sig->start_bit) break;
@@ -442,7 +441,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, [this](uint32_t address, const cabana::Signal *sig) { selectSignal(sig); });
+  QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
