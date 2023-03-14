@@ -150,7 +150,6 @@ public:
   QString language;
 
   QTransform car_space_transform;
-  bool wide_cam_only;
 
 signals:
   void uiUpdate(const UIState &s);
