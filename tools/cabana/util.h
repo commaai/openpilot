@@ -91,3 +91,4 @@ QPixmap icon(const QString &id);
 }
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip);
+int num_decimals(double num);
