@@ -62,7 +62,7 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
-      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig));
+      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
       if (!item->sig->unit.isEmpty()){
         value += " " + item->sig->unit;
       }
@@ -184,6 +184,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
+  s.updatePrecision();
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;

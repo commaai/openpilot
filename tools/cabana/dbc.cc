@@ -1,4 +1,5 @@
 #include "tools/cabana/dbc.h"
+#include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
@@ -10,6 +11,10 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
   return ret;
+}
+
+void cabana::Signal::updatePrecision() {
+  precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
 // helper functions

@@ -38,6 +38,7 @@ bool DBCManager::open(const QString &name, const QString &content, QString *erro
         sig.factor = s.factor;
         sig.offset = s.offset;
         sig.is_little_endian = s.is_little_endian;
+        sig.updatePrecision();
       }
     }
     parseExtraInfo(content);
