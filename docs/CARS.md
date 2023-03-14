@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 238 Supported Cars
+# 239 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -152,6 +152,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |SEAT|Ateca 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=SEAT&model=Ateca 2018">J533</a>||
 |SEAT|Leon 2014-20|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=SEAT&model=Leon 2014-20">J533</a>||
 |Subaru|Ascent 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Ascent 2019-21">Subaru A</a>||
+|Subaru|Ascent 2023|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Ascent 2023">Subaru D</a>||
 |Subaru|Crosstrek 2018-19|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Crosstrek 2018-19">Subaru A</a>|<a href="https://youtu.be/Agww7oE1k-s?t=26" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Subaru|Crosstrek 2020-23|EyeSight Driver Assistance|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Crosstrek 2020-23">Subaru A</a>||
 |Subaru|Forester 2019-21|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Subaru&model=Forester 2019-21">Subaru A</a>||
