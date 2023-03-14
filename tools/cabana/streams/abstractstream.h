@@ -52,9 +52,11 @@ signals:
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *);
   void received(QHash<MessageId, CanData> *);
+  void sourcesUpdated(const QSet<uint8_t> &s);
 
 public:
   QHash<MessageId, CanData> can_msgs;
+  QSet<uint8_t> sources;
 
 protected:
   void process(QHash<MessageId, CanData> *);

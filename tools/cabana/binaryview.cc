@@ -75,8 +75,8 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_endian = new QShortcut(QKeySequence(Qt::Key_E), this);
   QObject::connect(shortcut_endian, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      const Signal *hovered_sig_prev = hovered_sig;
-      Signal s = *hovered_sig;
+      const cabana::Signal *hovered_sig_prev = hovered_sig;
+      cabana::Signal s = *hovered_sig;
       s.is_little_endian = !s.is_little_endian;
       emit editSignal(hovered_sig, s);
 
@@ -89,8 +89,8 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_sign = new QShortcut(QKeySequence(Qt::Key_S), this);
   QObject::connect(shortcut_sign, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      const Signal *hovered_sig_prev = hovered_sig;
-      Signal s = *hovered_sig;
+      const cabana::Signal *hovered_sig_prev = hovered_sig;
+      cabana::Signal s = *hovered_sig;
       s.is_signed = !s.is_signed;
       emit editSignal(hovered_sig, s);
 
@@ -117,7 +117,7 @@ QSize BinaryView::minimumSizeHint() const {
           CELL_HEIGHT * std::min(model->rowCount(), 10) + 2};
 }
 
-void BinaryView::highlight(const Signal *sig) {
+void BinaryView::highlight(const cabana::Signal *sig) {
   if (sig != hovered_sig) {
     for (int i = 0; i < model->items.size(); ++i) {
       auto &item_sigs = model->items[i].sigs;
@@ -176,7 +176,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::highlightPosition(const QPoint &pos) {
   if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    const Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
+    const cabana::Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
   }
 }
@@ -226,8 +226,8 @@ void BinaryView::refresh() {
   highlightPosition(QCursor::pos());
 }
 
-QSet<const Signal *> BinaryView::getOverlappingSignals() const {
-  QSet<const Signal *> overlapping;
+QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
+  QSet<const cabana::Signal *> overlapping;
   for (auto &item : model->items) {
     if (item.sigs.size() > 1)
       for (auto s : item.sigs) overlapping += s;

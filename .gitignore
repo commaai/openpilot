@@ -46,9 +46,6 @@ selfdrive/mapd/default_speeds_by_region.json
 system/proclogd/proclogd
 selfdrive/ui/_ui
 selfdrive/test/longitudinal_maneuvers/out
-selfdrive/visiond/visiond
-selfdrive/sensord/_gpsd
-selfdrive/sensord/_sensord
 system/camerad/camerad
 system/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
