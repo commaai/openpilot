@@ -4,13 +4,15 @@ import time
 import statistics
 import cereal.messaging as messaging
 
+from typing import Dict
+
 camera_states = [
   'roadCameraState',
   'wideRoadCameraState',
   'driverCameraState'
 ]
 
-def format(val):
+def fmt(val):
   ref = 0.05
   return f"{val:.6f} ({100 * val / ref:.2f}%)"
 
@@ -18,7 +20,7 @@ if __name__ == "__main__":
   sm = messaging.SubMaster(camera_states)
 
   prev_sof = {state: None for state in camera_states}
-  diffs = {state: [] for state in camera_states}
+  diffs: Dict[str, list] = {state: [] for state in camera_states}
 
   st = time.monotonic()
   while True:
@@ -34,7 +36,7 @@ if __name__ == "__main__":
       for state in camera_states:
         values = diffs[state]
         ref = 0.05
-        print(f"{state}  \tMean: {format(statistics.mean(values))} \t Min: {format(min(values))} \t Max: {format(max(values))} \t Std: {statistics.stdev(values):.6f} \t Num frames: {len(values)}")
+        print(f"{state}  \tMean: {fmt(statistics.mean(values))} \t Min: {fmt(min(values))} \t Max: {fmt(max(values))} \t Std: {statistics.stdev(values):.6f} \t Num frames: {len(values)}")
         diffs[state] = []
 
       print()
