@@ -15,6 +15,11 @@
 
 using namespace std::string_literals;
 
+const int SECS_IN_MIN = 60;
+const int SECS_IN_HR = 60 * SECS_IN_MIN;
+const int SECS_IN_DAY = 24 * SECS_IN_HR;
+const int SECS_IN_WEEK = 7 * SECS_IN_DAY;
+
 // protocol constants
 namespace ublox {
   const uint8_t PREAMBLE1 = 0xb5;
@@ -102,7 +107,6 @@ class UbloxMsgParser {
     inline bool valid_cheksum();
     inline bool valid();
     inline bool valid_so_far();
-    inline uint16_t get_glonass_year(uint8_t N4, uint16_t Nt);
 
     kj::Array<capnp::word> parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg);
     kj::Array<capnp::word> parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg);
