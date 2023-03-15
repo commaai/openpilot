@@ -281,6 +281,7 @@ class TestLaikad(unittest.TestCase):
         
       self.assertTrue(has_navs or has_polys)
       self.assertTrue(has_fix)
+      self.assertEqual(len(laikad.astro_dog.navs_fetched_times._ranges), 0)
       self.assertEqual(None, laikad.orbit_fetch_future)
 
   def test_cache(self):
