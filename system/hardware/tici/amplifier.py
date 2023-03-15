@@ -129,3 +129,12 @@ class Amplifier:
       self.set_config(config)
 
     self.set_global_shutdown(amp_disabled=False)
+
+
+if __name__ == "__main__":
+  with open("/sys/firmware/devicetree/base/model") as f:
+    model = f.read().strip('\x00')
+  model = model.split('comma ')[-1]
+
+  amp = Amplifier()
+  amp.initialize_configuration(model)
