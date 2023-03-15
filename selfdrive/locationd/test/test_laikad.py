@@ -15,7 +15,7 @@ from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris, ephemeris_structs
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
-from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
+from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
 from selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
@@ -70,14 +70,23 @@ def get_log(segs=range(0)):
       low_gnss.append(mb.as_reader())
     else:
       low_gnss.append(m)
-
   return all_logs, low_gnss
 
+def get_log_qcom(segs=range(0)):
+  logs = []
+  for i in segs:
+    logs.extend(LogReader(get_url("b0b3cba7abf862d1|2023-03-11--09-40-33", i)))
+  all_logs = [m for m in logs if m.which() == 'qcomGnss']
+  return all_logs
 
 def verify_messages(lr, laikad, return_one_success=False):
   good_msgs = []
   for m in lr:
-    msg = laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=True)
+    if m.which() == 'ubloxGnss':
+      gnss_msg = m.ubloxGnss
+    else:
+      gnss_msg = m.qcomGnss
+    msg = laikad.process_gnss_msg(gnss_msg, m.logMonoTime, block=True)
     if msg is not None and len(msg.gnssMeasurements.correctedMeasurements) > 0:
       good_msgs.append(msg)
       if return_one_success:
@@ -87,10 +96,16 @@ def verify_messages(lr, laikad, return_one_success=False):
 
 def get_first_gps_time(logs):
   for m in logs:
-    if m.ubloxGnss.which == 'measurementReport':
-      new_meas = read_raw_ublox(m.ubloxGnss.measurementReport)
-      if len(new_meas) > 0:
-        return new_meas[0].recv_time
+    if m.which() == 'ubloxGnss':
+      if m.ubloxGnss.which == 'measurementReport':
+        new_meas = read_raw_ublox(m.ubloxGnss.measurementReport)
+        if len(new_meas) > 0:
+          return new_meas[0].recv_time
+    else:
+      if m.qcomGnss.which == 'measurementReport':
+        new_meas = read_raw_qcom(m.qcomGnss.measurementReport)
+        if len(new_meas) > 0:
+          return new_meas[0].recv_time
 
 
 def get_measurement_mock(gpstime, sat_ephemeris):
@@ -111,6 +126,7 @@ class TestLaikad(unittest.TestCase):
     logs, low_gnss = get_log(range(1))
     cls.logs = logs
     cls.low_gnss = low_gnss
+    cls.logs_qcom = get_log_qcom(range(1))
     first_gps_time = get_first_gps_time(logs)
     cls.first_gps_time = first_gps_time
 
@@ -209,12 +225,13 @@ class TestLaikad(unittest.TestCase):
     self.assertTrue(kf_valid)
 
   def test_laika_online_nav_only(self):
-    laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV)
-    # Disable fetch_orbits to test NAV only
-    correct_msgs = verify_messages(self.logs, laikad)
-    correct_msgs_expected = 559
-    self.assertEqual(correct_msgs_expected, len(correct_msgs))
-    self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
+      # Disable fetch_orbits to test NAV only
+      correct_msgs = verify_messages(logs, laikad)
+      correct_msgs_expected = 42 if use_qcom else 559
+      self.assertEqual(correct_msgs_expected, len(correct_msgs))
+      self.assertEqual(correct_msgs_expected, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   @mock.patch('laika.downloader.download_and_cache_file')
   def test_laika_offline(self, downloader_mock):
@@ -247,65 +264,73 @@ class TestLaikad(unittest.TestCase):
     print(min(laikad.astro_dog.navs[prn], key=lambda e: e.epoch).epoch.as_datetime())
 
   def test_get_navs_in_process(self):
-    laikad = Laikad(auto_update=False)
-    has_navs = False
-    for m in self.logs:
-      laikad.process_gnss_msg(m.ubloxGnss, m.logMonoTime, block=False)
-      if laikad.orbit_fetch_future is not None:
-        laikad.orbit_fetch_future.result()
-      vals = laikad.astro_dog.navs.values()
-      has_navs = len(vals) > 0 and max([len(v) for v in vals]) > 0
-      if has_navs:
-        break
-    self.assertTrue(has_navs)
-    self.assertGreater(len(laikad.astro_dog.navs_fetched_times._ranges), 0)
-    self.assertEqual(None, laikad.orbit_fetch_future)
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      laikad = Laikad(auto_update=False, use_qcom=use_qcom)
+      has_navs = False
+      has_fix = False
+      for m in logs:
+        gnss_msg = m.qcomGnss if use_qcom else m.ubloxGnss
+        out_msg = laikad.process_gnss_msg(gnss_msg, m.logMonoTime, block=False)
+        if laikad.orbit_fetch_future is not None:
+          laikad.orbit_fetch_future.result()
+        vals = laikad.astro_dog.navs.values()
+        has_navs = len(vals) > 0 and max([len(v) for v in vals]) > 0
+        vals = laikad.astro_dog.orbits.values()
+        has_polys = len(vals) > 0 and max([len(v) for v in vals]) > 0
+        if out_msg is not None:
+          has_fix = has_fix or out_msg.gnssMeasurements.positionECEF.valid
+        
+      self.assertTrue(has_navs or has_polys)
+      self.assertTrue(has_fix)
+      self.assertGreater(len(laikad.astro_dog.navs_fetched_times._ranges), 0)
+      self.assertEqual(None, laikad.orbit_fetch_future)
 
   def test_cache(self):
-    laikad = Laikad(auto_update=True, save_ephemeris=True)
+    use_qcom = True
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      laikad = Laikad(auto_update=True, save_ephemeris=True, use_qcom=use_qcom)
+      def wait_for_cache():
+        max_time = 2
+        while Params().get(EPHEMERIS_CACHE) is None:
+          time.sleep(0.1)
+          max_time -= 0.1
+          if max_time < 0:
+            self.fail("Cache has not been written after 2 seconds")
 
-    def wait_for_cache():
-      max_time = 2
-      while Params().get(EPHEMERIS_CACHE) is None:
-        time.sleep(0.1)
-        max_time -= 0.1
-        if max_time < 0:
-          self.fail("Cache has not been written after 2 seconds")
+      # Test cache with no ephemeris
+      laikad.last_report_time = GPSTime(1,0)
+      laikad.cache_ephemeris()
+      wait_for_cache()
+      Params().remove(EPHEMERIS_CACHE)
 
-    # Test cache with no ephemeris
-    laikad.last_report_time = GPSTime(1,0)
-    laikad.cache_ephemeris()
-    wait_for_cache()
-    Params().remove(EPHEMERIS_CACHE)
+      #laikad.astro_dog.get_navs(self.first_gps_time)
+      laikad.last_report_time = GPSTime(2,0)
+      laikad.fetch_navs(self.first_gps_time, block=True)
 
-    #laikad.astro_dog.get_navs(self.first_gps_time)
-    laikad.last_report_time = GPSTime(2,0)
-    laikad.fetch_navs(self.first_gps_time, block=True)
+      # Wait for cache to save
+      wait_for_cache()
 
-    # Wait for cache to save
-    wait_for_cache()
-
-    # Check both nav and orbits separate
-    laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV, save_ephemeris=True)
-    # Verify navs are loaded from cache
-    self.dict_has_values(laikad.astro_dog.navs)
-    # Verify cache is working for only nav by running a segment
-    msg = verify_messages(self.logs, laikad, return_one_success=True)
-    self.assertIsNotNone(msg)
-
-    with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
-      # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
-      laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
-      laikad.fetch_navs(self.first_gps_time, block=False)
-      mock_method.assert_not_called()
-
-      # Verify cache is working for only orbits by running a segment
-      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
-      msg = verify_messages(self.logs, laikad, return_one_success=True)
+      # Check both nav and orbits separate
+      laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.NAV, save_ephemeris=True, use_qcom=use_qcom)
+      # Verify navs are loaded from cache
+      self.dict_has_values(laikad.astro_dog.navs)
+      # Verify cache is working for only nav by running a segment
+      msg = verify_messages(logs, laikad, return_one_success=True)
       self.assertIsNotNone(msg)
-      # Verify orbit data is not downloaded
-      mock_method.assert_not_called()
 
+      with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
+        # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
+        laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
+        laikad.fetch_navs(self.first_gps_time, block=False)
+        mock_method.assert_not_called()
+
+        # Verify cache is working for only orbits by running a segment
+        laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
+        msg = verify_messages(self.logs, laikad, return_one_success=True)
+        self.assertIsNotNone(msg)
+        # Verify orbit data is not downloaded
+        mock_method.assert_not_called()
+      break
 
   def test_low_gnss_meas(self):
     cnt = 0
@@ -322,7 +347,6 @@ class TestLaikad(unittest.TestCase):
   def dict_has_values(self, dct):
     self.assertGreater(len(dct), 0)
     self.assertGreater(min([len(v) for v in dct.values()]), 0)
-
 
 if __name__ == "__main__":
   unittest.main()

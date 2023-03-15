@@ -94,6 +94,7 @@ class Laikad:
       nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
       ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in nav_list if e.prn[0]=='R'],
                                                         'gpsEphemerides': [e.data for e in nav_list if e.prn[0]=='G']})
+
       put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
       cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
@@ -157,6 +158,8 @@ class Laikad:
       if self.gps_week is None:
         return
       ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+      self.astro_dog.add_orbits({ephem.prn: [ephem]})
+
     else:
       if gnss_msg.which() == 'ephemeris':
         data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
@@ -167,7 +170,7 @@ class Laikad:
       else:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return
-    self.astro_dog.add_navs({ephem.prn: [ephem]})
+      self.astro_dog.add_navs({ephem.prn: [ephem]})
     self.cache_ephemeris()
 
   def process_report(self, new_meas, t):
@@ -421,7 +424,6 @@ def main(sm=None, pm=None, qc=None):
 
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
-
       msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
       if msg is None:
         # TODO: beautify this, locationd needs a valid message
