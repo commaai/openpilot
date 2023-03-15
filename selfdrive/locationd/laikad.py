@@ -90,10 +90,9 @@ class Laikad:
   def cache_ephemeris(self, t: GPSTime):
 
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
-      glonass_navs: List = sum([e for e in self.astro_dog.navs if e.constellation_id == ConstellationId.GLONASS], [])
-      gps_navs: List = sum([e for e in self.astro_dog.navs if e.constellation_id == ConstellationId.GPS], [])
-      ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data_struct for e in glonass_navs],
-                                                        'gpsEphemerides': [e.data_struct for e in gps_navs]})
+      nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
+      ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data_struct for e in nav_list if e.prn[0]=='R'],
+                                                        'gpsEphemerides': [e.data_struct for e in nav_list if e.prn[0]=='G']})
       put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
