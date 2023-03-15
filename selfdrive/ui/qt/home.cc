@@ -5,6 +5,7 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/maps/map_settings.h"
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
@@ -137,9 +138,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: DriveStats, PrimeAdWidget
+    // left: MapPanel, PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-    left_widget->addWidget(new DriveStats);
+    left_widget->addWidget(new MapPanel);
     left_widget->addWidget(new PrimeAdWidget);
 
     left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
