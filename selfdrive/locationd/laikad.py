@@ -69,29 +69,33 @@ class Laikad:
     if not self.save_ephemeris:
       return
 
-    cache = Params().get(EPHEMERIS_CACHE)
-    if not cache:
+    cache_bytes = Params().get(EPHEMERIS_CACHE)
+    if not cache_bytes:
       return
 
+    nav_dict = {}
     try:
-      cache = json.loads(cache, object_hook=deserialize_hook)
-      if cache['version'] == CACHE_VERSION:
-        self.astro_dog.add_navs(cache['navs'])
-        self.last_fetch_navs_t = cache['last_fetch_navs_t']
-      else:
-        cache['navs'] = {}
-    except json.decoder.JSONDecodeError:
+      ephem_cache = ephemeris_structs.EphemerisCache.from_bytes(cache_bytes)
+      glonass_navs = [GLONASSEphemeris(data_struct) for data_struct in ephem_cache.glonassEphemerides] 
+      gps_navs = [GPSEphemeris(data_struct) for data_struct in ephem_cache.glonassEphemerides]
+      for e in sum(glonass_navs, gps_navs):
+        if e.prn not in nav_dict:
+          nav_dict[e.prn] = []
+        nav_dict[e.prn].append(e)
+      self.astro_dog.add_navs(nav_dict)
+    except Exception:
       cloudlog.exception("Error parsing cache")
-    timestamp = self.last_fetch_navs_t.as_datetime() if self.last_fetch_navs_t is not None else 'Nan'
     cloudlog.debug(
-      f"Loaded navs ({sum([len(v) for v in cache['navs']])}) cache with timestamp: {timestamp}. Unique orbit and nav sats: {list(cache['navs'].keys())} " +
-      f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in self.astro_dog.navs_fetched_times._ranges]}")
+      f"Loaded navs ({sum([len(v) for v in nav_dict['navs']])}). Unique orbit and nav sats: {list(nav_dict.keys())} ")
 
   def cache_ephemeris(self, t: GPSTime):
+
     if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
-      put_nonblocking(EPHEMERIS_CACHE, json.dumps(
-        {'version': CACHE_VERSION, 'last_fetch_navs_t': self.last_fetch_navs_t, 'navs': self.astro_dog.navs},
-        cls=CacheSerializer))
+      glonass_navs = sum([e for e in self.astro_dog.navs if e.constellation_id == ConstellationId.GLONASS])
+      gps_navs = sum([e for e in self.astro_dog.navs if e.constellation_id == ConstellationId.GPS])
+      ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data_struct for e in glonass_navs],
+                                                        'gpsEphemerides': [e.data_struct for e in gps_navs]})
+      put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
       cloudlog.debug("Cache saved")
       self.last_cached_t = t
 
@@ -360,26 +364,6 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
   for kind, data in ekf_data.items():
     if len(data) > 0:
       gnss_kf.predict_and_observe(t, kind, data)
-
-
-class CacheSerializer(json.JSONEncoder):
-
-  def default(self, o):
-    if isinstance(o, Ephemeris):
-      return o.to_json()
-    if isinstance(o, GPSTime):
-      return o.__dict__
-    if isinstance(o, np.ndarray):
-      return o.tolist()
-    return json.JSONEncoder.default(self, o)
-
-
-def deserialize_hook(dct):
-  if 'ephemeris' in dct:
-    return Ephemeris.from_json(dct)
-  if 'week' in dct:
-    return GPSTime(dct['week'], dct['tow'])
-  return dct
 
 
 class EphemerisSourceType(IntEnum):
