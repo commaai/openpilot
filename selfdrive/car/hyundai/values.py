@@ -1569,11 +1569,25 @@ FW_VERSIONS = {
     ],
   },
   CAR.TUCSON_4TH_GEN: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9240 14T',
+    (Ecu.fwdCamera, 0x7ce, None): [
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
+      b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8739110-2S285\xf1\x81HM6M1_0a0_L80',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00HT6WA280BLHT6WAEH0A1SNX4G25X4XSC3SS4w5V\xa7',
+      b'\xf1\x87SDNVAA4469644GM1\xaa\xa9\x8a\x98x\x88\x98\x89ffffwwwwwwww\xc8O\xfa\xff\xa9\x99\x8f\xffr<\xf1\x81HT',
+      b'6WAEH0A1\xf1\x00HT6WA280BLHT6WAEH0A1SNX4G25X4XSC3SS4w5V\xa7',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00NX4 MDPS C 1.00 1.01 56300-CW000 1A15',
+    ],
+    (Ecu.cornerRadar,0x7b7, None): [
+      b'\xf1\x003D',
     ],
   },
   CAR.TUCSON_HYBRID_4TH_GEN: {
