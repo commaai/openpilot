@@ -17,7 +17,7 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import Ephemeris, EphemerisType, convert_ublox_gps_ephem, convert_ublox_glonass_ephem, parse_qcom_ephem
+from laika.ephemeris import Ephemeris, EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
@@ -155,9 +155,11 @@ class Laikad:
       ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
     else:
       if gnss_msg.which() == 'ephemeris':
-        ephem = convert_ublox_gps_ephem(gnss_msg.ephemeris)
+        data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
+        ephem = GPSEphemeris(data_struct)
       elif gnss_msg.which() == 'glonassEphemeris':
-        ephem = convert_ublox_glonass_ephem(gnss_msg.glonassEphemeris)
+        data_struct = ephemeris_structs.GlonassEphemeris.new_message(**gnss_msg.glonassEphemeris.to_dict())
+        ephem = GLONASSEphemeris(data_struct)
       else:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return

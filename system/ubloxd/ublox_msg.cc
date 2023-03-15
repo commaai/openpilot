@@ -65,22 +65,6 @@ inline bool UbloxMsgParser::valid_so_far() {
   return true;
 }
 
-inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
-  // convert time to year (conversion from A3.1.3)
-  int J = 0;
-  if (1 <= Nt && Nt <= 366) {
-    J = 1;
-  } else if (367 <= Nt && Nt <= 731) {
-    J = 2;
-  } else if (732 <= Nt && Nt <= 1096) {
-    J = 3;
-  } else if (1097 <= Nt && Nt <= 1461) {
-    J = 4;
-  }
-  uint16_t year = 1996 + 4*(N4 -1) + (J - 1);
-  return year;
-}
-
 bool UbloxMsgParser::add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
   last_log_time = log_time;
   int needed = needed_bytes();
@@ -203,6 +187,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
     int iode_s2 = 0;
     int iode_s3 = 0;
     int iodc_lsb = 0;
+    int week;
 
     // Subframe 1
     {
@@ -210,7 +195,14 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       gps_t subframe(&stream);
       gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
 
-      eph.setGpsWeek(subframe_1->week_no());
+      // Each message is incremented to be greater or equal than week 1877 (2015-12-27).
+      //  To skip this use the current_time argument
+      week = subframe_1->week_no();
+      week += 1024;
+      if (week < 1877) {
+        week += 1024;
+      }
+      //eph.setGpsWeek(subframe_1->week_no());
       eph.setTgd(subframe_1->t_gd() * pow(2, -31));
       eph.setToc(subframe_1->t_oc() * pow(2, 4));
       eph.setAf2(subframe_1->af_2() * pow(2, -55));
@@ -227,6 +219,12 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       gps_t subframe(&stream);
       gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
 
+      // GPS week refers to current week, the ephemeris can be valid for the next
+      // if toe equals 0, this can be verified by the TOW count if it is within the
+      // last 2 hours of the week (gps ephemeris valid for 4hours)
+      if (subframe_2->t_oe() == 0 and subframe.how()->tow_count()*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR)){
+        week += 1;
+      }
       eph.setCrs(subframe_2->c_rs() * pow(2, -5));
       eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
       eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
@@ -255,6 +253,9 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       eph.setIDot(subframe_3->idot() * pow(2, -43) * gpsPi);
       iode_s3 = subframe_3->iode();
     }
+
+    eph.setToeWeek(week);
+    eph.setTocWeek(week);
 
     gps_subframes[msg->sv_id()].clear();
     if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
@@ -329,7 +330,10 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
   MessageBuilder msg_builder;
   auto eph = msg_builder.initEvent().initUbloxGnss().initGlonassEphemeris();
   eph.setSvId(msg->sv_id());
+  eph.setFreqNum(msg->freq_id() - 7);
+
   uint16_t current_day = 0;
+  uint16_t tk = 0;
 
   // string number 1
   {
@@ -338,7 +342,8 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     glonass_t::string_1_t* data = static_cast<glonass_t::string_1_t*>(gl_stream.data());
 
     eph.setP1(data->p1());
-    eph.setTk(data->t_k());
+    tk = data->t_k();
+    eph.setTkDEPRECATED(tk);
     eph.setXVel(data->x_vel() * pow(2, -20));
     eph.setXAccel(data->x_accel() * pow(2, -30));
     eph.setX(data->x() * pow(2, -11));
@@ -379,6 +384,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     glonass_t::string_4_t* data = static_cast<glonass_t::string_4_t*>(gl_stream.data());
 
     current_day = data->n_t();
+    eph.setNt(current_day);
     eph.setTauN(data->tau_n() * pow(2, -30));
     eph.setDeltaTauN(data->delta_tau_n() * pow(2, -30));
     eph.setAge(data->e_n());
@@ -398,27 +404,9 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
     // string5 parsing is only needed to get the year, this can be removed and
     // the year can be fetched later in laika (note rollovers and leap year)
-    uint8_t n_4 = data->n_4();
-    uint16_t year = get_glonass_year(n_4, current_day);
-    if (current_day > 1461) {
-      // impossible day within last 4 year, reject ephemeris
-      // TODO: check if this can be detected via hamming code
-      LOGE("INVALID DATA: current day out of range: %d, %d", current_day, n_4);
-      glonass_strings[msg->sv_id()].clear();
-      return kj::Array<capnp::word>();
-    }
-
-    uint16_t last_leap_year = 1996 + 4*(n_4-1);
-    uint16_t days_till_this_year = (year - last_leap_year)*365;
-    if (days_till_this_year != 0) {
-      days_till_this_year++;
-    }
-
-    eph.setYear(year);
-    eph.setDayInYear(current_day - days_till_this_year);
-    eph.setHour((eph.getTk()>>7) & 0x1F);
-    eph.setMinute((eph.getTk()>>1) & 0x3F);
-    eph.setSecond((eph.getTk() & 0x1) * 30);
+    eph.setN4(data->n_4());
+    int tk_seconds = SECS_IN_HR * ((tk>>7) & 0x1F) + SECS_IN_MIN * ((tk>>1) & 0x3F) + (tk & 0x1) * 30;
+    eph.setTkSeconds(tk_seconds);
   }
 
   glonass_strings[msg->freq_id()].clear();
