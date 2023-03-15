@@ -1,21 +1,51 @@
 #!/usr/bin/env python3
 import time
 import unittest
-from collections import defaultdict
+from cereal import log
+import cereal.messaging as messaging
+from common.params import Params
 from datetime import datetime
 from unittest import mock
 from unittest.mock import patch
+from tqdm import tqdm
 
-from common.params import Params
+
 from laika.constants import SECS_IN_DAY
 from laika.downloader import DownloadFailed
-from laika.ephemeris import EphemerisType, GPSEphemeris
+from laika.ephemeris import EphemerisType, GPSEphemeris, ephemeris_structs
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, TimeRangeHolder
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox
 from selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
+from selfdrive.manager.process_config import managed_processes
+
+from selfdrive.test.process_replay.helpers import OpenpilotPrefix
+
+
+def get_ublox_gnss(ubloxraw):
+  with OpenpilotPrefix():
+    managed_processes['ubloxd'].start()
+    timeout_ms = 30
+    pm = messaging.PubMaster(['ubloxRaw'])
+    sock = messaging.sub_sock('ubloxGnss', timeout=timeout_ms)
+
+    log_msgs = []
+    log_t = []
+    for x in tqdm(ubloxraw):
+      pm.send(x.which(), x.as_builder())
+      ret = messaging.recv_one(sock)
+      if ret is not None:
+        msg = log.Event.new_message(ubloxGnss=ret.ubloxGnss.to_dict())
+        msg.logMonoTime = x.logMonoTime
+        log_msgs.append(msg)
+        log_t.append(1e-9 * x.logMonoTime)
+    assert managed_processes['ubloxd'].get_process_state_msg().running
+    assert len(log_msgs) > 1 or len(ubloxraw) == 0
+    managed_processes['ubloxd'].stop()
+  return log_t, log_msgs
+
 
 
 def get_log(segs=range(0)):
@@ -23,7 +53,8 @@ def get_log(segs=range(0)):
   for i in segs:
     logs.extend(LogReader(get_url("4cf7a6ad03080c90|2021-09-29--13-46-36", i)))
 
-  all_logs = [m for m in logs if m.which() == 'ubloxGnss']
+  raw_logs = [m for m in logs if m.which() == 'ubloxRaw']
+  all_logs = get_ublox_gnss(raw_logs)[1]
   low_gnss = []
   for m in all_logs:
     if m.ubloxGnss.which() != 'measurementReport':
@@ -31,7 +62,8 @@ def get_log(segs=range(0)):
 
     MAX_MEAS = 7
     if m.ubloxGnss.measurementReport.numMeas > MAX_MEAS:
-      mb = m.as_builder()
+      mb = log.Event.new_message(ubloxGnss=m.ubloxGnss.to_dict())
+      mb.logMonoTime = m.logMonoTime
       mb.ubloxGnss.measurementReport.numMeas = MAX_MEAS
       mb.ubloxGnss.measurementReport.measurements = list(m.ubloxGnss.measurementReport.measurements)[:MAX_MEAS]
       mb.ubloxGnss.measurementReport.measurements[0].pseudorange += 1000
@@ -128,8 +160,8 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(laikad.last_fetch_navs_t, real_current_time)
 
   def test_ephemeris_source_in_msg(self):
-    data_mock = defaultdict(str)
-    data_mock['sv_id'] = 1
+    dicto = {'svId': 1}
+    data_mock = ephemeris_structs.Ephemeris.new_message(**dicto)
 
     gpstime = GPS_TIME_PREDICTION_ORBITS_RUSSIAN_SRC
     laikad = Laikad()
@@ -151,7 +183,7 @@ class TestLaikad(unittest.TestCase):
     self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
 
     # Test nav source type
-    ephem = GPSEphemeris(data_mock, gpstime)
+    ephem = GPSEphemeris(data_mock)
     meas = get_measurement_mock(gpstime, ephem)
     msg = create_measurement_msg(meas)
     self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
@@ -195,8 +227,8 @@ class TestLaikad(unittest.TestCase):
     downloader_mock.side_effect = DownloadFailed
     laikad = Laikad(auto_update=False)
     correct_msgs = verify_messages(self.logs, laikad)
-    self.assertEqual(255, len(correct_msgs))
-    self.assertEqual(255, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
+    self.assertEqual(375, len(correct_msgs))
+    self.assertEqual(375, len([m for m in correct_msgs if m.gnssMeasurements.positionECEF.valid]))
 
   def test_laika_get_orbits(self):
     laikad = Laikad(auto_update=False)
@@ -241,11 +273,13 @@ class TestLaikad(unittest.TestCase):
           self.fail("Cache has not been written after 2 seconds")
 
     # Test cache with no ephemeris
-    laikad.cache_ephemeris(t=GPSTime(0, 0))
+    laikad.last_report_time = GPSTime(1,0)
+    laikad.cache_ephemeris()
     wait_for_cache()
     Params().remove(EPHEMERIS_CACHE)
 
     #laikad.astro_dog.get_navs(self.first_gps_time)
+    laikad.last_report_time = GPSTime(2,0)
     laikad.fetch_navs(self.first_gps_time, block=True)
 
     # Wait for cache to save
@@ -271,6 +305,7 @@ class TestLaikad(unittest.TestCase):
       self.assertIsNotNone(msg)
       # Verify orbit data is not downloaded
       mock_method.assert_not_called()
+
 
   def test_low_gnss_meas(self):
     cnt = 0
