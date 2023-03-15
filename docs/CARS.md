@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
 
-# 238 Supported Cars
+# 240 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -13,10 +13,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Acura|RDX 2019-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Acura&model=RDX 2019-22">Honda Bosch A</a>||
 |Audi|A3 2014-19|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=A3 2014-19">J533</a>||
 |Audi|A3 Sportback e-tron 2017-18|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=A3 Sportback e-tron 2017-18">J533</a>||
+|Audi|A4 2015-16|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=A4 2015-16">J533</a>||
 |Audi|Q2 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=Q2 2018">J533</a>||
 |Audi|Q3 2019-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=Q3 2019-23">J533</a>||
 |Audi|RS3 2018|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=RS3 2018">J533</a>||
 |Audi|S3 2015-17|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=S3 2015-17">J533</a>||
+|Audi|S4 2015-16|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Audi&model=S4 2015-16">J533</a>||
 |Cadillac|Escalade 2017[<sup>3</sup>](#footnotes)|Driver Assist Package|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Cadillac&model=Escalade 2017">OBD-II</a>||
 |Cadillac|Escalade ESV 2016[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Cadillac&model=Escalade ESV 2016">OBD-II</a>||
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Bolt EUV 2022-23">GM</a>|<a href="https://youtu.be/xvwzGMUA210" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
