@@ -42,6 +42,7 @@ MainWindow::MainWindow() : QMainWindow() {
   messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
+  qRegisterMetaType<QSet<uint8_t>>("QSet<uint8_t>");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
@@ -70,6 +71,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
+  QObject::connect(can, &AbstractStream::sourcesUpdated, dbc(), &DBCManager::updateSources);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
@@ -310,7 +312,7 @@ void MainWindow::loadDBCFromClipboard() {
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
   bool ret = dbc()->open("clipboard", dbc_str, &error);
-  if (ret && dbc()->messages().size() > 0) {
+  if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));

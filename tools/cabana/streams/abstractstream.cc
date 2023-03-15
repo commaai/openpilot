@@ -1,5 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
-
+#include <QTimer>
 #include <QtConcurrent>
 
 AbstractStream *can = nullptr;
@@ -39,6 +39,11 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.colors = tracker.colors;
       data.last_change_t = tracker.last_change_t;
       data.bit_change_counts = tracker.bit_change_counts;
+
+      if (!sources.contains(id.source)) {
+        sources.insert(id.source);
+        emit sourcesUpdated(sources);
+      }
     }
 
     double ts = millis_since_boot();
@@ -115,6 +120,8 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       m.value().freq = m.value().count / std::max(1.0, m.value().ts);
     }
   }
-  emit updated();
-  emit msgsReceived(&can_msgs);
+  QTimer::singleShot(0, [this]() {
+    emit updated();
+    emit msgsReceived(&can_msgs);
+  });
 }

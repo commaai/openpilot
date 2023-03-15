@@ -57,11 +57,11 @@ signals:
   void axisYLabelWidthChanged(int w);
 
 private slots:
-  void msgUpdated(uint32_t address);
   void signalUpdated(const cabana::Signal *sig);
   void manageSeries();
   void handleMarkerClicked();
-  void msgRemoved(uint32_t address) { removeIf([=](auto &s) { return s.msg_id.address == address; }); }
+  void msgUpdated(MessageId id);
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id == id; }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:

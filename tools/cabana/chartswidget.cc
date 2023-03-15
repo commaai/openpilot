@@ -421,8 +421,8 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
   }
 }
 
-void ChartView::msgUpdated(uint32_t address) {
-  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id.address == address; }))
+void ChartView::msgUpdated(MessageId id) {
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id == id; }))
     updateTitle();
 }
 
@@ -723,10 +723,12 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   // Scrubbing
   if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    double t = chart()->mapToValue({(double)ev->x(), (double)ev->y()}).x();
-    // Prevent seeking past the end of the route
-    t = std::clamp(t, 0., can->totalSeconds());
-    can->seekTo(t);
+    if (chart()->plotArea().contains(ev->pos())) {
+      double t = chart()->mapToValue(ev->pos()).x();
+      // Prevent seeking past the end of the route
+      t = std::clamp(t, 0., can->totalSeconds());
+      can->seekTo(t);
+    }
     return;
   }
 
