@@ -50,10 +50,11 @@ class Laikad:
     self.auto_fetch_navs = auto_fetch_navs
     self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
     self.orbit_fetch_future: Optional[Future] = None
-
-    self.last_fetch_navs_t = None
     self.got_first_gnss_msg = False
-    self.last_cached_t = None
+
+    self.last_report_time = GPSTime(0, 0)
+    self.last_fetch_navs_t = GPSTime(0, 0)
+    self.last_cached_t = GPSTime(0, 0)
     self.save_ephemeris = save_ephemeris
     self.load_cache()
 
@@ -76,7 +77,7 @@ class Laikad:
     try:
       ephem_cache = ephemeris_structs.EphemerisCache.from_bytes(cache_bytes)
       glonass_navs = [GLONASSEphemeris(data_struct) for data_struct in ephem_cache.glonassEphemerides] 
-      gps_navs = [GPSEphemeris(data_struct) for data_struct in ephem_cache.glonassEphemerides]
+      gps_navs = [GPSEphemeris(data_struct) for data_struct in ephem_cache.gpsEphemerides]
       for e in sum(glonass_navs, gps_navs):
         if e.prn not in nav_dict:
           nav_dict[e.prn] = []
@@ -87,15 +88,15 @@ class Laikad:
     cloudlog.debug(
       f"Loaded navs ({sum([len(nav_dict[[prn]]) for prn in nav_dict.keys()])}). Unique orbit and nav sats: {list(nav_dict.keys())} ")
 
-  def cache_ephemeris(self, t: GPSTime):
+  def cache_ephemeris(self):
 
-    if self.save_ephemeris and (self.last_cached_t is None or t - self.last_cached_t > SECS_IN_MIN):
+    if self.save_ephemeris and (self.last_report_time - self.last_cached_t > SECS_IN_MIN):
       nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
       ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in nav_list if e.prn[0]=='R'],
                                                         'gpsEphemerides': [e.data for e in nav_list if e.prn[0]=='G']})
       put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
       cloudlog.debug("Cache saved")
-      self.last_cached_t = t
+      self.last_cached_t = self.last_report_time
 
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
@@ -141,6 +142,7 @@ class Laikad:
       week = report.gpsWeek
       tow = report.rcvTow
       new_meas = read_raw_ublox(report)
+    self.last_report_time = GPSTime(week, tow)
     return week, tow, new_meas
 
   def is_ephemeris(self, gnss_msg):
@@ -166,7 +168,7 @@ class Laikad:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return
     self.astro_dog.add_navs({ephem.prn: [ephem]})
-    self.cache_ephemeris(t=ephem.epoch)
+    self.cache_ephemeris()
 
   def process_report(self, new_meas, t):
     # Filter measurements with unexpected pseudoranges for GPS and GLONASS satellites
@@ -276,7 +278,7 @@ class Laikad:
 
   def fetch_navs(self, t: GPSTime, block):
     # Download new navs if 1 hour of navs data left
-    if t + SECS_IN_HR not in self.astro_dog.navs_fetched_times and (self.last_fetch_navs_t is None or abs(t - self.last_fetch_navs_t) > SECS_IN_MIN):
+    if t + SECS_IN_HR not in self.astro_dog.navs_fetched_times and (abs(t - self.last_fetch_navs_t) > SECS_IN_MIN):
       astro_dog_vars = self.astro_dog.valid_const, self.astro_dog.auto_update, self.astro_dog.valid_ephem_types, self.astro_dog.cache_dir
       ret = None
 
@@ -294,7 +296,7 @@ class Laikad:
           self.last_fetch_navs_t = ret[2]
         else:
           self.astro_dog.navs, self.astro_dog.navs_fetched_times, self.last_fetch_navs_t = ret
-          self.cache_ephemeris(t=t)
+          self.cache_ephemeris()
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cache_dir):
