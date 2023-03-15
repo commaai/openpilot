@@ -86,7 +86,7 @@ class Laikad:
     except Exception:
       cloudlog.exception("Error parsing cache")
     cloudlog.debug(
-      f"Loaded navs ({sum([len(nav_dict[[prn]]) for prn in nav_dict.keys()])}). Unique orbit and nav sats: {list(nav_dict.keys())} ")
+      f"Loaded navs ({sum([len(nav_dict[prn]) for prn in nav_dict.keys()])}). Unique orbit and nav sats: {list(nav_dict.keys())} ")
 
   def cache_ephemeris(self):
 
