@@ -32,7 +32,7 @@ public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
+  void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left);

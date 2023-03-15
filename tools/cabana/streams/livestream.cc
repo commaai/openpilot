@@ -1,10 +1,8 @@
 #include "tools/cabana/streams/livestream.h"
 
-LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
-  timer = new QTimer(this);
-  timer->callOnTimeout(this, &LiveStream::removeExpiredEvents);
-  timer->start(3 * 1000);
+#include <QTimer>
 
+LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -15,8 +13,6 @@ LiveStream::~LiveStream() {
   stream_thread->requestInterruption();
   stream_thread->quit();
   stream_thread->wait();
-  for (Event *e : can_events) ::delete e;
-  for (auto m : messages) delete m;
 }
 
 void LiveStream::streamThread() {
@@ -35,11 +31,8 @@ void LiveStream::streamThread() {
       QThread::msleep(50);
       continue;
     }
-    AlignedBuffer *buf = messages.emplace_back(new AlignedBuffer());
-    Event *evt = ::new Event(buf->align(msg));
-    delete msg;
-
-    handleEvent(evt);
+    std::lock_guard lk(lock);
+    handleEvent(messages.emplace_back(msg).event);
     // TODO: write stream to log file to replay it with cabana --data_dir flag.
   }
 }
@@ -53,11 +46,10 @@ void LiveStream::handleEvent(Event *evt) {
     emit streamStarted();
   }
 
-  std::lock_guard lk(lock);
-  can_events.push_back(evt);
+  received.push_back(evt);
   if (!pause_) {
     if (speed_ < 1 && last_update_ts > 0) {
-      auto it = std::upper_bound(can_events.cbegin(), can_events.cend(), current_ts, [](uint64_t ts, auto &e) {
+      auto it = std::upper_bound(received.cbegin(), received.cend(), current_ts, [](uint64_t ts, auto &e) {
         return ts < e->mono_time;
       });
       if (it != can_events.cend()) {
@@ -73,27 +65,20 @@ void LiveStream::handleEvent(Event *evt) {
   }
 }
 
-void LiveStream::removeExpiredEvents() {
-  std::lock_guard lk(lock);
-  if (can_events.size() > 0) {
-    const uint64_t max_ns = settings.max_cached_minutes * 60 * 1e9;
-    const uint64_t last_ns = can_events.back()->mono_time;
-    while (!can_events.empty() && (last_ns - can_events.front()->mono_time) > max_ns) {
-      ::delete can_events.front();
-      delete messages.front();
-      can_events.pop_front();
-      messages.pop_front();
+void LiveStream::process(QHash<MessageId, CanData> *last_messages) {
+  {
+    std::lock_guard lk(lock);
+    uint64_t last_ts = can_events.empty() ? 0 : can_events.back()->mono_time;
+    auto first = std::upper_bound(received.cbegin(), received.cend(), last_ts, [](uint64_t ts, auto &e) {
+      return ts < e->mono_time;
+    });
+    can_events.insert(can_events.end(), first, received.cend());
+    if (speed_ == 1) {
+      received.clear();
     }
   }
-}
-
-const std::vector<Event *> *LiveStream::events() const {
-  std::lock_guard lk(lock);
-  if (events_vector.capacity() <= can_events.size()) {
-    events_vector.reserve(can_events.size() * 2);
-  }
-  events_vector.assign(can_events.begin(), can_events.end());
-  return &events_vector;
+  emit eventsMerged();
+  AbstractStream::process(last_messages);
 }
 
 void LiveStream::pause(bool pause) {

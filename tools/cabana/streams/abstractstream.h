@@ -59,7 +59,7 @@ public:
   QSet<uint8_t> sources;
 
 protected:
-  void process(QHash<MessageId, CanData> *);
+  virtual void process(QHash<MessageId, CanData> *);
   bool updateEvent(const Event *event);
   void updateLastMsgsTo(double sec);
 
