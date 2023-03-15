@@ -35,7 +35,7 @@ POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
 class Laikad:
   def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_navs=True, auto_update=False,
-               valid_ephem_types=(EphemerisType.NAV,),
+               valid_ephem_types=(EphemerisType.NAV, EphemerisType.QCOM_POLY),
                save_ephemeris=False, use_qcom=False):
     """
     valid_const: GNSS constellation which can be used
@@ -158,7 +158,7 @@ class Laikad:
       if self.gps_week is None:
         return
       ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
-      self.astro_dog.add_orbits({ephem.prn: [ephem]})
+      self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
 
     else:
       if gnss_msg.which() == 'ephemeris':
