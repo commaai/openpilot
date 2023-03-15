@@ -70,20 +70,33 @@ class CarControllerParams:
       self.STEER_DELTA_UP = 4             # Max HCA reached in 1.50s (STEER_MAX / (50Hz * 1.50))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
 
-      if CP.transmissionType == TransmissionType.automatic:
-        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
-      elif CP.transmissionType == TransmissionType.direct:
-        self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
       self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
 
-      self.BUTTONS = [
-        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
-        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
-        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
-        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
-        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
-        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
-      ]
+      if CP.carFingerprint in MLB_CARS:
+        # TODO: populate shifter enums
+        self.shifter_values = None
+        self.BUTTONS = [
+          Button(car.CarState.ButtonEvent.Type.setCruise, "LS_01", "LS_Tip_Setzen", [1]),
+          Button(car.CarState.ButtonEvent.Type.resumeCruise, "LS_01", "LS_Tip_Wiederaufnahme", [1]),
+          Button(car.CarState.ButtonEvent.Type.accelCruise, "LS_01", "LS_Tip_Hoch", [1]),
+          Button(car.CarState.ButtonEvent.Type.decelCruise, "LS_01", "LS_Tip_Runter", [1]),
+          Button(car.CarState.ButtonEvent.Type.cancel, "LS_01", "LS_Abbrechen", [1]),
+          Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "LS_01", "LS_Verstellung_Zeitluecke", [1]),
+        ]
+      else:
+        if CP.transmissionType == TransmissionType.automatic:
+          self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+        elif CP.transmissionType == TransmissionType.direct:
+          self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+
+        self.BUTTONS = [
+          Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+          Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+          Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+          Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+          Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+          Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+        ]
 
       self.LDW_MESSAGES = {
         "none": 0,                            # Nothing to display
@@ -125,6 +138,7 @@ class CAR:
   TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"   # Chassis 7H/7L, T6-facelift Transporter/Multivan/Caravelle/California
   TROC_MK1 = "VOLKSWAGEN T-ROC 1ST GEN"             # Chassis A1, Mk1 VW T-Roc and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
+  AUDI_A4_MK4 = "AUDI A4 4TH GEN"                   # Chassis FL, Mk4 (B8) Audi A4 and S4
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"                   # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   AUDI_Q3_MK2 = "AUDI Q3 2ND GEN"                   # Chassis 8U/F3/FS, Mk2 Audi Q3 and variants
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
@@ -139,11 +153,13 @@ class CAR:
 
 
 PQ_CARS = {CAR.PASSAT_NMS, CAR.SHARAN_MK2}
-
+MLB_CARS = {CAR.AUDI_A4_MK4}
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("vw_mqb_2010", None))
 for car_type in PQ_CARS:
   DBC[car_type] = dbc_dict("vw_golf_mk4", None)
+for car_type in MLB_CARS:
+  DBC[car_type] = dbc_dict("vw_mlb", None)
 
 
 class Footnote(Enum):
@@ -235,6 +251,10 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Audi A3 Sportback e-tron 2017-18"),
     VWCarInfo("Audi RS3 2018"),
     VWCarInfo("Audi S3 2015-17"),
+  ],
+  CAR.AUDI_A4_MK4: [
+    VWCarInfo("Audi A4 2015-16"),
+    VWCarInfo("Audi S4 2015-16"),
   ],
   CAR.AUDI_Q2_MK1: VWCarInfo("Audi Q2 2018"),
   CAR.AUDI_Q3_MK2: VWCarInfo("Audi Q3 2019-23"),
@@ -914,6 +934,25 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
+  },
+  CAR.AUDI_A4_MK4: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x878K5907551G \xf1\x890007',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x878K5927156D \xf1\x890003',
+    ],
+    # SRS needs to be probed on the test car
+    #(Ecu.srs, 0x715, None): [
+    #  b'\xf1\x875Q0959655BD\xf1\x890336\xf1\x82\x1311111111111100311211011231129321312111',
+    #],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x878K0909144J \xf1\x890509\xf1\x82\x01\n\x1a',
+    ],
+    # Test car lacks a radar
+    #(Ecu.fwdRadar, 0x757, None): [
+    #  b'\xf1\x872Q0907572M \xf1\x890233',
+    #],
   },
   CAR.AUDI_Q2_MK1: {
     (Ecu.engine, 0x7e0, None): [
