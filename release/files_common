@@ -573,6 +573,7 @@ opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
 opendbc/vw_golf_mk4.dbc
+opendbc/vw_mlb.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
