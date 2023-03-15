@@ -64,6 +64,8 @@ class Laikad:
     self.last_fix_t = None
     self.gps_week = None
     self.use_qcom = use_qcom
+    self.first_log_time = None
+    self.ttff = -1
 
   def load_cache(self):
     if not self.save_ephemeris:
@@ -204,6 +206,8 @@ class Laikad:
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
+    if self.first_log_time is None:
+      self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
       return out_msg
@@ -223,6 +227,8 @@ class Laikad:
       output = self.process_report(new_meas, t)
       if output is None:
         return out_msg
+      if self.ttff < 0:
+        self.ttff = t - self.first_log_time
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
       self.update_localizer(position_estimate, t, corrected_measurements)
@@ -244,7 +250,8 @@ class Laikad:
         "velocityECEF": measurement_msg(value=velocity_estimate, std=velocity_std.tolist(), valid=bool(self.last_fix_t == t)),
 
         "measTime": gnss_mono_time,
-        "correctedMeasurements": meas_msgs
+        "correctedMeasurements": meas_msgs,
+        "timeToFirstFix": self.ttff
       }
     return out_msg
 
