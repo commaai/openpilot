@@ -39,6 +39,11 @@ bool AbstractStream::updateEvent(const Event *event) {
       data.colors = tracker.colors;
       data.last_change_t = tracker.last_change_t;
       data.bit_change_counts = tracker.bit_change_counts;
+
+      if (!sources.contains(id.source)) {
+        sources.insert(id.source);
+        emit sourcesUpdated(sources);
+      }
     }
 
     double ts = millis_since_boot();

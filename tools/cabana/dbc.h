@@ -51,6 +51,8 @@ namespace cabana {
     QString min, max, unit;
     QString comment;
     ValueDescription val_desc;
+    int precision = 0;
+    void updatePrecision();
   };
 
   struct Msg {

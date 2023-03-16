@@ -32,7 +32,7 @@ public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
+  void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left);
@@ -57,11 +57,11 @@ signals:
   void axisYLabelWidthChanged(int w);
 
 private slots:
-  void msgUpdated(uint32_t address);
   void signalUpdated(const cabana::Signal *sig);
   void manageSeries();
   void handleMarkerClicked();
-  void msgRemoved(uint32_t address) { removeIf([=](auto &s) { return s.msg_id.address == address; }); }
+  void msgUpdated(MessageId id);
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id == id; }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
