@@ -1752,6 +1752,7 @@ FW_VERSIONS = {
   CAR.LEXUS_NXH_TSS2: {
     (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02378A0000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152678210\x00\x00\x00\x00\x00\x00',
@@ -1761,6 +1762,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F3301300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
