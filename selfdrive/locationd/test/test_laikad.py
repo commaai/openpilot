@@ -16,7 +16,7 @@ from laika.ephemeris import EphemerisType, GPSEphemeris, ephemeris_structs
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisSourceType, Laikad, create_measurement_msg
+from selfdrive.locationd.laikad import EPHEMERIS_CACHE, EphemerisType, Laikad, create_measurement_msg, get_log_eph_type
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from selfdrive.manager.process_config import managed_processes
@@ -184,11 +184,13 @@ class TestLaikad(unittest.TestCase):
     laikad.fetch_navs(gpstime, block=True)
     meas = get_measurement_mock(gpstime, laikad.astro_dog.navs['R01'][0])
     msg = create_measurement_msg(meas)
-    self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
+    eph = meas.sat_ephemeris
+    self.assertEqual(get_log_eph_type(eph), EphemerisType.nav)
     # Verify gps satellite returns same source
     meas = get_measurement_mock(gpstime, laikad.astro_dog.navs['R01'][0])
     msg = create_measurement_msg(meas)
-    self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
+    eph = meas.sat_ephemeris
+    self.assertEqual(get_log_eph_type(eph), EphemerisType.nav)
 
     # Test nasa source by using older date
     gpstime = GPSTime.from_datetime(datetime(2021, month=3, day=1))
@@ -196,13 +198,15 @@ class TestLaikad(unittest.TestCase):
     laikad.fetch_navs(gpstime, block=True)
     meas = get_measurement_mock(gpstime, laikad.astro_dog.navs['G01'][0])
     msg = create_measurement_msg(meas)
-    self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
+    eph = meas.sat_ephemeris
+    self.assertEqual(get_log_eph_type(eph), EphemerisType.nav)
 
     # Test nav source type
     ephem = GPSEphemeris(data_mock)
     meas = get_measurement_mock(gpstime, ephem)
     msg = create_measurement_msg(meas)
-    self.assertEqual(msg.ephemerisSource.type.raw, EphemerisSourceType.nav)
+    eph = meas.sat_ephemeris
+    self.assertEqual(get_log_eph_type(eph), EphemerisType.nav)
 
   def test_laika_online(self):
     laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT)

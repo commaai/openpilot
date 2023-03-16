@@ -18,7 +18,7 @@ from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
-from laika.helpers import ConstellationId
+from laika.helpers import ConstellationId, get_constellation, get_sv_id
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
@@ -31,6 +31,32 @@ EPHEMERIS_CACHE = 'LaikadEphemerisV3'
 DOWNLOADS_CACHE_FOLDER = "/tmp/comma_download_cache/"
 CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
+
+
+def get_log_eph_type(ephem):
+  if ephem.eph_type == EphemerisType.NAV:
+    source_type = EphemerisType.nav
+  elif ephem.eph_type == EphemerisType.QCOM_POLY:
+    source_type = EphemerisType.qcom
+  else:
+    assert ephem.file_epoch is not None
+    file_src = ephem.file_source
+    if file_src == 'igu':  # example nasa: '2214/igu22144_00.sp3.Z'
+      source_type = EphemerisType.nasaUltraRapid
+    elif file_src == 'Sta':  # example nasa: '22166/ultra/Stark_1D_22061518.sp3'
+      source_type = EphemerisType.glonassIacUltraRapid
+    else:
+      raise Exception(f"Didn't expect file source {file_src}")
+  return source_type
+
+def get_log_eph_source(ephem):
+  if ephem.file_source == 'qcom' or ephem.file_source == 'ublox':
+    source = EphemerisSource.gnssChip
+  elif ephem.file_source == EPHEMERIS_CACHE:
+    source = EphemerisSource.cache
+  else:
+    source = EphemerisSource.internet
+  return source
 
 
 class Laikad:
@@ -78,8 +104,8 @@ class Laikad:
     nav_dict = {}
     try:
       ephem_cache = ephemeris_structs.EphemerisCache.from_bytes(cache_bytes)
-      glonass_navs = [GLONASSEphemeris(data_struct) for data_struct in ephem_cache.glonassEphemerides] 
-      gps_navs = [GPSEphemeris(data_struct) for data_struct in ephem_cache.gpsEphemerides]
+      glonass_navs = [GLONASSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.glonassEphemerides] 
+      gps_navs = [GPSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.gpsEphemerides]
       for e in sum([glonass_navs, gps_navs], []):
         if e.prn not in nav_dict:
           nav_dict[e.prn] = []
@@ -101,6 +127,21 @@ class Laikad:
       cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
 
+  def create_ephem_statuses(self):
+    ephemeris_statuses = []
+    prns_to_check = self.astro_dog.get_all_ephem_prns()
+    for prn in prns_to_check:
+      eph = self.astro_dog.get_sat_info(prn, self.last_report_time)
+      if eph is not None:
+        status = log.GnssEphemerisStatus.EphemerisStatus.new_message()
+        status.constellationId = get_constellation(prn)
+        status.svId = get_sv_id(prn)
+        status.ephemerisType = get_log_eph_type(eph).value
+        status.source = get_log_eph_source(eph).value
+        ephemeris_statuses.append(status)
+    return ephemeris_statuses
+
+    
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
@@ -172,10 +213,10 @@ class Laikad:
     else:
       if gnss_msg.which() == 'ephemeris':
         data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
-        ephem = GPSEphemeris(data_struct)
+        ephem = GPSEphemeris(data_struct, file_name='ublox')
       elif gnss_msg.which() == 'glonassEphemeris':
         data_struct = ephemeris_structs.GlonassEphemeris.new_message(**gnss_msg.glonassEphemeris.to_dict())
-        ephem = GLONASSEphemeris(data_struct)
+        ephem = GLONASSEphemeris(data_struct, file_name='ublox')
       else:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return
@@ -206,6 +247,10 @@ class Laikad:
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
+    out_msg.gnssMeasurements = {
+        "timeToFirstFix": self.ttff,
+        "ephemerisStatuses" : self.create_ephem_statuses(),
+    }
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):
@@ -251,7 +296,8 @@ class Laikad:
 
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs,
-        "timeToFirstFix": self.ttff
+        "timeToFirstFix": self.ttff,
+        "ephemerisStatuses" : self.create_ephem_statuses(),
       }
     return out_msg
 
@@ -342,30 +388,7 @@ def create_measurement_msg(meas: GNSSMeasurement):
   c.satPos = meas.sat_pos_final.tolist()
   c.satVel = meas.sat_vel.tolist()
   c.satVel = meas.sat_vel.tolist()
-  ephem = meas.sat_ephemeris
-  assert ephem is not None
-  week, time_of_week = -1, -1
-  if ephem.eph_type == EphemerisType.NAV:
-    source_type = EphemerisSourceType.nav
-  elif ephem.eph_type == EphemerisType.QCOM_POLY:
-    source_type = EphemerisSourceType.qcom
-  else:
-    assert ephem.file_epoch is not None
-    week = ephem.file_epoch.week
-    time_of_week = ephem.file_epoch.tow
-    file_src = ephem.file_source
-    if file_src == 'igu':  # example nasa: '2214/igu22144_00.sp3.Z'
-      source_type = EphemerisSourceType.nasaUltraRapid
-    elif file_src == 'Sta':  # example nasa: '22166/ultra/Stark_1D_22061518.sp3'
-      source_type = EphemerisSourceType.glonassIacUltraRapid
-    else:
-      raise Exception(f"Didn't expect file source {file_src}")
-
-  c.ephemerisSource.type = source_type.value
-  c.ephemerisSource.gpsWeek = week
-  c.ephemerisSource.gpsTimeOfWeek = int(time_of_week)
   return c
-
 
 def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMeasurement]):
   ekf_data = defaultdict(list)
@@ -382,17 +405,17 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
       gnss_kf.predict_and_observe(t, kind, data)
 
 
-class EphemerisSourceType(IntEnum):
+class EphemerisType(IntEnum):
   nav = 0
   nasaUltraRapid = 1
   glonassIacUltraRapid = 2
   qcom = 3
 
-
-def process_msg(laikad, gnss_msg, mono_time, block=False):
-
-  return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
-
+class EphemerisSource(IntEnum):
+  gnssChip = 0
+  internet = 1
+  cache = 2
+  unknown = 3
 
 def clear_tmp_cache():
   if os.path.exists(DOWNLOADS_CACHE_FOLDER):
