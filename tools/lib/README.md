@@ -1,6 +1,6 @@
 ## LogReader
 
-Route is a class for conveniently accessing all the [logs](/selfdrive/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
+Route is a class for conveniently accessing all the [logs](/system/loggerd/) from your routes. The LogReader class reads the non-video logs, i.e. rlog.bz2 and qlog.bz2. There's also a matching FrameReader class for reading the videos.
 
 ```python
 from tools.lib.route import Route

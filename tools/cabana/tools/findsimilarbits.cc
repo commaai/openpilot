@@ -9,7 +9,6 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 
 FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags() | Qt::Window) {
   setWindowTitle(tr("Find similar bits"));
@@ -30,8 +29,9 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   bus_combo->setCurrentIndex(0);
 
   msg_cb = new QComboBox(this);
-  for (auto &[address, msg] : dbc()->messages()) {
-    msg_cb->addItem(msg.name, address);
+  // TODO: update when bus_combo changes
+  for (auto &[id, msg] : dbc()->getMessages(0)) {
+    msg_cb->addItem(msg.name, id.address);
   }
   msg_cb->model()->sort(0);
   msg_cb->setCurrentIndex(0);
