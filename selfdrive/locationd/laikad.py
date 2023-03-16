@@ -18,7 +18,7 @@ from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
-from laika.helpers import ConstellationId, get_constellation, get_sv_id
+from laika.helpers import ConstellationId, get_sv_id
 from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
