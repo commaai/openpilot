@@ -126,7 +126,10 @@ class Laikad:
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO: Understand and use remaining unknown constellations
-      good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+      try:
+        good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+      except NotImplemented:
+        good_constellation = False
       # gpsWeek 65535 is received rarely from quectel, this cannot be
       # passed to GnssMeasurements's gpsWeek (Int16)
       good_week = not getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max
