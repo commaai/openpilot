@@ -125,8 +125,15 @@ class Laikad:
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
-      # TODO support GLONASS
-      return constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+      # TODO: Understand and use remaining unknown constellations
+      try:
+        good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+      except NotImplementedError:
+        good_constellation = False
+      # gpsWeek 65535 is received rarely from quectel, this cannot be
+      # passed to GnssMeasurements's gpsWeek (Int16)
+      good_week = not getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max
+      return good_constellation and good_week
     elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
       return True
     else:
@@ -196,15 +203,15 @@ class Laikad:
     return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
+    out_msg = messaging.new_message("gnssMeasurements")
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
-      return None
+      return out_msg
     elif self.is_good_report(gnss_msg):
-
       week, tow, new_meas = self.read_report(gnss_msg)
       self.gps_week = week
       if len(new_meas) == 0:
-        return None
+        return out_msg
 
       t = gnss_mono_time * 1e-9
       if week > 0:
@@ -215,17 +222,16 @@ class Laikad:
 
       output = self.process_report(new_meas, t)
       if output is None:
-        return None
+        return out_msg
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
       self.update_localizer(position_estimate, t, corrected_measurements)
       meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-      msg = messaging.new_message("gnssMeasurements")
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
 
       P_diag = self.gnss_kf.P.diagonal()
       kf_valid = all(self.kf_valid(t))
-      msg.gnssMeasurements = {
+      out_msg.gnssMeasurements = {
         "gpsWeek": week,
         "gpsTimeOfWeek": tow,
         "kalmanPositionECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
@@ -240,7 +246,7 @@ class Laikad:
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-      return msg
+    return out_msg
 
     #elif gnss_msg.which() == 'ionoData':
     # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
@@ -377,15 +383,6 @@ class EphemerisSourceType(IntEnum):
 
 
 def process_msg(laikad, gnss_msg, mono_time, block=False):
-  # TODO: Understand and use remaining unknown constellations
-  if gnss_msg.which() == "drMeasurementReport":
-    if getattr(gnss_msg, gnss_msg.which()).source not in ['glonass', 'gps', 'beidou', 'sbas']:
-      return None
-
-    if getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max:
-      # gpsWeek 65535 is received rarely from quectel, this cannot be
-      # passed to GnssMeasurements's gpsWeek (Int16)
-      return None
 
   return laikad.process_gnss_msg(gnss_msg, mono_time, block=block)
 
@@ -424,10 +421,7 @@ def main(sm=None, pm=None, qc=None):
 
     if sm.updated[raw_gnss_socket]:
       gnss_msg = sm[raw_gnss_socket]
-      msg = process_msg(laikad, gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
-      if msg is None:
-        # TODO: beautify this, locationd needs a valid message
-        msg = messaging.new_message("gnssMeasurements")
+      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
       pm.send('gnssMeasurements', msg)
 
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
