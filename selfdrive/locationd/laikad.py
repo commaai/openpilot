@@ -243,7 +243,7 @@ class Laikad:
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs
       }
-      return out_msg
+    return out_msg
 
     #elif gnss_msg.which() == 'ionoData':
     # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
