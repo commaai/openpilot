@@ -12,11 +12,11 @@ from tqdm import tqdm
 
 from laika.constants import SECS_IN_DAY
 from laika.downloader import DownloadFailed
-from laika.ephemeris import EphemerisType, GPSEphemeris, ephemeris_structs
+from laika.ephemeris import EphemerisType
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId
 from laika.raw_gnss import GNSSMeasurement, read_raw_ublox, read_raw_qcom
-from selfdrive.locationd.laikad import EPHEMERIS_CACHE, LogEphemerisType, Laikad, create_measurement_msg, get_log_eph_type
+from selfdrive.locationd.laikad import EPHEMERIS_CACHE, Laikad
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from selfdrive.manager.process_config import managed_processes
