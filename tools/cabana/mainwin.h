@@ -13,6 +13,8 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
+const QString AUTO_SAVE_EXTENSION = ".tmp";
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -42,6 +44,8 @@ signals:
 protected:
   void remindSaveChanges();
   void saveFile(const QString &fn);
+  void autoSave();
+  void cleanupAutoSaveFile();
   void setCurrentFile(const QString &fn);
   void updateRecentFileActions();
   void createActions();

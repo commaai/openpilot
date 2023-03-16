@@ -67,6 +67,40 @@ void ChangeTracker::clear() {
   colors.clear();
 }
 
+
+// SegmentTree
+
+void SegmentTree::build(const QVector<QPointF> &arr) {
+  size = arr.size();
+  tree.resize(4 * size);  // size of the tree is 4 times the size of the array
+  if (size > 0) {
+    build_tree(arr, 1, 0, size - 1);
+  }
+}
+
+void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+  if (left == right) {
+    const double y = arr[left].y();
+    tree[n] = {y, y};
+  } else {
+    const int mid = (left + right) >> 1;
+    build_tree(arr, 2 * n, left, mid);
+    build_tree(arr, 2 * n + 1, mid + 1, right);
+    tree[n] = {std::min(tree[2 * n].first, tree[2 * n + 1].first), std::max(tree[2 * n].second, tree[2 * n + 1].second)};
+  }
+}
+
+std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, int range_left, int range_right) const {
+  if (range_left > right || range_right < left)
+    return {std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()};
+  if (range_left <= left && range_right >= right)
+    return tree[n];
+  int mid = (left + right) >> 1;
+  auto l = get_minmax(2 * n, left, mid, range_left, range_right);
+  auto r = get_minmax(2 * n + 1, mid + 1, right, range_left, range_right);
+  return {std::min(l.first, r.first), std::max(l.second, r.second)};
+}
+
 // MessageBytesDelegate
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
@@ -94,7 +128,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   }
 }
 
-QColor getColor(const Signal *sig) {
+QColor getColor(const cabana::Signal *sig) {
   float h = 19 * (float)sig->lsb / 64.0;
   h = fmod(h, 1.0);
 
@@ -136,6 +170,8 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   btn->setIcon(utils::icon(icon));
   btn->setToolTip(tooltip);
   btn->setAutoRaise(true);
+  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
+  btn->setIconSize({metric, metric});
   return btn;
 };
 
@@ -148,3 +184,13 @@ QString toHex(uint8_t byte) {
   }();
   return hex[byte];
 }
+
+int num_decimals(double num) {
+   const QString string = QString::number(num);
+   const QStringList split = string.split('.');
+   if (split.size() == 1) {
+     return 0;
+   } else {
+     return split[1].size();
+   }
+ }

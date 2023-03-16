@@ -596,16 +596,17 @@ trabalho definido</translation>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não é possível montar a partição de dados. Partição corrompida. Confirme para apagar e redefinir o dispositivo.</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancelar para voltar.</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
+        <translation>Redefinindo o dispositivo
+Isso pode levar até um minuto.</translation>
     </message>
 </context>
 <context>
@@ -707,11 +708,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>Não há software personalizado nesta URL.</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Algo deu errado. Reinicie o dispositivo.</translation>
     </message>
 </context>
 <context>

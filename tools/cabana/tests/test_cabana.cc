@@ -5,7 +5,6 @@
 #include "tools/replay/logreader.h"
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 
 // demo route, first segment
 const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
@@ -16,11 +15,11 @@ TEST_CASE("DBCManager::generateDBC") {
   DBCManager dbc_from_generated(nullptr);
   dbc_from_generated.open("", dbc_origin.generateDBC());
 
-  auto &msgs = dbc_origin.messages();
-  auto &new_msgs = dbc_from_generated.messages();
-  REQUIRE(msgs.size() == new_msgs.size());
-  for (auto &[address, m] : msgs) {
-    auto &new_m = new_msgs.at(address);
+  REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
+  auto msgs = dbc_origin.getMessages(0);
+  auto new_msgs = dbc_from_generated.getMessages(0);
+  for (auto &[id, m] : msgs) {
+    auto &new_m = new_msgs.at(id);
     REQUIRE(m.name == new_m.name);
     REQUIRE(m.size == new_m.size);
     REQUIRE(m.getSignals().size() == new_m.getSignals().size());
@@ -44,7 +43,7 @@ TEST_CASE("Parse can messages") {
     if (e->which == cereal::Event::Which::CAN) {
       std::map<std::pair<uint32_t, QString>, std::vector<double>> values_1;
       for (const auto &c : e->event.getCan()) {
-        const auto msg = dbc.msg(c.getAddress());
+        const auto msg = dbc.msg({.source = c.getSrc(), .address = c.getAddress()});
         if (c.getSrc() == 0 && msg) {
           for (auto sig : msg->getSignals()) {
             double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
