@@ -8,7 +8,6 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 
 class BinaryItemDelegate : public QStyledItemDelegate {
 public:
@@ -44,7 +43,7 @@ public:
     bool is_msb = false;
     bool is_lsb = false;
     QString val = "-";
-    QList<const Signal *> sigs;
+    QList<const cabana::Signal *> sigs;
   };
   std::vector<Item> items;
 
@@ -59,19 +58,19 @@ class BinaryView : public QTableView {
 public:
   BinaryView(QWidget *parent = nullptr);
   void setMessage(const MessageId &message_id);
-  void highlight(const Signal *sig);
-  QSet<const Signal*> getOverlappingSignals() const;
+  void highlight(const cabana::Signal *sig);
+  QSet<const cabana::Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
   QSize minimumSizeHint() const override;
 
 signals:
-  void signalClicked(const Signal *sig);
-  void signalHovered(const Signal *sig);
+  void signalClicked(const cabana::Signal *sig);
+  void signalHovered(const cabana::Signal *sig);
   void addSignal(int start_bit, int size, bool little_endian);
-  void resizeSignal(const Signal *sig, int from, int size);
-  void removeSignal(const Signal *sig);
-  void editSignal(const Signal *origin_s, Signal &s);
-  void showChart(const MessageId &id, const Signal *sig, bool show, bool merge);
+  void resizeSignal(const cabana::Signal *sig, int from, int size);
+  void removeSignal(const cabana::Signal *sig);
+  void editSignal(const cabana::Signal *origin_s, cabana::Signal &s);
+  void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 
 private:
   void addShortcuts();
@@ -87,7 +86,7 @@ private:
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
-  const Signal *resize_sig = nullptr;
-  const Signal *hovered_sig = nullptr;
+  const cabana::Signal *resize_sig = nullptr;
+  const cabana::Signal *hovered_sig = nullptr;
   friend class BinaryItemDelegate;
 };
