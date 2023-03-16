@@ -292,7 +292,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan", "uiPlan"],
       "carControl": [], "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
@@ -448,9 +448,6 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
-
-    # controlsd process configuration assume all routes are out of dashcam
-    params.put_bool("DashcamOverride", True)
 
 
 def python_replay_process(cfg, lr, fingerprint=None):

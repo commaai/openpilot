@@ -4,16 +4,17 @@
 #include <QUndoStack>
 
 #include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
 
 class EditMsgCommand : public QUndoCommand {
 public:
-  EditMsgCommand(const MessageId &id, const QString &title, int size, QUndoCommand *parent = nullptr);
+  EditMsgCommand(const MessageId &id, const QString &name, int size, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  QString old_title, new_title;
+  QString old_name, new_name;
   int old_size = 0, new_size = 0;
 };
 
@@ -25,41 +26,41 @@ public:
 
 private:
   const MessageId id;
-  DBCMsg message;
+  cabana::Msg message;
 };
 
 class AddSigCommand : public QUndoCommand {
 public:
-  AddSigCommand(const MessageId &id, const Signal &sig, QUndoCommand *parent = nullptr);
+  AddSigCommand(const MessageId &id, const cabana::Signal &sig, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  Signal signal = {};
+  cabana::Signal signal = {};
 };
 
 class RemoveSigCommand : public QUndoCommand {
 public:
-  RemoveSigCommand(const MessageId &id, const Signal *sig, QUndoCommand *parent = nullptr);
+  RemoveSigCommand(const MessageId &id, const cabana::Signal *sig, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  Signal signal = {};
+  cabana::Signal signal = {};
 };
 
 class EditSignalCommand : public QUndoCommand {
 public:
-  EditSignalCommand(const MessageId &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent = nullptr);
+  EditSignalCommand(const MessageId &id, const cabana::Signal *sig, const cabana::Signal &new_sig, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  Signal old_signal = {};
-  Signal new_signal = {};
+  cabana::Signal old_signal = {};
+  cabana::Signal new_signal = {};
 };
 
 namespace UndoStack {

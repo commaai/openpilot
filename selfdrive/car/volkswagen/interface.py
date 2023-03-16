@@ -187,6 +187,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1227 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
+    elif candidate == CAR.SKODA_FABIA_MK4:
+      ret.mass = 1266 + STD_CARGO_KG
+      ret.wheelbase = 2.56
+
     elif candidate == CAR.SKODA_KAMIQ_MK1:
       ret.mass = 1265 + STD_CARGO_KG
       ret.wheelbase = 2.66

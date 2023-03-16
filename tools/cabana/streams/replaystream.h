@@ -1,6 +1,5 @@
 #pragma once
 
-#include "opendbc/can/common_dbc.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/settings.h"
 

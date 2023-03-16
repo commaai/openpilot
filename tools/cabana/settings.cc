@@ -32,7 +32,7 @@ void Settings::save() {
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  max_cached_minutes = s.value("max_cached_minutes", 5).toInt();
+  max_cached_minutes = s.value("max_cached_minutes", 30).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
@@ -65,7 +65,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
 
   chart_series_type = new QComboBox(this);
-  chart_series_type->addItems({tr("Line"), tr("Scatter")});
+  chart_series_type->addItems({tr("Line"), tr("Step Line"), tr("Scatter")});
   chart_series_type->setCurrentIndex(settings.chart_series_type);
   form_layout->addRow(tr("Chart Default Series Type"), chart_series_type);
 
