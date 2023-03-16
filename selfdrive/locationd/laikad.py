@@ -128,7 +128,7 @@ class Laikad:
       # TODO: Understand and use remaining unknown constellations
       try:
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
-      except NotImplemented:
+      except NotImplementedError:
         good_constellation = False
       # gpsWeek 65535 is received rarely from quectel, this cannot be
       # passed to GnssMeasurements's gpsWeek (Int16)
