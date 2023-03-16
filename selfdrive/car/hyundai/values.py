@@ -1568,14 +1568,6 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.03 99211-GI010 220401',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00NE1 IEB \x02 106!\x11) 58520-GI010',
-      b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x02 106!\x11) 58520-GI010',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.06 57700GI000  4NEDR106',
-    ],
   },
   CAR.TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
