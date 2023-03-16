@@ -40,7 +40,7 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
     # "ANGLE": op_params.get("ANGLE"),
-    "ANGLE": 0 if abs(apply_steer) < 10 else 10 if apply_steer > 0 else -10,
+    "ANGLE": 0,  # if abs(apply_steer) < 10 else 10 if apply_steer > 0 else -10,
 
     # seems to just be desired angle cmd
     # TODO: does this have offset on cars where accurate steering angle signal has offset?
