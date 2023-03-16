@@ -319,22 +319,20 @@ class TestLaikad(unittest.TestCase):
 
 
 
-      #TODO test cache with only orbits
-      '''
-      with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
-        # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
-        laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
-        laikad.fetch_navs(self.first_gps_time, block=False)
-        mock_method.assert_not_called()
+      #TODO test cache with only orbits 
+      #with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
+      #  # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
+      #  laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
+      #  laikad.fetch_navs(self.first_gps_time, block=False)
+      #  mock_method.assert_not_called()
 
-        # Verify cache is working for only orbits by running a segment
-        laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
-        msg = verify_messages(self.logs, laikad, return_one_success=True)
-        self.assertIsNotNone(msg)
-        # Verify orbit data is not downloaded
-        mock_method.assert_not_called()
-      break
-      '''
+      #  # Verify cache is working for only orbits by running a segment
+      #  laikad = Laikad(auto_update=False, valid_ephem_types=EphemerisType.ULTRA_RAPID_ORBIT, save_ephemeris=True)
+      #  msg = verify_messages(self.logs, laikad, return_one_success=True)
+      #  self.assertIsNotNone(msg)
+      #  # Verify orbit data is not downloaded
+      #  mock_method.assert_not_called()
+      #break
 
   def test_low_gnss_meas(self):
     cnt = 0
