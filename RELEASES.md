@@ -1,6 +1,7 @@
 Version 0.9.2 (2023-03-XX)
 ========================
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* Škoda Fabia 2022-23 support thanks to jyoung8607!
 
 Version 0.9.1 (2023-02-28)
 ========================
