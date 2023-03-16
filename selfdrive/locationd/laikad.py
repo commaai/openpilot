@@ -301,10 +301,6 @@ class Laikad:
       }
     return out_msg
 
-    #elif gnss_msg.which() == 'ionoData':
-    # TODO: add this, Needed to better correct messages offline. First fix ublox_msg.cc to sent them.
-
-
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
     # Check time and outputs are valid
     valid = self.kf_valid(t)
