@@ -45,7 +45,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   toolbar->addWidget(stretch_label);
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
-  range_slider = new QSlider(Qt::Horizontal, this);
+  range_slider = new LogSlider(1000, Qt::Horizontal, this);
   range_slider->setMaximumWidth(200);
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
@@ -108,14 +108,14 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
 
 void ChartsWidget::eventsMerged() {
   {
-    assert(!can->liveStreaming());
     QFutureSynchronizer<void> future_synchronizer;
-    const auto events = can->events();
     for (auto c : charts) {
-      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, events, true));
+      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
     }
   }
-  updateState();
+  if (can->isPaused()) {
+    updateState();
+  }
 }
 
 void ChartsWidget::zoomIn(double min, double max) {
@@ -133,20 +133,13 @@ void ChartsWidget::zoomReset() {
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
-  const auto events = can->events();
-  if (can->liveStreaming()) {
-    // appends incoming events to the end of series
-    for (auto c : charts) {
-      c->updateSeries(nullptr, events, false);
-    }
-  }
-
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
     double pos = (cur_sec - display_range.first) / std::max(1.0, (display_range.second - display_range.first));
     if (pos < 0 || pos > 0.8) {
       display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
     }
+    auto events = can->events();
     double max_event_sec = events->empty() ? 0 : (events->back()->mono_time / 1e9 - can->routeStartTime());
     double max_sec = std::min(std::floor(display_range.first + max_chart_range), max_event_sec);
     display_range.first = std::max(0.0, max_sec - max_chart_range);
@@ -163,7 +156,7 @@ void ChartsWidget::updateState() {
 }
 
 void ChartsWidget::setMaxChartRange(int value) {
-  max_chart_range = settings.chart_range = value;
+  max_chart_range = settings.chart_range = range_slider->value();
   updateToolBar();
   updateState();
 }
@@ -421,8 +414,8 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
   }
 }
 
-void ChartView::msgUpdated(uint32_t address) {
-  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id.address == address; }))
+void ChartView::msgUpdated(MessageId id) {
+  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id == id; }))
     updateTitle();
 }
 
@@ -502,11 +495,11 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig, const std::vector<Event *> *events, bool clear) {
-  events = events ? events : can->events();
+void ChartView::updateSeries(const cabana::Signal *sig) {
+  const auto events = can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (clear) {
+      if (!can->liveStreaming()) {
         s.vals.clear();
         s.step_vals.clear();
         s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
@@ -723,10 +716,12 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
 void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   // Scrubbing
   if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    double t = chart()->mapToValue({(double)ev->x(), (double)ev->y()}).x();
-    // Prevent seeking past the end of the route
-    t = std::clamp(t, 0., can->totalSeconds());
-    can->seekTo(t);
+    if (chart()->plotArea().contains(ev->pos())) {
+      double t = chart()->mapToValue(ev->pos()).x();
+      // Prevent seeking past the end of the route
+      t = std::clamp(t, 0., can->totalSeconds());
+      can->seekTo(t);
+    }
     return;
   }
 

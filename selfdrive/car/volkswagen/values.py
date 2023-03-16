@@ -36,7 +36,7 @@ class CarControllerParams:
 
     if CP.carFingerprint in PQ_CARS:
       self.LDW_STEP = 5                   # LDW_1 message frequency 20Hz
-      self.ACC_HUD_STEP = 4               # ACC_GRA_Anziege frequency 25Hz
+      self.ACC_HUD_STEP = 4               # ACC_GRA_Anzeige frequency 25Hz
       self.STEER_DRIVER_ALLOWANCE = 80    # Driver intervention threshold 0.8 Nm
       self.STEER_DELTA_UP = 6             # Max HCA reached in 1.00s (STEER_MAX / (50Hz * 1.00))
       self.STEER_DELTA_DOWN = 10          # Min HCA reached in 0.60s (STEER_MAX / (50Hz * 0.60))
@@ -394,6 +394,7 @@ FW_VERSIONS = {
       b'\xf1\x8704L906021DT\xf1\x895520',
       b'\xf1\x8704L906021DT\xf1\x898127',
       b'\xf1\x8704L906021N \xf1\x895518',
+      b'\xf1\x8704L906026BN\xf1\x891197',
       b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8704L906026NF\xf1\x899528',
       b'\xf1\x8704L906056CL\xf1\x893823',
@@ -514,6 +515,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\x0511A00403A0',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\x0516A00604A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\x0516A00404A1',
+      b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\x0516A00504A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\x0516A00604A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\x0516A07A02A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521A00507A1',
