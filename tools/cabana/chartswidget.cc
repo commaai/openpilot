@@ -16,6 +16,8 @@
 #include <QtConcurrent>
 
 const int MAX_COLUMN_COUNT = 4;
+static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
+
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
@@ -480,8 +482,8 @@ void ChartView::updatePlot(double cur, double min, double max) {
 void ChartView::updateSeriesPoints() {
   // Show points when zoomed in enough
   for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), xLessThan);
 
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
@@ -548,8 +550,8 @@ void ChartView::updateAxisY() {
       unit.clear();
     }
 
-    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
         if (it->y() < min) min = it->y();
@@ -794,8 +796,8 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(Qt::NoPen);
   for (auto &s : sigs) {
     if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
-      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
       for (auto it = first; it != last; ++it) {
         painter->setBrush(s.series->color());
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
