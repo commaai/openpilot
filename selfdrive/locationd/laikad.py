@@ -284,8 +284,8 @@ class Laikad:
       output = self.process_report(new_meas, t)
       if output is None:
         return out_msg
-      if self.ttff < 0:
-        self.ttff = t - self.first_log_time
+      if self.ttff <= 0:
+        self.ttff = max(1e-3, t - self.first_log_time)
       position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
 
       self.update_localizer(position_estimate, t, corrected_measurements)
