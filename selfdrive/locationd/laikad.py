@@ -33,26 +33,38 @@ CACHE_VERSION = 0.2
 POS_FIX_RESIDUAL_THRESHOLD = 100.0
 
 
+class LogEphemerisType(IntEnum):
+  nav = 0
+  nasaUltraRapid = 1
+  glonassIacUltraRapid = 2
+  qcom = 3
+
+class EphemerisSource(IntEnum):
+  gnssChip = 0
+  internet = 1
+  cache = 2
+  unknown = 3
+
 def get_log_eph_type(ephem):
   if ephem.eph_type == EphemerisType.NAV:
-    source_type = EphemerisType.nav
+    source_type = LogEphemerisType.nav
   elif ephem.eph_type == EphemerisType.QCOM_POLY:
-    source_type = EphemerisType.qcom
+    source_type = LogEphemerisType.qcom
   else:
     assert ephem.file_epoch is not None
     file_src = ephem.file_source
     if file_src == 'igu':  # example nasa: '2214/igu22144_00.sp3.Z'
-      source_type = EphemerisType.nasaUltraRapid
+      source_type = LogEphemerisType.nasaUltraRapid
     elif file_src == 'Sta':  # example nasa: '22166/ultra/Stark_1D_22061518.sp3'
-      source_type = EphemerisType.glonassIacUltraRapid
+      source_type = LogEphemerisType.glonassIacUltraRapid
     else:
       raise Exception(f"Didn't expect file source {file_src}")
   return source_type
 
 def get_log_eph_source(ephem):
-  if ephem.file_source == 'qcom' or ephem.file_source == 'ublox':
+  if ephem.file_name == 'qcom' or ephem.file_name == 'ublox':
     source = EphemerisSource.gnssChip
-  elif ephem.file_source == EPHEMERIS_CACHE:
+  elif ephem.file_name == EPHEMERIS_CACHE:
     source = EphemerisSource.cache
   else:
     source = EphemerisSource.internet
@@ -131,12 +143,12 @@ class Laikad:
     ephemeris_statuses = []
     prns_to_check = self.astro_dog.get_all_ephem_prns()
     for prn in prns_to_check:
-      eph = self.astro_dog.get_sat_info(prn, self.last_report_time)
+      eph = self.astro_dog.get_eph(prn, self.last_report_time)
       if eph is not None:
-        status = log.GnssEphemerisStatus.EphemerisStatus.new_message()
-        status.constellationId = get_constellation(prn)
+        status = log.GnssMeasurements.EphemerisStatus.new_message()
+        status.constellationId = ConstellationId.from_rinex_char(prn[0]).value
         status.svId = get_sv_id(prn)
-        status.ephemerisType = get_log_eph_type(eph).value
+        status.type = get_log_eph_type(eph).value
         status.source = get_log_eph_source(eph).value
         ephemeris_statuses.append(status)
     return ephemeris_statuses
@@ -400,18 +412,6 @@ def kf_add_observations(gnss_kf: GNSSKalman, t: float, measurements: List[GNSSMe
     if len(data) > 0:
       gnss_kf.predict_and_observe(t, kind, data)
 
-
-class EphemerisType(IntEnum):
-  nav = 0
-  nasaUltraRapid = 1
-  glonassIacUltraRapid = 2
-  qcom = 3
-
-class EphemerisSource(IntEnum):
-  gnssChip = 0
-  internet = 1
-  cache = 2
-  unknown = 3
 
 def clear_tmp_cache():
   if os.path.exists(DOWNLOADS_CACHE_FOLDER):
