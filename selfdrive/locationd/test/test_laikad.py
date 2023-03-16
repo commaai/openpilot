@@ -6,7 +6,7 @@ import cereal.messaging as messaging
 from common.params import Params
 from datetime import datetime
 from unittest import mock
-from unittest.mock import patch
+#from unittest.mock import patch
 from tqdm import tqdm
 
 
@@ -278,7 +278,7 @@ class TestLaikad(unittest.TestCase):
         has_polys = len(vals) > 0 and max([len(v) for v in vals]) > 0
         if out_msg is not None:
           has_fix = has_fix or out_msg.gnssMeasurements.positionECEF.valid
-        
+
       self.assertTrue(has_navs or has_polys)
       self.assertTrue(has_fix)
       self.assertEqual(len(laikad.astro_dog.navs_fetched_times._ranges), 0)
@@ -335,7 +335,7 @@ class TestLaikad(unittest.TestCase):
         mock_method.assert_not_called()
       break
       '''
-  
+
   def test_low_gnss_meas(self):
     cnt = 0
     laikad = Laikad()
@@ -351,6 +351,7 @@ class TestLaikad(unittest.TestCase):
   def dict_has_values(self, dct):
     self.assertGreater(len(dct), 0)
     self.assertGreater(min([len(v) for v in dct.values()]), 0)
+
 
 if __name__ == "__main__":
   unittest.main()
