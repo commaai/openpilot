@@ -16,6 +16,8 @@
 #include <QtConcurrent>
 
 const int MAX_COLUMN_COUNT = 4;
+static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
+
 // ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
@@ -135,13 +137,11 @@ void ChartsWidget::updateState() {
 
   const double cur_sec = can->currentSec();
   if (!is_zoomed) {
-    double pos = (cur_sec - display_range.first) / std::max(1.0, (display_range.second - display_range.first));
+    double pos = (cur_sec - display_range.first) / std::max<float>(1.0, max_chart_range);
     if (pos < 0 || pos > 0.8) {
       display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
     }
-    auto events = can->events();
-    double max_event_sec = events->empty() ? 0 : (events->back()->mono_time / 1e9 - can->routeStartTime());
-    double max_sec = std::min(std::floor(display_range.first + max_chart_range), max_event_sec);
+    double max_sec = std::min(std::floor(display_range.first + max_chart_range), can->lastEventSecond());
     display_range.first = std::max(0.0, max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
   } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
@@ -326,6 +326,7 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   setRenderHint(QPainter::Antialiasing);
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
+  setMouseTracking(true);
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -481,8 +482,8 @@ void ChartView::updatePlot(double cur, double min, double max) {
 void ChartView::updateSeriesPoints() {
   // Show points when zoomed in enough
   for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), xLessThan);
 
     int num_points = std::max<int>(end - begin, 1);
     int pixels_per_point = width() / num_points;
@@ -496,64 +497,33 @@ void ChartView::updateSeriesPoints() {
 }
 
 void ChartView::updateSeries(const cabana::Signal *sig) {
-  const auto events = can->events();
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
       if (!can->liveStreaming()) {
         s.vals.clear();
         s.step_vals.clear();
-        s.vals.reserve(settings.max_cached_minutes * 60 * 100);  // [n]seconds * 100hz
-        s.step_vals.reserve(settings.max_cached_minutes * 60 * 100 * 2);
         s.last_value_mono_time = 0;
       }
       s.series->setColor(getColor(s.sig));
 
-      struct Chunk {
-        std::vector<Event *>::const_iterator first, second;
-        QVector<QPointF> vals;
-        QVector<QPointF> step_vals;
-      };
-      // split into one minitue chunks
-      QVector<Chunk> chunks;
-      Event begin_event(cereal::Event::Which::INIT_DATA, s.last_value_mono_time);
-      auto begin = std::upper_bound(events->begin(), events->end(), &begin_event, Event::lessThan());
-      for (auto it = begin, second = begin; it != events->end(); it = second) {
-        second = std::lower_bound(it, events->end(), (*it)->mono_time + 1e9 * 60, [](auto &e, uint64_t ts) { return e->mono_time < ts; });
-        chunks.push_back({it, second});
+      auto msgs = can->events().at(s.msg_id);
+      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time=s.last_value_mono_time});
+      int new_size = std::max<int>(s.vals.size() + std::distance(first, msgs.cend()), settings.max_cached_minutes * 60 * 100);
+      if (s.vals.capacity() <= new_size) {
+        s.vals.reserve(new_size * 2);
+        s.step_vals.reserve(new_size * 4);
       }
 
-      QtConcurrent::blockingMap(chunks, [&](Chunk &chunk) {
-        chunk.vals.reserve(60 * 100);  // 100 hz
-        chunk.step_vals.reserve(60 * 100 * 2);  // 100 hz
-        double route_start_time = can->routeStartTime();
-        for (auto it = chunk.first; it != chunk.second; ++it) {
-          if ((*it)->which == cereal::Event::Which::CAN) {
-            for (const auto &c : (*it)->event.getCan()) {
-              if (s.msg_id.address == c.getAddress() && s.msg_id.source == c.getSrc()) {
-                auto dat = c.getDat();
-                double value = get_raw_value((uint8_t *)dat.begin(), dat.size(), *s.sig);
-                double ts = ((*it)->mono_time / (double)1e9) - route_start_time;  // seconds
-                chunk.vals.push_back({ts, value});
-                if (!chunk.step_vals.empty()) {
-                  chunk.step_vals.push_back({ts, chunk.step_vals.back().y()});
-                }
-                chunk.step_vals.push_back({ts,value});
-              }
-            }
-          }
+      const double route_start_time = can->routeStartTime();
+      for (auto end = msgs.cend(); first != end; ++first) {
+        double value = get_raw_value(first->dat, first->size, *s.sig);
+        double ts = first->mono_time / 1e9 - route_start_time;  // seconds
+        s.vals.append({ts, value});
+        if (!s.step_vals.empty()) {
+          s.step_vals.append({ts, s.step_vals.back().y()});
         }
-      });
-      for (auto &c : chunks) {
-        s.vals.append(c.vals);
-        if (!c.step_vals.empty()) {
-          if (!s.step_vals.empty()) {
-            s.step_vals.append({c.step_vals.first().x(), s.step_vals.back().y()});
-          }
-          s.step_vals.append(c.step_vals);
-        }
-      }
-      if (events->size()) {
-        s.last_value_mono_time = events->back()->mono_time;
+        s.step_vals.append({ts, value});
+        s.last_value_mono_time = first->mono_time;
       }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
@@ -580,8 +550,8 @@ void ChartView::updateAxisY() {
       unit.clear();
     }
 
-    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
         if (it->y() < min) min = it->y();
@@ -826,8 +796,8 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(Qt::NoPen);
   for (auto &s : sigs) {
     if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
-      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), [](auto &p, double x) { return p.x() < x; });
-      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), [](auto &p, double x) { return p.x() < x; });
+      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
+      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
       for (auto it = first; it != last; ++it) {
         painter->setBrush(s.series->color());
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
@@ -929,7 +899,7 @@ SeriesSelector::SeriesSelector(QString title, QWidget *parent) : QDialog(parent)
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   main_layout->addWidget(buttonBox, 3, 2);
 
-  for (auto it = can->can_msgs.cbegin(); it != can->can_msgs.cend(); ++it) {
+  for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
     if (auto m = dbc()->msg(it.key())) {
       msgs_combo->addItem(QString("%1 (%2)").arg(m->name).arg(it.key().toString()), QVariant::fromValue(it.key()));
     }

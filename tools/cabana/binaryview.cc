@@ -422,7 +422,7 @@ void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewIte
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
   if (!subtract.isEmpty()) {
     // fill gaps inside corners.
-    painter->setPen(QPen(border_color, 2));
+    painter->setPen(QPen(border_color, 2, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
     for (auto &r : subtract) {
       painter->drawRect(r);
     }

@@ -160,7 +160,7 @@ void MessageListModel::setFilterString(const QString &string) {
 
   filter_str = string;
   msgs.clear();
-  for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+  for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
     if (filter_str.isEmpty() || contains(it.key(), filter_str)) {
       msgs.push_back(it.key());
     }
@@ -206,8 +206,8 @@ void MessageListModel::sortMessages() {
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
-  if (filter_str.isEmpty() && msgs.size() != can->can_msgs.size()) {
-    msgs = can->can_msgs.keys();
+  if (filter_str.isEmpty() && msgs.size() != can->last_msgs.size()) {
+    msgs = can->last_msgs.keys();
   }
   if (msgs.size() != prev_row_count) {
     sortMessages();

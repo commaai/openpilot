@@ -212,4 +212,3 @@ DBCManager *dbc() {
   static DBCManager dbc_manager(nullptr);
   return &dbc_manager;
 }
-
