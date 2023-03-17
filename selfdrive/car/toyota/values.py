@@ -75,8 +75,10 @@ class CAR:
   RAV4H = "TOYOTA RAV4 HYBRID 2017"
   RAV4_TSS2 = "TOYOTA RAV4 2019"
   RAV4_TSS2_2022 = "TOYOTA RAV4 2022"
+  RAV4_TSS2_2023 = "TOYOTA RAV4 2023"
   RAV4H_TSS2 = "TOYOTA RAV4 HYBRID 2019"
   RAV4H_TSS2_2022 = "TOYOTA RAV4 HYBRID 2022"
+  RAV4H_TSS2_2023 = "TOYOTA RAV4 HYBRID 2023"
   MIRAI = "TOYOTA MIRAI 2021"  # TSS 2.5
   SIENNA = "TOYOTA SIENNA 2018"
 
@@ -165,8 +167,10 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
   CAR.RAV4_TSS2_2022: ToyotaCarInfo("Toyota RAV4 2022"),
+  CAR.RAV4_TSS2_2023: ToyotaCarInfo("Toyota RAV4 2023"),
   CAR.RAV4H_TSS2: ToyotaCarInfo("Toyota RAV4 Hybrid 2019-21"),
   CAR.RAV4H_TSS2_2022: ToyotaCarInfo("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
+  CAR.RAV4H_TSS2_2023: ToyotaCarInfo("Toyota RAV4 Hybrid 2023"),
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
   CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
 
@@ -1472,6 +1476,23 @@ FW_VERSIONS = {
       b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
     ],
   },
+  CAR.RAV4_TSS2_2023: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\x01F15260R450\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896634AJ2000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0R03100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
+    ],
+  },
   CAR.RAV4H_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x01896634A15000\x00\x00\x00\x00',
@@ -1560,6 +1581,23 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0R02100\x00\x00\x00\x008646G0R01100\x00\x00\x00\x00',
+      b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
+    ],
+  },
+  CAR.RAV4H_TSS2_2023: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\x01F15264283200\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x01896634AE1001\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0R03100\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
     ],
   },
