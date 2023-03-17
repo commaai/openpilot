@@ -6,7 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
-                                        UNSUPPORTED_DSU_CAR
+                                        UNSUPPORTED_DSU_CAR, ANGLE_CONTROL_CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -75,6 +75,11 @@ class CarController:
     elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.steer_rate_counter = 0
+
+    # Never actuate with LKA on cars that only work LTA
+    if self.CP.carFingerprint in ANGLE_CONTROL_CAR:
+      apply_steer = 0
+      apply_steer_req = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
