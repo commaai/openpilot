@@ -141,7 +141,8 @@ class Laikad:
 
   def create_ephem_statuses(self):
     ephemeris_statuses = []
-    prns_to_check = list(self.astro_dog.get_all_ephem_prns()).sort()
+    prns_to_check = list(self.astro_dog.get_all_ephem_prns())
+    prns_to_check.sort()
     for prn in prns_to_check:
       eph = self.astro_dog.get_eph(prn, self.last_report_time)
       if eph is not None:
