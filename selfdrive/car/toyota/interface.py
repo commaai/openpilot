@@ -35,7 +35,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
     if candidate in ANGLE_CONTROL_CAR:
-      ret.dashcamOnly = True
+      # ret.dashcamOnly = True
       ret.steerControlType = car.CarParams.SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
     else:
