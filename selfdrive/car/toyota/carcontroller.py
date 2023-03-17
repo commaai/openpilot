@@ -76,7 +76,7 @@ class CarController:
       apply_steer_req = 0
       self.steer_rate_counter = 0
 
-    # Never actuate with LKA on cars that only work LTA
+    # Never actuate with LKA on cars that only support LTA
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       apply_steer = 0
       apply_steer_req = 0
