@@ -152,9 +152,9 @@ class Controls:
     self.VM = VehicleModel(self.CP)
 
     self.LaC: LatControl
-    # if self.CP.steerControlType == SteerControlType.angle:
-    #   self.LaC = LatControlAngle(self.CP, self.CI)
-    if self.CP.lateralTuning.which() == 'pid':
+    if self.CP.steerControlType == SteerControlType.angle:
+      self.LaC = LatControlAngle(self.CP, self.CI)
+    elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP, self.CI)
@@ -739,7 +739,7 @@ class Controls:
       self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
       CC.actuatorsOutput = self.last_actuators
-      if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      if self.CP.steerControlType == SteerControlType.angle:
         self.steer_limited = abs(CC.actuators.steeringAngleDeg - CC.actuatorsOutput.steeringAngleDeg) > \
                              STEER_ANGLE_SATURATION_THRESHOLD
       else:
@@ -792,8 +792,8 @@ class Controls:
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
-    # elif self.CP.steerControlType == SteerControlType.angle:
-    #   controlsState.lateralControlState.angleState = lac_log
+    elif self.CP.steerControlType == SteerControlType.angle:
+      controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
       controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
