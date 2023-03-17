@@ -51,12 +51,35 @@
 #define MIN_IR_POWER 0.0f
 #define CUTOFF_IL 400
 #define SATURATE_IL 1000
-#define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
+
+struct BoarddState {
+  Params params;
+
+  // sendcan
+  AlignedBuffer aligned_buf;
+  std::unique_ptr<SubSocket> subscriber;// (SubSocket::create(context.get(), "sendcan"));
+
+  // can recv
+  bool comms_healthy = true;
+  std::vector<can_frame> raw_can_data;
+
+  // panda state
+  bool ignition_last = false;
+  std::future<bool> safety_future;
+
+  // peripheral control
+  uint64_t last_front_frame_t = 0;
+  uint16_t prev_fan_speed = 999;
+  uint16_t prev_ir_pwr = 999;
+  unsigned int cnt = 0;
+  FirstOrderFilter integ_lines_filter{0, 30.0, 0.05};
+};
+
 
 static std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
@@ -200,29 +223,18 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   return panda.release();
 }
 
-void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  util::set_thread_name("boardd_can_send");
-
-  AlignedBuffer aligned_buf;
-  std::unique_ptr<Context> context(Context::create());
-  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
-  assert(subscriber != NULL);
-  subscriber->setTimeout(100);
-
+void can_send(BoarddState &bs, std::vector<Panda *> pandas, SubSocket *sock, bool fake_send) {
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
-    std::unique_ptr<Message> msg(subscriber->receive());
+    std::unique_ptr<Message> msg(sock->receive());
     if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
+      break;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
+    capnp::FlatArrayMessageReader cmsg(bs.aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    //Dont send if older than 1 second
+    // Don't send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
@@ -233,49 +245,23 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   }
 }
 
-void can_recv_thread(std::vector<Panda *> pandas) {
-  util::set_thread_name("boardd_can_recv");
-
-  // can = 8006
-  PubMaster pm({"can"});
-
-  // run at 100hz
-  const uint64_t dt = 10000000ULL;
-  uint64_t next_frame_time = nanos_since_boot() + dt;
-  std::vector<can_frame> raw_can_data;
-
-  while (!do_exit && check_all_connected(pandas)) {
-    bool comms_healthy = true;
-    raw_can_data.clear();
-    for (const auto& panda : pandas) {
-      comms_healthy &= panda->can_receive(raw_can_data);
-    }
-
-    MessageBuilder msg;
-    auto evt = msg.initEvent();
-    evt.setValid(comms_healthy);
-    auto canData = evt.initCan(raw_can_data.size());
-    for (uint i = 0; i<raw_can_data.size(); i++) {
-      canData[i].setAddress(raw_can_data[i].address);
-      canData[i].setBusTime(raw_can_data[i].busTime);
-      canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));
-      canData[i].setSrc(raw_can_data[i].src);
-    }
-    pm.send("can", msg);
-
-    uint64_t cur_time = nanos_since_boot();
-    int64_t remaining = next_frame_time - cur_time;
-    if (remaining > 0) {
-      std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
-    } else {
-      if (ignition) {
-        LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
-      }
-      next_frame_time = cur_time;
-    }
-
-    next_frame_time += dt;
+void can_recv(BoarddState &bs, PubMaster &pm, std::vector<Panda *> pandas) {
+  bs.raw_can_data.clear();
+  for (const auto& panda : pandas) {
+    bs.comms_healthy &= panda->can_receive(bs.raw_can_data);
   }
+
+  MessageBuilder msg;
+  auto evt = msg.initEvent();
+  evt.setValid(bs.comms_healthy);
+  auto canData = evt.initCan(bs.raw_can_data.size());
+  for (uint i = 0; i < bs.raw_can_data.size(); i++) {
+    canData[i].setAddress(bs.raw_can_data[i].address);
+    canData[i].setBusTime(bs.raw_can_data[i].busTime);
+    canData[i].setDat(kj::arrayPtr((uint8_t*)bs.raw_can_data[i].dat.data(), bs.raw_can_data[i].dat.size()));
+    canData[i].setSrc(bs.raw_can_data[i].src);
+  }
+  pm.send("can", msg);
 }
 
 void send_empty_peripheral_state(PubMaster *pm) {
@@ -436,9 +422,10 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
 
+  // TODO: this rarely lags, should probably be moved to deviceState anyway
   double read_time = millis_since_boot();
-  ps.setVoltage(Hardware::get_voltage());
-  ps.setCurrent(Hardware::get_current());
+  //ps.setVoltage(Hardware::get_voltage());
+  //ps.setCurrent(Hardware::get_current());
   read_time = millis_since_boot() - read_time;
   if (read_time > 50) {
     LOGW("reading hwmon took %lfms", read_time);
@@ -450,130 +437,98 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   pm->send("peripheralState", msg);
 }
 
-void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
-  util::set_thread_name("boardd_panda_state");
-
-  Params params;
-  SubMaster sm({"controlsState"});
-
+void panda_state(BoarddState &bs, PubMaster *pm, SubMaster &sm, std::vector<Panda *> pandas, bool spoofing_started) {
   Panda *peripheral_panda = pandas[0];
-  bool ignition_last = false;
-  std::future<bool> safety_future;
 
-  LOGD("start panda state thread");
+  // send out peripheralState
+  send_peripheral_state(pm, peripheral_panda);
+  auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
 
-  // run at 2hz
-  while (!do_exit && check_all_connected(pandas)) {
-    uint64_t start_time = nanos_since_boot();
+  if (!ignition_opt) {
+    return;
+  }
 
-    // send out peripheralState
-    send_peripheral_state(pm, peripheral_panda);
-    auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
+  ignition = *ignition_opt;
 
-    if (!ignition_opt) {
-      continue;
+  // clear ignition-based params and set new safety on car start
+  if (ignition && !bs.ignition_last) {
+    bs.params.clearAll(CLEAR_ON_IGNITION_ON);
+    if (!bs.safety_future.valid() || bs.safety_future.wait_for(0ms) == std::future_status::ready) {
+      bs.safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
+    } else {
+      LOGW("Safety setter thread already running");
     }
+  } else if (!ignition && bs.ignition_last) {
+    bs.params.clearAll(CLEAR_ON_IGNITION_OFF);
+  }
 
-    ignition = *ignition_opt;
+  bs.ignition_last = ignition;
 
-    // TODO: make this check fast, currently takes 16ms
-    // check if we have new pandas and are offroad
-    if (!ignition && (pandas.size() != Panda::list().size())) {
-      LOGW("Reconnecting to changed amount of pandas!");
-      do_exit = true;
-      break;
-    }
-
-    // clear ignition-based params and set new safety on car start
-    if (ignition && !ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION_ON);
-      if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
-        safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
-      } else {
-        LOGW("Safety setter thread already running");
-      }
-    } else if (!ignition && ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION_OFF);
-    }
-
-    ignition_last = ignition;
-
-    sm.update(0);
-    const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
-
-    for (const auto &panda : pandas) {
-      panda->send_heartbeat(engaged);
-    }
-
-    uint64_t dt = nanos_since_boot() - start_time;
-    util::sleep_for(500 - dt / 1000000ULL);
+  const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
+  for (const auto &panda : pandas) {
+    panda->send_heartbeat(engaged);
   }
 }
 
 
-void peripheral_control_thread(Panda *panda, bool no_fan_control) {
-  util::set_thread_name("boardd_peripheral_control");
+void peripheral_control(BoarddState &bs, Panda *panda, bool no_fan_control, SubMaster &sm) {
+  bs.cnt++;
 
-  SubMaster sm({"deviceState", "driverCameraState"});
+  if (sm.updated("deviceState") && !no_fan_control) {
+    // Fan speed
+    uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
+    if (fan_speed != bs.prev_fan_speed || bs.cnt % 100 == 0) {
+      panda->set_fan_speed(fan_speed);
+      bs.prev_fan_speed = fan_speed;
+    }
+  }
 
-  uint64_t last_front_frame_t = 0;
-  uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
-  uint16_t prev_ir_pwr = 999;
-  unsigned int cnt = 0;
+  if (sm.updated("driverCameraState")) {
+    auto event = sm["driverCameraState"];
+    int cur_integ_lines = event.getDriverCameraState().getIntegLines();
 
-  FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
+    cur_integ_lines = bs.integ_lines_filter.update(cur_integ_lines);
+    bs.last_front_frame_t = event.getLogMonoTime();
 
-  while (!do_exit && panda->connected()) {
-    cnt++;
-    sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
-
-    if (sm.updated("deviceState") && !no_fan_control) {
-      // Fan speed
-      uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
-      if (fan_speed != prev_fan_speed || cnt % 100 == 0) {
-        panda->set_fan_speed(fan_speed);
-        prev_fan_speed = fan_speed;
-      }
-    }
-
-    if (sm.updated("driverCameraState")) {
-      auto event = sm["driverCameraState"];
-      int cur_integ_lines = event.getDriverCameraState().getIntegLines();
-
-      cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
-      last_front_frame_t = event.getLogMonoTime();
-
-      if (cur_integ_lines <= CUTOFF_IL) {
-        ir_pwr = 100.0 * MIN_IR_POWER;
-      } else if (cur_integ_lines > SATURATE_IL) {
-        ir_pwr = 100.0 * MAX_IR_POWER;
-      } else {
-        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
-      }
-    }
-
-    // Disable ir_pwr on front frame timeout
-    uint64_t cur_t = nanos_since_boot();
-    if (cur_t - last_front_frame_t > 1e9) {
-      ir_pwr = 0;
-    }
-
-    if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0) {
-      panda->set_ir_pwr(ir_pwr);
-      prev_ir_pwr = ir_pwr;
-    }
-
-    // Write to rtc once per minute when no ignition present
-    if (!ignition && (cnt % 120 == 1)) {
-      sync_time(panda, SyncTimeDir::TO_PANDA);
+    if (cur_integ_lines <= CUTOFF_IL) {
+      ir_pwr = 100.0 * MIN_IR_POWER;
+    } else if (cur_integ_lines > SATURATE_IL) {
+      ir_pwr = 100.0 * MAX_IR_POWER;
+    } else {
+      ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
     }
   }
+
+  // Disable ir_pwr on front frame timeout
+  uint64_t cur_t = nanos_since_boot();
+  if (cur_t - bs.last_front_frame_t > 1e9) {
+    ir_pwr = 0;
+  }
+
+  if (ir_pwr != bs.prev_ir_pwr || bs.cnt % 100 == 0 || ir_pwr >= 50.0) {
+    panda->set_ir_pwr(ir_pwr);
+    bs.prev_ir_pwr = ir_pwr;
+  }
+
+  // Write to rtc once per minute when no ignition present
+  if (!ignition && (bs.cnt % 120 == 1)) {
+    sync_time(panda, SyncTimeDir::TO_PANDA);
+  }
 }
+
 
 void boardd_main_thread(std::vector<std::string> serials) {
-  PubMaster pm({"pandaStates", "peripheralState"});
   LOGW("attempting to connect");
+
+  BoarddState bs;
+  PubMaster pm({"can", "pandaStates", "peripheralState"});
+  SubMaster sm({"deviceState", "driverCameraState", "controlsState"});
+
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> sendcan_sock(SubSocket::create(context.get(), "sendcan"));
+  assert(sendcan_sock != NULL);
+  sendcan_sock->setTimeout(0);
 
   if (serials.size() == 0) {
     // connect to all
@@ -602,18 +557,46 @@ void boardd_main_thread(std::vector<std::string> serials) {
     ++i;
   }
 
-  if (!do_exit) {
-    LOGW("connected to board");
-    Panda *peripheral_panda = pandas[0];
-    std::vector<std::thread> threads;
+  // 100Hz loop
+  int frame = 0;
+  const uint64_t dt = 10000000ULL;
+  struct timespec ts;
+  uint64_t next_frame_time = nanos_since_boot() + dt;
+  while (!do_exit && check_all_connected(pandas)) {
+    // 100Hz stuff
+    can_recv(bs, pm, pandas);
+    can_send(bs, pandas, sendcan_sock.get(), getenv("FAKESEND") != nullptr);
 
-    threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-    threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
+    // 2Hz stuff
+    if ((frame % 50) == 0) {
+      panda_state(bs, &pm, sm, pandas, getenv("STARTED") != nullptr);
+      peripheral_control(bs, pandas[0], getenv("NO_FAN_CONTROL") != nullptr, sm);
 
-    threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
-    threads.emplace_back(can_recv_thread, pandas);
+      // TODO: make this check fast, currently takes 16ms
+      // check if we have new pandas and are offroad
+      if (!ignition && (pandas.size() != Panda::list().size())) {
+        LOGW("Reconnecting to changed amount of pandas!");
+        do_exit = true;
+        return;
+      }
+    }
 
-    for (auto &t : threads) t.join();
+    // setup next loop
+    uint64_t cur_time = nanos_since_boot();
+    int64_t remaining = next_frame_time - cur_time;
+    if (remaining > 0) {
+      ts.tv_sec = 0;
+      ts.tv_nsec = remaining;
+      nanosleep(&ts, &ts);
+    } else {
+      if (ignition) {
+        LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
+      }
+      next_frame_time = cur_time;
+    }
+
+    frame++;
+    next_frame_time += dt;
   }
 
   // we have exited, clean up pandas
