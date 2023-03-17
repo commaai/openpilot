@@ -132,8 +132,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV = [0.6]
       ret.lateralTuning.pid.kiV = [0.1]
       ret.lateralTuning.pid.kf = 0.00007818594
-      if candidate in (CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022):
-        ret.steerControlType = car.CarParams.SteerControlType.angle
 
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
@@ -229,13 +227,12 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
     if ret.steerControlType == car.CarParams.SteerControlType.angle:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
-
-      ret.steerActuatorDelay = 0.0  # + 0.2
+      # ret.steerActuatorDelay = 0.0  # + 0.2
 
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.0]
+      ret.lateralTuning.pid.kpV = [0.2]
       ret.lateralTuning.pid.kiV = [0.0]  # this causes huge wind-ups after turns (70 degrees in integral!)
       ret.lateralTuning.pid.kf = 1.0
 
