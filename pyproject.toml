@@ -83,7 +83,7 @@ mypy = "^0.961"
 myst-parser = "^0.18.0"
 natsort = "^8.1.0"
 numpy = "^1.23.0"
-opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu113/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl", platform = "linux" }
+opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl", platform = "linux" }
 pandas = "^1.4.3"
 parameterized = "^0.8.1"
 paramiko = "^2.11.0"
