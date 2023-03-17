@@ -89,16 +89,12 @@ class CarState(CarStateBase):
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
-    # 3 is a fault from the lka/lta command message not being received by the EPS
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LTA_STATE"] not in (1, 3, 5)  # TODO: set actual codes. 1 is inactive, 5 is active, 3 is below
-      ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LTA_STATE"] in (3,)  # TODO: any more?
-    else:
-      # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
-      # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
-      ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
-      # 17 is a fault from a prolonged high torque delta between cmd and user
-      ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
+    # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
+    # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
+    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
+    # 17 is a fault from a prolonged high torque delta between cmd and user
+    # 3 is a fault from the lka command message not being received by the EPS
+    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
@@ -185,7 +181,6 @@ class CarState(CarStateBase):
       ("STEER_ANGLE_INITIALIZING", "STEER_TORQUE_SENSOR"),
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
-      ("LTA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
     ]
 
