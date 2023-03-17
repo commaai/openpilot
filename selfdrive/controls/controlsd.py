@@ -634,7 +634,8 @@ class Controls:
 
     # Send a "steering required alert" if saturation count has reached the limit
     if lac_log.active and not recent_steer_pressed:
-      if self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
+      if self.CP.steerControlType == SteerControlType.torque and \
+        self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
