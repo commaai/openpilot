@@ -83,7 +83,7 @@ mypy = "^0.961"
 myst-parser = "^0.18.0"
 natsort = "^8.1.0"
 numpy = "^1.23.0"
-opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu113/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl", platform = "linux" }
+opencv-python-headless = { url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl", platform = "linux" }
 pandas = "^1.4.3"
 parameterized = "^0.8.1"
 paramiko = "^2.11.0"
@@ -117,7 +117,7 @@ optional = true
 aenum = "^3.1.11"
 aiohttp = "^3.8.1"
 albumentations = "^1.2.1"
-apex = { url = "https://github.com/commaai/apex/releases/download/pytorch1.10.0%2Bcu11.1/apex-0.1-cp38-cp38-linux_x86_64.whl" }
+apex = { url = "https://github.com/commaai/apex/releases/download/pytorch2.0.0%2Bcu11.8/apex-0.1-cp38-cp38-linux_x86_64.whl" }
 azure-cli-core = "^2.38.0"
 azure-common = "^1.1.28"
 azure-core = "^1.24.2"
@@ -127,7 +127,7 @@ azure-storage-nspkg = "~3.1"
 blosc = "==1.9.2"
 cloudpickle = "^2.1.0"
 configargparse = "^1.5.3"
-cupy-cuda113 = "^10.6.0"
+cupy-cuda11x = "^11.6.0"
 datadog = "^0.44.0"
 dotmap = "^1.3.30"
 einops = "^0.5.0"
@@ -166,10 +166,10 @@ scikit-learn = "^1.1.1"
 segmentation-models-pytorch = "==0.2.1"
 simplejson = "^3.17.6"
 SQLAlchemy = "^1.4.39"
-torch = { url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl" }
+torch = { url = "https://download.pytorch.org/whl/cu118/torch-2.0.0%2Bcu118-cp38-cp38-linux_x86_64.whl" }
 torchsummary = "^1.5.1"
-torchvision = { url = "https://download.pytorch.org/whl/cu113/torchvision-0.12.0%2Bcu113-cp38-cp38-linux_x86_64.whl" }
-triton = "^1.1.1"
+torchvision = { url = "https://download.pytorch.org/whl/cu118/torchvision-0.15.1%2Bcu118-cp38-cp38-linux_x86_64.whl" }
+triton = "^2.0.0"
 Werkzeug = "^2.1.2"
 zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "master" }
 omegaconf = "^2.3.0"
