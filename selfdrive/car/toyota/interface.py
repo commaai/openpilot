@@ -15,16 +15,6 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def get_angle_feedforward(desired_angle, v_ego):
-    return desired_angle
-
-  def get_steer_feedforward_function(self):
-    if self.CP.steerControlType == car.CarParams.SteerControlType.torque:
-      return CarInterfaceBase.get_steer_feedforward_default
-    else:
-      return self.get_angle_feedforward
-
-  @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
@@ -95,8 +85,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-        ret.steerControlType = car.CarParams.SteerControlType.angle
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -126,8 +114,6 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV = [0.6]
       ret.lateralTuning.pid.kiV = [0.1]
       ret.lateralTuning.pid.kf = 0.00007818594
-      if candidate in (CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2022):
-        ret.steerControlType = car.CarParams.SteerControlType.angle
 
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
@@ -144,7 +130,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.steerControlType = car.CarParams.SteerControlType.angle
 
     elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
       stop_and_go = True
@@ -221,17 +206,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-    if ret.steerControlType == car.CarParams.SteerControlType.angle:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
-
-      ret.steerActuatorDelay = 0.0  # + 0.2
-
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.0]
-      ret.lateralTuning.pid.kiV = [0.0]  # this causes huge wind-ups after turns (70 degrees in integral!)
-      ret.lateralTuning.pid.kf = 1.0
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
