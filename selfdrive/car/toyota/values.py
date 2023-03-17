@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import AngleRateLimit, dbc_dict
+from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -21,14 +21,6 @@ class CarControllerParams:
   STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
-
-  # stock LTA is 0 to 0.05 going straight
-  # and 0.1 to 0.4 when turning (max seen is 0.6303)
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 1.5, 1.5])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 2.5, 1.5])
-
-  # needs to be within +-3 degrees of current angle to avoid windup
-  ANGLE_DELTA_MAX = 5
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
@@ -2184,7 +2176,10 @@ NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH}
 UNSUPPORTED_DSU_CAR = {CAR.LEXUS_IS, CAR.LEXUS_RC}
 
 # these cars have a radar which sends ACC messages instead of the camera
-RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.CHR_TSS2, CAR.CHRH_TSS2}
+RADAR_ACC_CAR = {CAR.RAV4H_TSS2_2022, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023, CAR.CHR_TSS2, CAR.CHRH_TSS2}
+
+# these cars use the Lane Tracing Assist (LTA) message for lateral control
+ANGLE_CONTROL_CAR = {CAR.RAV4H_TSS2_2023, CAR.RAV4_TSS2_2023}
 
 EV_HYBRID_CAR = {CAR.AVALONH_2019, CAR.AVALONH_TSS2, CAR.CAMRYH, CAR.CAMRYH_TSS2, CAR.CHRH, CAR.CHRH_TSS2, CAR.COROLLAH_TSS2, CAR.HIGHLANDERH, CAR.HIGHLANDERH_TSS2, CAR.PRIUS,
                  CAR.PRIUS_V, CAR.RAV4H, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022, CAR.LEXUS_CTH, CAR.MIRAI, CAR.LEXUS_ESH, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_NXH, CAR.LEXUS_RXH,
