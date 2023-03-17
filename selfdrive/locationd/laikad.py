@@ -72,7 +72,7 @@ def get_log_eph_source(ephem):
 
 
 class Laikad:
-  def __init__(self, valid_const=("GPS", "GLONASS"), auto_fetch_navs=True, auto_update=False,
+  def __init__(self, valid_const=(ConstellationId.GPS, ConstellationId.GLONASS), auto_fetch_navs=True, auto_update=False,
                valid_ephem_types=(EphemerisType.NAV, EphemerisType.QCOM_POLY),
                save_ephemeris=False, use_qcom=False):
     """
