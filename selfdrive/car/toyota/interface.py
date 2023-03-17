@@ -20,18 +20,22 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
-    ret.dashcamOnly = candidate in ANGLE_CONTROL_CAR
 
     if candidate in (CAR.RAV4, CAR.PRIUS_V, CAR.COROLLA, CAR.LEXUS_ESH, CAR.LEXUS_CTH):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
+
+    if candidate in ANGLE_CONTROL_CAR:
+      ret.dashcamOnly = True
+      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+    else:
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
-    steering_angle_deadzone_deg = 0.0
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -42,9 +46,8 @@ class CarInterface(CarInterfaceBase):
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
-          steering_angle_deadzone_deg = 0.2
           ret.steerActuatorDelay = 0.25
-          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
+          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 0.2)
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -209,9 +212,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-    if candidate in ANGLE_CONTROL_CAR:
-      ret.steerControlType = car.CarParams.SteerControlType.angle
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
