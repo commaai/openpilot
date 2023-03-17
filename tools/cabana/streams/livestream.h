@@ -16,27 +16,23 @@ public:
   void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
   bool isPaused() const override { return pause_; }
   void pause(bool pause) override;
-  const std::vector<Event *> *events() const override { return &can_events; }
 
 protected:
-  void process(QHash<MessageId, CanData> *) override;
   virtual void handleEvent(Event *evt);
   virtual void streamThread();
+  void process(QHash<MessageId, CanData> *) override;
 
   struct Msg {
     Msg(Message *m) {
       event = ::new Event(aligned_buf.align(m));
       delete m;
     }
-    ~Msg() {
-      ::delete event;
-    }
+    ~Msg() { ::delete event; }
     Event *event;
     AlignedBuffer aligned_buf;
   };
 
   mutable std::mutex lock;
-  std::vector<Event *> can_events;
   std::vector<Event *> received;
   std::deque<Msg> messages;
   std::atomic<uint64_t> start_ts = 0;
