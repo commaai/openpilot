@@ -18,19 +18,23 @@ class CarControllerParams:
   ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
   ACCEL_MIN = -3.5  # m/s2
 
-  STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
 
   # stock LTA is 0 to 0.05 going straight
   # and 0.1 to 0.4 when turning (max seen is 0.6303)
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 1.5, 1.5])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5, 2.5, 1.5])
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5 * 2, 1.5 * 2, 1.5 * 2])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[2.5 * 2, 2.5 * 2, 1.5 * 2])
 
   # needs to be within +-3 degrees of current angle to avoid windup
   ANGLE_DELTA_MAX = 5
 
   def __init__(self, CP):
+    if CP.steerControlType == 'angle':
+      self.STEER_STEP = 2
+    else:
+      self.STEER_STEP = 1
+
     if CP.lateralTuning.which == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
