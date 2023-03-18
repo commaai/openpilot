@@ -666,6 +666,8 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     } else if ((max_rounded - min_rounded) >= 0.5) {
       // zoom in if selected range is greater than 0.5s
       emit zoomIn(min_rounded, max_rounded);
+    } else {
+      scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -738,6 +740,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (rubber_rect != rubber->geometry()) {
       rubber->setGeometry(rubber_rect);
     }
+    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
 }
 
@@ -802,6 +805,21 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
         painter->setBrush(s.series->color());
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
       }
+    }
+  }
+
+  // paint zoom range
+  auto rubber = findChild<QRubberBand *>();
+  if (rubber && rubber->isVisible() && rubber->width() > 1) {
+    painter->setPen(Qt::white);
+    auto rubber_rect = rubber->geometry().normalized();
+    for (const auto &pt : {rubber_rect.bottomLeft(), rubber_rect.bottomRight()}) {
+      QString sec = QString::number(chart()->mapToValue(pt).x(), 'f', 1);
+      // ChartAxisElement's padding is 4 (https://codebrowser.dev/qt5/qtcharts/src/charts/axis/chartaxiselement_p.h.html)
+      auto r = painter->fontMetrics().boundingRect(sec).adjusted(-6, -4, 6, 4);
+      pt == rubber_rect.bottomLeft() ? r.moveTopRight(pt + QPoint{0, 2}) : r.moveTopLeft(pt + QPoint{0, 2});
+      painter->fillRect(r, Qt::gray);
+      painter->drawText(r, Qt::AlignCenter, sec);
     }
   }
 }
