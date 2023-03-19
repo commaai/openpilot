@@ -245,7 +245,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     }
   }
 
-  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1};
+  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
   for (int i = 1; /**/; ++i) {
     sig.name = QString("NEW_SIGNAL_%1").arg(i);
     if (msg->sig(sig.name) == nullptr) break;

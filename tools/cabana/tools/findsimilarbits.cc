@@ -19,7 +19,7 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   QHBoxLayout *form_layout = new QHBoxLayout();
   bus_combo = new QComboBox(this);
   QSet<uint8_t> bus_set;
-  for (auto it = can->can_msgs.begin(); it != can->can_msgs.end(); ++it) {
+  for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
     bus_set << it.key().source;
   }
   for (uint8_t bus : bus_set) {
@@ -102,29 +102,24 @@ void FindSimilarBitsDlg::find() {
 QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx, int bit_idx, int min_msgs_cnt) {
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
-  auto events = can->events();
   int bit_to_find = -1;
-  for (auto e : *events) {
-    if (e->which == cereal::Event::Which::CAN) {
-      for (const auto &c : e->event.getCan()) {
-        if (c.getSrc() == bus) {
-          const auto dat = c.getDat();
-          uint32_t address = c.getAddress();
-          if (address == selected_address && dat.size() > byte_idx) {
-            bit_to_find = ((dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
-          }
-          ++msg_count[address];
-          if (bit_to_find == -1) continue;
+  for (const auto &[id, msg] : can->events()) {
+    if (id.source == bus) {
+      for (const auto &c : msg) {
+        if (id.address == selected_address && c.size > byte_idx) {
+          bit_to_find = ((c.dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
+        }
+        ++msg_count[id.address];
+        if (bit_to_find == -1) continue;
 
-          auto &mismatched = mismatches[address];
-          if (mismatched.size() < dat.size() * 8) {
-            mismatched.resize(dat.size() * 8);
-          }
-          for (int i = 0; i < dat.size(); ++i) {
-            for (int j = 0; j < 8; ++j) {
-              int bit = ((dat[i] >> (7 - j)) & 1) != 0;
-              mismatched[i * 8 + j] += (bit != bit_to_find);
-            }
+        auto &mismatched = mismatches[id.address];
+        if (mismatched.size() < c.size * 8) {
+          mismatched.resize(c.size * 8);
+        }
+        for (int i = 0; i < c.size; ++i) {
+          for (int j = 0; j < 8; ++j) {
+            int bit = ((c.dat[i] >> (7 - j)) & 1) != 0;
+            mismatched[i * 8 + j] += (bit != bit_to_find);
           }
         }
       }

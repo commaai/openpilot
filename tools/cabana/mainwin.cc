@@ -446,15 +446,7 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 }
 
 void MainWindow::updateStatus() {
-  float cached_minutes = 0;
-  if (!can->liveStreaming()) {
-    if (auto events = can->events(); !events->empty()) {
-      cached_minutes = (events->back()->mono_time - events->front()->mono_time) / (1e9 * 60);
-    }
-  } else {
-    settings.max_cached_minutes = settings.max_cached_minutes;
-  }
-  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(cached_minutes, 0, 'f', 1).arg(settings.fps));
+  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
 }
 
 void MainWindow::dockCharts(bool dock) {

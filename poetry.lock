@@ -113,10 +113,12 @@ category = "dev"
 optional = false
 python-versions = "*"
 
+[package.dependencies]
+packaging = ">20.6"
+
 [package.source]
 type = "url"
-url = "https://github.com/commaai/apex/releases/download/pytorch1.10.0%2Bcu11.1/apex-0.1-cp38-cp38-linux_x86_64.whl"
-
+url = "https://github.com/commaai/apex/releases/download/pytorch2.0.0%2Bcu11.8/apex-0.1-cp38-cp38-linux_x86_64.whl"
 [[package]]
 name = "appdirs"
 version = "1.4.4"
@@ -601,6 +603,17 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
+name = "cmake"
+version = "3.26.0"
+description = "CMake is an open-source, cross-platform family of tools designed to build, test and package software"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.extras]
+test = ["codecov (>=2.0.5)", "coverage (>=4.2)", "flake8 (>=3.0.4)", "path.py (>=11.5.0)", "pytest (>=3.0.3)", "pytest-cov (>=2.4.0)", "pytest-runner (>=2.9)", "pytest-virtualenv (>=1.7.0)", "scikit-build (>=0.10.0)", "setuptools (>=28.0.0)", "virtualenv (>=15.0.3)", "wheel"]
+
+[[package]]
 name = "colorama"
 version = "0.4.5"
 description = "Cross-platform colored terminal text."
@@ -716,8 +729,8 @@ ssh = ["bcrypt (>=3.1.5)"]
 test = ["hypothesis (>=1.11.4,!=3.79.2)", "iso8601", "pretend", "pytest (>=6.2.0)", "pytest-benchmark", "pytest-cov", "pytest-subtests", "pytest-xdist", "pytz"]
 
 [[package]]
-name = "cupy-cuda113"
-version = "10.6.0"
+name = "cupy-cuda11x"
+version = "11.6.0"
 description = "CuPy: NumPy & SciPy for GPU"
 category = "dev"
 optional = false
@@ -725,12 +738,12 @@ python-versions = ">=3.7"
 
 [package.dependencies]
 fastrlock = ">=0.5"
-numpy = ">=1.18,<1.25"
+numpy = ">=1.20,<1.27"
 
 [package.extras]
-all = ["Cython (>=0.29.22,<3)", "optuna (>=2.0)", "scipy (>=1.4,<1.11)"]
+all = ["Cython (>=0.29.22,<3)", "optuna (>=2.0)", "scipy (>=1.6,<1.12)"]
 stylecheck = ["autopep8 (==1.5.5)", "flake8 (==3.8.4)", "mypy (==0.950)", "pbr (==5.5.1)", "pycodestyle (==2.6.0)", "types-setuptools (==57.4.14)"]
-test = ["hypothesis (>=6.37.2)", "pytest (>=6.2)"]
+test = ["hypothesis (>=6.37.2,<6.55.0)", "pytest (>=7.2)"]
 
 [[package]]
 name = "cycler"
@@ -1899,6 +1912,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "lit"
+version = "15.0.7"
+description = "A Software Testing Tool"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "lockfile"
 version = "0.12.2"
 description = "Platform-independent file locking module"
@@ -2586,8 +2607,7 @@ numpy = [
 
 [package.source]
 type = "url"
-url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu113/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl"
-
+url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118/opencv_python_headless-4.5.5.64-cp38-cp38-manylinux_2_31_x86_64.whl"
 [[package]]
 name = "osmium"
 version = "3.4.1"
@@ -4220,19 +4240,26 @@ python-versions = ">=3.6,<4.0"
 
 [[package]]
 name = "torch"
-version = "1.11.0+cu113"
+version = "2.0.0+cu118"
 description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
 category = "dev"
 optional = false
-python-versions = ">=3.7.0"
+python-versions = ">=3.8.0"
 
 [package.dependencies]
+filelock = "*"
+jinja2 = "*"
+networkx = "*"
+sympy = "*"
+triton = {version = "2.0.0", markers = "platform_system == \"Linux\" and platform_machine == \"x86_64\""}
 typing-extensions = "*"
+
+[package.extras]
+opt-einsum = ["opt-einsum (>=3.3)"]
 
 [package.source]
 type = "url"
-url = "https://download.pytorch.org/whl/cu113/torch-1.11.0%2Bcu113-cp38-cp38-linux_x86_64.whl"
-
+url = "https://download.pytorch.org/whl/cu118/torch-2.0.0%2Bcu118-cp38-cp38-linux_x86_64.whl"
 [[package]]
 name = "torchsummary"
 version = "1.5.1"
@@ -4243,26 +4270,24 @@ python-versions = "*"
 
 [[package]]
 name = "torchvision"
-version = "0.12.0+cu113"
+version = "0.15.1+cu118"
 description = "image and video datasets and models for torch deep learning"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 
 [package.dependencies]
 numpy = "*"
 pillow = ">=5.3.0,<8.3.0 || >=8.4.0"
 requests = "*"
-torch = "1.11.0"
-typing-extensions = "*"
+torch = "2.0.0"
 
 [package.extras]
 scipy = ["scipy"]
 
 [package.source]
 type = "url"
-url = "https://download.pytorch.org/whl/cu113/torchvision-0.12.0%2Bcu113-cp38-cp38-linux_x86_64.whl"
-
+url = "https://download.pytorch.org/whl/cu118/torchvision-0.15.1%2Bcu118-cp38-cp38-linux_x86_64.whl"
 [[package]]
 name = "tornado"
 version = "6.2"
@@ -4302,15 +4327,21 @@ test = ["pre-commit", "pytest"]
 
 [[package]]
 name = "triton"
-version = "1.1.1"
+version = "2.0.0"
 description = "A language and compiler for custom Deep Learning operations"
 category = "dev"
 optional = false
 python-versions = "*"
 
 [package.dependencies]
+cmake = "*"
 filelock = "*"
+lit = "*"
 torch = "*"
+
+[package.extras]
+tests = ["autopep8", "flake8", "isort", "numpy", "pytest", "scipy (>=1.7.1)"]
+tutorials = ["matplotlib", "pandas", "tabulate"]
 
 [[package]]
 name = "types-atomicwrites"
@@ -4357,9 +4388,9 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-tabulate"
-version = "0.9.0.1"
+version = "0.8.11"
 description = "Typing stubs for tabulate"
-category = "main"
+category = "dev"
 optional = false
 python-versions = "*"
 
@@ -4575,7 +4606,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "669485055bf8d77336509cb7a3878e06aa32431c520825948914d76b57347fde"
+content-hash = "a16ec604c5251dc860a44f7133289d0b7b16120757f8c903f3917329753c52d1"
 
 [metadata.files]
 adal = [
@@ -5040,6 +5071,25 @@ cloudpickle = [
     {file = "cloudpickle-2.2.0-py3-none-any.whl", hash = "sha256:7428798d5926d8fcbfd092d18d01a2a03daf8237d8fcdc8095d256b8490796f0"},
     {file = "cloudpickle-2.2.0.tar.gz", hash = "sha256:3f4219469c55453cfe4737e564b67c2a149109dabf7f242478948b895f61106f"},
 ]
+cmake = [
+    {file = "cmake-3.26.0-py2.py3-none-macosx_10_10_universal2.macosx_10_10_x86_64.macosx_11_0_arm64.macosx_11_0_universal2.whl", hash = "sha256:4881727389325af84e39f1ec646b7249d8910b4ed637205bee6d589cb2b2ebd2"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2010_i686.manylinux_2_12_i686.whl", hash = "sha256:babd1e38c85d38a4bf4164c3126ec8cf4cd8d374072e2a4a181e52e953007f8c"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2010_x86_64.manylinux_2_12_x86_64.whl", hash = "sha256:1851be29d79bb39505954165e934d31994268d49f566ead6fff840a5092e444d"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:483aaaeb9535deaa2657c928af5d9f0da9329f89bc249f494923495745a03677"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2014_i686.manylinux_2_17_i686.whl", hash = "sha256:2f78c6194f224d462333e08d3acd571c553b58d04935971b87efbe76f241353c"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2014_ppc64le.manylinux_2_17_ppc64le.whl", hash = "sha256:cf129c8b71f1344975f179f30287baa8804c4c61ff1b13003244b4157b676e13"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2014_s390x.manylinux_2_17_s390x.whl", hash = "sha256:fabb82c69223eda27e673c5c6bb02985d60cf0baa631a2e4932eed87e8229928"},
+    {file = "cmake-3.26.0-py2.py3-none-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:502cbed2335557920b88687c6f3ff4ce433bd416204c928ad489e399e76149f5"},
+    {file = "cmake-3.26.0-py2.py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:b81c7775b125786c1696232078e9ceb0c9c66d26fb0a2259f40e33983170f924"},
+    {file = "cmake-3.26.0-py2.py3-none-musllinux_1_1_i686.whl", hash = "sha256:f4cc1dde7613cc813d15fd840a33e18cd07a443aa67205d74b9b05f55f08a459"},
+    {file = "cmake-3.26.0-py2.py3-none-musllinux_1_1_ppc64le.whl", hash = "sha256:ac6ca9d9ff58900138bbbebc55857647fb99f1c40b84d8a232f23b0d27d7f48a"},
+    {file = "cmake-3.26.0-py2.py3-none-musllinux_1_1_s390x.whl", hash = "sha256:85e0bad5aeb3a82919ed7d78b76a0462eafe2f918076a1823a09c6f37910f3e0"},
+    {file = "cmake-3.26.0-py2.py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:5523b9701be367572155e77294bf8aa3ac9aa0d73c50dcd6c57903d12bcb308e"},
+    {file = "cmake-3.26.0-py2.py3-none-win32.whl", hash = "sha256:96f0e887260255eeb83bcf3465d51bc6c94078251c9312fa142dce6d3e80acac"},
+    {file = "cmake-3.26.0-py2.py3-none-win_amd64.whl", hash = "sha256:a0719a6f79cdc4d7b16caf757b8ae13eae1c6ce5a08d594cc09774afe129515d"},
+    {file = "cmake-3.26.0-py2.py3-none-win_arm64.whl", hash = "sha256:11159c9b64c6473d84361ab44ef2c85e1bd2db7a2b1b798ce8bf5988f32adf43"},
+    {file = "cmake-3.26.0.tar.gz", hash = "sha256:c18185c9cc147d0fa1e9228962aa37901b37866bd5d617e9efa23dfe706f7321"},
+]
 colorama = [
     {file = "colorama-0.4.5-py2.py3-none-any.whl", hash = "sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da"},
     {file = "colorama-0.4.5.tar.gz", hash = "sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4"},
@@ -5209,15 +5259,17 @@ cryptography = [
     {file = "cryptography-37.0.4-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:4c590ec31550a724ef893c50f9a97a0c14e9c851c85621c5650d699a7b88f7ab"},
     {file = "cryptography-37.0.4.tar.gz", hash = "sha256:63f9c17c0e2474ccbebc9302ce2f07b55b3b3fcb211ded18a42d5764f5c10a82"},
 ]
-cupy-cuda113 = [
-    {file = "cupy_cuda113-10.6.0-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:27e5efe2c3afa80ff48654cb27f9e0eddb36f8b26ef0d32d3ba0a233e1359b51"},
-    {file = "cupy_cuda113-10.6.0-cp310-cp310-win_amd64.whl", hash = "sha256:8b96076d1ddd33fdb2c908ed0f8109caf69d37d36f839a8a8cdae1312508336f"},
-    {file = "cupy_cuda113-10.6.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:22363c2863727cae5154aa4bab9e8a648d7fe66c9e2195d81dd4e8693c2e61ce"},
-    {file = "cupy_cuda113-10.6.0-cp37-cp37m-win_amd64.whl", hash = "sha256:8cc69b9d5735372477a7af3822c8f8e996ffe6de05cfc917500af9dc0117ca3e"},
-    {file = "cupy_cuda113-10.6.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:10dc6899577e445426d81f0960ba9059d9aaa750426997c61fad882d6345264c"},
-    {file = "cupy_cuda113-10.6.0-cp38-cp38-win_amd64.whl", hash = "sha256:c6893ac9040a11610e63973063dfd715dbda8bd07ef99951bab7a09c7f335e1e"},
-    {file = "cupy_cuda113-10.6.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:4bf4bc06d991c06b95f6fe558d117cafd93bd4eeaf80606f18dd31d20d2eff25"},
-    {file = "cupy_cuda113-10.6.0-cp39-cp39-win_amd64.whl", hash = "sha256:3745fc42dca86ba8a1109ddc7964aed8e1efc0ce8085cb2f140dcd6429f26354"},
+cupy-cuda11x = [
+    {file = "cupy_cuda11x-11.6.0-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:1b9914f57868a1559e9bfabfbae8c724585914e8e1f277acb9cdb6aa0756eaa4"},
+    {file = "cupy_cuda11x-11.6.0-cp310-cp310-win_amd64.whl", hash = "sha256:ac8dd082ddb00996bc4d37cc5765907048f467aadb61bcbff25f3c2a88c50583"},
+    {file = "cupy_cuda11x-11.6.0-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:bf7496340dfbc2eaa3e0ebfd03c4ab8b1fc36d7d14f68718c33eeb395aaa6eed"},
+    {file = "cupy_cuda11x-11.6.0-cp311-cp311-win_amd64.whl", hash = "sha256:e3bbd55c26d60069d7e5af2200fb47e7c42ca6437acac297637a2d3c00f6fe46"},
+    {file = "cupy_cuda11x-11.6.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:0d7ebcfd7234946719ad28890593d9fc78fad5753ef4b073e0d7bdb7da2f5640"},
+    {file = "cupy_cuda11x-11.6.0-cp37-cp37m-win_amd64.whl", hash = "sha256:3bc3f81fbc5a86c7155c6036809f2ada4023fc0870dce158d3d9f6d0b575727f"},
+    {file = "cupy_cuda11x-11.6.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:1d6810568e683cb153972b3019ddb5efc369036511122117d9eda09cf84d1042"},
+    {file = "cupy_cuda11x-11.6.0-cp38-cp38-win_amd64.whl", hash = "sha256:31c1ec72ffe9ad6fda9fb0a2aff1fcca38da66a8e521e333bae0d67ebc80ead0"},
+    {file = "cupy_cuda11x-11.6.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:6a4822daadfce0464cb619099eb82c7ba30ae7755d6869ba5eba1c675a9eed67"},
+    {file = "cupy_cuda11x-11.6.0-cp39-cp39-win_amd64.whl", hash = "sha256:3d0f44d747b38ce2b213d64270265f953b68cf29860ec5fa65848b9faaea3fc1"},
 ]
 cycler = [
     {file = "cycler-0.11.0-py3-none-any.whl", hash = "sha256:3a27e95f763a428a739d2add979fa7494c912a32c17c4c38c4d5f082cad165a3"},
@@ -6044,6 +6096,9 @@ libusb1 = [
     {file = "libusb1-3.0.0-py3-none-win32.whl", hash = "sha256:083f75e5d15cb5e2159e64c308c5317284eae926a820d6dce53a9505d18be3b2"},
     {file = "libusb1-3.0.0-py3-none-win_amd64.whl", hash = "sha256:6f6bb010632ada35c661d17a65e135077beef0fbb2434d5ffdb3a4a911fd9490"},
     {file = "libusb1-3.0.0.tar.gz", hash = "sha256:5792a9defee40f15d330a40d9b1800545c32e47ba7fc66b6f28f133c9fcc8538"},
+]
+lit = [
+    {file = "lit-15.0.7.tar.gz", hash = "sha256:ed08ac55afe714a193653df293ae8a6ee6c45d6fb11eeca72ce347d99b88ecc8"},
 ]
 lockfile = [
     {file = "lockfile-0.12.2-py2.py3-none-any.whl", hash = "sha256:6c3cb24f344923d30b2785d5ad75182c8ea7ac1b6171b08657258ec7429d50fa"},
@@ -7009,6 +7064,7 @@ pycryptodome = [
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:7c9ed8aa31c146bef65d89a1b655f5f4eab5e1120f55fc297713c89c9e56ff0b"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2010_x86_64.whl", hash = "sha256:5099c9ca345b2f252f0c28e96904643153bae9258647585e5e6f649bb7a1844a"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-manylinux2014_aarch64.whl", hash = "sha256:2ec709b0a58b539a4f9d33fb8508264c3678d7edb33a68b8906ba914f71e8c13"},
+    {file = "pycryptodome-3.15.0-cp27-cp27m-musllinux_1_1_aarch64.whl", hash = "sha256:2ae53125de5b0d2c95194d957db9bb2681da8c24d0fb0fe3b056de2bcaf5d837"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-win32.whl", hash = "sha256:fd2184aae6ee2a944aaa49113e6f5787cdc5e4db1eb8edb1aea914bd75f33a0c"},
     {file = "pycryptodome-3.15.0-cp27-cp27m-win_amd64.whl", hash = "sha256:7e3a8f6ee405b3bd1c4da371b93c31f7027944b2bcce0697022801db93120d83"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux1_i686.whl", hash = "sha256:b9c5b1a1977491533dfd31e01550ee36ae0249d78aae7f632590db833a5012b8"},
@@ -7016,12 +7072,14 @@ pycryptodome = [
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2010_i686.whl", hash = "sha256:2aa55aae81f935a08d5a3c2042eb81741a43e044bd8a81ea7239448ad751f763"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2010_x86_64.whl", hash = "sha256:c3640deff4197fa064295aaac10ab49a0d55ef3d6a54ae1499c40d646655c89f"},
     {file = "pycryptodome-3.15.0-cp27-cp27mu-manylinux2014_aarch64.whl", hash = "sha256:045d75527241d17e6ef13636d845a12e54660aa82e823b3b3341bcf5af03fa79"},
+    {file = "pycryptodome-3.15.0-cp27-cp27mu-musllinux_1_1_aarch64.whl", hash = "sha256:eb6fce570869e70cc8ebe68eaa1c26bed56d40ad0f93431ee61d400525433c54"},
     {file = "pycryptodome-3.15.0-cp35-abi3-macosx_10_9_x86_64.whl", hash = "sha256:9ee40e2168f1348ae476676a2e938ca80a2f57b14a249d8fe0d3cdf803e5a676"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux1_i686.whl", hash = "sha256:4c3ccad74eeb7b001f3538643c4225eac398c77d617ebb3e57571a897943c667"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux1_x86_64.whl", hash = "sha256:1b22bcd9ec55e9c74927f6b1f69843cb256fb5a465088ce62837f793d9ffea88"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2010_i686.whl", hash = "sha256:57f565acd2f0cf6fb3e1ba553d0cb1f33405ec1f9c5ded9b9a0a5320f2c0bd3d"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2010_x86_64.whl", hash = "sha256:4b52cb18b0ad46087caeb37a15e08040f3b4c2d444d58371b6f5d786d95534c2"},
     {file = "pycryptodome-3.15.0-cp35-abi3-manylinux2014_aarch64.whl", hash = "sha256:092a26e78b73f2530b8bd6b3898e7453ab2f36e42fd85097d705d6aba2ec3e5e"},
+    {file = "pycryptodome-3.15.0-cp35-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:50ca7e587b8e541eb6c192acf92449d95377d1f88908c0a32ac5ac2703ebe28b"},
     {file = "pycryptodome-3.15.0-cp35-abi3-win32.whl", hash = "sha256:e244ab85c422260de91cda6379e8e986405b4f13dc97d2876497178707f87fc1"},
     {file = "pycryptodome-3.15.0-cp35-abi3-win_amd64.whl", hash = "sha256:c77126899c4b9c9827ddf50565e93955cb3996813c18900c16b2ea0474e130e9"},
     {file = "pycryptodome-3.15.0-pp27-pypy_73-macosx_10_9_x86_64.whl", hash = "sha256:9eaadc058106344a566dc51d3d3a758ab07f8edde013712bc8d22032a86b264f"},
@@ -8032,11 +8090,15 @@ traitlets = [
     {file = "traitlets-5.5.0.tar.gz", hash = "sha256:b122f9ff2f2f6c1709dab289a05555be011c87828e911c0cf4074b85cb780a79"},
 ]
 triton = [
-    {file = "triton-1.1.1-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8441e6f44517aef8f6345f621c003926cbe970892802411a949ccda516cbd5ba"},
-    {file = "triton-1.1.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:840776bc1f4757fb2d6af974694c5e5313220ceec238ee6118b9728bc2aa9ade"},
-    {file = "triton-1.1.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:97d42cdaa7d56de463d762c18cc876bfd0828a2b6a706263393fe7e10d1c83ca"},
-    {file = "triton-1.1.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ebc19c0e902bbf7d29de4d444455608065a2c56e3524f4bc94e724511ca518f3"},
-    {file = "triton-1.1.1-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f02f798cd2dd922228082ce1a4e9d81badb9a6217a9aac6d783e95bf7055974d"},
+    {file = "triton-2.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8f05a7e64e4ca0565535e3d5d3405d7e49f9d308505bb7773d21fb26a4c008c2"},
+    {file = "triton-2.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bb4b99ca3c6844066e516658541d876c28a5f6e3a852286bbc97ad57134827fd"},
+    {file = "triton-2.0.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:47b4d70dc92fb40af553b4460492c31dc7d3a114a979ffb7a5cdedb7eb546c08"},
+    {file = "triton-2.0.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fedce6a381901b1547e0e7e1f2546e4f65dca6d91e2d8a7305a2d1f5551895be"},
+    {file = "triton-2.0.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:75834f27926eab6c7f00ce73aaf1ab5bfb9bec6eb57ab7c0bfc0a23fac803b4c"},
+    {file = "triton-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0117722f8c2b579cd429e0bee80f7731ae05f63fe8e9414acd9a679885fcbf42"},
+    {file = "triton-2.0.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bcd9be5d0c2e45d2b7e6ddc6da20112b6862d69741576f9c3dbaf941d745ecae"},
+    {file = "triton-2.0.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:42a0d2c3fc2eab4ba71384f2e785fbfd47aa41ae05fa58bf12cb31dcbd0aeceb"},
+    {file = "triton-2.0.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:52c47b72c72693198163ece9d90a721299e4fb3b8e24fd13141e384ad952724f"},
 ]
 types-atomicwrites = [
     {file = "types-atomicwrites-1.4.5.1.tar.gz", hash = "sha256:9e9f0923ebf93524b28bcece5a23ac8c3820f39b060df29f671936d2e4bc04bc"},
@@ -8059,8 +8121,8 @@ types-requests = [
     {file = "types_requests-2.28.11.2-py3-none-any.whl", hash = "sha256:14941f8023a80b16441b3b46caffcbfce5265fd14555844d6029697824b5a2ef"},
 ]
 types-tabulate = [
-    {file = "types-tabulate-0.9.0.1.tar.gz", hash = "sha256:e486292c279f19247865bdabe802419740a0e74b53444e7f7a8009e08129da5d"},
-    {file = "types_tabulate-0.9.0.1-py3-none-any.whl", hash = "sha256:be2ea0de05f615ccfcbadf6206aa720e265955eb1de23e343aec9d8bf3fa9aaa"},
+    {file = "types-tabulate-0.8.11.tar.gz", hash = "sha256:17a5fa3b5ca453815778fc9865e8ecd0118b07b2b9faff3e2b06fe448174dd5e"},
+    {file = "types_tabulate-0.8.11-py3-none-any.whl", hash = "sha256:af811268241e8fb87b63c052c87d1e329898a93191309d5d42111372232b2e0e"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.25.1.tar.gz", hash = "sha256:a948584944b2412c9a74b9cf64f6c48caf8652cb88b38361316f6d15d8a184cd"},

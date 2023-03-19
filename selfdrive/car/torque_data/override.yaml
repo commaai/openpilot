@@ -7,6 +7,10 @@ NISSAN LEAF 2018 Instrument Cluster: [.nan, 1.5, .nan]
 NISSAN LEAF 2018: [.nan, 1.5, .nan]
 NISSAN ROGUE 2019: [.nan, 1.5, .nan]
 
+# Toyota LTA also has torque
+TOYOTA RAV4 2023: [.nan, 3.0, .nan]
+TOYOTA RAV4 HYBRID 2023: [.nan, 3.0, .nan]
+
 # Tesla has high torque
 TESLA AP1 MODEL S: [.nan, 2.5, .nan]
 TESLA AP2 MODEL S: [.nan, 2.5, .nan]
