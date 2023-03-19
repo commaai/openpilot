@@ -28,6 +28,7 @@ class CarController:
     self.gra_acc_counter_last = None
     self.frame = 0
     self.hcaSameTorqueCount = 0
+    self.hcaLowTorqueCount = 0
     self.hcaEnabledFrameCount = 0
 
   def update(self, CC, CS, ext_bus, now_nanos):
@@ -51,23 +52,26 @@ class CarController:
       if CC.latActive:
         new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
         apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.CCP)
-        if apply_steer == 0:
-          hcaEnabled = False
-          self.hcaEnabledFrameCount = 0
+        self.hcaEnabledFrameCount += 1
+        if abs(apply_steer) <= 60:  # 20% output
+          self.hcaLowTorqueCount += 1
         else:
-          self.hcaEnabledFrameCount += 1
-          if self.hcaEnabledFrameCount >= 118 * (100 / self.CCP.STEER_STEP):  # 118s
-            hcaEnabled = False
+          self.hcaLowTorqueCount = 0
+        # start trying for opportunistic resets after 4 minutes of engagement
+        if self.hcaEnabledFrameCount >= 240 * (100 / self.CCP.STEER_STEP) and self.hcaLowTorqueCount >= 0.5 * (100 / self.CCP.STEER_STEP):  # 10s
+          hcaEnabled = False
+          apply_steer = 0
+          if self.hcaLowTorqueCount >= 1.55 * (100 / self.CCP.STEER_STEP):
             self.hcaEnabledFrameCount = 0
-          else:
-            hcaEnabled = True
-            if self.apply_steer_last == apply_steer:
-              self.hcaSameTorqueCount += 1
-              if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.STEER_STEP):  # 1.9s
-                apply_steer -= (1, -1)[apply_steer < 0]
-                self.hcaSameTorqueCount = 0
-            else:
+        else:
+          hcaEnabled = True
+          if self.apply_steer_last == apply_steer:
+            self.hcaSameTorqueCount += 1
+            if self.hcaSameTorqueCount > 1.9 * (100 / self.CCP.STEER_STEP):  # 1.9s
+              apply_steer -= (1, -1)[apply_steer < 0]
               self.hcaSameTorqueCount = 0
+          else:
+            self.hcaSameTorqueCount = 0
       else:
         hcaEnabled = False
         apply_steer = 0
