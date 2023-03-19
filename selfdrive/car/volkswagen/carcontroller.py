@@ -66,7 +66,7 @@ class CarController:
           self.hca_frame_same_torque = 0
         hca_enabled = abs(apply_steer) > 0
         self.hca_output_steer = apply_steer
-        if self.eps_timer_workaround and self.hca_frame_timer_running >= 10 / DT_CTRL:
+        if self.eps_timer_workaround and self.hca_frame_timer_running >= 240 / DT_CTRL:
           if abs(apply_steer) <= self.CCP.STEER_MAX * 0.2:
             self.hca_frame_low_torque += self.CCP.STEER_STEP
           else:
