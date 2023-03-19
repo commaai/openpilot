@@ -77,6 +77,7 @@ class CarController:
       else:
         hcaEnabled = False
         apply_steer = 0
+        output_steer = 0
 
       self.apply_steer_last = apply_steer
       can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, output_steer, hcaEnabled))
