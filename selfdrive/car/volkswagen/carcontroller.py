@@ -60,9 +60,10 @@ class CarController:
         # start trying for opportunistic resets after 4 minutes of engagement
         if self.hcaEnabledFrameCount >= 240 * (100 / self.CCP.STEER_STEP) and self.hcaLowTorqueCount >= 0.5 * (100 / self.CCP.STEER_STEP):  # 10s
           hcaEnabled = False
-          apply_steer = 0
+          output_steer = 0
           if self.hcaLowTorqueCount >= 1.55 * (100 / self.CCP.STEER_STEP):
             self.hcaEnabledFrameCount = 0
+            apply_steer = 0
         else:
           hcaEnabled = True
           if self.apply_steer_last == apply_steer:
@@ -72,12 +73,13 @@ class CarController:
               self.hcaSameTorqueCount = 0
           else:
             self.hcaSameTorqueCount = 0
+          output_steer = apply_steer
       else:
         hcaEnabled = False
         apply_steer = 0
 
       self.apply_steer_last = apply_steer
-      can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, hcaEnabled))
+      can_sends.append(self.CCS.create_steering_control(self.packer_pt, CANBUS.pt, output_steer, hcaEnabled))
 
     # **** Acceleration Controls ******************************************** #
 
