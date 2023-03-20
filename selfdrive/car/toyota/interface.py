@@ -2,7 +2,8 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from panda import Panda
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, CarControllerParams, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
+                                        MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -23,13 +24,18 @@ class CarInterface(CarInterfaceBase):
     if candidate in (CAR.RAV4, CAR.PRIUS_V, CAR.COROLLA, CAR.LEXUS_ESH, CAR.LEXUS_CTH):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
+    if candidate in ANGLE_CONTROL_CAR:
+      ret.dashcamOnly = True
+      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+    else:
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
-    steering_angle_deadzone_deg = 0.0
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -40,9 +46,8 @@ class CarInterface(CarInterfaceBase):
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
-          steering_angle_deadzone_deg = 0.2
           ret.steerActuatorDelay = 0.25
-          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
+          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -102,7 +107,8 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
+                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3

@@ -38,6 +38,10 @@ struct MessageId {
 uint qHash(const MessageId &item);
 Q_DECLARE_METATYPE(MessageId);
 
+template <>
+struct std::hash<MessageId> {
+  std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
+};
 
 typedef QList<std::pair<QString, QString>> ValueDescription;
 
@@ -72,7 +76,7 @@ namespace cabana {
 }
 
 // Helper functions
-double get_raw_value(uint8_t *data, size_t data_size, const cabana::Signal &sig);
+double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);

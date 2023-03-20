@@ -119,40 +119,31 @@ template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
   QVector<double> values(sigs.size());
-  for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        if (msg_id.address == c.getAddress() && msg_id.source == c.getSrc()) {
-          const auto dat = c.getDat();
-          for (int i = 0; i < sigs.size(); ++i) {
-            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sigs[i]);
-          }
-          if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
-            auto &m = msgs.emplace_back();
-            m.mono_time = (*it)->mono_time;
-            m.data = QByteArray((char *)dat.begin(), dat.size());
-            m.sig_values = values;
-            if (msgs.size() >= batch_size && min_time == 0)
-              return msgs;
-          }
-        }
+  for (; first != last && first->mono_time > min_time; ++first) {
+    for (int i = 0; i < sigs.size(); ++i) {
+      values[i] = get_raw_value(first->dat, first->size, *sigs[i]);
+    }
+    if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
+      auto &m = msgs.emplace_back();
+      m.mono_time = first->mono_time;
+      m.data = QByteArray((const char *)first->dat, first->size);
+      m.sig_values = values;
+      if (msgs.size() >= batch_size && min_time == 0) {
+        return msgs;
       }
     }
   }
   return msgs;
 }
 
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::iterator first, std::vector<const Event*>::iterator last, uint64_t min_time);
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::reverse_iterator first, std::vector<const Event*>::reverse_iterator last, uint64_t min_time);
-
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
-  auto events = can->events();
+  const auto &events = can->events().at(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
   if (dynamic_mode) {
-    auto first = std::upper_bound(events->rbegin(), events->rend(), from_time, [=](uint64_t ts, auto &e) { return e->mono_time < ts; });
-    auto msgs = fetchData(first, events->rend(), min_time);
+    auto first = std::upper_bound(events.rbegin(), events.rend(), CanEvent{.mono_time=from_time}, std::greater<CanEvent>());
+    auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
         hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
@@ -162,10 +153,10 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     return msgs;
   } else {
     assert(min_time == 0);
-    auto first = std::upper_bound(events->begin(), events->end(), from_time, [=](uint64_t ts, auto &e) { return ts < e->mono_time; });
-    auto msgs = fetchData(first, events->end(), 0);
+    auto first = std::upper_bound(events.begin(), events.end(), CanEvent{.mono_time=from_time});
+    auto msgs = fetchData(first, events.end(), 0);
     if (update_colors) {
-      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
+      for (auto it = msgs.begin(); it != msgs.end(); ++it) {
         hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
         it->colors = hex_colors.colors;
       }
