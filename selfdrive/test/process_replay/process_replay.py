@@ -373,7 +373,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=laika_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
-    fake_pubsubmaster=True,
+    fake_pubsubmaster=False,
   ),
   ProcessConfig(
     proc_name="torqued",
