@@ -42,6 +42,7 @@ MainWindow::MainWindow() : QMainWindow() {
   messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
+  qRegisterMetaType<QSet<uint8_t>>("QSet<uint8_t>");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
@@ -70,6 +71,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
+  QObject::connect(can, &AbstractStream::sourcesUpdated, dbc(), &DBCManager::updateSources);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
@@ -97,7 +99,7 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  auto dbc_names = dbc()->allDBCNames();
+  auto dbc_names = allDBCNames();
   std::sort(dbc_names.begin(), dbc_names.end());
   for (const auto &name : dbc_names) {
     load_opendbc_menu->addAction(QString::fromStdString(name), this, &MainWindow::openOpendbcFile);
@@ -214,6 +216,7 @@ void MainWindow::undoStackIndexChanged(int index) {
   }
   prev_undostack_index = index;
   prev_undostack_count = count;
+  autoSave();
 }
 
 void MainWindow::undoStackCleanChanged(bool clean) {
@@ -255,7 +258,18 @@ void MainWindow::openFile() {
 
 void MainWindow::loadFile(const QString &fn) {
   if (!fn.isEmpty()) {
-    QFile file(fn);
+    QString dbc_fn = fn;
+
+    // Prompt user to load auto saved file if it exists.
+    if (QFile::exists(fn + AUTO_SAVE_EXTENSION)) {
+      auto ret = QMessageBox::question(this, tr("Auto saved DBC found"), tr("Auto saved DBC file from previous session found. Do you want to load it instead?"));
+      if (ret == QMessageBox::Yes) {
+        dbc_fn += AUTO_SAVE_EXTENSION;
+        UndoStack::instance()->resetClean(); // Force user to save on close so the auto saved file is not lost
+      }
+    }
+
+    QFile file(dbc_fn);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
@@ -298,7 +312,7 @@ void MainWindow::loadDBCFromClipboard() {
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
   bool ret = dbc()->open("clipboard", dbc_str, &error);
-  if (ret && dbc()->messages().size() > 0) {
+  if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
@@ -340,7 +354,23 @@ void MainWindow::save() {
   }
 }
 
+void MainWindow::autoSave() {
+  if (!current_file.isEmpty() && !UndoStack::instance()->isClean()) {
+    QFile file(current_file + AUTO_SAVE_EXTENSION);
+    if (file.open(QIODevice::WriteOnly)) {
+      file.write(dbc()->generateDBC().toUtf8());
+    }
+  }
+}
+
+void MainWindow::cleanupAutoSaveFile() {
+  if (!current_file.isEmpty()) {
+    QFile::remove(current_file + AUTO_SAVE_EXTENSION);
+  }
+}
+
 void MainWindow::saveFile(const QString &fn) {
+  cleanupAutoSaveFile();
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(dbc()->generateDBC().toUtf8());
@@ -416,15 +446,7 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 }
 
 void MainWindow::updateStatus() {
-  float cached_minutes = 0;
-  if (!can->liveStreaming()) {
-    if (auto events = can->events(); !events->empty()) {
-      cached_minutes = (events->back()->mono_time - events->front()->mono_time) / (1e9 * 60);
-    }
-  } else {
-    settings.max_cached_minutes = settings.max_cached_minutes;
-  }
-  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(cached_minutes, 0, 'f', 1).arg(settings.fps));
+  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
 }
 
 void MainWindow::dockCharts(bool dock) {
@@ -445,6 +467,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  cleanupAutoSaveFile();
   remindSaveChanges();
 
   main_win = nullptr;
