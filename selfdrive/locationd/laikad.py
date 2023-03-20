@@ -446,8 +446,8 @@ def main(sm=None, pm=None, qc=None):
 
   while True:
     for in_msg in messaging.drain_sock(raw_gnss_sock, wait_for_one=True):
-      out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), m.logMonoTime, replay)
-      pm.send('gnssMeasurements', msg)
+      out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), in_msg.logMonoTime, replay)
+      pm.send('gnssMeasurements', out_msg)
 
     sm.update()
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
