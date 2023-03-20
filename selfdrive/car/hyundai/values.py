@@ -1637,7 +1637,7 @@ FW_VERSIONS = {
   CAR.KIA_SORENTO_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00MQ4 MFC  AT USA LHD 1.00 1.05 99210-R5000 210623',
-      b'\xf1\x00MQ4 MFC  AT USA LHD 1.00 1.03 99210-R5000 200903',      
+      b'\xf1\x00MQ4 MFC  AT USA LHD 1.00 1.03 99210-R5000 200903',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00MQ4_ SCC FHCUP      1.00 1.06 99110-P2000         ',
