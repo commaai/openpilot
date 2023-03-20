@@ -1648,26 +1648,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
-      b'\xf1\x8799110AT000\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00SG2 MDPS C 1.00 1.06 56310AT050\x00 4SG2C106',
-      b'\xf1\x8756310AT050\x00\xf1\x00SG2 MDPS C 1.00 1.06 56310AT050\x00 4SG2C106',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00PSBG2552  D121049\x00\x00\x00DSG2G16XXH049NS6MC\xe3x',
-      b'\xf1\x8795441-2BGJ0\x00\xf1\x81D121049\x00\x00\x00\xf1\x00PSBG2552  D121049\x00\x00\x00DSG2G16XXH049NS6',
-      b'\xf1\x8795441-2BGJ0\x00\xf1\x89D121049\x00\x00\x00\xf1\x82DSG2G16XXH049NS6',
-      b'D121049\x00\x00\x00',
-      b'DSG2G16XXH049NS6',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x87391S3-08AF0\xf1\x81HM6M7_0a0_D00',
-      b'\xf1\x87391S3-08AF0\xf1\x820TD23N6HGXD00\x00',
-      b'0TD23N6HGXD00\x00',
-    ],
-    (Ecu.engine, 0x7b7, None): [
-      b'\xf1\x00SG2 BCW RR 1.01 , 1.04 (wQ\x83"\x02\x01\x03@',
     ],
   },
 }
