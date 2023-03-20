@@ -32,7 +32,6 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    ret.steerLimitTimer = 0.4
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False

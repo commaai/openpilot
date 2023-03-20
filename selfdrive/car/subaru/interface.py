@@ -24,7 +24,6 @@ class CarInterface(CarInterfaceBase):
       if candidate in GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
 
-    ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 

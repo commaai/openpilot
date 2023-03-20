@@ -21,7 +21,6 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
-    ret.steerLimitTimer = 1.0
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67

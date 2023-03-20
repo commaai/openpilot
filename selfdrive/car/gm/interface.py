@@ -111,7 +111,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     tire_stiffness_factor = 0.444  # not optimized yet
 
-    ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
     if candidate == CAR.VOLT:

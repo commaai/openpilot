@@ -13,7 +13,6 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
 
-    ret.steerLimitTimer = 1.0
 
     ret.steerActuatorDelay = 0.1
     ret.steerRatio = 17

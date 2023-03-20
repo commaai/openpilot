@@ -15,7 +15,6 @@ class CarInterface(CarInterfaceBase):
     # radar parsing needs some work, see https://github.com/commaai/openpilot/issues/26842
     ret.radarUnavailable = True # DBC[candidate]['radar'] is None
     ret.steerActuatorDelay = 0.1
-    ret.steerLimitTimer = 0.4
 
     # safety config
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
