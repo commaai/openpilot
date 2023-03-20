@@ -150,6 +150,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
       ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
+    elif candidate == CAR.BUICK_LACROSSE:
+      ret.mass = 1712. + STD_CARGO_KG
+      ret.wheelbase = 2.91
+      ret.steerRatio = 15.8
+      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
       ret.wheelbase = 2.83  # 111.4 inches in meters

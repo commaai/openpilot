@@ -204,11 +204,12 @@ jobs:
                         $UNIT_TEST selfdrive/boardd && \
                         $UNIT_TEST selfdrive/controls && \
                         $UNIT_TEST selfdrive/monitoring && \
-                        $UNIT_TEST selfdrive/loggerd && \
+                        $UNIT_TEST system/loggerd && \
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST system/ubloxd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
-                        ./selfdrive/locationd/test/test_glonass_runner && \
+                        ./system/ubloxd/tests/test_glonass_runner && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST system/hardware/tici && \
@@ -219,7 +220,7 @@ jobs:
                         ./common/tests/test_util && \
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/loggerd/tests/test_logger &&\
+                        ./system/loggerd/tests/test_logger &&\
                         ./system/proclogd/tests/test_proclog && \
                         ./tools/replay/tests/test_replay && \
                         ./tools/cabana/tests/test_cabana && \
