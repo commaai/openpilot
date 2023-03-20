@@ -152,6 +152,17 @@ class GPSTime:
   def as_datetime(self):
     return tow_to_datetime(self.tow, self.week)
 
+  def as_glonass(self):
+    time_utc = gpst_to_utc(self)
+    datetime_utc = time_utc.as_datetime()
+    datetime_glonass = datetime_utc + datetime.timedelta(hours=3)
+
+    year = datetime_glonass.year
+    cycle = (year - 1992) // 4
+    days = (datetime_glonass - datetime.datetime(1992 + cycle*4, 1, 1)).days + 1
+    tod = (datetime_glonass - datetime_glonass.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+    return cycle, days, tod
+
   def as_unix_timestamp(self):
     return (gpst_to_utc(self).as_datetime() - datetime.datetime(1970, 1, 1)).total_seconds()
 

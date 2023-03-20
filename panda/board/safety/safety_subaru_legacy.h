@@ -26,7 +26,7 @@ addr_checks subaru_l_rx_checks = {subaru_l_addr_checks, SUBARU_L_ADDR_CHECK_LEN}
 
 static int subaru_legacy_rx_hook(CANPacket_t *to_push) {
 
-  bool valid = addr_safety_check(to_push, &subaru_l_rx_checks, NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &subaru_l_rx_checks, NULL, NULL, NULL, NULL);
 
   if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);

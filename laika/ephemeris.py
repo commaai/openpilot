@@ -1,4 +1,3 @@
-import json
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
@@ -7,13 +6,19 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import numpy.polynomial.polynomial as poly
-from datetime import datetime, timedelta
+from datetime import datetime
 from math import sin, cos, sqrt, fabs, atan2
 
 from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
                        SECS_IN_WEEK, EARTH_ROTATION_RATE, EARTH_GM
 from .helpers import get_constellation, get_prn_from_nmea_id
+
+import capnp
+import os
+capnp.remove_import_hook()
+capnp_path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "ephemeris.capnp"))
+ephemeris_structs = capnp.load(capnp_path)
 
 
 def read4(f, rinex_ver):
@@ -22,95 +27,6 @@ def read4(f, rinex_ver):
     line = ' ' + line  # Shift 1 char to the right
   line = line.replace('D', 'E')  # Handle bizarro float format
   return float(line[4:23]), float(line[23:42]), float(line[42:61]), float(line[61:80])
-
-
-def convert_ublox_gps_ephem(ublox_ephem, current_time: Optional[datetime] = None):
-  # Week time of ephemeris gps msg has a roll-over period of 10 bits (19.6 years)
-  # The latest roll-over was on 2019-04-07
-  week = ublox_ephem.gpsWeek
-  if current_time is None:
-    # Each message is incremented to be greater or equal than week 1877 (2015-12-27).
-    #  To skip this use the current_time argument
-    week += 1024
-    if week < 1877:
-      week += 1024
-  else:
-    roll_overs = GPSTime.from_datetime(current_time).week // 1024
-    week += (roll_overs - (week // 1024)) * 1024
-
-  # GPS week refers to current week, the ephemeris can be valid for the next
-  # if toe equals 0, this can be verified by the TOW count if it is within the
-  # last 2 hours of the week (gps ephemeris valid for 4hours)
-  if ublox_ephem.toe == 0 and ublox_ephem.towCount*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR):
-    week += 1
-
-  ephem = {}
-  ephem['sv_id'] = ublox_ephem.svId
-  ephem['toe'] = GPSTime(week, ublox_ephem.toe)
-  ephem['toc'] = GPSTime(week, ublox_ephem.toc)
-  ephem['af0'] = ublox_ephem.af0
-  ephem['af1'] = ublox_ephem.af1
-  ephem['af2'] = ublox_ephem.af2
-  ephem['tgd'] = ublox_ephem.tgd
-
-  ephem['sqrta'] = np.sqrt(ublox_ephem.a)
-  ephem['dn'] = ublox_ephem.deltaN
-  ephem['m0'] = ublox_ephem.m0
-
-  ephem['ecc'] = ublox_ephem.ecc
-  ephem['w'] = ublox_ephem.omega
-  ephem['cus'] = ublox_ephem.cus
-  ephem['cuc'] = ublox_ephem.cuc
-  ephem['crc'] = ublox_ephem.crc
-  ephem['crs'] = ublox_ephem.crs
-  ephem['cic'] = ublox_ephem.cic
-  ephem['cis'] = ublox_ephem.cis
-
-  ephem['inc'] = ublox_ephem.i0
-  ephem['inc_dot'] = ublox_ephem.iDot
-  ephem['omegadot'] = ublox_ephem.omegaDot
-  ephem['omega0'] = ublox_ephem.omega0
-
-  ephem['healthy'] = ublox_ephem.svHealth == 0.0
-
-  epoch = ephem['toe']
-  return GPSEphemeris(ephem, epoch)
-
-
-def convert_ublox_glonass_ephem(ublox_ephem, current_time: Optional[datetime] = None):
-  ephem = {}
-  ephem['prn'] = 'R%02i' % ublox_ephem.svId
-
-  etime = datetime.strptime(f"{ublox_ephem.year}-{ublox_ephem.dayInYear}", "%Y-%j")
-  # glonass time: UTC + 3h
-  time_in_day = timedelta(hours=ublox_ephem.hour, minutes=ublox_ephem.minute, seconds=ublox_ephem.second)
-  ephem['toc'] = GPSTime.from_datetime(etime + time_in_day - timedelta(hours=3))
-  ephem['toe'] = GPSTime.from_datetime(etime + timedelta(minutes=(ublox_ephem.tb*15 - 180)))
-
-  ephem['x'] = ublox_ephem.x # km
-  ephem['x_vel'] = ublox_ephem.xVel # km/s
-  ephem['x_acc'] = ublox_ephem.xAccel # km/s*s
-
-  ephem['y'] = ublox_ephem.y # km
-  ephem['y_vel'] = ublox_ephem.yVel # km/s
-  ephem['y_acc'] = ublox_ephem.yAccel # km/s*s
-
-  ephem['z'] = ublox_ephem.z # km
-  ephem['z_vel'] = ublox_ephem.zVel # km/s
-  ephem['z_acc'] = ublox_ephem.zAccel # km/s*s
-
-  ephem['healthy'] = ublox_ephem.svHealth == 0.0
-  ephem['age'] = ublox_ephem.age # age of information [days]
-
-  # tauN compared to ephemeris from gdc.cddis.eosdis.nasa.gov is times -1
-  ephem['min_tauN'] = ublox_ephem.tauN * (-1) # time correction relative to GLONASS tc
-  ephem['GammaN'] = ublox_ephem.gammaN
-
-  # TODO: channel is in string 7, which is not parsed
-  ephem['freq_num'] = "1"
-
-  # NOTE: ublox_ephem.tk is in a different format than rinex tk
-  return GLONASSEphemeris(ephem, ephem['toe'])
 
 
 class EphemerisType(IntEnum):
@@ -138,17 +54,16 @@ class EphemerisType(IntEnum):
 
 class Ephemeris(ABC):
 
-  def __init__(self, prn: str, data, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float,
+  def __init__(self, prn: str, epoch: GPSTime, eph_type: EphemerisType, healthy: bool, max_time_diff: float,
                file_epoch: Optional[GPSTime] = None, file_name=None):
     self.prn = prn
-    self.data = data
     self.epoch = epoch
     self.eph_type = eph_type
     self.healthy = healthy
     self.max_time_diff = max_time_diff
     self.file_epoch = file_epoch
+    self.file_name = file_name
     self.file_source = '' if file_name is None else file_name.split('/')[-1][:3]  # File source for the ephemeris (e.g. igu, igr, Sta)
-    self.__json = None
 
   def valid(self, time):
     return abs(time - self.epoch) <= self.max_time_diff
@@ -169,54 +84,24 @@ class Ephemeris(ABC):
   def _get_sat_info(self, time):
     pass
 
-  def to_json(self):
-    if self.__json is None:
-      dict = self.__dict__
-      dict['ephemeris_class'] = self.__class__.__name__
-      self.__json = {'ephemeris': json.dumps(dict, cls=EphemerisSerializer)}
-    return self.__json
-
-  @classmethod
-  def from_json(cls, json_dct):
-    dct = json.loads(json_dct['ephemeris'], object_hook=ephemeris_deserialize_hook)
-    obj = cls.__new__(globals()[dct['ephemeris_class']])
-    obj.__dict__.update(dct)
-    obj.__json = json_dct
-    return obj
-
-
-def ephemeris_deserialize_hook(dct):
-  if 'week' in dct:
-    return GPSTime(dct['week'], dct['tow'])
-  return dct
-
-
-class EphemerisSerializer(json.JSONEncoder):
-
-  def default(self, o):
-    if isinstance(o, GPSTime):
-      return o.__dict__
-    if isinstance(o, np.ndarray):
-      return o.tolist()
-    return json.JSONEncoder.default(self, o)
-
 
 class GLONASSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, file_name=None):
-    super().__init__(data['prn'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=25*SECS_IN_MIN, file_name=file_name)
-    self.channel = data['freq_num']
-    self.to_json()
+  def __init__(self, data, file_name=None):
+    self.epoch = GPSTime.from_glonass(data.n4, data.nt, data.tb*15*SECS_IN_MIN)
+    super().__init__('R%02i' % data.svId, self.epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=25*SECS_IN_MIN, file_name=file_name)
+    self.data = data
+    self.epoch =  GPSTime.from_glonass(data.n4, data.nt, data.tb*15 * SECS_IN_MIN)
+    self.channel = data.freqNum
 
   def _get_sat_info(self, time: GPSTime):
     # see the russian doc for this:
     # http://gauss.gge.unb.ca/GLONASS.ICD.pdf
 
     eph = self.data
-    tdiff = time - utc_to_gpst(eph['toe'])
-
+    tdiff = time - self.epoch
     # Clock correction (except for general relativity which is applied later)
-    clock_err = eph['min_tauN'] + tdiff * (eph['GammaN'])
-    clock_rate_err = eph['GammaN']
+    clock_err = -eph.tauN + tdiff * eph.gammaN
+    clock_rate_err = eph.gammaN
 
     def glonass_diff_eq(state, acc):
       J2 = 1.0826257e-3
@@ -238,14 +123,14 @@ class GLONASSEphemeris(Ephemeris):
       return ders
 
     init_state = np.empty(6)
-    init_state[0] = eph['x']
-    init_state[1] = eph['y']
-    init_state[2] = eph['z']
-    init_state[3] = eph['x_vel']
-    init_state[4] = eph['y_vel']
-    init_state[5] = eph['z_vel']
+    init_state[0] = eph.x
+    init_state[1] = eph.y
+    init_state[2] = eph.z
+    init_state[3] = eph.xVel
+    init_state[4] = eph.yVel
+    init_state[5] = eph.zVel
     init_state = 1000*init_state
-    acc = 1000*np.array([eph['x_acc'], eph['y_acc'], eph['z_acc']])
+    acc = 1000*np.array([eph.xAccel, eph.yAccel, eph.zAccel])
     state = init_state
     tstep = 90
     if tdiff < 0:
@@ -271,9 +156,9 @@ class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
                file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0,
                max_time_diff: int=SECS_IN_HR):
-    super().__init__(prn, data, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
+    super().__init__(prn, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
+    self.data = data
     self.tgd = tgd
-    self.to_json()
 
   def _get_sat_info(self, time: GPSTime):
     dt = time - self.data['t0']
@@ -290,27 +175,32 @@ class PolyEphemeris(Ephemeris):
 
 
 class GPSEphemeris(Ephemeris):
-  def __init__(self, data, epoch, file_name=None):
-    super().__init__('G%02i' % data['sv_id'], data, epoch, EphemerisType.NAV, data['healthy'], max_time_diff=2*SECS_IN_HR, file_name=file_name)
+  def __init__(self, data, file_name=None):
+    self.toe = GPSTime(data.toeWeek, data.toe)
+    self.toc = GPSTime(data.tocWeek, data.toc)
+    self.epoch = self.toc
+
+    super().__init__('G%02i' % data.svId, self.epoch, EphemerisType.NAV, data.svHealth==0, max_time_diff=2*SECS_IN_HR, file_name=file_name)
     self.max_time_diff_tgd = SECS_IN_DAY
-    self.to_json()
+    self.data = data
+    self.sqrta = np.sqrt(data.a)
 
   def get_tgd(self):
-    return self.data['tgd']
+    return self.datatgd
 
   def _get_sat_info(self, time: GPSTime):
     eph = self.data
-    tdiff = time - eph['toc']  # Time of clock
-    clock_err = eph['af0'] + tdiff * (eph['af1'] + tdiff * eph['af2'])
-    clock_rate_err = eph['af1'] + 2 * tdiff * eph['af2']
+    tdiff = time - self.toc  # Time of clock
+    clock_err = eph.af0 + tdiff * (eph.af1 + tdiff * eph.af2)
+    clock_rate_err = eph.af1 + 2 * tdiff * eph.af2\
 
     # Orbit propagation
-    tdiff = time - eph['toe']  # Time of ephemeris (might be different from time of clock)
+    tdiff = time - self.toe  # Time of ephemeris (might be different from time of clock)
 
     # Calculate position per IS-GPS-200D p 97 Table 20-IV
-    a = eph['sqrta'] * eph['sqrta']  # [m] Semi-major axis
-    ma_dot = sqrt(EARTH_GM / (a * a * a)) + eph['dn']  # [rad/sec] Corrected mean motion
-    ma = eph['m0'] + ma_dot * tdiff  # [rad] Corrected mean anomaly
+    a = self.sqrta * self.sqrta # [m] Semi-major axis
+    ma_dot = sqrt(EARTH_GM / (a * a * a)) + eph.deltaN  # [rad/sec] Corrected mean motion
+    ma = eph.m0 + ma_dot * tdiff  # [rad] Corrected mean anomaly
 
     # Iteratively solve for the Eccentric Anomaly (from Keith Alter and David Johnston)
     ea = ma  # Starting value for E
@@ -318,37 +208,37 @@ class GPSEphemeris(Ephemeris):
     ea_old = 2222
     while fabs(ea - ea_old) > 1.0E-14:
       ea_old = ea
-      tempd1 = 1.0 - eph['ecc'] * cos(ea_old)
-      ea = ea + (ma - ea_old + eph['ecc'] * sin(ea_old)) / tempd1
+      tempd1 = 1.0 - eph.ecc * cos(ea_old)
+      ea = ea + (ma - ea_old + eph.ecc * sin(ea_old)) / tempd1
     ea_dot = ma_dot / tempd1
 
     # Relativistic correction term
-    einstein = -4.442807633E-10 * eph['ecc'] * eph['sqrta'] * sin(ea)
+    einstein = -4.442807633E-10 * eph.ecc * self.sqrta * sin(ea)
 
     # Begin calc for True Anomaly and Argument of Latitude
-    tempd2 = sqrt(1.0 - eph['ecc'] * eph['ecc'])
+    tempd2 = sqrt(1.0 - eph.ecc * eph.ecc)
     # [rad] Argument of Latitude = True Anomaly + Argument of Perigee
-    al = atan2(tempd2 * sin(ea), cos(ea) - eph['ecc']) + eph['w']
+    al = atan2(tempd2 * sin(ea), cos(ea) - eph.ecc) + eph.omega
     al_dot = tempd2 * ea_dot / tempd1
 
     # Calculate corrected argument of latitude based on position
-    cal = al + eph['cus'] * sin(2.0 * al) + eph['cuc'] * cos(2.0 * al)
-    cal_dot = al_dot * (1.0 + 2.0 * (eph['cus'] * cos(2.0 * al) -
-                                     eph['cuc'] * sin(2.0 * al)))
+    cal = al + eph.cus * sin(2.0 * al) + eph.cuc * cos(2.0 * al)
+    cal_dot = al_dot * (1.0 + 2.0 * (eph.cus * cos(2.0 * al) -
+                                     eph.cuc * sin(2.0 * al)))
 
     # Calculate corrected radius based on argument of latitude
-    r = a * tempd1 + eph['crc'] * cos(2.0 * al) + eph['crs'] * sin(2.0 * al)
-    r_dot = (a * eph['ecc'] * sin(ea) * ea_dot +
-             2.0 * al_dot * (eph['crs'] * cos(2.0 * al) -
-                             eph['crc'] * sin(2.0 * al)))
+    r = a * tempd1 + eph.crc * cos(2.0 * al) + eph.crs * sin(2.0 * al)
+    r_dot = (a * eph.ecc * sin(ea) * ea_dot +
+             2.0 * al_dot * (eph.crs * cos(2.0 * al) -
+                             eph.crc * sin(2.0 * al)))
 
     # Calculate inclination based on argument of latitude
-    inc = (eph['inc'] + eph['inc_dot'] * tdiff +
-           eph['cic'] * cos(2.0 * al) +
-           eph['cis'] * sin(2.0 * al))
-    inc_dot = (eph['inc_dot'] +
-               2.0 * al_dot * (eph['cis'] * cos(2.0 * al) -
-                               eph['cic'] * sin(2.0 * al)))
+    inc = (eph.i0 + eph.iDot * tdiff +
+           eph.cic * cos(2.0 * al) +
+           eph.cis * sin(2.0 * al))
+    inc_dot = (eph.iDot +
+               2.0 * al_dot * (eph.cis * cos(2.0 * al) -
+                               eph.cic * sin(2.0 * al)))
 
     # Calculate position and velocity in orbital plane
     x = r * cos(cal)
@@ -357,8 +247,8 @@ class GPSEphemeris(Ephemeris):
     y_dot = r_dot * sin(cal) + x * cal_dot
 
     # Corrected longitude of ascending node
-    om_dot = eph['omegadot'] - EARTH_ROTATION_RATE
-    om = eph['omega0'] + tdiff * om_dot - EARTH_ROTATION_RATE * eph['toe'].tow
+    om_dot = eph.omegaDot - EARTH_ROTATION_RATE
+    om = eph.omega0 + tdiff * om_dot - EARTH_ROTATION_RATE * self.toe.tow
 
     # Compute the satellite's position in Earth-Centered Earth-Fixed coordinates
     pos = np.empty(3)
@@ -507,24 +397,26 @@ def parse_rinex_nav_msg_gps(file_name):
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
-    e = {'epoch': epoch, 'sv_id': sv_id}
-    e['toc'] = epoch
+    e = {'svId': sv_id}
+    # TODO are TOC and TOE the same?
+    e['toc'] = epoch.tow
+    e['tocWeek'] = epoch.week
     e['af0'] = float(line[23:42])
     e['af1'] = float(line[42:61])
     e['af2'] = float(line[61:80])
 
-    e['iode'], e['crs'], e['dn'], e['m0'] = read4(f, rinex_ver)
-    e['cuc'], e['ecc'], e['cus'], e['sqrta'] = read4(f, rinex_ver)
-    toe_tow, e['cic'], e['omega0'], e['cis'] = read4(f, rinex_ver)
-    e['inc'], e['crc'], e['w'], e['omegadot'] = read4(f, rinex_ver)
-    e['inc_dot'], e['l2_codes'], toe_week, e['l2_pflag'] = read4(f, rinex_ver)
-    e['sv_accuracy'], e['health'], e['tgd'], e['iodc'] = read4(f, rinex_ver)
+    e['iode'], e['crs'], e['deltaN'], e['m0'] = read4(f, rinex_ver)
+    e['cuc'], e['ecc'], e['cus'], sqrta = read4(f, rinex_ver)
+    e['a'] = sqrta ** 2
+    e['toe'], e['cic'], e['omega0'], e['cis'] = read4(f, rinex_ver)
+    e['i0'], e['crc'], e['omega'], e['omegaDot'] = read4(f, rinex_ver)
+    e['iDot'], e['codesL2'], e['toeWeek'], l2_pflag = read4(f, rinex_ver)
+    e['svAcc'], e['svHealth'], e['tgd'], e['iodc'] = read4(f, rinex_ver)
     f.readline()  # Discard last row
 
-    e['toe'] = GPSTime(toe_week, toe_tow)
-    e['healthy'] = (e['health'] == 0.0)
+    data_struct = ephemeris_structs.Ephemeris.new_message(**e)
 
-    ephem = GPSEphemeris(e, epoch, file_name=file_name)
+    ephem = GPSEphemeris(data_struct, file_name=file_name)
     ephems[ephem.prn].append(ephem)
   f.close()
   return ephems
@@ -550,26 +442,39 @@ def parse_rinex_nav_msg_glonass(file_name):
         got_header = True
       continue
     if rinex_ver == 3:
-      prn = line[:3]
-      epoch = GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S"))
+      sv_id = int(line[1:3])
+
+      epoch = utc_to_gpst(GPSTime.from_datetime(datetime.strptime(line[4:23], "%y %m %d %H %M %S")))
     elif rinex_ver == 2:
-      prn = 'R%02i' % int(line[0:2])
-      epoch = GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S"))
+      sv_id = int(line[0:2])
+      epoch = utc_to_gpst(GPSTime.from_datetime(datetime.strptime(line[3:20], "%y %m %d %H %M %S")))
       line = ' ' + line  # Shift 1 char to the right
 
     line = line.replace('D', 'E')  # Handle bizarro float format
-    e = {'epoch': epoch, 'prn': prn}
-    e['toe'] = epoch
-    e['min_tauN'] = float(line[23:42])
-    e['GammaN'] = float(line[42:61])
-    e['tk'] = float(line[61:80])
+    e = {'svId': sv_id}
+    e['n4'], e['nt'], toe_seconds = epoch.as_glonass()
+    tb = toe_seconds / (15 * SECS_IN_MIN)
 
-    e['x'], e['x_vel'], e['x_acc'], e['health'] = read4(f, rinex_ver)
-    e['y'], e['y_vel'], e['y_acc'], e['freq_num'] = read4(f, rinex_ver)
-    e['z'], e['z_vel'], e['z_acc'], e['age'] = read4(f, rinex_ver)
+  
+    e['tb'] = tb
 
-    e['healthy'] = (e['health'] == 0.0)
-    ephems[prn].append(GLONASSEphemeris(e, epoch, file_name=file_name))
+    e['tauN'] = -float(line[23:42])
+    e['gammaN'] = float(line[42:61])
+    e['tkSeconds'] = float(line[61:80])
+
+    e['x'], e['xVel'], e['xAccel'], e['svHealth'] = read4(f, rinex_ver)
+    e['y'], e['yVel'], e['yAccel'], e['freqNum'] = read4(f, rinex_ver)
+    e['z'], e['zVel'], e['zAccel'], e['age'] = read4(f, rinex_ver)
+    
+    # TODO unclear why glonass sometimes has nav messages 3s after correct one
+    if abs(tb - int(tb)) > 1e-3:
+      continue
+
+    
+    data_struct = ephemeris_structs.GlonassEphemeris.new_message(**e)
+    ephem = GLONASSEphemeris(data_struct, file_name=file_name)
+
+    ephems[ephem.prn].append(ephem)
   f.close()
   return ephems
 
@@ -580,9 +485,9 @@ def parse_qcom_ephem(qcom_poly, current_week):
   t0 = data.t0
   # fix glonass time
   prn = get_prn_from_nmea_id(svId)
-  if prn == 'GLONASS':
+  if prn[0] == 'R':
     # TODO should handle leap seconds better
-    epoch = GPSTime(current_week, (t0 + 3*SECS_IN_WEEK) % (SECS_IN_WEEK) + 18)
+    epoch = GPSTime(current_week, (t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + 18)
   else:
     epoch = GPSTime(current_week, t0)
   poly_data = {}
@@ -595,4 +500,4 @@ def parse_qcom_ephem(qcom_poly, current_week):
   poly_data['clock'] = [1e-3*data.other[3], 1e-3*data.other[2], 1e-3*data.other[1], 1e-3*data.other[0]]
   poly_data['deg'] = 3
   poly_data['deg_t'] = 3
-  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY, max_time_diff=180)
+  return PolyEphemeris(prn, poly_data, epoch, ephem_type=EphemerisType.QCOM_POLY, max_time_diff=300, file_name='qcom')
