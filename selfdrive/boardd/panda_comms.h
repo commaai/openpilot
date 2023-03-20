@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <vector>
 
+#ifndef __APPLE__
 #include <linux/spi/spidev.h>
+#endif
 
 #include <libusb-1.0/libusb.h>
 
@@ -52,6 +54,7 @@ private:
   void handle_usb_issue(int err, const char func[]);
 };
 
+#ifndef __APPLE__
 class PandaSpiHandle : public PandaCommsHandle {
 public:
   PandaSpiHandle(std::string serial);
@@ -75,3 +78,4 @@ private:
   int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
   int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
 };
+#endif

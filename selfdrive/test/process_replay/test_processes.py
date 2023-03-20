@@ -34,6 +34,7 @@ source_segments = [
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dashcamOnly is no longer set
+  #("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),  # FORD.BRONCO_SPORT_MK1
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
 ]

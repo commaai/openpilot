@@ -6,6 +6,8 @@
 #include <QSpinBox>
 #include <QTableWidget>
 
+#include "tools/cabana/dbcmanager.h"
+
 class FindSimilarBitsDlg : public QDialog {
   Q_OBJECT
 
@@ -13,7 +15,7 @@ public:
   FindSimilarBitsDlg(QWidget *parent);
 
 signals:
-  void openMessage(const QString &msg_id);
+  void openMessage(const MessageId &msg_id);
 
 private:
   struct mismatched_struct {

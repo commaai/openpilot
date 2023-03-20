@@ -197,10 +197,6 @@ env = Environment(
     "#third_party/libyuv/include",
     "#third_party/json11",
     "#third_party/curl/include",
-    "#third_party/libgralloc/include",
-    "#third_party/android_frameworks_native/include",
-    "#third_party/android_hardware_libhardware/include",
-    "#third_party/android_system_core/include",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
@@ -402,6 +398,7 @@ SConscript([
   'system/camerad/SConscript',
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
+  'system/ubloxd/SConscript',
 ])
 if arch != "Darwin":
   SConscript(['system/logcatd/SConscript'])
@@ -428,10 +425,10 @@ SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 
-SConscript(['selfdrive/loggerd/SConscript'])
+SConscript(['system/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/sensord/SConscript'])
+SConscript(['system/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 

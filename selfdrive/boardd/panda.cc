@@ -14,7 +14,9 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   try {
     handle = std::make_unique<PandaUsbHandle>(serial);
   } catch (std::exception &e) {
+#ifndef __APPLE__
     handle = std::make_unique<PandaSpiHandle>(serial);
+#endif
   }
 
   hw_type = get_hw_type();
@@ -46,11 +48,13 @@ std::string Panda::hw_serial() {
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
+#ifndef __APPLE__
   for (auto s : PandaSpiHandle::list()) {
     if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
       serials.push_back(s);
     }
   }
+#endif
 
   return serials;
 }
@@ -232,6 +236,9 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
+  // Check if enough space left in buffer to store RECV_SIZE data
+  assert(receive_buffer_size + RECV_SIZE <= sizeof(receive_buffer));
+
   int recv = handle->bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
   if (!comms_healthy()) {
     return false;
@@ -274,6 +281,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
 
     if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
       LOGE("Panda CAN checksum failed");
+      size = 0;
       return false;
     }
 

@@ -1,67 +1,78 @@
 #pragma once
 
 #include <map>
+#include <QList>
+#include <QMetaType>
 #include <QObject>
 #include <QString>
-#include "opendbc/can/common_dbc.h"
+#include <QSet>
+#include <QDebug>
 
-struct DBCMsg {
-  QString name;
-  uint32_t size;
-  std::map<QString, Signal> sigs;
-  std::vector<const Signal*> getSignals() const;
-};
+#include "tools/cabana/dbc.h"
 
 class DBCManager : public QObject {
   Q_OBJECT
 
 public:
-  DBCManager(QObject *parent);
-  ~DBCManager();
-
-  void open(const QString &dbc_file_name);
-  void open(const QString &name, const QString &content);
+  DBCManager(QObject *parent) {}
+  ~DBCManager() {}
+  bool open(const QString &dbc_file_name, QString *error = nullptr);
+  bool open(const QString &name, const QString &content, QString *error = nullptr);
   QString generateDBC();
-  void addSignal(const QString &id, const Signal &sig);
-  void updateSignal(const QString &id, const QString &sig_name, const Signal &sig);
-  void removeSignal(const QString &id, const QString &sig_name);
+  void addSignal(const MessageId &id, const cabana::Signal &sig);
+  void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
+  void removeSignal(const MessageId &id, const QString &sig_name);
+  inline int msgCount() const { return msgs.size(); }
 
-  static std::pair<uint8_t, uint32_t> parseId(const QString &id);
-  inline static std::vector<std::string> allDBCNames() { return get_dbc_names(); }
-  inline QString name() const { return dbc ? dbc->name.c_str() : ""; }
-  void updateMsg(const QString &id, const QString &name, uint32_t size);
-  void removeMsg(const QString &id);
-  inline const std::map<uint32_t, DBCMsg> &messages() const { return msgs; }
-  inline const DBCMsg *msg(const QString &id) const { return msg(parseId(id).second); }
-  inline const DBCMsg *msg(uint32_t address) const {
-    auto it = msgs.find(address);
-    return it != msgs.end() ? &it->second : nullptr;
+  inline QString name() const { return name_; }
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size);
+  void removeMsg(const MessageId &id);
+  inline std::map<MessageId, cabana::Msg> getMessages(uint8_t source) {
+    std::map<MessageId, cabana::Msg> ret;
+    for (auto &[address, msg] : msgs) {
+      MessageId id = {.source = source, .address = address};
+      ret[id] = msg;
+    }
+    return ret;
   }
+  inline const cabana::Msg *msg(const MessageId &id) const { return msg(id.address); }
+  inline const cabana::Msg* msg(uint8_t source, const QString &name) {
+    for (auto &[_, msg] : msgs) {
+      if (msg.name == name) {
+        return &msg;
+      }
+    }
+
+    return nullptr;
+  }
+  QStringList signalNames();
+
+public slots:
+  void updateSources(const QSet<uint8_t> &s);
 
 signals:
-  void signalAdded(const Signal *sig);
-  void signalRemoved(const Signal *sig);
-  void signalUpdated(const Signal *sig);
-  void msgUpdated(uint32_t address);
-  void msgRemoved(uint32_t address);
+  void signalAdded(MessageId id, const cabana::Signal *sig);
+  void signalRemoved(const cabana::Signal *sig);
+  void signalUpdated(const cabana::Signal *sig);
+  void msgUpdated(MessageId id);
+  void msgRemoved(MessageId id);
   void DBCFileChanged();
 
 private:
-  void initMsgMap();
-  DBC *dbc = nullptr;
-  std::map<uint32_t, DBCMsg> msgs;
+  void parseExtraInfo(const QString &content);
+  std::map<uint32_t, cabana::Msg> msgs;
+  QString name_;
+  QSet<uint8_t> sources;
+
+  inline const cabana::Msg *msg(uint32_t address) const {
+    auto it = msgs.find(address);
+    return it != msgs.end() ? &it->second : nullptr;
+  }
 };
 
-// TODO: Add helper function in dbc.h
-double get_raw_value(uint8_t *data, size_t data_size, const Signal &sig);
-bool operator==(const Signal &l, const Signal &r);
-inline bool operator!=(const Signal &l, const Signal &r) { return !(l == r); }
-int bigEndianStartBitsIndex(int start_bit);
-int bigEndianBitIndex(int index);
-void updateSigSizeParamsFromRange(Signal &s, int start_bit, int size);
-std::pair<int, int> getSignalRange(const Signal *s);
 DBCManager *dbc();
-inline QString msgName(const QString &id, const char *def = "untitled") {
+
+inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
-  return msg ? msg->name : def;
+  return msg ? msg->name : UNTITLED;
 }

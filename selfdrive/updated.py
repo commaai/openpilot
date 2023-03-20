@@ -423,6 +423,9 @@ def main() -> None:
   wait_helper = WaitTimeHelper()
   wait_helper.only_check_for_update = True
 
+  # invalidate old finalized update
+  set_consistent_flag(False)
+
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
