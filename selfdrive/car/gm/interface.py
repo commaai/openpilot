@@ -35,27 +35,12 @@ class CarInterface(CarInterfaceBase):
     desired_angle *= 0.09760208
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.04689655 * sigmoid * (v_ego + 10.028217)
-  
-  @staticmethod
-  def get_steer_feedforward_lacrosse(angle, speed):
-    ANGLE_COEF = 0.58539783
-    ANGLE_COEF2 = 0.32765082
-    ANGLE_OFFSET = 0.00460531
-    SPEED_OFFSET = 13.23075991
-    SIGMOID_COEF_RIGHT = 0.13719471
-    SIGMOID_COEF_LEFT = 0.13309956
-    SPEED_COEF = 0.06147823
-    x = ANGLE_COEF * (angle + ANGLE_OFFSET)
-    sigmoid = x / (1. + fabs(x))
-    return ((SIGMOID_COEF_RIGHT if (angle + ANGLE_OFFSET) > 0. else SIGMOID_COEF_LEFT) * sigmoid) * ((speed + SPEED_OFFSET) * SPEED_COEF) * ((fabs(angle + ANGLE_OFFSET) ** fabs(ANGLE_COEF2)))
 
   def get_steer_feedforward_function(self):
     if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
     elif self.CP.carFingerprint == CAR.ACADIA:
       return self.get_steer_feedforward_acadia
-    elif self.CP.carFingerprint == CAR.BUICK_LACROSSE:
-      return self.get_steer_feedforward_lacrosse
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
@@ -166,14 +151,12 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.BUICK_LACROSSE:
-      ret.mass = 1741. + STD_CARGO_KG
-      ret.wheelbase = 2.90
+      ret.mass = 1712. + STD_CARGO_KG
+      ret.wheelbase = 2.91
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
-      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_lacrosse()
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 40.], [0., 40.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.05, 0.2], [0.01, 0.005]]
-      
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
     elif candidate == CAR.BUICK_REGAL:
       ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
       ret.wheelbase = 2.83  # 111.4 inches in meters
