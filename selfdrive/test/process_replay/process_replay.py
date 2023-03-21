@@ -395,10 +395,10 @@ def replay_process(cfg, lr, fingerprint=None):
     if cfg.fake_pubsubmaster:
       return python_replay_process(cfg, lr, fingerprint)
     else:
-      return cpp_replay_process(cfg, lr, fingerprint)
+      return replay_process_with_sockets(cfg, lr, fingerprint)
 
 
-def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -413,6 +413,10 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   os.environ["REPLAY"] = "1"
   os.environ["SKIP_FW_QUERY"] = ""
   os.environ["FINGERPRINT"] = ""
+
+  if lr is not None:
+    services = {m.which() for m in lr}
+    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
 
   if cfg is not None:
     # Clear all custom processConfig environment variables
@@ -534,17 +538,15 @@ def python_replay_process(cfg, lr, fingerprint=None):
   return log_msgs
 
 
-def cpp_replay_process(cfg, lr, fingerprint=None):
+def replay_process_with_sockets(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
   pm = messaging.PubMaster(cfg.pub_sub.keys())
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  Params().put_bool("UbloxAvailable", True)
-
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True, cfg=cfg)
+  setup_env(simulation=True, cfg=cfg, lr=pub_msgs)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
