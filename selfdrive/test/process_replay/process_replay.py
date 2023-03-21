@@ -248,15 +248,6 @@ def ublox_rcv_callback(msg):
     return []
 
 
-def laika_rcv_callback(msg, CP, cfg, fsm):
-  if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
-    return ["gnssMeasurements"], True
-  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
-    return ["gnssMeasurements"], True
-  else:
-    return [], False
-
-
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -331,7 +322,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -371,7 +362,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
-    should_recv_callback=laika_rcv_callback,
+    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
@@ -398,7 +389,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return cpp_replay_process(cfg, lr, fingerprint)
 
 
-def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -406,13 +397,16 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
-  params.put_bool("UbloxAvailable", True)
   params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
   os.environ['SKIP_FW_QUERY'] = ""
   os.environ['FINGERPRINT'] = ""
+
+  if lr is not None:
+    services = {m.which() for m in lr}
+    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
 
   if cfg is not None:
     # Clear all custom processConfig environment variables
@@ -485,10 +479,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env(cfg=cfg, controlsState=controlsState)
+    setup_env(cfg=cfg, controlsState=controlsState, lr=lr)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(CP=CP, cfg=cfg, controlsState=controlsState)
+    setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -517,7 +511,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
-                    (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+                    (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
       should_recv = bool(len(recv_socks))
 
     if msg.which() == 'can':
@@ -549,14 +543,14 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   log_msgs = []
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True, cfg=cfg)
+  setup_env(simulation=True, cfg=cfg, lr=lr)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
   try:
     with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
-      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+      while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
       # Make sure all subscribers are connected
