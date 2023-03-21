@@ -1086,10 +1086,10 @@ BO_ 872 ACC_System: 8 XXX
  SG_ ACS_Sollbeschl : 24|11@1+ (0.005,-7.22) [-7.22|3.005] "Unit_MeterPerSeconSquar" XXX
  SG_ ACS_Anhaltewunsch : 38|1@1+ (1,0) [0|1] "" XXX
  SG_ ACS_Fehler : 39|1@1+ (1,0) [0|1] "" XXX
- SG_ ACS_zul_Regelabw : 40|8@1+ (1,0.005) [0|1.265] "Unit_MeterPerSeconSquar" XXX
- SG_ ACS_max_AendGrad : 48|8@1+ (1,0.02) [0.02|5.06] "Unit_MeterPerSeconSquar" XXX
+ SG_ ACS_zul_Regelabw : 40|8@1+ (0.005,0) [0|1.265] "Unit_MeterPerSeconSquar" XXX
+ SG_ ACS_max_AendGrad : 48|8@1+ (0.02,0) [0.02|5.06] "Unit_MeterPerSeconSquar" XXX
 
-BO_ 1386 ACC_GRA_Anziege: 8 XXX
+BO_ 1386 ACC_GRA_Anzeige: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ ACA_StaACC : 8|3@1+ (1,0) [0|7] "" XXX
  SG_ ACA_ID_StaACC : 11|5@1+ (1,0) [0|31] "" XXX
@@ -1100,7 +1100,7 @@ BO_ 1386 ACC_GRA_Anziege: 8 XXX
  SG_ ACA_kmh_mph : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ ACA_Akustik1 : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ ACA_Akustik2 : 34|1@1+ (1,0) [0|1] "" XXX
- SG_ ACA_PrioDisp : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ ACA_PrioDisp : 35|2@1+ (1,0) [0|3] "" XXX
  SG_ ACA_gemZeitl : 40|4@1+ (1,0) [0|15] "" XXX
  SG_ ACA_ACC_Verz : 44|1@1+ (1,0) [0|1] "" XXX
  SG_ ACA_StaGRA : 48|3@1+ (1,0) [0|7] "" XXX
@@ -1153,8 +1153,8 @@ BO_ 644 Motor_Bremse: 6 XXX
  SG_ MOB_COUNTER : 8|4@1+ (1,0) [0|15] "" Bremse_MK25AESP
  SG_ TSK_v_Begrenzung_aktiv : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ TSK_ax_Getriebe_01 : 40|8@1+ (0.048,0) [0|255] "m/s2" XXX
- SG_ MOB_Bremsstgr : 16|11@1+ (0.76,0) [0|100] "Unit_PerCent" Vector__XXX
- SG_ MOB_Bremsmom : 27|13@1+ (1,0) [0|8190] "Unit_NewtoMeter" Bremse_MK25AESP
+ SG_ MOB_Bremsstgr : 16|11@1+ (0.048852,0) [0|100] "Unit_PerCent" Vector__XXX
+ SG_ MOB_Bremsmom : 27|13@1+ (4,0) [0|32760] "Unit_NewtoMeter"  Bremse_MK25AESP
 
 BO_ 870 AWV: 5 XXX
  SG_ AWV_2_Gurtstraffer : 39|1@1+ (1,0) [0|1] ""  Bremsbooster
@@ -1531,5 +1531,36 @@ CM_ SG_ 1470 XX_DLCORTLC2 "Might be DLC or TLC, might have wrong size";
 CM_ SG_ 1550 MFA_v_Signal_02 "0=km/h, 1=mph";
 
 
+VAL_ 872 ACS_Sta_ADR 2 "ADR_passiv" 0 "ADR_nicht_aktiv" 1 "ADR_aktiv" 3 "irrev_Fehler" ;
+VAL_ 872 ACS_ADR_Schub 1 "Verz_begr_auf_Schub" 0 "Verz_nicht_begr_auf_Schub" ;
+VAL_ 872 ACS_Schubabsch 1 "SA_nicht_zulaessig" 0 "SA_zulaessig" ;
+VAL_ 872 ACS_StSt_Info 3 "Systemfehler" 0 "Motorlauf_nn" 1 "Stoppverbot_Motoranlauf_nn" 2 "Motoranlauf_notwendig" ;
+VAL_ 872 ACS_MomEingriff 1 "MomEingr_verhindern" 0 "keine_Beeinfl_MomEingr_Mot" ;
+VAL_ 872 ACS_Typ_ACC 0 "Basis_ACC" 1 "ACC_mit_FollowToStop" 3 "frei" 2 "frei" ;
+VAL_ 872 ACS_FreigSollB 0 "Sollbeschl_nicht_freigeg" 1 "Sollbeschl_freigeg" ;
+VAL_ 872 ACS_Sollbeschl 2046 "ADR_nicht_aktiv" 2047 "Fehler" ;
+VAL_ 872 ACS_Anhaltewunsch 0 "kein_Haltewunsch" 1 "Fzg_haelt_an" ;
+VAL_ 872 ACS_Fehler 1 "Fehlerspeichereintrag" 0 "kein_Fehlerspeichereintrag" ;
+VAL_ 872 ACS_zul_Regelabw 254 "ADR_nicht_aktiv" 255 "Fehler" ;
+VAL_ 872 ACS_max_AendGrad 254 "Neutralwert" 0 "Neutralwert" 255 "Fehler" ;
+
 VAL_ 978 LH2_Sta_HCA 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active";
 VAL_ 1088 Waehlhebelposition__Getriebe_1_ 8 "P" 7 "R" 6 "N" 5 "D" 9 "U" 12 "S" 14 "T" 10 "T" 11 "T";
+
+VAL_ 1386 ACA_StaACC 6 "ACC_rev_aus" 0 "Hauptschalter_aus" 4 "ACC_im_Hintergrund" 3 "ACC_aktiv" 1 "Reserve" 2 "ACC_passiv" 7 "ACC_irrev_aus" 5 "frei" ;
+VAL_ 1386 ACA_ID_StaACC 0 "keine_Anzeige" ;
+VAL_ 1386 ACA_Fahrerhinw 1 "Ein" 0 "Aus" ;
+VAL_ 1386 ACA_AnzDisplay 1 "Anzeige_erw" 0 "Anzeige_nicht_erw" ;
+VAL_ 1386 ACA_Zeitluecke 3 "Zeitluecke3" 10 "Zeitluecke10" 4 "Zeitluecke4" 14 "Zeitluecke14" 11 "Zeitluecke11" 2 "Zeitluecke2" 13 "Zeitluecke13" 9 "Zeitluecke9" 1 "Zeitluecke1" 8 "Zeitluecke8" 5 "Zeitluecke5" 15 "Zeitluecke15" 0 "nicht_definiert" 12 "Zeitluecke12" 6 "Zeitluecke6" 7 "Zeitluecke7" ;
+VAL_ 1386 ACA_V_Wunsch 255 "kein_Wert_im_Speicher" ;
+VAL_ 1386 ACA_kmh_mph 0 "km_h" 1 "mph" ;
+VAL_ 1386 ACA_Akustik1 0 "kein_Gong" 1 "Gong" ;
+VAL_ 1386 ACA_Akustik2 0 "kein_Summer" 1 "Summer" ;
+VAL_ 1386 ACA_PrioDisp 1 "mittlere_Prio" 3 "keine_Anzeige_Anf" 0 "hohe_Prio" 2 "niedrige_Prio" ;
+VAL_ 1386 ACA_gemZeitl 6 "Zeitluecke6" 2 "Zeitluecke2" 7 "Zeitluecke7" 13 "Zeitluecke13" 11 "Zeitluecke11" 4 "Zeitluecke4" 8 "Zeitluecke8" 12 "Zeitluecke12" 10 "Zeitluecke10" 0 "Kein_Objekt_erfasst" 1 "Zeitluecke1" 3 "Zeitluecke3" 9 "Zeitluecke9" 15 "Zeitluecke15" 14 "Zeitluecke14" 5 "Zeitluecke5" ;
+VAL_ 1386 ACA_ACC_Verz 0 "ACC_verzoegert_nicht" 1 "ACC_verzoegert" ;
+VAL_ 1386 ACA_StaGRA 3 "GRA_aktiv" 4 "GRA_uebertreten" 2 "GRA_passiv" 0 "Hauptschalter_aus" 6 "frei" 7 "GRA_Fehler" 1 "Reserve" 5 "frei" ;
+VAL_ 1386 ACA_ID_StaGRA 0 "keine_Anzeige" ;
+VAL_ 1386 ACA_Codierung 0 "ACC" 1 "GRA" ;
+VAL_ 1386 ACA_Tachokranz 0 "nicht_beleuchtet" 1 "beleuchtet" ;
+VAL_ 1386 ACA_Aend_Zeitluecke 1 "Anzeige_angef" 0 "keine_Anzeige" ;

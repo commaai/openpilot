@@ -8,6 +8,8 @@ void EXTI2_IRQ_Handler(void) {
 }
 
 void llfan_init(void) {
+  fan_reset_cooldown();
+
   // 5000RPM * 4 tach edges / 60 seconds
   REGISTER_INTERRUPT(EXTI2_IRQn, EXTI2_IRQ_Handler, 700U, FAULT_INTERRUPT_RATE_TACH)
 

@@ -8,6 +8,7 @@ BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 class McuConfig(NamedTuple):
   mcu: str
   mcu_idcode: int
+  uid_address: int
   block_size: int
   sector_sizes: List[int]
   serial_number_address: int
@@ -17,6 +18,7 @@ class McuConfig(NamedTuple):
   bootstub_path: str
 
 Fx = (
+  0x1FFF7A10,
   0x800,
   [0x4000 for _ in range(4)] + [0x10000] + [0x20000 for _ in range(11)],
   0x1FFF79C0,
@@ -31,6 +33,7 @@ F4Config = McuConfig("STM32F4", 0x463, *Fx)
 H7Config = McuConfig(
   "STM32H7",
   0x483,
+  0x1FF1E800,
   0x400,
   # there is an 8th sector, but we use that for the provisioning chunk, so don't program over that!
   [0x20000 for _ in range(7)],
@@ -50,3 +53,5 @@ class McuType(enum.Enum):
   @property
   def config(self):
     return self.value
+
+MCU_TYPE_BY_IDCODE = {m.config.mcu_idcode: m for m in McuType}

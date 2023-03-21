@@ -7,22 +7,28 @@ from .helpers import ConstellationId
 from .raw_gnss import GNSSMeasurement
 
 
-def gauss_newton(fun, b, xtol=1e-8, max_n=25):
+def gauss_newton(fun, b, M, xtol=1e-8, max_n=25):
+
+  W = np.linalg.inv(M)
   for _ in range(max_n):
     # Compute function and jacobian on current estimate
     r, J = fun(b)
 
-    # Update estimate
-    delta = np.linalg.pinv(J) @ r
+    # Update estimate, WLS https://en.wikipedia.org/wiki/Weighted_least_squares
+    delta = np.linalg.pinv(J.T.dot(W).dot(J)).dot(J.T).dot(W) @ r
     b -= delta
 
     # Check step size for stopping condition
     if np.linalg.norm(delta) < xtol:
       break
-  return b
+
+  r, J = fun(b)
+  Mb = np.linalg.pinv(J.T.dot(W).dot(J))
+  x_std = np.sqrt(np.diagonal(Mb))
+  return b, r, x_std
 
 
-def calc_pos_fix(measurements, posfix_functions=None, x0=None, no_weight=False, signal='C1C', min_measurements=6):
+def calc_pos_fix(measurements, posfix_functions=None, x0=None, signal='C1C', min_measurements=5):
   '''
   Calculates gps fix using gauss newton method
   To solve the problem a minimal of 4 measurements are required.
@@ -35,15 +41,16 @@ def calc_pos_fix(measurements, posfix_functions=None, x0=None, no_weight=False, 
     x0 = [0, 0, 0, 0, 0]
 
   if len(measurements) < min_measurements:
-    return [],[]
+    return [],[],[]
 
-  Fx_pos = pr_residual(measurements, posfix_functions, signal=signal, no_weight=no_weight, no_nans=True)
-  x = gauss_newton(Fx_pos, x0)
-  residual, _ = Fx_pos(x, no_weight=True)
-  return x.tolist(), residual.tolist()
+  Fx_pos = pr_residual(measurements, posfix_functions, signal=signal, no_nans=True)
+  meas_cov = np.diag([meas.observables_std[signal]**2 for meas in measurements])
+
+  x, residual, x_std = gauss_newton(Fx_pos, x0, meas_cov)
+  return x.tolist(), residual.tolist(), x_std
 
 
-def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, no_weight=False, signal='D1C', min_measurements=6):
+def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, signal='D1C', min_measurements=5):
   '''
   Calculates gps velocity fix using gauss newton method
   returns:
@@ -54,12 +61,13 @@ def calc_vel_fix(measurements, est_pos, velfix_function=None, v0=None, no_weight
     v0 = [0, 0, 0, 0]
 
   if len(measurements) < min_measurements:
-    return [], []
+    return [], [], []
 
-  Fx_vel = prr_residual(measurements, est_pos, velfix_function, signal=signal, no_weight=no_weight, no_nans=True)
-  v = gauss_newton(Fx_vel, v0)
-  residual, _ = Fx_vel(v, no_weight=True)
-  return v.tolist(), residual.tolist()
+  Fx_vel = prr_residual(measurements, est_pos, velfix_function, signal=signal, no_nans=True)
+  meas_cov = np.diag([meas.observables_std[signal]**2 for meas in measurements])
+
+  v, residual, x_std = gauss_newton(Fx_vel, v0, meas_cov)
+  return v.tolist(), residual.tolist(), x_std
 
 
 def get_posfix_sympy_fun(constellation):
@@ -73,7 +81,6 @@ def get_posfix_sympy_fun(constellation):
   # Knowns
   pr = sympy.Symbol('pr')
   sat_x, sat_y, sat_z = sympy.Symbol('sat_x'), sympy.Symbol('sat_y'), sympy.Symbol('sat_z')
-  weight = sympy.Symbol('weight')
 
   theta = (EARTH_ROTATION_RATE * (pr - bc) / SPEED_OF_LIGHT)*zero_theta
   val = sympy.sqrt(
@@ -83,15 +90,15 @@ def get_posfix_sympy_fun(constellation):
   )
 
   if constellation == ConstellationId.GLONASS:
-    res = weight * (val - (pr - bc - bg))
+    res = val - (pr - bc - bg)
   elif constellation == ConstellationId.GPS:
-    res = weight * (val - (pr - bc))
+    res = val - (pr - bc)
   else:
     raise NotImplementedError(f"Constellation {constellation} not supported")
 
   res = [res] + [sympy.diff(res, v) for v in var]
 
-  return sympy.lambdify([x, y, z, bc, bg, pr, zero_theta, sat_x, sat_y, sat_z, weight], res, modules=["numpy"])
+  return sympy.lambdify([x, y, z, bc, bg, pr, zero_theta, sat_x, sat_y, sat_z], res, modules=["numpy"])
 
 
 def get_velfix_sympy_func():
@@ -105,7 +112,6 @@ def get_velfix_sympy_func():
   sv_x, sv_y, sv_z = sympy.Symbol('sv_x'), sympy.Symbol('sv_y'), sympy.Symbol('sv_z')
   sat_vel = np.array([sv_x, sv_y, sv_z])
   observables = sympy.Symbol('observables')
-  weight = sympy.Symbol('weight')
 
   # unknown, receiver velocity
   v_x, v_y, v_z = sympy.Symbol('v_x'), sympy.Symbol('v_y'), sympy.Symbol('v_z')
@@ -114,27 +120,24 @@ def get_velfix_sympy_func():
 
   loss = sat_pos - est_pos
   loss /= sympy.sqrt(loss.dot(loss))
-
-  nv = loss.dot(sat_vel - vel)
-  ov = (observables - vel_o)
-  res = (nv - ov)*weight
+  res = loss.dot(sat_vel - vel) - (observables - vel_o)
 
   res = [res] + [sympy.diff(res, v) for v in [v_x, v_y, v_z, vel_o]]
 
   return sympy.lambdify([
       ep_x, ep_y, ep_z, sp_x, sp_y, sp_z,
-      sv_x, sv_y, sv_z, observables, weight,
+      sv_x, sv_y, sv_z, observables,
       v_x, v_y, v_z, vel_o
     ],
     res, modules=["numpy"])
 
 
-def pr_residual(measurements: List[GNSSMeasurement], posfix_functions=None, signal='C1C', no_weight=False, no_nans=False):
+def pr_residual(measurements: List[GNSSMeasurement], posfix_functions=None, signal='C1C', no_nans=False):
 
   if posfix_functions is None:
     posfix_functions = {constellation: get_posfix_sympy_fun(constellation) for constellation in (ConstellationId.GPS, ConstellationId.GLONASS)}
 
-  def Fx_pos(inp, no_weight=no_weight):
+  def Fx_pos(inp):
     vals, gradients = [], []
 
     for meas in measurements:
@@ -153,20 +156,19 @@ def pr_residual(measurements: List[GNSSMeasurement], posfix_functions=None, sign
           gradients.append(np.nan)
         continue
 
-      w = 1.0 if no_weight or meas.observables_std[signal] == 0 else (1 / meas.observables_std[signal])
-      val, *gradient = posfix_functions[meas.constellation_id](*inp, pr, zero_theta, *sat_pos, w)
+      val, *gradient = posfix_functions[meas.constellation_id](*inp, pr, zero_theta, *sat_pos)
       vals.append(val)
       gradients.append(gradient)
     return np.asarray(vals), np.asarray(gradients)
   return Fx_pos
 
 
-def prr_residual(measurements: List[GNSSMeasurement], est_pos, velfix_function=None, signal='D1C', no_weight=False, no_nans=False):
+def prr_residual(measurements: List[GNSSMeasurement], est_pos, velfix_function=None, signal='D1C', no_nans=False):
 
   if velfix_function is None:
     velfix_function = get_velfix_sympy_func()
 
-  def Fx_vel(vel, no_weight=no_weight):
+  def Fx_vel(vel):
     vals, gradients = [], []
 
     for meas in measurements:
@@ -177,12 +179,11 @@ def prr_residual(measurements: List[GNSSMeasurement], est_pos, velfix_function=N
         continue
 
       sat_pos = meas.sat_pos_final if meas.corrected else meas.sat_pos
-      weight = 1.0 if no_weight or meas.observables_std[signal] == 0 else (1 / meas.observables_std[signal])
 
       val, *gradient = velfix_function(est_pos[0], est_pos[1], est_pos[2],
                                        sat_pos[0], sat_pos[1], sat_pos[2],
                                        meas.sat_vel[0], meas.sat_vel[1], meas.sat_vel[2],
-                                       meas.observables[signal], weight,
+                                       meas.observables[signal],
                                        vel[0], vel[1], vel[2], vel[3])
       vals.append(val)
       gradients.append(gradient)

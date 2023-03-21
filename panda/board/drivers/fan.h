@@ -5,6 +5,7 @@ struct fan_state_t {
   uint8_t power;
   float error_integral;
   uint8_t stall_counter;
+  uint8_t cooldown_counter;
 } fan_state_t;
 struct fan_state_t fan_state;
 
@@ -13,6 +14,10 @@ struct fan_state_t fan_state;
 
 void fan_set_power(uint8_t percentage){
   fan_state.target_rpm = ((current_board->fan_max_rpm * MIN(100U, MAX(0U, percentage))) / 100U);
+}
+
+void fan_reset_cooldown(void){
+  fan_state.cooldown_counter = current_board->fan_enable_cooldown_time * 8U;
 }
 
 // Call this at 8Hz
@@ -24,26 +29,31 @@ void fan_tick(void){
     fan_state.rpm = (fan_rpm_fast + (3U * fan_state.rpm)) / 4U;
 
     // Enable fan if we want it to spin
-    current_board->set_fan_enabled(fan_state.target_rpm > 0U);
+    current_board->set_fan_enabled((fan_state.target_rpm > 0U) || (fan_state.cooldown_counter > 0U));
+    if (fan_state.target_rpm > 0U) {
+      fan_reset_cooldown();
+    }
 
     // Stall detection
-    if (fan_state.power > 0U) {
-      if (fan_rpm_fast == 0U) {
-        fan_state.stall_counter = MIN(fan_state.stall_counter + 1U, 255U);
+    if (current_board->fan_stall_recovery) {
+      if (fan_state.power > 0U) {
+        if (fan_rpm_fast == 0U) {
+          fan_state.stall_counter = MIN(fan_state.stall_counter + 1U, 255U);
+        } else {
+          fan_state.stall_counter = 0U;
+        }
+
+        if (fan_state.stall_counter > FAN_STALL_THRESHOLD) {
+          // Stall detected, power cycling fan controller
+          current_board->set_fan_enabled(false);
+
+          // clip integral, can't fully reset otherwise we may always be stuck in stall detection
+          fan_state.error_integral = MIN(50.0f, MAX(0.0f, fan_state.error_integral));
+        }
       } else {
         fan_state.stall_counter = 0U;
+        fan_state.error_integral = 0.0f;
       }
-
-      if (fan_state.stall_counter > FAN_STALL_THRESHOLD) {
-        // Stall detected, power cycling fan controller
-        current_board->set_fan_enabled(false);
-
-        // clip integral, can't fully reset otherwise we may always be stuck in stall detection
-        fan_state.error_integral = MIN(50.0f, MAX(0.0f, fan_state.error_integral));
-      }
-    } else {
-      fan_state.stall_counter = 0U;
-      fan_state.error_integral = 0.0f;
     }
 
     // Update controller
@@ -55,5 +65,10 @@ void fan_tick(void){
 
     fan_state.power = MIN(100U, MAX(0U, feedforward + fan_state.error_integral));
     pwm_set(TIM3, 3, fan_state.power);
+
+    // Cooldown counter
+    if (fan_state.cooldown_counter > 0U) {
+      fan_state.cooldown_counter--;
+    }
   }
 }

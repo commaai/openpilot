@@ -11,8 +11,8 @@ void fake_siren_codec_enable(bool enabled) {
     bool success = false;
     success &= i2c_set_reg_bits(I2C5, CODEC_I2C_ADDR, 0x2B, (1U << 1)); // Left speaker mix from INA1
     success &= i2c_set_reg_bits(I2C5, CODEC_I2C_ADDR, 0x2C, (1U << 1)); // Right speaker mix from INA1
-    success &= i2c_set_reg_mask(I2C5, CODEC_I2C_ADDR, 0x3D, 0x1F, 0b11111); // Left speaker volume
-    success &= i2c_set_reg_mask(I2C5, CODEC_I2C_ADDR, 0x3E, 0x1F, 0b11111); // Right speaker volume
+    success &= i2c_set_reg_mask(I2C5, CODEC_I2C_ADDR, 0x3D, 0x17, 0b11111); // Left speaker volume
+    success &= i2c_set_reg_mask(I2C5, CODEC_I2C_ADDR, 0x3E, 0x17, 0b11111); // Right speaker volume
     success &= i2c_set_reg_mask(I2C5, CODEC_I2C_ADDR, 0x37, 0b101, 0b111); // INA gain
     success &= i2c_set_reg_bits(I2C5, CODEC_I2C_ADDR, 0x4C, (1U << 7)); // Enable INA
     success &= i2c_set_reg_bits(I2C5, CODEC_I2C_ADDR, 0x51, (1U << 7)); // Disable global shutdown
@@ -56,7 +56,7 @@ void fake_siren_init(void) {
   register_set(&DMA1_Stream1->M0AR, (uint32_t) fake_siren_lut, 0xFFFFFFFFU);
   register_set(&DMA1_Stream1->PAR, (uint32_t) &(DAC1->DHR8R1), 0xFFFFFFFFU);
   DMA1_Stream1->NDTR = sizeof(fake_siren_lut);
-  register_set(&DMA1_Stream1->FCR, 0U, 0xFFFFFFFFU);
+  register_set(&DMA1_Stream1->FCR, 0U, 0x00000083U);
   DMA1_Stream1->CR = (0b11 << DMA_SxCR_PL_Pos);
   DMA1_Stream1->CR |= DMA_SxCR_MINC | DMA_SxCR_CIRC | (1 << DMA_SxCR_DIR_Pos);
 

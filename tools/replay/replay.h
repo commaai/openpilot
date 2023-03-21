@@ -71,6 +71,7 @@ public:
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::vector<Event *> *events() const { return events_.get(); }
+  inline const std::map<int, std::unique_ptr<Segment>> &segments() const { return segments_; };
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
