@@ -322,7 +322,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -550,7 +550,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
   try:
     with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
-      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+      while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
       # Make sure all subscribers are connected
