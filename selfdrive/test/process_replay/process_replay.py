@@ -249,9 +249,10 @@ def ublox_rcv_callback(msg, CP, cfg, fsm):
 
 
 def laikad_rcv_callback(msg, CP, cfg, fsm):
-  if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
+  ublox_available = Params().get_bool("UbloxAvailable")
+  if ublox_available and msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
     return ["gnssMeasurements"], True
-  elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
+  elif not ublox_available and msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
     return ["gnssMeasurements"], True
   else:
     return [], False
@@ -332,6 +333,7 @@ CONFIGS = [
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
       "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
+      "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -547,13 +549,18 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
   # We need to fake SubMaster alive since we can't inject a fake clock
   setup_env(simulation=True, cfg=cfg, lr=lr)
 
+  if cfg.proc_name == "laikad":
+    ublox = Params().get_bool("UbloxAvailable")
+    keys = set(cfg.pub_sub.keys()) - ({"qcomGnss", } if ublox else {"ubloxGnss", })
+    pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
+
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
   log_msgs = []
   try:
     # Wait for process to startup
-    with Timeout(5, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+    with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
       while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
@@ -564,8 +571,8 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
 
     # Do the replay
     cnt = 0
-    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
-      for msg in pub_msgs:
+    for msg in pub_msgs:
+      with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
         pm.send(msg.which(), msg.as_builder())
         while not pm.all_readers_updated(msg.which()):
           time.sleep(0)
