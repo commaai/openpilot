@@ -7,7 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import numpy as np
 
@@ -261,7 +261,7 @@ class Laikad:
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
     t = gnss_mono_time * 1e-9
-    msg_dict = {"measTime": gnss_mono_time}
+    msg_dict: Dict[str, Any] = {"measTime": gnss_mono_time}
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):
@@ -276,7 +276,7 @@ class Laikad:
           self.fetch_navs(latest_msg_t, block)
 
       corrected_measurements = self.process_report(new_meas, t)
-      msg_dict['correctedMeasurements'] = list([create_measurement_msg(m) for m in corrected_measurements])
+      msg_dict['correctedMeasurements'] = [create_measurement_msg(m) for m in corrected_measurements]
 
       fix = self.calc_fix(t, corrected_measurements)
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
