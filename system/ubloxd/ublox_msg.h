@@ -15,6 +15,11 @@
 
 using namespace std::string_literals;
 
+const int SECS_IN_MIN = 60;
+const int SECS_IN_HR = 60 * SECS_IN_MIN;
+const int SECS_IN_DAY = 24 * SECS_IN_HR;
+const int SECS_IN_WEEK = 7 * SECS_IN_DAY;
+
 // protocol constants
 namespace ublox {
   const uint8_t PREAMBLE1 = 0xb5;
@@ -86,7 +91,7 @@ namespace ublox {
 
 class UbloxMsgParser {
   public:
-    bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
+    bool add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
     inline void reset() {bytes_in_parse_buf = 0;}
     inline int needed_bytes();
     inline std::string data() {return std::string((const char*)msg_parse_buf, bytes_in_parse_buf);}
@@ -97,18 +102,19 @@ class UbloxMsgParser {
     kj::Array<capnp::word> gen_rxm_rawx(ubx_t::rxm_rawx_t *msg);
     kj::Array<capnp::word> gen_mon_hw(ubx_t::mon_hw_t *msg);
     kj::Array<capnp::word> gen_mon_hw2(ubx_t::mon_hw2_t *msg);
+    kj::Array<capnp::word> gen_nav_sat(ubx_t::nav_sat_t *msg);
 
   private:
     inline bool valid_cheksum();
     inline bool valid();
     inline bool valid_so_far();
-    inline uint16_t get_glonass_year(uint8_t N4, uint16_t Nt);
 
     kj::Array<capnp::word> parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *msg);
     kj::Array<capnp::word> parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg);
 
     std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
 
+    float last_log_time = 0.0;
     size_t bytes_in_parse_buf = 0;
     uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];
 
@@ -119,5 +125,6 @@ class UbloxMsgParser {
        {11, 64}, {12, 128}, {13, 256}, {14, 512}, {15, 1024}};
 
     std::unordered_map<int, std::unordered_map<int, std::string>> glonass_strings;
-    std::unordered_map<int, int> glonass_superframes;
+    std::unordered_map<int, std::unordered_map<int, long>> glonass_string_times;
+    std::unordered_map<int, std::unordered_map<int, int>> glonass_string_superframes;
 };

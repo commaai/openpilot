@@ -65,23 +65,8 @@ inline bool UbloxMsgParser::valid_so_far() {
   return true;
 }
 
-inline uint16_t UbloxMsgParser::get_glonass_year(uint8_t N4, uint16_t Nt) {
-  // convert time to year (conversion from A3.1.3)
-  int J = 0;
-  if (1 <= Nt && Nt <= 366) {
-    J = 1;
-  } else if (367 <= Nt && Nt <= 731) {
-    J = 2;
-  } else if (732 <= Nt && Nt <= 1096) {
-    J = 3;
-  } else if (1097 <= Nt && Nt <= 1461) {
-    J = 4;
-  }
-  uint16_t year = 1996 + 4*(N4 -1) + (J - 1);
-  return year;
-}
-
-bool UbloxMsgParser::add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
+bool UbloxMsgParser::add_data(float log_time, const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed) {
+  last_log_time = log_time;
   int needed = needed_bytes();
   if(needed > 0) {
     bytes_consumed = std::min((uint32_t)needed, incoming_data_len );
@@ -202,6 +187,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
     int iode_s2 = 0;
     int iode_s3 = 0;
     int iodc_lsb = 0;
+    int week;
 
     // Subframe 1
     {
@@ -209,7 +195,14 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       gps_t subframe(&stream);
       gps_t::subframe_1_t* subframe_1 = static_cast<gps_t::subframe_1_t*>(subframe.body());
 
-      eph.setGpsWeek(subframe_1->week_no());
+      // Each message is incremented to be greater or equal than week 1877 (2015-12-27).
+      //  To skip this use the current_time argument
+      week = subframe_1->week_no();
+      week += 1024;
+      if (week < 1877) {
+        week += 1024;
+      }
+      //eph.setGpsWeek(subframe_1->week_no());
       eph.setTgd(subframe_1->t_gd() * pow(2, -31));
       eph.setToc(subframe_1->t_oc() * pow(2, 4));
       eph.setAf2(subframe_1->af_2() * pow(2, -55));
@@ -226,6 +219,12 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       gps_t subframe(&stream);
       gps_t::subframe_2_t* subframe_2 = static_cast<gps_t::subframe_2_t*>(subframe.body());
 
+      // GPS week refers to current week, the ephemeris can be valid for the next
+      // if toe equals 0, this can be verified by the TOW count if it is within the
+      // last 2 hours of the week (gps ephemeris valid for 4hours)
+      if (subframe_2->t_oe() == 0 and subframe.how()->tow_count()*6 >= (SECS_IN_WEEK - 2*SECS_IN_HR)){
+        week += 1;
+      }
       eph.setCrs(subframe_2->c_rs() * pow(2, -5));
       eph.setDeltaN(subframe_2->delta_n() * pow(2, -43) * gpsPi);
       eph.setM0(subframe_2->m_0() * pow(2, -31) * gpsPi);
@@ -255,6 +254,9 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
       iode_s3 = subframe_3->iode();
     }
 
+    eph.setToeWeek(week);
+    eph.setTocWeek(week);
+
     gps_subframes[msg->sv_id()].clear();
     if (iodc_lsb != iode_s2 || iodc_lsb != iode_s3) {
       // data set cutover, reject ephemeris
@@ -266,12 +268,8 @@ kj::Array<capnp::word> UbloxMsgParser::parse_gps_ephemeris(ubx_t::rxm_sfrbx_t *m
 }
 
 kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_t *msg) {
-  if (msg->sv_id() == 255) {
-    // data can be decoded before identifying the SV number, in this case 255
-    // is returned, which means "unknown"  (ublox p32)
-    return kj::Array<capnp::word>();
-  }
-
+  // This parser assumes that no 2 satellites of the same frequency
+  // can be in view at the same time
   auto body = *msg->body();
   assert(body.size() == 4);
   {
@@ -284,39 +282,68 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
     kaitai::kstream stream(string_data);
     glonass_t gl_string(&stream);
-
     int string_number = gl_string.string_number();
     if (string_number < 1 || string_number > 5 || gl_string.idle_chip()) {
       // dont parse non immediate data, idle_chip == 0
       return kj::Array<capnp::word>();
     }
 
-    // immediate data is the same within one superframe
-    if (glonass_superframes[msg->sv_id()] != gl_string.superframe_number()) {
-      glonass_strings[msg->sv_id()].clear();
-      glonass_superframes[msg->sv_id()] = gl_string.superframe_number();
+    // Check if new string either has same superframe_id or log transmission times make sense
+    bool superframe_unknown = false;
+    bool needs_clear = false;
+    for (int i = 1; i <= 5; i++) {
+      if (glonass_strings[msg->freq_id()].find(i) == glonass_strings[msg->freq_id()].end())
+        continue;
+      if (glonass_string_superframes[msg->freq_id()][i] == 0 || gl_string.superframe_number() == 0) {
+        superframe_unknown = true;
+      }
+      else if (glonass_string_superframes[msg->freq_id()][i] != gl_string.superframe_number()) {
+        needs_clear = true;
+      }
+      // Check if string times add up to being from the same frame
+      // If superframe is known this is redundant
+      // Strings are sent 2s apart and frames are 30s apart
+      if (superframe_unknown &&
+          std::abs((glonass_string_times[msg->freq_id()][i] - 2.0 * i) - (last_log_time - 2.0 * string_number)) > 10)
+        needs_clear = true;
     }
-    glonass_strings[msg->sv_id()][string_number] = string_data;
+    if (needs_clear) {
+      glonass_strings[msg->freq_id()].clear();
+      glonass_string_superframes[msg->freq_id()].clear();
+      glonass_string_times[msg->freq_id()].clear();
+    }
+    glonass_strings[msg->freq_id()][string_number] = string_data;
+    glonass_string_superframes[msg->freq_id()][string_number] = gl_string.superframe_number();
+    glonass_string_times[msg->freq_id()][string_number] = last_log_time;
+  }
+  if (msg->sv_id() == 255) {
+    // data can be decoded before identifying the SV number, in this case 255
+    // is returned, which means "unknown"  (ublox p32)
+    return kj::Array<capnp::word>();
   }
 
   // publish if strings 1-5 have been collected
-  if (glonass_strings[msg->sv_id()].size() != 5) {
+  if (glonass_strings[msg->freq_id()].size() != 5) {
     return kj::Array<capnp::word>();
   }
 
   MessageBuilder msg_builder;
   auto eph = msg_builder.initEvent().initUbloxGnss().initGlonassEphemeris();
   eph.setSvId(msg->sv_id());
+  eph.setFreqNum(msg->freq_id() - 7);
+
   uint16_t current_day = 0;
+  uint16_t tk = 0;
 
   // string number 1
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][1]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][1]);
     glonass_t gl_stream(&stream);
     glonass_t::string_1_t* data = static_cast<glonass_t::string_1_t*>(gl_stream.data());
 
     eph.setP1(data->p1());
-    eph.setTk(data->t_k());
+    tk = data->t_k();
+    eph.setTkDEPRECATED(tk);
     eph.setXVel(data->x_vel() * pow(2, -20));
     eph.setXAccel(data->x_accel() * pow(2, -30));
     eph.setX(data->x() * pow(2, -11));
@@ -324,7 +351,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 2
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][2]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][2]);
     glonass_t gl_stream(&stream);
     glonass_t::string_2_t* data = static_cast<glonass_t::string_2_t*>(gl_stream.data());
 
@@ -338,7 +365,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 3
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][3]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][3]);
     glonass_t gl_stream(&stream);
     glonass_t::string_3_t* data = static_cast<glonass_t::string_3_t*>(gl_stream.data());
 
@@ -352,11 +379,12 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 4
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][4]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][4]);
     glonass_t gl_stream(&stream);
     glonass_t::string_4_t* data = static_cast<glonass_t::string_4_t*>(gl_stream.data());
 
     current_day = data->n_t();
+    eph.setNt(current_day);
     eph.setTauN(data->tau_n() * pow(2, -30));
     eph.setDeltaTauN(data->delta_tau_n() * pow(2, -30));
     eph.setAge(data->e_n());
@@ -370,36 +398,18 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
 
   // string number 5
   {
-    kaitai::kstream stream(glonass_strings[msg->sv_id()][5]);
+    kaitai::kstream stream(glonass_strings[msg->freq_id()][5]);
     glonass_t gl_stream(&stream);
     glonass_t::string_5_t* data = static_cast<glonass_t::string_5_t*>(gl_stream.data());
 
     // string5 parsing is only needed to get the year, this can be removed and
     // the year can be fetched later in laika (note rollovers and leap year)
-    uint8_t n_4 = data->n_4();
-    uint16_t year = get_glonass_year(n_4, current_day);
-    if (current_day > 1461) {
-      // impossible day within last 4 year, reject ephemeris
-      // TODO: check if this can be detected via hamming code
-      LOGE("INVALID DATA: current day out of range: %d, %d", current_day, n_4);
-      glonass_strings[msg->sv_id()].clear();
-      return kj::Array<capnp::word>();
-    }
-
-    uint16_t last_leap_year = 1996 + 4*(n_4-1);
-    uint16_t days_till_this_year = (year - last_leap_year)*365;
-    if (days_till_this_year != 0) {
-      days_till_this_year++;
-    }
-
-    eph.setYear(year);
-    eph.setDayInYear(current_day - days_till_this_year);
-    eph.setHour((eph.getTk()>>7) & 0x1F);
-    eph.setMinute((eph.getTk()>>1) & 0x3F);
-    eph.setSecond((eph.getTk() & 0x1) * 30);
+    eph.setN4(data->n_4());
+    int tk_seconds = SECS_IN_HR * ((tk>>7) & 0x1F) + SECS_IN_MIN * ((tk>>1) & 0x3F) + (tk & 0x1) * 30;
+    eph.setTkSeconds(tk_seconds);
   }
 
-  glonass_strings[msg->sv_id()].clear();
+  glonass_strings[msg->freq_id()].clear();
   return capnp::messageToFlatArray(msg_builder);
 }
 
@@ -424,7 +434,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
   mr.setGpsWeek(msg->week());
 
   auto mb = mr.initMeasurements(msg->num_meas());
-  auto measurements = *msg->measurements();
+  auto measurements = *msg->meas();
   for(int8_t i = 0; i < msg->num_meas(); i++) {
     mb[i].setSvId(measurements[i]->sv_id());
     mb[i].setPseudorange(measurements[i]->pr_mes());
@@ -450,6 +460,22 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_rawx(ubx_t::rxm_rawx_t *msg) {
   auto rs = mr.initReceiverStatus();
   rs.setLeapSecValid(bit_to_bool(msg->rec_stat(), 0));
   rs.setClkReset(bit_to_bool(msg->rec_stat(), 2));
+  return capnp::messageToFlatArray(msg_builder);
+}
+
+kj::Array<capnp::word> UbloxMsgParser::gen_nav_sat(ubx_t::nav_sat_t *msg) {
+  MessageBuilder msg_builder;
+  auto sr = msg_builder.initEvent().initUbloxGnss().initSatReport();
+  sr.setITow(msg->itow());
+
+  auto svs = sr.initSvs(msg->num_svs());
+  auto svs_data = *msg->svs();
+  for(int8_t i = 0; i < msg->num_svs(); i++) {
+    svs[i].setSvId(svs_data[i]->sv_id());
+    svs[i].setGnssId(svs_data[i]->gnss_id());
+    svs[i].setFlagsBitfield(svs_data[i]->flags());
+  }
+
   return capnp::messageToFlatArray(msg_builder);
 }
 

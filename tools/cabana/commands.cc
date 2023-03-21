@@ -50,7 +50,7 @@ void RemoveMsgCommand::redo() {
 
 // AddSigCommand
 
-AddSigCommand::AddSigCommand(const MessageId &id, const Signal &sig, QUndoCommand *parent)
+AddSigCommand::AddSigCommand(const MessageId &id, const cabana::Signal &sig, QUndoCommand *parent)
     : id(id), signal(sig), QUndoCommand(parent) {
   setText(QObject::tr("add signal %1 to %2:%3").arg(sig.name).arg(msgName(id)).arg(id.address));
 }
@@ -60,7 +60,7 @@ void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
 
 // RemoveSigCommand
 
-RemoveSigCommand::RemoveSigCommand(const MessageId &id, const Signal *sig, QUndoCommand *parent)
+RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *sig, QUndoCommand *parent)
     : id(id), signal(*sig), QUndoCommand(parent) {
   setText(QObject::tr("remove signal %1 from %2:%3").arg(signal.name).arg(msgName(id)).arg(id.address));
 }
@@ -70,7 +70,7 @@ void RemoveSigCommand::redo() { dbc()->removeSignal(id, signal.name); }
 
 // EditSignalCommand
 
-EditSignalCommand::EditSignalCommand(const MessageId &id, const Signal *sig, const Signal &new_sig, QUndoCommand *parent)
+EditSignalCommand::EditSignalCommand(const MessageId &id, const cabana::Signal *sig, const cabana::Signal &new_sig, QUndoCommand *parent)
     : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
   setText(QObject::tr("edit signal %1 in %2:%3").arg(old_signal.name).arg(msgName(id)).arg(id.address));
 }

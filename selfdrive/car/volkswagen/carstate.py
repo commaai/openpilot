@@ -228,13 +228,13 @@ class CarState(CarStateBase):
     ret.cruiseState.available = bool(pt_cp.vl["Motor_5"]["GRA_Hauptschalter"])
     ret.cruiseState.enabled = pt_cp.vl["Motor_2"]["GRA_Status"] in (1, 2)
     if self.CP.pcmCruise:
-      ret.accFaulted = ext_cp.vl["ACC_GRA_Anziege"]["ACA_StaACC"] in (6, 7)
+      ret.accFaulted = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_StaACC"] in (6, 7)
     else:
       ret.accFaulted = pt_cp.vl["Motor_2"]["GRA_Status"] == 3
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
-    ret.cruiseState.speed = ext_cp.vl["ACC_GRA_Anziege"]["ACA_V_Wunsch"] * CV.KPH_TO_MS
+    ret.cruiseState.speed = ext_cp.vl["ACC_GRA_Anzeige"]["ACA_V_Wunsch"] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
       ret.cruiseState.speed = 0
 
@@ -516,12 +516,12 @@ class PqExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
   fwd_radar_signals = [
     ("ACS_Typ_ACC", "ACC_System"),               # Basic vs FtS (no SnG support on PQ)
-    ("ACA_StaACC", "ACC_GRA_Anziege"),           # ACC drivetrain coordinator status
-    ("ACA_V_Wunsch", "ACC_GRA_Anziege"),         # ACC set speed
+    ("ACA_StaACC", "ACC_GRA_Anzeige"),           # ACC drivetrain coordinator status
+    ("ACA_V_Wunsch", "ACC_GRA_Anzeige"),         # ACC set speed
   ]
   fwd_radar_checks = [
     ("ACC_System", 50),                          # From J428 ACC radar control module
-    ("ACC_GRA_Anziege", 25),                     # From J428 ACC radar control module
+    ("ACC_GRA_Anzeige", 25),                     # From J428 ACC radar control module
   ]
   bsm_radar_signals = [
     ("SWA_Infostufe_SWA_li", "SWA_1"),           # Blind spot object info, left

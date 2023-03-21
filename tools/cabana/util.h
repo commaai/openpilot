@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 
 #include <QByteArray>
 #include <QColor>
@@ -11,8 +12,7 @@
 #include <QToolButton>
 #include <QVector>
 
-#include "tools/cabana/dbcmanager.h"
-using namespace dbcmanager;
+#include "tools/cabana/dbc.h"
 
 class ChangeTracker {
 public:
@@ -29,6 +29,23 @@ private:
   const float fade_time = 2.0;
   QByteArray prev_dat;
 };
+
+class LogSlider : public QSlider {
+  Q_OBJECT
+
+public:
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+
+  void setRange(double min, double max) { QSlider::setRange(logScale(min), logScale(max)); }
+  int value() const { return invLogScale(QSlider::value()); }
+  void setValue(int value) { QSlider::setValue(logScale(value)); }
+
+private:
+  double factor;
+  int logScale(int value) const { return factor * std::log10(value); }
+  int invLogScale(int value) const { return std::pow(10, value / factor); }
+};
+
 
 enum {
   ColorsRole = Qt::UserRole + 1,
@@ -59,7 +76,7 @@ public:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const dbcmanager::Signal *sig);
+QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -74,3 +91,4 @@ QPixmap icon(const QString &id);
 }
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip);
+int num_decimals(double num);
