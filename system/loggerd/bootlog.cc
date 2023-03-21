@@ -49,10 +49,11 @@ static kj::Array<capnp::word> build_boot_log() {
 }
 
 int main(int argc, char** argv) {
-  const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name();
+  const std::string route = logger_get_route_name();
+  const std::string path = LOG_ROOT + "/boot/" + route;
   LOGW("bootlog to %s", path.c_str());
 
-  Params().put("CurrentBootlog", path.c_str());
+  Params().put("CurrentBootlog", route.c_str());
 
   // Open bootlog
   bool r = util::create_directories(LOG_ROOT + "/boot/", 0775);
