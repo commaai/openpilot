@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
         elif msg.which() == "carParams":
           CP = msg.carParams
-          car_fw = CP.carFw
+          car_fw = [fw for fw in CP.carFw if not fw.logging]
           if len(car_fw) == 0:
             print("no fw")
             break

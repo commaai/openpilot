@@ -84,9 +84,9 @@ def main() -> NoReturn:
       params.remove("PandaSignatures")
 
       # Flash all Pandas in DFU mode
-      for p in PandaDFU.list():
-        cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
-        PandaDFU(p).recover()
+      for serial in PandaDFU.list():
+        cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
+        PandaDFU(serial).recover()
       time.sleep(1)
 
       panda_serials = Panda.list()

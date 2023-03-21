@@ -27,6 +27,8 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
+  TOYOTA.RAV4_TSS2_2023,
+  TOYOTA.RAV4H_TSS2_2023,
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -50,6 +52,7 @@ routes = [
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
+  CarTestRoute("75a6bcb9b8b40373|2023-03-11--22-47-33", GM.BUICK_LACROSSE),
   CarTestRoute("ef8f2185104d862e|2023-02-09--18-37-13", GM.ESCALADE),
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
@@ -206,6 +209,7 @@ routes = [
   CarTestRoute("0cd0b7f7e31a3853|2021-12-03--03-12-05", VOLKSWAGEN.AUDI_Q3_MK2),
   CarTestRoute("8f205bdd11bcbb65|2021-03-26--01-00-17", VOLKSWAGEN.SEAT_ATECA_MK1),
   CarTestRoute("fc6b6c9a3471c846|2021-05-27--13-39-56", VOLKSWAGEN.SEAT_LEON_MK3),
+  CarTestRoute("0bbe367c98fa1538|2023-03-04--17-46-11", VOLKSWAGEN.SKODA_FABIA_MK4),
   CarTestRoute("12d6ae3057c04b0d|2021-09-15--00-04-07", VOLKSWAGEN.SKODA_KAMIQ_MK1),
   CarTestRoute("12d6ae3057c04b0d|2021-09-04--21-21-21", VOLKSWAGEN.SKODA_KAROQ_MK1),
   CarTestRoute("90434ff5d7c8d603|2021-03-15--12-07-31", VOLKSWAGEN.SKODA_KODIAQ_MK1),
