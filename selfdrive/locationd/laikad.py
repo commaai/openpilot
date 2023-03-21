@@ -420,11 +420,11 @@ def clear_tmp_cache():
   os.mkdir(DOWNLOADS_CACHE_FOLDER)
 
 
-def main(sm=None, pm=None, qc=None):
+def main(sm=None, pm=None):
   #clear_tmp_cache()
 
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
-  if use_qcom or (qc is not None and qc):
+  if use_qcom:
     raw_gnss_socket = "qcomGnss"
   else:
     raw_gnss_socket = "ubloxGnss"
