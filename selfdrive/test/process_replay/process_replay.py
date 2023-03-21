@@ -238,23 +238,23 @@ def torqued_rcv_callback(msg, CP, cfg, fsm):
   return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
 
 
-def ublox_rcv_callback(msg):
+def ublox_rcv_callback(msg, CP, cfg, fsm):
   msg_class, msg_id = msg.ubloxRaw[2:4]
   if (msg_class, msg_id) in {(1, 7 * 16)}:
-    return ["gpsLocationExternal"]
+    return ["gpsLocationExternal"], True
   elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
-    return ["ubloxGnss"]
+    return ["ubloxGnss"], True
   else:
-    return []
+    return [], False
 
 
-def laikad_rcv_callback(msg):
+def laikad_rcv_callback(msg, CP, cfg, fsm):
   if msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
-    return ["gnssMeasurements", ]
+    return ["gnssMeasurements"], True
   elif msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
-    return ["gnssMeasurements", ]
+    return ["gnssMeasurements"], True
   else:
-    return []
+    return [], False
 
 
 CONFIGS = [
@@ -540,7 +540,6 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
-  log_msgs = []
 
   Params().put_bool("UbloxAvailable", True)
 
@@ -550,6 +549,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
+  log_msgs = []
   try:
     # Wait for process to startup
     with Timeout(5, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
@@ -561,25 +561,19 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     for s in sub_sockets:
       messaging.recv_one_or_none(sockets[s])
 
-    with Timeout(TIMEOUT*10, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
-      for i, msg in enumerate(pub_msgs[:100]):
+    # Do the replay
+    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
+      for msg in pub_msgs:
         pm.send(msg.which(), msg.as_builder())
+        while not pm.all_readers_updated(msg.which()):
+          time.sleep(0)
 
-        resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+        resp_sockets, _ = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg, None, None, None)
         for s in resp_sockets:
-          response = messaging.recv_one_retry(sockets[s])
-
-          if response is None:
-            print(f"Warning, no response received {i}")
-          else:
-            response = response.as_builder()
-            response.logMonoTime = msg.logMonoTime
-            response = response.as_reader()
-            log_msgs.append(response)
-
-        if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
-          while not pm.all_readers_updated(msg.which()):
-            time.sleep(0)
+          m = messaging.recv_one_retry(sockets[s])
+          m = m.as_builder()
+          m.logMonoTime = msg.logMonoTime
+          log_msgs.append(m.as_reader())
   finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
     managed_processes[cfg.proc_name].stop()
