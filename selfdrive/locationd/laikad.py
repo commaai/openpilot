@@ -428,7 +428,7 @@ def main(sm=None, pm=None):
     raw_name = "qcomGnss"
   else:
     raw_name = "ubloxGnss"
-  raw_gnss_sock = messaging.sub_sock(raw_name)
+  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False, timeout=1000)
 
   if sm is None:
     sm = messaging.SubMaster(['clocks',])
@@ -445,11 +445,11 @@ def main(sm=None, pm=None):
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
-    for in_msg in messaging.drain_sock(raw_gnss_sock, wait_for_one=True):
+    for in_msg in messaging.drain_sock(raw_gnss_sock):
       out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), in_msg.logMonoTime, replay)
       pm.send('gnssMeasurements', out_msg)
 
-    sm.update()
+    sm.update(0)
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
