@@ -254,7 +254,6 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     self.params.put("CalibrationParams", msg.to_bytes())
-    self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
 
     self._args = arguments
     self._carla_objects = []
@@ -562,6 +561,4 @@ if __name__ == "__main__":
     p.join()
 
   finally:
-    # Try cleaning up the wide camera param
-    # in case users want to use replay after
-    Params().remove("WideCameraOnly")
+    pass
