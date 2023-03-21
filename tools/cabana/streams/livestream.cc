@@ -52,7 +52,7 @@ void LiveStream::handleEvent(Event *evt) {
       auto it = std::upper_bound(received.cbegin(), received.cend(), current_ts, [](uint64_t ts, auto &e) {
         return ts < e->mono_time;
       });
-      if (it != can_events.cend()) {
+      if (it != received.cend()) {
         bool skip = (nanos_since_boot() - last_update_ts) < ((*it)->mono_time - current_ts) / speed_;
         if (skip) return;
 
@@ -68,16 +68,15 @@ void LiveStream::handleEvent(Event *evt) {
 void LiveStream::process(QHash<MessageId, CanData> *last_messages) {
   {
     std::lock_guard lk(lock);
-    uint64_t last_ts = can_events.empty() ? 0 : can_events.back()->mono_time;
-    auto first = std::upper_bound(received.cbegin(), received.cend(), last_ts, [](uint64_t ts, auto &e) {
+    auto first = std::upper_bound(received.cbegin(), received.cend(), last_event_ts, [](uint64_t ts, auto &e) {
       return ts < e->mono_time;
     });
-    can_events.insert(can_events.end(), first, received.cend());
+    mergeEvents(first, received.cend(), true);
     if (speed_ == 1) {
       received.clear();
+      messages.clear();
     }
   }
-  emit eventsMerged();
   AbstractStream::process(last_messages);
 }
 

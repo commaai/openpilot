@@ -1,6 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
 #include <QTimer>
-#include <QtConcurrent>
 
 AbstractStream *can = nullptr;
 
@@ -13,7 +12,7 @@ AbstractStream::AbstractStream(QObject *parent, bool is_live_streaming) : is_liv
 
 void AbstractStream::process(QHash<MessageId, CanData> *messages) {
   for (auto it = messages->begin(); it != messages->end(); ++it) {
-    can_msgs[it.key()] = it.value();
+    last_msgs[it.key()] = it.value();
   }
   emit updated();
   emit msgsReceived(messages);
@@ -62,66 +61,68 @@ bool AbstractStream::updateEvent(const Event *event) {
 
 const CanData &AbstractStream::lastMessage(const MessageId &id) {
   static CanData empty_data;
-  auto it = can_msgs.find(id);
-  return it != can_msgs.end() ? it.value() : empty_data;
+  auto it = last_msgs.find(id);
+  return it != last_msgs.end() ? it.value() : empty_data;
 }
-
-static QHash<MessageId, CanData> parseEvents(std::vector<Event *>::const_reverse_iterator first,
-                                             std::vector<Event *>::const_reverse_iterator last, double route_start_time) {
-  QHash<MessageId, CanData> msgs;
-  msgs.reserve(500);
-  for (auto it = first; it != last; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        auto &m = msgs[{.source = c.getSrc(), .address = c.getAddress()}];
-        if (++m.count == 1) {
-          m.ts = ((*it)->mono_time / 1e9) - route_start_time;
-          m.dat = QByteArray((char *)c.getDat().begin(), c.getDat().size());
-          m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
-          m.last_change_t = QVector<double>(m.dat.size(), m.ts);
-          m.bit_change_counts.resize(m.dat.size());
-        }
-      }
-    }
-  }
-  return msgs;
-};
 
 // it is thread safe to update data in updateLastMsgsTo.
 // updateEvent will not be called before replayStream::seekedTo return.
 void AbstractStream::updateLastMsgsTo(double sec) {
-  uint64_t ts = (sec + routeStartTime()) * 1e9;
-  const uint64_t delta = std::max(std::ceil(sec / std::thread::hardware_concurrency()), 30.0) * 1e9;
-  const auto evs = events();
-  auto first = std::upper_bound(evs->crbegin(), evs->crend(), ts, [](uint64_t ts, auto &e) { return ts > e->mono_time; });
-  QFutureSynchronizer<QHash<MessageId, CanData>> synchronizer;
-  while(first != evs->crend()) {
-    ts = (*first)->mono_time > delta ? (*first)->mono_time - delta : 0;
-    auto last = std::lower_bound(first, evs->crend(), ts, [](auto &e, uint64_t ts) { return e->mono_time > ts; });
-    synchronizer.addFuture(QtConcurrent::run(parseEvents, first, last, routeStartTime()));
-    first = last;
-  }
-  synchronizer.waitForFinished();
-
   new_msgs->clear();
   change_trackers.clear();
-  can_msgs.clear();
+  last_msgs.clear();
   counters.clear();
-  for (const auto &f : synchronizer.futures()) {
-    auto msgs = f.result();
-    for (auto it = msgs.cbegin(); it != msgs.cend(); ++it) {
-      counters[it.key()] += it.value().count;
-      auto m = can_msgs.find(it.key());
-      if (m == can_msgs.end()) {
-        m = can_msgs.insert(it.key(), it.value());
-      } else {
-        m.value().count += it.value().count;
-      }
-      m.value().freq = m.value().count / std::max(1.0, m.value().ts);
+
+  CanEvent last_event = {.mono_time = uint64_t((sec + routeStartTime()) * 1e9)};
+  for (auto &[id, e] : events_) {
+    auto it = std::lower_bound(e.crbegin(), e.crend(), last_event, std::greater<CanEvent>());
+    if (it != e.crend()) {
+      auto &m = last_msgs[id];
+      m.dat = QByteArray((const char *)it->dat, it->size);
+      m.ts = it->mono_time / 1e9 - routeStartTime();
+      m.count = std::distance(it, e.crend());
+      m.freq = m.count / std::max(1.0, m.ts);
+      m.last_change_t = QVector<double>(m.dat.size(), m.ts);
+      m.colors = QVector<QColor>(m.dat.size(), QColor(0, 0, 0, 0));
+      m.bit_change_counts = QVector<std::array<uint32_t, 8>>(m.dat.size());
+      counters[id] = m.count;
     }
   }
   QTimer::singleShot(0, [this]() {
     emit updated();
-    emit msgsReceived(&can_msgs);
+    emit msgsReceived(&last_msgs);
   });
+}
+
+void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<CanEvent>> &msgs,
+                                 std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
+  for (; first != last; ++first) {
+    if ((*first)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*first)->event.getCan()) {
+        auto dat = c.getDat();
+        auto &m = msgs[{.source = c.getSrc(), .address = c.getAddress()}].emplace_back();
+        m.size = std::min(dat.size(), std::size(m.dat));
+        memcpy(m.dat, (uint8_t *)dat.begin(), m.size);
+        m.mono_time = (*first)->mono_time;
+      }
+      last_event_ts = std::max(last_event_ts, (*first)->mono_time);
+    }
+  }
+}
+
+void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append) {
+  if (first == last) return;
+
+  if (append) {
+    parseEvents(events_, first, last);
+  } else {
+    std::unordered_map<MessageId, std::deque<CanEvent>> new_events;
+    parseEvents(new_events, first, last);
+    for (auto &[id, new_e] : new_events) {
+      auto &e = events_[id];
+      auto it = std::upper_bound(e.cbegin(), e.cend(), new_e.front());
+      e.insert(it, new_e.cbegin(), new_e.cend());
+    }
+  }
+  emit eventsMerged();
 }
