@@ -76,7 +76,7 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
   CAR.RAM_HD: [
     ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
-    ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 3500 2019-22", harness=Harness.ram),
   ],
 }
 
@@ -303,6 +303,7 @@ FW_VERSIONS = {
       b'68462657AE',
       b'68484694AD',
       b'68484694AE',
+      b'56029827AH',
     ],
     (Ecu.eps, 0x761, None): [
       b'68421036AC',
