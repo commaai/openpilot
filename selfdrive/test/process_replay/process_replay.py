@@ -248,16 +248,6 @@ def ublox_rcv_callback(msg, CP, cfg, fsm):
     return [], False
 
 
-def laikad_rcv_callback(msg, CP, cfg, fsm):
-  ublox_available = Params().get_bool("UbloxAvailable")
-  if ublox_available and msg.which() == 'ubloxGnss' and msg.ubloxGnss.which() == "measurementReport":
-    return ["gnssMeasurements"], True
-  elif not ublox_available and msg.which() == 'qcomGnss' and msg.qcomGnss.which() == "drMeasurementReport":
-    return ["gnssMeasurements"], True
-  else:
-    return [], False
-
-
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -332,8 +322,7 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [],
-      "gpsLocation": [],
+      "gpsLocationExternal": [], "liveCalibration": [], "carState": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -373,7 +362,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
-    should_recv_callback=laikad_rcv_callback,
+    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
   ),
@@ -414,6 +403,10 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   os.environ["REPLAY"] = "1"
   os.environ["SKIP_FW_QUERY"] = ""
   os.environ["FINGERPRINT"] = ""
+
+  if lr is not None:
+    services = {m.which() for m in lr}
+    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
 
   if lr is not None:
     services = {m.which() for m in lr}
@@ -484,10 +477,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
   if fingerprint is not None:
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = fingerprint
-    setup_env(cfg=cfg, controlsState=controlsState)
+    setup_env(cfg=cfg, controlsState=controlsState, lr=lr)
   else:
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-    setup_env(CP=CP, cfg=cfg, controlsState=controlsState)
+    setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
   assert(type(managed_processes[cfg.proc_name]) is PythonProcess)
   managed_processes[cfg.proc_name].prepare()
@@ -516,7 +509,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
-                    (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+                    (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
       should_recv = bool(len(recv_socks))
 
     if msg.which() == 'can':
