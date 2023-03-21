@@ -510,11 +510,6 @@ def python_replay_process(cfg, lr, fingerprint=None):
     if cfg.should_recv_callback is not None:
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
-      #for s in cfg.pub_sub[msg.which()]:
-        #try:
-        #  a = (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0
-        #except:
-        #  print("*********** EXCEPTION", cfg.proc_name, s, msg.which(), service_list[msg.which()].frequency, service_list[s].frequency)
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
                     (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
       should_recv = bool(len(recv_socks))
@@ -548,7 +543,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   log_msgs = []
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True, cfg=cfg)
+  setup_env(simulation=True, cfg=cfg, lr=lr)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
