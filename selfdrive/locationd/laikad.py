@@ -261,7 +261,6 @@ class Laikad:
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
     t = gnss_mono_time * 1e-9
-
     msg_dict = {"measTime": gnss_mono_time}
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
@@ -295,15 +294,7 @@ class Laikad:
       msg_dict["kalmanPositionECEF"] = measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
                                         std=np.sqrt(P_diag[GStates.ECEF_POS]).tolist(),
                                         valid=kf_valid)
-
-<<<<<<< HEAD
-        "measTime": gnss_mono_time,
-        "correctedMeasurements": meas_msgs,
-        "timeToFirstFix": self.ttff,
-        "ephemerisStatuses": self.create_ephem_statuses(),
-      }
-=======
-      msg_dict["kalmanVelocityECEF"]: measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
+      msg_dict["kalmanVelocityECEF"] = measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
                                         std=np.sqrt(P_diag[GStates.ECEF_VELOCITY]).tolist(),
                                         valid=kf_valid)
 
@@ -312,7 +303,6 @@ class Laikad:
     msg_dict['timeToFirstFix'] = self.ttff
     msg_dict['ephemerisStatuses'] = self.create_ephem_statuses()
     out_msg.gnssMeasurements = msg_dict
->>>>>>> 04265348b (laika flow)
     return out_msg
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
