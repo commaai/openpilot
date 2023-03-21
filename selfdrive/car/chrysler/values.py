@@ -73,7 +73,7 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.ram),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
   CAR.RAM_HD: [
     ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
     ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.ram),
@@ -223,7 +223,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
-      b'04672932AB',
       b'68320950AH',
       b'68320950AI',
       b'68320950AJ',
@@ -233,6 +232,7 @@ FW_VERSIONS = {
       b'68475160AE',
       b'68475160AF',
       b'68475160AG',
+      b'04672932AB',
     ],
     (Ecu.eps, 0x75A, None): [
       b'68273275AF',
@@ -257,6 +257,7 @@ FW_VERSIONS = {
       b'68500630AD',
       b'68500630AE',
       b'68539650AD',
+      b'05036066AE ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
