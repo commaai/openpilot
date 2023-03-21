@@ -366,7 +366,7 @@ CONFIGS = [
     proc_name="laikad",
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
-      #"qcomGnss": ["gnssMeasurements"],
+      "qcomGnss": ["gnssMeasurements"],
       "clocks": []
     },
     ignore=["logMonoTime"],
@@ -411,8 +411,8 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None):
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
-  os.environ['SKIP_FW_QUERY'] = ""
-  os.environ['FINGERPRINT'] = ""
+  os.environ["SKIP_FW_QUERY"] = ""
+  os.environ["FINGERPRINT"] = ""
 
   if cfg is not None:
     # Clear all custom processConfig environment variables
@@ -553,7 +553,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   try:
     # Wait for process to startup
     with Timeout(5, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+      while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
         time.sleep(0)
 
     # Make sure all subscribers are connected
