@@ -406,7 +406,6 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
-  params.put_bool("UbloxAvailable", True)
   params.put_bool("ObdMultiplexingDisabled", True)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
@@ -546,7 +545,7 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True, cfg=cfg, lr=pub_msgs)
+  setup_env(simulation=True, cfg=cfg, lr=lr)
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
@@ -564,18 +563,22 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
       messaging.recv_one_or_none(sockets[s])
 
     # Do the replay
-    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}"):
+    cnt = 0
+    with Timeout(TIMEOUT, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
       for msg in pub_msgs:
         pm.send(msg.which(), msg.as_builder())
         while not pm.all_readers_updated(msg.which()):
           time.sleep(0)
 
-        resp_sockets, _ = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg, None, None, None)
+        resp_sockets = cfg.pub_sub[msg.which()]
+        if cfg.should_recv_callback is not None:
+          resp_sockets, _ = cfg.should_recv_callback(msg, None, None, None)
         for s in resp_sockets:
           m = messaging.recv_one_retry(sockets[s])
           m = m.as_builder()
           m.logMonoTime = msg.logMonoTime
           log_msgs.append(m.as_reader())
+        cnt += 1
   finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
     managed_processes[cfg.proc_name].stop()
