@@ -1020,13 +1020,6 @@ void CameraState::handle_camera_event(void *evdat) {
     auto &meta_data = buf.camera_bufs_metadata[buf_idx];
     meta_data.frame_id = main_id - idx_offset;
     meta_data.timestamp_sof = timestamp;
-    exp_lock.lock();
-    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight);
-    meta_data.high_conversion_gain = dc_gain_enabled;
-    meta_data.integ_lines = exposure_time;
-    meta_data.measured_grey_fraction = measured_grey_fraction;
-    meta_data.target_grey_fraction = target_grey_fraction;
-    exp_lock.unlock();
 
     // dispatch
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
@@ -1140,12 +1133,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
     }
   }
 
-  exp_lock.lock();
-
-  measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
-  analog_gain_frac = sensor_analog_gains[new_exp_g];
+  float analog_gain_frac = sensor_analog_gains[new_exp_g];
   gain_idx = new_exp_g;
   exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
@@ -1153,7 +1143,12 @@ void CameraState::set_camera_exposure(float grey_frac) {
   float gain = analog_gain_frac * (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight);
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
-  exp_lock.unlock();
+  buf.cur_frame_data.gain = gain;
+  buf.cur_frame_data.high_conversion_gain = dc_gain_enabled;
+  buf.cur_frame_data.integ_lines = exposure_time;
+  buf.cur_frame_data.measured_grey_fraction = grey_frac;
+  buf.cur_frame_data.target_grey_fraction = target_grey_fraction;
+  buf.cur_frame_data.exposure_val_percent = util::map_val(exposure_time * gain, min_ev, max_ev, 0.0f, 100.0f);
 
   // Processing a frame takes right about 50ms, so we need to wait a few ms
   // so we don't send i2c commands around the frame start.
@@ -1239,6 +1234,9 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
+  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+  const int skip = 2;
+  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
@@ -1257,10 +1255,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
 
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-  const int skip = 2;
-  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {

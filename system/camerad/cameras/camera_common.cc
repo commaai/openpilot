@@ -161,10 +161,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
-
-  const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->min_ev, c->max_ev, 0.0f, 100.0f);
-  framed.setExposureValPercent(perc);
+  framed.setExposureValPercent(frame_data.exposure_val_percent);
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     framed.setSensor(cereal::FrameData::ImageSensor::AR0231);
