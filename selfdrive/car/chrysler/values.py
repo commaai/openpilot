@@ -50,6 +50,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 3
       self.STEER_MAX = 261  # higher than this faults the EPS
 
+
 STEER_THRESHOLD = 120
 
 RAM_DT = {CAR.RAM_1500, }
@@ -61,6 +62,7 @@ RAM_CARS = RAM_DT | RAM_HD
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.fca
+
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
