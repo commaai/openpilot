@@ -276,8 +276,7 @@ class Laikad:
           self.fetch_navs(latest_msg_t, block)
 
       corrected_measurements = self.process_report(new_meas, t)
-      meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
-      msg_dict['correctedMeasurements'] = meas_msgs
+      msg_dict['correctedMeasurements'] = list([create_measurement_msg(m) for m in corrected_measurements])
 
       fix = self.calc_fix(t, corrected_measurements)
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
