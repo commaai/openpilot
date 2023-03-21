@@ -20,13 +20,10 @@ public:
   CameraInfo ci;
   bool enabled;
 
-  std::mutex exp_lock;
-
   int exposure_time;
   bool dc_gain_enabled;
   int dc_gain_weight;
   int gain_idx;
-  float analog_gain_frac;
 
   int exposure_time_min;
   int exposure_time_max;
@@ -51,7 +48,6 @@ public:
   int new_exp_g;
   int new_exp_t;
 
-  float measured_grey_fraction;
   float target_grey_fraction;
   float target_grey_factor;
 
