@@ -223,6 +223,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
+      b'04672932AB',
       b'68320950AH',
       b'68320950AI',
       b'68320950AJ',
@@ -232,7 +233,6 @@ FW_VERSIONS = {
       b'68475160AE',
       b'68475160AF',
       b'68475160AG',
-      b'04672932AB',
     ],
     (Ecu.eps, 0x75A, None): [
       b'68273275AF',
@@ -250,6 +250,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05036065AE ',
+      b'05036066AE ',
       b'68378701AI ',
       b'68378758AM ',
       b'68448163AJ',
@@ -257,7 +258,6 @@ FW_VERSIONS = {
       b'68500630AD',
       b'68500630AE',
       b'68539650AD',
-      b'05036066AE ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
@@ -300,10 +300,10 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',
       b'56029827AG',
+      b'56029827AH',
       b'68462657AE',
       b'68484694AD',
       b'68484694AE',
-      b'56029827AH',
     ],
     (Ecu.eps, 0x761, None): [
       b'68421036AC',
