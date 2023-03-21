@@ -262,11 +262,7 @@ class Laikad:
     out_msg = messaging.new_message("gnssMeasurements")
     t = gnss_mono_time * 1e-9
 
-    msg_dict = {
-        "timeToFirstFix": self.ttff,
-        "ephemerisStatuses": self.create_ephem_statuses(),
-        "measTime": gnss_mono_time,
-    }
+    msg_dict = {"measTime": gnss_mono_time}
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):
@@ -313,6 +309,8 @@ class Laikad:
 
     msg_dict['gpsWeek'] = self.last_report_time.week
     msg_dict['gpsTimeOfWeek'] = self.last_report_time.tow
+    msg_dict['timeToFirstFix'] = self.ttff
+    msg_dict['ephemerisStatuses'] = self.create_ephem_statuses()
     out_msg.gnssMeasurements = msg_dict
 >>>>>>> 04265348b (laika flow)
     return out_msg
