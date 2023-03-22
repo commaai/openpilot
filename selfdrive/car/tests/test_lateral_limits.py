@@ -19,7 +19,7 @@ MAX_LAT_JERK_TOLERANCE = 0.75  # m/s^3
 MAX_LAT_ACCEL = 3.0            # m/s^2
 
 # jerk is measured over half a second
-JERK_MEAS_FRAMES = 0.5 / DT_CTRL
+JERK_MEAS_T = 0.5
 
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
@@ -50,14 +50,18 @@ class TestLateralLimits(unittest.TestCase):
   @staticmethod
   def calculate_0_5s_jerk(control_params, torque_params):
     steer_step = control_params.STEER_STEP
-    steer_up_per_frame = (control_params.STEER_DELTA_UP / control_params.STEER_MAX) / steer_step
-    steer_down_per_frame = (control_params.STEER_DELTA_DOWN / control_params.STEER_MAX) / steer_step
-
-    steer_up_0_5_sec = min(steer_up_per_frame * JERK_MEAS_FRAMES, 1.0)
-    steer_down_0_5_sec = min(steer_down_per_frame * JERK_MEAS_FRAMES, 1.0)
-
     max_lat_accel = torque_params['MAX_LAT_ACCEL_MEASURED']
-    return steer_up_0_5_sec * max_lat_accel, steer_down_0_5_sec * max_lat_accel
+
+    # Steer up/down delta per 10ms frame, in percentage of max torque
+    steer_up_per_frame = control_params.STEER_DELTA_UP / control_params.STEER_MAX / steer_step
+    steer_down_per_frame = control_params.STEER_DELTA_DOWN / control_params.STEER_MAX / steer_step
+
+    # Lateral acceleration reached in 0.5 seconds, clipping to max torque
+    accel_up_0_5_sec = min(steer_up_per_frame * JERK_MEAS_T / DT_CTRL, 1.0) * max_lat_accel
+    accel_down_0_5_sec = min(steer_down_per_frame * JERK_MEAS_T / DT_CTRL, 1.0) * max_lat_accel
+
+    # Convert to m/s^3
+    return accel_up_0_5_sec / JERK_MEAS_T, accel_down_0_5_sec / JERK_MEAS_T
 
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
