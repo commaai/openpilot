@@ -13,6 +13,8 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
+const QString AUTO_SAVE_EXTENSION = ".tmp";
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -42,6 +44,8 @@ signals:
 protected:
   void remindSaveChanges();
   void saveFile(const QString &fn);
+  void autoSave();
+  void cleanupAutoSaveFile();
   void setCurrentFile(const QString &fn);
   void updateRecentFileActions();
   void createActions();
@@ -54,19 +58,39 @@ protected:
   void setOption();
   void findSimilarBits();
   void undoStackCleanChanged(bool clean);
+  void undoStackIndexChanged(int index);
+  void onlineHelp();
+  void toggleFullScreen();
+  void updateStatus();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   MessagesWidget *messages_widget;
-  DetailWidget *detail_widget;
+  CenterWidget *center_widget;
   ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
+  QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
   QSplitter *video_splitter;;
   QString current_file = "";
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
+  int prev_undostack_index = 0;
+  int prev_undostack_count = 0;
+  friend class OnlineHelp;
+};
+
+class HelpOverlay : public QWidget {
+  Q_OBJECT
+public:
+  HelpOverlay(MainWindow *parent);
+
+protected:
+  void drawHelpForWidget(QPainter &painter, QWidget *w);
+  void paintEvent(QPaintEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  bool eventFilter(QObject *obj, QEvent *event) override;
 };

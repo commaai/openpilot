@@ -9,7 +9,9 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QResizeEvent>
 #include <QShortcut>
+#include <QTextDocument>
 #include <QUndoView>
 #include <QVBoxLayout>
 #include <QWidgetAction>
@@ -20,13 +22,13 @@
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
-  if (main_win) emit main_win->showMessage(msg, 0);
+  if (main_win) emit main_win->showMessage(msg, 2000);
 }
 
 MainWindow::MainWindow() : QMainWindow() {
   createDockWindows();
-  detail_widget = new DetailWidget(charts_widget, this);
-  setCentralWidget(detail_widget);
+  center_widget = new CenterWidget(charts_widget, this);
+  setCentralWidget(center_widget);
   createActions();
   createStatusBar();
   createShortcuts();
@@ -40,10 +42,11 @@ MainWindow::MainWindow() : QMainWindow() {
   messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
+  qRegisterMetaType<QSet<uint8_t>>("QSet<uint8_t>");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
-    emit showMessage(QString::fromStdString(msg), 3000);
+    emit showMessage(QString::fromStdString(msg), 2000);
   });
   installDownloadProgressHandler([this](uint64_t cur, uint64_t total, bool success) {
     emit updateProgressBar(cur, total, success);
@@ -56,13 +59,22 @@ MainWindow::MainWindow() : QMainWindow() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
 
+  setStyleSheet(QString(R"(QMainWindow::separator {
+    width: %1px; /* when vertical */
+    height: %1px; /* when horizontal */
+  })").arg(style()->pixelMetric(QStyle::PM_SplitterWidth)));
+
   QObject::connect(this, &MainWindow::showMessage, statusBar(), &QStatusBar::showMessage);
   QObject::connect(this, &MainWindow::updateProgressBar, this, &MainWindow::updateDownloadProgress);
-  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, detail_widget, &DetailWidget::setMessage);
+  QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MainWindow::loadDBCFromFingerprint);
+  QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
+  QObject::connect(can, &AbstractStream::sourcesUpdated, dbc(), &DBCManager::updateSources);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
+  QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
 }
 
 void MainWindow::createActions() {
@@ -87,7 +99,7 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
   // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
-  auto dbc_names = dbc()->allDBCNames();
+  auto dbc_names = allDBCNames();
   std::sort(dbc_names.begin(), dbc_names.end());
   for (const auto &name : dbc_names) {
     load_opendbc_menu->addAction(QString::fromStdString(name), this, &MainWindow::openOpendbcFile);
@@ -125,6 +137,7 @@ void MainWindow::createActions() {
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
+  help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
 }
 
@@ -171,18 +184,46 @@ void MainWindow::createStatusBar() {
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setTextVisible(true);
-  progress_bar->setFixedSize({230, 16});
+  progress_bar->setFixedSize({300, 16});
   progress_bar->setVisible(false);
+  statusBar()->addWidget(new QLabel(tr("For Help, Press F1")));
   statusBar()->addPermanentWidget(progress_bar);
+
+  statusBar()->addPermanentWidget(status_label = new QLabel(this));
+  updateStatus();
 }
 
 void MainWindow::createShortcuts() {
   auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
   QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
+  shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this, nullptr, nullptr, Qt::ApplicationShortcut);
+  QObject::connect(shortcut, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
   // TODO: add more shortcuts here.
 }
 
+void MainWindow::undoStackIndexChanged(int index) {
+  int count = UndoStack::instance()->count();
+  if (count >= 0) {
+    QString command_text;
+    if (index == count) {
+      command_text = (count == prev_undostack_count ? "Redo " : "") + UndoStack::instance()->text(index - 1);
+    } else if (index < prev_undostack_index) {
+      command_text = tr("Undo %1").arg(UndoStack::instance()->text(index));
+    } else if (index > prev_undostack_index) {
+      command_text = tr("Redo %1").arg(UndoStack::instance()->text(index - 1));
+    }
+    statusBar()->showMessage(command_text, 2000);
+  }
+  prev_undostack_index = index;
+  prev_undostack_count = count;
+  autoSave();
+}
+
 void MainWindow::undoStackCleanChanged(bool clean) {
+  if (clean) {
+    prev_undostack_index = 0;
+    prev_undostack_count = 0;
+  }
   setWindowModified(!clean);
 }
 
@@ -194,7 +235,7 @@ void MainWindow::DBCFileChanged() {
 void MainWindow::openRoute() {
   OpenRouteDialog dlg(this);
   if (dlg.exec()) {
-    detail_widget->removeAll();
+    center_widget->clear();
     charts_widget->removeAll();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
   } else if (dlg.failedToLoad()) {
@@ -217,7 +258,18 @@ void MainWindow::openFile() {
 
 void MainWindow::loadFile(const QString &fn) {
   if (!fn.isEmpty()) {
-    QFile file(fn);
+    QString dbc_fn = fn;
+
+    // Prompt user to load auto saved file if it exists.
+    if (QFile::exists(fn + AUTO_SAVE_EXTENSION)) {
+      auto ret = QMessageBox::question(this, tr("Auto saved DBC found"), tr("Auto saved DBC file from previous session found. Do you want to load it instead?"));
+      if (ret == QMessageBox::Yes) {
+        dbc_fn += AUTO_SAVE_EXTENSION;
+        UndoStack::instance()->resetClean(); // Force user to save on close so the auto saved file is not lost
+      }
+    }
+
+    QFile file(dbc_fn);
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
@@ -260,7 +312,7 @@ void MainWindow::loadDBCFromClipboard() {
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
   bool ret = dbc()->open("clipboard", dbc_str, &error);
-  if (ret && dbc()->messages().size() > 0) {
+  if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
@@ -302,7 +354,23 @@ void MainWindow::save() {
   }
 }
 
+void MainWindow::autoSave() {
+  if (!current_file.isEmpty() && !UndoStack::instance()->isClean()) {
+    QFile file(current_file + AUTO_SAVE_EXTENSION);
+    if (file.open(QIODevice::WriteOnly)) {
+      file.write(dbc()->generateDBC().toUtf8());
+    }
+  }
+}
+
+void MainWindow::cleanupAutoSaveFile() {
+  if (!current_file.isEmpty()) {
+    QFile::remove(current_file + AUTO_SAVE_EXTENSION);
+  }
+}
+
 void MainWindow::saveFile(const QString &fn) {
+  cleanupAutoSaveFile();
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
     file.write(dbc()->generateDBC().toUtf8());
@@ -377,6 +445,10 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
   }
 }
 
+void MainWindow::updateStatus() {
+  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
+}
+
 void MainWindow::dockCharts(bool dock) {
   if (dock && floating_window) {
     floating_window->removeEventFilter(charts_widget);
@@ -395,6 +467,7 @@ void MainWindow::dockCharts(bool dock) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
+  cleanupAutoSaveFile();
   remindSaveChanges();
 
   main_win = nullptr;
@@ -421,4 +494,75 @@ void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg->show();
+}
+
+void MainWindow::onlineHelp() {
+  if (auto help = findChild<HelpOverlay*>()) {
+    help->close();
+  } else {
+    help = new HelpOverlay(this);
+    help->setGeometry(rect());
+    help->show();
+    help->raise();
+  }
+}
+
+void MainWindow::toggleFullScreen() {
+  if (isFullScreen()) {
+    menuBar()->show();
+    statusBar()->show();
+    showNormal();
+    showMaximized();
+  } else {
+    menuBar()->hide();
+    statusBar()->hide();
+    showFullScreen();
+  }
+}
+
+// HelpOverlay
+HelpOverlay::HelpOverlay(MainWindow *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_NoSystemBackground, true);
+  setAttribute(Qt::WA_TranslucentBackground, true);
+  setAttribute(Qt::WA_DeleteOnClose);
+  parent->installEventFilter(this);
+}
+
+void HelpOverlay::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.fillRect(rect(), QColor(0, 0, 0, 50));
+  MainWindow *parent = (MainWindow *)parentWidget();
+  drawHelpForWidget(painter, parent->findChild<MessagesWidget *>());
+  drawHelpForWidget(painter, parent->findChild<BinaryView *>());
+  drawHelpForWidget(painter, parent->findChild<SignalView *>());
+  drawHelpForWidget(painter, parent->findChild<ChartsWidget *>());
+  drawHelpForWidget(painter, parent->findChild<VideoWidget *>());
+}
+
+void HelpOverlay::drawHelpForWidget(QPainter &painter, QWidget *w) {
+  if (w && w->isVisible() && !w->whatsThis().isEmpty()) {
+    QPoint pt = mapFromGlobal(w->mapToGlobal(w->rect().center()));
+    if (rect().contains(pt)) {
+      QTextDocument document;
+      document.setHtml(w->whatsThis());
+      QSize doc_size = document.size().toSize();
+      QPoint topleft = {pt.x() - doc_size.width() / 2, pt.y() - doc_size.height() / 2};
+      painter.translate(topleft);
+      painter.fillRect(QRect{{0, 0}, doc_size}, palette().toolTipBase());
+      document.drawContents(&painter);
+      painter.translate(-topleft);
+    }
+  }
+}
+
+bool HelpOverlay::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == parentWidget() && event->type() == QEvent::Resize) {
+    QResizeEvent *resize_event = (QResizeEvent *)(event);
+    setGeometry(QRect{QPoint(0, 0), resize_event->size()});
+  }
+  return false;
+}
+
+void HelpOverlay::mouseReleaseEvent(QMouseEvent *event) {
+  close();
 }
