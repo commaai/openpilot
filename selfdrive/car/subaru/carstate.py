@@ -231,6 +231,7 @@ class CarState(CarStateBase):
         ("Distance_Swap", "ES_Distance"),
         ("Standstill", "ES_Distance"),
         ("Signal3", "ES_Distance"),
+        ("Cruise_Soft_Disable", "ES_Distance"),
         ("Close_Distance", "ES_Distance"),
         ("Signal4", "ES_Distance"),
         ("Standstill_2", "ES_Distance"),
