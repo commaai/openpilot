@@ -843,7 +843,7 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
   series->setUseOpenGL(true);
   // Qt doesn't properly apply device pixel ratio in OpenGL mode
   QPen pen = series->pen();
-  pen.setWidth(2.0 * qApp->devicePixelRatio());
+  pen.setWidthF(2.0 * devicePixelRatioF());
   series->setPen(pen);
 #endif
   chart()->addSeries(series);
