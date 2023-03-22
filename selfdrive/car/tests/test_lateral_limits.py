@@ -10,7 +10,6 @@ from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 
 CAR_MODELS = all_known_cars()
 
