@@ -22,10 +22,6 @@ MAX_LAT_ACCEL = 3.0            # m/s^2
 # jerk is measured over half a second
 JERK_MEAS_FRAMES = 0.5 / DT_CTRL
 
-# TODO: update the max measured lateral accel for these cars
-ABOVE_LIMITS_CARS = [
-]
-
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
 
@@ -46,9 +42,6 @@ class TestLateralLimits(unittest.TestCase):
       raise unittest.SkipTest
 
     if CP.notCar:
-      raise unittest.SkipTest
-
-    if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
