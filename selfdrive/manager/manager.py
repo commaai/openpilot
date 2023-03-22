@@ -28,13 +28,10 @@ def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
 
-  params = Params()
-
   # save boot log
-  params.remove("CurrentBootlog")
   subprocess.call("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"))
 
-  # clear old params, must be after bootlog
+  params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
 
   default_params: List[Tuple[str, Union[str, bytes]]] = [
