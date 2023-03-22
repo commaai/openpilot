@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bz2
+import gzip
 import io
 import json
 import os
@@ -156,6 +157,9 @@ class Uploader():
         with open(fn, "rb") as f:
           if key.endswith('.bz2') and not fn.endswith('.bz2'):
             data = bz2.compress(f.read())
+            data = io.BytesIO(data)
+          elif key.endswith('.gz') and not fn.endswith('.gz'):
+            data = gzip.compress(f.read())
             data = io.BytesIO(data)
           else:
             data = f
