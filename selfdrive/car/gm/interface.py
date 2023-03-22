@@ -51,20 +51,14 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = False
     use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
 
-    # These cars have been put into dashcam only due to both a lack of users and test coverage.
-    # These cars likely still work fine. Once a user confirms each car works and a test route is
-    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX} or \
-                      (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
-
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
     else:
       ret.transmissionType = TransmissionType.automatic
 
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.15]
-
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kiBP = [0.]
 
@@ -102,6 +96,12 @@ class CarInterface(CarInterfaceBase):
       # Tuning
       ret.longitudinalTuning.kpV = [2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.36]
+
+    # These cars have been put into dashcam only due to both a lack of users and test coverage.
+    # These cars likely still work fine. Once a user confirms each car works and a test route is
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX} or \
+                      (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
