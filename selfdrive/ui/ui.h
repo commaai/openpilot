@@ -152,7 +152,6 @@ public:
   QString language;
 
   QTransform car_space_transform;
-  bool wide_cam_only;
   bool driver_view_enabled = false;
 
 signals:
