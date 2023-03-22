@@ -113,7 +113,7 @@ void FindSimilarBitsDlg::find() {
     table->setItem(i, 2, new QTableWidgetItem(QString::number(m.bit_idx)));
     table->setItem(i, 3, new QTableWidgetItem(QString::number(m.mismatches)));
     table->setItem(i, 4, new QTableWidgetItem(QString::number(m.total)));
-    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc)));
+    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc, 'f', 2)));
   }
   search_btn->setEnabled(true);
 }
