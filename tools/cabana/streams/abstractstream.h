@@ -50,6 +50,7 @@ public:
   virtual void setSpeed(float speed) {}
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  virtual const std::vector<Event*> *rawEvents() const { return nullptr; }
   const std::unordered_map<MessageId, std::deque<CanEvent>> &events() const { return events_; }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
   void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
