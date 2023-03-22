@@ -18,7 +18,7 @@ from tools.lib.logreader import LogReader
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6
+  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6 (+ QCOM GPS)
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
@@ -70,7 +70,7 @@ def run_test_process(data):
   res = None
   if not args.upload_only:
     lr = LogReader.from_bytes(lr_dat)
-    res, log_msgs = test_process(cfg, lr, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, segment, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
 
@@ -88,7 +88,7 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
-def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -96,7 +96,10 @@ def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore
 
   ref_log_msgs = list(LogReader(ref_log_path))
 
-  log_msgs = replay_process(cfg, lr)
+  try:
+    log_msgs = replay_process(cfg, lr)
+  except Exception as e:
+    raise Exception("failed on segment: " + segment) from e
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
