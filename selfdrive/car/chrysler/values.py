@@ -182,6 +182,30 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
+  CAR.JEEP_CHEROKEE_2019: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68402971AD',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68355363AB',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68408639AD',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'68456722AC',
+    ],
+    (Ecu.eps, 0x75A, None): [
+      b'68453431AA',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'05035674AB ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'05035707AA',
+    ],
+  },
+
   CAR.RAM_1500: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294051AG',
