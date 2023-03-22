@@ -116,7 +116,7 @@ class Laikad:
     nav_dict = {}
     try:
       ephem_cache = ephemeris_structs.EphemerisCache.from_bytes(cache_bytes)
-      glonass_navs = [GLONASSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.glonassEphemerides] 
+      glonass_navs = [GLONASSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.glonassEphemerides]
       gps_navs = [GPSEphemeris(data_struct, file_name=EPHEMERIS_CACHE) for data_struct in ephem_cache.gpsEphemerides]
       for e in sum([glonass_navs, gps_navs], []):
         if e.prn not in nav_dict:
@@ -154,7 +154,7 @@ class Laikad:
         ephemeris_statuses.append(status)
     return ephemeris_statuses
 
-    
+
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
@@ -262,7 +262,7 @@ class Laikad:
     out_msg = messaging.new_message("gnssMeasurements")
     out_msg.gnssMeasurements = {
         "timeToFirstFix": self.ttff,
-        "ephemerisStatuses" : self.create_ephem_statuses(),
+        "ephemerisStatuses": self.create_ephem_statuses(),
     }
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
@@ -310,7 +310,7 @@ class Laikad:
         "measTime": gnss_mono_time,
         "correctedMeasurements": meas_msgs,
         "timeToFirstFix": self.ttff,
-        "ephemerisStatuses" : self.create_ephem_statuses(),
+        "ephemerisStatuses": self.create_ephem_statuses(),
       }
     return out_msg
 
@@ -425,17 +425,18 @@ def main(sm=None, pm=None):
 
   use_qcom = not Params().get_bool("UbloxAvailable", block=True)
   if use_qcom:
-    raw_gnss_socket = "qcomGnss"
+    raw_name = "qcomGnss"
   else:
-    raw_gnss_socket = "ubloxGnss"
+    raw_name = "ubloxGnss"
+  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False, timeout=1000)
 
   if sm is None:
-    sm = messaging.SubMaster([raw_gnss_socket, 'clocks'])
+    sm = messaging.SubMaster(['clocks',])
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   # disable until set as main gps source, to better analyze startup time
-  use_internet = False #"LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   if replay or "CI" in os.environ:
@@ -444,18 +445,17 @@ def main(sm=None, pm=None):
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
-    sm.update()
+    for in_msg in messaging.drain_sock(raw_gnss_sock):
+      out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), in_msg.logMonoTime, replay)
+      pm.send('gnssMeasurements', out_msg)
 
-    if sm.updated[raw_gnss_socket]:
-      gnss_msg = sm[raw_gnss_socket]
-      msg = laikad.process_gnss_msg(gnss_msg, sm.logMonoTime[raw_gnss_socket], replay)
-      pm.send('gnssMeasurements', msg)
-
+    sm.update(0)
     if not laikad.got_first_gnss_msg and sm.updated['clocks']:
       clocks_msg = sm['clocks']
       t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
       if laikad.auto_fetch_navs:
         laikad.fetch_navs(t, block=replay)
+
 
 if __name__ == "__main__":
   main()
