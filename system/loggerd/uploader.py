@@ -272,6 +272,10 @@ def uploader_fn(exit_event):
     if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
       key += ".bz2"
 
+    # qcamera.ts files should be compressed with gzip before uploading
+    if key.endswith("qcamera.ts"):
+      key += ".gz"
+
     success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:
       backoff = 0.1
