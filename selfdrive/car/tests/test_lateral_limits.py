@@ -13,10 +13,11 @@ from selfdrive.car.interfaces import get_torque_params
 
 CAR_MODELS = all_known_cars()
 
-# ISO 11270
-MAX_LAT_JERK = 2.5             # m/s^3
-MAX_LAT_JERK_TOLERANCE = 0.75  # m/s^3
-MAX_LAT_ACCEL = 3.0            # m/s^2
+# ISO 11270 - allowed up jerk is strictly lower than recommended limits
+MAX_LAT_ACCEL = 3.0              # m/s^2
+MAX_LAT_JERK_UP = 2.5            # m/s^3
+MAX_LAT_JERK_DOWN = 5.0          # m/s^3
+MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
 
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
@@ -66,8 +67,8 @@ class TestLateralLimits(unittest.TestCase):
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
     car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLessEqual(up_jerk, MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE)
-    self.assertLessEqual(down_jerk, MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE)
+    self.assertLessEqual(up_jerk, MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE)
+    self.assertLessEqual(down_jerk, MAX_LAT_JERK_DOWN)
 
   def test_max_lateral_accel(self):
     self.assertLessEqual(self.torque_params["MAX_LAT_ACCEL_MEASURED"], MAX_LAT_ACCEL)
@@ -80,7 +81,8 @@ if __name__ == "__main__":
 
   max_car_model_len = max([len(car_model) for car_model in car_model_jerks])
   for car_model, _jerks in sorted(car_model_jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
-    violation = any([_jerk >= MAX_LAT_JERK + MAX_LAT_JERK_TOLERANCE for _jerk in _jerks.values()])
+    violation = _jerks["up_jerk"] > MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE or \
+                _jerks["down_jerk"] > MAX_LAT_JERK_DOWN
     violation_str = " - VIOLATION" if violation else ""
 
     print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
