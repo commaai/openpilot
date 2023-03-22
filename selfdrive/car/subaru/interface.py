@@ -108,7 +108,12 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
-    ret.events = self.create_common_events(ret).to_msg()
+    events = self.create_common_events(ret)
+    # EyeSight soft disable (e.g. bad lighting or weather)
+    if self.CS.es_distance_msg["Cruise_Soft_Disable"] != 0:
+      events.add(car.CarEvent.EventName.cruiseDisabled)
+
+    ret.events = events.to_msg()
 
     return ret
 
