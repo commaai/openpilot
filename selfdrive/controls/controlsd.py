@@ -85,13 +85,6 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['testJoystick']
-      if SIMULATION:
-        ignore += ['driverCameraState', 'managerState']
-        # block until get the available streams
-        available_streams = VisionIpcClient.available_streams("camerad", block=True)
-        if len(available_streams) == 1 and VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams:
-          ignore += ['roadCameraState']
-
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
@@ -220,6 +213,15 @@ class Controls:
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
+
+    if SIMULATION:
+      ignore = ['driverCameraState', 'managerState']
+      # block until get the available streams
+      available_streams = VisionIpcClient.available_streams("camerad", block=True)
+      if len(available_streams) == 1 and VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams:
+        ignore += ['roadCameraState']
+      self.sm.ignore_alive += ignore
+
 
   def update_events(self, CS):
     """Compute carEvents from carState"""
