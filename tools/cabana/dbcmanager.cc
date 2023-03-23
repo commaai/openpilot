@@ -9,10 +9,11 @@
 #include <sstream>
 
 
-bool DBCManager::open(const QString &dbc_file_name, QString *error) {
-  // TODO: get source set as argument
+bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
+  // TODO: check if file is already open and merge sources
+
   try {
-    dbc_files.reset(new DBCFile(dbc_file_name, this));
+    dbc_files.push_back({s, new DBCFile(dbc_file_name, this)});
   } catch (std::exception &e) {
     if (error) *error = e.what();
     return false;
@@ -22,10 +23,11 @@ bool DBCManager::open(const QString &dbc_file_name, QString *error) {
   return true;
 }
 
-bool DBCManager::open(const QString &name, const QString &content, QString *error) {
-  // TODO: get source set as argument
+bool DBCManager::open(SourceSet s, const QString &name, const QString &content, QString *error) {
+  // TODO: check if file is already open and merge sources
+
   try {
-    dbc_files.reset(new DBCFile(name, content, this));
+    dbc_files.push_back({s, new DBCFile(name, content, this)});
   } catch (std::exception &e) {
     if (error) *error = e.what();
     return false;
@@ -37,10 +39,7 @@ bool DBCManager::open(const QString &name, const QString &content, QString *erro
 
 QString DBCManager::generateDBC() {
   // TODO: move saving logic into DBCManager
-  DBCFile *dbc_file = dbc_files.get();
-  assert(dbc_file != nullptr);
-
-  return dbc_file->generateDBC();
+  return "";
 }
 
 
@@ -127,10 +126,9 @@ const cabana::Msg* DBCManager::msg(uint8_t source, const QString &name) {
 QStringList DBCManager::signalNames() const {
   QStringList ret;
 
-  // TODO: Loop over all dbc files
-  DBCFile *dbc_file = dbc_files.get();
-  assert(dbc_file != nullptr);
-  ret << dbc_file->signalNames();
+  for (auto &[_, dbc_file] : dbc_files) {
+    ret << dbc_file->signalNames();
+  }
 
   ret.sort();
   ret.removeDuplicates();
@@ -140,20 +138,11 @@ QStringList DBCManager::signalNames() const {
 int DBCManager::msgCount() const {
   int ret = 0;
 
-  // TODO: Loop over all dbc files
-  DBCFile *dbc_file = dbc_files.get();
-  assert(dbc_file != nullptr);
-  ret += dbc_file->msgCount();
+  for (auto &[_, dbc_file] : dbc_files) {
+    ret += dbc_file->msgCount();
+  }
 
   return ret;
-}
-
-QString DBCManager::name() const {
-  // TODO: doesn't make sense with multiple DBC
-
-  DBCFile *dbc_file = dbc_files.get();
-  assert(dbc_file != nullptr);
-  return dbc_file->name();
 }
 
 void DBCManager::updateSources(const QSet<uint8_t> &s) {
@@ -161,7 +150,15 @@ void DBCManager::updateSources(const QSet<uint8_t> &s) {
 }
 
 DBCFile *DBCManager::findDBCFile(const MessageId &id) const {
-  return dbc_files.get();
+  // Find DBC file that matches id.source, fall back to SOURCE_ALL if no specific DBC is found
+  for (auto &[source_set, dbc_file] : dbc_files) {
+    if (source_set.contains(id.source)) return dbc_file;
+  }
+  for (auto &[source_set, dbc_file] : dbc_files) {
+    if (source_set == SOURCE_ALL) return dbc_file;
+  }
+  return nullptr;
+
 }
 
 DBCManager *dbc() {

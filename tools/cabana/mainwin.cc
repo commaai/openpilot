@@ -231,7 +231,6 @@ void MainWindow::undoStackCleanChanged(bool clean) {
 
 void MainWindow::DBCFileChanged() {
   UndoStack::instance()->clear();
-  setWindowFilePath(QString("%1").arg(dbc()->name()));
 }
 
 void MainWindow::openRoute() {
@@ -247,7 +246,7 @@ void MainWindow::openRoute() {
 
 void MainWindow::newFile() {
   remindSaveChanges();
-  dbc()->open("untitled.dbc", "");
+  dbc()->open(SOURCE_ALL, "untitled.dbc", "");
 }
 
 void MainWindow::openFile() {
@@ -275,7 +274,7 @@ void MainWindow::loadFile(const QString &fn) {
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
-      bool ret = dbc()->open(dbc_name, file.readAll(), &error);
+      bool ret = dbc()->open(SOURCE_ALL, dbc_name, file.readAll(), &error);
       if (ret) {
         setCurrentFile(fn);
         statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
@@ -303,17 +302,15 @@ void MainWindow::openRecentFile() {
 }
 
 void MainWindow::loadDBCFromOpendbc(const QString &name) {
-  if (name != dbc()->name()) {
-    remindSaveChanges();
-    dbc()->open(name);
-  }
+  remindSaveChanges();
+  dbc()->open(SOURCE_ALL, name);
 }
 
 void MainWindow::loadDBCFromClipboard() {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
-  bool ret = dbc()->open("clipboard", dbc_str, &error);
+  bool ret = dbc()->open(SOURCE_ALL, "clipboard", dbc_str, &error);
   if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
@@ -327,7 +324,7 @@ void MainWindow::loadDBCFromClipboard() {
 
 void MainWindow::loadDBCFromFingerprint() {
   // Don't overwrite already loaded DBC
-  if (!dbc()->name().isEmpty()) {
+  if (dbc()->msgCount()) {
     return;
   }
 

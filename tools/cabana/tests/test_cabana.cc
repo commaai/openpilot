@@ -11,9 +11,9 @@ const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/comm
 
 TEST_CASE("DBCManager::generateDBC") {
   DBCManager dbc_origin(nullptr);
-  dbc_origin.open("toyota_new_mc_pt_generated");
+  dbc_origin.open({0}, "toyota_new_mc_pt_generated");
   DBCManager dbc_from_generated(nullptr);
-  dbc_from_generated.open("", dbc_origin.generateDBC());
+  dbc_from_generated.open({0}, "", dbc_origin.generateDBC());
 
   REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
   auto msgs = dbc_origin.getMessages(0);
@@ -33,7 +33,7 @@ TEST_CASE("DBCManager::generateDBC") {
 
 TEST_CASE("Parse can messages") {
   DBCManager dbc(nullptr);
-  dbc.open("toyota_new_mc_pt_generated");
+  dbc.open({0}, "toyota_new_mc_pt_generated");
   CANParser can_parser(0, "toyota_new_mc_pt_generated", {}, {});
 
   LogReader log;

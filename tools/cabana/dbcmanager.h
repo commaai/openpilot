@@ -11,14 +11,17 @@
 #include "tools/cabana/dbc.h"
 #include "tools/cabana/dbcfile.h"
 
+typedef QSet<uint8_t> SourceSet;
+const SourceSet SOURCE_ALL = {};
+
 class DBCManager : public QObject {
   Q_OBJECT
 
 public:
   DBCManager(QObject *parent) {}
   ~DBCManager() {}
-  bool open(const QString &dbc_file_name, QString *error = nullptr);
-  bool open(const QString &name, const QString &content, QString *error = nullptr);
+  bool open(SourceSet s, const QString &dbc_file_name, QString *error = nullptr);
+  bool open(SourceSet s, const QString &name, const QString &content, QString *error = nullptr);
   QString generateDBC();
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);
@@ -34,12 +37,11 @@ public:
 
   QStringList signalNames() const;
   int msgCount() const;
-  QString name() const;
 
 private:
   DBCFile *findDBCFile(const MessageId &id) const;
   QSet<uint8_t> sources;
-  std::unique_ptr<DBCFile> dbc_files; // TODO: Replace by list
+  QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 
 public slots:
   void updateSources(const QSet<uint8_t> &s);
