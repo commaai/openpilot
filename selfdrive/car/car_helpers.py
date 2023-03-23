@@ -80,12 +80,13 @@ def fingerprint(logcan, sendcan, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   ecu_rx_addrs = set()
+  params = Params()
 
   if not skip_fw_query:
     # Vin query only reliably works through OBDII
     bus = 1
 
-    cached_params = Params().get("CarParamsCache")
+    cached_params = params.get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
       if cached_params.carName == "mock":
@@ -98,6 +99,7 @@ def fingerprint(logcan, sendcan, num_pandas):
       cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
+      set_obd_multiplexing(params, True)
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
@@ -112,10 +114,9 @@ def fingerprint(logcan, sendcan, num_pandas):
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
     vin = VIN_UNKNOWN
+  params.put("CarVin", vin)
   cloudlog.warning("VIN %s", vin)
 
-  params = Params()
-  params.put("CarVin", vin)
   # disable OBD multiplexing for potential ECU knockouts
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
