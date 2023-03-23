@@ -135,8 +135,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
       p.putBool("ObdMultiplexingEnabled", obd_multiplexing_requested);
     }
 
-    if (p.getBool("FirmwareObdQueryDone")) {
-      LOGW("finished FW query at OBD port");
+    if (p.getBool("FirmwareQueryDone")) {
+      LOGW("finished FW query");
       break;
     }
     util::sleep_for(20);
