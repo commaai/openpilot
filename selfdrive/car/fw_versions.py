@@ -203,6 +203,15 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
+def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
+  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+    params.remove("ObdMultiplexingChanged")
+    params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+    params.get_bool("ObdMultiplexingChanged", block=True)
+    cloudlog.warning("OBD multiplexing set successfully")
+
+
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
@@ -218,15 +227,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
       break
 
   return all_car_fw
-
-
-def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
-    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
-    params.remove("ObdMultiplexingChanged")
-    params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
-    params.get_bool("ObdMultiplexingChanged", block=True)
-    cloudlog.warning("OBD multiplexing set successfully")
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False):
