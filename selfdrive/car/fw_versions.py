@@ -38,9 +38,12 @@ def build_fw_dict(fw_versions, filter_brand=None):
 
 def get_brand_addrs():
   brand_addrs = defaultdict(set)
-  for brand, cars in VERSIONS.items():
-    for fw in cars.values():
-      brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
+  for brand, r in REQUESTS:
+    for brand_versions in VERSIONS[brand].values():
+      for ecu_type, addr, sub_addr in brand_versions:
+        # Only add ecus in whitelist if whitelist is not empty
+        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+          brand_addrs[brand].add((addr, sub_addr, r.bus))
   return brand_addrs
 
 
@@ -188,10 +191,10 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   brand_matches = {brand: set() for brand, _ in REQUESTS}
 
   brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
-  for addr, sub_addr, _ in ecu_rx_addrs:
+  for addr, sub_addr, bus in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
-      a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), sub_addr)
+      a = (uds.get_rx_addr_for_tx_addr(addr, -rx_offset), sub_addr, bus)
       if a in brand_addrs[brand]:
         brand_matches[brand].add(a)
 
