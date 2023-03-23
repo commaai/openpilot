@@ -544,21 +544,17 @@ if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
 
-  try:
-    carla_bridge = CarlaBridge(args)
-    p = carla_bridge.run(q)
+  carla_bridge = CarlaBridge(args)
+  p = carla_bridge.run(q)
 
-    if args.joystick:
-      # start input poll for joystick
-      from tools.sim.lib.manual_ctrl import wheel_poll_thread
+  if args.joystick:
+    # start input poll for joystick
+    from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-      wheel_poll_thread(q)
-    else:
-      # start input poll for keyboard
-      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+    wheel_poll_thread(q)
+  else:
+    # start input poll for keyboard
+    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-      keyboard_poll_thread(q)
-    p.join()
-
-  finally:
-    pass
+    keyboard_poll_thread(q)
+  p.join()
