@@ -110,7 +110,6 @@ class TestStartup(unittest.TestCase):
     for _ in range(1000):
       # controlsd waits for boardd to echo back that it has changed the multiplexing mode
       if not params.get_bool("ObdMultiplexingChanged"):
-        print('putting bool!')
         params.put_bool("ObdMultiplexingChanged", True)
 
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
