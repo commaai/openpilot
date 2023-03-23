@@ -99,7 +99,6 @@ def fingerprint(logcan, sendcan, num_pandas):
       cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
-      print('OBDOBDOBDOBDOBD - setting obd_multiplexing to True for VIN')
       set_obd_multiplexing(params, True)
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
@@ -119,7 +118,6 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.warning("VIN %s", vin)
 
   # disable OBD multiplexing for potential ECU knockouts
-  print('OBDOBDOBDOBDOBD - setting obd_multiplexing to False for ECU knockouts')
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
