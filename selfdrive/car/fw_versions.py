@@ -189,11 +189,11 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   return ecu_responses
 
 
-def get_brand_ecu_matches(ecu_rx_addrs):
+def get_brand_ecu_matches(ecu_rx_addrs: Set[EcuAddrBusType]) -> Dict[str, Set[EcuAddrBusType]]:
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {brand: set() for brand, _ in REQUESTS}
+  brand_matches: Dict[str, Set[EcuAddrBusType]] = {brand: set() for brand, _ in REQUESTS}
 
   brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
   for addr, sub_addr, bus in ecu_rx_addrs:
