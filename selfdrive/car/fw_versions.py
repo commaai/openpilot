@@ -180,6 +180,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 
   ecu_responses = set()
   for obd_multiplexing in queries:
+    print('OBDOBDOBDOBDOBD - tester present, obd_multiplexing:', obd_multiplexing)
     set_obd_multiplexing(params, obd_multiplexing)
     for query in queries[obd_multiplexing]:
       ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
@@ -282,6 +283,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           continue
 
         # Toggle OBD multiplexing for each request
+        print('OBDOBDOBDOBDOBD - setting obd_multiplexing for {} request: {}'.format(brand, r.obd_multiplexing))
         set_obd_multiplexing(params, r.obd_multiplexing)
 
         try:
