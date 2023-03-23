@@ -233,8 +233,18 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   return all_car_fw
 
 
+def set_obd_multiplexing(params, obd_multiplexing):
+  cloudlog.warning(f"Setting OBD multiplexing: {obd_multiplexing}")
+  # Remove response param that boardd writes to block on it
+  params.remove("ObdMultiplexingDisabled")
+  params.put_bool("ObdMultiplexingRequested", obd_multiplexing)
+  params.get_bool("ObdMultiplexingDisabled", block=True)
+  cloudlog.warning(f"OBD multiplexing set successfully")
+
+
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexed=True, debug=False, progress=False):
   versions = VERSIONS.copy()
+  params = Params()
 
   # Each brand can define extra ECUs to query for data collection
   for brand, config in FW_QUERY_CONFIGS.items():
@@ -281,9 +291,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
           continue
-        # Or if request is not designated for current multiplexing mode
-        elif r.non_obd == obd_multiplexed:
-          continue
+
+        # Toggle OBD multiplexing for each request
+        set_obd_multiplexing(params, not r.non_obd)
 
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
