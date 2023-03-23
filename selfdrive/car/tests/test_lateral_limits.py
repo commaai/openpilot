@@ -10,7 +10,6 @@ from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 
 CAR_MODELS = all_known_cars()
 
@@ -21,14 +20,6 @@ MAX_LAT_ACCEL = 3.0            # m/s^2
 
 # jerk is measured over half a second
 JERK_MEAS_FRAMES = 0.5 / DT_CTRL
-
-# TODO: update the max measured lateral accel for these cars
-ABOVE_LIMITS_CARS = [
-  HYUNDAI.KONA_EV,
-  HYUNDAI.KONA_HEV,
-  HYUNDAI.KONA,
-  HYUNDAI.KONA_EV_2022,
-]
 
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
@@ -50,9 +41,6 @@ class TestLateralLimits(unittest.TestCase):
       raise unittest.SkipTest
 
     if CP.notCar:
-      raise unittest.SkipTest
-
-    if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
