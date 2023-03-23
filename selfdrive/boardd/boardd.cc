@@ -128,15 +128,13 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     }
 
     bool obd_multiplexing_requested = p.getBool("ObdMultiplexingRequested");
-//    std::string obd_multiplexing_requested = p.get("ObdMultiplexingRequested");
-//    if (!obd_multiplexing_requested.isEmpty()) {
     if (obd_multiplexing_requested != p.getBool("ObdMultiplexingEnabled")) {
       const uint16_t safety_param = obd_multiplexing_requested ? 0U : 1U;
       for (int i = 0; i < pandas.size(); i++) {
         pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
       }
-//      p.remove("ObdMultiplexingRequested", obd_multiplexing_requested);
       p.putBool("ObdMultiplexingEnabled", obd_multiplexing_requested);
+      p.putBool("ObdMultiplexingChanged", true);
     }
 
     if (p.getBool("FirmwareQueryDone")) {
