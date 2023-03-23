@@ -83,6 +83,9 @@ protected:
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
   QMenu *open_dbc_for_source = nullptr;
+  QAction *save_dbc = nullptr;
+  QAction *save_dbc_as = nullptr;
+  QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
   SourceSet sources;

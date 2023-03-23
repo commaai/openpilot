@@ -173,6 +173,10 @@ int DBCManager::msgCount() const {
   return ret;
 }
 
+int DBCManager::dbcCount() const {
+  return dbc_files.size();
+}
+
 void DBCManager::updateSources(const SourceSet &s) {
   sources = s;
 }

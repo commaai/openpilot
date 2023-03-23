@@ -112,9 +112,14 @@ void MainWindow::createActions() {
   file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
 
   file_menu->addSeparator();
-  file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save)->setShortcuts(QKeySequence::Save);
-  file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs)->setShortcuts(QKeySequence::SaveAs);
-  file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+  save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save);
+  save_dbc->setShortcuts(QKeySequence::Save);
+
+  save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs);
+  save_dbc_as->setShortcuts(QKeySequence::SaveAs);
+
+  copy_dbc_to_clipboard = file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption)->setShortcuts(QKeySequence::Preferences);
 
@@ -421,6 +426,13 @@ void MainWindow::updateSources(const SourceSet &s) {
 }
 
 void MainWindow::updateLoadSaveMenus() {
+  if (dbc()->dbcCount() > 1) {
+    save_dbc->setText(tr("Save %1 DBCs...").arg(dbc()->dbcCount()));
+  } else {
+    save_dbc->setText(tr("Save DBC..."));
+  }
+  save_dbc_as->setEnabled(sources.size() == 1);
+
   open_dbc_for_source->setEnabled(sources.size() > 0);
 
   open_dbc_for_source->clear();

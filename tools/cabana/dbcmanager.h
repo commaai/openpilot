@@ -38,6 +38,7 @@ public:
 
   QStringList signalNames() const;
   int msgCount() const;
+  int dbcCount() const;
 
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
