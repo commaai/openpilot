@@ -113,31 +113,34 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
-  // set to ELM327 for fingerprinting
+  // initialize to ELM327 without OBD multiplexing for fingerprinting
+  bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
-    const uint16_t safety_param = (i > 0) ? 1U : 0U;
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
-  // wait for FW query at OBD port to finish
+  // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
-    if (p.getBool("FirmwareObdQueryDone")) {
-      LOGW("finished FW query at OBD port");
+    bool obd_multiplexing_requested = p.getBool("ObdMultiplexingEnabled");
+    if (obd_multiplexing_requested != obd_multiplexing_enabled) {
+      const uint16_t safety_param = obd_multiplexing_requested ? 0U : 1U;
+      for (int i = 0; i < pandas.size(); i++) {
+        pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+      }
+      obd_multiplexing_enabled = obd_multiplexing_requested;
+      p.putBool("ObdMultiplexingChanged", true);
+    }
+
+    if (p.getBool("FirmwareQueryDone")) {
+      LOGW("finished FW query");
       break;
     }
     util::sleep_for(20);
   }
-
-  // set to ELM327 to finish fingerprinting and for potential ECU knockouts
-  for (Panda *panda : pandas) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
-  }
-
-  p.putBool("ObdMultiplexingDisabled", true);
 
   std::string params;
   LOGW("waiting for params to set safety model");
