@@ -7,7 +7,7 @@ from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from datetime import datetime
 from enum import IntEnum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 import numpy as np
 
@@ -241,12 +241,14 @@ class Laikad:
     new_meas = [m for m in new_meas if 1e7 < m.observables['C1C'] < 3e7]
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
-      corrected_measurements = correct_measurements(processed_measurements, self.last_fix_pos, self.astro_dog)
-      instant_fix = self.get_lsq_fix(t, corrected_measurements)
-      #instant_fix = self.get_lsq_fix(t, processed_measurements)
+      est_pos = self.last_fix_pos
     else:
-      corrected_measurements = []
-      instant_fix = self.get_lsq_fix(t, processed_measurements)
+      est_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
+    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+    return corrected_measurements
+
+  def calc_fix(self, t, measurements):
+    instant_fix = self.get_lsq_fix(t, measurements)
     if instant_fix is None:
       return None
     else:
@@ -254,64 +256,52 @@ class Laikad:
       self.last_fix_t = t
       self.last_fix_pos = position_estimate
       self.lat_fix_pos_std = position_std
-    if (t*1e9) % 10 == 0:
-      cloudlog.debug(f"Measurements Incoming/Processed/Corrected: {len(new_meas), len(processed_measurements), len(corrected_measurements)}")
-    return position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, processed_measurements
+      return position_estimate, position_std, velocity_estimate, velocity_std
 
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
-    out_msg.gnssMeasurements = {
-        "timeToFirstFix": self.ttff,
-        "ephemerisStatuses": self.create_ephem_statuses(),
-    }
+    t = gnss_mono_time * 1e-9
+    msg_dict: Dict[str, Any] = {"measTime": gnss_mono_time}
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
-      return out_msg
     elif self.is_good_report(gnss_msg):
       week, tow, new_meas = self.read_report(gnss_msg)
       self.gps_week = week
-      if len(new_meas) == 0:
-        return out_msg
-
-      t = gnss_mono_time * 1e-9
       if week > 0:
         self.got_first_gnss_msg = True
         latest_msg_t = GPSTime(week, tow)
         if self.auto_fetch_navs:
           self.fetch_navs(latest_msg_t, block)
 
-      output = self.process_report(new_meas, t)
-      if output is None:
-        return out_msg
-      if self.ttff <= 0:
-        self.ttff = max(1e-3, t - self.first_log_time)
-      position_estimate, position_std, velocity_estimate, velocity_std, corrected_measurements, _ = output
+      corrected_measurements = self.process_report(new_meas, t)
+      msg_dict['correctedMeasurements'] = [create_measurement_msg(m) for m in corrected_measurements]
 
-      self.update_localizer(position_estimate, t, corrected_measurements)
-      meas_msgs = [create_measurement_msg(m) for m in corrected_measurements]
+      fix = self.calc_fix(t, corrected_measurements)
       measurement_msg = log.LiveLocationKalman.Measurement.new_message
+      if fix is not None:
+        position_estimate, position_std, velocity_estimate, velocity_std = fix
+        if self.ttff <= 0:
+          self.ttff = max(1e-3, t - self.first_log_time)
+        msg_dict["positionECEF"] = measurement_msg(value=position_estimate, std=position_std.tolist(), valid=bool(self.last_fix_t == t))
+        msg_dict["velocityECEF"] = measurement_msg(value=velocity_estimate, std=velocity_std.tolist(), valid=bool(self.last_fix_t == t))
 
+      self.update_localizer(self.last_fix_pos, t, corrected_measurements)
       P_diag = self.gnss_kf.P.diagonal()
       kf_valid = all(self.kf_valid(t))
-      out_msg.gnssMeasurements = {
-        "gpsWeek": week,
-        "gpsTimeOfWeek": tow,
-        "kalmanPositionECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
+      msg_dict["kalmanPositionECEF"] = measurement_msg(value=self.gnss_kf.x[GStates.ECEF_POS].tolist(),
                                         std=np.sqrt(P_diag[GStates.ECEF_POS]).tolist(),
-                                        valid=kf_valid),
-        "kalmanVelocityECEF": measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
+                                        valid=kf_valid)
+      msg_dict["kalmanVelocityECEF"] = measurement_msg(value=self.gnss_kf.x[GStates.ECEF_VELOCITY].tolist(),
                                         std=np.sqrt(P_diag[GStates.ECEF_VELOCITY]).tolist(),
-                                        valid=kf_valid),
-        "positionECEF": measurement_msg(value=position_estimate, std=position_std.tolist(), valid=bool(self.last_fix_t == t)),
-        "velocityECEF": measurement_msg(value=velocity_estimate, std=velocity_std.tolist(), valid=bool(self.last_fix_t == t)),
+                                        valid=kf_valid)
 
-        "measTime": gnss_mono_time,
-        "correctedMeasurements": meas_msgs,
-        "timeToFirstFix": self.ttff,
-        "ephemerisStatuses": self.create_ephem_statuses(),
-      }
+    msg_dict['gpsWeek'] = self.last_report_time.week
+    msg_dict['gpsTimeOfWeek'] = self.last_report_time.tow
+    msg_dict['timeToFirstFix'] = self.ttff
+    msg_dict['ephemerisStatuses'] = self.create_ephem_statuses()
+    out_msg.gnssMeasurements = msg_dict
     return out_msg
 
   def update_localizer(self, est_pos, t: float, measurements: List[GNSSMeasurement]):
@@ -324,7 +314,7 @@ class Laikad:
         cloudlog.error("Time gap of over 10s detected, gnss kalman reset")
       elif not valid[2]:
         cloudlog.error("Gnss kalman filter state is nan")
-      if len(est_pos) > 0:
+      if est_pos is not None and len(est_pos) > 0:
         cloudlog.info(f"Reset kalman filter with {est_pos}")
         self.init_gnss_localizer(est_pos)
       else:
