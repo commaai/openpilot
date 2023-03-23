@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import time
 from collections import defaultdict
 from typing import Any, Dict, List, Set
 from tqdm import tqdm
@@ -222,14 +221,12 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  _t = time.perf_counter()
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
     cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
     params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
     params.get_bool("ObdMultiplexingChanged", block=True)
     cloudlog.warning("OBD multiplexing set successfully")
-    print('Took {} s to change OBD multiplexing!'.format(time.perf_counter() - _t))
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False):
