@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 from collections import defaultdict
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
@@ -149,8 +149,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
   params = Params()
-  queries = defaultdict(list)
-  parallel_queries = defaultdict(list)
+  queries: Dict[bool, List[List[Tuple[int, Optional[int], int]]]] = defaultdict(list)
+  parallel_queries: Dict[bool, List[Tuple[int, Optional[int], int]]] = defaultdict(list)
   responses = set()
 
   for brand, r in REQUESTS:
