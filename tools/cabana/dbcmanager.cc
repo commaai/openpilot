@@ -17,6 +17,8 @@ bool DBCManager::open(const QString &dbc_file_name, QString *error) {
     if (error) *error = e.what();
     return false;
   }
+
+  emit DBCFileChanged();
   return true;
 }
 
@@ -28,6 +30,8 @@ bool DBCManager::open(const QString &name, const QString &content, QString *erro
     if (error) *error = e.what();
     return false;
   }
+
+  emit DBCFileChanged();
   return true;
 }
 
