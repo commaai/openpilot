@@ -22,6 +22,7 @@ public:
   ~DBCManager() {}
   bool open(SourceSet s, const QString &dbc_file_name, QString *error = nullptr);
   bool open(SourceSet s, const QString &name, const QString &content, QString *error = nullptr);
+  void closeAll();
   QString generateDBC();
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);

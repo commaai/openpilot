@@ -274,6 +274,7 @@ void MainWindow::loadFile(const QString &fn) {
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
+      dbc()->closeAll();
       bool ret = dbc()->open(SOURCE_ALL, dbc_name, file.readAll(), &error);
       if (ret) {
         setCurrentFile(fn);
@@ -303,6 +304,8 @@ void MainWindow::openRecentFile() {
 
 void MainWindow::loadDBCFromOpendbc(const QString &name) {
   remindSaveChanges();
+
+  dbc()->closeAll();
   dbc()->open(SOURCE_ALL, name);
 }
 

@@ -37,6 +37,16 @@ bool DBCManager::open(SourceSet s, const QString &name, const QString &content, 
   return true;
 }
 
+void DBCManager::closeAll() {
+  while (dbc_files.size()) {
+    DBCFile *dbc_file = dbc_files.back().second;
+    dbc_files.pop_back();
+    delete dbc_file;
+  }
+  emit DBCFileChanged();
+}
+
+
 QString DBCManager::generateDBC() {
   // TODO: move saving logic into DBCManager
   return "";
