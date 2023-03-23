@@ -40,7 +40,7 @@ public:
   int msgCount() const;
 
 private:
-  DBCFile *findDBCFile(const MessageId &id) const;
+  std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
   SourceSet sources;
   QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 

@@ -54,21 +54,29 @@ QString DBCManager::generateDBC() {
 
 
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
-  DBCFile *dbc_file = findDBCFile(id);
-  assert(dbc_file != nullptr); // Create new DBC?
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // Create new DBC?
+  auto [dbc_sources, dbc_file] = *sources_dbc_file;
+
   cabana::Signal *s = dbc_file->addSignal(id, sig);
 
   if (s != nullptr) {
     // This DBC applies to all active sources, emit for every source
-    for (uint8_t source : sources) {
+    if (dbc_sources == SOURCE_ALL) {
+      dbc_sources = sources;
+    }
+
+    for (uint8_t source : dbc_sources) {
       emit signalAdded({.source = source, .address = id.address}, s);
     }
   }
 }
 
 void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig) {
-  DBCFile *dbc_file = findDBCFile(id);
-  assert(dbc_file != nullptr); // This should be impossible
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [_, dbc_file] = *sources_dbc_file;
+
   cabana::Signal *s = dbc_file->updateSignal(id, sig_name, sig);
 
   if (s != nullptr) {
@@ -77,8 +85,10 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
 }
 
 void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
-  DBCFile *dbc_file = findDBCFile(id);
-  assert(dbc_file != nullptr); // This should be impossible
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [_, dbc_file] = *sources_dbc_file;
+
   cabana::Signal *s = dbc_file->removeSignal(id, sig_name);
 
   if (s != nullptr) {
@@ -87,23 +97,36 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
 }
 
 void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
-  DBCFile *dbc_file = findDBCFile(id);
-  assert(dbc_file != nullptr); // This should be impossible
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [dbc_sources, dbc_file] = *sources_dbc_file;
+
   dbc_file->updateMsg(id, name, size);
 
   // This DBC applies to all active sources, emit for every source
-  for (uint8_t source : sources) {
+  if (dbc_sources == SOURCE_ALL) {
+    dbc_sources = sources;
+  }
+
+  for (uint8_t source : dbc_sources) {
     emit msgUpdated({.source = source, .address = id.address});
   }
 }
 
 void DBCManager::removeMsg(const MessageId &id) {
-  DBCFile *dbc_file = findDBCFile(id);
-  assert(dbc_file != nullptr); // This should be impossible
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [dbc_sources, dbc_file] = *sources_dbc_file;
+
   dbc_file->removeMsg(id);
 
+
   // This DBC applies to all active sources, emit for every source
-  for (uint8_t source : sources) {
+  if (dbc_sources == SOURCE_ALL) {
+    dbc_sources = sources;
+  }
+
+  for (uint8_t source : dbc_sources) {
     emit msgRemoved({.source = source, .address = id.address});
   }
 }
@@ -111,10 +134,12 @@ void DBCManager::removeMsg(const MessageId &id) {
 std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
   std::map<MessageId, cabana::Msg> ret;
 
-  DBCFile *dbc_file = findDBCFile({.source = source, .address = 0});
-  if (dbc_file == nullptr) {
+  auto sources_dbc_file = findDBCFile({.source = source, .address = 0});
+  if (!sources_dbc_file) {
     return ret;
   }
+
+  auto [_, dbc_file] = *sources_dbc_file;
 
   for (auto &[address, msg] : dbc_file->getMessages()) {
     MessageId id = {.source = source, .address = address};
@@ -124,18 +149,20 @@ std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
 }
 
 const cabana::Msg *DBCManager::msg(const MessageId &id) const {
-  DBCFile *dbc_file = findDBCFile(id);
-  if (dbc_file == nullptr) {
+  auto sources_dbc_file = findDBCFile(id);
+  if (!sources_dbc_file) {
     return nullptr;
   }
+  auto [_, dbc_file] = *sources_dbc_file;
   return dbc_file->msg(id);
 }
 
 const cabana::Msg* DBCManager::msg(uint8_t source, const QString &name) {
-  DBCFile *dbc_file = findDBCFile({.source = source, .address = 0});
-  if (dbc_file == nullptr) {
+  auto sources_dbc_file = findDBCFile({.source = source, .address = 0});
+  if (!sources_dbc_file) {
     return nullptr;
   }
+  auto [_, dbc_file] = *sources_dbc_file;
   return dbc_file->msg(name);
 }
 
@@ -165,16 +192,16 @@ void DBCManager::updateSources(const SourceSet &s) {
   sources = s;
 }
 
-DBCFile *DBCManager::findDBCFile(const MessageId &id) const {
+std::optional<std::pair<SourceSet, DBCFile*>> DBCManager::findDBCFile(const MessageId &id) const {
   // Find DBC file that matches id.source, fall back to SOURCE_ALL if no specific DBC is found
 
   for (auto &[source_set, dbc_file] : dbc_files) {
-    if (source_set.contains(id.source)) return dbc_file;
+    if (source_set.contains(id.source)) return {{source_set, dbc_file}};
   }
   for (auto &[source_set, dbc_file] : dbc_files) {
-    if (source_set == SOURCE_ALL) return dbc_file;
+    if (source_set == SOURCE_ALL) return {{source_set, dbc_file}};
   }
-  return nullptr;
+  return {};
 
 }
 
