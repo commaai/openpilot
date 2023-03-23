@@ -113,14 +113,13 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
-  // set to ELM327 without OBD multiplexing for fingerprinting
+  // initialize to ELM327 without OBD multiplexing for fingerprinting
   bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
-  // openpilot can switch between multiplexing modes for different FW queries,
-  // set to ELM327 and wait for FW query to finish
+  // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
