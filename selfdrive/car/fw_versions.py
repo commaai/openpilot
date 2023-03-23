@@ -163,7 +163,6 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[i
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
-          print((a, r.obd_multiplexing))
           # Build set of queries
           if sub_addr is None:
             if a not in parallel_queries[r.obd_multiplexing]:
@@ -227,7 +226,7 @@ def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
     params.remove("ObdMultiplexingChanged")
     params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
     params.get_bool("ObdMultiplexingChanged", block=True)
-    cloudlog.warning(f"OBD multiplexing set successfully")
+    cloudlog.warning("OBD multiplexing set successfully")
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False):
