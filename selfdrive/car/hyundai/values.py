@@ -367,6 +367,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar],
       bus=5,
+      non_obd=True,
     ),
   ],
   extra_ecus=[

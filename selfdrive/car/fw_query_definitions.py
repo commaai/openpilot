@@ -59,7 +59,7 @@ class Request:
   bus: int = 1
   # FW responses from these queries will not be used for fingerprinting
   logging: bool = False
-  # These requests are done once OBD multiplexing is disabled, after all others
+  # boardd toggles OBD multiplexing on/off as needed for these requests
   non_obd: bool = False
 
 
