@@ -107,9 +107,10 @@ class TestStartup(unittest.TestCase):
     else:
       finger = _FINGERPRINTS[car_model][0]
 
-    for i in range(1000):
+    for _ in range(1000):
       # controlsd waits for boardd to echo back that it has changed the multiplexing mode
-      if i % 100 == 0:
+      if not params.get_bool("ObdMultiplexingChanged"):
+        print('putting bool!')
         params.put_bool("ObdMultiplexingChanged", True)
 
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
