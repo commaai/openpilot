@@ -72,6 +72,7 @@ MainWindow::MainWindow() : QMainWindow() {
   QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::updateStatus);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MainWindow::DBCFileChanged);
   QObject::connect(can, &AbstractStream::sourcesUpdated, dbc(), &DBCManager::updateSources);
+  QObject::connect(can, &AbstractStream::sourcesUpdated, this, &MainWindow::updateSources);
   QObject::connect(UndoStack::instance(), &QUndoStack::cleanChanged, this, &MainWindow::undoStackCleanChanged);
   QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MainWindow::undoStackIndexChanged);
   QObject::connect(&settings, &Settings::changed, this, &MainWindow::updateStatus);
@@ -86,6 +87,9 @@ void MainWindow::createActions() {
 
   file_menu->addAction(tr("New DBC File"), this, &MainWindow::newFile)->setShortcuts(QKeySequence::New);
   file_menu->addAction(tr("Open DBC File..."), this, &MainWindow::openFile)->setShortcuts(QKeySequence::Open);
+
+  open_dbc_for_source = file_menu->addMenu(tr("Open &DBC File for Bus"));
+  open_dbc_for_source->setEnabled(false);
 
   open_recent_menu = file_menu->addMenu(tr("Open &Recent"));
   for (int i = 0; i < MAX_RECENT_FILES; ++i) {
@@ -257,6 +261,12 @@ void MainWindow::openFile() {
   }
 }
 
+void MainWindow::openFileForSource() {
+  QAction *act = qobject_cast<QAction *>(sender());
+  uint8_t source = act->data().value<uint8_t>();
+  qDebug() << "open for source" << source;
+}
+
 void MainWindow::loadFile(const QString &fn) {
   if (!fn.isEmpty()) {
     QString dbc_fn = fn;
@@ -392,6 +402,25 @@ void MainWindow::saveAs() {
 void MainWindow::saveDBCToClipboard() {
   QGuiApplication::clipboard()->setText(dbc()->generateDBC());
   QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+}
+
+void MainWindow::updateSources(const QSet<uint8_t> &s) {
+  open_dbc_for_source->setEnabled(true);
+
+  open_dbc_for_source->clear();
+
+  // TODO: only show sources < 128 and match for sent/blocked automatically?
+  QList<uint8_t> sources = s.toList();
+  std::sort(sources.begin(), sources.end());
+
+  for (uint8_t source : sources) {
+    QAction *action = new QAction(this);
+    action->setText(tr("Bus %1").arg(source));
+    action->setData(source);
+
+    QObject::connect(action, &QAction::triggered, this, &MainWindow::openFileForSource);
+    open_dbc_for_source->addAction(action);
+  }
 }
 
 void MainWindow::setCurrentFile(const QString &fn) {
