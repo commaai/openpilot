@@ -116,7 +116,8 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   params = Params()
   params.put("CarVin", vin)
-  # TODO: does this matter for CAN fingerprinting? we can rm if not
+
+  # set to ELM327 for potential ECU knockouts
   set_obd_multiplexing(params, False)
   params.put_bool("FirmwareQueryDone", True)
 
