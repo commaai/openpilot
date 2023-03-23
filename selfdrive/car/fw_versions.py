@@ -147,22 +147,6 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_brand_addrs_bus(num_pandas=1):
-  brand_addrs = defaultdict(set)
-  for brand, r in REQUESTS:
-    # Skip query if no panda available
-    if r.bus > num_pandas * 4 - 1:
-      continue
-
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
-        # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          brand_addrs[brand].add((addr, sub_addr, r.bus))
-
-  return brand_addrs
-
-
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
   params = Params()
   queries = defaultdict(list)
@@ -179,26 +163,26 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[i
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
-          print((a, r.non_obd))
+          print((a, r.obd_multiplexing))
           # Build set of queries
           if sub_addr is None:
-            if a not in parallel_queries[r.non_obd]:
-              parallel_queries[r.non_obd].append(a)
+            if a not in parallel_queries[r.obd_multiplexing]:
+              parallel_queries[r.obd_multiplexing].append(a)
           else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.non_obd]:
-              queries[r.non_obd].append([a])
+            if [a] not in queries[r.obd_multiplexing]:
+              queries[r.obd_multiplexing].append([a])
 
           # Build set of expected responses to filter
           response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
           responses.add((response_addr, sub_addr, r.bus))
 
-  for non_obd in queries:
-    queries[non_obd].insert(0, parallel_queries[non_obd])
+  for obd_multiplexing in queries:
+    queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
 
   ecu_responses = set()
-  for non_obd in queries:
-    set_obd_multiplexing(params, not non_obd)
-    for query in queries[non_obd]:
+  for obd_multiplexing in queries:
+    set_obd_multiplexing(params, obd_multiplexing)
+    for query in queries[obd_multiplexing]:
       ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
 
@@ -298,7 +282,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
         # Toggle OBD multiplexing for each request
         _t = time.perf_counter()
-        set_obd_multiplexing(params, not r.non_obd)
+        set_obd_multiplexing(params, r.obd_multiplexing)
         print('Took {} s to change OBD multiplexing!'.format(time.perf_counter() - _t))
 
         try:

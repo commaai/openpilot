@@ -60,7 +60,7 @@ class Request:
   # FW responses from these queries will not be used for fingerprinting
   logging: bool = False
   # boardd toggles OBD multiplexing on/off as needed for these requests
-  non_obd: bool = False
+  obd_multiplexing: bool = True
 
 
 @dataclass
