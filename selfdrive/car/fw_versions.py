@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 from collections import defaultdict
 from typing import Any, Optional, Set, Tuple
 from tqdm import tqdm
@@ -275,7 +276,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           continue
 
         # Toggle OBD multiplexing for each request
+        _t = time.perf_counter()
         set_obd_multiplexing(params, not r.non_obd)
+        print('Took {} s to change OBD multiplexing!'.format(time.perf_counter() - _t))
 
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
