@@ -113,7 +113,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ObdMultiplexingRequested", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
-    {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ObdMultiplexingSet", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
     {"GitBranch", PERSISTENT},

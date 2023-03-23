@@ -114,7 +114,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   }
 
   // set to ELM327 without OBD multiplexing for fingerprinting
-  p.putBool("ObdMultiplexingEnabled", false);
+  bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
 //    const uint16_t safety_param = (i > 0) ? 1U : 0U;
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
@@ -128,12 +128,12 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     }
 
     bool obd_multiplexing_requested = p.getBool("ObdMultiplexingRequested");
-    if (obd_multiplexing_requested != p.getBool("ObdMultiplexingEnabled")) {
+    if (obd_multiplexing_requested != obd_multiplexing_enabled) {
       const uint16_t safety_param = obd_multiplexing_requested ? 0U : 1U;
       for (int i = 0; i < pandas.size(); i++) {
         pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
       }
-      p.putBool("ObdMultiplexingEnabled", obd_multiplexing_requested);
+      obd_multiplexing_enabled = obd_multiplexing_requested;
       p.putBool("ObdMultiplexingChanged", true);
     }
 
