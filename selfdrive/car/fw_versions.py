@@ -148,6 +148,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 
 
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
+  # TODO: batch requests by multiplexed OBD
   queries = list()
   parallel_queries = list()
   responses = set()
