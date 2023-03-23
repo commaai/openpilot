@@ -50,9 +50,6 @@ void DBCFile::open(const QString &name, const QString &content) {
   parseExtraInfo(content);
   name_ = name;
 
-  // TODO: deal with names
-  // emit DBCFileChanged();
-
   delete dbc;
 }
 
