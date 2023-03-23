@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Optional, Set
+from typing import Any, List, Optional, Set
 from tqdm import tqdm
 
 import panda.python.uds as uds
@@ -147,8 +147,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 
 
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
-  queries = list()
-  parallel_queries = list()
+  queries: List[List[EcuAddrBusType]] = list()
+  parallel_queries: List[EcuAddrBusType] = list()
   responses = set()
 
   for brand, r in REQUESTS:
