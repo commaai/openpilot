@@ -23,7 +23,7 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet sources = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
 
 public slots:
   void openRoute();
@@ -65,6 +65,7 @@ protected:
   void onlineHelp();
   void toggleFullScreen();
   void updateStatus();
+  void updateLoadSaveMenus();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
@@ -84,6 +85,7 @@ protected:
   QMenu *open_dbc_for_source = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
+  SourceSet sources;
   friend class OnlineHelp;
 };
 

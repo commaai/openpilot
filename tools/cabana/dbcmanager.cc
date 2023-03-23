@@ -177,17 +177,20 @@ void DBCManager::updateSources(const SourceSet &s) {
   sources = s;
 }
 
-std::optional<std::pair<SourceSet, DBCFile*>> DBCManager::findDBCFile(const MessageId &id) const {
+std::optional<std::pair<SourceSet, DBCFile*>> DBCManager::findDBCFile(const uint8_t source) const {
   // Find DBC file that matches id.source, fall back to SOURCE_ALL if no specific DBC is found
 
   for (auto &[source_set, dbc_file] : dbc_files) {
-    if (source_set.contains(id.source)) return {{source_set, dbc_file}};
+    if (source_set.contains(source)) return {{source_set, dbc_file}};
   }
   for (auto &[source_set, dbc_file] : dbc_files) {
     if (source_set == SOURCE_ALL) return {{sources, dbc_file}};
   }
   return {};
+}
 
+std::optional<std::pair<SourceSet, DBCFile*>> DBCManager::findDBCFile(const MessageId &id) const {
+  return findDBCFile(id.source);
 }
 
 DBCManager *dbc() {

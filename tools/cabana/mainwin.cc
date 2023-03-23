@@ -235,6 +235,7 @@ void MainWindow::undoStackCleanChanged(bool clean) {
 
 void MainWindow::DBCFileChanged() {
   UndoStack::instance()->clear();
+  updateLoadSaveMenus();
 }
 
 void MainWindow::openRoute() {
@@ -273,7 +274,7 @@ void MainWindow::openFileForSource() {
   }
 }
 
-void MainWindow::loadFile(const QString &fn, SourceSet sources, bool close_all) {
+void MainWindow::loadFile(const QString &fn, SourceSet s, bool close_all) {
   if (!fn.isEmpty()) {
     QString dbc_fn = fn;
 
@@ -295,7 +296,7 @@ void MainWindow::loadFile(const QString &fn, SourceSet sources, bool close_all) 
         dbc()->closeAll();
       }
 
-      bool ret = dbc()->open(sources, dbc_name, file.readAll(), &error);
+      bool ret = dbc()->open(s, dbc_name, file.readAll(), &error);
       if (ret) {
         setCurrentFile(fn);
         statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
@@ -415,18 +416,27 @@ void MainWindow::saveDBCToClipboard() {
 }
 
 void MainWindow::updateSources(const SourceSet &s) {
-  open_dbc_for_source->setEnabled(true);
+  sources = s;
+  updateLoadSaveMenus();
+}
+
+void MainWindow::updateLoadSaveMenus() {
+  open_dbc_for_source->setEnabled(sources.size() > 0);
 
   open_dbc_for_source->clear();
 
   // TODO: only show sources < 128 and match for sent/blocked automatically?
-  QList<uint8_t> sources = s.toList();
-  std::sort(sources.begin(), sources.end());
+  QList<uint8_t> sources_sorted = sources.toList();
+  std::sort(sources_sorted.begin(), sources_sorted.end());
 
-  for (uint8_t source : sources) {
+  for (uint8_t source : sources_sorted) {
     if (source >= 64) continue; // Sent and blocked busses are handled implicitly
     QAction *action = new QAction(this);
-    action->setText(tr("Bus %1").arg(source));
+
+    auto d = dbc()->findDBCFile(source);
+    QString name = d ? d->second->name() : tr("no DBC");
+
+    action->setText(tr("Bus %1 (%2)").arg(source).arg(name));
     action->setData(source);
 
     QObject::connect(action, &QAction::triggered, this, &MainWindow::openFileForSource);
