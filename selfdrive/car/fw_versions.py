@@ -198,15 +198,6 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   return brand_matches
 
 
-def disable_obd_multiplexing(params):
-  if not params.get_bool("ObdMultiplexingDisabled"):
-    params.put_bool("FirmwareObdQueryDone", True)
-
-    cloudlog.warning("Waiting for OBD multiplexing to be disabled")
-    params.get_bool("ObdMultiplexingDisabled", block=True)
-    cloudlog.warning("OBD multiplexing disabled")
-
-
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
@@ -220,9 +211,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
     matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
       break
-
-  # TODO: write a param later on telling boardd we're done with fingerprinting!
-  # disable_obd_multiplexing(Params())
 
   return all_car_fw
 
