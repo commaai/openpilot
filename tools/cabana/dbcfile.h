@@ -23,7 +23,8 @@ public:
 
   cabana::Signal *addSignal(const MessageId &id, const cabana::Signal &sig);
   cabana::Signal *updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
-  cabana::Signal *removeSignal(const MessageId &id, const QString &sig_name);
+  cabana::Signal *getSignal(const MessageId &id, const QString &sig_name);
+  void removeSignal(const MessageId &id, const QString &sig_name);
 
   void updateMsg(const MessageId &id, const QString &name, uint32_t size);
   void removeMsg(const MessageId &id);

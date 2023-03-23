@@ -84,10 +84,11 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   assert(sources_dbc_file); // This should be impossible
   auto [_, dbc_file] = *sources_dbc_file;
 
-  cabana::Signal *s = dbc_file->removeSignal(id, sig_name);
+  cabana::Signal *s = dbc_file->getSignal(id, sig_name);
 
   if (s != nullptr) {
     emit signalRemoved(s);
+    dbc_file->removeSignal(id, sig_name);
   }
 }
 

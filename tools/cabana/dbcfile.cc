@@ -73,16 +73,23 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   return nullptr;
 }
 
- cabana::Signal *DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
+cabana::Signal *DBCFile::getSignal(const MessageId &id, const QString &sig_name) {
+  if (auto m = const_cast<cabana::Msg *>(msg(id))) {
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
+    if (it != m->sigs.end()) {
+     return &(*it);
+    }
+  }
+  return nullptr;
+ }
+
+void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
     if (it != m->sigs.end()) {
       m->sigs.erase(it);
-      return &(*it); // TOOD: is this a use after free?
     }
   }
-
-  return nullptr;
 }
 
 void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
