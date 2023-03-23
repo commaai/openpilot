@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import time
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
 from common.params import Params
-from selfdrive.car.ecu_addrs import get_ecu_addrs
+from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -147,10 +147,10 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[Tuple[int, Optional[int], int]]:
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   params = Params()
-  queries: Dict[bool, List[List[Tuple[int, Optional[int], int]]]] = defaultdict(list)
-  parallel_queries: Dict[bool, List[Tuple[int, Optional[int], int]]] = defaultdict(list)
+  queries: Dict[bool, List[List[EcuAddrBusType]]] = defaultdict(list)
+  parallel_queries: Dict[bool, List[EcuAddrBusType]] = defaultdict(list)
   responses = set()
 
   for brand, r in REQUESTS:
