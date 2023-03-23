@@ -216,8 +216,7 @@ class Controls:
 
     if SIMULATION:
       ignore = ['driverCameraState', 'managerState']
-      # block until get the available streams
-      available_streams = VisionIpcClient.available_streams("camerad", block=True)
+      available_streams = VisionIpcClient.available_streams("camerad", block=False)
       if len(available_streams) == 1 and VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams:
         ignore += ['roadCameraState']
       self.sm.ignore_alive += ignore
