@@ -61,11 +61,6 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   cabana::Signal *s = dbc_file->addSignal(id, sig);
 
   if (s != nullptr) {
-    // This DBC applies to all active sources, emit for every source
-    if (dbc_sources == SOURCE_ALL) {
-      dbc_sources = sources;
-    }
-
     for (uint8_t source : dbc_sources) {
       emit signalAdded({.source = source, .address = id.address}, s);
     }
@@ -103,11 +98,6 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
 
   dbc_file->updateMsg(id, name, size);
 
-  // This DBC applies to all active sources, emit for every source
-  if (dbc_sources == SOURCE_ALL) {
-    dbc_sources = sources;
-  }
-
   for (uint8_t source : dbc_sources) {
     emit msgUpdated({.source = source, .address = id.address});
   }
@@ -119,12 +109,6 @@ void DBCManager::removeMsg(const MessageId &id) {
   auto [dbc_sources, dbc_file] = *sources_dbc_file;
 
   dbc_file->removeMsg(id);
-
-
-  // This DBC applies to all active sources, emit for every source
-  if (dbc_sources == SOURCE_ALL) {
-    dbc_sources = sources;
-  }
 
   for (uint8_t source : dbc_sources) {
     emit msgRemoved({.source = source, .address = id.address});
@@ -199,7 +183,7 @@ std::optional<std::pair<SourceSet, DBCFile*>> DBCManager::findDBCFile(const Mess
     if (source_set.contains(id.source)) return {{source_set, dbc_file}};
   }
   for (auto &[source_set, dbc_file] : dbc_files) {
-    if (source_set == SOURCE_ALL) return {{source_set, dbc_file}};
+    if (source_set == SOURCE_ALL) return {{sources, dbc_file}};
   }
   return {};
 
