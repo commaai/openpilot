@@ -114,8 +114,8 @@ def fingerprint(logcan, sendcan, num_pandas):
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
     vin = VIN_UNKNOWN
-  params.put("CarVin", vin)
   cloudlog.warning("VIN %s", vin)
+  params.put("CarVin", vin)
 
   # disable OBD multiplexing for potential ECU knockouts
   set_obd_multiplexing(params, False)
