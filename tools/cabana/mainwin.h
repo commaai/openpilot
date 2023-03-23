@@ -8,6 +8,7 @@
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
+#include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
@@ -22,7 +23,7 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn);
+  void loadFile(const QString &fn, SourceSet sources = SOURCE_ALL, bool close_all = true);
 
 public slots:
   void openRoute();
@@ -37,7 +38,7 @@ public slots:
   void save();
   void saveAs();
   void saveDBCToClipboard();
-  void updateSources(const QSet<uint8_t> &s);
+  void updateSources(const SourceSet &s);
 
 signals:
   void showMessage(const QString &msg, int timeout);

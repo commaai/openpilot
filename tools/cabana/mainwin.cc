@@ -42,7 +42,7 @@ MainWindow::MainWindow() : QMainWindow() {
   messages_widget->restoreHeaderState(settings.message_header_state);
 
   qRegisterMetaType<uint64_t>("uint64_t");
-  qRegisterMetaType<QSet<uint8_t>>("QSet<uint8_t>");
+  qRegisterMetaType<SourceSet>("SourceSet");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
@@ -262,12 +262,18 @@ void MainWindow::openFile() {
 }
 
 void MainWindow::openFileForSource() {
-  QAction *act = qobject_cast<QAction *>(sender());
-  uint8_t source = act->data().value<uint8_t>();
-  qDebug() << "open for source" << source;
+  if (auto action = qobject_cast<QAction *>(sender())) {
+    uint8_t source = action->data().value<uint8_t>();
+    assert(source < 64);
+
+    QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+    if (!fn.isEmpty()) {
+      loadFile(fn, {source, uint8_t(source + 128), uint8_t(source + 192)}, false);
+    }
+  }
 }
 
-void MainWindow::loadFile(const QString &fn) {
+void MainWindow::loadFile(const QString &fn, SourceSet sources, bool close_all) {
   if (!fn.isEmpty()) {
     QString dbc_fn = fn;
 
@@ -284,8 +290,12 @@ void MainWindow::loadFile(const QString &fn) {
     if (file.open(QIODevice::ReadOnly)) {
       auto dbc_name = QFileInfo(fn).baseName();
       QString error;
-      dbc()->closeAll();
-      bool ret = dbc()->open(SOURCE_ALL, dbc_name, file.readAll(), &error);
+
+      if (close_all) {
+        dbc()->closeAll();
+      }
+
+      bool ret = dbc()->open(sources, dbc_name, file.readAll(), &error);
       if (ret) {
         setCurrentFile(fn);
         statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn), 2000);
@@ -404,7 +414,7 @@ void MainWindow::saveDBCToClipboard() {
   QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
 }
 
-void MainWindow::updateSources(const QSet<uint8_t> &s) {
+void MainWindow::updateSources(const SourceSet &s) {
   open_dbc_for_source->setEnabled(true);
 
   open_dbc_for_source->clear();
@@ -414,6 +424,7 @@ void MainWindow::updateSources(const QSet<uint8_t> &s) {
   std::sort(sources.begin(), sources.end());
 
   for (uint8_t source : sources) {
+    if (source >= 64) continue; // Sent and blocked busses are handled implicitly
     QAction *action = new QAction(this);
     action->setText(tr("Bus %1").arg(source));
     action->setData(source);

@@ -161,14 +161,13 @@ int DBCManager::msgCount() const {
   return ret;
 }
 
-void DBCManager::updateSources(const QSet<uint8_t> &s) {
+void DBCManager::updateSources(const SourceSet &s) {
   sources = s;
 }
 
 DBCFile *DBCManager::findDBCFile(const MessageId &id) const {
   // Find DBC file that matches id.source, fall back to SOURCE_ALL if no specific DBC is found
 
-  // TODO: match on lower 6 bits only to get sent/blocked busses automatically?
   for (auto &[source_set, dbc_file] : dbc_files) {
     if (source_set.contains(id.source)) return dbc_file;
   }

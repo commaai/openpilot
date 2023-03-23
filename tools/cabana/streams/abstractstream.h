@@ -64,11 +64,11 @@ signals:
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *);
   void received(QHash<MessageId, CanData> *);
-  void sourcesUpdated(const QSet<uint8_t> &s);
+  void sourcesUpdated(const SourceSet &s);
 
 public:
   QHash<MessageId, CanData> last_msgs;
-  QSet<uint8_t> sources;
+  SourceSet sources;
 
 protected:
   virtual void process(QHash<MessageId, CanData> *);

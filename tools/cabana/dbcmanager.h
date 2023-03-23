@@ -41,11 +41,11 @@ public:
 
 private:
   DBCFile *findDBCFile(const MessageId &id) const;
-  QSet<uint8_t> sources;
+  SourceSet sources;
   QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 
 public slots:
-  void updateSources(const QSet<uint8_t> &s);
+  void updateSources(const SourceSet &s);
 
 signals:
   void signalAdded(MessageId id, const cabana::Signal *sig);
