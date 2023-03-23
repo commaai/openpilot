@@ -116,7 +116,6 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   // set to ELM327 without OBD multiplexing for fingerprinting
   bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
-//    const uint16_t safety_param = (i > 0) ? 1U : 0U;
     pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
