@@ -233,13 +233,14 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   return all_car_fw
 
 
-def set_obd_multiplexing(params, obd_multiplexing):
-  cloudlog.warning(f"Setting OBD multiplexing: {obd_multiplexing}")
-  # Remove response param that boardd writes to block on it
-  params.remove("ObdMultiplexingEnabled")
-  params.put_bool("ObdMultiplexingRequested", obd_multiplexing)
-  params.get_bool("ObdMultiplexingEnabled", block=True)
-  cloudlog.warning(f"OBD multiplexing set successfully")
+def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
+  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+    # Remove response param that boardd writes to block on it
+    params.remove("ObdMultiplexingEnabled")
+    params.put_bool("ObdMultiplexingRequested", obd_multiplexing)
+    params.get_bool("ObdMultiplexingEnabled", block=True)
+    cloudlog.warning(f"OBD multiplexing set successfully")
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, obd_multiplexed=True, debug=False, progress=False):
