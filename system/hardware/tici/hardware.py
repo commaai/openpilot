@@ -452,6 +452,10 @@ class Tici(HardwareBase):
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
+    # Turn off fan, turned on by the ABL
+    gpio_init(GPIO.SOM_ST_IO, True)
+    gpio_set(GPIO.SOM_ST_IO, 0)
+
     # *** IRQ config ***
 
     # move these off the default core
