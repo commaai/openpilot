@@ -78,6 +78,6 @@ class FwQueryConfig:
   def __post_init__(self):
     for i in range(len(self.requests)):
       if self.requests[i].auxiliary:
-        new_r = copy.deepcopy(self.requests[i])
-        new_r.bus += 4
-        self.requests.append(new_r)
+        new_request = copy.deepcopy(self.requests[i])
+        new_request.bus += 4
+        self.requests.append(new_request)
