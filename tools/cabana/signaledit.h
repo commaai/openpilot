@@ -108,8 +108,17 @@ private:
   void rowsChanged();
   void leaveEvent(QEvent *event);
 
+  struct TreeView : public QTreeView {
+    TreeView(QWidget *parent) : QTreeView(parent) {}
+    void rowsInserted(const QModelIndex &parent, int start, int end) override {
+      ((SignalView *)parentWidget())->rowsChanged();
+      // update widget geometries in QTreeView::rowsInserted
+      QTreeView::rowsInserted(parent, start, end);
+    }
+  };
+
   MessageId msg_id;
-  QTreeView *tree;
+  TreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;

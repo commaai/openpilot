@@ -78,7 +78,6 @@ class CarInterface(CarInterfaceBase):
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
-      ret.longitudinalActuatorDelayUpperBound = 0.5
 
       if experimental_long:
         ret.pcmCruise = False
@@ -113,6 +112,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
+    ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     if candidate == CAR.VOLT:
       ret.mass = 1607. + STD_CARGO_KG
@@ -148,7 +148,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
-      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
     elif candidate == CAR.BUICK_LACROSSE:
       ret.mass = 1712. + STD_CARGO_KG
@@ -175,7 +174,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.95  # 116 inches in meters
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.ESCALADE_ESV:

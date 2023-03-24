@@ -133,8 +133,10 @@ void MainWindow::createActions() {
   commands_act->setDefaultWidget(undo_view);
   commands_menu->addAction(commands_act);
 
-  QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
-  tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
+  if (!can->liveStreaming()) {
+    QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
+    tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
+  }
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
