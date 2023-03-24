@@ -53,7 +53,7 @@ public:
   }
 
 private:
-  double factor, log_min, log_max;
+  double factor, log_min = 0, log_max = 1;
 };
 
 enum {

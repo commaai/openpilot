@@ -4,10 +4,8 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QDebug>
-
-#include <limits>
 #include <cmath>
+#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -42,7 +40,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         }
 
         // Track bit level changes
-        for (int bit = 0; bit < 8; bit++){
+        for (int bit = 0; bit < 8; bit++) {
           if ((cur ^ last) & (1 << bit)) {
             bit_change_counts[i][bit] += 1;
           }
@@ -66,7 +64,6 @@ void ChangeTracker::clear() {
   bit_change_counts.clear();
   colors.clear();
 }
-
 
 // SegmentTree
 
@@ -116,7 +113,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
+  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
@@ -139,7 +136,7 @@ QColor getColor(const cabana::Signal *sig) {
   return QColor::fromHsvF(h, s, v);
 }
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
@@ -175,7 +172,6 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   return btn;
 };
 
-
 QString toHex(uint8_t byte) {
   static std::array<QString, 256> hex = []() {
     std::array<QString, 256> ret;
@@ -186,11 +182,11 @@ QString toHex(uint8_t byte) {
 }
 
 int num_decimals(double num) {
-   const QString string = QString::number(num);
-   const QStringList split = string.split('.');
-   if (split.size() == 1) {
-     return 0;
-   } else {
-     return split[1].size();
-   }
- }
+  const QString string = QString::number(num);
+  const QStringList split = string.split('.');
+  if (split.size() == 1) {
+    return 0;
+  } else {
+    return split[1].size();
+  }
+}
