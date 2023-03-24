@@ -116,7 +116,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   // initialize to ELM327 without OBD multiplexing for fingerprinting
   bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+    const uint16_t safety_param = (i > 0) ? 1U : 0U;
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
   }
 
   // openpilot can switch between multiplexing modes for different FW queries
@@ -127,8 +128,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
     bool obd_multiplexing_requested = p.getBool("ObdMultiplexingEnabled");
     if (obd_multiplexing_requested != obd_multiplexing_enabled) {
-      const uint16_t safety_param = obd_multiplexing_requested ? 0U : 1U;
       for (int i = 0; i < pandas.size(); i++) {
+        const uint16_t safety_param = (i > 0) ? 1U : (obd_multiplexing_requested ? 0U : 1U);
         pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
       }
       obd_multiplexing_enabled = obd_multiplexing_requested;
