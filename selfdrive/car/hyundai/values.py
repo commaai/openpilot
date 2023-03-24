@@ -355,6 +355,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
+
     # CAN-FD queries (from camera)
     # TODO: combine shared whitelists with CAN requests
     Request(
