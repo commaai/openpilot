@@ -1,5 +1,6 @@
 #include "tools/cabana/tools/findsimilarbits.h"
 
+#include <QGridLayout>
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QIntValidator>
@@ -16,20 +17,23 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  QHBoxLayout *form_layout = new QHBoxLayout();
-  bus_combo = new QComboBox(this);
+  QHBoxLayout *src_layout = new QHBoxLayout();
+  src_bus_combo = new QComboBox(this);
+  find_bus_combo = new QComboBox(this);
   QSet<uint8_t> bus_set;
   for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
     bus_set << it.key().source;
   }
-  for (uint8_t bus : bus_set) {
-    bus_combo->addItem(QString::number(bus), bus);
+  for (auto cb : {src_bus_combo, find_bus_combo}) {
+    for (uint8_t bus : bus_set) {
+      cb->addItem(QString::number(bus), bus);
+    }
+    cb->model()->sort(0);
+    cb->setCurrentIndex(0);
   }
-  bus_combo->model()->sort(0);
-  bus_combo->setCurrentIndex(0);
 
   msg_cb = new QComboBox(this);
-  // TODO: update when bus_combo changes
+  // TODO: update when src_bus_combo changes
   for (auto &[id, msg] : dbc()->getMessages(0)) {
     msg_cb->addItem(msg.name, id.address);
   }
@@ -37,29 +41,44 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   msg_cb->setCurrentIndex(0);
 
   byte_idx_sb = new QSpinBox(this);
+  byte_idx_sb->setFixedWidth(50);
   byte_idx_sb->setRange(0, 63);
 
   bit_idx_sb = new QSpinBox(this);
+  bit_idx_sb->setFixedWidth(50);
   bit_idx_sb->setRange(0, 7);
 
-  form_layout->addWidget(new QLabel("Bus"));
-  form_layout->addWidget(bus_combo);
-  form_layout->addWidget(msg_cb);
-  form_layout->addWidget(new QLabel("Byte Index"));
-  form_layout->addWidget(byte_idx_sb);
-  form_layout->addWidget(new QLabel("Bit Index"));
-  form_layout->addWidget(bit_idx_sb);
+  src_layout->addWidget(new QLabel(tr("Bus")));
+  src_layout->addWidget(src_bus_combo);
+  src_layout->addWidget(msg_cb);
+  src_layout->addWidget(new QLabel(tr("Byte Index")));
+  src_layout->addWidget(byte_idx_sb);
+  src_layout->addWidget(new QLabel(tr("Bit Index")));
+  src_layout->addWidget(bit_idx_sb);
+  src_layout->addStretch(0);
 
-
+  QHBoxLayout *find_layout = new QHBoxLayout();
+  find_layout->addWidget(new QLabel(tr("Bus")));
+  find_layout->addWidget(find_bus_combo);
+  find_layout->addWidget(new QLabel(tr("Equal")));
+  equal_combo = new QComboBox(this);
+  equal_combo->addItems({"Yes", "No"});
+  find_layout->addWidget(equal_combo);
   min_msgs = new QLineEdit(this);
   min_msgs->setValidator(new QIntValidator(this));
   min_msgs->setText("100");
-  form_layout->addWidget(new QLabel("Min msg count"));
-  form_layout->addWidget(min_msgs);
+  find_layout->addWidget(new QLabel(tr("Min msg count")));
+  find_layout->addWidget(min_msgs);
   search_btn = new QPushButton(tr("&Find"), this);
-  form_layout->addWidget(search_btn);
-  form_layout->addStretch(1);
-  main_layout->addLayout(form_layout);
+  find_layout->addWidget(search_btn);
+  find_layout->addStretch(0);
+
+  QGridLayout *grid_layout = new QGridLayout();
+  grid_layout->addWidget(new QLabel("Find From:"), 0, 0);
+  grid_layout->addLayout(src_layout, 0, 1);
+  grid_layout->addWidget(new QLabel("Find In:"), 1, 0);
+  grid_layout->addLayout(find_layout, 1, 1);
+  main_layout->addLayout(grid_layout);
 
   table = new QTableWidget(this);
   table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -70,10 +89,9 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
 
   setMinimumSize({700, 500});
   QObject::connect(search_btn, &QPushButton::clicked, this, &FindSimilarBitsDlg::find);
-
   QObject::connect(table, &QTableWidget::doubleClicked, [this](const QModelIndex &index) {
     if (index.isValid()) {
-      MessageId msg_id = {.source = (uint8_t)bus_combo->currentData().toUInt(), .address = table->item(index.row(), 0)->text().toUInt(0, 16)};
+      MessageId msg_id = {.source = (uint8_t)find_bus_combo->currentData().toUInt(), .address = table->item(index.row(), 0)->text().toUInt(0, 16)};
       emit openMessage(msg_id);
     }
   });
@@ -83,7 +101,8 @@ void FindSimilarBitsDlg::find() {
   search_btn->setEnabled(false);
   table->clear();
   uint32_t selected_address = msg_cb->currentData().toUInt();
-  auto msg_mismatched = calcBits(bus_combo->currentText().toUInt(), selected_address, byte_idx_sb->value(), bit_idx_sb->value(), min_msgs->text().toInt());
+  auto msg_mismatched = calcBits(src_bus_combo->currentText().toUInt(), selected_address, byte_idx_sb->value(), bit_idx_sb->value(),
+                                 find_bus_combo->currentText().toUInt(), equal_combo->currentIndex() == 0, min_msgs->text().toInt());
   table->setRowCount(msg_mismatched.size());
   table->setColumnCount(6);
   table->setHorizontalHeaderLabels({"address", "byte idx", "bit idx", "mismatches", "total msgs", "% mismatched"});
@@ -94,32 +113,41 @@ void FindSimilarBitsDlg::find() {
     table->setItem(i, 2, new QTableWidgetItem(QString::number(m.bit_idx)));
     table->setItem(i, 3, new QTableWidgetItem(QString::number(m.mismatches)));
     table->setItem(i, 4, new QTableWidgetItem(QString::number(m.total)));
-    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc)));
+    table->setItem(i, 5, new QTableWidgetItem(QString::number(m.perc, 'f', 2)));
   }
   search_btn->setEnabled(true);
 }
 
-QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx, int bit_idx, int min_msgs_cnt) {
+QList<FindSimilarBitsDlg::mismatched_struct> FindSimilarBitsDlg::calcBits(uint8_t bus, uint32_t selected_address, int byte_idx,
+                                                                          int bit_idx, uint8_t find_bus, bool equal, int min_msgs_cnt) {
   QHash<uint32_t, QVector<uint32_t>> mismatches;
   QHash<uint32_t, uint32_t> msg_count;
+  auto events = can->rawEvents();
   int bit_to_find = -1;
-  for (const auto &[id, msg] : can->events()) {
-    if (id.source == bus) {
-      for (const auto &c : msg) {
-        if (id.address == selected_address && c.size > byte_idx) {
-          bit_to_find = ((c.dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
+  for (auto e : *events) {
+    if (e->which == cereal::Event::Which::CAN) {
+      for (const auto &c : e->event.getCan()) {
+        uint8_t src = c.getSrc();
+        uint32_t address = c.getAddress();
+        const auto dat = c.getDat();
+        if (src == bus) {
+          if (address == selected_address && dat.size() > byte_idx) {
+            bit_to_find = ((dat[byte_idx] >> (7 - bit_idx)) & 1) != 0;
+          }
         }
-        ++msg_count[id.address];
-        if (bit_to_find == -1) continue;
+        if (src == find_bus) {
+          ++msg_count[address];
+          if (bit_to_find == -1) continue;
 
-        auto &mismatched = mismatches[id.address];
-        if (mismatched.size() < c.size * 8) {
-          mismatched.resize(c.size * 8);
-        }
-        for (int i = 0; i < c.size; ++i) {
-          for (int j = 0; j < 8; ++j) {
-            int bit = ((c.dat[i] >> (7 - j)) & 1) != 0;
-            mismatched[i * 8 + j] += (bit != bit_to_find);
+          auto &mismatched = mismatches[address];
+          if (mismatched.size() < dat.size() * 8) {
+            mismatched.resize(dat.size() * 8);
+          }
+          for (int i = 0; i < dat.size(); ++i) {
+            for (int j = 0; j < 8; ++j) {
+              int bit = ((dat[i] >> (7 - j)) & 1) != 0;
+              mismatched[i * 8 + j] += equal ? (bit != bit_to_find) : (bit == bit_to_find);
+            }
           }
         }
       }
