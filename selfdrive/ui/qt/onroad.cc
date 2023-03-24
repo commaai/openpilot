@@ -573,7 +573,10 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   const int arc_l = 133;
   const float arc_t_default = 6.7;
   const float arc_t_extend = 12.0;
-  QColor arc_color = QColor::fromRgbF(0.09, 0.945, 0.26, 0.4*(1.0-dm_fade_state)*(s->engaged()));
+  QColor arc_color = QColor::fromRgbF(0.545 - 0.445 * s->engaged(),
+                                      0.545 + 0.4 * s->engaged(),
+                                      0.545 - 0.285 * s->engaged(),
+                                      0.4 * (1.0 - dm_fade_state));
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
   painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
@@ -645,16 +648,18 @@ void AnnotatedCameraWidget::paintGL() {
     }
 
     // Wide or narrow cam dependent on speed
-    float v_ego = sm["carState"].getCarState().getVEgo();
-    if ((v_ego < 10) || s->wide_cam_only) {
-      wide_cam_requested = true;
-    } else if (v_ego > 15) {
-      wide_cam_requested = false;
+    bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
+    if (has_wide_cam) {
+      float v_ego = sm["carState"].getCarState().getVEgo();
+      if ((v_ego < 10) || available_streams.size() == 1) {
+        wide_cam_requested = true;
+      } else if (v_ego > 15) {
+        wide_cam_requested = false;
+      }
+      wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
+      // for replay of old routes, never go to widecam
+      wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
-    wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
-    // TODO: also detect when ecam vision stream isn't available
-    // for replay of old routes, never go to widecam
-    wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
@@ -674,7 +679,7 @@ void AnnotatedCameraWidget::paintGL() {
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_model(s, sm["modelV2"].getModelV2());
+      update_model(s, sm["modelV2"].getModelV2(), sm["uiPlan"].getUiPlan());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
         update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
       }

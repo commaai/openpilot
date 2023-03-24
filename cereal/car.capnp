@@ -612,6 +612,7 @@ struct CarParams {
     brand @6 :Text;
     bus @7 :UInt8;
     logging @8 :Bool;
+    obdMultiplexing @9 :Bool;
   }
 
   enum Ecu {
@@ -630,6 +631,7 @@ struct CarParams {
     shiftByWire @16;
     adas @19;
     cornerRadar @21;
+    hvac @20;
 
     # Toyota only
     dsu @6;
@@ -643,7 +645,7 @@ struct CarParams {
     hcp @18;  # Hybrid Control Processor
 
     # Hyundai only
-    vcu @20;  # Vehicle (Motor) Control Unit
+    parking @22;  # ADAS parking ECU
 
     debug @17;
   }

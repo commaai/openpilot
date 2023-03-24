@@ -51,7 +51,7 @@ class TestBoardd(unittest.TestCase):
     cp.safetyConfigs = [safety_config]*num_pandas
 
     params = Params()
-    params.put_bool("FirmwareObdQueryDone", True)
+    params.put_bool("FirmwareQueryDone", True)
     params.put_bool("ControlsReady", True)
     params.put("CarParams", cp.to_bytes())
 

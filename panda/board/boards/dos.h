@@ -140,12 +140,8 @@ void dos_init(void) {
   set_gpio_output(GPIOC, 11, 1);
 
 #ifdef ENABLE_SPI
-  // A4-A7: SPI
-  set_gpio_alternate(GPIOA, 4, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 5, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 6, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 7, GPIO_AF5_SPI1);
-  register_set_bits(&(GPIOA->OSPEEDR), GPIO_OSPEEDER_OSPEEDR4 | GPIO_OSPEEDER_OSPEEDR5 | GPIO_OSPEEDER_OSPEEDR6 | GPIO_OSPEEDER_OSPEEDR7);
+  // SPI init
+  gpio_spi_init();
 #endif
 
   // C8: FAN PWM aka TIM3_CH3
@@ -219,6 +215,9 @@ const board board_dos = {
   .has_canfd = false,
   .has_rtc_battery = true,
   .fan_max_rpm = 6500U,
+  .adc_scale = 8862U,
+  .fan_stall_recovery = true,
+  .fan_enable_cooldown_time = 0U,
   .init = dos_init,
   .enable_can_transceiver = dos_enable_can_transceiver,
   .enable_can_transceivers = dos_enable_can_transceivers,

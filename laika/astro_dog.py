@@ -9,7 +9,7 @@ from .ephemeris import Ephemeris, EphemerisType, GLONASSEphemeris, GPSEphemeris,
 from .downloader import download_orbits_gps, download_orbits_russia_src, download_nav, download_ionex, download_dcb, download_prediction_orbits_russia_src
 from .downloader import download_cors_station
 from .trop import saast
-from .iono import IonexMap, parse_ionex
+from .iono import IonexMap, parse_ionex, get_slant_delay
 from .dcb import DCB, parse_dcbs
 from .gps_time import GPSTime
 from .dgps import get_closest_station_names, parse_dgps
@@ -33,9 +33,14 @@ class AstroDog:
   def __init__(self, auto_update=True,
                cache_dir='/tmp/gnss/',
                dgps=False,
-               valid_const=('GPS', 'GLONASS'),
+               valid_const=(ConstellationId.GPS, ConstellationId.GLONASS),
                valid_ephem_types=EphemerisType.all_orbits(),
                clear_old_ephemeris=False):
+
+    for const in valid_const:
+      if not isinstance(const, ConstellationId):
+        raise TypeError(f"valid_const must be a list of ConstellationId, got {const}")
+  
     self.auto_update = auto_update
     self.cache_dir = cache_dir
     self.clear_old_ephemeris = clear_old_ephemeris
@@ -44,6 +49,7 @@ class AstroDog:
       valid_ephem_types = [valid_ephem_types]
     self.pull_orbit = len(set(EphemerisType.all_orbits()) & set(valid_ephem_types)) > 0
     self.pull_nav = EphemerisType.NAV in valid_ephem_types
+    self.use_qcom_poly = EphemerisType.QCOM_POLY in valid_ephem_types
     self.valid_const = valid_const
     self.valid_ephem_types = valid_ephem_types
 
@@ -54,12 +60,14 @@ class AstroDog:
     self.dgps_delays = []
     self.ionex_maps: List[IonexMap] = []
     self.orbits: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
+    self.qcom_polys: DefaultDict[str, List[PolyEphemeris]] = defaultdict(list)
     self.navs: DefaultDict[str, List[Union[GPSEphemeris, GLONASSEphemeris]]] = defaultdict(list)
     self.dcbs: DefaultDict[str, List[DCB]] = defaultdict(list)
 
     self.cached_ionex: Optional[IonexMap] = None
     self.cached_dgps = None
     self.cached_orbit: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
+    self.cached_qcom_polys: DefaultDict[str, Optional[PolyEphemeris]] = defaultdict(lambda: None)
     self.cached_nav: DefaultDict[str, Union[GPSEphemeris, GLONASSEphemeris, None]] = defaultdict(lambda: None)
     self.cached_dcb: DefaultDict[str, Optional[DCB]] = defaultdict(lambda: None)
 
@@ -96,6 +104,9 @@ class AstroDog:
       result[prn] = obj
     return result
 
+  def get_all_ephem_prns(self):
+    return set(self.orbits.keys()).union(set(self.navs.keys())).union(set(self.qcom_polys.keys()))
+
   def get_navs(self, time):
     if time not in self.navs_fetched_times:
       self.get_nav_data(time)
@@ -107,6 +118,12 @@ class AstroDog:
     if orbit is not None:
       self.cached_orbit[prn] = orbit
     return orbit
+
+  def get_qcom_poly(self, prn: str, time: GPSTime):
+    poly = self._get_latest_valid_data(self.qcom_polys[prn], self.cached_qcom_polys[prn], None, time, True)
+    if poly is not None:
+      self.cached_qcom_polys[prn] = poly
+    return poly
 
   def get_orbits(self, time):
     if time not in self.orbit_fetched_times:
@@ -129,13 +146,16 @@ class AstroDog:
       self.cached_dgps = latest_data
     return latest_data
 
+  def add_qcom_polys(self, new_ephems: Dict[str, List[Ephemeris]]):
+    self._add_ephems(new_ephems, self.qcom_polys)
+
   def add_orbits(self, new_ephems: Dict[str, List[Ephemeris]]):
-    self._add_ephems(new_ephems, self.orbits, self.orbit_fetched_times)
+    self._add_ephems(new_ephems, self.orbits)
 
   def add_navs(self, new_ephems: Dict[str, List[Ephemeris]]):
-    self._add_ephems(new_ephems, self.navs, self.navs_fetched_times)
+    self._add_ephems(new_ephems, self.navs)
 
-  def _add_ephems(self, new_ephems: Dict[str, List[Ephemeris]], ephems_dict, fetched_times):
+  def _add_ephems(self, new_ephems: Dict[str, List[Ephemeris]], ephems_dict):
     for k, v in new_ephems.items():
       if len(v) > 0:
         if self.clear_old_ephemeris:
@@ -143,9 +163,10 @@ class AstroDog:
         else:
           ephems_dict[k].extend(v)
 
+  def add_ephem_fetched_time(self, ephems, fetched_times):
     min_epochs = []
     max_epochs = []
-    for v in new_ephems.values():
+    for v in ephems.values():
       if len(v) > 0:
         min_ephem, max_ephem = self.get_epoch_range(v)
         min_epochs.append(min_ephem)
@@ -162,9 +183,9 @@ class AstroDog:
 
     fetched_ephems = {}
 
-    if 'GPS' in self.valid_const:
+    if ConstellationId.GPS in self.valid_const:
       fetched_ephems = download_and_parse(ConstellationId.GPS, parse_rinex_nav_msg_gps)
-    if 'GLONASS' in self.valid_const:
+    if ConstellationId.GLONASS in self.valid_const:
       for k, v in download_and_parse(ConstellationId.GLONASS, parse_rinex_nav_msg_glonass).items():
         fetched_ephems.setdefault(k, []).extend(v)
     self.add_navs(fetched_ephems)
@@ -180,7 +201,7 @@ class AstroDog:
     with ThreadPoolExecutor() as executor:
       futures_other = [executor.submit(download_orbits_russia_src, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
       futures_gps = None
-      if "GPS" in self.valid_const:
+      if ConstellationId.GPS in self.valid_const:
         futures_gps = [executor.submit(download_orbits_gps, t, self.cache_dir, self.valid_ephem_types) for t in time_steps]
 
       ephems_other = parse_sp3_orbits([f.result() for f in futures_other if f.result()], self.valid_const, skip_before_epoch)
@@ -195,7 +216,7 @@ class AstroDog:
     result = download_prediction_orbits_russia_src(gps_time, self.cache_dir)
     if result is not None:
       result = [result]
-    elif "GPS" in self.valid_const:
+    elif ConstellationId.GPS in self.valid_const:
       # Slower fallback. Russia src prediction orbits are published from 2022
       result = [download_orbits_gps(t, self.cache_dir, self.valid_ephem_types) for t in [gps_time - SECS_IN_DAY, gps_time]]
     if result is None:
@@ -209,7 +230,7 @@ class AstroDog:
       ephems_sp3 = self.download_parse_orbit(time)
     if sum([len(v) for v in ephems_sp3.values()]) < 5:
       raise RuntimeError(f'No orbit data found. For Time {time.as_datetime()} constellations {self.valid_const} valid ephem types {self.valid_ephem_types}')
-
+    self.add_ephem_fetched_time(ephems_sp3, self.orbit_fetched_times)
     self.add_orbits(ephems_sp3)
 
   def get_dcb_data(self, time):
@@ -257,7 +278,7 @@ class AstroDog:
       return eph.get_tgd()
     return None
 
-  def get_sat_info(self, prn, time):
+  def get_eph(self, prn, time):
     if get_constellation(prn) not in self.valid_const:
       return None
     eph = None
@@ -265,6 +286,12 @@ class AstroDog:
       eph = self.get_orbit(prn, time)
     if not eph and self.pull_nav:
       eph = self.get_nav(prn, time)
+    if not eph and self.use_qcom_poly:
+      eph = self.get_qcom_poly(prn, time)
+    return eph
+
+  def get_sat_info(self, prn, time):
+    eph = self.get_eph(prn, time)
     if eph:
       return eph.get_sat_info(time)
     return None
@@ -285,7 +312,7 @@ class AstroDog:
     return None
 
   def get_frequency(self, prn, time, signal='C1C'):
-    if get_constellation(prn) == 'GPS':
+    if get_constellation(prn) == ConstellationId.GPS:
       switch = {'1': constants.GPS_L1,
                 '2': constants.GPS_L2,
                 '5': constants.GPS_L5,
@@ -296,7 +323,7 @@ class AstroDog:
       if freq:
         return freq
       raise NotImplementedError("Dont know this GPS frequency: ", signal, prn)
-    elif get_constellation(prn) == 'GLONASS':
+    elif get_constellation(prn) == ConstellationId.GLONASS:
       n = self.get_glonass_channel(prn, time)
       if n is None:
         return None
@@ -330,7 +357,11 @@ class AstroDog:
     # When using internet we expect all data or return None
     if self.auto_update and (ionex is None or dcb is None or freq is None):
       return None
-    iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq) if ionex is not None else 0.
+    if ionex is not None:
+      iono_delay = ionex.get_delay(rcv_pos, az, el, sat_pos, time, freq)
+    else:
+      # 5m vertical delay is a good default
+      iono_delay = get_slant_delay(rcv_pos, az, el, sat_pos, time, freq, vertical_delay=5.0)
     trop_delay = saast(rcv_pos, el)
     code_bias = dcb.get_delay(signal) if dcb is not None else 0.
     return iono_delay + trop_delay + code_bias

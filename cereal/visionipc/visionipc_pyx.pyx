@@ -97,3 +97,7 @@ cdef class VisionIpcClient:
 
   def is_connected(self):
     return self.client.is_connected()
+
+  @staticmethod
+  def available_streams(string name, bool block):
+    return cppVisionIpcClient.getAvailableStreams(name, block)

@@ -9,7 +9,7 @@ addr_checks body_rx_checks = {body_addr_checks, BODY_ADDR_CHECK_LEN};
 
 static int body_rx_hook(CANPacket_t *to_push) {
 
-  bool valid = addr_safety_check(to_push, &body_rx_checks, NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &body_rx_checks, NULL, NULL, NULL, NULL);
 
   controls_allowed = valid;
 

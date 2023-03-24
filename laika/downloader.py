@@ -8,6 +8,7 @@ import pycurl
 import re
 import time
 import socket
+import logging
 
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -42,7 +43,7 @@ def retryable(f):
       try:
         return f(url_base, *args, **kwargs)
       except DownloadFailed as e:
-        print(e)
+        logging.warning(e)
     # none of them succeeded
     raise DownloadFailed("Multiple URL failures attempting to pull file(s)")
   return wrapped
@@ -98,7 +99,7 @@ def ftp_download_files(url_base, folder_path, cacheDir, filenames):
     if "/" in filename:
       continue
     filepath = os.path.join(folder_path_abs, filename)
-    print("pulling from", url_base, "to", filepath)
+    logging.debug("pulling from", url_base, "to", filepath)
 
     if not os.path.isfile(filepath):
       os.makedirs(folder_path_abs, exist_ok=True)
@@ -141,7 +142,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
       continue
     filepath = os.path.join(folder_path_abs, filename)
     if not os.path.isfile(filepath):
-      print("pulling from", url_base, "to", filepath)
+      logging.debug("pulling from", url_base, "to", filepath)
       os.makedirs(folder_path_abs, exist_ok=True)
       url_path = url_base + folder_path + filename
       handle = pycurl.Curl()
@@ -170,7 +171,7 @@ def http_download_files(url_base, folder_path, cacheDir, filenames):
   # if there are downloads left to be done, repeat, and don't overwrite
   _, requests_processing = fetcher.perform()
   if requests_processing > 0:
-    print("some requests stalled, retrying them")
+    logging.warning("some requests stalled, retrying them")
     return http_download_files(url_base, folder_path, cacheDir, filenames)
 
   return filepaths
@@ -229,7 +230,7 @@ def download_files(url_base, folder_path, cacheDir, filenames):
 @retryable
 def download_file(url_base, folder_path, filename_zipped):
   url = url_base + folder_path + filename_zipped
-  print('Downloading ' + url)
+  logging.debug('Downloading ' + url)
   if url.startswith('https://'):
     return https_download_file(url)
   elif url.startswith('ftp://'):
@@ -478,5 +479,5 @@ def download_cors_station(time, station_name, cache_dir):
     filepath = download_and_cache_file(url_bases, folder_path, cache_dir+'cors_obs/', filename, compression='.gz')
     return filepath
   except DownloadFailed:
-    print("File not downloaded, check availability on server.")
+    logging.warning("File not downloaded, check availability on server.")
     return None
