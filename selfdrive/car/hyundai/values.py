@@ -355,7 +355,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
-
     # CAN-FD queries (from camera)
     # TODO: combine shared whitelists with CAN requests
     Request(
@@ -375,7 +374,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.adas, 0x730, None),  # ADAS Driving ECU on HDA2 platforms
+    (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.cornerRadar, 0x7b7, None),
   ],
 )
@@ -1547,9 +1546,6 @@ FW_VERSIONS = {
     ]
   },
   CAR.KIA_EV6: {
-    (Ecu.transmission, 0x7e1, None): [
-      b'gdg',
-    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ],

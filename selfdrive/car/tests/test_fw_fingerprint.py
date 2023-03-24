@@ -22,20 +22,20 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-  # @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  # def test_fw_fingerprint(self, brand, car_model, ecus):
-  #   CP = car.CarParams.new_message()
-  #   for _ in range(200):
-  #     fw = []
-  #     for ecu, fw_versions in ecus.items():
-  #       if not len(fw_versions):
-  #         raise unittest.SkipTest("Car model has no FW versions")
-  #       ecu_name, addr, sub_addr = ecu
-  #       fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
-  #                  "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-  #     CP.carFw = fw
-  #     _, matches = match_fw_to_car(CP.carFw)
-  #     self.assertFingerprints(matches, car_model)
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fw_fingerprint(self, brand, car_model, ecus):
+    CP = car.CarParams.new_message()
+    for _ in range(200):
+      fw = []
+      for ecu, fw_versions in ecus.items():
+        if not len(fw_versions):
+          raise unittest.SkipTest("Car model has no FW versions")
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP.carFw = fw
+      _, matches = match_fw_to_car(CP.carFw)
+      self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
     for car_model, ecus in FW_VERSIONS.items():
