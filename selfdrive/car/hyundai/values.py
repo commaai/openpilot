@@ -341,6 +341,28 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(0xf100)
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
+# CAN-FD queries (from camera)
+canfd_fw_requests = [
+  Request(
+    [HYUNDAI_VERSION_REQUEST_LONG],
+    [HYUNDAI_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar],
+    bus=0,
+  ),
+  Request(
+    [HYUNDAI_VERSION_REQUEST_LONG],
+    [HYUNDAI_VERSION_RESPONSE],
+    whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar],
+    bus=1,
+    obd_multiplexing=False,
+  ),
+]
+
+for _, r in enumerate(canfd_fw_requests):
+  new_r = r.copy()
+  new_r.bus += 3
+  canfd_fw_requests.append(new_r)
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
@@ -354,21 +376,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
-    ),
-    # CAN-FD queries (camera)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar],
-      bus=4,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar],
-      bus=5,
-    ),
-  ],
+    )
+  ] + canfd_fw_requests + [r.bus for r in canfd_fw_requests],
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
     (Ecu.cornerRadar, 0x7b7, None),
@@ -1542,6 +1551,9 @@ FW_VERSIONS = {
     ]
   },
   CAR.KIA_EV6: {
+    (Ecu.transmission, 0x7e1, None): [
+      b'gdg',
+    ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ],
