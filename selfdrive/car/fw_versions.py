@@ -300,6 +300,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.brand = brand
               f.bus = r.bus
               f.logging = r.logging or ecu_key in logging_addrs
+              f.obdMultiplexing = r.obd_multiplexing
 
               if sub_addr is not None:
                 f.subAddress = sub_addr
