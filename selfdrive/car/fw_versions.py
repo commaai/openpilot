@@ -247,7 +247,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []
-  logging_addrs = []
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
@@ -256,9 +255,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
-
-        if a not in logging_addrs and candidate == "debug":
-          logging_addrs.append(a)
 
         if sub_addr is None:
           if a not in parallel_addrs:
@@ -300,7 +296,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.request = r.request
               f.brand = brand
               f.bus = r.bus
-              f.logging = r.logging or ecu_key in logging_addrs
+              f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in r.extra_ecus
               f.obdMultiplexing = r.obd_multiplexing
 
               if sub_addr is not None:

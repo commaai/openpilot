@@ -9,7 +9,7 @@ from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from system.swaglog import cloudlog
 
-EcuAddrBusType = Tuple[int, Optional[int], int]
+EcuAddrBusType = Tuple[int, Optional[int], int]  # (addr, sub_addr, bus)
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):
