@@ -162,9 +162,6 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    print('brand', brand)
-    print('brand versions', VERSIONS[brand].values())
-    print('brand extra ecus', config.extra_ecus)
     for brand_versions in VERSIONS[brand].values():
       for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
         # Only query ecus in whitelist if whitelist is not empty
