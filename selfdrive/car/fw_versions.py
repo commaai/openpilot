@@ -156,8 +156,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   params = Params()
   # queries are split by OBD multiplexing mode
-  queries: Dict[bool, List[List[EcuAddrBusType]]] = {True: [], False: []}
-  parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
+  queries: Dict[bool, Set[EcuAddrBusType]] = {True: set(), False: set()}
+  parallel_queries: Dict[bool, Set[EcuAddrBusType]] = {True: set(), False: set()}
   responses = set()
 
   for _, brand, r in REQUESTS:
@@ -165,31 +165,22 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
-        # Only query ecus in whitelist if whitelist is not empty
-        if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-          a = (addr, sub_addr, r.bus)
-          # Build set of queries
-          if sub_addr is None:
-            if a not in parallel_queries[r.obd_multiplexing]:
-              parallel_queries[r.obd_multiplexing].append(a)
-          else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.obd_multiplexing]:
-              queries[r.obd_multiplexing].append([a])
+    parallel_addrs, addrs = r.get_addrs(VERSIONS[brand], [])
 
-          # Build set of expected responses to filter
-          response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-          responses.add((response_addr, sub_addr, r.bus))
+    queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in addrs}
+    parallel_queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in parallel_addrs}
 
-  for obd_multiplexing in queries:
-    queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
+    for addr, sub_addr in addrs | parallel_addrs:
+      # Build set of expected responses to filter
+      response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+      responses.add((response_addr, sub_addr, r.bus))
 
   ecu_responses = set()
-  for obd_multiplexing in queries:
+  for obd_multiplexing in [True, False]:
     set_obd_multiplexing(params, obd_multiplexing)
-    for query in queries[obd_multiplexing]:
-      ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+    ecu_responses.update(get_ecu_addrs(logcan, sendcan, parallel_queries[obd_multiplexing], responses, timeout=0.1))
+    for addr in queries[obd_multiplexing]:
+      ecu_responses.update(get_ecu_addrs(logcan, sendcan, {addr}, responses, timeout=0.1))
   return ecu_responses
 
 
