@@ -36,16 +36,25 @@ class LogSlider : public QSlider {
 public:
   LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
 
-  void setRange(double min, double max) { QSlider::setRange(logScale(min), logScale(max)); }
-  int value() const { return invLogScale(QSlider::value()); }
-  void setValue(int value) { QSlider::setValue(logScale(value)); }
+  void setRange(double min, double max) {
+    log_min = factor * std::log10(min);
+    log_max = factor * std::log10(max);
+    QSlider::setRange(min, max);
+    setValue(QSlider::value());
+  }
+  int value() const {
+    double v = log_min + (log_max - log_min) * ((QSlider::value() - minimum()) / double(maximum() - minimum()));
+    return std::lround(std::pow(10, v / factor));
+  }
+  void setValue(int v) {
+    double log_v = std::clamp(factor * std::log10(v), log_min, log_max);
+    v = minimum() + (maximum() - minimum()) * ((log_v - log_min) / (log_max - log_min));
+    QSlider::setValue(v);
+  }
 
 private:
-  double factor;
-  int logScale(int value) const { return factor * std::log10(value); }
-  int invLogScale(int value) const { return std::pow(10, value / factor); }
+  double factor, log_min = 0, log_max = 1;
 };
-
 
 enum {
   ColorsRole = Qt::UserRole + 1,
