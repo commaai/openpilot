@@ -19,7 +19,7 @@ FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
-REQUESTS = [(config, brand, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
+REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
 
 def chunks(l, n=128):
@@ -155,7 +155,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
-  for config, brand, r in REQUESTS:
+  for brand, config, r in REQUESTS:
     # Skip query if no panda available
     if r.bus > num_pandas * 4 - 1:
       continue
@@ -192,9 +192,9 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {brand: set() for _, brand, _ in REQUESTS}
+  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
-  brand_rx_offsets = set((brand, r.rx_offset) for _, brand, r in REQUESTS)
+  brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
@@ -273,7 +273,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, r) for _, brand, r in REQUESTS if query_brand is None or brand == query_brand]
+  requests = [(brand, r) for brand, _, r in REQUESTS if query_brand is None or brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, r in requests:
