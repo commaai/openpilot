@@ -41,10 +41,8 @@ def get_brand_addrs():
   for brand, cars in VERSIONS.items():
     # Add ecus in database + extra ecus to match against
     brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
-
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-
   return brand_addrs
 
 
