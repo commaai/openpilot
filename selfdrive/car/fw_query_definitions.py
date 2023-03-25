@@ -75,18 +75,23 @@ class Request:
   #     return [(addr, sub_addr) for addr, sub_addr in self.query_ecus if
   #             (sub_addr is None) == parallel_query]
 
-  def get_addrs(self, VERSIONS, extra_ecus: bool = True):
-    ecus = set()
+  def get_addrs(self, VERSIONS):
+    addrs = set()
+    parallel_addrs = set()
     for versions in VERSIONS.values():
-      for ecu_type, addr, sub_addr in versions:
+      for ecu_type, addr, sub_addr in list(versions) + self.extra_ecus:
         if len(self.whitelist_ecus) == 0 or ecu_type in self.whitelist_ecus:
-          ecus.add((addr, sub_addr))
+          a = (addr, sub_addr)
+          if sub_addr is None:
+            parallel_addrs.add(a)
+          else:
+            addrs.add(a)
 
-    if extra_ecus:
-      for ecu_type, addr, sub_addr in self.extra_ecus:
-        if len(self.whitelist_ecus) == 0 or ecu_type in self.whitelist_ecus:
-          ecus.add((addr, sub_addr))
-    return ecus
+    # if extra_ecus:
+    #   for ecu_type, addr, sub_addr in self.extra_ecus:
+    #     if len(self.whitelist_ecus) == 0 or ecu_type in self.whitelist_ecus:
+    #       ecus.add((addr, sub_addr))
+    return addrs, parallel_addrs
 
 
 @dataclass

@@ -233,78 +233,48 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   versions = VERSIONS.copy()
   params = Params()
 
-  # Each brand can define extra ECUs to query for data collection
-  for brand, config in FW_QUERY_CONFIGS.items():
-    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
-
-  if query_brand is not None:
-    versions = {query_brand: versions[query_brand]}
-
-  if extra is not None:
-    versions.update(extra)
-
-  # Extract ECU addresses to query from fingerprints
-  # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
-  addrs = []
-  parallel_addrs = []
-  ecu_types = {}
-
-  for brand, brand_versions in versions.items():
-    for candidate, ecu in brand_versions.items():
-      for ecu_type, addr, sub_addr in ecu.keys():
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types:
-          ecu_types[a] = ecu_type
-
-        if sub_addr is None:
-          if a not in parallel_addrs:
-            parallel_addrs.append(a)
-        else:
-          if [a] not in addrs:
-            addrs.append([a])
-
-  addrs.insert(0, parallel_addrs)
-
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
-  for addr in tqdm(addrs, disable=not progress):
-    for addr_chunk in chunks(addr):
-      for brand, r in requests:
-        # Skip query if no panda available
-        if r.bus > num_pandas * 4 - 1:
-          continue
+  for brand, r in requests:
+    if query_brand is not None and brand != query_brand:
+      continue
 
-        # Toggle OBD multiplexing for each request
-        if r.bus % 4 == 1:
-          set_obd_multiplexing(params, r.obd_multiplexing)
+    # Skip query if no panda available
+    if r.bus > num_pandas * 4 - 1:
+      continue
 
-        try:
-          addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
-                   (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
+    # Toggle OBD multiplexing for each request
+    if r.bus % 4 == 1:
+      set_obd_multiplexing(params, r.obd_multiplexing)
 
-          if addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
-            for (tx_addr, sub_addr), version in query.get_data(timeout).items():
-              f = car.CarParams.CarFw.new_message()
+    for addrs in r.get_addrs(versions[brand]):
+      if not len(addrs):
+        continue
 
-              ecu_key = (brand, tx_addr, sub_addr)
-              f.ecu = ecu_types.get(ecu_key, Ecu.unknown)
-              f.fwVersion = version
-              f.address = tx_addr
-              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
-              f.request = r.request
-              f.brand = brand
-              f.bus = r.bus
-              f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in r.extra_ecus
-              f.obdMultiplexing = r.obd_multiplexing
+      try:
+        query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
+        for (tx_addr, sub_addr), version in query.get_data(timeout).items():
+          f = car.CarParams.CarFw.new_message()
 
-              if sub_addr is not None:
-                f.subAddress = sub_addr
+          ecu_key = (brand, tx_addr, sub_addr)
+          # TODO: fix this line
+          f.ecu = Ecu.unknown  # ecu_types.get(ecu_key, Ecu.unknown)
+          f.fwVersion = version
+          f.address = tx_addr
+          f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
+          f.request = r.request
+          f.brand = brand
+          f.bus = r.bus
+          f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in r.extra_ecus
+          f.obdMultiplexing = r.obd_multiplexing
 
-              car_fw.append(f)
-        except Exception:
-          cloudlog.exception("FW query exception")
+          if sub_addr is not None:
+            f.subAddress = sub_addr
+
+          car_fw.append(f)
+      except Exception:
+        cloudlog.exception("FW query exception")
 
   return car_fw
 
