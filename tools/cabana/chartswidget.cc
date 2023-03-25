@@ -9,8 +9,9 @@
 #include <QGraphicsLayout>
 #include <QLineEdit>
 #include <QMenu>
-#include <QRubberBand>
+#include <QOpenGLWidget>
 #include <QPushButton>
+#include <QRubberBand>
 #include <QToolBar>
 #include <QToolTip>
 #include <QtConcurrent>
@@ -849,6 +850,13 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
+
+  // disables the delivery of mouse events to the opengl widget.
+  // this enables the user to select the zoom area when the mouse press on the data point.
+  auto glwidget = findChild<QOpenGLWidget *>();
+  if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
+    glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
+  }
   return series;
 }
 
