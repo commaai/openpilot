@@ -170,7 +170,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   # Lexus
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
   CAR.LEXUS_ES: ToyotaCarInfo("Lexus ES 2017-18"),
-  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "Lexus Safety System+"),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
@@ -178,7 +178,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
-  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
+  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2018-20"),
   CAR.LEXUS_RX: [
     ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
     ToyotaCarInfo("Lexus RX 2017-19"),
