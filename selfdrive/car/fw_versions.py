@@ -36,14 +36,6 @@ def build_fw_dict(fw_versions, filter_brand=None):
   return dict(fw_versions_dict)
 
 
-# def get_brand_addrs():
-#   brand_addrs = defaultdict(set)
-#   for brand, cars in VERSIONS.items():
-#     for fw in cars.values():
-#       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-#   return brand_addrs
-
-
 def get_brand_addrs():
   brand_addrs = defaultdict(set)
   for config, brand, r in REQUESTS:
