@@ -39,6 +39,8 @@ def build_fw_dict(fw_versions, filter_brand=None):
 def get_brand_addrs():
   brand_addrs = defaultdict(set)
   for brand, cars in VERSIONS.items():
+    # Add ecus in database + extra ecus to match against
+    brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
   return brand_addrs
@@ -153,13 +155,13 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
-  for brand, _, r in REQUESTS:
+  for brand, config, r in REQUESTS:
     # Skip query if no panda available
     if r.bus > num_pandas * 4 - 1:
       continue
 
     for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
+      for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
