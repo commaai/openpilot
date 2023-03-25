@@ -252,7 +252,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
-    for candidate, ecu in brand_versions.items():
+    for ecu in brand_versions.values():
       for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
