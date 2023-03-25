@@ -157,22 +157,34 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    parallel_addrs, addrs = r.get_addrs(VERSIONS[brand], [])
+    # parallel_addrs, addrs = r.get_addrs(VERSIONS[brand], [])
+    addrs = set.union(*r.get_addrs(VERSIONS[brand], []))
 
-    queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in addrs}
-    parallel_queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in parallel_addrs}
+    for addr, sub_addr in addrs:
+      a = (addr, sub_addr, r.bus)
+      if sub_addr is None:
+        parallel_queries[r.obd_multiplexing].add(a)
+      else:  # subaddresses must be queried one by one
+        queries[r.obd_multiplexing].add(a)
 
-    for addr, sub_addr in addrs | parallel_addrs:
       # Build set of expected responses to filter
       response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
       responses.add((response_addr, sub_addr, r.bus))
 
+    # queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in addrs}
+    # parallel_queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in parallel_addrs}
+
+    # for addr, sub_addr in addrs:
+    #   # Build set of expected responses to filter
+    #   response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
+    #   responses.add((response_addr, sub_addr, r.bus))
+
   ecu_responses = set()
   for obd_multiplexing in [True, False]:
     set_obd_multiplexing(params, obd_multiplexing)
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, parallel_queries[obd_multiplexing], responses, timeout=0.1))
-    for addr in queries[obd_multiplexing]:
-      ecu_responses.update(get_ecu_addrs(logcan, sendcan, {addr}, responses, timeout=0.1))
+    addrs = [parallel_queries[obd_multiplexing], *[{a} for a in queries[obd_multiplexing]]]
+    for addr_chunk in addrs:
+      ecu_responses.update(get_ecu_addrs(logcan, sendcan, addr_chunk, responses, timeout=0.1))
   return ecu_responses
 
 

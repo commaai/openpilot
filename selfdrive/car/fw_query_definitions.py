@@ -74,10 +74,10 @@ class Request:
           a = (addr, sub_addr)
           if sub_addr is None:
             parallel_addrs.add(a)
-          else:
+          else:  # subaddresses must be queried one by one
             addrs.add(a)
 
-    return parallel_addrs, addrs
+    return [parallel_addrs, *[{a} for a in addrs]]
 
 
 @dataclass
