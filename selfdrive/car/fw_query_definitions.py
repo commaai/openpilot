@@ -66,14 +66,7 @@ class Request:
   obd_multiplexing: bool = True
 
   # Auto-filled by FwQueryConfig
-  # ecus: Set[Tuple[int, Optional[int]]] = field(default_factory=set)
-  query_ecus: Set[Tuple[int, Optional[int]]] = field(default_factory=set)
-
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = None
-
-  # def get_ecus(self, parallel_query: bool):
-  #     return [(addr, sub_addr) for addr, sub_addr in self.query_ecus if
-  #             (sub_addr is None) == parallel_query]
 
   def get_addrs(self, VERSIONS):
     addrs = set()
@@ -87,10 +80,6 @@ class Request:
           else:
             addrs.add(a)
 
-    # if extra_ecus:
-    #   for ecu_type, addr, sub_addr in self.extra_ecus:
-    #     if len(self.whitelist_ecus) == 0 or ecu_type in self.whitelist_ecus:
-    #       ecus.add((addr, sub_addr))
     return addrs, parallel_addrs
 
 
@@ -111,26 +100,3 @@ class FwQueryConfig:
         new_request = copy.deepcopy(request)
         new_request.bus += 4
         self.requests.append(new_request)
-
-  def init(self, VERSIONS):
-    # for versions in VERSIONS.values():
-    #   for ecu_type, addr, sub_addr in versions:
-    #     for r in self.requests:
-    #       if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-    #         r.query_ecus.add((addr, sub_addr))
-
-    for r in self.requests:
-      for versions in VERSIONS.values():
-        for ecu_type, addr, sub_addr in list(versions) + self.extra_ecus:
-          if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-            r.query_ecus.add((addr, sub_addr))
-
-      # for
-      # brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
-            # # Build set of queries
-            # if sub_addr is None:
-            #   if a not in parallel_queries[r.obd_multiplexing]:
-            #     parallel_queries[r.obd_multiplexing].append(a)
-            # else:  # subaddresses must be queried one by one
-            #   if [a] not in queries[r.obd_multiplexing]:
-            #     queries[r.obd_multiplexing].append([a])
