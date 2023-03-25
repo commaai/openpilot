@@ -157,7 +157,6 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
     if r.bus > num_pandas * 4 - 1:
       continue
 
-    # parallel_addrs, addrs = r.get_addrs(VERSIONS[brand], [])
     addrs = set.union(*r.get_addrs(VERSIONS[brand], []))
 
     for addr, sub_addr in addrs:
@@ -170,14 +169,6 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
       # Build set of expected responses to filter
       response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
       responses.add((response_addr, sub_addr, r.bus))
-
-    # queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in addrs}
-    # parallel_queries[r.obd_multiplexing] |= {(addr, sub_addr, r.bus) for addr, sub_addr in parallel_addrs}
-
-    # for addr, sub_addr in addrs:
-    #   # Build set of expected responses to filter
-    #   response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
-    #   responses.add((response_addr, sub_addr, r.bus))
 
   ecu_responses = set()
   for obd_multiplexing in [True, False]:
