@@ -279,6 +279,7 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
+    updateState(nullptr);
   }
 }
 
