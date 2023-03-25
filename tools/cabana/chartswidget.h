@@ -1,12 +1,11 @@
 #pragma once
 
-#include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QSlider>
+#include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
@@ -122,7 +121,7 @@ private:
   void resizeEvent(QResizeEvent *event) override;
   void alignCharts();
   void newChart();
-  ChartView * createChart();
+  ChartView *createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
@@ -154,6 +153,7 @@ private:
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  QTimer align_timer;
 };
 
 class SeriesSelector : public QDialog {
