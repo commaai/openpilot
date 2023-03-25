@@ -80,7 +80,7 @@ class Request:
           else:
             addrs.add(a)
 
-    return addrs, parallel_addrs
+    return parallel_addrs, addrs
 
 
 @dataclass
