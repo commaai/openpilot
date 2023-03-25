@@ -148,8 +148,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
 def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   params = Params()
   # queries are split by OBD multiplexing mode
-  queries: Dict[bool, Set[EcuAddrBusType]] = {True: set(), False: set()}
-  parallel_queries: Dict[bool, Set[EcuAddrBusType]] = {True: set(), False: set()}
+  queries: Dict[bool, Set[EcuAddrBusType]] = defaultdict(set)
+  parallel_queries: Dict[bool, Set[EcuAddrBusType]] = defaultdict(set)
   responses = set()
 
   for _, brand, r in REQUESTS:
