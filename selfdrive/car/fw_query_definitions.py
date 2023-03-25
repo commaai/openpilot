@@ -65,14 +65,11 @@ class Request:
   # boardd toggles OBD multiplexing on/off as needed
   obd_multiplexing: bool = True
 
-  # Auto-filled by FwQueryConfig
-  extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = None
-
-  def get_addrs(self, VERSIONS):
+  def get_addrs(self, VERSIONS, extra_ecus):
     addrs = set()
     parallel_addrs = set()
     for versions in VERSIONS.values():
-      for ecu_type, addr, sub_addr in list(versions) + self.extra_ecus:
+      for ecu_type, addr, sub_addr in list(versions) + extra_ecus:
         if len(self.whitelist_ecus) == 0 or ecu_type in self.whitelist_ecus:
           a = (addr, sub_addr)
           if sub_addr is None:
@@ -94,9 +91,7 @@ class FwQueryConfig:
 
   def __post_init__(self):
     for i in range(len(self.requests)):
-      request = self.requests[i]
-      request.extra_ecus = [a for a in self.extra_ecus if a[0] in request.whitelist_ecus]
-      if request.auxiliary:
-        new_request = copy.deepcopy(request)
+      if self.requests[i].auxiliary:
+        new_request = copy.deepcopy(self.requests[i])
         new_request.bus += 4
         self.requests.append(new_request)
