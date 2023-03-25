@@ -153,7 +153,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
   parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
-  for brand, config, r in REQUESTS:
+  for brand, _, r in REQUESTS:
     # Skip query if no panda available
     if r.bus > num_pandas * 4 - 1:
       continue
