@@ -192,7 +192,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
+  brand_matches = defaultdict(set)
 
   brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
