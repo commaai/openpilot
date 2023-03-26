@@ -21,7 +21,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   } else if (role == BytesRole) {
     return m.data;
   } else if (role == Qt::TextAlignmentRole) {
-    return Qt::AlignRight;
+    return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
   return {};
 }

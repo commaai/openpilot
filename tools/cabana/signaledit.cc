@@ -279,6 +279,7 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
+    updateState(nullptr);
   }
 }
 
@@ -415,7 +416,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   hl->addWidget(collapse_btn);
 
   // tree view
-  tree = new QTreeView(this);
+  tree = new TreeView(this);
   tree->setModel(model = new SignalModel(this));
   tree->setItemDelegate(new SignalItemDelegate(this));
   tree->setFrameShape(QFrame::NoFrame);
@@ -439,7 +440,6 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
-  QObject::connect(model, &QAbstractItemModel::rowsInserted, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
 
