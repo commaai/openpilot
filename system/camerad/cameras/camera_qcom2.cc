@@ -1175,7 +1175,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
     uint32_t hcg_time = exposure_time;
     uint32_t lcg_time = hcg_time;
-    uint32_t spd_time = exposure_time_max + VS_TIME_MAX_OX03C10;
+    uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
