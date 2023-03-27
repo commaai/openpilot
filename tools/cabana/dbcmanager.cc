@@ -52,12 +52,6 @@ void DBCManager::closeAll() {
 }
 
 
-QString DBCManager::generateDBC() {
-  // TODO: move saving logic into DBCManager
-  return "";
-}
-
-
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   auto sources_dbc_file = findDBCFile(id);
   assert(sources_dbc_file); // Create new DBC?
