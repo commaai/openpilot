@@ -10,7 +10,14 @@
 
 
 bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
-  // TODO: check if file is already open and merge sources
+  // Check if file is already open, and merge sources
+  for (auto &[ss, dbc_file] : dbc_files) {
+    if (dbc_file->filename == dbc_file_name) {
+      ss |= s;
+      emit DBCFileChanged();
+      return true;
+    }
+  }
 
   try {
     dbc_files.push_back({s, new DBCFile(dbc_file_name, this)});
@@ -24,8 +31,6 @@ bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error)
 }
 
 bool DBCManager::open(SourceSet s, const QString &name, const QString &content, QString *error) {
-  // TODO: check if file is already open and merge sources
-
   try {
     dbc_files.push_back({s, new DBCFile(name, content, this)});
   } catch (std::exception &e) {
