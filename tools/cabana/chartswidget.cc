@@ -327,13 +327,18 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 }
 
 bool ChartsWidget::event(QEvent *event) {
-  // TODO: Does this work on Linux/Windows? Only tested on MacOS.
-  if (event->type() == QEvent::NativeGesture) {
+  bool back_button = false;
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent *ev = static_cast<QMouseEvent *>(event);
+    back_button = ev->button() == Qt::BackButton;
+  } else if (event->type() == QEvent::NativeGesture) { // MacOS emulates a back swipe on pressing the mouse back button
     QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
-    if (ev->value() == 180) {
-      zoomUndo();
-      return true;
-    }
+    back_button = (ev->value() == 180);
+  }
+
+  if (back_button) {
+    zoomUndo();
+    return true;
   }
   return QFrame::event(event);
 }
