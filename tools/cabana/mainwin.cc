@@ -54,9 +54,13 @@ MainWindow::MainWindow() : QMainWindow() {
 
   main_win = this;
   qInstallMessageHandler(qLogMessageHandler);
-  QFile json_file("./car_fingerprint_to_dbc.json");
-  if (json_file.open(QIODevice::ReadOnly)) {
-    fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+
+  for (const QString &fn : {"./car_fingerprint_to_dbc.json", "./tools/cabana/car_fingerprint_to_dbc.json"}) {
+    QFile json_file(fn);
+    if (json_file.open(QIODevice::ReadOnly)) {
+      fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
+      break;
+    }
   }
 
   setStyleSheet(QString(R"(QMainWindow::separator {
