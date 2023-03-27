@@ -95,6 +95,9 @@ class Footnote(Enum):
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
     Column.FSR_LONGITUDINAL)
+  FSR_LONG_DSU = CarFootnote(
+    "If the Driver Support Unit (DSU) is disconnected, openpilot ACC will be able to accelerate from 19 mph.",
+    Column.FSR_LONGITUDINAL)
 
 
 @dataclass
@@ -103,9 +106,10 @@ class ToyotaCarInfo(CarInfo):
   harness: Enum = Harness.toyota
 
   def init_make(self, CP):
-    # if not CP.openpilotLongitudinalControl and CP.carFingerprint not in TSS2_CAR:
-    if not CP.openpilotLongitudinalControl and abs(CP.minEnableSpeed - 19 * CV.MPH_TO_MS) < 1e-2:
+    stock_long = (not CP.openpilotLongitudinalControl or CP.enableDsu)
+    if stock_long and abs(CP.minEnableSpeed - 19 * CV.MPH_TO_MS) < 1e-2:
       self.min_enable_speed = 28. * CV.MPH_TO_MS
+      self.footnotes.append(Footnote.FSR_LONG_DSU)
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
