@@ -38,10 +38,10 @@ void DBCFile::open(const QString &content) {
   auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name_.toStdString(), stream));
   msgs.clear();
   for (auto &msg : dbc->msgs) {
-      auto &m = msgs[msg.address];
-      m.name = msg.name.c_str();
-      m.size = msg.size;
-      for (auto &s : msg.sigs) {
+    auto &m = msgs[msg.address];
+    m.name = msg.name.c_str();
+    m.size = msg.size;
+    for (auto &s : msg.sigs) {
       m.sigs.push_back({});
       auto &sig = m.sigs.last();
       sig.name = s.name.c_str();
@@ -54,7 +54,7 @@ void DBCFile::open(const QString &content) {
       sig.offset = s.offset;
       sig.is_little_endian = s.is_little_endian;
       sig.updatePrecision();
-      }
+    }
   }
   parseExtraInfo(content);
 
