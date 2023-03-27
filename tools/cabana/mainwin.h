@@ -14,8 +14,6 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
-const QString AUTO_SAVE_EXTENSION = ".tmp";
-
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -46,10 +44,10 @@ signals:
 
 protected:
   void remindSaveChanges();
-  void saveFile(const QString &fn);
+  void saveFile();
   void autoSave();
   void cleanupAutoSaveFile();
-  void setCurrentFile(const QString &fn);
+  void updateRecentFiles(const QString &fn);
   void updateRecentFileActions();
   void createActions();
   void createDockWindows();
@@ -78,7 +76,6 @@ protected:
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
   QSplitter *video_splitter;;
-  QString current_file = "";
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;

@@ -43,9 +43,10 @@ public:
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
 
+  QList<std::pair<SourceSet, DBCFile*>> dbc_files;
+
 private:
   SourceSet sources;
-  QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 
 public slots:
   void updateSources(const SourceSet &s);

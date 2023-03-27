@@ -10,6 +10,9 @@
 
 #include "tools/cabana/dbc.h"
 
+const QString AUTO_SAVE_EXTENSION = ".tmp";
+
+
 class DBCFile : public QObject {
   Q_OBJECT
 
@@ -18,7 +21,13 @@ public:
   DBCFile(const QString &name, const QString &content, QObject *parent=nullptr);
   ~DBCFile() {}
 
-  void open(const QString &name, const QString &content);
+  void open(const QString &content);
+
+  bool save();
+  bool saveAs(const QString &new_filename);
+  bool autoSave();
+  bool writeContents(const QString &fn);
+  void cleanupAutoSaveFile();
   QString generateDBC();
 
   cabana::Signal *addSignal(const MessageId &id, const cabana::Signal &sig);
@@ -36,6 +45,8 @@ public:
   QStringList signalNames() const;
   int msgCount() const;
   QString name() const;
+
+  QString filename;
 
 private:
   void parseExtraInfo(const QString &content);

@@ -3,6 +3,7 @@
 #include <QDebug>
 
 #include <QFile>
+#include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
 #include <QVector>
@@ -11,22 +12,30 @@
 
 
 DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
-  QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, dbc_file_name);
-  QFile file(opendbc_file_path);
+  QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
-    open(dbc_file_name, file.readAll());
+    name_ = QFileInfo(dbc_file_name).baseName();
+
+    // Remove auto save file extension
+    if (dbc_file_name.endsWith(AUTO_SAVE_EXTENSION)) {
+      filename = dbc_file_name.left(dbc_file_name.length() - AUTO_SAVE_EXTENSION.length());
+    } else {
+      filename = dbc_file_name;
+    }
+    open(file.readAll());
   } else {
     // TODO: throw exception
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent) {
-  open(name, content);
+DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+  // Open from clipboard
+  open(content);
 }
 
-void DBCFile::open(const QString &name, const QString &content) {
+void DBCFile::open(const QString &content) {
   std::istringstream stream(content.toStdString());
-  auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name.toStdString(), stream));
+  auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name_.toStdString(), stream));
   msgs.clear();
   for (auto &msg : dbc->msgs) {
       auto &m = msgs[msg.address];
@@ -48,9 +57,44 @@ void DBCFile::open(const QString &name, const QString &content) {
       }
   }
   parseExtraInfo(content);
-  name_ = name;
 
   delete dbc;
+}
+
+bool DBCFile::save() {
+  assert (!filename.isEmpty());
+  if (writeContents(filename)) {
+    cleanupAutoSaveFile();
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool DBCFile::saveAs(const QString &new_filename) {
+  filename = new_filename;
+  return save();
+}
+
+bool DBCFile::autoSave() {
+  assert(!filename.isEmpty());
+  return writeContents(filename + AUTO_SAVE_EXTENSION);
+}
+
+void DBCFile::cleanupAutoSaveFile() {
+  if (!filename.isEmpty()) {
+    QFile::remove(filename + AUTO_SAVE_EXTENSION);
+  }
+}
+
+bool DBCFile::writeContents(const QString &fn) {
+  QFile file(fn);
+  if (file.open(QIODevice::WriteOnly)) {
+    file.write(generateDBC().toUtf8());
+    return true;
+  } else {
+    return false;
+  }
 }
 
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
