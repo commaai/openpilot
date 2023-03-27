@@ -220,16 +220,28 @@ class Laikad:
       # TODO this is not robust to gps week rollover
       if self.gps_week is None:
         return
-      ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
-      self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
+      try:
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+        self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
+      except Exception:
+        cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
+        return
 
     else:
       if gnss_msg.which() == 'ephemeris':
         data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
-        ephem = GPSEphemeris(data_struct, file_name='ublox')
+        try:
+          ephem = GPSEphemeris(data_struct, file_name='ublox')
+        except Exception:
+          cloudlog.exception("Error parsing GPS ephemeris from ublox")
+          return
       elif gnss_msg.which() == 'glonassEphemeris':
         data_struct = ephemeris_structs.GlonassEphemeris.new_message(**gnss_msg.glonassEphemeris.to_dict())
-        ephem = GLONASSEphemeris(data_struct, file_name='ublox')
+        try:
+          ephem = GLONASSEphemeris(data_struct, file_name='ublox')
+        except Exception:
+          cloudlog.exception("Error parsing GLONASS ephemeris from ublox")
+          return
       else:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return

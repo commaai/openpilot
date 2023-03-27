@@ -8,12 +8,11 @@
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
+#include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
-
-const QString AUTO_SAVE_EXTENSION = ".tmp";
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -22,12 +21,13 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
 
 public slots:
   void openRoute();
   void newFile();
   void openFile();
+  void openFileForSource();
   void openRecentFile();
   void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
@@ -36,6 +36,7 @@ public slots:
   void save();
   void saveAs();
   void saveDBCToClipboard();
+  void updateSources(const SourceSet &s);
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -43,10 +44,10 @@ signals:
 
 protected:
   void remindSaveChanges();
-  void saveFile(const QString &fn);
+  void saveFile();
   void autoSave();
   void cleanupAutoSaveFile();
-  void setCurrentFile(const QString &fn);
+  void updateRecentFiles(const QString &fn);
   void updateRecentFileActions();
   void createActions();
   void createDockWindows();
@@ -62,6 +63,7 @@ protected:
   void onlineHelp();
   void toggleFullScreen();
   void updateStatus();
+  void updateLoadSaveMenus();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
@@ -74,12 +76,16 @@ protected:
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
   QSplitter *video_splitter;;
-  QString current_file = "";
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
+  QMenu *open_dbc_for_source = nullptr;
+  QAction *save_dbc = nullptr;
+  QAction *save_dbc_as = nullptr;
+  QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
+  SourceSet sources;
   friend class OnlineHelp;
 };
 
