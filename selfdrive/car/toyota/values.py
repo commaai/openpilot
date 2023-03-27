@@ -106,7 +106,7 @@ class ToyotaCarInfo(CarInfo):
   harness: Enum = Harness.toyota
 
   def init_make(self, CP):
-    stock_long = (not CP.openpilotLongitudinalControl or CP.enableDsu)
+    stock_long = not CP.openpilotLongitudinalControl or CP.enableDsu
     if stock_long and abs(CP.minEnableSpeed - 19 * CV.MPH_TO_MS) < 1e-3:
       self.min_enable_speed = 28. * CV.MPH_TO_MS
       self.footnotes.append(Footnote.FSR_LONG_DSU)
