@@ -102,6 +102,11 @@ class ToyotaCarInfo(CarInfo):
   package: str = "All"
   harness: Enum = Harness.toyota
 
+  def init_make(self, CP):
+    # if not CP.openpilotLongitudinalControl and CP.carFingerprint not in TSS2_CAR:
+    if not CP.openpilotLongitudinalControl and CP.carFingerprint not in TSS2_CAR:
+      self.min_enable_speed = 28. * CV.MPH_TO_MS
+
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   # Toyota
