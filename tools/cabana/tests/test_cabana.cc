@@ -9,15 +9,14 @@
 // demo route, first segment
 const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
 
-TEST_CASE("DBCManager::generateDBC") {
-  DBCManager dbc_origin(nullptr);
-  dbc_origin.open("toyota_new_mc_pt_generated");
-  DBCManager dbc_from_generated(nullptr);
-  dbc_from_generated.open("", dbc_origin.generateDBC());
+TEST_CASE("DBCFile::generateDBC") {
+  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "toyota_new_mc_pt_generated");
+  DBCFile dbc_origin(fn);
+  DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 
   REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
-  auto msgs = dbc_origin.getMessages(0);
-  auto new_msgs = dbc_from_generated.getMessages(0);
+  auto msgs = dbc_origin.getMessages();
+  auto new_msgs = dbc_from_generated.getMessages();
   for (auto &[id, m] : msgs) {
     auto &new_m = new_msgs.at(id);
     REQUIRE(m.name == new_m.name);
@@ -33,7 +32,7 @@ TEST_CASE("DBCManager::generateDBC") {
 
 TEST_CASE("Parse can messages") {
   DBCManager dbc(nullptr);
-  dbc.open("toyota_new_mc_pt_generated");
+  dbc.open({0}, "toyota_new_mc_pt_generated");
   CANParser can_parser(0, "toyota_new_mc_pt_generated", {}, {});
 
   LogReader log;
