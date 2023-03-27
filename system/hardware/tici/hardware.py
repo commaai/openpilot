@@ -565,6 +565,9 @@ class Tici(HardwareBase):
     except Exception:
       return -1, -1
 
+  def has_internal_panda(self):
+    return True
+
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
 
