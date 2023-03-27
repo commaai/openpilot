@@ -4,12 +4,14 @@
 import os
 import time
 import numpy as np
+import polyline
 from cffi import FFI
 
 from common.ffi_wrapper import suffix
 from common.basedir import BASEDIR
 
-HEIGHT = WIDTH = 512
+HEIGHT = WIDTH = SIZE = 512
+METERS_PER_PIXEL = 2
 
 
 def get_ffi():
@@ -18,7 +20,6 @@ def get_ffi():
   ffi = FFI()
   ffi.cdef("""
 void* map_renderer_init(char *maps_host, char *token);
-void map_renderer_update_zoom(void *inst, float zoom);
 void map_renderer_update_position(void *inst, float lat, float lon, float bearing);
 void map_renderer_update_route(void *inst, char *polyline);
 void map_renderer_update(void *inst);
@@ -48,6 +49,22 @@ def get_image(lib, renderer):
   # Convert to numpy
   r = np.asarray(r)
   return r.reshape((WIDTH, HEIGHT))
+
+
+def navRoute_to_polyline(nr):
+  coords = [(m.latitude, m.longitude) for m in nr.navRoute.coordinates]
+  return coords_to_polyline(coords)
+
+
+def coords_to_polyline(coords):
+  # TODO: where does this factor of 10 come from?
+  return polyline.encode([(lat * 10., lon * 10.) for lat, lon in coords])
+
+
+def polyline_to_coords(p):
+  coords = polyline.decode(p)
+  return [(lat / 10., lon / 10.) for lat, lon in coords]
+
 
 
 if __name__ == "__main__":

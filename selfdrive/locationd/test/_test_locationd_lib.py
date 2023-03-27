@@ -19,7 +19,7 @@ LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../
 class TestLocationdLib(unittest.TestCase):
   def setUp(self):
     header = '''typedef ...* Localizer_t;
-Localizer_t localizer_init();
+Localizer_t localizer_init(bool has_ublox);
 void localizer_get_message_bytes(Localizer_t localizer, bool inputsOK, bool sensorsOK, bool gpsOK, bool msgValid, char *buff, size_t buff_size);
 void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t size);'''
 
@@ -27,7 +27,7 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
     self.ffi.cdef(header)
     self.lib = self.ffi.dlopen(LIBLOCATIOND_PATH)
 
-    self.localizer = self.lib.localizer_init()
+    self.localizer = self.lib.localizer_init(True) # default to ublox
 
     self.buff_size = 2048
     self.msg_buff = self.ffi.new(f'char[{self.buff_size}]')

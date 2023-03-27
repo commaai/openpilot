@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS
 
@@ -9,11 +9,9 @@ from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None, experimental_long=False):
-    ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "subaru"
-    ret.radarOffCan = True
+    ret.radarUnavailable = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
     ret.autoResumeSng = False
 
@@ -103,14 +101,6 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
-
     return ret
 
   # returns a car.CarState
@@ -122,5 +112,5 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  def apply(self, c):
-    return self.CC.update(c, self.CS)
+  def apply(self, c, now_nanos):
+    return self.CC.update(c, self.CS, now_nanos)

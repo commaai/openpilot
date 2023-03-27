@@ -24,6 +24,14 @@ void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
 }
 
+void ThneedModel::addDrivingStyle(float *state, int state_size) {
+    drivingStyle = state;
+}
+
+void ThneedModel::addNavFeatures(float *state, int state_size) {
+  navFeatures = state;
+}
+
 void ThneedModel::addImage(float *image_input_buf, int buf_size) {
   input = image_input_buf;
 }

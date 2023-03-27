@@ -99,6 +99,12 @@ HUDData = namedtuple("HUDData",
                       "lanes_visible", "fcw", "acc_alert", "steer_required"])
 
 
+def rate_limit_steer(new_steer, last_steer):
+  # TODO just hardcoded ramp to min/max in 0.33s for all Honda
+  MAX_DELTA = 3 * DT_CTRL
+  return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
+
+
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
@@ -116,8 +122,9 @@ class CarController:
     self.speed = 0.0
     self.gas = 0.0
     self.brake = 0.0
+    self.last_steer = 0.0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed * CV.MS_TO_KPH if hud_control.speedVisible else 255
@@ -129,6 +136,10 @@ class CarController:
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
+
+    # *** rate limit steer ***
+    limited_steer = rate_limit_steer(actuators.steer, self.last_steer)
+    self.last_steer = limited_steer
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
@@ -143,7 +154,7 @@ class CarController:
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(interp(-actuators.steer * self.params.STEER_MAX,
+    apply_steer = int(interp(-limited_steer * self.params.STEER_MAX,
                              self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
 
     # Send CAN commands
@@ -178,14 +189,14 @@ class CarController:
                      clip(CS.out.vEgo + 0.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(1.0 * 0xc6)
+      pcm_accel = int(1.0 * self.params.NIDEC_GAS_MAX)
     else:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * 0xc6)
+      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
@@ -243,13 +254,15 @@ class CarController:
         self.speed = pcm_speed
 
         if not self.CP.enableGasInterceptor:
-          self.gas = pcm_accel / 0xc6
+          self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
     new_actuators = actuators.copy()
     new_actuators.speed = self.speed
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
+    new_actuators.steer = self.last_steer
+    new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1
     return new_actuators, can_sends

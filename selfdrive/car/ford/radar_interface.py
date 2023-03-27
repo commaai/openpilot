@@ -47,7 +47,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
     self.track_id = 0
     self.radar = DBC[CP.carFingerprint]['radar']
-    if self.radar is None:
+    if self.radar is None or CP.radarUnavailable:
       self.rcp = None
     elif self.radar == RADAR.DELPHI_ESR:
       self.rcp = _create_delphi_esr_radar_can_parser()

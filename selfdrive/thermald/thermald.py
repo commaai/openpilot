@@ -18,7 +18,7 @@ from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, TICI, AGNOS
-from selfdrive.loggerd.config import get_available_percent
+from system.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
@@ -347,7 +347,8 @@ def thermald_thread(end_event, hw_queue):
         off_ts = sec_since_boot()
 
     # Offroad power monitoring
-    power_monitor.calculate(peripheralState, onroad_conditions["ignition"])
+    voltage = None if peripheralState.pandaType == log.PandaState.PandaType.unknown else peripheralState.voltage
+    power_monitor.calculate(voltage, onroad_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
     current_power_draw = HARDWARE.get_current_power_draw()

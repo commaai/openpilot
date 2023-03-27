@@ -4,13 +4,23 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
+SUDO=""
 
 # NOTE: this is used in a docker build, so do not run any scripts here.
 
+# Use sudo if not root
+if [[ ! $(id -u) -eq 0 ]]; then
+  if [[ -z $(which sudo) ]]; then
+    echo "Please install sudo or run as root"
+    exit 1
+  fi
+  SUDO="sudo"
+fi
+
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  sudo apt-get update
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get update
+  $SUDO apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     ca-certificates \
@@ -46,6 +56,7 @@ function install_ubuntu_common_requirements() {
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
+    libportaudio2 \
     libssl-dev \
     libsqlite3-dev \
     libusb-1.0-0-dev \
@@ -71,10 +82,11 @@ function install_ubuntu_common_requirements() {
 }
 
 # Install Ubuntu 22.04 LTS packages
-function install_ubuntu_jammy_requirements() {
+function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get install -y --no-install-recommends \
+    g++-12 \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -86,7 +98,7 @@ function install_ubuntu_jammy_requirements() {
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get install -y --no-install-recommends \
+  $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
     python-dev
@@ -97,7 +109,10 @@ if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
     "jammy")
-      install_ubuntu_jammy_requirements
+      install_ubuntu_lts_latest_requirements
+      ;;
+    "kinetic")
+      install_ubuntu_lts_latest_requirements
       ;;
     "focal")
       install_ubuntu_focal_requirements
@@ -109,8 +124,8 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ]; then
-        install_ubuntu_jammy_requirements
+      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
+        install_ubuntu_lts_latest_requirements
       else
         install_ubuntu_focal_requirements
       fi

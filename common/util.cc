@@ -1,5 +1,6 @@
 #include "common/util.h"
 
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
@@ -9,6 +10,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <iomanip>
+#include <random>
 #include <sstream>
 
 #ifdef __linux__
@@ -149,6 +151,14 @@ int safe_fflush(FILE *stream) {
   return ret;
 }
 
+int safe_ioctl(int fd, unsigned long request, void *argp) {
+  int ret;
+  do {
+    ret = ioctl(fd, request, argp);
+  } while ((ret == -1) && (errno == EINTR));
+  return ret;
+}
+
 std::string readlink(const std::string &path) {
   char buff[4096];
   ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
@@ -217,6 +227,18 @@ std::string hexdump(const uint8_t* in, const size_t size) {
     ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
   return ss.str();
+}
+
+std::string random_string(std::string::size_type length) {
+  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  std::mt19937 rg{std::random_device{}()};
+  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::string s;
+  s.reserve(length);
+  while (length--) {
+    s += chrs[pick(rg)];
+  }
+  return s;
 }
 
 std::string dir_name(std::string const &path) {

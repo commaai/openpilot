@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <bitset>
 #include <cassert>
@@ -18,8 +19,6 @@
 #include <cstdlib>
 #include <future>
 #include <thread>
-
-#include <libusb-1.0/libusb.h>
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
@@ -50,8 +49,8 @@
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
-#define CUTOFF_IL 200
-#define SATURATE_IL 1600
+#define CUTOFF_IL 400
+#define SATURATE_IL 1000
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 using namespace std::chrono_literals;
 
@@ -67,7 +66,7 @@ static std::string get_time_str(const struct tm &time) {
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
-    if (!panda->connected) {
+    if (!panda->connected()) {
       do_exit = true;
       return false;
     }
@@ -107,38 +106,40 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
+  Params p;
+
   // there should be at least one panda connected
   if (pandas.size() == 0) {
     return false;
   }
 
-  // set to ELM327 for fingerprinting
+  // initialize to ELM327 without OBD multiplexing for fingerprinting
+  bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
-    const uint16_t safety_param = (i > 0) ? 1U : 0U;
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
-  Params p = Params();
-
-  // wait for VIN to be read
+  // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
-    std::string value_vin = p.get("CarVin");
-    if (value_vin.size() > 0) {
-      // sanity check VIN format
-      assert(value_vin.size() == 17);
-      LOGW("got CarVin %s", value_vin.c_str());
+    bool obd_multiplexing_requested = p.getBool("ObdMultiplexingEnabled");
+    if (obd_multiplexing_requested != obd_multiplexing_enabled) {
+      for (int i = 0; i < pandas.size(); i++) {
+        const uint16_t safety_param = (i > 0 || !obd_multiplexing_requested) ? 1U : 0U;
+        pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+      }
+      obd_multiplexing_enabled = obd_multiplexing_requested;
+      p.putBool("ObdMultiplexingChanged", true);
+    }
+
+    if (p.getBool("FirmwareQueryDone")) {
+      LOGW("finished FW query");
       break;
     }
     util::sleep_for(20);
-  }
-
-  // set to ELM327 for ECU knockouts
-  for (Panda *panda : pandas) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
   std::string params;
@@ -184,7 +185,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   return true;
 }
 
-Panda *usb_connect(std::string serial="", uint32_t index=0) {
+Panda *connect(std::string serial="", uint32_t index=0) {
   std::unique_ptr<Panda> panda;
   try {
     panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_CNT));
@@ -227,9 +228,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
-        LOGT("sending sendcan to panda: %s", (panda->usb_serial).c_str());
+        LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
         panda->can_send(event.getSendcan());
-        LOGT("sendcan sent to panda: %s", (panda->usb_serial).c_str());
+        LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
     }
   }
@@ -357,7 +358,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
   #endif
 
-    if (!panda->comms_healthy) {
+    if (!panda->comms_healthy()) {
       evt.setValid(false);
     }
 
@@ -433,7 +434,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  evt.setValid(panda->comms_healthy);
+  evt.setValid(panda->comms_healthy());
 
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
@@ -526,12 +527,9 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected()) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
-
-    // Other pandas don't have fan/IR to control
-    if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
 
     if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
@@ -545,9 +543,8 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
-      float cur_gain = event.getDriverCameraState().getGain();
 
-      cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
+      cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
@@ -595,7 +592,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
   // connect to all provided serials
   std::vector<Panda *> pandas;
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
-    Panda *p = usb_connect(serials[i], i);
+    Panda *p = connect(serials[i], i);
     if (!p) {
       // send empty pandaState & peripheralState and try again
       send_empty_panda_state(&pm);

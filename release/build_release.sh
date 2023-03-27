@@ -11,15 +11,19 @@ SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
-  RELEASE_BRANCH=release3-staging
-  DASHCAM_BRANCH=dashcam3-staging
 else
-  exit 0
+  echo "no release files set"
+  exit 1
 fi
+
+if [ -z "$RELEASE_BRANCH" ]; then
+  echo "RELEASE_BRANCH is not set"
+  exit 1
+fi
+
 
 # set git identity
 source $DIR/identity.sh
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -27,7 +31,6 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-git fetch origin $RELEASE_BRANCH
 git checkout --orphan $RELEASE_BRANCH
 
 # do the files copy
@@ -48,7 +51,6 @@ echo "#define COMMA_VERSION \"$VERSION-release\"" > common/version.h
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
-git branch --set-upstream-to=origin/$RELEASE_BRANCH
 
 # Build panda firmware
 pushd panda/
@@ -105,10 +107,12 @@ RELEASE=1 selfdrive/test/test_onroad.py
 selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
-if [ ! -z "$PUSH" ]; then
-  echo "[-] pushing T=$SECONDS"
-  git push -f origin $RELEASE_BRANCH
+if [ ! -z "$RELEASE_BRANCH" ]; then
+  echo "[-] pushing release T=$SECONDS"
+  git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
+fi
 
+if [ ! -z "$DASHCAM_BRANCH" ]; then
   # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
   git commit -m "create dashcam release from release"

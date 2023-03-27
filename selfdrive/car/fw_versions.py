@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Optional, Set, Tuple
+from typing import Any, Dict, List, Set
 from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
-from selfdrive.car.ecu_addrs import get_ecu_addrs
+from common.params import Params
+from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -18,7 +19,7 @@ FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
-REQUESTS = [(brand, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
+REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
 
 def chunks(l, n=128):
@@ -29,16 +30,17 @@ def chunks(l, n=128):
 def build_fw_dict(fw_versions, filter_brand=None):
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    if filter_brand is None or fw.brand == filter_brand:
-      addr = fw.address
+    if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
-      fw_versions_dict[(addr, sub_addr)].add(fw.fwVersion)
+      fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
 
 
 def get_brand_addrs():
   brand_addrs = defaultdict(set)
   for brand, cars in VERSIONS.items():
+    # Add ecus in database + extra ecus to match against
+    brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
   return brand_addrs
@@ -90,7 +92,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict):
+def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -146,34 +148,43 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan):
-  queries = list()
-  parallel_queries = list()
+def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
+  params = Params()
+  # queries are split by OBD multiplexing mode
+  queries: Dict[bool, List[List[EcuAddrBusType]]] = {True: [], False: []}
+  parallel_queries: Dict[bool, List[EcuAddrBusType]] = {True: [], False: []}
   responses = set()
 
-  for brand, r in REQUESTS:
+  for brand, config, r in REQUESTS:
+    # Skip query if no panda available
+    if r.bus > num_pandas * 4 - 1:
+      continue
+
     for brand_versions in VERSIONS[brand].values():
-      for ecu_type, addr, sub_addr in brand_versions:
+      for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
         # Only query ecus in whitelist if whitelist is not empty
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
           # Build set of queries
           if sub_addr is None:
-            if a not in parallel_queries:
-              parallel_queries.append(a)
+            if a not in parallel_queries[r.obd_multiplexing]:
+              parallel_queries[r.obd_multiplexing].append(a)
           else:  # subaddresses must be queried one by one
-            if [a] not in queries:
-              queries.append([a])
+            if [a] not in queries[r.obd_multiplexing]:
+              queries[r.obd_multiplexing].append([a])
 
           # Build set of expected responses to filter
           response_addr = uds.get_rx_addr_for_tx_addr(addr, r.rx_offset)
           responses.add((response_addr, sub_addr, r.bus))
 
-  queries.insert(0, parallel_queries)
+  for obd_multiplexing in queries:
+    queries[obd_multiplexing].insert(0, parallel_queries[obd_multiplexing])
 
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()
-  for query in queries:
-    ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+  ecu_responses = set()
+  for obd_multiplexing in queries:
+    set_obd_multiplexing(params, obd_multiplexing)
+    for query in queries[obd_multiplexing]:
+      ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
 
 
@@ -181,9 +192,9 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
-  brand_matches = {brand: set() for brand, _ in REQUESTS}
+  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
-  brand_rx_offsets = set((brand, r.rx_offset) for brand, r in REQUESTS)
+  brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:
@@ -192,6 +203,15 @@ def get_brand_ecu_matches(ecu_rx_addrs):
         brand_matches[brand].add(a)
 
   return brand_matches
+
+
+def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
+  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+    params.remove("ObdMultiplexingChanged")
+    params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+    params.get_bool("ObdMultiplexingChanged", block=True)
+    cloudlog.warning("OBD multiplexing set successfully")
 
 
 def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pandas=1, debug=False, progress=False):
@@ -213,6 +233,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False):
   versions = VERSIONS.copy()
+  params = Params()
 
   # Each brand can define extra ECUs to query for data collection
   for brand, config in FW_QUERY_CONFIGS.items():
@@ -231,8 +252,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
-    for c in brand_versions.values():
-      for ecu_type, addr, sub_addr in c.keys():
+    for ecu in brand_versions.values():
+      for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
@@ -248,13 +269,17 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, r) for brand, r in REQUESTS if query_brand is None or brand == query_brand]
+  requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
-      for brand, r in requests:
+      for brand, config, r in requests:
         # Skip query if no panda available
         if r.bus > num_pandas * 4 - 1:
           continue
+
+        # Toggle OBD multiplexing for each request
+        if r.bus % 4 == 1:
+          set_obd_multiplexing(params, r.obd_multiplexing)
 
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
@@ -272,6 +297,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.request = r.request
               f.brand = brand
               f.bus = r.bus
+              f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in config.extra_ecus
+              f.obdMultiplexing = r.obd_multiplexing
 
               if sub_addr is not None:
                 f.subAddress = sub_addr

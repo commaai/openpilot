@@ -24,8 +24,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const float VALID_POS_STD = 50.0; // m
-
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
@@ -47,7 +45,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setVisible(false);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position) {
+  if (last_gps_position.has_value()) {
     last_position = *last_gps_position;
   }
 
@@ -82,6 +80,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
+    m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -121,41 +120,6 @@ void MapWindow::updateState(const UIState &s) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(locationd_velocity.getValue()[0]);
-    }
-  }
-
-  if (sm.updated("gnssMeasurements")) {
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos = laikad_location.getPositionECEF();
-    auto laikad_pos_ecef = laikad_pos.getValue();
-    auto laikad_pos_std = laikad_pos.getStd();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
-
-    if (laikad_valid && !locationd_valid) {
-      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
-
-      // Compute NED velocity
-      LocalCoord converter(ecef);
-      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
-      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
-
-      float velocity = ned_vel.norm();
-      velocity_filter.update(velocity);
-
-      // Convert NED velocity to angle
-      if (velocity > 1.0) {
-        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        if (last_bearing) {
-          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
-        } else {
-          last_bearing = new_bearing;
-        }
-      }
     }
   }
 
@@ -220,7 +184,6 @@ void MapWindow::updateState(const UIState &s) {
         emit instructionsChanged(i);
       }
     } else {
-      m_map->setPitch(MIN_PITCH);
       clearRoute();
     }
   }
@@ -237,6 +200,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
+    updateDestinationMarker();
   }
 }
 
@@ -274,6 +238,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
+    updateDestinationMarker();
   }
 
   map_instructions->hideIfNoError();
@@ -359,6 +324,19 @@ void MapWindow::offroadTransition(bool offroad) {
     setVisible(dest.has_value());
   }
   last_bearing = {};
+}
+
+void MapWindow::updateDestinationMarker() {
+  if (marker_id != -1) {
+    m_map->removeAnnotation(marker_id);
+    marker_id = -1;
+  }
+
+  auto nav_dest = coordinate_from_param("NavDestination");
+  if (nav_dest.has_value()) {
+    auto ano = QMapbox::SymbolAnnotation {*nav_dest, "default_marker"};
+    marker_id = m_map->addAnnotation(QVariant::fromValue<QMapbox::SymbolAnnotation>(ano));
+  }
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {

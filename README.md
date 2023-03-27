@@ -103,13 +103,15 @@ Directory Structure
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
     ├── third_party         # External libraries
-    ├── pyextra             # Extra python packages
     └── system              # Generic services
         ├── camerad         # Driver to capture images from the camera sensors
         ├── clocksd         # Broadcasts current time
         ├── hardware        # Hardware abstraction classes
         ├── logcatd         # systemd journal as a service
-        └── proclogd        # Logs information from /proc
+        ├── loggerd         # Logger and uploader of car data
+        ├── proclogd        # Logs information from /proc
+        ├── sensord         # IMU interface code
+        └── ubloxd          # u-blox GNSS module interface code
     └── selfdrive           # Code needed to drive the car
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
@@ -118,12 +120,10 @@ Directory Structure
         ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
         ├── locationd       # Precise localization and vehicle parameter estimation
-        ├── loggerd         # Logger and uploader of car data
         ├── manager         # Daemon that starts/stops all other daemons as needed
         ├── modeld          # Driving and monitoring model runners
         ├── monitoring      # Daemon to determine driver attention
         ├── navd            # Turn-by-turn navigation
-        ├── sensord         # IMU interface code
         ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
 
@@ -143,7 +143,4 @@ NO WARRANTY EXPRESSED OR IMPLIED.**
 <img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
 
 [![openpilot tests](https://github.com/commaai/openpilot/workflows/openpilot%20tests/badge.svg?event=push)](https://github.com/commaai/openpilot/actions)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/alerts/)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:python)
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/commaai/openpilot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/commaai/openpilot/context:cpp)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)

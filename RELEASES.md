@@ -1,17 +1,62 @@
-Version 0.8.17 (2022-XX-XX)
+Version 0.9.2 (2023-03-XX)
+========================
+* Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* Buick LaCrosse 2017-19 support thanks to koch-cf!
+* Škoda Fabia 2022-23 support thanks to jyoung8607!
+
+Version 0.9.1 (2023-02-28)
 ========================
 * New driving model
-  * Internal feature space accuracy increased tenfold during training, this makes the model dramatically more accurate.
-* Self-tuning torque lateral controller parameters
-  * Parameters learned live for each car
-  * Enabled only on Toyota Corolla for now
+  * 30% improved height estimation resulting in better driving performance for tall cars
+* Driver monitoring: removed timer resetting on user interaction if distracted
 * UI updates
-  * Multi-language in navigation
+  * Adjust alert volume using ambient noise level
+  * Driver monitoring icon shows driver's head pose
+  * German translation thanks to Vrabetz and CzokNorris!
+* Cadillac Escalade 2017 support thanks to rickygilleland!
+* Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Genesis GV60 2023 support thanks to sunnyhaibin!
+* Hyundai Tucson 2022-23 support
+* Kia K5 Hybrid 2020 support thanks to sunnyhaibin!
+* Kia Niro Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
+* Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Toyota C-HR 2021 support thanks to eFiniLan!
+* Toyota C-HR Hybrid 2022 support thanks to Korben00!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
+
+Version 0.9.0 (2022-11-21)
+========================
+* New driving model
+  * Internal feature space information content increased tenfold during training to ~700 bits, which makes the model dramatically more accurate
+  * Less reliance on previous frames makes model more reactive and snappy
+  * Trained in new reprojective simulator
+  * Trained in 36 hours from scratch, compared to one week for previous releases
+  * Training now simulates both lateral and longitudinal behavior, which allows openpilot to slow down for turns, stop at traffic lights, and more in experimental mode
+* Experimental driving mode
+  * End-to-end longitudinal control
+  * Stops for traffic lights and stop signs
+  * Slows down for turns
+  * openpilot defaults to chill mode, enable experimental mode in settings
+* Driver monitoring updates
+  * New bigger model with added end-to-end distracted trigger
+  * Reduced false positives during driver calibration
+* Self-tuning torque controller: learns parameters live for each car
+* Torque controller used on all Toyota, Lexus, Hyundai, Kia, and Genesis models
+* UI updates
   * Matched speeds shown on car's dash
+  * Multi-language in navigation
   * Improved update experience
   * Border turns grey while overriding steering
-  * Added button to bookmark events while driving; view them later in comma connect
-* AGNOS 6
+  * Bookmark events while driving; view them in comma connect
+  * New onroad visualization for experimental mode
+* tools: new and improved cabana thanks to deanlee!
+* Experimental longitudinal support for Volkswagen, CAN-FD Hyundai, and new GM models
+* Genesis GV70 2022-23 support thanks to zunichky and sunnyhaibin!
+* Hyundai Santa Cruz 2021-22 support thanks to sunnyhaibin!
+* Kia Sportage 2023 support thanks to sunnyhaibin!
+* Kia Sportage Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Stinger 2022 support thanks to sunnyhaibin!
 
 Version 0.8.16 (2022-08-26)
 ========================

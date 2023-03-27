@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from smbus2 import SMBus
 from collections import namedtuple
 
@@ -25,13 +24,10 @@ BASE_CONFIG = [
   AmpConfig("MCLK prescaler", 0b01, 0x10, 4, 0b00110000),
   AmpConfig("PM: enable speakers", 0b11, 0x4D, 4, 0b00110000),
   AmpConfig("PM: enable DACs", 0b11, 0x4D, 0, 0b00000011),
-  AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
-  AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
   AmpConfig("Enable PLL1", 0b1, 0x12, 7, 0b10000000),
   AmpConfig("Enable PLL2", 0b1, 0x1A, 7, 0b10000000),
   AmpConfig("DAI1: I2S mode", 0b00100, 0x14, 2, 0b01111100),
   AmpConfig("DAI2: I2S mode", 0b00100, 0x1C, 2, 0b01111100),
-  AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
   AmpConfig("DAI1 Passband filtering: music mode", 0b1, 0x18, 7, 0b10000000),
   AmpConfig("DAI1 voice mode gain (DV1G)", 0b00, 0x2F, 4, 0b00110000),
   AmpConfig("DAI1 attenuation (DV1)", 0x0, 0x2F, 0, 0b00001111),
@@ -42,7 +38,6 @@ BASE_CONFIG = [
   AmpConfig("ALC/excursion limiter release time", 0b101, 0x43, 4, 0b01110000),
   AmpConfig("ALC multiband enable", 0b1, 0x43, 3, 0b00001000),
   AmpConfig("DAI1 EQ enable", 0b0, 0x49, 0, 0b00000001),
-  AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
   AmpConfig("DAI2 EQ clip detection disabled", 0b1, 0x32, 4, 0b00010000),
   AmpConfig("DAI2 EQ attenuation", 0x5, 0x32, 0, 0b00001111),
   AmpConfig("Excursion limiter upper corner freq", 0b100, 0x41, 4, 0b01110000),
@@ -63,11 +58,44 @@ BASE_CONFIG = [
   AmpConfig("Zero-crossing detection disabled", 0b0, 0x49, 5, 0b00100000),
 ]
 
-BASE_CONFIG += configs_from_eq_params(0x84, EQParams(0x274F, 0xC0FF, 0x3BF9, 0x0B3C, 0x1656))
-BASE_CONFIG += configs_from_eq_params(0x8E, EQParams(0x1009, 0xC6BF, 0x2952, 0x1C97, 0x30DF))
-BASE_CONFIG += configs_from_eq_params(0x98, EQParams(0x0F75, 0xCBE5, 0x0ED2, 0x2528, 0x3E42))
-BASE_CONFIG += configs_from_eq_params(0xA2, EQParams(0x091F, 0x3D4C, 0xCE11, 0x1266, 0x2807))
-BASE_CONFIG += configs_from_eq_params(0xAC, EQParams(0x0A9E, 0x3F20, 0xE573, 0x0A8B, 0x3A3B))
+CONFIGS = {
+  "tici": [
+    AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
+    AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
+    AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
+    AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
+
+    *configs_from_eq_params(0x84, EQParams(0x274F, 0xC0FF, 0x3BF9, 0x0B3C, 0x1656)),
+    *configs_from_eq_params(0x8E, EQParams(0x1009, 0xC6BF, 0x2952, 0x1C97, 0x30DF)),
+    *configs_from_eq_params(0x98, EQParams(0x0F75, 0xCBE5, 0x0ED2, 0x2528, 0x3E42)),
+    *configs_from_eq_params(0xA2, EQParams(0x091F, 0x3D4C, 0xCE11, 0x1266, 0x2807)),
+    *configs_from_eq_params(0xAC, EQParams(0x0A9E, 0x3F20, 0xE573, 0x0A8B, 0x3A3B)),
+  ],
+  "tizi": [
+    AmpConfig("Left speaker output from left DAC", 0b1, 0x2B, 0, 0b11111111),
+    AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
+    AmpConfig("Left Speaker Mixer Gain", 0b00, 0x2D, 0, 0b00000011),
+    AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
+    AmpConfig("Left speaker output volume", 0x17, 0x3D, 0, 0b00011111),
+    AmpConfig("Right speaker output volume", 0x17, 0x3E, 0, 0b00011111),
+
+    AmpConfig("DAI2 EQ enable", 0b0, 0x49, 1, 0b00000010),
+    AmpConfig("DAI2: DC blocking", 0b0, 0x20, 0, 0b00000001),
+    AmpConfig("ALC enable", 0b0, 0x43, 7, 0b10000000),
+    AmpConfig("DAI2 EQ attenuation", 0x2, 0x32, 0, 0b00001111),
+    AmpConfig("Excursion limiter upper corner freq", 0b001, 0x41, 4, 0b01110000),
+    AmpConfig("Excursion limiter threshold", 0b100, 0x42, 0, 0b00001111),
+    AmpConfig("Distortion limit (THDCLP)", 0x0, 0x46, 4, 0b11110000),
+    AmpConfig("Distortion limiter release time constant", 0b1, 0x46, 0, 0b00000001),
+    AmpConfig("Left DAC input mixer: DAI1 left", 0b0, 0x22, 7, 0b10000000),
+    AmpConfig("Left DAC input mixer: DAI1 right", 0b0, 0x22, 6, 0b01000000),
+    AmpConfig("Left DAC input mixer: DAI2 left", 0b1, 0x22, 5, 0b00100000),
+    AmpConfig("Left DAC input mixer: DAI2 right", 0b0, 0x22, 4, 0b00010000),
+    AmpConfig("Right DAC input mixer: DAI2 left", 0b0, 0x22, 1, 0b00000010),
+    AmpConfig("Right DAC input mixer: DAI2 right", 0b1, 0x22, 0, 0b00000001),
+    AmpConfig("Volume adjustment smoothing disabled", 0b1, 0x49, 6, 0b01000000),
+  ],
+}
 
 class Amplifier:
   AMP_I2C_BUS = 0
@@ -91,14 +119,22 @@ class Amplifier:
   def set_global_shutdown(self, amp_disabled):
     self.set_config(AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000))
 
-  def initialize_configuration(self):
+  def initialize_configuration(self, model):
     self.set_global_shutdown(amp_disabled=True)
 
     for config in BASE_CONFIG:
+      self.set_config(config)
+
+    for config in CONFIGS[model]:
       self.set_config(config)
 
     self.set_global_shutdown(amp_disabled=False)
 
 
 if __name__ == "__main__":
-  Amplifier(debug=True).initialize_configuration()
+  with open("/sys/firmware/devicetree/base/model") as f:
+    model = f.read().strip('\x00')
+  model = model.split('comma ')[-1]
+
+  amp = Amplifier()
+  amp.initialize_configuration(model)
