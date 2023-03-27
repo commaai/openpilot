@@ -382,9 +382,6 @@ void MainWindow::loadDBCFromFingerprint() {
 
 void MainWindow::save() {
   saveFile();
-
-  // TODO: Check if we need to save as
-  // saveAs();
 }
 
 void MainWindow::autoSave() {
@@ -410,7 +407,6 @@ void MainWindow::saveFile() {
       dbc_file->save();
       updateRecentFiles(dbc_file->filename);
     } else {
-      // TODO: Show sources in prompt
       QString fn = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
       if (!fn.isEmpty()) {
         dbc_file->saveAs(fn);
