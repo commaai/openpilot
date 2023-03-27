@@ -24,7 +24,7 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
     }
     open(file.readAll());
   } else {
-    // TODO: throw exception
+    throw std::runtime_error("Failed to open file.");
   }
 }
 
@@ -79,6 +79,8 @@ bool DBCFile::saveAs(const QString &new_filename) {
 bool DBCFile::autoSave() {
   if (!filename.isEmpty()) {
     return writeContents(filename + AUTO_SAVE_EXTENSION);
+  } else {
+    return false;
   }
 }
 
