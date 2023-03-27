@@ -383,14 +383,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parking],
+      whitelist_ecus=[Ecu.parkingAdas],
       bus=0,
       auxiliary=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parking],
+      whitelist_ecus=[Ecu.parkingAdas],
       bus=1,
       auxiliary=True,
       obd_multiplexing=False,
@@ -398,7 +398,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   extra_ecus=[
     (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
-    (Ecu.parking, 0x7b1, None),      # ADAS Parking ECU (may exist on all platforms)
+    (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
