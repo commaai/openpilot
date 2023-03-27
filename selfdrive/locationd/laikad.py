@@ -223,8 +223,8 @@ class Laikad:
       try:
         ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
         self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
-      except Exception as e:
-        cloudlog.exception(f"Error parsing qcom svPoly ephemeris from qcom module: {e}")
+      except Exception:
+        cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
         return
 
     else:
@@ -232,18 +232,18 @@ class Laikad:
         data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
         try:
           ephem = GPSEphemeris(data_struct, file_name='ublox')
-        except Exception as e:
-          cloudlog.exception(f"Error parsing GPS ephemeris from ublox: {e}")
+        except Exception:
+          cloudlog.exception("Error parsing GPS ephemeris from ublox")
           return
       elif gnss_msg.which() == 'glonassEphemeris':
         data_struct = ephemeris_structs.GlonassEphemeris.new_message(**gnss_msg.glonassEphemeris.to_dict())
         try:
           ephem = GLONASSEphemeris(data_struct, file_name='ublox')
-        except Exception as e:
-          cloudlog.exception(f"Error parsing GLONASS ephemeris from ublox: {e}")
+        except Exception:
+          cloudlog.exception("Error parsing GLONASS ephemeris from ublox")
           return
       else:
-        cloudlog.exception(f"Unsupported ephemeris type: {gnss_msg.which()}")
+        cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return
       self.astro_dog.add_navs({ephem.prn: [ephem]})
     self.cache_ephemeris()
