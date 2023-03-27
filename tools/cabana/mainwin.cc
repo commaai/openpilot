@@ -465,7 +465,7 @@ void MainWindow::updateLoadSaveMenus() {
   open_dbc_for_source->clear();
 
   for (uint8_t source : sources_sorted) {
-    if (source >= 64) continue; // Sent and blocked busses are handled implicitly
+    if (source >= 64) continue; // Sent and blocked buses are handled implicitly
     QAction *action = new QAction(this);
 
     auto d = dbc()->findDBCFile(source);
