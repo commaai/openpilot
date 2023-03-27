@@ -33,11 +33,6 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir) {
   QObject::connect(replay.get(), &Replay::streamStarted, this, &AbstractStream::streamStarted);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
   if (replay->load()) {
-    const auto &segments = replay->route()->segments();
-    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
-      qWarning() << "no rlogs in route" << route;
-      return false;
-    }
     replay->start();
     return true;
   }
