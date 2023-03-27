@@ -77,8 +77,9 @@ bool DBCFile::saveAs(const QString &new_filename) {
 }
 
 bool DBCFile::autoSave() {
-  assert(!filename.isEmpty());
-  return writeContents(filename + AUTO_SAVE_EXTENSION);
+  if (!filename.isEmpty()) {
+    return writeContents(filename + AUTO_SAVE_EXTENSION);
+  }
 }
 
 void DBCFile::cleanupAutoSaveFile() {
