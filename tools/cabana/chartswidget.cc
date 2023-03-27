@@ -221,7 +221,7 @@ ChartView *ChartsWidget::createChart() {
   chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
-  QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
+  QObject::connect(chart, &ChartView::zoomUndo, this, &ChartsWidget::zoomUndo);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
@@ -713,7 +713,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
-    emit zoomReset();
+    emit zoomUndo();
     event->accept();
   } else {
     QGraphicsView::mouseReleaseEvent(event);

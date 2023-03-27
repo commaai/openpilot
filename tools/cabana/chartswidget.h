@@ -52,7 +52,7 @@ signals:
   void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
   void seriesAdded(const MessageId &id, const cabana::Signal *sig);
   void zoomIn(double min, double max);
-  void zoomReset();
+  void zoomUndo();
   void remove();
   void axisYLabelWidthChanged(int w);
 
