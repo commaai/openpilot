@@ -24,8 +24,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const float VALID_POS_STD = 50.0; // m
-
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
@@ -122,42 +120,6 @@ void MapWindow::updateState(const UIState &s) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
       last_bearing = RAD2DEG(locationd_orientation.getValue()[2]);
       velocity_filter.update(locationd_velocity.getValue()[0]);
-    }
-  }
-
-  // TODO should check a valid/status flag
-  if (sm.updated("gnssMeasurements") && sm["gnssMeasurements"].getGnssMeasurements().getGpsWeek() > 0){
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos = laikad_location.getPositionECEF();
-    auto laikad_pos_ecef = laikad_pos.getValue();
-    auto laikad_pos_std = laikad_pos.getStd();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
-
-    if (laikad_valid && !locationd_valid) {
-      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
-
-      // Compute NED velocity
-      LocalCoord converter(ecef);
-      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
-      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
-
-      float velocity = ned_vel.norm();
-      velocity_filter.update(velocity);
-
-      // Convert NED velocity to angle
-      if (velocity > 1.0) {
-        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        if (last_bearing) {
-          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
-        } else {
-          last_bearing = new_bearing;
-        }
-      }
     }
   }
 

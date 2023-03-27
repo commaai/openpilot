@@ -8,7 +8,6 @@
 
 #include "tools/cabana/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -16,7 +15,7 @@ Q_OBJECT
 public:
   MessageListModel(QObject *parent) : QAbstractTableModel(parent) {}
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 5; }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 6; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;

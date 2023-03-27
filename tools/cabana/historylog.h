@@ -11,8 +11,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/util.h"
 
-using namespace dbcmanager;
-
 class HeaderView : public QHeaderView {
 public:
   HeaderView(Qt::Orientation orientation, QWidget *parent = nullptr) : QHeaderView(orientation, parent) {}
@@ -64,7 +62,7 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  std::vector<const Signal *> sigs;
+  std::vector<const cabana::Signal *> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };

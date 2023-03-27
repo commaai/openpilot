@@ -13,6 +13,8 @@
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
 
+const QString AUTO_SAVE_EXTENSION = ".tmp";
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
@@ -42,6 +44,8 @@ signals:
 protected:
   void remindSaveChanges();
   void saveFile(const QString &fn);
+  void autoSave();
+  void cleanupAutoSaveFile();
   void setCurrentFile(const QString &fn);
   void updateRecentFileActions();
   void createActions();
@@ -56,6 +60,8 @@ protected:
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
+  void toggleFullScreen();
+  void updateStatus();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
@@ -65,6 +71,7 @@ protected:
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
+  QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
   QSplitter *video_splitter;;
   QString current_file = "";
