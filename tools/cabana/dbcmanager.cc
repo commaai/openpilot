@@ -10,10 +10,20 @@
 
 
 bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
-  // Check if file is already open, and merge sources
-  for (auto &[ss, dbc_file] : dbc_files) {
+  for (int i = 0; i < dbc_files.size(); i++) {
+    auto &[ss, dbc_file] = dbc_files[i];
+
+    // Check if file is already open, and merge sources
     if (dbc_file->filename == dbc_file_name) {
       ss |= s;
+      emit DBCFileChanged();
+      return true;
+    }
+
+    // Check if there is already a file for this sourceset, then replace it
+    if (ss == s) {
+      delete dbc_file;
+      dbc_files[i] = {s, new DBCFile(dbc_file_name, this)};
       emit DBCFileChanged();
       return true;
     }
