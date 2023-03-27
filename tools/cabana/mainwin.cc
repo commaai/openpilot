@@ -256,6 +256,7 @@ void MainWindow::openRoute() {
 
 void MainWindow::newFile() {
   remindSaveChanges();
+  dbc()->closeAll();
   dbc()->open(SOURCE_ALL, "", "");
   updateLoadSaveMenus();
 }
