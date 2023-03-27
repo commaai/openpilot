@@ -10,7 +10,7 @@ import glob
 from typing import NoReturn
 
 from common.file_helpers import mkdirs_exists_ok
-from selfdrive.loggerd.config import ROOT
+from system.loggerd.config import ROOT
 import selfdrive.sentry as sentry
 from system.swaglog import cloudlog
 from system.version import get_commit

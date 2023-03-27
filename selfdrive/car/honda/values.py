@@ -186,7 +186,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
       logging=True,
-      non_obd=True,
+      obd_multiplexing=False,
     ),
   ],
   extra_ecus=[

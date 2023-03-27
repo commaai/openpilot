@@ -4,10 +4,8 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QDebug>
-
-#include <limits>
 #include <cmath>
+#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -42,7 +40,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         }
 
         // Track bit level changes
-        for (int bit = 0; bit < 8; bit++){
+        for (int bit = 0; bit < 8; bit++) {
           if ((cur ^ last) & (1 << bit)) {
             bit_change_counts[i][bit] += 1;
           }
@@ -67,6 +65,39 @@ void ChangeTracker::clear() {
   colors.clear();
 }
 
+// SegmentTree
+
+void SegmentTree::build(const QVector<QPointF> &arr) {
+  size = arr.size();
+  tree.resize(4 * size);  // size of the tree is 4 times the size of the array
+  if (size > 0) {
+    build_tree(arr, 1, 0, size - 1);
+  }
+}
+
+void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+  if (left == right) {
+    const double y = arr[left].y();
+    tree[n] = {y, y};
+  } else {
+    const int mid = (left + right) >> 1;
+    build_tree(arr, 2 * n, left, mid);
+    build_tree(arr, 2 * n + 1, mid + 1, right);
+    tree[n] = {std::min(tree[2 * n].first, tree[2 * n + 1].first), std::max(tree[2 * n].second, tree[2 * n + 1].second)};
+  }
+}
+
+std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, int range_left, int range_right) const {
+  if (range_left > right || range_right < left)
+    return {std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()};
+  if (range_left <= left && range_right >= right)
+    return tree[n];
+  int mid = (left + right) >> 1;
+  auto l = get_minmax(2 * n, left, mid, range_left, range_right);
+  auto r = get_minmax(2 * n + 1, mid + 1, right, range_left, range_right);
+  return {std::min(l.first, r.first), std::max(l.second, r.second)};
+}
+
 // MessageBytesDelegate
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
@@ -82,7 +113,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
+  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
@@ -94,7 +125,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   }
 }
 
-QColor getColor(const Signal *sig) {
+QColor getColor(const cabana::Signal *sig) {
   float h = 19 * (float)sig->lsb / 64.0;
   h = fmod(h, 1.0);
 
@@ -105,7 +136,7 @@ QColor getColor(const Signal *sig) {
   return QColor::fromHsvF(h, s, v);
 }
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
@@ -136,9 +167,10 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   btn->setIcon(utils::icon(icon));
   btn->setToolTip(tooltip);
   btn->setAutoRaise(true);
+  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
+  btn->setIconSize({metric, metric});
   return btn;
 };
-
 
 QString toHex(uint8_t byte) {
   static std::array<QString, 256> hex = []() {
@@ -147,4 +179,14 @@ QString toHex(uint8_t byte) {
     return ret;
   }();
   return hex[byte];
+}
+
+int num_decimals(double num) {
+  const QString string = QString::number(num);
+  const QStringList split = string.split('.');
+  if (split.size() == 1) {
+    return 0;
+  } else {
+    return split[1].size();
+  }
 }

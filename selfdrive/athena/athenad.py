@@ -36,8 +36,8 @@ from common.file_helpers import CallbackReader
 from common.params import Params
 from common.realtime import sec_since_boot, set_core_affinity
 from system.hardware import HARDWARE, PC, AGNOS
-from selfdrive.loggerd.config import ROOT
-from selfdrive.loggerd.xattr_cache import getxattr, setxattr
+from system.loggerd.config import ROOT
+from system.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
