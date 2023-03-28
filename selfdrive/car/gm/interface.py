@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs, exp  # , erf
+from math import fabs, exp  # , tanh, erf
 from panda import Panda
 
 from common.conversions import Conversions as CV
@@ -48,6 +48,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def torque_from_lateral_accel_bolt(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
+    friction_compensation = False  # Disable friction compensation in the bolt
     friction_interp = interp(
       apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
       [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
@@ -58,10 +59,16 @@ class CarInterface(CarInterfaceBase):
     def sig(val):
       return 1 / (1 + exp(-val)) - 0.5
 
-    # a, b, c, _ = [1.589957242826664, 0.4335237771434789, 0.20701994923698716, 0.007771162911547703]  # weights for erf based ff
-    # steer_torque = (erf(lateral_accel_value * a) * b) + (lateral_accel_value * c)
-    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights for sigmoid based ff
-    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
+    # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
+    # This has big effect on the stability about 0 (noise when going straight)
+    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
+    steer_troque_fn = sig
+
+    # The "lat_accel vs torque" relationship is assumed to be the sum of "tanh + linear" curves
+    # a, b, c, _ = [1.2155020399755947, 0.6657418328176833, 0.07779661439819789, 0.01678987253163216]  # weights computed offline
+    # steer_troque_fn = tanh
+    steer_torque = (steer_troque_fn(lateral_accel_value * a) * b) + (lateral_accel_value * c)
     return steer_torque + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
