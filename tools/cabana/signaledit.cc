@@ -61,12 +61,13 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
+    max_value_width = 0;
     for (auto item : root->children) {
-      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
+      item->sig_val = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
       if (!item->sig->unit.isEmpty()){
-        value += " " + item->sig->unit;
+        item->sig_val += " " + item->sig->unit;
       }
-      item->sig_val = value;
+      max_value_width = std::max(max_value_width, QFontMetrics(QFont()).width(item->sig_val));
       emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
       ++row;
     }
@@ -353,42 +354,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->fillRect(option.rect, option.palette.highlight());
     }
 
-    // sparkline
-    // TODO: get seconds from settings.
-    const uint64_t chart_seconds = 15;  // seconds
-    const double route_start_time = can->routeStartTime();
-    uint64_t ts = (can->currentSec() + route_start_time) * 1e9;
-    const auto &msgs = can->events().at(((SignalView *)parent())->msg_id);
-    auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
-    if (first != msgs.cend()) {
-      auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
-      double min = std::numeric_limits<double>::max();
-      double max = std::numeric_limits<double>::lowest();
-      double first_ts = first->mono_time / 1e9 - route_start_time;  // seconds
-      QPolygonF lines;
-      for (; first != last; ++first) {
-        double value = get_raw_value(first->dat, first->size, *item->sig);
-        lines.append({first->mono_time / 1e9 - route_start_time - first_ts, value});
-        min = std::min(min, value);
-        max = std::max(max, value);
-      }
-      if (min == max) {
-        min -= 1;
-        max += 1;
-      }
-
-      // TODO: calc width from sizehint
-      const double xscale = 150 / chart_seconds;
-      const double yscale = (option.rect.height() - 8) / (max - min);
-      const int left = option.rect.left();
-      const int top = option.rect.top() + 4;
-      for (auto &pt : lines) {
-        pt.rx() = left + pt.x() * xscale;
-        pt.ry() = top + std::abs(pt.y() - max) * yscale;
-      }
-      painter->setPen({getColor(item->sig), 1});
-      painter->drawPolyline(lines);
-    }
+    drawSparkline(painter, option, index);
     // draw signal value
     painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     QRect rc = option.rect.adjusted(0, 0, -70, 0);
@@ -396,6 +362,45 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
+  }
+}
+
+void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  // TODO: get seconds from settings.
+  const uint64_t chart_seconds = 15;  // seconds
+  const double route_start_time = can->routeStartTime();
+  uint64_t ts = (can->currentSec() + route_start_time) * 1e9;
+  const auto &msgs = can->events().at(((SignalView *)parent())->msg_id);
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
+  if (first != msgs.cend()) {
+    auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+    double min = std::numeric_limits<double>::max();
+    double max = std::numeric_limits<double>::lowest();
+    double first_ts = first->mono_time / 1e9 - route_start_time;  // seconds
+    QPolygonF lines;
+    for (; first != last; ++first) {
+      double value = get_raw_value(first->dat, first->size, *item->sig);
+      lines.append({first->mono_time / 1e9 - route_start_time - first_ts, value});
+      min = std::min(min, value);
+      max = std::max(max, value);
+    }
+    if (min == max) {
+      min -= 1;
+      max += 1;
+    }
+
+    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+    const double xscale = (option.rect.width() - 70 - ((SignalModel *)(index.model()))->max_value_width) / chart_seconds;
+    const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
+    const int left = option.rect.left();
+    const int top = option.rect.top() + v_margin;
+    for (auto &pt : lines) {
+      pt.rx() = left + pt.x() * xscale;
+      pt.ry() = top + std::abs(pt.y() - max) * yscale;
+    }
+    painter->setPen({getColor(item->sig), 1});
+    painter->drawPolyline(lines);
   }
 }
 
