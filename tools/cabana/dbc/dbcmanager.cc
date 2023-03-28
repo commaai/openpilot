@@ -1,4 +1,4 @@
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 
 #include <QFile>
 #include <QRegularExpression>

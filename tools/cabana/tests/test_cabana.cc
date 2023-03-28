@@ -3,7 +3,7 @@
 #undef INFO
 #include "catch2/catch.hpp"
 #include "tools/replay/logreader.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 // demo route, first segment
