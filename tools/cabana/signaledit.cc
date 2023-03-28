@@ -367,8 +367,9 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
   static std::vector<QPointF> points;
   // TODO: get seconds from settings.
   const uint64_t chart_seconds = 15;  // seconds
-  const auto &msgs = can->events().at(((SignalView *)parent())->msg_id);
-  uint64_t ts = (can->currentSec() + can->routeStartTime()) * 1e9;
+  const auto &msg_id = ((SignalView *)parent())->msg_id;
+  const auto &msgs = can->events().at(msg_id);
+  uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
   if (first != msgs.cend()) {
     double min = std::numeric_limits<double>::max();
