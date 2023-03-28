@@ -318,6 +318,8 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   auto item = (SignalModel::Item *)index.internalPointer();
   if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
@@ -328,8 +330,6 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
     QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
@@ -354,9 +354,10 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     drawSparkline(painter, option, index);
     // draw signal value
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QRect rc = option.rect.adjusted(0, 0, -70 * option.widget->devicePixelRatioF(), 0);
+    int right_offset = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
+    QRect rc = option.rect.adjusted(0, 0, -right_offset, 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
+    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
@@ -374,9 +375,9 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
   if (first != msgs.cend()) {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
-    points.clear();
     const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
     auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+    points.clear();
     for (auto it = first; it != last; ++it) {
       double value = get_raw_value(it->dat, it->size, *sig);
       points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);

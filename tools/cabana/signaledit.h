@@ -123,4 +123,5 @@ private:
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  friend SignalItemDelegate;
 };
