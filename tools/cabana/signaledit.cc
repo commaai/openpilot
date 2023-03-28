@@ -376,6 +376,8 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         min -= 1;
         max += 1;
       }
+
+      // TODO: calc width from sizehint
       const double xscale = 150 / chart_seconds;
       const double yscale = (option.rect.height() - 8) / (max - min);
       const int left = option.rect.left();
