@@ -99,6 +99,7 @@ public:
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
+  MessageId msg_id;
 
 signals:
   void highlight(const cabana::Signal *sig);
@@ -117,7 +118,6 @@ private:
     }
   };
 
-  MessageId msg_id;
   TreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
