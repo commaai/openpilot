@@ -365,23 +365,20 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   static std::vector<QPointF> points;
-  auto item = (SignalModel::Item *)index.internalPointer();
   // TODO: get seconds from settings.
   const uint64_t chart_seconds = 15;  // seconds
-  const double route_start_time = can->routeStartTime();
-  uint64_t ts = (can->currentSec() + route_start_time) * 1e9;
   const auto &msgs = can->events().at(((SignalView *)parent())->msg_id);
+  uint64_t ts = (can->currentSec() + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
   if (first != msgs.cend()) {
-    auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
-    const double first_ts = first->mono_time / 1e9 - route_start_time;  // seconds
-
     points.clear();
-    for (; first != last; ++first) {
-      double value = get_raw_value(first->dat, first->size, *item->sig);
-      points.emplace_back(first->mono_time / 1e9 - route_start_time - first_ts, value);
+    const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
+    auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+    for (auto it = first; it != last; ++it) {
+      double value = get_raw_value(it->dat, it->size, *sig);
+      points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
       min = std::min(min, value);
       max = std::max(max, value);
     }
@@ -392,7 +389,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
     int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
-    const double xscale = (option.rect.width() - 175 * option.widget->devicePixelRatioF() - h_margin * 2) / chart_seconds;
+    const double xscale = (option.rect.width() - 175.0 * option.widget->devicePixelRatioF() - h_margin * 2) / chart_seconds;
     const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
     const int left = option.rect.left();
     const int top = option.rect.top() + v_margin;
@@ -400,7 +397,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
       pt.rx() = left + pt.x() * xscale;
       pt.ry() = top + std::abs(pt.y() - max) * yscale;
     }
-    painter->setPen(getColor(item->sig));
+    painter->setPen(getColor(sig));
     painter->drawPolyline(points.data(), points.size());
   }
 }
