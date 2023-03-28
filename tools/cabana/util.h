@@ -12,7 +12,7 @@
 #include <QToolButton>
 #include <QVector>
 
-#include "tools/cabana/dbc.h"
+#include "tools/cabana/dbc/dbc.h"
 
 class ChangeTracker {
 public:
