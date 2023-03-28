@@ -393,7 +393,12 @@ class Updater:
 def main() -> None:
   params = Params()
 
+  updater = Updater()
+  update_failed_count = 0  # TODO: Load from param?
+  exception = None
+
   if params.get_bool("DisableUpdates"):
+    updater.set_params(update_failed_count, exception)
     cloudlog.warning("updates are disabled by the DisableUpdates param")
     exit(0)
 
@@ -416,9 +421,6 @@ def main() -> None:
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  updater = Updater()
-  update_failed_count = 0  # TODO: Load from param?
-
   # no fetch on the first time
   wait_helper = WaitTimeHelper()
   wait_helper.only_check_for_update = True
@@ -431,7 +433,6 @@ def main() -> None:
     wait_helper.ready_event.clear()
 
     # Attempt an update
-    exception = None
     try:
       # TODO: reuse overlay from previous updated instance if it looks clean
       init_overlay()
