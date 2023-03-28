@@ -8,10 +8,11 @@
 #include <QPixmap>
 #include <QStyleOptionSlider>
 #include <QTimeEdit>
-#include <QTimer>
 #include <QToolTip>
 #include <QVBoxLayout>
 #include <QtConcurrent>
+
+const int MIN_VIDEO_HEIGHT = 100;
 
 static const QColor timeline_colors[] = {
   [(int)TimelineType::None] = QColor(111, 143, 175),
@@ -22,7 +23,7 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
 
-inline QString formatTime(int seconds) {
+static inline QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 
@@ -106,7 +107,7 @@ QWidget *VideoWidget::createCameraWidget() {
   slider_layout->addWidget(end_time_label);
   l->addLayout(slider_layout);
 
-  cam_widget->setMinimumHeight(100);
+  cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
@@ -164,16 +165,12 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
-  QTimer *timer = new QTimer(this);
-  timer->setInterval(2000);
-  timer->callOnTimeout([this]() {
+Slider::Slider(QWidget *parent) : timer(this), QSlider(Qt::Horizontal, parent) {
+  timer.callOnTimeout([this]() {
     timeline = can->getTimeline();
     update();
   });
   setMouseTracking(true);
-
-  QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
   QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
 }
 
@@ -187,11 +184,13 @@ void Slider::streamStarted() {
   thumnail_future.waitForFinished();
   abort_load_thumbnail = false;
   thumbnails.clear();
+  timeline.clear();
+  timer.start(2000);
   thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
 }
 
 void Slider::loadThumbnails() {
-  const auto segments = can->route()->segments();
+  const auto &segments = can->route()->segments();
   for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
     std::string qlog = it->second.qlog.toStdString();
     if (!qlog.empty()) {
@@ -279,4 +278,9 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
   QPoint pt = mapToGlobal({e->pos().x() - thumbnail_size.width() / 2, -thumbnail_size.height() - 30});
   QToolTip::showText(pt, thumb, this, rect());
   QSlider::mouseMoveEvent(e);
+}
+
+void Slider::leaveEvent(QEvent *event) {
+  QToolTip::hideText();
+  QSlider::leaveEvent(event);
 }
