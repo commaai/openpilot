@@ -195,7 +195,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   """
 
   brand_addrs = get_brand_addrs()
-  brand_matches = defaultdict(set)
+  brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
   brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
   for addr, sub_addr, _ in ecu_rx_addrs:
@@ -205,7 +205,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
       if a in brand_addrs[brand]:
         brand_matches[brand].add(a)
 
-  return brand_matches
+  return {brand: len(matches) for brand, matches in brand_matches if len(matches)}
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
