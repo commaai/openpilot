@@ -40,5 +40,5 @@ if GetOption('test'):
   cabana_env.Program('tests/_test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
 def generate_dbc_json(target, source, env):
-  env.Execute('tools/cabana/generate_dbc_json.py --out tools/cabana/car_fingerprint_to_dbc.json')
+  env.Execute('tools/cabana/dbc/generate_dbc_json.py --out tools/cabana/dbc/car_fingerprint_to_dbc.json')
 cabana_env.Command('generate_dbc_json', [], generate_dbc_json)
