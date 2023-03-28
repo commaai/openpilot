@@ -62,14 +62,11 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
-      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
-      if (!item->sig->unit.isEmpty()){
-        value += " " + item->sig->unit;
+      item->sig_val = QString::number(get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig), 'f', item->sig->precision);
+      if (!item->sig->unit.isEmpty()) {
+        item->sig_val += " " + item->sig->unit;
       }
-      if (value != item->sig_val) {
-        item->sig_val = value;
-        emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
-      }
+      emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
       ++row;
     }
   }
@@ -321,6 +318,8 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   auto item = (SignalModel::Item *)index.internalPointer();
   if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
@@ -331,8 +330,6 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
     QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
@@ -351,16 +348,59 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
-    // draw signal value
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QRect rc = option.rect.adjusted(0, 0, -70, 0);
+
+    drawSparkline(painter, option, index);
+    // draw signal value
+    int right_offset = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
+    QRect rc = option.rect.adjusted(0, 0, -right_offset, 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
+    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
+  }
+}
+
+void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  static std::vector<QPointF> points;
+  // TODO: get seconds from settings.
+  const uint64_t chart_seconds = 15;  // seconds
+  const auto &msg_id = ((SignalView *)parent())->msg_id;
+  const auto &msgs = can->events().at(msg_id);
+  uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
+  if (first != msgs.cend()) {
+    double min = std::numeric_limits<double>::max();
+    double max = std::numeric_limits<double>::lowest();
+    const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
+    auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+    points.clear();
+    for (auto it = first; it != last; ++it) {
+      double value = get_raw_value(it->dat, it->size, *sig);
+      points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
+      min = std::min(min, value);
+      max = std::max(max, value);
+    }
+    if (min == max) {
+      min -= 1;
+      max += 1;
+    }
+
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+    int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
+    const double xscale = (option.rect.width() - 175.0 * option.widget->devicePixelRatioF() - h_margin * 2) / chart_seconds;
+    const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
+    const int left = option.rect.left();
+    const int top = option.rect.top() + v_margin;
+    for (auto &pt : points) {
+      pt.rx() = left + pt.x() * xscale;
+      pt.ry() = top + std::abs(pt.y() - max) * yscale;
+    }
+    painter->setPen(getColor(sig));
+    painter->drawPolyline(points.data(), points.size());
   }
 }
 
