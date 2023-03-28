@@ -23,6 +23,7 @@ public:
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
+  const std::vector<Event*> *rawEvents() const override { return replay->events(); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
 
 private:

@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QSlider>
+#include <QStack>
+#include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 using namespace QtCharts;
 
@@ -52,7 +52,7 @@ signals:
   void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
   void seriesAdded(const MessageId &id, const cabana::Signal *sig);
   void zoomIn(double min, double max);
-  void zoomReset();
+  void zoomUndo();
   void remove();
   void axisYLabelWidthChanged(int w);
 
@@ -120,14 +120,17 @@ signals:
 
 private:
   void resizeEvent(QResizeEvent *event) override;
+  bool event(QEvent *event) override;
   void alignCharts();
   void newChart();
-  ChartView * createChart();
+  ChartView *createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
+  void zoomUndo();
+  void setZoom(double min, double max);
   void updateToolBar();
   void setMaxChartRange(int value);
   void updateLayout();
@@ -142,6 +145,7 @@ private:
   QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
+  QAction *undo_zoom_action;
   QAction *reset_zoom_action;
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
@@ -150,10 +154,12 @@ private:
   bool is_zoomed = false;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
+  QStack<QPair<double, double>> zoom_stack;
   bool use_dark_theme = false;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  QTimer align_timer;
 };
 
 class SeriesSelector : public QDialog {
