@@ -61,13 +61,11 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
-    max_value_width = 0;
     for (auto item : root->children) {
       item->sig_val = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
-      if (!item->sig->unit.isEmpty()){
+      if (!item->sig->unit.isEmpty()) {
         item->sig_val += " " + item->sig->unit;
       }
-      max_value_width = std::max(max_value_width, QFontMetrics(QFont()).width(item->sig_val));
       emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
       ++row;
     }
@@ -357,7 +355,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     drawSparkline(painter, option, index);
     // draw signal value
     painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QRect rc = option.rect.adjusted(0, 0, -70, 0);
+    QRect rc = option.rect.adjusted(0, 0, -70 * option.widget->devicePixelRatioF(), 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
@@ -366,6 +364,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 }
 
 void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  static QPolygonF lines;
   auto item = (SignalModel::Item *)index.internalPointer();
   // TODO: get seconds from settings.
   const uint64_t chart_seconds = 15;  // seconds
@@ -378,7 +377,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
     double first_ts = first->mono_time / 1e9 - route_start_time;  // seconds
-    QPolygonF lines;
+    lines.clear();
     for (; first != last; ++first) {
       double value = get_raw_value(first->dat, first->size, *item->sig);
       lines.append({first->mono_time / 1e9 - route_start_time - first_ts, value});
@@ -390,8 +389,9 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
       max += 1;
     }
 
-    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
-    const double xscale = (option.rect.width() - 70 - ((SignalModel *)(index.model()))->max_value_width) / chart_seconds;
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+    int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
+    const double xscale = (option.rect.width() - 180 * option.widget->devicePixelRatioF() - h_margin * 2) / chart_seconds;
     const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
     const int left = option.rect.left();
     const int top = option.rect.top() + v_margin;

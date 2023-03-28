@@ -58,9 +58,7 @@ private:
   MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
-  int max_value_width = 0;
   friend class SignalView;
-  friend class SignalItemDelegate;
 };
 
 class ValueDescriptionDlg : public QDialog {
