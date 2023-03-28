@@ -386,7 +386,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         pt.rx() = left + pt.x() * xscale;
         pt.ry() = top + std::abs(pt.y() - max) * yscale;
       }
-      painter->setPen({getColor(item->sig), 2});
+      painter->setPen({getColor(item->sig), 1});
       painter->drawPolyline(lines);
     }
     // draw signal value
