@@ -189,7 +189,10 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 
 
 def get_brand_ecu_matches(ecu_rx_addrs):
-  """Returns dictionary of brands and matches with ECUs in their FW versions"""
+  """
+  Returns dictionary of brands and matches with ECUs in their FW versions.
+  Excludes brands with no matches.
+  """
 
   brand_addrs = get_brand_addrs()
   brand_matches = defaultdict(set)
