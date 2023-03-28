@@ -56,6 +56,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
 
+  control_on = 5 if enabled else 0
   gas_command = gas if active and accel > min_gas_accel else -30000
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
@@ -76,7 +77,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   else:
     acc_control_values.update({
       # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
-      "CONTROL_ON": 5 if enabled else 0,
+      "CONTROL_ON": control_on,
       "GAS_COMMAND": gas_command,  # used for gas
       "BRAKE_LIGHTS": braking,
       "BRAKE_REQUEST": braking,
