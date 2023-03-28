@@ -379,7 +379,7 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
-    timeout=60*4,  # first messages are blocked on internet assistance
+    timeout=60*10,  # first messages are blocked on internet assistance
   ),
   ProcessConfig(
     proc_name="torqued",
