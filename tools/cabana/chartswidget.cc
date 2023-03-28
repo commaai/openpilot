@@ -558,7 +558,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
       }
       s.series->setColor(getColor(s.sig));
 
-      auto msgs = can->events().at(s.msg_id);
+      const auto &msgs = can->events().at(s.msg_id);
       auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = s.last_value_mono_time});
       int new_size = std::max<int>(s.vals.size() + std::distance(first, msgs.cend()), settings.max_cached_minutes * 60 * 100);
       if (s.vals.capacity() <= new_size) {
