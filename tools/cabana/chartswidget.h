@@ -13,7 +13,7 @@
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 using namespace QtCharts;
 
