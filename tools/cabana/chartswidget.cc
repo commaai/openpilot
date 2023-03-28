@@ -56,6 +56,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   range_slider->setPageStep(60);  // 1 min
   range_slider_action = toolbar->addWidget(range_slider);
 
+  undo_zoom_action = toolbar->addAction(utils::icon("arrow-counterclockwise"), tr("Previous zoom"));
+  qobject_cast<QToolButton*>(toolbar->widgetForAction(undo_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
   reset_zoom_action = toolbar->addAction(utils::icon("zoom-out"), tr("Reset Zoom"));
   qobject_cast<QToolButton*>(toolbar->widgetForAction(reset_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
@@ -97,6 +100,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
+  QObject::connect(undo_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomUndo);
   QObject::connect(reset_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -123,7 +127,7 @@ void ChartsWidget::eventsMerged() {
   }
 }
 
-void ChartsWidget::zoomIn(double min, double max) {
+void ChartsWidget::setZoom(double min, double max) {
   zoomed_range = {min, max};
   is_zoomed = zoomed_range != display_range;
   updateToolBar();
@@ -131,8 +135,25 @@ void ChartsWidget::zoomIn(double min, double max) {
   emit rangeChanged(min, max, is_zoomed);
 }
 
+void ChartsWidget::zoomIn(double min, double max) {
+  // Save previous zoom on undo stack
+  if (is_zoomed) {
+    zoom_stack.push({zoomed_range.first, zoomed_range.second});
+  }
+  setZoom(min, max);
+}
+
 void ChartsWidget::zoomReset() {
-  zoomIn(display_range.first, display_range.second);
+  setZoom(display_range.first, display_range.second);
+}
+
+void ChartsWidget::zoomUndo() {
+  if (!zoom_stack.isEmpty()) {
+    auto r = zoom_stack.pop();
+    setZoom(r.first, r.second);
+  } else {
+    zoomReset();
+  }
 }
 
 void ChartsWidget::updateState() {
@@ -148,7 +169,7 @@ void ChartsWidget::updateState() {
     display_range.first = std::max(0.0, max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
   } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
-    // loop in zoommed range
+    // loop in zoomed range
     can->seekTo(zoomed_range.first);
   }
 
@@ -170,6 +191,7 @@ void ChartsWidget::updateToolBar() {
   range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
+  undo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
@@ -199,7 +221,7 @@ ChartView *ChartsWidget::createChart() {
   chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
-  QObject::connect(chart, &ChartView::zoomReset, this, &ChartsWidget::zoomReset);
+  QObject::connect(chart, &ChartView::zoomUndo, this, &ChartsWidget::zoomUndo);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
@@ -302,6 +324,23 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
     return true;
   }
   return false;
+}
+
+bool ChartsWidget::event(QEvent *event) {
+  bool back_button = false;
+  if (event->type() == QEvent::MouseButtonPress) {
+    QMouseEvent *ev = static_cast<QMouseEvent *>(event);
+    back_button = ev->button() == Qt::BackButton;
+  } else if (event->type() == QEvent::NativeGesture) { // MacOS emulates a back swipe on pressing the mouse back button
+    QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
+    back_button = (ev->value() == 180);
+  }
+
+  if (back_button) {
+    zoomUndo();
+    return true;
+  }
+  return QFrame::event(event);
 }
 
 // ChartView
@@ -679,7 +718,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
-    emit zoomReset();
+    emit zoomUndo();
     event->accept();
   } else {
     QGraphicsView::mouseReleaseEvent(event);
