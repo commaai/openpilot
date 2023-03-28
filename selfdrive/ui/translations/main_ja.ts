@@ -963,8 +963,8 @@ This may take up to a minute.</source>
         <translation>車内カメラの映像をアップロードし、ドライバー監視システムのアルゴリズムの向上に役立てます。</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>実験段階のopenpilotによるアクセル制御</translation>
+        <source>openpilot Longitudinal Control</source>
+        <translation type="unfinished">実験段階のopenpilotによるアクセル制御</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>

@@ -964,8 +964,8 @@ This may take up to a minute.</source>
         <translation>운전자 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선합니다.</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>openpilot 롱컨트롤 (실험적)</translation>
+        <source>openpilot Longitudinal Control</source>
+        <translation type="unfinished">openpilot 롱컨트롤 (실험적)</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>

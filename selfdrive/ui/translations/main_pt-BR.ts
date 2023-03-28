@@ -968,8 +968,8 @@ Isso pode levar até um minuto.</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>Controle longitudinal experimental openpilot</translation>
+        <source>openpilot Longitudinal Control</source>
+        <translation type="unfinished">Controle longitudinal experimental openpilot</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>

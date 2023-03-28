@@ -961,8 +961,8 @@ This may take up to a minute.</source>
         <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>试验性的openpilot纵向控制</translation>
+        <source>openpilot Longitudinal Control</source>
+        <translation type="unfinished">试验性的openpilot纵向控制</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
