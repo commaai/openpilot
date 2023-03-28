@@ -205,7 +205,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
       if a in brand_addrs[brand]:
         brand_matches[brand].add(a)
 
-  return {brand: len(matches) for brand, matches in brand_matches if len(matches)}
+  return {brand: matches for brand, matches in brand_matches if len(matches)}
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
