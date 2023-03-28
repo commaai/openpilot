@@ -11,9 +11,16 @@
 #include <QTimer>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
-#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
+
+class ThumbnailLabel : public QWidget {
+public:
+  ThumbnailLabel(QWidget *parent);
+  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm);
+  void paintEvent(QPaintEvent *event) override;
+  QPixmap pixmap;
+  QString second;
+};
 
 class Slider : public QSlider {
   Q_OBJECT
@@ -30,19 +37,18 @@ private:
   void paintEvent(QPaintEvent *ev) override;
   void streamStarted();
   void loadThumbnails();
-  QString getThumbnailString(const capnp::Data::Reader &data);
 
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
   std::mutex thumbnail_lock;
   std::atomic<bool> abort_load_thumbnail = false;
-  QMap<uint64_t, QString> thumbnails;
+  QMap<uint64_t, QPixmap> thumbnails;
   QFuture<void> thumnail_future;
-  QSize thumbnail_size = {};
+  ThumbnailLabel thumbnail_label;
   QTimer timer;
 };
 
-class VideoWidget : public QWidget {
+class VideoWidget : public QFrame {
   Q_OBJECT
 
 public:
@@ -52,12 +58,11 @@ public:
 protected:
   void updateState();
   void updatePlayBtnState();
-  void timeLabelClicked();
   QWidget *createCameraWidget();
 
   CameraWidget *cam_widget;
   QLabel *end_time_label;
-  ElidedLabel *time_label;
+  QLabel *time_label;
   QHBoxLayout *slider_layout;
   QPushButton *play_btn;
   Slider *slider;
