@@ -145,6 +145,7 @@ void ChartsWidget::zoomIn(double min, double max) {
 
 void ChartsWidget::zoomReset() {
   setZoom(display_range.first, display_range.second);
+  zoom_stack.clear();
 }
 
 void ChartsWidget::zoomUndo() {
