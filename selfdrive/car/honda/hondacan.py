@@ -21,6 +21,13 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
+def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
+  # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
+  if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric:
+    return CV.MPH_TO_MS
+  return CV.KPH_TO_MS
+
+
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0

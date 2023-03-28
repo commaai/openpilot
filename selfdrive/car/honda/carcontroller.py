@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from cereal import car
-from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
@@ -127,8 +126,8 @@ class CarController:
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
-    conversion = CV.MS_TO_MPH if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and not CS.is_metric else CV.MS_TO_KPH
-    hud_v_cruise = hud_control.setSpeed * conversion if hud_control.speedVisible else 255
+    conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
+    hud_v_cruise = hud_control.setSpeed / conversion if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
