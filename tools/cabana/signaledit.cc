@@ -366,12 +366,10 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   static std::vector<QPointF> points;
-  // TODO: get seconds from settings.
-  const uint64_t chart_seconds = 15;  // seconds
   const auto &msg_id = ((SignalView *)parent())->msg_id;
   const auto &msgs = can->events().at(msg_id);
   uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - chart_seconds * 1e9, 0)});
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - settings.sparkline_range * 1e9, 0)});
   if (first != msgs.cend()) {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
@@ -391,7 +389,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
     int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
-    const double xscale = (option.rect.width() - 175.0 * option.widget->devicePixelRatioF() - h_margin * 2) / chart_seconds;
+    const double xscale = (option.rect.width() - 175.0 * option.widget->devicePixelRatioF() - h_margin * 2) / settings.sparkline_range;
     const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
     const int left = option.rect.left();
     const int top = option.rect.top() + v_margin;
@@ -451,6 +449,17 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
+
+  // WARNING: increasing the maximum range can result in severe performance degradation.
+  // 60s is a reasonable value at present.
+  const int max_range = 60; // 60s
+  settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
+  hl->addWidget(sparkline_label = new QLabel());
+  hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
+  sparkline_range_slider->setRange(1, max_range);
+  sparkline_label->setText(tr("Range: %1s").arg(settings.sparkline_range, 2, 10, QLatin1Char('0')));
+  sparkline_range_slider->setValue(settings.sparkline_range);
+
   auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
@@ -475,6 +484,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->addWidget(tree);
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
+  QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
@@ -567,6 +577,12 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
     }
   }
+}
+
+void SignalView::setSparklineRange(int value) {
+  settings.sparkline_range = value;
+  sparkline_label->setText(tr("Range: %1s").arg(settings.sparkline_range, 2, 10, QLatin1Char('0')));
+  model->updateState(nullptr);
 }
 
 void SignalView::leaveEvent(QEvent *event) {
