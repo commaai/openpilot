@@ -218,13 +218,8 @@ class CarController:
           self.gas = interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V)
 
           stopping = actuators.longControlState == LongCtrlState.stopping
-          idlestop_allow = 0
-          if stopping:
-            self.stopping_counter += 1
-            if self.stopping_counter > 200:
-              idlestop_allow = 1
-          else:
-            self.stopping_counter = 0
+          self.stopping_counter = self.stopping_counter + 1 if stopping else 0
+          idlestop_allow = self.stopping_counter > 200
           can_sends.extend(hondacan.create_acc_commands(self.packer, CC.enabled, CC.longActive, self.accel, self.gas,
                                                         stopping, self.CP.carFingerprint, idlestop_allow))
         else:
