@@ -72,7 +72,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, c
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
     acc_control_values.update({
       "CONTROL_ON": enabled,
-      "IDLESTOP_ALLOW": stopping_counter > 200,  # allow idle-stop after 2 seconds
+      "IDLESTOP_ALLOW": stopping_counter > 200,  # allow idle-stop after 4 seconds (50 Hz)
     })
   else:
     acc_control_values.update({
