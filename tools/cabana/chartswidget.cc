@@ -847,8 +847,8 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
       auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
       auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+      painter->setBrush(s.series->color());
       for (auto it = first; it != last; ++it) {
-        painter->setBrush(s.series->color());
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
       }
     }

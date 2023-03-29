@@ -370,11 +370,11 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
   const auto &msgs = can->events().at(msg_id);
   uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - settings.sparkline_range * 1e9, 0)});
-  if (first != msgs.cend()) {
+  auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+  if (first != last) {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
     const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
-    auto last = std::lower_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
     points.clear();
     for (auto it = first; it != last; ++it) {
       double value = get_raw_value(it->dat, it->size, *sig);
@@ -399,6 +399,13 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
     }
     painter->setPen(getColor(sig));
     painter->drawPolyline(points.data(), points.size());
+    if ((points.back().x() - points.front().x()) / points.size() > 10) {
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(getColor(sig));
+      for (const auto &pt : points) {
+        painter->drawEllipse(pt, 2, 2);
+      }
+    }
   }
 }
 
