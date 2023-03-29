@@ -87,6 +87,7 @@ class CAR:
   FIT = "HONDA FIT 2018"
   FREED = "HONDA FREED 2020"
   HRV = "HONDA HRV 2019"
+  HRV_2023 = "HONDA HRV 2023"
   ODYSSEY = "HONDA ODYSSEY 2018"
   ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
   ACURA_RDX = "ACURA RDX 2018"
@@ -138,6 +139,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV_2023: HondaCarInfo("Honda HR-V 2023"),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
   CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -1406,6 +1408,35 @@ FW_VERSIONS = {
       b'78109-THX-A220\x00\x00',
       b'78109-THX-C220\x00\x00',
       b'78109-THW-A110\x00\x00',
+    ],
+  },
+  CAR.HRV_2023: {
+    (Ecu.eps, 0x18DA30F1, None): [
+      b'39990-3W0-A030\x00\x00',
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None): [
+      b'38897-3W1-A010\x00\x00',
+    ],
+    (Ecu.srs, 0x18DA53F1, None): [
+      b'77959-3V0-A820\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
+      b'78108-3V1-A220\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'8S102-3W0-A060\x00\x00',
+    ],
+    (Ecu.vsa, 0x18DA28F1, None): [
+      b'57114-3W0-A040\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-6EH-A010\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-6CT-A710\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
+      b'46114-3W0-A020\x00\x00',
     ],
   },
   CAR.ACURA_ILX: {
