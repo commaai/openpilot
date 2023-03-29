@@ -45,7 +45,7 @@ void Settings::load() {
   recent_files = s.value("recent_files").toStringList();
   message_header_state = s.value("message_header_state").toByteArray();
   chart_series_type = s.value("chart_series_type", 0).toInt();
-  sparkline_range = s.value("sparkline_range", 60).toInt();
+  sparkline_range = s.value("sparkline_range", 15).toInt();
 }
 
 // SettingsDlg

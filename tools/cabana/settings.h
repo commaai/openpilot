@@ -19,7 +19,7 @@ public:
   int chart_column_count = 1;
   int chart_range = 3 * 60; // 3 minutes
   int chart_series_type = 0;
-  int sparkline_range = 60; // 60 seconds
+  int sparkline_range = 15; // 15 seconds
   QString last_dir;
   QString last_route_dir;
   QByteArray geometry;

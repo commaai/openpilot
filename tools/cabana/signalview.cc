@@ -456,9 +456,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
   hl->addWidget(sparkline_label = new QLabel());
   hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
-  sparkline_range_slider->setRange(1, max_range);
   sparkline_label->setText(tr("Range: %1s").arg(settings.sparkline_range, 2, 10, QLatin1Char('0')));
+  sparkline_range_slider->setRange(1, max_range);
   sparkline_range_slider->setValue(settings.sparkline_range);
+  sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
   auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
