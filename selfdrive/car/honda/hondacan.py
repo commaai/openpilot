@@ -21,6 +21,11 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
+def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
+  # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
+  return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
+
+
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
@@ -58,27 +63,36 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   standstill = 1 if active and stopping else 0
   standstill_release = 1 if active and not stopping else 0
 
+  # common ACC_CONTROL values
   acc_control_values = {
-    # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
-    "CONTROL_ON": control_on,
-    "GAS_COMMAND": gas_command,  # used for gas
-    "ACCEL_COMMAND": accel_command,  # used for brakes
-    "BRAKE_LIGHTS": braking,
-    "BRAKE_REQUEST": braking,
-    "STANDSTILL": standstill,
-    "STANDSTILL_RELEASE": standstill_release,
+    'ACCEL_COMMAND': accel_command,
+    'STANDSTILL': standstill,
   }
+
+  if car_fingerprint in HONDA_BOSCH_RADARLESS:
+    acc_control_values.update({
+      "CONTROL_ON": enabled,
+      "IDLESTOP_ALLOW": 0,  # disallows idle stop
+    })
+  else:
+    acc_control_values.update({
+      # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
+      "CONTROL_ON": control_on,
+      "GAS_COMMAND": gas_command,  # used for gas
+      "BRAKE_LIGHTS": braking,
+      "BRAKE_REQUEST": braking,
+      "STANDSTILL_RELEASE": standstill_release,
+    })
+    acc_control_on_values = {
+      "SET_TO_3": 0x03,
+      "CONTROL_ON": enabled,
+      "SET_TO_FF": 0xff,
+      "SET_TO_75": 0x75,
+      "SET_TO_30": 0x30,
+    }
+    commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
+
   commands.append(packer.make_can_msg("ACC_CONTROL", bus, acc_control_values))
-
-  acc_control_on_values = {
-    "SET_TO_3": 0x03,
-    "CONTROL_ON": enabled,
-    "SET_TO_FF": 0xff,
-    "SET_TO_75": 0x75,
-    "SET_TO_30": 0x30,
-  }
-  commands.append(packer.make_can_msg("ACC_CONTROL_ON", bus, acc_control_on_values))
-
   return commands
 
 

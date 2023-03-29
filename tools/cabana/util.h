@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 
 #include <QByteArray>
 #include <QColor>
@@ -11,8 +12,7 @@
 #include <QToolButton>
 #include <QVector>
 
-#include "tools/cabana/dbcmanager.h"
-using namespace dbcmanager;
+#include "tools/cabana/dbc/dbc.h"
 
 class ChangeTracker {
 public:
@@ -28,6 +28,32 @@ private:
   const int start_alpha = 128;
   const float fade_time = 2.0;
   QByteArray prev_dat;
+};
+
+class LogSlider : public QSlider {
+  Q_OBJECT
+
+public:
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+
+  void setRange(double min, double max) {
+    log_min = factor * std::log10(min);
+    log_max = factor * std::log10(max);
+    QSlider::setRange(min, max);
+    setValue(QSlider::value());
+  }
+  int value() const {
+    double v = log_min + (log_max - log_min) * ((QSlider::value() - minimum()) / double(maximum() - minimum()));
+    return std::lround(std::pow(10, v / factor));
+  }
+  void setValue(int v) {
+    double log_v = std::clamp(factor * std::log10(v), log_min, log_max);
+    v = minimum() + (maximum() - minimum()) * ((log_v - log_min) / (log_max - log_min));
+    QSlider::setValue(v);
+  }
+
+private:
+  double factor, log_min = 0, log_max = 1;
 };
 
 enum {
@@ -59,7 +85,7 @@ public:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const dbcmanager::Signal *sig);
+QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -74,3 +100,4 @@ QPixmap icon(const QString &id);
 }
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip);
+int num_decimals(double num);
