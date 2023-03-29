@@ -1,4 +1,4 @@
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 #include <QApplication>
 #include <QCompleter>

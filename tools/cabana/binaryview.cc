@@ -11,7 +11,7 @@
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 // BinaryView
 
