@@ -28,7 +28,7 @@ cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "asset
 
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
-cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signaledit.cc', 
+cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc', 
                                                'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'commands.cc', 'messageswidget.cc', 'route.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
