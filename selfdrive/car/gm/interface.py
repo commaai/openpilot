@@ -46,7 +46,8 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_bolt(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
+  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+                                     lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
     def sig(val):
@@ -59,7 +60,7 @@ class CarInterface(CarInterfaceBase):
     a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
 
     steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
-    return steer_torque + friction
+    return float(steer_torque) + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     if self.CP.carFingerprint == CAR.BOLT_EUV:
