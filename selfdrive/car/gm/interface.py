@@ -48,7 +48,6 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def torque_from_lateral_accel_bolt(lateral_accel_value, torque_params, lateral_accel_error, lateral_accel_deadzone, friction_compensation):
-    friction_compensation = False  # Disable friction compensation in the bolt
     friction_interp = interp(
       apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
       [-FRICTION_THRESHOLD, FRICTION_THRESHOLD],
