@@ -458,8 +458,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   hl->addStretch(1);
 
   // WARNING: increasing the maximum range can result in severe performance degradation.
-  // 60s is a reasonable value at present.
-  const int max_range = 60; // 60s
+  // 30s is a reasonable value at present.
+  const int max_range = 30; // 30s
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
   hl->addWidget(sparkline_label = new QLabel());
   hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
