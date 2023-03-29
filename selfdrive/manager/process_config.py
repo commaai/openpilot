@@ -17,10 +17,16 @@ def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
+def ublox_available() -> bool:
+  return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
+
 def ublox(started, params, CP: car.CarParams) -> bool:
-  use_ublox = os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
+  use_ublox = ublox_available()
   params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
+
+def qcomgps(started, params, CP: car.CarParams) -> bool:
+  return started and not ublox_available()
 
 procs = [
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
@@ -50,11 +56,11 @@ procs = [
   PythonProcess("deleter", "system.loggerd.deleter", offroad=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
-  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI),
+  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI, onroad=False, callback=qcomgps),
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
-  NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"], enabled=TICI, onroad=False, callback=ublox),
+  NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], enabled=TICI, onroad=False, callback=ublox),
   PythonProcess("pigeond", "system.sensord.pigeond", enabled=TICI, onroad=False, callback=ublox),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),

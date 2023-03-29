@@ -6,7 +6,7 @@
 #include <ctime>
 
 #include "catch2/catch.hpp"
-#include "selfdrive/locationd/generated/glonass.h"
+#include "system/ubloxd/generated/glonass.h"
 
 typedef std::vector<std::pair<int, int64_t>> string_data;
 
