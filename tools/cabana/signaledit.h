@@ -82,6 +82,7 @@ public:
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QValidator *name_validator, *double_validator;
   QFont small_font;
   const int color_label_width = 18;
@@ -99,6 +100,7 @@ public:
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
+  MessageId msg_id;
 
 signals:
   void highlight(const cabana::Signal *sig);
@@ -117,9 +119,9 @@ private:
     }
   };
 
-  MessageId msg_id;
   TreeView *tree;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  friend SignalItemDelegate;
 };

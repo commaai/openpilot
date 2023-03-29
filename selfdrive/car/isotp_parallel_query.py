@@ -60,7 +60,7 @@ class IsoTpParallelQuery:
     return msgs
 
   def _drain_rx(self):
-    messaging.drain_sock(self.logcan)
+    messaging.drain_sock_raw(self.logcan)
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr, sub_addr, rx_addr):
