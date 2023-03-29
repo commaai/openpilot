@@ -327,6 +327,7 @@ FW_VERSIONS = {
   CAR.AVALON_TSS2: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152607240\x00\x00\x00\x00\x00\x00',
+      b'\x01F152607250\x00\x00\x00\x00\x00\x00',
       b'\x01F152607280\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -334,6 +335,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630742000\x00\x00\x00\x00',
+      b'\x01896630743000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
