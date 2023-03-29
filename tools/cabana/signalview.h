@@ -110,6 +110,7 @@ signals:
 private:
   void rowsChanged();
   void leaveEvent(QEvent *event);
+  void updateToolBar();
   void setSparklineRange(int value);
 
   struct TreeView : public QTreeView {

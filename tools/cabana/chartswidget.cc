@@ -189,7 +189,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Column: %1").arg(column_count));
-  range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
+  range_lb->setText(QString("Range: %1 ").arg(utils::formatSeconds(max_chart_range)));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
   undo_zoom_action->setVisible(is_zoomed);

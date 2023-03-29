@@ -456,7 +456,6 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
   hl->addWidget(sparkline_label = new QLabel());
   hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
-  sparkline_label->setText(tr("Range: %1s").arg(settings.sparkline_range, 2, 10, QLatin1Char('0')));
   sparkline_range_slider->setRange(1, max_range);
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
@@ -483,6 +482,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->setSpacing(0);
   main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
+  updateToolBar();
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
   QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
@@ -532,7 +532,7 @@ void SignalView::rowsChanged() {
       });
     }
   }
-  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  updateToolBar();
   updateChartState();
 }
 
@@ -580,9 +580,14 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
   }
 }
 
+void SignalView::updateToolBar() {
+  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  sparkline_label->setText(QString("Range: %1 ").arg(utils::formatSeconds(settings.sparkline_range)));
+}
+
 void SignalView::setSparklineRange(int value) {
   settings.sparkline_range = value;
-  sparkline_label->setText(tr("Range: %1s").arg(settings.sparkline_range, 2, 10, QLatin1Char('0')));
+  updateToolBar();
   model->updateState(nullptr);
 }
 
