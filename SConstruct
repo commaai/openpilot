@@ -175,7 +175,7 @@ env = Environment(
   CCFLAGS=[
     "-g",
     "-fPIC",
-    "-O2",
+    "-O0",
     #"-Wunused",
     "-Werror",
     "-Wshadow",
