@@ -13,6 +13,7 @@ class CarController:
     self.es_lkas_cnt = -1
     self.es_distance_cnt = -1
     self.es_dashstatus_cnt = -1
+    self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
 
@@ -78,6 +79,10 @@ class CarController:
       if self.es_dashstatus_cnt != CS.es_dashstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
         self.es_dashstatus_cnt = CS.es_dashstatus_msg["COUNTER"]
+      
+      if self.infotainmentstatus_cnt != CS.infotainmentstatus_msg["COUNTER"]:
+        can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.infotainmentstatus_msg))
+        self.es_dashstatus_cnt = CS.infotainmentstatusmsg["COUNTER"]
 
       if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
