@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs
+from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -43,6 +44,29 @@ class CarInterface(CarInterfaceBase):
       return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
+
+  @staticmethod
+  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+                                     lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+
+    def sig(val):
+      return 1 / (1 + exp(-val)) - 0.5
+
+    # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
+    # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
+    # This has big effect on the stability about 0 (noise when going straight)
+    # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
+    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
+
+    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    return float(steer_torque) + friction
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.torque_from_lateral_accel_bolt
+    else:
+      return self.torque_from_lateral_accel_linear
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):

@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QLabel>
 #include <QLineEdit>
+#include <QSlider>
 #include <QStyledItemDelegate>
 #include <QTableWidget>
 #include <QTreeView>
@@ -109,6 +110,8 @@ signals:
 private:
   void rowsChanged();
   void leaveEvent(QEvent *event);
+  void updateToolBar();
+  void setSparklineRange(int value);
 
   struct TreeView : public QTreeView {
     TreeView(QWidget *parent) : QTreeView(parent) {}
@@ -120,6 +123,8 @@ private:
   };
 
   TreeView *tree;
+  QLabel *sparkline_label;
+  QSlider *sparkline_range_slider;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
