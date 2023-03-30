@@ -83,7 +83,7 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
 
     data_table = new QTableWidget();
     data_table->setRowCount(1);
-    data_table->setColumnCount(3);
+    data_table->setColumnCount(6);
 
     search_results_layout->addWidget(data_table);
 
