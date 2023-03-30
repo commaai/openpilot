@@ -528,7 +528,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateAxisY();
     updateSeriesPoints();
   }
-  update();
+  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
 }
 
 void ChartView::updateSeriesPoints() {
