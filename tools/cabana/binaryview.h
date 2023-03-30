@@ -42,8 +42,9 @@ public:
     QColor bg_color = QColor(102, 86, 169, 0);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val = "-";
+    QString val;
     QList<const cabana::Signal *> sigs;
+    bool valid = false;
   };
   std::vector<Item> items;
 
