@@ -18,6 +18,15 @@ def compute_gb_honda_bosch(accel, speed):
   return 0.0, 0.0
 
 
+def compute_accel_honda_bosch_radarless(accel, speed):
+  creep_brake = 0.0
+  creep_speed = 2.3
+  creep_brake_value = 0.4
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  return float(accel) - creep_brake
+
+
 def compute_gb_honda_nidec(accel, speed):
   creep_brake = 0.0
   creep_speed = 2.3
@@ -33,6 +42,12 @@ def compute_gas_brake(accel, speed, fingerprint):
     return compute_gb_honda_bosch(accel, speed)
   else:
     return compute_gb_honda_nidec(accel, speed)
+
+
+def compute_accel(accel, speed, fingerprint):
+  if fingerprint in HONDA_BOSCH_RADARLESS:
+    return compute_accel_honda_bosch_radarless(accel, speed)
+  return accel
 
 
 # TODO not clear this does anything useful
@@ -131,7 +146,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
-      accel = actuators.accel
+      accel = compute_accel(actuators.accel, CS.vEgo, self.CP.carFingerprint)
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
     else:
       accel = 0.0
