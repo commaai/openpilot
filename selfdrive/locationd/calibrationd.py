@@ -34,7 +34,7 @@ RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 
 # These values are needed to accommodate biggest modelframe
-PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
+PITCH_LIMITS = np.array([-0.09074112085129739, 0.17453292519943295])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
