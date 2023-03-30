@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <QByteArray>
+#include <QDateTime>
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
@@ -97,6 +98,9 @@ public:
 
 namespace utils {
 QPixmap icon(const QString &id);
+inline QString formatSeconds(int seconds) {
+  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+}
 }
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip);

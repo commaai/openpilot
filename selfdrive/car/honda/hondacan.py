@@ -51,7 +51,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values)
 
 
-def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
   min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
@@ -60,8 +60,8 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   gas_command = gas if active and accel > min_gas_accel else -30000
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
-  standstill = 1 if active and stopping else 0
-  standstill_release = 1 if active and not stopping else 0
+  standstill = 1 if active and stopping_counter > 0 else 0
+  standstill_release = 1 if active and stopping_counter == 0 else 0
 
   # common ACC_CONTROL values
   acc_control_values = {
@@ -72,7 +72,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping, car_finge
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
     acc_control_values.update({
       "CONTROL_ON": enabled,
-      "IDLESTOP_ALLOW": 0,  # disallows idle stop
+      "IDLESTOP_ALLOW": stopping_counter > 200,  # allow idle stop after 4 seconds (50 Hz)
     })
   else:
     acc_control_values.update({
