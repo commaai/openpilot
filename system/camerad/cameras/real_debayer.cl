@@ -18,6 +18,9 @@ float3 color_correct(float3 rgb) {
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
   #endif
 
+  #if IS_OX
+  return (0.29672272*erf(x*52.69802759)-0.69221516*exp(-8.72601052*x)+0.15238458*x+0.72277452)*0.876262834-0.026778035;
+  #else
   // tone mapping params
   const float gamma_k = 0.75;
   const float gamma_b = 0.125;
@@ -25,11 +28,6 @@ float3 color_correct(float3 rgb) {
   const float rk = 9 - 100*mp;
 
   // poly approximation for s curve
-  #if IS_OX
-  return (x > mp) ?
-    powr(((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b), 0.7) :
-    powr(((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b), 0.7);
-  #else
   return (x > mp) ?
     ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
     ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
