@@ -22,6 +22,7 @@ class Plant:
       Plant.radar = messaging.pub_sock('radarState')
       Plant.controls_state = messaging.pub_sock('controlsState')
       Plant.car_state = messaging.pub_sock('carState')
+      Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
 
@@ -61,6 +62,7 @@ class Plant:
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
+    live_params = messaging.new_message('liveParameters')
     model = messaging.new_message('modelV2')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
@@ -116,11 +118,14 @@ class Plant:
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
 
+    live_params.liveParameters.valid = True
+
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
           'controlsState': control.controlsState,
-          'modelV2': model.modelV2}
+          'modelV2': model.modelV2,
+          'liveParameters': live_params.liveParameters}
     self.planner.update(sm)
     self.speed = self.planner.v_desired_filter.x
     self.acceleration = self.planner.a_desired
