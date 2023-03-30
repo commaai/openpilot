@@ -993,8 +993,8 @@ This may take up to a minute.</source>
         <translation>Experimenteller Modus</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="unfinished">Experimenteller Openpilot Tempomat</translation>
+        <source>Experimental openpilot Longitudinal Control</source>
+        <translation>Experimenteller Openpilot Tempomat</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>

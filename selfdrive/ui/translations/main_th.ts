@@ -988,8 +988,8 @@ This may take up to a minute.</source>
         <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="unfinished">ทดลองใช้ระบบควบคุมการเร่ง/เบรคโดย openpilot</translation>
+        <source>Experimental openpilot Longitudinal Control</source>
+        <translation>ทดลองใช้ระบบควบคุมการเร่ง/เบรคโดย openpilot</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

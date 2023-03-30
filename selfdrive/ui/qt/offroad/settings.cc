@@ -36,18 +36,18 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_openpilot.png",
     },
     {
-      "ExperimentalLongitudinalEnabled",
-      tr("openpilot Longitudinal Control"),
-      QString("<b>%1</b><br>%2")
-      .arg(tr("WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.")),
-      "../assets/offroad/icon_speed_limit.png",
-    },
-    {
       "ExperimentalMode",
       tr("Experimental Mode"),
       "",
       "../assets/img_experimental_white.svg",
+    },
+    {
+      "ExperimentalLongitudinalEnabled",
+      tr("Experimental openpilot Longitudinal Control"),
+      QString("<b>%1</b><br>%2")
+      .arg(tr("WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB)."))
+      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.")),
+      "../assets/offroad/icon_speed_limit.png",
     },
     {
       "IsLdwEnabled",

@@ -963,8 +963,8 @@ This may take up to a minute.</source>
         <translation>上傳駕駛監控的錄像來協助我們提升駕駛監控的準確率。</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="unfinished">使用 openpilot 縱向控制（實驗）</translation>
+        <source>Experimental openpilot Longitudinal Control</source>
+        <translation>使用 openpilot 縱向控制（實驗）</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>

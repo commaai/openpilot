@@ -1059,7 +1059,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
