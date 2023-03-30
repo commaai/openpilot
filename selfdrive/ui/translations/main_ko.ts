@@ -1029,15 +1029,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 롱컨트롤 (알파)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>경고: openpilot 롱컨트롤은 알파 기능으로 차량의 자동긴급제동(AEB)를 비활성화합니다.</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
     </message>
 </context>
 <context>
