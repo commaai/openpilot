@@ -61,7 +61,7 @@ def create_acc_commands(packer, enabled, active, accel, gas, stopping_counter, c
   accel_command = accel if active else 0
   braking = 1 if active and accel < min_gas_accel else 0
   standstill = 1 if active and stopping_counter > 0 else 0
-  standstill_release = 1 if active and not stopping_counter > 0 else 0
+  standstill_release = 1 if active and stopping_counter == 0 else 0
 
   # common ACC_CONTROL values
   acc_control_values = {
