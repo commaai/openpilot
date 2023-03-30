@@ -528,7 +528,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateAxisY();
     updateSeriesPoints();
   }
-  update();
+  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
 }
 
 void ChartView::updateSeriesPoints() {
@@ -713,11 +713,10 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if ((max_rounded - min_rounded) >= 0.5) {
-      // zoom in if selected range is greater than 0.5s
+    } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
-      update();
+      scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -775,7 +774,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
     QPointF tooltip_pt(x + 12, plot_area.top() - 20);
     QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), this, plot_area.toRect());
-    update();
+    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   } else {
     QToolTip::hideText();
   }
@@ -788,7 +787,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (rubber_rect != rubber->geometry()) {
       rubber->setGeometry(rubber_rect);
     }
-    update();
+    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
 }
 

@@ -62,10 +62,21 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
-      item->sig_val = QString::number(get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig), 'f', item->sig->precision);
+      double value = get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig);
+      item->sig_val = QString::number(value, 'f', item->sig->precision);
+
+      // Show unit
       if (!item->sig->unit.isEmpty()) {
         item->sig_val += " " + item->sig->unit;
       }
+
+      // Show enum string
+      for (auto &[val, desc] : item->sig->val_desc) {
+        if (std::abs(value - val.toInt()) < 1e-6) {
+          item->sig_val = desc;
+        }
+      }
+
       emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
       ++row;
     }
@@ -389,7 +400,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
     int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
-    const double xscale = (option.rect.width() - 175.0 * option.widget->devicePixelRatioF() - h_margin * 2) / settings.sparkline_range;
+    const double xscale = (option.rect.width() - 175.0 - h_margin * 2) / settings.sparkline_range;
     const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
     const int left = option.rect.left();
     const int top = option.rect.top() + v_margin;
