@@ -82,7 +82,7 @@ class CarState(CarStateBase):
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
-    self.infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+    self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
 
     return ret
 
