@@ -968,10 +968,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>Controle longitudinal experimental openpilot</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>Desacionar com Pedal do Acelerador</translation>
     </message>
@@ -998,14 +994,6 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Experimental Mode</source>
         <translation>Modo Experimental</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>ATENÇÃO: o controle longitudinal do openpilot é experimental para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation>Neste carro o penpilot por padrão utiliza o ACC nativo do veículo ao invés de controlar longitudinalmente. Ative isto para mudar para o controle longitudinal do openpilot. Ativar o Modo Experimental é recomendado quando em uso do controle longitudinal experimental do openpilot.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1042,6 +1030,18 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
