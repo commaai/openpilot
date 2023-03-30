@@ -713,8 +713,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if ((max_rounded - min_rounded) >= 0.5) {
-      // zoom in if selected range is greater than 0.5s
+    } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
       update();
