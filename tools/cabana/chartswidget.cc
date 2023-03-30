@@ -777,27 +777,22 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 }
 
 void ChartView::showTip(double sec) {
-  QStringList text_list;
-  qreal x = -1;
+  qreal x = chart()->mapToPosition({sec, 0}).x();
+  QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   for (auto &s : sigs) {
-    if (!s.series->isVisible()) continue;
-
-    // use reverse iterator to find last item <= sec.
-    double value = 0;
-    auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-    if (it != s.vals.rend() && it->x() >= axis_x->min()) {
-      value = it->y();
-      s.track_pt = chart()->mapToPosition(*it);
-      x = std::max(x, s.track_pt.x());
+    if (s.series->isVisible()) {
+      QString value = "--";
+      // use reverse iterator to find last item <= sec.
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = QString::number(it->y());
+        s.track_pt = chart()->mapToPosition(*it);
+        x = std::max(x, s.track_pt.x());
+      }
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
+                       .arg(s.series->color().name(), s.sig->name, value);
     }
-    text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
-                            .arg(s.series->color().name(), s.sig->name,
-                                 s.track_pt.isNull() ? "--" : QString::number(value)));
   }
-  if (x < 0) {
-    x = chart()->mapToPosition({sec, 0}).x();
-  }
-  text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   QPointF tooltip_pt(x, chart()->plotArea().top());
   int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
   tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), plot_right);
@@ -1069,17 +1064,13 @@ ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::Tool | Qt::Fr
 void ValueTipLabel::showText(const QPoint &pt, const QString &text, int right_edge) {
   setText(text);
   if (!text.isEmpty()) {
-    setUpdatesEnabled(false);
     QSize extra(1, 1);
-    QSize sh = sizeHint();
-    resize(sh + extra);
-    QPoint tip_pos = pt;
-    tip_pos.rx() += 12;
+    resize(sizeHint() + extra);
+    QPoint tip_pos(pt.x() + 12, pt.y());
     if (tip_pos.x() + size().width() >= right_edge) {
       tip_pos.rx() = pt.x() - size().width() - 12;
     }
     move(tip_pos);
-    setUpdatesEnabled(true);
   }
   setVisible(!text.isEmpty());
 }
