@@ -19,7 +19,7 @@ float3 color_correct(float3 rgb) {
   #endif
 
   #if IS_OX
-  return (0.29672272*erf(x*52.69802759)-0.69221516*exp(-8.72601052*x)+0.15238458*x+0.72277452)*0.876262834-0.026778035;
+  return (1.68963455*exp(-1.18227337*x)-1.72323481+3.00240797*powr(x,0.5)-0.7952626*x+0.0336002687)*0.965697808;
   #else
   // tone mapping params
   const float gamma_k = 0.75;
