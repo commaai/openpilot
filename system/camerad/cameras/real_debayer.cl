@@ -25,9 +25,15 @@ float3 color_correct(float3 rgb) {
   const float rk = 9 - 100*mp;
 
   // poly approximation for s curve
+  #if IS_OX
+  return (x > mp) ?
+    powr(((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b), 0.7) :
+    powr(((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b), 0.7);
+  #else
   return (x > mp) ?
     ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
     ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
+  #endif
 }
 
 float get_vignetting_s(float r) {
