@@ -1,6 +1,6 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  url = ../../jnewb1/panda.git
 [submodule "opendbc"]
   path = opendbc
   url = ../../jnewb1/opendbc.git
