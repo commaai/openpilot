@@ -273,6 +273,10 @@ void BinaryViewModel::refresh() {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
+  int valid_rows = std::min(can->lastMessage(msg_id).dat.size(), row_count);
+  for (int i = 0; i < valid_rows * column_count; ++i) {
+    items[i].valid = true;
+  }
   endResetModel();
   updateState();
 }
@@ -306,9 +310,6 @@ void BinaryViewModel::updateState() {
     }
     items[i * column_count + 8].val = toHex(binary[i]);
     items[i * column_count + 8].bg_color = last_msg.colors[i];
-  }
-  for (int i = binary.size() * column_count; i < items.size(); ++i) {
-    items[i].val = "-";
   }
 
   for (int i = 0; i < items.size(); ++i) {
@@ -376,6 +377,9 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     }
   }
 
+  if (!item->valid) {
+    painter->fillRect(option.rect, QBrush(Qt::darkGray, Qt::BDiagPattern));
+  }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
