@@ -82,7 +82,7 @@ class CarController:
       
       if self.infotainmentstatus_cnt != CS.infotainmentstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.infotainmentstatus_msg))
-        self.infotainmentstatus_cnt = CS.infotainmentstatusmsg["COUNTER"]
+        self.infotainmentstatus_cnt = CS.infotainmentstatus_msg["COUNTER"]
 
       if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
