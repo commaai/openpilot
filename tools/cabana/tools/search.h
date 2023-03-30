@@ -165,6 +165,7 @@ private:
   void undoScan();
 
   void update();
+  void updateRowData();
   void setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue);
 
   std::vector<ScanType> enabledScanTypes();

@@ -92,6 +92,9 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
     main_layout->addLayout(search_results_layout);
 
     update();
+
+    QObject::connect(can, &AbstractStream::received, this, &SearchDlg::updateRowData);
+    QObject::connect(can, &AbstractStream::seekedTo, this, &SearchDlg::updateRowData);
 }
 
 void SearchDlg::setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue){
@@ -110,14 +113,18 @@ void SearchDlg::setRowData(int row, QString msgID, QString bitRange, QString cur
 
 void SearchDlg::updateRowData(){
     data_table->clear();
-    data_table->setRowCount(filteredSignals.size() + 1);
+    data_table->setRowCount(0);
 
-    setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
+    if(filteredSignals.size() < 1000){
+        data_table->setRowCount(filteredSignals.size() + 1);
 
-    int row=1;
-    for(auto &sig : filteredSignals){
-        setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue()), QString::number(sig.previousValue));
-        row++;
+        setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
+
+        int row=1;
+        for(auto &sig : filteredSignals){
+            setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue()), QString::number(sig.previousValue));
+            row++;
+        }
     }
 }
 
