@@ -2,6 +2,7 @@
 from collections import defaultdict
 from typing import Any, Dict, List, Set
 from tqdm import tqdm
+import time
 
 import panda.python.uds as uds
 from cereal import car
@@ -182,7 +183,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 
   ecu_responses = set()
   for obd_multiplexing in queries:
-    set_obd_multiplexing(params, obd_multiplexing)
+    # set_obd_multiplexing(params, obd_multiplexing)
     for query in queries[obd_multiplexing]:
       ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
   return ecu_responses
@@ -206,7 +207,10 @@ def get_brand_ecu_matches(ecu_rx_addrs):
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
+  print('SETTING MULTIPLEXING')
+  return
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+    print('SET MULTIPLEXING')
     cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
     params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
@@ -232,6 +236,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False):
+  t = time.perf_counter()
   versions = VERSIONS.copy()
   params = Params()
 
@@ -270,6 +275,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
+  # print('ready to query', time.perf_counter() - t)
+  t = time.perf_counter()
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
@@ -277,15 +284,16 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         if r.bus > num_pandas * 4 - 1:
           continue
 
-        # Toggle OBD multiplexing for each request
-        if r.bus % 4 == 1:
-          set_obd_multiplexing(params, r.obd_multiplexing)
+        # # Toggle OBD multiplexing for each request
+        # if r.bus % 4 == 1:
+        #   set_obd_multiplexing(params, r.obd_multiplexing)
 
         try:
           addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
                    (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if addrs:
+            print(addrs)
             query = IsoTpParallelQuery(sendcan, logcan, r.bus, addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (tx_addr, sub_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
@@ -306,6 +314,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               car_fw.append(f)
         except Exception:
           cloudlog.exception("FW query exception")
+
+  # print('query took', time.perf_counter() - t)
 
   return car_fw
 

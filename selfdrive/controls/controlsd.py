@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import time
 import math
 from typing import SupportsFloat
 
@@ -98,9 +99,13 @@ class Controls:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
+      t = time.perf_counter()
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
+      print('took {} to get num pandas'.format(time.perf_counter() - t))
+      t = time.perf_counter()
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled") and not is_release_branch()
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
+      print('took {} to get car'.format(time.perf_counter() - t))
     else:
       self.CI, self.CP = CI, CI.CP
 

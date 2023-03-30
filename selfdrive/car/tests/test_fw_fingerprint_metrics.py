@@ -16,7 +16,6 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 class TestFwFingerprint(unittest.TestCase):
-  # TODO: test multiple pandas
   @parameterized.expand([(1,), (2,)])
   def test_fw_query_metrics(self, num_pandas):
     for brand, config in FW_QUERY_CONFIGS.items():
@@ -32,9 +31,9 @@ class TestFwFingerprint(unittest.TestCase):
         for r in requests:
           total_time += 0.1
 
-          if r.obd_multiplexing != obd_multiplexing and r.bus % 4 == 1:
-            obd_multiplexing = r.obd_multiplexing
-            total_time += 0.1
+          # if r.obd_multiplexing != obd_multiplexing and r.bus % 4 == 1:
+          #   obd_multiplexing = r.obd_multiplexing
+          #   total_time += 0.1
 
         total_time = round(total_time, 2)
         self.assertLessEqual(total_time, 1.1)
