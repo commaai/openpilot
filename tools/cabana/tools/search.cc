@@ -108,6 +108,19 @@ void SearchDlg::setRowData(int row, QString msgID, QString bitRange, QString cur
     data_table->setItem(row, 3, previous_value);
 }
 
+void SearchDlg::updateRowData(){
+    data_table->clear();
+    data_table->setRowCount(filteredSignals.size() + 1);
+
+    setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
+
+    int row=1;
+    for(auto &sig : filteredSignals){
+        setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue()), QString::number(sig.previousValue));
+        row++;
+    }
+}
+
 void SearchDlg::update(){
     first_scan_button->setText(scanningStarted ? "New Scan" : "First Scan");
     numberOfSigsLabel->setText(QString("Found: ") + QString::number(filteredSignals.size()));
@@ -132,16 +145,7 @@ void SearchDlg::update(){
         scan_type->setCurrentIndex(selectedIndex);
     }
 
-    data_table->clear();
-    data_table->setRowCount(filteredSignals.size() + 1);
-
-    setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
-
-    int row=1;
-    for(auto &sig : filteredSignals){
-        setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue()), QString::number(sig.previousValue));
-        row++;
-    }
+    updateRowData();
 
     for(auto &sig : filteredSignals){
         sig.previousValue = sig.getValue();
