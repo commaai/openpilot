@@ -85,3 +85,4 @@ build/
 poetry.toml
 
 sandbox/
+settings
