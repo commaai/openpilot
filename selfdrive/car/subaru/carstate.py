@@ -275,7 +275,6 @@ class CarState(CarStateBase):
         ("Signal7", "ES_DashStatus"),
         ("Far_Distance", "ES_DashStatus"),
         ("Cruise_State", "ES_DashStatus"),
-        ("LKAS_State", "ES_DashStatus"),
 
         ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
 
