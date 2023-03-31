@@ -759,7 +759,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   if (!is_zooming && plot_area.contains(ev->pos())) {
     const double sec = chart()->mapToValue(ev->pos()).x();
     emit hovered(sec);
-  } else {
+  } else if (tip_label.isVisible()) {
     emit hovered(-1);
   }
 
