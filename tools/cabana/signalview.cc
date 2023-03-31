@@ -1,4 +1,4 @@
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 #include <QApplication>
 #include <QCompleter>
@@ -62,14 +62,22 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
     auto &dat = can->lastMessage(msg_id).dat;
     int row = 0;
     for (auto item : root->children) {
-      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
-      if (!item->sig->unit.isEmpty()){
-        value += " " + item->sig->unit;
+      double value = get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig);
+      item->sig_val = QString::number(value, 'f', item->sig->precision);
+
+      // Show unit
+      if (!item->sig->unit.isEmpty()) {
+        item->sig_val += " " + item->sig->unit;
       }
-      if (value != item->sig_val) {
-        item->sig_val = value;
-        emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
+
+      // Show enum string
+      for (auto &[val, desc] : item->sig->val_desc) {
+        if (std::abs(value - val.toInt()) < 1e-6) {
+          item->sig_val = desc;
+        }
       }
+
+      emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
       ++row;
     }
   }
@@ -321,6 +329,8 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   auto item = (SignalModel::Item *)index.internalPointer();
   if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
@@ -331,8 +341,6 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     // color label
     auto bg_color = getColor(item->sig);
-    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
     QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
     painter->setPen(Qt::NoPen);
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
@@ -351,16 +359,64 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
-    // draw signal value
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QRect rc = option.rect.adjusted(0, 0, -70, 0);
+
+    drawSparkline(painter, option, index);
+    // draw signal value
+    int right_offset = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
+    QRect rc = option.rect.adjusted(0, 0, -right_offset, 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
+    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
+  }
+}
+
+void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  static std::vector<QPointF> points;
+  const auto &msg_id = ((SignalView *)parent())->msg_id;
+  const auto &msgs = can->events().at(msg_id);
+  uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - settings.sparkline_range * 1e9, 0)});
+  auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+  if (first != last) {
+    double min = std::numeric_limits<double>::max();
+    double max = std::numeric_limits<double>::lowest();
+    const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
+    points.clear();
+    for (auto it = first; it != last; ++it) {
+      double value = get_raw_value(it->dat, it->size, *sig);
+      points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
+      min = std::min(min, value);
+      max = std::max(max, value);
+    }
+    if (min == max) {
+      min -= 1;
+      max += 1;
+    }
+
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
+    int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
+    const double xscale = (option.rect.width() - 175.0 - h_margin * 2) / settings.sparkline_range;
+    const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
+    const int left = option.rect.left();
+    const int top = option.rect.top() + v_margin;
+    for (auto &pt : points) {
+      pt.rx() = left + pt.x() * xscale;
+      pt.ry() = top + std::abs(pt.y() - max) * yscale;
+    }
+    painter->setPen(getColor(sig));
+    painter->drawPolyline(points.data(), points.size());
+    if ((points.back().x() - points.front().x()) / points.size() > 10) {
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(getColor(sig));
+      for (const auto &pt : points) {
+        painter->drawEllipse(pt, 2, 2);
+      }
+    }
   }
 }
 
@@ -411,6 +467,17 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
+
+  // WARNING: increasing the maximum range can result in severe performance degradation.
+  // 30s is a reasonable value at present.
+  const int max_range = 30; // 30s
+  settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
+  hl->addWidget(sparkline_label = new QLabel());
+  hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
+  sparkline_range_slider->setRange(1, max_range);
+  sparkline_range_slider->setValue(settings.sparkline_range);
+  sparkline_range_slider->setToolTip(tr("Sparkline time range"));
+
   auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
@@ -433,8 +500,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->setSpacing(0);
   main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
+  updateToolBar();
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
+  QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
@@ -481,7 +550,7 @@ void SignalView::rowsChanged() {
       });
     }
   }
-  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  updateToolBar();
   updateChartState();
 }
 
@@ -527,6 +596,17 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
     }
   }
+}
+
+void SignalView::updateToolBar() {
+  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  sparkline_label->setText(QString("Range: %1 ").arg(utils::formatSeconds(settings.sparkline_range)));
+}
+
+void SignalView::setSparklineRange(int value) {
+  settings.sparkline_range = value;
+  updateToolBar();
+  model->updateState(nullptr);
 }
 
 void SignalView::leaveEvent(QEvent *event) {
