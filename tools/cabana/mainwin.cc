@@ -149,7 +149,6 @@ void MainWindow::createActions() {
   if (!can->liveStreaming()) {
     QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
     tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
-    tools_menu->addAction(tr("Search"), this, &MainWindow::searchDlg);
   }
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
@@ -588,11 +587,6 @@ void MainWindow::setOption() {
 void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
-  dlg->show();
-}
-
-void MainWindow::searchDlg() {
-  SearchDlg *dlg = new SearchDlg(this);
   dlg->show();
 }
 

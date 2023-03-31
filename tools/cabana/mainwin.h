@@ -13,7 +13,6 @@
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
-#include "tools/cabana/tools/search.h"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -59,7 +58,6 @@ protected:
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
   void findSimilarBits();
-  void searchDlg();
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
