@@ -296,6 +296,7 @@ class CarState(CarStateBase):
       ]
 
       checks = [
+        ("INFOTAINMENT_STATUS", 10),
         ("ES_DashStatus", 10),
         ("ES_LKAS_State", 10),
       ]
