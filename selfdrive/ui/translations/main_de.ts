@@ -577,16 +577,8 @@ location set</source>
         <translation>Bist du sicher, dass du das Gerät auf Werkseinstellungen zurücksetzen möchtest?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Gerät wird zurückgesetzt...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>System auf Werkseinstellungen zurücksetzen</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Zurücksetzen auf Werkseinstellungen wurde ausgewählt. Drücke Annehmen, um alle Inhalte und Einstellungen zu löschen. Drücke Abbrechen, um mit dem Starten des Gerätes fortzufahren.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -601,8 +593,17 @@ location set</source>
         <translation>Bestätigen</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>Datenpartition kann nicht geöffnet werden. Drücke Annehmen, um dein Gerät auf Werkseinstellungen zurückzusetzen.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -701,6 +702,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>Von neuem beginnen</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -984,20 +993,8 @@ location set</source>
         <translation>Experimenteller Modus</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>Experimenteller Openpilot Tempomat</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>WARNUNG: Der Openpilot Tempomat ist für dieses Auto experimentell und deaktiviert den Notbremsassistenten.</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>Bei Gasbetätigung ausschalten</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation>Bei diesem auto wird standardmäßig der im Auto eingebaute adaptive Tempomat anstelle des Openpilot Tempomats benutzt. Aktiviere diesen Schalter, um zum Openpilot Tempomaten zu wechseln. Es ist empfohlen den Experimentellen Modus bei Nutzung des Openpilot Tempomats zu aktivieren.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1034,6 +1031,18 @@ location set</source>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

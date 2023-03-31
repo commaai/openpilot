@@ -1,7 +1,5 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include "tools/cabana/dbcmanager.h"
-
 ReplayStream::ReplayStream(uint32_t replay_flags, QObject *parent) : replay_flags(replay_flags), AbstractStream(parent, false) {
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
@@ -16,19 +14,25 @@ static bool event_filter(const Event *e, void *opaque) {
   return ((ReplayStream *)opaque)->eventFilter(e);
 }
 
+void ReplayStream::mergeSegments() {
+  for (auto &[n, seg] : replay->segments()) {
+    if (seg && seg->isLoaded() && !processed_segments.count(n)) {
+      const auto &events = seg->log->events;
+      bool append = processed_segments.empty() || *processed_segments.rbegin() < n;
+      processed_segments.insert(n);
+      mergeEvents(events.cbegin(), events.cend(), append);
+    }
+  }
+}
+
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir) {
   replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
-  QObject::connect(replay.get(), &Replay::segmentsMerged, this, &AbstractStream::eventsMerged);
   QObject::connect(replay.get(), &Replay::streamStarted, this, &AbstractStream::streamStarted);
+  QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
   if (replay->load()) {
-    const auto &segments = replay->route()->segments();
-    if (std::none_of(segments.begin(), segments.end(), [](auto &s) { return s.second.rlog.length() > 0; })) {
-      qWarning() << "no rlogs in route" << route;
-      return false;
-    }
     replay->start();
     return true;
   }
