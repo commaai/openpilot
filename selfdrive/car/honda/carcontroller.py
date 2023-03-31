@@ -147,7 +147,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
-      accel = compute_accel(actuators.accel, CS.vEgo, self.CP.carFingerprint)
+      accel = compute_accel(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
     else:
       accel = 0.0
