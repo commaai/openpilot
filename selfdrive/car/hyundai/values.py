@@ -1488,7 +1488,7 @@ FW_VERSIONS = {
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.08 99210-AA000 220728',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\000CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
+      b'\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
       b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
