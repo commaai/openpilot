@@ -606,16 +606,20 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+    s.min = std::numeric_limits<double>::max();
+    s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
-        if (it->y() < min) min = it->y();
-        if (it->y() > max) max = it->y();
+        if (it->y() < s.min) s.min = it->y();
+        if (it->y() > s.max) s.max = it->y();
       }
     } else {
       auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
-      min = std::min(min, min_y);
-      max = std::max(max, max_y);
+      s.min = min_y;
+      s.max = max_y;
     }
+    min = std::min(min, s.min);
+    max = std::max(max, s.max);
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
@@ -764,16 +768,18 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
                               .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(value)));
+                                   s.track_pt.isNull() ? "--" : QString::number(value),
+                                   QString::number(s.min), QString::number(s.max)));
+
     }
     if (x < 0) {
       x = ev->pos().x();
     }
     text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
     QPointF tooltip_pt(x + 12, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), this, plot_area.toRect());
+    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />"), this, plot_area.toRect());
     scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   } else {
     QToolTip::hideText();
