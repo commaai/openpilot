@@ -111,6 +111,8 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           continue
 
+        # Extend timeout for each ISO-TP frame to avoid timing out on long responses
+        # Do not extend timeout for addresses that have already completed
         if updated and not (msg.rx_done and msg.tx_done):
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
