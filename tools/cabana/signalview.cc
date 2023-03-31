@@ -344,6 +344,17 @@ bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, c
   return QStyledItemDelegate::helpEvent(event, view, option, index);
 }
 
+void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
+    QRect geom = option.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &option);
+    geom.setLeft(geom.right() - editor->sizeHint().width());
+    editor->setGeometry(geom);
+    return;
+  }
+  QStyledItemDelegate::updateEditorGeometry(editor, option, index);
+}
+
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
@@ -375,6 +386,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
+    painter->save();
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
@@ -389,6 +401,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
     QRect sparkline_rect = r.adjusted(0, 0, -r.width() * 0.4 - h_margin, 0);
     drawSparkline(painter, sparkline_rect, index);
+    painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
@@ -406,7 +419,8 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
   if (first != last) {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
-    const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
+    const auto item = (const SignalModel::Item *)index.internalPointer();
+    const auto sig = item->sig;
     points.clear();
     for (auto it = first; it != last; ++it) {
       double value = get_raw_value(it->dat, it->size, *sig);
@@ -434,6 +448,17 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
       for (const auto &pt : points) {
         painter->drawEllipse(pt, 2, 2);
       }
+    }
+
+    if (item->highlight) {
+      QFont font;
+      font.setPixelSize(10);
+      painter->setFont(font);
+      painter->setPen(Qt::darkGray);
+      painter->drawLine(rect.topRight(), rect.bottomRight());
+      QRect minmax_rect{rect.right() + 3, rect.top(), 1000, rect.height()};
+      painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignTop, QString::number(max));
+      painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignBottom, QString::number(min));
     }
   }
 }
@@ -552,7 +577,6 @@ void SignalView::rowsChanged() {
       int h_margin = style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
-      h->addStretch(0);
 
       auto remove_btn = toolButton("x", tr("Remove signal"));
       auto plot_btn = toolButton("graph-up", "");
@@ -612,6 +636,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
+      emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
     }
   }
 }
