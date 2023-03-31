@@ -550,7 +550,11 @@ void ChartView::updateSeriesPoints() {
       double pixels_per_point = (chart()->mapToPosition(right_pt).x() - chart()->mapToPosition(*begin).x()) / num_points;
 
       if (series_type == SeriesType::Scatter) {
-        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 2.0, 2.0, 8.0) * devicePixelRatioF());
+        qreal size = std::clamp(pixels_per_point / 2.0, 2.0, 8.0);
+        if (s.series->useOpenGL()) {
+          size *= devicePixelRatioF();
+        }
+        ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
         s.series->setPointsVisible(pixels_per_point > 20);
       }
@@ -676,7 +680,9 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  emit hovered(-1);
+  if (tip_label.isVisible()) {
+    emit hovered(-1);
+  }
   QChartView::leaveEvent(event);
 }
 
@@ -748,12 +754,10 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (plot_area.contains(ev->pos())) {
       can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
     }
-    return;
   }
 
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
-  is_scrubbing = false;
   clearTrackPoints();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
