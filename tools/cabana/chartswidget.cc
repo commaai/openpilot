@@ -71,13 +71,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   charts_layout = new QGridLayout();
   charts_layout->setSpacing(10);
 
-  QWidget *charts_container = new QWidget(this);
+  charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
   charts_main_layout->addLayout(charts_layout);
   charts_main_layout->addStretch(0);
 
-  QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll = new QScrollArea(this);
   charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
@@ -159,8 +159,13 @@ void ChartsWidget::zoomUndo() {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  const QRect visible_rect(-charts_container->pos(), charts_scroll->viewport()->size());
   for (auto c : charts) {
-    sec >= 0 ? c->showTip(sec) : c->hideTip();
+    if (sec >= 0 && visible_rect.contains(QRect(c->mapTo(charts_container, QPoint(0, 0)), c->size()))) {
+      c->showTip(sec);
+    } else {
+      c->hideTip();
+    }
   }
 }
 
