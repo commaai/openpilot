@@ -8,7 +8,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from system.hardware import TICI, HARDWARE
+from system.hardware import TICI
 from selfdrive.manager.process_config import managed_processes
 
 BMX = {
