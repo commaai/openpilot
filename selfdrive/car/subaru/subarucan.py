@@ -80,8 +80,8 @@ def create_infotainmentstatus(packer, infotainmentstatus_msg):
   values = copy.copy(infotainmentstatus_msg)
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
-  if values["LKAS_State"] in [1,2]:
-    values["LKAS_State"] = 0
+  if values["LKAS_State_Infotainment"] in [1,2]:
+    values["LKAS_State_Infotainment"] = 0
   
   return packer.make_can_msg("INFOTAINMENT_STATUS", 0, values)
 
