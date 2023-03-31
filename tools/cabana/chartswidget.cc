@@ -618,16 +618,20 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+    s.min = std::numeric_limits<double>::max();
+    s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
-        if (it->y() < min) min = it->y();
-        if (it->y() > max) max = it->y();
+        if (it->y() < s.min) s.min = it->y();
+        if (it->y() > s.max) s.max = it->y();
       }
     } else {
       auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
-      min = std::min(min, min_y);
-      max = std::max(max, max_y);
+      s.min = min_y;
+      s.max = max_y;
     }
+    min = std::min(min, s.min);
+    max = std::max(max, s.max);
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
@@ -792,13 +796,13 @@ void ChartView::showTip(double sec) {
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
-      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
-                       .arg(s.series->color().name(), s.sig->name, value);
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
+                       .arg(s.series->color().name(), s.sig->name, value, QString::number(s.min), QString::number(s.max));
     }
   }
   QPointF tooltip_pt(x, chart()->plotArea().top());
   int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
-  tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), plot_right);
+  tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />") + "</p>", plot_right);
   scene()->update();
 }
 
