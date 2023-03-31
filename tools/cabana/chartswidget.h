@@ -164,6 +164,8 @@ private:
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
+  QWidget *charts_container;
+  QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> display_range;
