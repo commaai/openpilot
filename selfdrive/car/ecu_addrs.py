@@ -25,7 +25,7 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
   # ISO-TP messages are always padded to 8 bytes, except for Chrysler abs
   # tester present response is always a single frame
   dat_offset = 1 if subaddr is not None else 0
-  chrysler_abs_ecu = msg.address == 0x747 - 0x280
+  chrysler_abs_ecu = msg.address == (0x747 - 0x280) and len(msg.dat) == 3
   if (len(msg.dat) == 8 or chrysler_abs_ecu) and 1 <= msg.dat[dat_offset] <= 7:
     # success response
     if msg.dat[dat_offset + 1] == (SERVICE_TYPE.TESTER_PRESENT + 0x40):
