@@ -12,6 +12,7 @@
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QRubberBand>
+#include <QStylePainter>
 #include <QToolBar>
 #include <QToolTip>
 #include <QtConcurrent>
@@ -157,6 +158,12 @@ void ChartsWidget::zoomUndo() {
   }
 }
 
+void ChartsWidget::showValueTip(double sec) {
+  for (auto c : charts) {
+    sec >= 0 ? c->showTip(sec) : c->hideTip();
+  }
+}
+
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
@@ -226,6 +233,7 @@ ChartView *ChartsWidget::createChart() {
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
+  QObject::connect(chart, &ChartView::hovered, this, &ChartsWidget::showValueTip);
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -346,7 +354,7 @@ bool ChartsWidget::event(QEvent *event) {
 
 // ChartView
 
-ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
+ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -542,7 +550,11 @@ void ChartView::updateSeriesPoints() {
       double pixels_per_point = (chart()->mapToPosition(right_pt).x() - chart()->mapToPosition(*begin).x()) / num_points;
 
       if (series_type == SeriesType::Scatter) {
-        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 2.0, 2.0, 8.0) * devicePixelRatioF());
+        qreal size = std::clamp(pixels_per_point / 2.0, 2.0, 8.0);
+        if (s.series->useOpenGL()) {
+          size *= devicePixelRatioF();
+        }
+        ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
         s.series->setPointsVisible(pixels_per_point > 20);
       }
@@ -672,8 +684,9 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  clearTrackPoints();
-  scene()->update();
+  if (tip_label.isVisible()) {
+    emit hovered(-1);
+  }
   QChartView::leaveEvent(event);
 }
 
@@ -745,44 +758,17 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (plot_area.contains(ev->pos())) {
       can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
     }
-    return;
   }
 
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
-  is_scrubbing = false;
   clearTrackPoints();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
-    QStringList text_list;
     const double sec = chart()->mapToValue(ev->pos()).x();
-    qreal x = -1;
-    for (auto &s : sigs) {
-      if (!s.series->isVisible()) continue;
-
-      // use reverse iterator to find last item <= sec.
-      double value = 0;
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
-        value = it->y();
-        s.track_pt = chart()->mapToPosition(*it);
-        x = std::max(x, s.track_pt.x());
-      }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
-                              .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(value),
-                                   QString::number(s.min), QString::number(s.max)));
-
-    }
-    if (x < 0) {
-      x = ev->pos().x();
-    }
-    text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
-    QPointF tooltip_pt(x + 12, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />"), this, plot_area.toRect());
-    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
-  } else {
-    QToolTip::hideText();
+    emit hovered(sec);
+  } else if (tip_label.isVisible()) {
+    emit hovered(-1);
   }
 
   QChartView::mouseMoveEvent(ev);
@@ -795,6 +781,35 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     }
     scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   }
+}
+
+void ChartView::showTip(double sec) {
+  qreal x = chart()->mapToPosition({sec, 0}).x();
+  QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
+  for (auto &s : sigs) {
+    if (s.series->isVisible()) {
+      QString value = "--";
+      // use reverse iterator to find last item <= sec.
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = QString::number(it->y());
+        s.track_pt = chart()->mapToPosition(*it);
+        x = std::max(x, s.track_pt.x());
+      }
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
+                       .arg(s.series->color().name(), s.sig->name, value, QString::number(s.min), QString::number(s.max));
+    }
+  }
+  QPointF tooltip_pt(x, chart()->plotArea().top());
+  int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
+  tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />") + "</p>", plot_right);
+  scene()->update();
+}
+
+void ChartView::hideTip() {
+  clearTrackPoints();
+  tip_label.hide();
+  scene()->update();
 }
 
 void ChartView::dragMoveEvent(QDragMoveEvent *event) {
@@ -1038,4 +1053,40 @@ QList<SeriesSelector::ListItem *> SeriesSelector::seletedItems() {
   QList<SeriesSelector::ListItem *> ret;
   for (int i = 0; i < selected_list->count(); ++i) ret.push_back((ListItem *)selected_list->item(i));
   return ret;
+}
+
+// ValueTipLabel
+
+ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::Tool | Qt::FramelessWindowHint) {
+  setForegroundRole(QPalette::ToolTipText);
+  setBackgroundRole(QPalette::ToolTipBase);
+  setPalette(QToolTip::palette());
+  ensurePolished();
+  setMargin(1 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this));
+  setAttribute(Qt::WA_ShowWithoutActivating);
+  setTextFormat(Qt::RichText);
+  setVisible(false);
+}
+
+void ValueTipLabel::showText(const QPoint &pt, const QString &text, int right_edge) {
+  setText(text);
+  if (!text.isEmpty()) {
+    QSize extra(1, 1);
+    resize(sizeHint() + extra);
+    QPoint tip_pos(pt.x() + 12, pt.y());
+    if (tip_pos.x() + size().width() >= right_edge) {
+      tip_pos.rx() = pt.x() - size().width() - 12;
+    }
+    move(tip_pos);
+  }
+  setVisible(!text.isEmpty());
+}
+
+void ValueTipLabel::paintEvent(QPaintEvent *ev) {
+  QStylePainter p(this);
+  QStyleOptionFrame opt;
+  opt.init(this);
+  p.drawPrimitive(QStyle::PE_PanelTipLabel, opt);
+  p.end();
+  QLabel::paintEvent(ev);
 }

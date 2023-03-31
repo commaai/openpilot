@@ -25,6 +25,13 @@ enum class SeriesType {
   Scatter
 };
 
+class ValueTipLabel : public QLabel {
+public:
+  ValueTipLabel(QWidget *parent = nullptr);
+  void showText(const QPoint &pt, const QString &sec, int right_edge);
+  void paintEvent(QPaintEvent *ev) override;
+};
+
 class ChartView : public QChartView {
   Q_OBJECT
 
@@ -36,6 +43,8 @@ public:
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left);
+  void showTip(double sec);
+  void hideTip();
 
   struct SigItem {
     MessageId msg_id;
@@ -57,6 +66,7 @@ signals:
   void zoomUndo();
   void remove();
   void axisYLabelWidthChanged(int w);
+  void hovered(double sec);
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
@@ -94,6 +104,7 @@ private:
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QGraphicsRectItem *background;
+  ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
@@ -137,6 +148,7 @@ private:
   void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();
+  void showValueTip(double sec);
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
