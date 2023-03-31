@@ -30,7 +30,6 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &message_id);
   void refresh();
-  QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:
   void showTabBarContextMenu(const QPoint &pt);
