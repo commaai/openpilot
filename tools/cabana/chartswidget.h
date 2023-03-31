@@ -46,6 +46,8 @@ public:
     uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
     SegmentTree segment_tree;
+    double min = 0;
+    double max = 0;
   };
 
 signals:

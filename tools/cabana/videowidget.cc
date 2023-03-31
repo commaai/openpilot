@@ -1,7 +1,6 @@
 #include "tools/cabana/videowidget.h"
 
 #include <QButtonGroup>
-#include <QDateTime>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStyleOptionSlider>
@@ -19,10 +18,6 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
-
-static inline QString formatTime(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-}
 
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -101,11 +96,11 @@ QWidget *VideoWidget::createCameraWidget() {
   slider_layout->addWidget(end_time_label);
   l->addLayout(slider_layout);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
-  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
+  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
   QObject::connect(can, &AbstractStream::streamStarted, [this]() {
-    end_time_label->setText(formatTime(can->totalSeconds()));
+    end_time_label->setText(utils::formatSeconds(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
   return w;
@@ -116,7 +111,7 @@ void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
     min = 0;
     max = can->totalSeconds();
   }
-  end_time_label->setText(formatTime(max));
+  end_time_label->setText(utils::formatSeconds(max));
   slider->setRange(min * 1000, max * 1000);
 }
 
@@ -230,7 +225,7 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
   }
   int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
   int y = -thumb.height() - THUMBNAIL_MARGIN - style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
-  thumbnail_label.showPixmap(mapToGlobal({x, y}), formatTime(seconds), thumb);
+  thumbnail_label.showPixmap(mapToGlobal({x, y}), utils::formatSeconds(seconds), thumb);
   QSlider::mouseMoveEvent(e);
 }
 

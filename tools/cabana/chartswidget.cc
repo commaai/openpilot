@@ -189,7 +189,7 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Column: %1").arg(column_count));
-  range_lb->setText(QString("Range: %1:%2 ").arg(max_chart_range / 60, 2, 10, QLatin1Char('0')).arg(max_chart_range % 60, 2, 10, QLatin1Char('0')));
+  range_lb->setText(QString("Range: %1 ").arg(utils::formatSeconds(max_chart_range)));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
   undo_zoom_action->setVisible(is_zoomed);
@@ -536,14 +536,16 @@ void ChartView::updateSeriesPoints() {
   for (auto &s : sigs) {
     auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
     auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), xLessThan);
+    if (begin != end) {
+      int num_points = std::max<int>((end - begin), 1);
+      QPointF right_pt = end == s.vals.end() ? s.vals.back() : *end;
+      double pixels_per_point = (chart()->mapToPosition(right_pt).x() - chart()->mapToPosition(*begin).x()) / num_points;
 
-    int num_points = std::max<int>(end - begin, 1);
-    int pixels_per_point = width() / num_points;
-
-    if (series_type == SeriesType::Scatter) {
-      ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 3, 2, 8) * devicePixelRatioF());
-    } else {
-      s.series->setPointsVisible(pixels_per_point > 20);
+      if (series_type == SeriesType::Scatter) {
+        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 2.0, 2.0, 8.0) * devicePixelRatioF());
+      } else {
+        s.series->setPointsVisible(pixels_per_point > 20);
+      }
     }
   }
 }
@@ -604,16 +606,20 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+    s.min = std::numeric_limits<double>::max();
+    s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
-        if (it->y() < min) min = it->y();
-        if (it->y() > max) max = it->y();
+        if (it->y() < s.min) s.min = it->y();
+        if (it->y() > s.max) s.max = it->y();
       }
     } else {
       auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
-      min = std::min(min, min_y);
-      max = std::max(max, max_y);
+      s.min = min_y;
+      s.max = max_y;
     }
+    min = std::min(min, s.min);
+    max = std::max(max, s.max);
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
@@ -711,8 +717,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if ((max_rounded - min_rounded) >= 0.5) {
-      // zoom in if selected range is greater than 0.5s
+    } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
       scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
@@ -763,16 +768,18 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
         s.track_pt = chart()->mapToPosition(*it);
         x = std::max(x, s.track_pt.x());
       }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
+      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
                               .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(value)));
+                                   s.track_pt.isNull() ? "--" : QString::number(value),
+                                   QString::number(s.min), QString::number(s.max)));
+
     }
     if (x < 0) {
       x = ev->pos().x();
     }
     text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
     QPointF tooltip_pt(x + 12, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), this, plot_area.toRect());
+    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />"), this, plot_area.toRect());
     scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
   } else {
     QToolTip::hideText();
@@ -847,8 +854,8 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
       auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
       auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+      painter->setBrush(s.series->color());
       for (auto it = first; it != last; ++it) {
-        painter->setBrush(s.series->color());
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
       }
     }
