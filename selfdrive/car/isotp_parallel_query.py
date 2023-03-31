@@ -100,9 +100,6 @@ class IsoTpParallelQuery:
     while True:
       self.rx()
 
-      if all(request_done.values()):
-        break
-
       for tx_addr, msg in msgs.items():
         try:
           dat, updated = msg.recv()
@@ -139,6 +136,11 @@ class IsoTpParallelQuery:
             request_done[tx_addr] = True
             cloudlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
+      # Break if all requests are done
+      if all(request_done.values()):
+        break
+
+      # Or if we've timed out on all requests
       cur_time = time.monotonic()
       if cur_time - max(response_timeouts.values()) > 0:
         for tx_addr in msgs:
@@ -146,6 +148,7 @@ class IsoTpParallelQuery:
             cloudlog.error(f"iso-tp query timeout after receiving response: {tx_addr}")
         break
 
+      # Or we've hit a max total timeout
       if cur_time - start_time > total_timeout:
         cloudlog.error("iso-tp query timeout while receiving data")
         break
