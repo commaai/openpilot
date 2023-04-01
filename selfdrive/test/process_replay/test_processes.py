@@ -18,7 +18,7 @@ from tools.lib.logreader import LogReader
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6
+  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6 (+ QCOM GPS)
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
@@ -29,12 +29,12 @@ source_segments = [
   ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.BOLT_EUV
-  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.BRONCO_SPORT_MK1
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dashcamOnly is no longer set
+  #("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),  # FORD.BRONCO_SPORT_MK1
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
 ]
@@ -53,7 +53,6 @@ segments = [
   ("SUBARU", "regen1E72BBDCED5|2022-09-27--15-55-31--0"),
   ("GM", "regen45B05A80EF6|2022-09-27--15-57-22--0"),
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),
-  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),
   ("NISSAN", "regenC19D899B46D|2022-09-27--15-59-13--0"),
   ("VOLKSWAGEN", "regenD8F7AC4BD0D|2022-09-27--16-41-45--0"),
   ("MAZDA", "regenFC3F9ECBB64|2022-09-27--16-03-09--0"),
@@ -71,7 +70,7 @@ def run_test_process(data):
   res = None
   if not args.upload_only:
     lr = LogReader.from_bytes(lr_dat)
-    res, log_msgs = test_process(cfg, lr, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, segment, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
 
@@ -89,7 +88,7 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
-def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -97,7 +96,10 @@ def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore
 
   ref_log_msgs = list(LogReader(ref_log_path))
 
-  log_msgs = replay_process(cfg, lr)
+  try:
+    log_msgs = replay_process(cfg, lr)
+  except Exception as e:
+    raise Exception("failed on segment: " + segment) from e
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
