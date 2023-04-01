@@ -342,12 +342,26 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 
 bool ChartsWidget::event(QEvent *event) {
   bool back_button = false;
-  if (event->type() == QEvent::MouseButtonPress) {
-    QMouseEvent *ev = static_cast<QMouseEvent *>(event);
-    back_button = ev->button() == Qt::BackButton;
-  } else if (event->type() == QEvent::NativeGesture) { // MacOS emulates a back swipe on pressing the mouse back button
-    QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
-    back_button = (ev->value() == 180);
+  switch (event->type()) {
+    case QEvent::MouseButtonPress: {
+      QMouseEvent *ev = static_cast<QMouseEvent *>(event);
+      back_button = ev->button() == Qt::BackButton;
+      break;
+    }
+
+    case QEvent::NativeGesture: {
+      QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
+      back_button = (ev->value() == 180);
+      break;
+    }
+    case QEvent::WindowActivate:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusIn:
+    case QEvent::FocusOut:
+      showValueTip(-1);
+      break;
+    default:
+      break;
   }
 
   if (back_button) {
@@ -541,7 +555,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateAxisY();
     updateSeriesPoints();
   }
-  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+  scene()->update();
 }
 
 void ChartView::updateSeriesPoints() {
@@ -738,7 +752,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
-      scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+      scene()->update();
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -784,7 +798,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (rubber_rect != rubber->geometry()) {
       rubber->setGeometry(rubber_rect);
     }
-    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+    scene()->update();
   }
 }
 
@@ -1062,7 +1076,7 @@ QList<SeriesSelector::ListItem *> SeriesSelector::seletedItems() {
 
 // ValueTipLabel
 
-ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::Tool | Qt::FramelessWindowHint) {
+ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::FramelessWindowHint) {
   setForegroundRole(QPalette::ToolTipText);
   setBackgroundRole(QPalette::ToolTipBase);
   setPalette(QToolTip::palette());
