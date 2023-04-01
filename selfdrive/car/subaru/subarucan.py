@@ -76,12 +76,16 @@ def create_es_dashstatus(packer, dashstatus_msg):
 
   return packer.make_can_msg("ES_DashStatus", 0, values)
 
-def create_infotainmentstatus(packer, infotainmentstatus_msg):
+def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   values = copy.copy(infotainmentstatus_msg)
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   if values["LKAS_State_Infotainment"] in [1,2]:
     values["LKAS_State_Infotainment"] = 0
+  
+  # Show Keep hands on wheel alert for openpilot steerRequired alert
+  if visual_alert == VisualAlert.steerRequired:
+    values["LKAS_State_Infotainment"] = 1
   
   return packer.make_can_msg("INFOTAINMENT_STATUS", 0, values)
 
