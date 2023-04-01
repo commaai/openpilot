@@ -1,4 +1,4 @@
-#include "tools/cabana/dbc.h"
+#include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
@@ -27,7 +27,7 @@ static QVector<int> BIG_ENDIAN_START_BITS = []() {
   return ret;
 }();
 
-double get_raw_value(uint8_t *data, size_t data_size, const cabana::Signal &sig) {
+double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig) {
   int64_t val = 0;
 
   int i = sig.msb / 8;

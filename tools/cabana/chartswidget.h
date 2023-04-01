@@ -1,19 +1,19 @@
 #pragma once
 
-#include <QDragEnterEvent>
 #include <QGridLayout>
 #include <QLabel>
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QSlider>
+#include <QStack>
+#include <QTimer>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QValueAxis>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 using namespace QtCharts;
 
@@ -25,6 +25,13 @@ enum class SeriesType {
   Scatter
 };
 
+class ValueTipLabel : public QLabel {
+public:
+  ValueTipLabel(QWidget *parent = nullptr);
+  void showText(const QPoint &pt, const QString &sec, int right_edge);
+  void paintEvent(QPaintEvent *ev) override;
+};
+
 class ChartView : public QChartView {
   Q_OBJECT
 
@@ -32,10 +39,12 @@ public:
   ChartView(QWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, const std::vector<Event*> *events = nullptr, bool clear = true);
+  void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left);
+  void showTip(double sec);
+  void hideTip();
 
   struct SigItem {
     MessageId msg_id;
@@ -46,15 +55,18 @@ public:
     uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
     SegmentTree segment_tree;
+    double min = 0;
+    double max = 0;
   };
 
 signals:
   void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
   void seriesAdded(const MessageId &id, const cabana::Signal *sig);
   void zoomIn(double min, double max);
-  void zoomReset();
+  void zoomUndo();
   void remove();
   void axisYLabelWidthChanged(int w);
+  void hovered(double sec);
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
@@ -92,6 +104,7 @@ private:
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
   QGraphicsRectItem *background;
+  ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
@@ -120,18 +133,22 @@ signals:
 
 private:
   void resizeEvent(QResizeEvent *event) override;
+  bool event(QEvent *event) override;
   void alignCharts();
   void newChart();
-  ChartView * createChart();
+  ChartView *createChart();
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
+  void zoomUndo();
+  void setZoom(double min, double max);
   void updateToolBar();
   void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();
+  void showValueTip(double sec);
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
@@ -142,18 +159,23 @@ private:
   QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
+  QAction *undo_zoom_action;
   QAction *reset_zoom_action;
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
+  QWidget *charts_container;
+  QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
+  QStack<QPair<double, double>> zoom_stack;
   bool use_dark_theme = false;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  QTimer align_timer;
 };
 
 class SeriesSelector : public QDialog {

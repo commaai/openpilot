@@ -3,6 +3,7 @@
 #include <QAbstractItemModel>
 #include <QLabel>
 #include <QLineEdit>
+#include <QSlider>
 #include <QStyledItemDelegate>
 #include <QTableWidget>
 #include <QTreeView>
@@ -82,6 +83,9 @@ public:
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+  void drawSparkline(QPainter *painter, const QRect &rect, const QModelIndex &index) const;
+  void 	updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
   QFont small_font;
   const int color_label_width = 18;
@@ -99,6 +103,7 @@ public:
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
+  MessageId msg_id;
 
 signals:
   void highlight(const cabana::Signal *sig);
@@ -107,10 +112,23 @@ signals:
 private:
   void rowsChanged();
   void leaveEvent(QEvent *event);
+  void updateToolBar();
+  void setSparklineRange(int value);
 
-  MessageId msg_id;
-  QTreeView *tree;
+  struct TreeView : public QTreeView {
+    TreeView(QWidget *parent) : QTreeView(parent) {}
+    void rowsInserted(const QModelIndex &parent, int start, int end) override {
+      ((SignalView *)parentWidget())->rowsChanged();
+      // update widget geometries in QTreeView::rowsInserted
+      QTreeView::rowsInserted(parent, start, end);
+    }
+  };
+
+  TreeView *tree;
+  QLabel *sparkline_label;
+  QSlider *sparkline_range_slider;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  friend SignalItemDelegate;
 };
