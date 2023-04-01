@@ -33,7 +33,7 @@ class CarControllerParams:
 
 class ToyotaFlags(IntFlag):
   HYBRID = 1
-  RADAR_ACC_FILTER = 2
+  SMART_DSU = 2
 
 
 class CAR:
