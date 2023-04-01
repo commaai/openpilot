@@ -3,5 +3,5 @@ moc_*
 
 cabana
 settings
-car_fingerprint_to_dbc.json
+dbc/car_fingerprint_to_dbc.json
 tests/test_cabana
