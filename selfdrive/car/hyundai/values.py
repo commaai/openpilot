@@ -531,7 +531,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.SONATA: {
-    (Ecu.fwdRadar, 0x7d0, None): [
+    (Ecu.fwdRadar, 0x7d8, None): [
       b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     ',
       b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
@@ -539,23 +539,25 @@ FW_VERSIONS = {
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.02 99110-L1000         ',
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
+      b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN89110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     ',
       b'\xf1\x8799110L0000\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
     ],
-    (Ecu.abs, 0x7d1, None): [
+    (Ecu.abs, 0x7d9, None): [
       b'\xf1\x00DN ESC \x07 106 \x07\x01 58910-L0100',
       b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300',
       b'\xf1\x00DN ESC \x03 100 \x08\x01 58910-L0300',
       b'\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100',
       b'\xf1\x00DN ESC \x08 103\x19\x06\x01 58910-L1300',
+      b'\xf1\x00DN ESC \x07 107"\x08\x07 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x07 106 \x07\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 104\x19\x08\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x06 106 \x07\x01 58910-L0100',
       b'\xf1\x8758910-L0100\xf1\x00DN ESC \x07 104\x19\x08\x01 58910-L0100',
       b'\xf1\x00DN ESC \x06 106 \x07\x01 58910-L0100',
     ],
-    (Ecu.engine, 0x7e0, None): [
+    (Ecu.engine, 0x7e8, None): [
       b'\xf1\x81HM6M1_0a0_F00',
       b'\xf1\x82DNBVN5GMCCXXXDCA',
       b'\xf1\x82DNBVN5GMCCXXXG2F',
@@ -572,9 +574,10 @@ FW_VERSIONS = {
       b'HM6M2_0a0_BD0',
       b'\xf1\x8739110-2S278\xf1\x82DNDVD5GMCCXXXL5B',
       b'\xf1\x8739110-2S041\xf1\x81HM6M1_0a0_M00',
+      b'\xf1\x8739110-2S042\xf1\x81HM6M1_0a0_M00',
       b'\xf1\x81HM6M1_0a0_G20',
     ],
-    (Ecu.eps, 0x7d4, None): [
+    (Ecu.eps, 0x7dc, None): [
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
       b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
@@ -591,8 +594,9 @@ FW_VERSIONS = {
       b'\xf1\x8757700-L0000\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP100',
       b'\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC102',
+      b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0200\x00 4DNAC102',
     ],
-    (Ecu.fwdCamera, 0x7c4, None): [
+    (Ecu.fwdCamera, 0x7cc, None): [
       b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
       b'\xf1\x00DN8 MFC  AT RUS LHD 1.00 1.03 99211-L1000 190705',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
@@ -601,8 +605,9 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.07 99211-L1000 211223',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.07 99211-L1000 211223',
     ],
-    (Ecu.transmission, 0x7e1, None): [
+    (Ecu.transmission, 0x7e9, None): [
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
       b'\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB1\xe3\xc10\xa1',
       b'\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
@@ -611,6 +616,7 @@ FW_VERSIONS = {
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x96\xa1\xf1\x92',
       b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB2\x00\x00\x00\x00\x00\x00\x08\xc9O:',
+      b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB4\x00\x00\x00\x00\x00\x00g!l[',
       b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB4\x00\x00\x00\x00\x00\x00g!l[',
       b'\xf1\x00T02601BL  T02730A1  VDN8T25XXX730NS5\xf7_\x92\xf5',
       b'\xf1\x00T02601BL  T02832A1  VDN8T25XXX832NS8G\x0e\xfeE',
