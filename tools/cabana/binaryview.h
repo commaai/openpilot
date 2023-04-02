@@ -6,7 +6,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 class BinaryItemDelegate : public QStyledItemDelegate {
@@ -42,8 +42,9 @@ public:
     QColor bg_color = QColor(102, 86, 169, 0);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val = "-";
+    QString val;
     QList<const cabana::Signal *> sigs;
+    bool valid = false;
   };
   std::vector<Item> items;
 

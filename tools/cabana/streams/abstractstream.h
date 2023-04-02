@@ -6,7 +6,7 @@
 #include <QColor>
 #include <QHash>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
 #include "tools/replay/replay.h"
@@ -50,6 +50,7 @@ public:
   virtual void setSpeed(float speed) {}
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  virtual const std::vector<Event*> *rawEvents() const { return nullptr; }
   const std::unordered_map<MessageId, std::deque<CanEvent>> &events() const { return events_; }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
   void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
@@ -63,11 +64,11 @@ signals:
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *);
   void received(QHash<MessageId, CanData> *);
-  void sourcesUpdated(const QSet<uint8_t> &s);
+  void sourcesUpdated(const SourceSet &s);
 
 public:
   QHash<MessageId, CanData> last_msgs;
-  QSet<uint8_t> sources;
+  SourceSet sources;
 
 protected:
   virtual void process(QHash<MessageId, CanData> *);
