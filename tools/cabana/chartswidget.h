@@ -42,7 +42,7 @@ public:
   void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
-  void updatePlotArea(int left);
+  void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
 
@@ -88,6 +88,8 @@ private:
   QSize sizeHint() const override { return {CHART_MIN_WIDTH, settings.chart_height}; }
   void updateAxisY();
   void updateTitle();
+  void resetChartCache();
+  void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
@@ -103,7 +105,6 @@ private:
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  QGraphicsRectItem *background;
   ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
@@ -111,6 +112,7 @@ private:
   SeriesType series_type = SeriesType::Line;
   bool is_scrubbing = false;
   bool resume_after_scrub = false;
+  QPixmap chart_pixmap;
   friend class ChartsWidget;
  };
 

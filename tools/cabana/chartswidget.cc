@@ -385,18 +385,17 @@ ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, par
   chart->legend()->setShowToolTips(true);
   chart->setMargins({0, 0, 0, 0});
 
-  background = new QGraphicsRectItem(chart);
-  background->setBrush(QApplication::palette().color(QPalette::Base));
-  background->setPen(Qt::NoPen);
-  background->setZValue(chart->zValue() - 1);
-
   setChart(chart);
 
   createToolButtons();
-  setRenderHint(QPainter::Antialiasing);
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
   setMouseTracking(true);
+
+  QObject::connect(axis_x, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
+  QObject::connect(chart, &QChart::plotAreaChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -474,6 +473,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
     emit remove();
   } else if (sigs.size() != prev_size) {
     updateAxisY();
+    resetChartCache();
   }
 }
 
@@ -515,15 +515,14 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   manage_btn_proxy->setPos(x, top);
   chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), manage_btn_proxy->sceneBoundingRect().bottomLeft()});
   if (align_to > 0) {
-    updatePlotArea(align_to);
+    updatePlotArea(align_to, true);
   }
   QChartView::resizeEvent(event);
 }
 
-void ChartView::updatePlotArea(int left_pos) {
-  if (align_to != left_pos || rect() != background->rect()) {
+void ChartView::updatePlotArea(int left_pos, bool force) {
+  if (align_to != left_pos || force) {
     align_to = left_pos;
-    background->setRect(rect());
 
     qreal left, top, right, bottom;
     chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
@@ -532,9 +531,6 @@ void ChartView::updatePlotArea(int left_pos) {
     int adjust_top = chart()->legend()->geometry().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
     chart()->layout()->invalidate();
-    if (can->isPaused()) {
-      update();
-    }
   }
 }
 
@@ -546,6 +542,7 @@ void ChartView::updateTitle() {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
     s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name, msgName(s.msg_id), s.msg_id.toString()));
   }
+  resetChartCache();
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -555,7 +552,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateAxisY();
     updateSeriesPoints();
   }
-  scene()->update();
+  viewport()->update();
 }
 
 void ChartView::updateSeriesPoints() {
@@ -617,6 +614,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
     }
   }
   updateAxisY();
+  resetChartCache();
 }
 
 // auto zoom on yaxis
@@ -752,7 +750,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
-      scene()->update();
+      viewport()->update();
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -798,7 +796,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (rubber_rect != rubber->geometry()) {
       rubber->setGeometry(rubber_rect);
     }
-    scene()->update();
+    viewport()->update();
   }
 }
 
@@ -822,13 +820,13 @@ void ChartView::showTip(double sec) {
   QPointF tooltip_pt(x, chart()->plotArea().top());
   int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
   tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />") + "</p>", plot_right);
-  scene()->update();
+  viewport()->update();
 }
 
 void ChartView::hideTip() {
   clearTrackPoints();
   tip_label.hide();
-  scene()->update();
+  viewport()->update();
 }
 
 void ChartView::dragMoveEvent(QDragMoveEvent *event) {
@@ -855,6 +853,34 @@ void ChartView::dropEvent(QDropEvent *event) {
     }
   } else {
     event->ignore();
+  }
+}
+
+void ChartView::resetChartCache() {
+  chart_pixmap = QPixmap();
+  viewport()->update();
+}
+
+void ChartView::paintEvent(QPaintEvent *event) {
+  if (!can->liveStreaming()) {
+    if (chart_pixmap.isNull()) {
+      const qreal dpr = viewport()->devicePixelRatioF();
+      chart_pixmap = QPixmap(viewport()->size() * dpr);
+      chart_pixmap.setDevicePixelRatio(dpr);
+      chart_pixmap.fill(palette().color(QPalette::Base));
+      QPainter p(&chart_pixmap);
+      p.setRenderHints(QPainter::Antialiasing);
+      scene()->setSceneRect(viewport()->rect());
+      scene()->render(&p);
+    }
+
+    QPainter painter(viewport());
+    painter.setRenderHints(QPainter::Antialiasing);
+    painter.drawPixmap(QPoint(), chart_pixmap);
+    QRectF exposed_rect = mapToScene(event->region().boundingRect()).boundingRect();
+    drawForeground(&painter, exposed_rect);
+  } else {
+    QChartView::paintEvent(event);
   }
 }
 
