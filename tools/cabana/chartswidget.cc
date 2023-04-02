@@ -385,11 +385,6 @@ ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, par
   chart->legend()->setShowToolTips(true);
   chart->setMargins({0, 0, 0, 0});
 
-  background = new QGraphicsRectItem(chart);
-  background->setBrush(QApplication::palette().color(QPalette::Base));
-  background->setPen(Qt::NoPen);
-  background->setZValue(chart->zValue() - 1);
-
   setChart(chart);
 
   createToolButtons();
@@ -520,15 +515,14 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   manage_btn_proxy->setPos(x, top);
   chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), manage_btn_proxy->sceneBoundingRect().bottomLeft()});
   if (align_to > 0) {
-    updatePlotArea(align_to);
+    updatePlotArea(align_to, true);
   }
   QChartView::resizeEvent(event);
 }
 
-void ChartView::updatePlotArea(int left_pos) {
-  if (align_to != left_pos || rect() != background->rect()) {
+void ChartView::updatePlotArea(int left_pos, bool force) {
+  if (align_to != left_pos || force) {
     align_to = left_pos;
-    background->setRect(rect());
 
     qreal left, top, right, bottom;
     chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
@@ -873,6 +867,7 @@ void ChartView::paintEvent(QPaintEvent *event) {
       const qreal dpr = viewport()->devicePixelRatioF();
       chart_pixmap = QPixmap(viewport()->size() * dpr);
       chart_pixmap.setDevicePixelRatio(dpr);
+      chart_pixmap.fill(Qt::white);
       QPainter p(&chart_pixmap);
       p.setRenderHints(QPainter::Antialiasing);
       scene()->setSceneRect(viewport()->rect());

@@ -42,7 +42,7 @@ public:
   void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
-  void updatePlotArea(int left);
+  void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
 
@@ -105,7 +105,6 @@ private:
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  QGraphicsRectItem *background;
   ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
