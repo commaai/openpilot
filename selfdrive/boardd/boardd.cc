@@ -363,6 +363,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
 
     auto ps = pss[i];
+    ps.setVoltage(health.voltage_pkt);
+    ps.setCurrent(health.current_pkt);
     ps.setUptime(health.uptime_pkt);
     ps.setSafetyTxBlocked(health.safety_tx_blocked_pkt);
     ps.setSafetyRxInvalid(health.safety_rx_invalid_pkt);
