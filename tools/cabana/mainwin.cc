@@ -541,6 +541,7 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 
 void MainWindow::updateStatus() {
   status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
+  utils::setTheme(settings.theme);
 }
 
 void MainWindow::dockCharts(bool dock) {

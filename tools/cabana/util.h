@@ -98,6 +98,7 @@ public:
 
 namespace utils {
 QPixmap icon(const QString &id);
+void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }

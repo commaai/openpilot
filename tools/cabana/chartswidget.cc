@@ -85,8 +85,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   main_layout->addWidget(charts_scroll);
 
   // init settings
-  use_dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                   QApplication::palette().color(QPalette::Background).value();
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
@@ -231,7 +229,7 @@ ChartView *ChartsWidget::createChart() {
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-  chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+  chart->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomUndo, this, &ChartsWidget::zoomUndo);

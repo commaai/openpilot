@@ -173,7 +173,6 @@ private:
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   QStack<QPair<double, double>> zoom_stack;
-  bool use_dark_theme = false;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
