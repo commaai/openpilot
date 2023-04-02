@@ -867,7 +867,7 @@ void ChartView::paintEvent(QPaintEvent *event) {
       const qreal dpr = viewport()->devicePixelRatioF();
       chart_pixmap = QPixmap(viewport()->size() * dpr);
       chart_pixmap.setDevicePixelRatio(dpr);
-      chart_pixmap.fill(Qt::white);
+      chart_pixmap.fill(palette().color(QPalette::Base));
       QPainter p(&chart_pixmap);
       p.setRenderHints(QPainter::Antialiasing);
       scene()->setSceneRect(viewport()->rect());
