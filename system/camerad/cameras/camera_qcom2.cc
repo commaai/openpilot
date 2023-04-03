@@ -71,7 +71,7 @@ const int DC_GAIN_MIN_WEIGHT_OX03C10 = 1; // always on is fine
 const int DC_GAIN_MAX_WEIGHT_OX03C10 = 1;
 
 const float TARGET_GREY_FACTOR_AR0231 = 1.0;
-const float TARGET_GREY_FACTOR_OX03C10 = 0.02;
+const float TARGET_GREY_FACTOR_OX03C10 = 0.01;
 
 const float sensor_analog_gains_AR0231[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
