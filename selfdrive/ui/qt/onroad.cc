@@ -526,14 +526,24 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     // FIXME: painter.drawPolygon can be slow if hue is not rounded
     end_hue = int(end_hue * 100 + 0.5) / 100;
 
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
+    // bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
+    // bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
+    // bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+    // bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    // bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
+    // bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
   }
+  const float dbp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getBrakeDisengageProbs()[4];
+  const float dgp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getGasDisengageProbs()[4];
+  const float dsp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getSteerOverrideProbs()[4];
+
+  float cont10 = (1 - dbp) * (1 - dgp) * (1 - dsp);
+  float cont60 = pow(cont10, 6.0);
+  float cont600 = pow(cont10, 60.0);
+  float dhue = cont60 < 0.25 ? (10 + 200*cont60) : (cont600 < 0.01 ? (60 + 5000*cont600) : (110));
+  bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
+  bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
