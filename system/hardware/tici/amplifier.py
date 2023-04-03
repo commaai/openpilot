@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+import time
 from smbus2 import SMBus
 from collections import namedtuple
 
@@ -109,9 +112,19 @@ class Amplifier:
       if self.debug:
         print(f"Setting \"{config.name}\" to {config.value}:")
 
-      old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
-      new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
-      bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
+      write_succeeded = False
+      for _ in range(10):
+        try:
+          old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
+          new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
+          bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
+          write_succeeded = True
+          break
+        except OSError:
+          time.sleep(0.01)
+
+      if not write_succeeded:
+        raise ConnectionError(f"I2C write to {hex(self.AMP_ADDRESS)} on bus {self.AMP_I2C_BUS} failed")
 
       if self.debug:
         print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
@@ -136,5 +149,5 @@ if __name__ == "__main__":
     model = f.read().strip('\x00')
   model = model.split('comma ')[-1]
 
-  amp = Amplifier()
+  amp = Amplifier(debug=True)
   amp.initialize_configuration(model)
