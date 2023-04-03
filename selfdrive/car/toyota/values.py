@@ -33,6 +33,7 @@ class CarControllerParams:
 
 class ToyotaFlags(IntFlag):
   HYBRID = 1
+  SMART_DSU = 2
 
 
 class CAR:
@@ -732,12 +733,14 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a1, None): [
       b'8965B10092\x00\x00\x00\x00\x00\x00',
       b'8965B10091\x00\x00\x00\x00\x00\x00',
+      b'8965B10111\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152610041\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x0189663F438000\x00\x00\x00\x00',
+      b'\x02896631025000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x0289663F453000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 15): [
@@ -1107,6 +1110,7 @@ FW_VERSIONS = {
       b'\x01F152648J4000\x00\x00\x00\x00',
       b'\x01F152648J5000\x00\x00\x00\x00',
       b'\x01F152648J6000\x00\x00\x00\x00',
+      b'\x01F15264872700\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630E67000\x00\x00\x00\x00',
