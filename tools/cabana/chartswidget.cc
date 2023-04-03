@@ -882,6 +882,7 @@ void ChartView::paintEvent(QPaintEvent *event) {
     QChartView::paintEvent(event);
   }
 }
+
 void ChartView::drawBackground(QPainter *painter, const QRectF &rect) {
   painter->fillRect(rect, palette().color(QPalette::Base));
 }
