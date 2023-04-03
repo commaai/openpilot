@@ -17,8 +17,10 @@ public:
   int max_cached_minutes = 30;
   int chart_height = 200;
   int chart_column_count = 1;
-  int chart_range = 3 * 60; // e minutes
+  int chart_range = 3 * 60; // 3 minutes
   int chart_series_type = 0;
+  int theme = 0;
+  int sparkline_range = 15; // 15 seconds
   QString last_dir;
   QString last_route_dir;
   QByteArray geometry;
@@ -41,6 +43,7 @@ public:
   QSpinBox *cached_minutes;
   QSpinBox *chart_height;
   QComboBox *chart_series_type;
+  QComboBox *theme;
 };
 
 extern Settings settings;
