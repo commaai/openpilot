@@ -358,6 +358,7 @@ bool ChartsWidget::event(QEvent *event) {
     case QEvent::WindowDeactivate:
     case QEvent::FocusIn:
     case QEvent::FocusOut:
+    case QEvent::Leave:
       showValueTip(-1);
       break;
     default:
@@ -618,7 +619,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
     }
   }
   updateAxisY();
-  resetChartCache();
+  chart_pixmap = QPixmap();
 }
 
 // auto zoom on yaxis
@@ -874,9 +875,9 @@ void ChartView::paintEvent(QPaintEvent *event) {
       const qreal dpr = viewport()->devicePixelRatioF();
       chart_pixmap = QPixmap(viewport()->size() * dpr);
       chart_pixmap.setDevicePixelRatio(dpr);
-      chart_pixmap.fill(palette().color(QPalette::Base));
       QPainter p(&chart_pixmap);
       p.setRenderHints(QPainter::Antialiasing);
+      drawBackground(&p, viewport()->rect());
       scene()->setSceneRect(viewport()->rect());
       scene()->render(&p);
     }
@@ -889,6 +890,10 @@ void ChartView::paintEvent(QPaintEvent *event) {
   } else {
     QChartView::paintEvent(event);
   }
+}
+
+void ChartView::drawBackground(QPainter *painter, const QRectF &rect) {
+  painter->fillRect(rect, palette().color(QPalette::Base));
 }
 
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
