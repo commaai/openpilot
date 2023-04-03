@@ -541,9 +541,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   float cont10 = (1 - dbp) * (1 - dgp) * (1 - dsp);
   float cont600 = pow(cont10, 60.0);
   float dhue = cont10 < 0.5 ? 10 : (cont10 < 0.8 ? (10 + 66*(cont10-0.5)) : (cont10 < 0.925 ? (30 + 6000*(cont600)) : (90)));
+  dhue = dhue * 0.3 + dhue_last * 0.7;
   // printf("C1M %.3f, CTM %.3f, HUE %.0f\n", pow(cont10, 6.0), pow(cont10, 60.0), dhue);
   bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
   bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
+  dhue_last = dhue;
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
