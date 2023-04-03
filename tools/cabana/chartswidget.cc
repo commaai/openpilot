@@ -311,12 +311,14 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
-  for (auto c : charts) {
-    c->deleteLater();
+  if (!charts.isEmpty()) {
+    for (auto c : charts) {
+      c->deleteLater();
+    }
+    charts.clear();
+    updateToolBar();
+    emit seriesChanged();
   }
-  charts.clear();
-  updateToolBar();
-  emit seriesChanged();
 }
 
 void ChartsWidget::alignCharts() {
@@ -390,10 +392,8 @@ ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, par
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
   setMouseTracking(true);
 
-  QObject::connect(axis_x, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
-  QObject::connect(chart, &QChart::plotAreaChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -529,6 +529,7 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     int adjust_top = chart()->legend()->geometry().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
     chart()->layout()->invalidate();
+    resetChartCache();
   }
 }
 
@@ -549,6 +550,11 @@ void ChartView::updatePlot(double cur, double min, double max) {
     axis_x->setRange(min, max);
     updateAxisY();
     updateSeriesPoints();
+    // update tooltip
+    if (tooltip_x >= 0) {
+      showTip(chart()->mapToValue({tooltip_x, 0}).x());
+    }
+    resetChartCache();
   }
   viewport()->update();
 }
@@ -799,7 +805,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 }
 
 void ChartView::showTip(double sec) {
-  qreal x = chart()->mapToPosition({sec, 0}).x();
+  tooltip_x = chart()->mapToPosition({sec, 0}).x();
+  qreal x = tooltip_x;
   QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   for (auto &s : sigs) {
     if (s.series->isVisible()) {
@@ -808,11 +815,12 @@ void ChartView::showTip(double sec) {
       auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.rend() && it->x() >= axis_x->min()) {
         value = QString::number(it->y());
-        s.track_pt = chart()->mapToPosition(*it);
-        x = std::max(x, s.track_pt.x());
+        s.track_pt = *it;
+        x = std::max(x, chart()->mapToPosition(*it).x());
       }
-      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
-                       .arg(s.series->color().name(), s.sig->name, value, QString::number(s.min), QString::number(s.max));
+      QString name = sigs.size() > 1 ? s.sig->name + ": " : "";
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2<b>%3</b> (%4 - %5)")
+                       .arg(s.series->color().name(), name, value, QString::number(s.min), QString::number(s.max));
     }
   }
   QPointF tooltip_pt(x, chart()->plotArea().top());
@@ -823,6 +831,7 @@ void ChartView::showTip(double sec) {
 
 void ChartView::hideTip() {
   clearTrackPoints();
+  tooltip_x = -1;
   tip_label.hide();
   viewport()->update();
 }
@@ -897,8 +906,9 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   for (auto &s : sigs) {
     if (!s.track_pt.isNull() && s.series->isVisible()) {
       painter->setBrush(s.series->color().darker(125));
-      painter->drawEllipse(s.track_pt, 5.5, 5.5);
-      track_line_x = std::max(track_line_x, s.track_pt.x());
+      QPointF pos = chart()->mapToPosition(s.track_pt);
+      painter->drawEllipse(pos, 5.5, 5.5);
+      track_line_x = std::max(track_line_x, pos.x());
     }
   }
   if (track_line_x > 0) {
