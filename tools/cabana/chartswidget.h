@@ -113,6 +113,7 @@ private:
   bool is_scrubbing = false;
   bool resume_after_scrub = false;
   QPixmap chart_pixmap;
+  double tooltip_x = -1;
   friend class ChartsWidget;
  };
 
