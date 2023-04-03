@@ -539,7 +539,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   const float dsp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getSteerOverrideProbs()[4];
 
   float cont10 = (1 - dbp) * (1 - dgp) * (1 - dsp);
-  float dhue = cont10 < 0.8 ? (10 + 62.5*cont10) : (cont10 < 0.925 ? (60 + 400*(cont10-0.8)) : (110));
+  float dhue = cont10 < 0.5 ? 10 : (cont10 < 0.8 ? (10 + 166*(cont10-0.5)) : (cont10 < 0.925 ? (60 + 400*(cont10-0.8)) : (110)));
+  printf("C1M %.3f, CTM %.3f, HUE %.0f\n", pow(cont10, 6.0), pow(cont10, 60.0), dhue);
   bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
   bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
 
