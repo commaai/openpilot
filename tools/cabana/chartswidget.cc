@@ -12,6 +12,7 @@
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QRubberBand>
+#include <QStylePainter>
 #include <QToolBar>
 #include <QToolTip>
 #include <QtConcurrent>
@@ -70,13 +71,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   charts_layout = new QGridLayout();
   charts_layout->setSpacing(10);
 
-  QWidget *charts_container = new QWidget(this);
+  charts_container = new QWidget(this);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(charts_container);
   charts_main_layout->setContentsMargins(0, 0, 0, 0);
   charts_main_layout->addLayout(charts_layout);
   charts_main_layout->addStretch(0);
 
-  QScrollArea *charts_scroll = new QScrollArea(this);
+  charts_scroll = new QScrollArea(this);
   charts_scroll->setFrameStyle(QFrame::NoFrame);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
@@ -84,8 +85,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   main_layout->addWidget(charts_scroll);
 
   // init settings
-  use_dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                   QApplication::palette().color(QPalette::Background).value();
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
@@ -157,6 +156,17 @@ void ChartsWidget::zoomUndo() {
   }
 }
 
+void ChartsWidget::showValueTip(double sec) {
+  const QRect visible_rect(-charts_container->pos(), charts_scroll->viewport()->size());
+  for (auto c : charts) {
+    if (sec >= 0 && visible_rect.contains(QRect(c->mapTo(charts_container, QPoint(0, 0)), c->size()))) {
+      c->showTip(sec);
+    } else {
+      c->hideTip();
+    }
+  }
+}
+
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
@@ -219,13 +229,14 @@ ChartView *ChartsWidget::createChart() {
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-  chart->chart()->setTheme(use_dark_theme ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+  chart->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomUndo, this, &ChartsWidget::zoomUndo);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
+  QObject::connect(chart, &ChartView::hovered, this, &ChartsWidget::showValueTip);
   charts.push_back(chart);
   updateLayout();
   return chart;
@@ -329,12 +340,26 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 
 bool ChartsWidget::event(QEvent *event) {
   bool back_button = false;
-  if (event->type() == QEvent::MouseButtonPress) {
-    QMouseEvent *ev = static_cast<QMouseEvent *>(event);
-    back_button = ev->button() == Qt::BackButton;
-  } else if (event->type() == QEvent::NativeGesture) { // MacOS emulates a back swipe on pressing the mouse back button
-    QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
-    back_button = (ev->value() == 180);
+  switch (event->type()) {
+    case QEvent::MouseButtonPress: {
+      QMouseEvent *ev = static_cast<QMouseEvent *>(event);
+      back_button = ev->button() == Qt::BackButton;
+      break;
+    }
+
+    case QEvent::NativeGesture: {
+      QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
+      back_button = (ev->value() == 180);
+      break;
+    }
+    case QEvent::WindowActivate:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusIn:
+    case QEvent::FocusOut:
+      showValueTip(-1);
+      break;
+    default:
+      break;
   }
 
   if (back_button) {
@@ -346,7 +371,7 @@ bool ChartsWidget::event(QEvent *event) {
 
 // ChartView
 
-ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
+ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -358,18 +383,17 @@ ChartView::ChartView(QWidget *parent) : QChartView(nullptr, parent) {
   chart->legend()->setShowToolTips(true);
   chart->setMargins({0, 0, 0, 0});
 
-  background = new QGraphicsRectItem(chart);
-  background->setBrush(QApplication::palette().color(QPalette::Base));
-  background->setPen(Qt::NoPen);
-  background->setZValue(chart->zValue() - 1);
-
   setChart(chart);
 
   createToolButtons();
-  setRenderHint(QPainter::Antialiasing);
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
   setMouseTracking(true);
+
+  QObject::connect(axis_x, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
+  QObject::connect(chart, &QChart::plotAreaChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -447,6 +471,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
     emit remove();
   } else if (sigs.size() != prev_size) {
     updateAxisY();
+    resetChartCache();
   }
 }
 
@@ -488,15 +513,14 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   manage_btn_proxy->setPos(x, top);
   chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), manage_btn_proxy->sceneBoundingRect().bottomLeft()});
   if (align_to > 0) {
-    updatePlotArea(align_to);
+    updatePlotArea(align_to, true);
   }
   QChartView::resizeEvent(event);
 }
 
-void ChartView::updatePlotArea(int left_pos) {
-  if (align_to != left_pos || rect() != background->rect()) {
+void ChartView::updatePlotArea(int left_pos, bool force) {
+  if (align_to != left_pos || force) {
     align_to = left_pos;
-    background->setRect(rect());
 
     qreal left, top, right, bottom;
     chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
@@ -505,9 +529,6 @@ void ChartView::updatePlotArea(int left_pos) {
     int adjust_top = chart()->legend()->geometry().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
     chart()->layout()->invalidate();
-    if (can->isPaused()) {
-      update();
-    }
   }
 }
 
@@ -519,6 +540,7 @@ void ChartView::updateTitle() {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
     s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name, msgName(s.msg_id), s.msg_id.toString()));
   }
+  resetChartCache();
 }
 
 void ChartView::updatePlot(double cur, double min, double max) {
@@ -528,7 +550,7 @@ void ChartView::updatePlot(double cur, double min, double max) {
     updateAxisY();
     updateSeriesPoints();
   }
-  scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+  viewport()->update();
 }
 
 void ChartView::updateSeriesPoints() {
@@ -542,7 +564,11 @@ void ChartView::updateSeriesPoints() {
       double pixels_per_point = (chart()->mapToPosition(right_pt).x() - chart()->mapToPosition(*begin).x()) / num_points;
 
       if (series_type == SeriesType::Scatter) {
-        ((QScatterSeries *)s.series)->setMarkerSize(std::clamp(pixels_per_point / 2.0, 2.0, 8.0) * devicePixelRatioF());
+        qreal size = std::clamp(pixels_per_point / 2.0, 2.0, 8.0);
+        if (s.series->useOpenGL()) {
+          size *= devicePixelRatioF();
+        }
+        ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
         s.series->setPointsVisible(pixels_per_point > 20);
       }
@@ -586,6 +612,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
     }
   }
   updateAxisY();
+  resetChartCache();
 }
 
 // auto zoom on yaxis
@@ -606,16 +633,20 @@ void ChartView::updateAxisY() {
 
     auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
     auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+    s.min = std::numeric_limits<double>::max();
+    s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
       for (auto it = first; it != last; ++it) {
-        if (it->y() < min) min = it->y();
-        if (it->y() > max) max = it->y();
+        if (it->y() < s.min) s.min = it->y();
+        if (it->y() > s.max) s.max = it->y();
       }
     } else {
       auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
-      min = std::min(min, min_y);
-      max = std::max(max, max_y);
+      s.min = min_y;
+      s.max = max_y;
     }
+    min = std::min(min, s.min);
+    max = std::max(max, s.max);
   }
   if (min == std::numeric_limits<double>::max()) min = 0;
   if (max == std::numeric_limits<double>::lowest()) max = 0;
@@ -668,8 +699,9 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 }
 
 void ChartView::leaveEvent(QEvent *event) {
-  clearTrackPoints();
-  scene()->update();
+  if (tip_label.isVisible()) {
+    emit hovered(-1);
+  }
   QChartView::leaveEvent(event);
 }
 
@@ -716,7 +748,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     } else if (rubber->width() > 10) {
       emit zoomIn(min_rounded, max_rounded);
     } else {
-      scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+      viewport()->update();
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
@@ -741,42 +773,17 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (plot_area.contains(ev->pos())) {
       can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
     }
-    return;
   }
 
   auto rubber = findChild<QRubberBand *>();
   bool is_zooming = rubber && rubber->isVisible();
-  is_scrubbing = false;
   clearTrackPoints();
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
-    QStringList text_list;
     const double sec = chart()->mapToValue(ev->pos()).x();
-    qreal x = -1;
-    for (auto &s : sigs) {
-      if (!s.series->isVisible()) continue;
-
-      // use reverse iterator to find last item <= sec.
-      double value = 0;
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
-        value = it->y();
-        s.track_pt = chart()->mapToPosition(*it);
-        x = std::max(x, s.track_pt.x());
-      }
-      text_list.push_back(QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b>")
-                              .arg(s.series->color().name(), s.sig->name,
-                                   s.track_pt.isNull() ? "--" : QString::number(value)));
-    }
-    if (x < 0) {
-      x = ev->pos().x();
-    }
-    text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
-    QPointF tooltip_pt(x + 12, plot_area.top() - 20);
-    QToolTip::showText(mapToGlobal(tooltip_pt.toPoint()), text_list.join("<br />"), this, plot_area.toRect());
-    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
-  } else {
-    QToolTip::hideText();
+    emit hovered(sec);
+  } else if (tip_label.isVisible()) {
+    emit hovered(-1);
   }
 
   QChartView::mouseMoveEvent(ev);
@@ -787,8 +794,37 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
     if (rubber_rect != rubber->geometry()) {
       rubber->setGeometry(rubber_rect);
     }
-    scene()->invalidate({}, QGraphicsScene::ForegroundLayer);
+    viewport()->update();
   }
+}
+
+void ChartView::showTip(double sec) {
+  qreal x = chart()->mapToPosition({sec, 0}).x();
+  QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
+  for (auto &s : sigs) {
+    if (s.series->isVisible()) {
+      QString value = "--";
+      // use reverse iterator to find last item <= sec.
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = QString::number(it->y());
+        s.track_pt = chart()->mapToPosition(*it);
+        x = std::max(x, s.track_pt.x());
+      }
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2: <b>%3</b> (%4 - %5)")
+                       .arg(s.series->color().name(), s.sig->name, value, QString::number(s.min), QString::number(s.max));
+    }
+  }
+  QPointF tooltip_pt(x, chart()->plotArea().top());
+  int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
+  tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />") + "</p>", plot_right);
+  viewport()->update();
+}
+
+void ChartView::hideTip() {
+  clearTrackPoints();
+  tip_label.hide();
+  viewport()->update();
 }
 
 void ChartView::dragMoveEvent(QDragMoveEvent *event) {
@@ -815,6 +851,34 @@ void ChartView::dropEvent(QDropEvent *event) {
     }
   } else {
     event->ignore();
+  }
+}
+
+void ChartView::resetChartCache() {
+  chart_pixmap = QPixmap();
+  viewport()->update();
+}
+
+void ChartView::paintEvent(QPaintEvent *event) {
+  if (!can->liveStreaming()) {
+    if (chart_pixmap.isNull()) {
+      const qreal dpr = viewport()->devicePixelRatioF();
+      chart_pixmap = QPixmap(viewport()->size() * dpr);
+      chart_pixmap.setDevicePixelRatio(dpr);
+      chart_pixmap.fill(palette().color(QPalette::Base));
+      QPainter p(&chart_pixmap);
+      p.setRenderHints(QPainter::Antialiasing);
+      scene()->setSceneRect(viewport()->rect());
+      scene()->render(&p);
+    }
+
+    QPainter painter(viewport());
+    painter.setRenderHints(QPainter::Antialiasing);
+    painter.drawPixmap(QPoint(), chart_pixmap);
+    QRectF exposed_rect = mapToScene(event->region().boundingRect()).boundingRect();
+    drawForeground(&painter, exposed_rect);
+  } else {
+    QChartView::paintEvent(event);
   }
 }
 
@@ -1032,4 +1096,40 @@ QList<SeriesSelector::ListItem *> SeriesSelector::seletedItems() {
   QList<SeriesSelector::ListItem *> ret;
   for (int i = 0; i < selected_list->count(); ++i) ret.push_back((ListItem *)selected_list->item(i));
   return ret;
+}
+
+// ValueTipLabel
+
+ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::FramelessWindowHint) {
+  setForegroundRole(QPalette::ToolTipText);
+  setBackgroundRole(QPalette::ToolTipBase);
+  setPalette(QToolTip::palette());
+  ensurePolished();
+  setMargin(1 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this));
+  setAttribute(Qt::WA_ShowWithoutActivating);
+  setTextFormat(Qt::RichText);
+  setVisible(false);
+}
+
+void ValueTipLabel::showText(const QPoint &pt, const QString &text, int right_edge) {
+  setText(text);
+  if (!text.isEmpty()) {
+    QSize extra(1, 1);
+    resize(sizeHint() + extra);
+    QPoint tip_pos(pt.x() + 12, pt.y());
+    if (tip_pos.x() + size().width() >= right_edge) {
+      tip_pos.rx() = pt.x() - size().width() - 12;
+    }
+    move(tip_pos);
+  }
+  setVisible(!text.isEmpty());
+}
+
+void ValueTipLabel::paintEvent(QPaintEvent *ev) {
+  QStylePainter p(this);
+  QStyleOptionFrame opt;
+  opt.init(this);
+  p.drawPrimitive(QStyle::PE_PanelTipLabel, opt);
+  p.end();
+  QLabel::paintEvent(ev);
 }
