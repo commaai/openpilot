@@ -112,7 +112,6 @@ const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
 
 const int EXPOSURE_TIME_MIN_OX03C10 = 2; // 1x
 const int EXPOSURE_TIME_MAX_OX03C10 = 2016;
-const uint32_t HCG_TIME_MIN_OX03C10 = 550;
 const uint32_t VS_TIME_MIN_OX03C10 = 1;
 const uint32_t VS_TIME_MAX_OX03C10 = 34; // vs < 35
 
@@ -1174,8 +1173,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
     // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
-    uint32_t lcg_time = exposure_time;
-    uint32_t hcg_time = std::max((uint32_t)exposure_time, HCG_TIME_MIN_OX03C10);
+    uint32_t hcg_time = exposure_time;
+    uint32_t lcg_time = hcg_time;
     uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
