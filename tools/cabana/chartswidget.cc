@@ -227,6 +227,7 @@ ChartView *ChartsWidget::createChart() {
   QObject::connect(chart, &ChartView::hovered, this, &ChartsWidget::showValueTip);
   charts.push_back(chart);
   updateLayout();
+  updateToolBar();
   return chart;
 }
 
@@ -238,7 +239,6 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   } else if (!show && chart) {
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }
-  updateToolBar();
 }
 
 void ChartsWidget::setColumnCount(int n) {
