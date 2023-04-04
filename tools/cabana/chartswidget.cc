@@ -213,7 +213,7 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
 }
 
 ChartView *ChartsWidget::createChart() {
-  auto chart = new ChartView(this);
+  auto chart = new ChartView(is_zoomed ? zoomed_range : display_range, this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
@@ -235,7 +235,6 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   if (show && !chart) {
     chart = merge && charts.size() > 0 ? charts.back() : createChart();
     chart->addSeries(id, sig);
-    updateState();
   } else if (!show && chart) {
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }
@@ -362,7 +361,7 @@ bool ChartsWidget::event(QEvent *event) {
 
 // ChartView
 
-ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, parent) {
+ChartView::ChartView(const std::pair<double, double> &x_range, QWidget *parent) : tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -374,6 +373,7 @@ ChartView::ChartView(QWidget *parent) : tip_label(this), QChartView(nullptr, par
   chart->legend()->setShowToolTips(true);
   chart->setMargins({0, 0, 0, 0});
 
+  axis_x->setRange(x_range.first, x_range.second);
   setChart(chart);
 
   createToolButtons();

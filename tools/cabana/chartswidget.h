@@ -37,7 +37,7 @@ class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(QWidget *parent = nullptr);
+  ChartView(const std::pair<double, double> &x_range, QWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr);
