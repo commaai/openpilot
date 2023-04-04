@@ -57,10 +57,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   range_slider->setPageStep(60);  // 1 min
   range_slider_action = toolbar->addWidget(range_slider);
 
-  undo_zoom_action = toolbar->addAction(utils::icon("arrow-counterclockwise"), tr("Previous zoom"));
-  qobject_cast<QToolButton*>(toolbar->widgetForAction(undo_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-
-  reset_zoom_action = toolbar->addAction(utils::icon("zoom-out"), tr("Reset Zoom"));
+  // zoom controls
+  zoom_undo_stack = new QUndoStack(this);
+  undo_zoom_action = zoom_undo_stack->createUndoAction(this);
+  undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
+  toolbar->addAction(undo_zoom_action);
+  redo_zoom_action = zoom_undo_stack->createRedoAction(this);
+  redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
+  toolbar->addAction(redo_zoom_action);
+  reset_zoom_action = toolbar->addAction(utils::icon("zoom-out"), "");
+  reset_zoom_action->setToolTip(tr("Reset zoom"));
   qobject_cast<QToolButton*>(toolbar->widgetForAction(reset_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
@@ -99,7 +105,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
-  QObject::connect(undo_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomUndo);
   QObject::connect(reset_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(dock_btn, &QAction::triggered, [this]() {
@@ -135,25 +140,12 @@ void ChartsWidget::setZoom(double min, double max) {
 }
 
 void ChartsWidget::zoomIn(double min, double max) {
-  // Save previous zoom on undo stack
-  if (is_zoomed) {
-    zoom_stack.push({zoomed_range.first, zoomed_range.second});
-  }
-  setZoom(min, max);
+  zoom_undo_stack->push(new ZoomCommand(this, {min, max}));
 }
 
 void ChartsWidget::zoomReset() {
   setZoom(display_range.first, display_range.second);
-  zoom_stack.clear();
-}
-
-void ChartsWidget::zoomUndo() {
-  if (!zoom_stack.isEmpty()) {
-    auto r = zoom_stack.pop();
-    setZoom(r.first, r.second);
-  } else {
-    zoomReset();
-  }
+  zoom_undo_stack->clear();
 }
 
 void ChartsWidget::showValueTip(double sec) {
@@ -199,12 +191,13 @@ void ChartsWidget::setMaxChartRange(int value) {
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Column: %1").arg(column_count));
-  range_lb->setText(QString("Range: %1 ").arg(utils::formatSeconds(max_chart_range)));
+  range_lb->setText(utils::formatSeconds(max_chart_range));
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
   undo_zoom_action->setVisible(is_zoomed);
+  redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_action->setText(is_zoomed ? tr("Zoomin: %1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
+  reset_zoom_action->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
@@ -232,7 +225,7 @@ ChartView *ChartsWidget::createChart() {
   chart->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
-  QObject::connect(chart, &ChartView::zoomUndo, this, &ChartsWidget::zoomUndo);
+  QObject::connect(chart, &ChartView::zoomUndo, undo_zoom_action, &QAction::trigger);
   QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
@@ -366,7 +359,7 @@ bool ChartsWidget::event(QEvent *event) {
   }
 
   if (back_button) {
-    zoomUndo();
+    emit undo_zoom_action->triggered();
     return true;
   }
   return QFrame::event(event);
