@@ -120,14 +120,9 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
 }
 
 void ChartsWidget::eventsMerged() {
-  {
-    QFutureSynchronizer<void> future_synchronizer;
-    for (auto c : charts) {
-      future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
-    }
-  }
-  if (can->isPaused()) {
-    updateState();
+  QFutureSynchronizer<void> future_synchronizer;
+  for (auto c : charts) {
+    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
   }
 }
 
