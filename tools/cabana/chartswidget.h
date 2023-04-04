@@ -5,8 +5,9 @@
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QStack>
 #include <QTimer>
+#include <QUndoCommand>
+#include <QUndoStack>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
@@ -36,7 +37,7 @@ class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(QWidget *parent = nullptr);
+  ChartView(const std::pair<double, double> &x_range, QWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr);
@@ -129,6 +130,7 @@ public:
 public slots:
   void setColumnCount(int n);
   void removeAll();
+  void setZoom(double min, double max);
 
 signals:
   void dock(bool floating);
@@ -146,8 +148,6 @@ private:
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
-  void zoomUndo();
-  void setZoom(double min, double max);
   void updateToolBar();
   void setMaxChartRange(int value);
   void updateLayout();
@@ -163,8 +163,12 @@ private:
   QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
+
   QAction *undo_zoom_action;
+  QAction *redo_zoom_action;
   QAction *reset_zoom_action;
+  QUndoStack *zoom_undo_stack;
+
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
@@ -174,11 +178,23 @@ private:
   bool is_zoomed = false;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
-  QStack<QPair<double, double>> zoom_stack;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
   QTimer align_timer;
+  friend class ZoomCommand;
+};
+
+class ZoomCommand : public QUndoCommand {
+public:
+  ZoomCommand(ChartsWidget *charts, std::pair<double, double> range) : charts(charts), range(range), QUndoCommand() {
+    prev_range = charts->is_zoomed ? charts->zoomed_range : charts->display_range;
+    setText(QObject::tr("Zoom to %1-%2").arg(range.first, 0, 'f', 1).arg(range.second, 0, 'f', 1));
+  }
+  void undo() override { charts->setZoom(prev_range.first, prev_range.second); }
+  void redo() override { charts->setZoom(range.first, range.second); }
+  ChartsWidget *charts;
+  std::pair<double, double> prev_range, range;
 };
 
 class SeriesSelector : public QDialog {
