@@ -85,8 +85,8 @@ def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance
     "ACA_V_Wunsch": set_speed,
     "ACA_gemZeitl": lead_distance,
     "ACA_PrioDisp": 3,
-    # TODO: ACA_ID_StaACC, ACA_AnzDisplay, ACA_kmh_mph, ACA_Aend_Zeitluecke
-    # kmh_mph handling probably needed to resolve rounding errors in displayed setpoint
+    # TODO: restore dynamic pop-to-foreground/highlight behavior with ACA_PrioDisp and ACA_AnzDisplay
+    # TODO: ACA_kmh_mph handling probably needed to resolve rounding errors in displayed setpoint
   }
 
   return packer.make_can_msg("ACC_GRA_Anzeige", bus, values)
