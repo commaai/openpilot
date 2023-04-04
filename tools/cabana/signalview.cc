@@ -168,6 +168,8 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
+    } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
+      return (index.column() == 0) ? item->sig->name : item->sig_val;
     }
   }
   return {};
@@ -323,9 +325,34 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
       int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
       it = width_cache.insert(text, option.fontMetrics.width(text) + spacing);
     }
-    width = std::min(width, it.value());
+    width = std::min<int>(option.widget->size().width() / 3.0, it.value());
   }
   return {width, QApplication::fontMetrics().height()};
+}
+
+bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
+  if (event && event->type() == QEvent::ToolTip && index.isValid()) {
+    auto item = (SignalModel::Item *)index.internalPointer();
+    if (item->type == SignalModel::Item::Sig && index.column() == 1) {
+      QRect rc = option.rect.adjusted(0, 0, -option.rect.width() * 0.4, 0);
+      if (rc.contains(event->pos())) {
+        event->setAccepted(false);
+        return false;
+      }
+    }
+  }
+  return QStyledItemDelegate::helpEvent(event, view, option, index);
+}
+
+void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
+    QRect geom = option.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &option);
+    geom.setLeft(geom.right() - editor->sizeHint().width());
+    editor->setGeometry(geom);
+    return;
+  }
+  QStyledItemDelegate::updateEditorGeometry(editor, option, index);
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -359,33 +386,41 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->drawText(text_rect, option.displayAlignment, text);
     painter->restore();
   } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
+    painter->save();
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
 
-    drawSparkline(painter, option, index);
+    int adjust_right = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
+    QRect r = option.rect.adjusted(h_margin, v_margin, -adjust_right, -v_margin);
     // draw signal value
-    int right_offset = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
-    QRect rc = option.rect.adjusted(0, 0, -right_offset, 0);
-    auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
+    QRect value_rect = r.adjusted(r.width() * 0.6 + h_margin, 0, 0, 0);
+    auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, value_rect.width());
     painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
+    painter->drawText(value_rect, Qt::AlignRight | Qt::AlignVCenter, text);
+
+    QRect sparkline_rect = r.adjusted(0, 0, -r.width() * 0.4 - h_margin, 0);
+    drawSparkline(painter, sparkline_rect, index);
+    painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
 }
 
-void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, const QModelIndex &index) const {
   static std::vector<QPointF> points;
   const auto &msg_id = ((SignalView *)parent())->msg_id;
   const auto &msgs = can->events().at(msg_id);
+
   uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - settings.sparkline_range * 1e9, 0)});
   auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+
   if (first != last) {
     double min = std::numeric_limits<double>::max();
     double max = std::numeric_limits<double>::lowest();
-    const auto sig = ((SignalModel::Item *)index.internalPointer())->sig;
+    const auto item = (const SignalModel::Item *)index.internalPointer();
+    const auto sig = item->sig;
     points.clear();
     for (auto it = first; it != last; ++it) {
       double value = get_raw_value(it->dat, it->size, *sig);
@@ -398,16 +433,13 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
       max += 1;
     }
 
-    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-    int v_margin = std::max(option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 2, 4);
-    const double xscale = (option.rect.width() - 175.0 - h_margin * 2) / settings.sparkline_range;
-    const double yscale = (option.rect.height() - v_margin * 2) / (max - min);
-    const int left = option.rect.left();
-    const int top = option.rect.top() + v_margin;
+    const double xscale = rect.width() / (double)settings.sparkline_range;
+    const double yscale = rect.height() / (max - min);
     for (auto &pt : points) {
-      pt.rx() = left + pt.x() * xscale;
-      pt.ry() = top + std::abs(pt.y() - max) * yscale;
+      pt.rx() = rect.left() + pt.x() * xscale;
+      pt.ry() = rect.top() + std::abs(pt.y() - max) * yscale;
     }
+
     painter->setPen(getColor(sig));
     painter->drawPolyline(points.data(), points.size());
     if ((points.back().x() - points.front().x()) / points.size() > 10) {
@@ -416,6 +448,17 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QStyleOptionView
       for (const auto &pt : points) {
         painter->drawEllipse(pt, 2, 2);
       }
+    }
+
+    if (item->highlight) {
+      QFont font;
+      font.setPixelSize(10);
+      painter->setFont(font);
+      painter->setPen(Qt::darkGray);
+      painter->drawLine(rect.topRight(), rect.bottomRight());
+      QRect minmax_rect{rect.right() + 3, rect.top(), 1000, rect.height()};
+      painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignTop, QString::number(max));
+      painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignBottom, QString::number(min));
     }
   }
 }
@@ -534,7 +577,6 @@ void SignalView::rowsChanged() {
       int h_margin = style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
-      h->addStretch(0);
 
       auto remove_btn = toolButton("x", tr("Remove signal"));
       auto plot_btn = toolButton("graph-up", "");
@@ -594,6 +636,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
+      emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
     }
   }
 }

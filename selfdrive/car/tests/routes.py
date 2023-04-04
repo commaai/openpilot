@@ -185,6 +185,7 @@ routes = [
   CarTestRoute("9b36accae406390e|2021-03-30--10-41-38", TOYOTA.MIRAI),
   CarTestRoute("cd9cff4b0b26c435|2021-05-13--15-12-39", TOYOTA.CHR),
   CarTestRoute("ea8fbe72b96a185c|2023-02-08--15-11-46", TOYOTA.CHR_TSS2),
+  CarTestRoute("ea8fbe72b96a185c|2023-02-22--09-20-34", TOYOTA.CHR_TSS2),  # openpilot longitudinal, with smartDSU
   CarTestRoute("57858ede0369a261|2021-05-18--20-34-20", TOYOTA.CHRH),
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHRH_TSS2),
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),

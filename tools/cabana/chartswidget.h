@@ -25,6 +25,13 @@ enum class SeriesType {
   Scatter
 };
 
+class ValueTipLabel : public QLabel {
+public:
+  ValueTipLabel(QWidget *parent = nullptr);
+  void showText(const QPoint &pt, const QString &sec, int right_edge);
+  void paintEvent(QPaintEvent *ev) override;
+};
+
 class ChartView : public QChartView {
   Q_OBJECT
 
@@ -35,7 +42,9 @@ public:
   void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
-  void updatePlotArea(int left);
+  void updatePlotArea(int left, bool force = false);
+  void showTip(double sec);
+  void hideTip();
 
   struct SigItem {
     MessageId msg_id;
@@ -46,6 +55,8 @@ public:
     uint64_t last_value_mono_time = 0;
     QPointF track_pt{};
     SegmentTree segment_tree;
+    double min = 0;
+    double max = 0;
   };
 
 signals:
@@ -55,6 +66,7 @@ signals:
   void zoomUndo();
   void remove();
   void axisYLabelWidthChanged(int w);
+  void hovered(double sec);
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
@@ -76,7 +88,10 @@ private:
   QSize sizeHint() const override { return {CHART_MIN_WIDTH, settings.chart_height}; }
   void updateAxisY();
   void updateTitle();
+  void resetChartCache();
+  void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void drawBackground(QPainter *painter, const QRectF &rect) override;
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
@@ -91,13 +106,15 @@ private:
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  QGraphicsRectItem *background;
+  ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
   const QString mime_type = "application/x-cabanachartview";
   SeriesType series_type = SeriesType::Line;
   bool is_scrubbing = false;
   bool resume_after_scrub = false;
+  QPixmap chart_pixmap;
+  double tooltip_x = -1;
   friend class ChartsWidget;
  };
 
@@ -135,6 +152,7 @@ private:
   void setMaxChartRange(int value);
   void updateLayout();
   void settingChanged();
+  void showValueTip(double sec);
   bool eventFilter(QObject *obj, QEvent *event) override;
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
@@ -150,12 +168,13 @@ private:
   QAction *remove_all_btn;
   QGridLayout *charts_layout;
   QList<ChartView *> charts;
+  QWidget *charts_container;
+  QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
   QStack<QPair<double, double>> zoom_stack;
-  bool use_dark_theme = false;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
