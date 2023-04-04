@@ -808,8 +808,10 @@ void ChartView::showTip(double sec) {
         x = std::max(x, chart()->mapToPosition(*it).x());
       }
       QString name = sigs.size() > 1 ? s.sig->name + ": " : "";
-      text_list << QString("<span style=\"color:%1;\">■ </span>%2<b>%3</b> (%4 - %5)")
-                       .arg(s.series->color().name(), name, value, QString::number(s.min), QString::number(s.max));
+      QString min = s.min == std::numeric_limits<double>::max() ? "--" : QString::number(s.min);
+      QString max = s.max == std::numeric_limits<double>::lowest() ? "--" : QString::number(s.max);
+      text_list << QString("<span style=\"color:%1;\">■ </span>%2<b>%3</b> (%4, %5)")
+                       .arg(s.series->color().name(), name, value, min, max);
     }
   }
   QPointF tooltip_pt(x, chart()->plotArea().top());
