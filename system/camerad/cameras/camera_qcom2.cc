@@ -101,11 +101,11 @@ const float ANALOG_GAIN_COST_LOW_AR0231 = 0.1;
 const float ANALOG_GAIN_COST_HIGH_AR0231 = 5.0;
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x11; // 2.5x
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x0; // 1x
 const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
 const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
 const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.4;
-const float ANALOG_GAIN_COST_HIGH_OX03C10 = 6.4;
+const float ANALOG_GAIN_COST_HIGH_OX03C10 = 2.0;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
