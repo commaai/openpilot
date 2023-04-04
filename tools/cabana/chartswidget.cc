@@ -292,8 +292,8 @@ void ChartsWidget::removeChart(ChartView *chart) {
   charts.removeOne(chart);
   chart->deleteLater();
   updateToolBar();
-  alignCharts();
   updateLayout();
+  alignCharts();
   emit seriesChanged();
 }
 
