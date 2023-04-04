@@ -217,6 +217,7 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
+    self.cur_remote: str = "origin"
     self.branches = defaultdict(lambda: '')
     self._has_internet: bool = False
 
@@ -255,6 +256,10 @@ class Updater:
 
   def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
+
+  def get_remote(self, path: str) -> str:
+    cur_branch = self.get_branch(path)
+    return run(["git", "config", "--get", f"branch.{cur_branch}.remote"]).rstrip()
 
   def set_params(self, failed_count: int, exception: Optional[str]) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
@@ -329,7 +334,8 @@ class Updater:
     excluded_branches = ('release2', 'release2-staging', 'dashcam', 'dashcam-staging')
 
     try:
-      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
+      self.cur_remote = self.get_remote(OVERLAY_MERGED)
+      run(["git", "ls-remote", self.cur_remote, "HEAD"], OVERLAY_MERGED)
       self._has_internet = True
     except subprocess.CalledProcessError:
       self._has_internet = False
@@ -365,7 +371,7 @@ class Updater:
     setup_git_options(OVERLAY_MERGED)
 
     branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
+    git_fetch_output = run(["git", "fetch", self.cur_remote, branch], OVERLAY_MERGED)
     cloudlog.info("git fetch success: %s", git_fetch_output)
 
     cloudlog.info("git reset in progress")
