@@ -197,11 +197,10 @@ class CarState(CarStateBase):
     # NO_TORQUE_ALERT_2 can be caused by bump or steering nudge from driver
     ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
-    if self.CP.openpilotLongitudinalControl:
-      if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-        self.brake_error = cp.vl["CRUISE_RELATED"]["CRUISE_FAULT"] or cp.vl["BRAKE_MODULE"]["CRUISE_FAULT"]
-      else:
-        self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
+    if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+      self.brake_error = cp.vl["CRUISE_RELATED"]["CRUISE_FAULT"]
+    elif self.CP.openpilotLongitudinalControl:
+      self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
