@@ -19,6 +19,20 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
 
+
+bool sortTimelineBasedOnEventPriority(std::tuple<int, int, TimelineType> left, std::tuple<int, int, TimelineType> right){
+  const static std::map<TimelineType, int> timelinePriority = {
+    {  TimelineType::None, 0 },
+    {  TimelineType::Engaged, 10 },
+    {  TimelineType::AlertInfo, 20 },
+    {  TimelineType::AlertWarning, 30 },
+    {  TimelineType::AlertCritical, 40 },
+    {  TimelineType::UserFlag, 35 }
+  };
+
+  return timelinePriority.at(std::get<2>(left)) < timelinePriority.at(std::get<2>(right));
+}
+
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   auto main_layout = new QVBoxLayout(this);
@@ -128,7 +142,16 @@ void VideoWidget::updatePlayBtnState() {
 // Slider
 Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
-    timeline = can->getTimeline();
+    auto unsortedTimeline = can->getTimeline();
+
+    std::vector<std::tuple<int, int, TimelineType>> sortedTimeline;
+
+    std::copy(unsortedTimeline.begin(), unsortedTimeline.end(), std::back_inserter(sortedTimeline));
+
+    std::sort(sortedTimeline.begin(), sortedTimeline.end(), sortTimelineBasedOnEventPriority);
+
+    timeline = sortedTimeline;
+    
     update();
   });
   setMouseTracking(true);
@@ -183,19 +206,6 @@ void Slider::sliderChange(QAbstractSlider::SliderChange change) {
   }
 }
 
-bool sortTimelineBasedOnEventPriority(std::tuple<int, int, TimelineType> left, std::tuple<int, int, TimelineType> right){
-  std::map<TimelineType, int> timelinePriority = {
-    {  TimelineType::None, 0 },
-    {  TimelineType::Engaged, 10 },
-    {  TimelineType::AlertInfo, 20 },
-    {  TimelineType::AlertWarning, 30 },
-    {  TimelineType::AlertCritical, 40 },
-    {  TimelineType::UserFlag, 35 }
-  };
-
-  return timelinePriority[std::get<2>(left)] < timelinePriority[std::get<2>(right)];
-}
-
 void Slider::paintEvent(QPaintEvent *ev) {
   QPainter p(this);
   QRect r = rect().adjusted(0, 4, 0, -4);
@@ -203,13 +213,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
   double min = minimum() / 1000.0;
   double max = maximum() / 1000.0;
 
-  std::vector<std::tuple<int, int, TimelineType>> sortedTimeline;
-
-  std::copy(timeline.begin(), timeline.end(), std::back_inserter(sortedTimeline));
-
-  std::sort(sortedTimeline.begin(), sortedTimeline.end(), sortTimelineBasedOnEventPriority);
-
-  for (auto [begin, end, type] : sortedTimeline) {
+  for (auto [begin, end, type] : timeline) {
     if (begin > max || end < min)
       continue;
     r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
