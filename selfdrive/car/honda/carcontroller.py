@@ -138,7 +138,6 @@ class CarController:
     self.gas = 0.0
     self.brake = 0.0
     self.last_steer = 0.0
-    self.stop_sending_acc = False
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -235,11 +234,8 @@ class CarController:
 
           stopping = actuators.longControlState == LongCtrlState.stopping
           self.stopping_counter = self.stopping_counter + 1 if stopping else 0
-          if CC.enabled:
-            self.stop_sending_acc = True
-          if not self.stop_sending_acc:
-            can_sends.extend(hondacan.create_acc_commands(self.packer, CC.enabled, CC.longActive, self.accel, self.gas,
-                                                          self.stopping_counter, self.CP.carFingerprint))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, CC.enabled, CC.longActive, self.accel, self.gas,
+                                                        self.stopping_counter, self.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
