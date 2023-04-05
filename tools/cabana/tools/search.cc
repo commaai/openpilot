@@ -129,12 +129,12 @@ void SearchDlg::updateRowData(){
 }
 
 void SearchDlg::update(){
-    first_scan_button->setText(scanningStarted ? "New Scan" : "First Scan");
+    first_scan_button->setText(scanningStarted() ? "New Scan" : "First Scan");
     numberOfSigsLabel->setText(QString("Found: ") + QString::number(filteredSignals.size()));
 
     ScanType selectedValue = (ScanType)(scan_type->currentData().toInt());
 
-    next_scan_button->setEnabled(scanningStarted);
+    next_scan_button->setEnabled(scanningStarted());
     undo_scan_button->setEnabled(false);
 
     scan_type->clear();
@@ -159,13 +159,13 @@ void SearchDlg::update(){
     }
 }
 
-std::vector<Sig> getAllPossibleSignals(int bits_min, int bits_max){
-    std::vector<Sig> ret;
+std::vector<SearchSignal> getAllPossibleSignals(int bits_min, int bits_max){
+    std::vector<SearchSignal> ret;
     
     for(auto msg_id : can->last_msgs.keys()) {
         for(int i = bits_min; i < bits_max+1; i++) {
             for(int j = 0; j < 64 - i; j++) {
-                ret.push_back(Sig(msg_id, j, i));
+                ret.push_back(SearchSignal(msg_id, j, i));
             }
         }
     }
@@ -174,7 +174,7 @@ std::vector<Sig> getAllPossibleSignals(int bits_min, int bits_max){
 }
 
 std::vector<ScanType> SearchDlg::enabledScanTypes(){
-    if(!scanningStarted){
+    if(!scanningStarted()){
         return std::vector<ScanType> {
             ExactValue,
             BiggerThan,
@@ -199,15 +199,18 @@ std::vector<ScanType> SearchDlg::enabledScanTypes(){
     }
 }
 
+bool SearchDlg::scanningStarted(){
+    return searchHistory.size() > 0;
+}
+
 void SearchDlg::firstScan(){
-    if(scanningStarted){
+    if(scanningStarted()){
+        // Reset scan history and signals
         filteredSignals.clear();
-        scanningStarted = false;
+        searchHistory.clear();
     }
     else{
         filteredSignals = getAllPossibleSignals(scan_bits_range_min, scan_bits_range_max);
-        scanningStarted = true;
-
         nextScan();
     }
     update();
@@ -239,11 +242,13 @@ SignalFilterer* SearchDlg::getCurrentFilterer() {
         return new DecreasedValueSignalFilter();
     }
 
-    return nullptr;
+    throw std::runtime_error("Unsupported scan type...");
 }
 
 void SearchDlg::nextScan(){
     auto filterer = getCurrentFilterer();
+
+    searchHistory.push_back(std::tuple<SignalFilterer*, double>(filterer, can->currentSec()));
 
     filteredSignals = filterer->filter(filteredSignals);
 

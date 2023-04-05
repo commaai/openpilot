@@ -25,7 +25,7 @@ enum ScanType {
   SmallerThan,
   ValueBetween,
   IncreasedValue,
-  IncreaseValueBy,
+  IncreasedValueBy,
   DecreasedValue,
   DecreasedValueBy,
   ChangedValue,
@@ -33,9 +33,9 @@ enum ScanType {
   UnknownInitialValue
 };
 
-class Sig {
+class SearchSignal {
     public:
-        Sig(MessageId _messageID, int _offset, int _size) : messageID(_messageID), offset(_offset), size(_size) {}
+        SearchSignal(MessageId _messageID, size_t _offset, size_t _size) : messageID(_messageID), offset(_offset), size(_size) {}
 
         MessageId messageID;
         size_t offset;
@@ -52,15 +52,60 @@ class Sig {
 
 class SignalFilterer {
   public:
-    virtual bool signalMatches(Sig sig) = 0;
+    virtual bool signalMatches(SearchSignal sig) = 0;
 
-    std::vector<Sig> filter(std::vector<Sig> in) {
-      std::vector<Sig> ret;
+    virtual ~SignalFilterer() = default;
 
-      std::copy_if(in.begin(), in.end(), std::back_inserter(ret), [=] (Sig sig) { return signalMatches(sig); });
+    std::vector<SearchSignal> filter(std::vector<SearchSignal> in) {
+      std::vector<SearchSignal> ret;
+
+      std::copy_if(in.begin(), in.end(), std::back_inserter(ret), [=] (SearchSignal sig) { return signalMatches(sig); });
 
       return ret;
     }
+};
+
+class SearchDlg : public QDialog {
+  Q_OBJECT
+
+public:
+  SearchDlg(QWidget *parent);
+
+private:
+  void firstScan();
+  void nextScan();
+  void undoScan();
+
+  void update();
+  void updateRowData();
+  void setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue);
+
+  std::vector<ScanType> enabledScanTypes();
+
+  SignalFilterer* getCurrentFilterer();
+
+  uint32_t scan_bits_range_min = 1;
+  uint32_t scan_bits_range_max = 32;
+
+  uint64_t scan_value1 = 0;
+  uint64_t scan_value2 = 0;
+
+  std::vector<SearchSignal> filteredSignals;
+
+  ScanType selectedScanType;
+
+  QLabel* numberOfSigsLabel;
+  QComboBox *scan_type;
+  QPushButton *first_scan_button;
+  QPushButton *next_scan_button;
+  QPushButton *undo_scan_button;
+
+  QTableWidget *data_table;
+
+  // Search history, at a specific time
+  std::vector<std::tuple<SignalFilterer*, double>> searchHistory;
+
+  bool scanningStarted();
 };
 
 class ZeroInputSignalFilterer : public SignalFilterer {
@@ -92,7 +137,7 @@ class DoubleInputSignalFilterer : public SignalFilterer {
 class ExactValueSignalFilterer : public SingleInputSignalFilterer {
   using SingleInputSignalFilterer::SingleInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() == value;
   }
 };
@@ -100,7 +145,7 @@ class ExactValueSignalFilterer : public SingleInputSignalFilterer {
 class BiggerThanSignalFilterer : public SingleInputSignalFilterer {
   using SingleInputSignalFilterer::SingleInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() > value;
   }
 };
@@ -108,7 +153,7 @@ class BiggerThanSignalFilterer : public SingleInputSignalFilterer {
 class SmallerThanSignalFilterer : public SingleInputSignalFilterer {
   using SingleInputSignalFilterer::SingleInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() < value;
   }
 };
@@ -116,7 +161,7 @@ class SmallerThanSignalFilterer : public SingleInputSignalFilterer {
 class UnknownInitialValueSignalFilter : public ZeroInputSignalFilterer {
   using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return true;
   }
 };
@@ -124,7 +169,7 @@ class UnknownInitialValueSignalFilter : public ZeroInputSignalFilterer {
 class IncreasedValueSignalFilter : public ZeroInputSignalFilterer {
   using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() > sig.previousValue;
   }
 };
@@ -132,7 +177,7 @@ class IncreasedValueSignalFilter : public ZeroInputSignalFilterer {
 class DecreasedValueSignalFilter : public ZeroInputSignalFilterer {
   using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() < sig.previousValue;
   }
 };
@@ -140,7 +185,7 @@ class DecreasedValueSignalFilter : public ZeroInputSignalFilterer {
 class ChangedValueSignalFilter : public ZeroInputSignalFilterer {
   using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() != sig.previousValue;
   }
 };
@@ -148,47 +193,7 @@ class ChangedValueSignalFilter : public ZeroInputSignalFilterer {
 class UnchangedValueSignalFilter : public ZeroInputSignalFilterer {
   using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
 
-  bool signalMatches(Sig sig) {
+  bool signalMatches(SearchSignal sig) {
     return sig.getValue() == sig.previousValue;
   }
-};
-
-class SearchDlg : public QDialog {
-  Q_OBJECT
-
-public:
-  SearchDlg(QWidget *parent);
-
-private:
-  void firstScan();
-  void nextScan();
-  void undoScan();
-
-  void update();
-  void updateRowData();
-  void setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue);
-
-  std::vector<ScanType> enabledScanTypes();
-
-  SignalFilterer* getCurrentFilterer();
-
-  bool scanningStarted = false;
-
-  uint32_t scan_bits_range_min = 1;
-  uint32_t scan_bits_range_max = 32;
-
-  uint64_t scan_value1 = 0;
-  uint64_t scan_value2 = 0;
-
-  std::vector<Sig> filteredSignals;
-
-  ScanType selectedScanType;
-
-  QLabel* numberOfSigsLabel;
-  QComboBox *scan_type;
-  QPushButton *first_scan_button;
-  QPushButton *next_scan_button;
-  QPushButton *undo_scan_button;
-
-  QTableWidget *data_table;
 };
