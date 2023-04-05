@@ -122,7 +122,7 @@ void SearchDlg::updateRowData(){
 
         int row=1;
         for(auto &sig : filteredSignals){
-            setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue()), QString::number(sig.previousValue));
+            setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue(can->currentSec())), QString::number(sig.previousValue));
             row++;
         }
     }
@@ -155,7 +155,7 @@ void SearchDlg::update(){
     updateRowData();
 
     for(auto &sig : filteredSignals){
-        sig.previousValue = sig.getValue();
+        sig.previousValue = sig.getValue(std::get<1>(searchHistory[searchHistory.size() - 1]));
     }
 }
 
@@ -249,6 +249,9 @@ void SearchDlg::nextScan(){
     auto filterer = getCurrentFilterer();
 
     searchHistory.push_back(std::tuple<SignalFilterer*, double>(filterer, can->currentSec()));
+
+    filterer->searchHistory = searchHistory;
+
 
     filteredSignals = filterer->filter(filteredSignals);
 
