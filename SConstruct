@@ -175,8 +175,8 @@ env = Environment(
   CCFLAGS=[
     "-g",
     "-fPIC",
-    "-O0",
-    #"-Wunused",
+    "-O2",
+    "-Wunused",
     "-Werror",
     "-Wshadow",
     "-Wno-unknown-warning-option",

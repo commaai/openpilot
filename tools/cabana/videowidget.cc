@@ -188,19 +188,6 @@ void Slider::sliderChange(QAbstractSlider::SliderChange change) {
   }
 }
 
-bool sortTimelineBasedOnEventPriority(std::tuple<int, int, TimelineType> left, std::tuple<int, int, TimelineType> right){
-  std::map<TimelineType, int> timelinePriority = {
-    {  TimelineType::None, 0 },
-    {  TimelineType::Engaged, 10 },
-    {  TimelineType::AlertInfo, 20 },
-    {  TimelineType::AlertWarning, 30 },
-    {  TimelineType::AlertCritical, 40 },
-    {  TimelineType::UserFlag, 35 }
-  };
-
-  return timelinePriority[std::get<2>(left)] < timelinePriority[std::get<2>(right)];
-}
-
 void Slider::paintEvent(QPaintEvent *ev) {
   QPainter p(this);
   QRect r = rect().adjusted(0, 4, 0, -4);
@@ -208,13 +195,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
   double min = minimum() / 1000.0;
   double max = maximum() / 1000.0;
 
-  std::vector<std::tuple<int, int, TimelineType>> sortedTimeline;
-
-  std::copy(timeline.begin(), timeline.end(), std::back_inserter(sortedTimeline));
-
-  std::sort(sortedTimeline.begin(), sortedTimeline.end(), sortTimelineBasedOnEventPriority);
-
-  for (auto [begin, end, type] : sortedTimeline) {
+  for (auto [begin, end, type] : timeline) {
      if (begin > max || end < min)
       continue;
     

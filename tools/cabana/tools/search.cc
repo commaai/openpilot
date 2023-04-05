@@ -10,7 +10,7 @@ std::map<ScanType, std::string> scanTypeToDisplayName {
   {BiggerThan, "Bigger than..."},
   {ValueBetween, "Value between..."},
   {IncreasedValue, "Increased value"},
-  {IncreaseValueBy, "Increased value by..."},
+  {IncreasedValueBy, "Increased value by..."},
   {DecreasedValue, "Decreased value"},
   {DecreasedValueBy, "Decreased value by..."},
   {ChangedValue, "Changed value"},
@@ -190,7 +190,7 @@ std::vector<ScanType> SearchDlg::enabledScanTypes(){
             SmallerThan,
             ValueBetween,
             IncreasedValue,
-            IncreaseValueBy,
+            IncreasedValueBy,
             DecreasedValue,
             DecreasedValueBy,
             ChangedValue,
@@ -248,6 +248,8 @@ void SearchDlg::nextScan(){
     filteredSignals = filterer->filter(filteredSignals);
 
     update();
+
+    delete filterer;
 }
 
 void SearchDlg::undoScan(){
