@@ -124,10 +124,8 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       signals += [
         ("CRUISE_FAULT", "CRUISE_RELATED"),
-        ("CRUISE_FAULT", "BRAKE_MODULE")
       ]
       checks.append(("CRUISE_RELATED", 50))
-      checks.append(("BRAKE_MODULE", 50))
     else:
       signals += [
         ("BRAKE_ERROR_1", "STANDSTILL"),
