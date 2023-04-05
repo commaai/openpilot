@@ -87,7 +87,10 @@ pipeline {
       steps {
         phone_steps("tizi", [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ["test boardd loopback", "SINGLE_PANDA=1 python selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
+          ["test camerad", "python system/camerad/test/test_camerad.py"],
+          ["test exposure", "python system/camerad/test/test_exposure.py"],
         ])
       }
     }
