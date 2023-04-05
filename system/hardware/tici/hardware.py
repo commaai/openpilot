@@ -63,8 +63,6 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 def sudo_write(val, path):
   os.system(f"sudo su -c 'echo {val} > {path}'")
 
-#def affine_irq(val, irq):
-#  sudo_write(str(val), f"/proc/irq/{irq}/smp_affinity_list")
 
 def affine_irq(val, action):
   irq = get_irq_for_action(action)
@@ -444,10 +442,9 @@ class Tici(HardwareBase):
     affine_irq(4, "spi_geni")        # SPI goes on boardd core
     affine_irq(4, "xhci-hcd:usb1")   # xhci-hcd:usb1 goes on the boardd core
     affine_irq(4, "xhci-hcd:usb3")   # xhci-hcd:usb3 goes on the boardd core
-    # TODO: some of these have multiple irqs
     camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid", "csid-lite", "ife-lite")
-    #for irq in range(237, 246):
-    #  affine_irq(5, irq) # camerad
+    for n in camera_irqs:
+      affine_irq(5, n)  # camerad core
 
   def get_gpu_usage_percent(self):
     try:
