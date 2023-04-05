@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import glob
 import time
 import unittest
 import numpy as np
@@ -8,6 +7,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
+from common.gpio import get_irq_for_action
 from system.hardware import TICI
 from selfdrive.manager.process_config import managed_processes
 
@@ -113,13 +113,7 @@ class TestSensord(unittest.TestCase):
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
-      cls.sensord_irq = None
-      for fn in glob.glob('/sys/kernel/irq/*/actions'):
-        with open(fn) as f:
-          if "sensord" in f.read():
-            cls.sensord_irq = int(fn.split('/')[-2])
-            break
-      assert cls.sensord_irq is not None
+      cls.sensord_irq = get_irq_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
       managed_processes["sensord"].stop()
