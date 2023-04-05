@@ -122,9 +122,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
 
   if CP.openpilotLongitudinalControl:
     if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      signals += [
-        ("CRUISE_FAULT", "CRUISE_RELATED"),
-      ]
+      signals.append(("CRUISE_FAULT", "CRUISE_RELATED"))
       checks.append(("CRUISE_RELATED", 50))
     else:
       signals += [
