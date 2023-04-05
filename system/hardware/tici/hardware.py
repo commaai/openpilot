@@ -67,7 +67,7 @@ def sudo_write(val, path):
 def affine_irq(val, action):
   irq = get_irq_for_action(action)
   if len(irq) == 0:
-    print(f"No IRQs not found for '{action}'")
+    print(f"No IRQs found for '{action}'")
     return
   for i in irq:
     sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
@@ -438,13 +438,19 @@ class Tici(HardwareBase):
       sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
 
     # *** IRQ config ***
+
+    # GPU
     affine_irq(5, "kgsl-3d0")
-    affine_irq(4, "spi_geni")        # SPI goes on boardd core
-    affine_irq(4, "xhci-hcd:usb1")   # xhci-hcd:usb1 goes on the boardd core
-    affine_irq(4, "xhci-hcd:usb3")   # xhci-hcd:usb3 goes on the boardd core
+
+    # boardd core
+    affine_irq(4, "spi_geni")        # SPI
+    affine_irq(4, "xhci-hcd:usb1")   # internal panda USB
+    affine_irq(4, "xhci-hcd:usb3")   # aux panda USB (or potentially anything else on USB)
+
+    # camerad core
     camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid", "csid-lite", "ife-lite")
     for n in camera_irqs:
-      affine_irq(5, n)  # camerad core
+      affine_irq(5, n)
 
   def get_gpu_usage_percent(self):
     try:
