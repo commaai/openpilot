@@ -8,6 +8,7 @@
 #include <limits>
 
 #include "selfdrive/ui/qt/util.h"
+#include "tools/cabana/settings.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -145,8 +146,7 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                           QApplication::palette().color(QPalette::Background).value();
+  bool dark_theme = settings.theme == 2;
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -154,12 +154,44 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), Qt::lightGray);
+      p.fillRect(pm.rect(), Qt::white);
     }
     QPixmapCache::insert(key, pm);
   }
   return pm;
 }
+
+void setTheme(int theme) {
+  auto style = QApplication::style();
+  if (!style) return;
+
+  static int prev_theme = 0;
+  if (theme != prev_theme) {
+    prev_theme = theme;
+    if (theme == 2) {
+      // modify palette to dark
+      QPalette darkPalette;
+      darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::WindowText, Qt::white);
+      darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+      darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+      darkPalette.setColor(QPalette::ToolTipText, QColor(41, 41, 41));
+      darkPalette.setColor(QPalette::Text, Qt::white);
+      darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::ButtonText, Qt::white);
+      darkPalette.setColor(QPalette::BrightText, Qt::red);
+      darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+      darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+      darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+      qApp->setPalette(darkPalette);
+    } else {
+      qApp->setPalette(style->standardPalette());
+    }
+    style->polish(qApp);
+  }
+}
+
 }  // namespace utils
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip) {

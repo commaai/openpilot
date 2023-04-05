@@ -59,7 +59,9 @@ private:
   MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
+  int value_width = 0;
   friend class SignalView;
+  friend class SignalItemDelegate;
 };
 
 class ValueDescriptionDlg : public QDialog {
@@ -83,9 +85,11 @@ public:
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void drawSparkline(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
+  void drawSparkline(QPainter *painter, const QRect &rect, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  void 	updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QValidator *name_validator, *double_validator;
-  QFont small_font;
+  QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QHash<QString, int> width_cache;
 };

@@ -59,6 +59,8 @@ bool DBCManager::open(SourceSet s, const QString &name, const QString &content, 
 }
 
 void DBCManager::closeAll() {
+  if (dbc_files.isEmpty()) return;
+
   while (dbc_files.size()) {
     DBCFile *dbc_file = dbc_files.back().second;
     dbc_files.pop_back();
