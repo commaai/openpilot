@@ -420,7 +420,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     size_t j = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-         f <= size_t(cereal::PandaState::FaultType::SIREN_MALFUNCTION); f++) {
+         f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
       if (fault_bits.test(f)) {
         faults.set(j, cereal::PandaState::FaultType(f));
         j++;
