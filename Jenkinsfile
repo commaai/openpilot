@@ -93,6 +93,18 @@ pipeline {
         }
       }
 
+      stage('tizi-tests') {
+        agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+        steps {
+          phone_steps("tizi", [
+            ["build openpilot", "cd selfdrive/manager && ./build.py"],
+            ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ])
+        }
+      }
+
+
+
       parallel {
 
         /*
@@ -124,16 +136,6 @@ pipeline {
           }
         }
         */
-
-        stage('tizi-tests') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("tizi", [
-              ["build openpilot", "cd selfdrive/manager && ./build.py"],
-              ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
-            ])
-          }
-        }
 
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
