@@ -196,7 +196,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
   double max = maximum() / 1000.0;
 
   for (auto [begin, end, type] : timeline) {
-     if (begin > max || end < min)
+    if (begin > max || end < min)
       continue;
     
     r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
