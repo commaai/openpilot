@@ -280,7 +280,6 @@ def main() -> NoReturn:
         ttff = max(1e-3, msg.logMonoTime * 1e-9 - first_log_time)
 
       gps = msg.gpsLocation
-      gps.timeToFirstFix = ttff
       gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
@@ -294,6 +293,7 @@ def main() -> NoReturn:
       gps.verticalAccuracy = report["q_FltVdop"]
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
+      gps.timeToFirstFix = ttff
 
       pm.send('gpsLocation', msg)
 
