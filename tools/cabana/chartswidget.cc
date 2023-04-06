@@ -282,13 +282,15 @@ void ChartsWidget::stopAutoScroll() {
 }
 
 void ChartsWidget::doAutoScroll() {
-  QRect area = charts_scroll->viewport()->rect();
-  QPoint pos = charts_scroll->viewport()->mapFromGlobal(QCursor::pos());
   QScrollBar *scroll = charts_scroll->verticalScrollBar();
   if (auto_scroll_count < scroll->pageStep()) {
     ++auto_scroll_count;
   }
+
   int value = scroll->value();
+  QPoint pos = charts_scroll->viewport()->mapFromGlobal(QCursor::pos());
+  QRect area = charts_scroll->viewport()->rect();
+
   if (pos.y() - area.top() < settings.chart_height / 2) {
     scroll->setValue(value - auto_scroll_count);
   } else if (area.bottom() - pos.y() < settings.chart_height / 2) {
