@@ -443,9 +443,10 @@ class Tici(HardwareBase):
     affine_irq(5, "kgsl-3d0")
 
     # boardd core
-    affine_irq(4, "spi_geni")        # SPI
-    affine_irq(4, "xhci-hcd:usb1")   # internal panda USB
-    affine_irq(4, "xhci-hcd:usb3")   # aux panda USB (or potentially anything else on USB)
+    affine_irq(4, "spi_geni")         # SPI
+    affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
+    if "tici" in self.model:
+      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB
 
     # camerad core
     camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid", "csid-lite", "ife-lite")
