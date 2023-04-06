@@ -142,7 +142,7 @@ void VideoWidget::updatePlayBtnState() {
 // Slider
 Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
-    auto timeline = can->getTimeline();
+    timeline = can->getTimeline();
     std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
 
     update();
