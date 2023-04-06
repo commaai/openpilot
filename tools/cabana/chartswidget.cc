@@ -736,7 +736,7 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     QPixmap pm = grab();
     QPainter p(&pm);
     p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-    p.fillRect(pm.rect(), QColor(0, 0, 0, 127));
+    p.fillRect(pm.rect(), QColor(0, 0, 0, 180));
     p.end();
 
     QDrag *drag = new QDrag(this);
