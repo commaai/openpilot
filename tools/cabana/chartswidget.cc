@@ -883,8 +883,8 @@ void ChartView::dropEvent(QDropEvent *event) {
         chart()->addSeries(s.series);
         s.series->attachAxis(axis_x);
         s.series->attachAxis(axis_y);
-        sigs.push_back(s);
       }
+      sigs.append(source_chart->sigs);
       updateAxisY();
       updateTitle();
 
