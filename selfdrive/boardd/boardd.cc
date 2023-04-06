@@ -386,6 +386,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
     ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
+    ps.setSpiChecksumErrorCount(health.spi_checksum_error_count);
 
     std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
 
