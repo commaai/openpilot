@@ -33,11 +33,12 @@ public:
   void paintEvent(QPaintEvent *ev) override;
 };
 
+class ChartsWidget;
 class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(const std::pair<double, double> &x_range, QWidget *parent = nullptr);
+  ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr);
@@ -116,6 +117,7 @@ private:
   bool resume_after_scrub = false;
   QPixmap chart_pixmap;
   double tooltip_x = -1;
+  ChartsWidget *charts_widget;
   friend class ChartsWidget;
  };
 
@@ -148,6 +150,9 @@ private:
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
+  void startAutoScroll();
+  void stopAutoScroll();
+  void doAutoScroll();
   void updateToolBar();
   void setMaxChartRange(int value);
   void updateLayout();
@@ -181,8 +186,11 @@ private:
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  int auto_scroll_count = 0;
+  QTimer auto_scroll_timer;
   QTimer align_timer;
   friend class ZoomCommand;
+  friend class ChartView;
 };
 
 class ZoomCommand : public QUndoCommand {
