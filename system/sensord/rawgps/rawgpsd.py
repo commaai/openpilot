@@ -198,6 +198,9 @@ def main() -> NoReturn:
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 
+  first_log_time = None
+  ttff = -1
+
   while 1:
     opcode, payload = diag.recv()
     if opcode != DIAG_LOG_F:
@@ -220,6 +223,8 @@ def main() -> NoReturn:
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
       msg = messaging.new_message('qcomGnss')
+      if first_log_time is None:
+        first_log_time = msg.logMonoTime * 1e-9
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time
@@ -269,7 +274,13 @@ def main() -> NoReturn:
       vNEDsigma = [report["q_FltVelSigmaMps[1]"], report["q_FltVelSigmaMps[0]"], -report["q_FltVelSigmaMps[2]"]]
 
       msg = messaging.new_message('gpsLocation')
+
+      # quectel will only send LOG_GNSS_POSITION_REPORT if it has a fix
+      if ttff <= 0 and first_log_time is not None:
+        ttff = max(1e-3, msg.logMonoTime * 1e-9 - first_log_time)
+
       gps = msg.gpsLocation
+      gps.timeToFirstFix = ttff
       gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
@@ -288,6 +299,9 @@ def main() -> NoReturn:
 
     elif log_type == LOG_GNSS_OEMDRE_SVPOLY_REPORT:
       msg = messaging.new_message('qcomGnss')
+      if first_log_time is None:
+        first_log_time = msg.logMonoTime * 1e-9
+
       dat = unpack_svpoly(log_payload)
       dat = relist(dat)
       gnss = msg.qcomGnss
@@ -305,6 +319,8 @@ def main() -> NoReturn:
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
       msg = messaging.new_message('qcomGnss')
+      if first_log_time is None:
+        first_log_time = msg.logMonoTime * 1e-9
 
       gnss = msg.qcomGnss
       gnss.logTs = log_time

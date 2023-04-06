@@ -275,7 +275,7 @@ class Laikad:
     t = gnss_mono_time * 1e-9
     msg_dict: Dict[str, Any] = {"measTime": gnss_mono_time}
     if self.first_log_time is None:
-      self.first_log_time = 1e-9 * gnss_mono_time
+      self.first_log_time = t
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
     elif self.is_good_report(gnss_msg):
