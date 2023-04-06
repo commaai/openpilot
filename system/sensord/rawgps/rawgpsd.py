@@ -282,7 +282,7 @@ def main() -> NoReturn:
       gps.verticalAccuracy = report["q_FltVdop"]
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
-      # quectel gps verticalAccuracy is clipped to 500
+      # quectel gps verticalAccuracy is clipped to 500, invalid if so
       gps.flags = 0 if gps.verticalAccuracy == 500 else 1
 
       pm.send('gpsLocation', msg)
