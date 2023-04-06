@@ -863,6 +863,17 @@ void ChartView::hideTip() {
   viewport()->update();
 }
 
+void ChartView::dragEnterEvent(QDragEnterEvent *event) {
+  can_drop = event->source() != this;
+  viewport()->update();
+  QChartView::dragEnterEvent(event);
+}
+void ChartView::dragLeaveEvent(QDragLeaveEvent *event) {
+  can_drop = false;
+  viewport()->update();
+  QChartView::dragLeaveEvent(event);
+}
+
 void ChartView::dragMoveEvent(QDragMoveEvent *event) {
   if (event->mimeData()->hasFormat(mime_type)) {
     event->setDropAction(event->source() == this ? Qt::MoveAction : Qt::CopyAction);
@@ -894,6 +905,7 @@ void ChartView::dropEvent(QDropEvent *event) {
       emit source_chart->remove();
       event->acceptProposedAction();
     }
+    can_drop = false;
   } else {
     event->ignore();
   }
@@ -920,6 +932,10 @@ void ChartView::paintEvent(QPaintEvent *event) {
     QPainter painter(viewport());
     painter.setRenderHints(QPainter::Antialiasing);
     painter.drawPixmap(QPoint(), chart_pixmap);
+    if (can_drop) {
+      painter.setPen(QPen(palette().color(QPalette::Highlight), 4));
+      painter.drawRect(viewport()->rect());
+    }
     QRectF exposed_rect = mapToScene(event->region().boundingRect()).boundingRect();
     drawForeground(&painter, exposed_rect);
   } else {

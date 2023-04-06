@@ -83,6 +83,8 @@ private:
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragLeaveEvent(QDragLeaveEvent *event) override;
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
@@ -116,6 +118,7 @@ private:
   bool is_scrubbing = false;
   bool resume_after_scrub = false;
   QPixmap chart_pixmap;
+  bool can_drop = false;
   double tooltip_x = -1;
   ChartsWidget *charts_widget;
   friend class ChartsWidget;
