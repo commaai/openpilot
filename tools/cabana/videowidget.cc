@@ -20,7 +20,7 @@ static const QColor timeline_colors[] = {
 };
 
 
-bool sortTimelineBasedOnEventPriority(std::tuple<int, int, TimelineType> left, std::tuple<int, int, TimelineType> right){
+bool sortTimelineBasedOnEventPriority(const std::tuple<int, int, TimelineType> &left, const std::tuple<int, int, TimelineType> &right){
   const static std::map<TimelineType, int> timelinePriority = {
     {  TimelineType::None, 0 },
     {  TimelineType::Engaged, 10 },
@@ -142,16 +142,9 @@ void VideoWidget::updatePlayBtnState() {
 // Slider
 Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
-    auto unsortedTimeline = can->getTimeline();
+    auto timeline = can->getTimeline();
+    std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
 
-    std::vector<std::tuple<int, int, TimelineType>> sortedTimeline;
-
-    std::copy(unsortedTimeline.begin(), unsortedTimeline.end(), std::back_inserter(sortedTimeline));
-
-    std::sort(sortedTimeline.begin(), sortedTimeline.end(), sortTimelineBasedOnEventPriority);
-
-    timeline = sortedTimeline;
-    
     update();
   });
   setMouseTracking(true);
