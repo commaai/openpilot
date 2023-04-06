@@ -10,8 +10,10 @@ const int NM_802_11_AP_FLAGS_WPS = 0x00000002;
 // https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApSecurityFlags
 const int NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001;
 const int NM_802_11_AP_SEC_PAIR_WEP104     = 0x00000002;
+const int NM_802_11_AP_SEC_PAIR_CCMP       = 0x00000008;
 const int NM_802_11_AP_SEC_GROUP_WEP40     = 0x00000010;
 const int NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020;
+const int NM_802_11_AP_SEC_GROUP_CCMP      = 0x00000080;
 const int NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100;
 const int NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200;
 

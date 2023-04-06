@@ -145,7 +145,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   int wpa_props = wpaflag | rsnflag;
 
   // obtained by looking at flags of networks in the office as reported by an Android phone
-  const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+  const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_PAIR_CCMP | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_GROUP_CCMP | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
   if ((sflag == NM_802_11_AP_FLAGS_NONE) || ((sflag & NM_802_11_AP_FLAGS_WPS) && !(wpa_props & supports_wpa))) {
     return SecurityType::OPEN;
