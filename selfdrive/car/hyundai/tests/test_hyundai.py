@@ -11,7 +11,7 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_auxiliary_request_ecu_whitelist(self):
     # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
-    whitelisted_ecus = {ecu for r in FW_QUERY_CONFIG.requests for ecu in r.whitelist_ecus if r.bus > 3}
+    whitelisted_ecus = {ecu for r in FW_QUERY_CONFIG.requests for ecu in r.whitelist_ecus if r.auxiliary}
 
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
