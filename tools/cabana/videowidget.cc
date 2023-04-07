@@ -172,14 +172,25 @@ void Slider::loadThumbnails() {
     std::string qlog = it->second.qlog.toStdString();
     if (!qlog.empty()) {
       LogReader log;
-      if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL}, true, 0, 3)) {
+      if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
         for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
-          auto thumb = (*ev)->event.getThumbnail();
-          auto data = thumb.getThumbnail();
-          if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
-            pm = pm.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
-            std::lock_guard lk(thumbnail_lock);
-            thumbnails[thumb.getTimestampEof()] = pm;
+          if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
+            auto thumb = (*ev)->event.getThumbnail();
+            auto data = thumb.getThumbnail();
+            if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
+              pm = pm.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
+              std::lock_guard lk(thumbnail_lock);
+              thumbnails[thumb.getTimestampEof()] = pm;
+            }
+          } else if ((*ev)->which == cereal::Event::Which::CONTROLS_STATE) {
+            auto cs = (*ev)->event.getControlsState();
+            if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0) {
+              std::lock_guard lk(thumbnail_lock);
+              auto &alert = alerts[(*ev)->mono_time];
+              alert.status = cs.getAlertStatus();
+              alert.text1 = cs.getAlertText1().cStr();
+              alert.text2 = cs.getAlertText2().cStr();
+            }
           }
         }
       }
@@ -234,15 +245,21 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 
 void Slider::mouseMoveEvent(QMouseEvent *e) {
   QPixmap thumb;
+  AlertInfo alert;
   double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
   {
     std::lock_guard lk(thumbnail_lock);
-    auto it = thumbnails.lowerBound((seconds + can->routeStartTime()) * 1e9);
+    uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+    auto it = thumbnails.lowerBound(mono_time);
     if (it != thumbnails.end()) thumb = it.value();
+    auto alert_it = alerts.lower_bound(mono_time);
+    if (alert_it != alerts.end() && (alert_it->first - mono_time) < 1e9) {
+      alert = alert_it->second;
+    }
   }
   int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
   int y = -thumb.height() - THUMBNAIL_MARGIN - style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
-  thumbnail_label.showPixmap(mapToGlobal({x, y}), utils::formatSeconds(seconds), thumb);
+  thumbnail_label.showPixmap(mapToGlobal({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);
 }
 
@@ -258,9 +275,10 @@ ThumbnailLabel::ThumbnailLabel(QWidget *parent) : QWidget(parent, Qt::Tool | Qt:
   setVisible(false);
 }
 
-void ThumbnailLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm) {
+void ThumbnailLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert) {
   pixmap = pm;
   second = sec;
+  alert_info = alert;
   setVisible(!pm.isNull());
   if (isVisible()) {
     setGeometry({pt, pm.size()});
@@ -274,4 +292,26 @@ void ThumbnailLabel::paintEvent(QPaintEvent *event) {
   p.setPen(QPen(Qt::white, 2));
   p.drawRect(rect());
   p.drawText(rect().adjusted(0, 0, 0, -THUMBNAIL_MARGIN), second, Qt::AlignHCenter | Qt::AlignBottom);
+  if (alert_info.text1.size() > 0) {
+    QColor color = timeline_colors[(int)TimelineType::AlertInfo];
+    if (alert_info.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      color = timeline_colors[(int)TimelineType::AlertWarning];
+    } else if (alert_info.status == cereal::ControlsState::AlertStatus::CRITICAL) {
+      color = timeline_colors[(int)TimelineType::AlertCritical];
+    }
+    color.setAlphaF(0.5);
+
+    QString text = alert_info.text1;
+    if (!alert_info.text2.isEmpty()) {
+      text += "\n" + alert_info.text2;
+    }
+
+    QFont font;
+    font.setPixelSize(11);
+    p.setFont(font);
+    QRect text_rect = rect().adjusted(2, 2, -2, -2);
+    QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
+    p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
+    p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
+  }
 }
