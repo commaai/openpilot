@@ -5,6 +5,8 @@ import sysconfig
 import platform
 import numpy as np
 
+import SCons.Errors
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -311,7 +313,11 @@ else:
   elif arch != "Darwin":
     qt_libs += ["GL"]
 
-qt_env.Tool('qt')
+try:
+  qt_env.Tool('qt3')
+except SCons.Errors.UserError:
+  qt_env.Tool('qt')
+
 qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
@@ -434,9 +440,6 @@ SConscript(['selfdrive/navd/SConscript'])
 
 if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
-
-  opendbc = abspath([File('opendbc/can/libdbc.so')])
-  Export('opendbc')
   SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')

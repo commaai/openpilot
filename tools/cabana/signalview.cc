@@ -35,6 +35,7 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const caba
 void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
   filter_str = "";
+  value_width = 0;
   refresh();
   updateState(nullptr);
 }
@@ -60,7 +61,6 @@ void SignalModel::refresh() {
 void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
-    int row = 0;
     for (auto item : root->children) {
       double value = get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig);
       item->sig_val = QString::number(value, 'f', item->sig->precision);
@@ -76,9 +76,11 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
           item->sig_val = desc;
         }
       }
+      value_width = std::max(value_width, QFontMetrics(QFont()).width(item->sig_val));
+    }
 
-      emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
-      ++row;
+    for (int i = 0; i < root->children.size(); ++i) {
+      emit dataChanged(index(i, 1), index(i, 1), {Qt::DisplayRole});
     }
   }
 }
@@ -313,7 +315,8 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
-  small_font.setPointSize(8);
+  label_font.setPointSize(8);
+  minmax_font.setPixelSize(10);
 }
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -373,7 +376,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
     painter->drawRoundedRect(rc.adjusted(0, v_margin, 0, -v_margin), 3, 3);
     painter->setPen(item->highlight ? Qt::white : Qt::black);
-    painter->setFont(small_font);
+    painter->setFont(label_font);
     painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
 
     // signal name
@@ -391,23 +394,23 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->fillRect(option.rect, option.palette.highlight());
     }
 
+    SignalModel *model = (SignalModel*)index.model();
     int adjust_right = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
     QRect r = option.rect.adjusted(h_margin, v_margin, -adjust_right, -v_margin);
-    // draw signal value
-    QRect value_rect = r.adjusted(r.width() * 0.6 + h_margin, 0, 0, 0);
+
+    int value_width = std::min<int>(model->value_width, r.width() * 0.4);
+    QRect value_rect = r.adjusted(r.width() - value_width - h_margin, 0, 0, 0);
     auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, value_rect.width());
     painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
     painter->drawText(value_rect, Qt::AlignRight | Qt::AlignVCenter, text);
-
-    QRect sparkline_rect = r.adjusted(0, 0, -r.width() * 0.4 - h_margin, 0);
-    drawSparkline(painter, sparkline_rect, index);
+    drawSparkline(painter, r.adjusted(0, 0, -value_width, 0), option, index);
     painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
 }
 
-void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, const QModelIndex &index) const {
+void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   static std::vector<QPointF> points;
   const auto &msg_id = ((SignalView *)parent())->msg_id;
   const auto &msgs = can->events().at(msg_id);
@@ -433,30 +436,31 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
       max += 1;
     }
 
-    const double xscale = rect.width() / (double)settings.sparkline_range;
-    const double yscale = rect.height() / (max - min);
+    const double min_max_width = std::min(rect.width() - 10, QFontMetrics(minmax_font).width("000.00") + 5);
+    const QRect r = rect.adjusted(0, 0, -min_max_width, 0);
+    const double xscale = r.width() / (double)settings.sparkline_range;
+    const double yscale = r.height() / (max - min);
     for (auto &pt : points) {
-      pt.rx() = rect.left() + pt.x() * xscale;
-      pt.ry() = rect.top() + std::abs(pt.y() - max) * yscale;
+      pt.rx() = r.left() + pt.x() * xscale;
+      pt.ry() = r.top() + std::abs(pt.y() - max) * yscale;
     }
 
-    painter->setPen(getColor(sig));
+    auto color = item->highlight ? getColor(sig).darker(125) : getColor(sig);
+    painter->setPen(color);
     painter->drawPolyline(points.data(), points.size());
     if ((points.back().x() - points.front().x()) / points.size() > 10) {
       painter->setPen(Qt::NoPen);
-      painter->setBrush(getColor(sig));
+      painter->setBrush(color);
       for (const auto &pt : points) {
         painter->drawEllipse(pt, 2, 2);
       }
     }
 
-    if (item->highlight) {
-      QFont font;
-      font.setPixelSize(10);
-      painter->setFont(font);
-      painter->setPen(Qt::darkGray);
-      painter->drawLine(rect.topRight(), rect.bottomRight());
-      QRect minmax_rect{rect.right() + 3, rect.top(), 1000, rect.height()};
+    if (item->highlight || option.state & QStyle::State_Selected) {
+      painter->setFont(minmax_font);
+      painter->setPen(option.state & QStyle::State_Selected ? option.palette.color(QPalette::HighlightedText) : Qt::darkGray);
+      painter->drawLine(r.topRight(), r.bottomRight());
+      QRect minmax_rect{r.right() + 5, r.top(), 1000, r.height()};
       painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignTop, QString::number(max));
       painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignBottom, QString::number(min));
     }
@@ -643,7 +647,7 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
 
 void SignalView::updateToolBar() {
   signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
-  sparkline_label->setText(QString("Range: %1 ").arg(utils::formatSeconds(settings.sparkline_range)));
+  sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
 }
 
 void SignalView::setSparklineRange(int value) {

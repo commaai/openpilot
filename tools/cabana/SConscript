@@ -1,6 +1,6 @@
 import os
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib',
-       'cereal', 'transformations', 'widgets', 'opendbc')
+       'cereal', 'transformations', 'widgets')
 
 base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
@@ -15,8 +15,9 @@ else:
 
 qt_libs = ['qt_util'] + base_libs
 
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, opendbc,'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 cabana_env = qt_env.Clone()
+cabana_env["LIBPATH"] += ['../../opendbc/can']
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'libdbc_static', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -31,13 +32,10 @@ cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'chartswidget.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc', 
                                                'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'commands.cc', 'messageswidget.cc', 'route.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-cabana_env.Program('_cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
-
-if arch == "Darwin":
-  cabana_env.Execute('install_name_tool -change opendbc/can/libdbc.dylib @loader_path/../../opendbc/can/libdbc.dylib ./_cabana')
+cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('test'):
-  cabana_env.Program('tests/_test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
+  cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
 def generate_dbc_json(target, source, env):
   env.Execute('tools/cabana/dbc/generate_dbc_json.py --out tools/cabana/dbc/car_fingerprint_to_dbc.json')
