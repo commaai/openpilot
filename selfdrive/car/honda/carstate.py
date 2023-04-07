@@ -103,7 +103,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       checks.append(("CRUISE_PARAMS", 50))
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_2023):
+  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK"))
   elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
     signals.append(("DRIVERS_DOOR_OPEN", "SCM_BUTTONS"))
@@ -176,7 +176,7 @@ class CarState(CarStateBase):
     # panda checks if the signal is non-zero
     ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
     # TODO: find a common signal across all cars
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_2023):
+    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
@@ -255,8 +255,6 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
-    # elif self.CP.carFingerprint == CAR.HRV_2023:
-    #   ret.brakePressed = cp.vl["POWERTRAIN_DATA"]["BRAKE_PRESSED"] != 0
     else:
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
