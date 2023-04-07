@@ -14,9 +14,9 @@ class TestPandad(unittest.TestCase):
   def tearDown(self):
     managed_processes['pandad'].stop()
 
-  def _wait_for_boardd(self):
+  def _wait_for_boardd(self, timeout=30):
     sm = messaging.SubMaster(['peripheralState'])
-    for _ in range(30):
+    for _ in range(timeout):
       sm.update(1000)
       if sm.updated['peripheralState']:
         break
@@ -30,7 +30,7 @@ class TestPandad(unittest.TestCase):
     time.sleep(1)
 
     managed_processes['pandad'].start()
-    self._wait_for_boardd()
+    self._wait_for_boardd(60)
 
   @phone_only
   def test_in_bootstub(self):

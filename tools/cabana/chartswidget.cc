@@ -12,6 +12,7 @@
 #include <QOpenGLWidget>
 #include <QPushButton>
 #include <QRubberBand>
+#include <QScrollBar>
 #include <QStylePainter>
 #include <QToolBar>
 #include <QToolTip>
@@ -22,7 +23,7 @@ static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
 // ChartsWidget
 
-ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) {
+ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -99,6 +100,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), QFrame(parent) 
 
   align_timer.setSingleShot(true);
   QObject::connect(&align_timer, &QTimer::timeout, this, &ChartsWidget::alignCharts);
+  QObject::connect(&auto_scroll_timer, &QTimer::timeout, this, &ChartsWidget::doAutoScroll);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
@@ -270,6 +272,36 @@ void ChartsWidget::updateLayout() {
   }
 }
 
+void ChartsWidget::startAutoScroll() {
+  auto_scroll_timer.start(50);
+}
+
+void ChartsWidget::stopAutoScroll() {
+  auto_scroll_timer.stop();
+  auto_scroll_count = 0;
+}
+
+void ChartsWidget::doAutoScroll() {
+  QScrollBar *scroll = charts_scroll->verticalScrollBar();
+  if (auto_scroll_count < scroll->pageStep()) {
+    ++auto_scroll_count;
+  }
+
+  int value = scroll->value();
+  QPoint pos = charts_scroll->viewport()->mapFromGlobal(QCursor::pos());
+  QRect area = charts_scroll->viewport()->rect();
+
+  if (pos.y() - area.top() < settings.chart_height / 2) {
+    scroll->setValue(value - auto_scroll_count);
+  } else if (area.bottom() - pos.y() < settings.chart_height / 2) {
+    scroll->setValue(value + auto_scroll_count);
+  }
+  bool vertical_unchanged = value == scroll->value();
+  if (vertical_unchanged) {
+    stopAutoScroll();
+  }
+}
+
 void ChartsWidget::resizeEvent(QResizeEvent *event) {
   QWidget::resizeEvent(event);
   updateLayout();
@@ -335,7 +367,6 @@ bool ChartsWidget::event(QEvent *event) {
       back_button = ev->button() == Qt::BackButton;
       break;
     }
-
     case QEvent::NativeGesture: {
       QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
       back_button = (ev->value() == 180);
@@ -361,7 +392,7 @@ bool ChartsWidget::event(QEvent *event) {
 
 // ChartView
 
-ChartView::ChartView(const std::pair<double, double> &x_range, QWidget *parent) : tip_label(this), QChartView(nullptr, parent) {
+ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent) : charts_widget(parent), tip_label(this), QChartView(nullptr, parent) {
   series_type = (SeriesType)settings.chart_series_type;
   QChart *chart = new QChart();
   chart->setBackgroundVisible(false);
@@ -514,7 +545,7 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     qreal left, top, right, bottom;
     chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
     QSizeF x_label_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, QString::number(axis_x->max(), 'f', 2));
-    x_label_size += QSizeF{5 * devicePixelRatioF(), 5 * devicePixelRatioF()};
+    x_label_size += QSizeF{5, 5};
     int adjust_top = chart()->legend()->geometry().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
     chart()->layout()->invalidate();
@@ -704,11 +735,18 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
+    QPixmap pm = grab();
+    QPainter p(&pm);
+    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+    p.fillRect(pm.rect(), QColor(0, 0, 0, 180));
+    p.end();
+
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
-    drag->setPixmap(grab());
+    drag->setPixmap(pm);
     drag->setHotSpot(event->pos());
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
+    charts_widget->stopAutoScroll();
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
     if (!can->liveStreaming()) {
       // Save current playback state when scrubbing
@@ -735,13 +773,11 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     min = std::clamp(min, 0., can->totalSeconds());
     max = std::clamp(max, 0., can->totalSeconds());
 
-    double min_rounded = std::floor(min * 10.0) / 10.0;
-    double max_rounded = std::floor(max * 10.0) / 10.0;
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10) {
-      emit zoomIn(min_rounded, max_rounded);
+      emit zoomIn(min, max);
     } else {
       viewport()->update();
     }
@@ -827,6 +863,17 @@ void ChartView::hideTip() {
   viewport()->update();
 }
 
+void ChartView::dragEnterEvent(QDragEnterEvent *event) {
+  can_drop = event->source() != this;
+  viewport()->update();
+  QChartView::dragEnterEvent(event);
+}
+void ChartView::dragLeaveEvent(QDragLeaveEvent *event) {
+  can_drop = false;
+  viewport()->update();
+  QChartView::dragLeaveEvent(event);
+}
+
 void ChartView::dragMoveEvent(QDragMoveEvent *event) {
   if (event->mimeData()->hasFormat(mime_type)) {
     event->setDropAction(event->source() == this ? Qt::MoveAction : Qt::CopyAction);
@@ -834,6 +881,7 @@ void ChartView::dragMoveEvent(QDragMoveEvent *event) {
   } else {
     event->ignore();
   }
+  charts_widget->startAutoScroll();
 }
 
 void ChartView::dropEvent(QDropEvent *event) {
@@ -844,11 +892,20 @@ void ChartView::dropEvent(QDropEvent *event) {
     } else {
       ChartView *source_chart = (ChartView *)event->source();
       for (auto &s : source_chart->sigs) {
-        addSeries(s.msg_id, s.sig);
+        source_chart->chart()->removeSeries(s.series);
+        chart()->addSeries(s.series);
+        s.series->attachAxis(axis_x);
+        s.series->attachAxis(axis_y);
       }
+      sigs.append(source_chart->sigs);
+      updateAxisY();
+      updateTitle();
+
+      source_chart->sigs.clear();
       emit source_chart->remove();
       event->acceptProposedAction();
     }
+    can_drop = false;
   } else {
     event->ignore();
   }
@@ -875,6 +932,10 @@ void ChartView::paintEvent(QPaintEvent *event) {
     QPainter painter(viewport());
     painter.setRenderHints(QPainter::Antialiasing);
     painter.drawPixmap(QPoint(), chart_pixmap);
+    if (can_drop) {
+      painter.setPen(QPen(palette().color(QPalette::Highlight), 4));
+      painter.drawRect(viewport()->rect());
+    }
     QRectF exposed_rect = mapToScene(event->region().boundingRect()).boundingRect();
     drawForeground(&painter, exposed_rect);
   } else {

@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab containers="1" tab_name="SOF / EOF">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.500885;0.499115" count="2">
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range right="780.030468" bottom="35000000.000000" top="65000000.000000" left="0.108134"/>
+       <limitY max="6.5e+07" min="3.5e+07"/>
+       <curve color="#1f77b4" name="/driverEncodeIdx/timestampSof">
+        <transform alias="/driverEncodeIdx/timestampSof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+       <curve color="#d62728" name="/roadEncodeIdx/timestampSof">
+        <transform alias="/roadEncodeIdx/timestampSof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+       <curve color="#1ac938" name="/wideRoadEncodeIdx/timestampSof">
+        <transform alias="/wideRoadEncodeIdx/timestampSof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range right="780.030468" bottom="35000000.000000" top="65000000.000000" left="0.108134"/>
+       <limitY max="6.5e+07" min="3.5e+07"/>
+       <curve color="#f14cc1" name="/driverEncodeIdx/timestampEof">
+        <transform alias="/driverEncodeIdx/timestampEof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+       <curve color="#9467bd" name="/roadEncodeIdx/timestampEof">
+        <transform alias="/roadEncodeIdx/timestampEof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+       <curve color="#17becf" name="/wideRoadEncodeIdx/timestampEof">
+        <transform alias="/wideRoadEncodeIdx/timestampEof[Derivative]" name="Derivative">
+         <options lineEdit="1.0" radioChecked="radioCustom"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="model timings">
+   <Container>
+    <DockSplitter orientation="-" sizes="0.5;0.5" count="2">
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range right="780.030468" bottom="0.018421" top="0.030813" left="0.108134"/>
+       <limitY/>
+       <curve color="#ff7f0e" name="/modelV2/modelExecutionTime"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range right="780.030468" bottom="-0.100000" top="0.100000" left="0.108134"/>
+       <limitY/>
+       <curve color="#f14cc1" name="/modelV2/frameDropPerc"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab containers="1" tab_name="sensor info">
+   <Container>
+    <DockSplitter orientation="-" sizes="1" count="1">
+     <DockArea name="...">
+      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
+       <range right="780.030468" bottom="1.900000" top="2.100000" left="0.108134"/>
+       <limitY/>
+       <curve color="#bcbd22" name="/driverCameraState/sensor"/>
+       <curve color="#1f77b4" name="/roadCameraState/sensor"/>
+       <curve color="#d62728" name="/wideRoadCameraState/sensor"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+
