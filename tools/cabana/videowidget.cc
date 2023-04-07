@@ -19,6 +19,20 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
 
+
+bool sortTimelineBasedOnEventPriority(const std::tuple<int, int, TimelineType> &left, const std::tuple<int, int, TimelineType> &right){
+  const static std::map<TimelineType, int> timelinePriority = {
+    {  TimelineType::None, 0 },
+    {  TimelineType::Engaged, 10 },
+    {  TimelineType::AlertInfo, 20 },
+    {  TimelineType::AlertWarning, 30 },
+    {  TimelineType::AlertCritical, 40 },
+    {  TimelineType::UserFlag, 35 }
+  };
+
+  return timelinePriority.at(std::get<2>(left)) < timelinePriority.at(std::get<2>(right));
+}
+
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   auto main_layout = new QVBoxLayout(this);
@@ -129,6 +143,8 @@ void VideoWidget::updatePlayBtnState() {
 Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
     timeline = can->getTimeline();
+    std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
+
     update();
   });
   setMouseTracking(true);
@@ -189,6 +205,7 @@ void Slider::paintEvent(QPaintEvent *ev) {
   p.fillRect(r, timeline_colors[(int)TimelineType::None]);
   double min = minimum() / 1000.0;
   double max = maximum() / 1000.0;
+
   for (auto [begin, end, type] : timeline) {
     if (begin > max || end < min)
       continue;
