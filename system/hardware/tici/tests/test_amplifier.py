@@ -30,11 +30,19 @@ class TestAmplifier(unittest.TestCase):
     else:
       assert "i2c error :-107" in i2c_str or "Bus arbitration lost" in i2c_str
 
-  def test_init_while_siren_play(self):
+  def test_init(self):
     amp = Amplifier(debug=True)
     r = amp.initialize_configuration(Tici().model)
     assert r
     self._check_for_i2c_errors(False)
+
+  def test_shutdown(self):
+    amp = Amplifier(debug=True)
+    for _ in range(10):
+      r = amp.set_global_shutdown(True)
+      r = amp.set_global_shutdown(False)
+      assert r
+      self._check_for_i2c_errors(False)
 
   def test_init_while_siren_play(self):
     for _ in range(5):
