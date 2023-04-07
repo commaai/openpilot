@@ -1314,10 +1314,10 @@ FW_VERSIONS = {
     ],
   },
   CAR.KIA_NIRO_EV_2ND_GEN: {
-    (Ecu.fwdRadar, 0x7D0, None): [
+    (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
     ],
-    (Ecu.fwdCamera, 0x7C4, None): [
+    (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
     ],
   },
