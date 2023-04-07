@@ -1,6 +1,7 @@
 import time
 from smbus2 import SMBus
 from collections import namedtuple
+from typing import List
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 
@@ -105,46 +106,44 @@ class Amplifier:
   def __init__(self, debug=False):
     self.debug = debug
 
-  def _set_config(self, config):
+  def _get_shutdown_config(self, amp_disabled: bool) -> AmpConfig:
+    return AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000)
+
+  def _set_configs(self, configs: List[AmpConfig]) -> None:
     with SMBus(self.AMP_I2C_BUS) as bus:
-      if self.debug:
-        print(f"Setting \"{config.name}\" to {config.value}:")
+      for config in configs:
+        if self.debug:
+          print(f"Setting \"{config.name}\" to {config.value}:")
 
-      old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
-      new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
-      bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
+        old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
+        new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
+        bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
 
-      if self.debug:
-        print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
+        if self.debug:
+          print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
 
-  def _set_config_retry(self, config) -> bool:
+  def set_configs(self, configs: List[AmpConfig]) -> bool:
     # retry in case panda is using the amp
-    ret = False
     for _ in range(10):
       try:
-        self._set_config(config)
-        ret = True
-        break
+        self._set_configs(configs)
+        return True
       except OSError:
         print("Failed to set amp config, retrying...")
-        time.sleep(0.05)
-    return ret
+        time.sleep(0.02)
+    return False
 
   def set_global_shutdown(self, amp_disabled: bool) -> bool:
-    return self._set_config_retry(AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000))
+    return self.set_configs([self._get_shutdown_config(amp_disabled), ])
 
   def initialize_configuration(self, model: str) -> bool:
-    ret = True
-    ret &= self.set_global_shutdown(amp_disabled=True)
-
-    for config in BASE_CONFIG:
-      ret &= self._set_config_retry(config)
-
-    for config in CONFIGS[model]:
-      ret &= self._set_config_retry(config)
-
-    ret &= self.set_global_shutdown(amp_disabled=False)
-    return ret
+    cfgs = [
+      self._get_shutdown_config(True),
+      *BASE_CONFIG,
+      *CONFIGS[model],
+      self._get_shutdown_config(False),
+    ]
+    return self.set_configs(cfgs)
 
 
 if __name__ == "__main__":
