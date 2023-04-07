@@ -5,6 +5,7 @@
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
+#include <QTabBar>
 #include <QTimer>
 #include <QUndoCommand>
 #include <QUndoStack>
@@ -177,6 +178,9 @@ private:
   void settingChanged();
   void showValueTip(double sec);
   bool eventFilter(QObject *obj, QEvent *event) override;
+  void newTab();
+  void removeTab(int index);
+  inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
   QLabel *title_label;
@@ -194,6 +198,8 @@ private:
 
   QAction *remove_all_btn;
   QList<ChartView *> charts;
+  std::unordered_map<int, QList<ChartView *>> tab_charts;
+  QTabBar *tabbar;
   ChartsContainer *charts_container;
   QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
