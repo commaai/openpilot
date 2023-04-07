@@ -914,7 +914,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CK__ SCC F-CUP      1.00 1.00 99110-J5500         ',
       b'\xf1\x00CK__ SCC FHCUP      1.00 1.00 99110-J5500         ',
-      b'\xf1\x8799110J5500\xf1\x00CK__ SCC FHCUP      1.00 1.00 99110-J5500         ',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81640R0051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -931,8 +930,6 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87VCNLF11383972DK1vffV\x99\x99\x89\x98\x86eUU\x88wg\x89vfff\x97fff\x99\x87o\xff"\xc1\xf1\x81E30\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E30\x00\x00\x00\x00\x00\x00\x00SCK0T33GH0\xbe`\xfb\xc6',
       b'\xf1\x00bcsh8p54  E31\x00\x00\x00\x00\x00\x00\x00SCK0T25KH2B\xfbI\xe2',
-      b'\xf1\x87WANBA11189792CM8\x88vWfffff\x86fefx\x88\x88\x88wvff\x97\x87wwVfO\xffsr\xf1\x81E31\x00\x00\x00',
-      b'\x00\x00\x00\x00\xf1\x00bcsh8p54  E31\x00\x00\x00\x00\x00\x00\x00SCK0T25KH2B\xfbI\xe2',
     ],
   },
   CAR.PALISADE: {
