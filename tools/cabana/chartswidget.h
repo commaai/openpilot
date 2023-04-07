@@ -5,8 +5,9 @@
 #include <QListWidget>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
-#include <QStack>
 #include <QTimer>
+#include <QUndoCommand>
+#include <QUndoStack>
 #include <QtCharts/QChartView>
 #include <QtCharts/QLegendMarker>
 #include <QtCharts/QLineSeries>
@@ -32,11 +33,12 @@ public:
   void paintEvent(QPaintEvent *ev) override;
 };
 
+class ChartsWidget;
 class ChartView : public QChartView {
   Q_OBJECT
 
 public:
-  ChartView(QWidget *parent = nullptr);
+  ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr);
@@ -81,6 +83,8 @@ private:
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator(false); }
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
@@ -91,6 +95,8 @@ private:
   void resetChartCache();
   void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void drawBackground(QPainter *painter, const QRectF &rect) override;
+  void drawDropIndicator(bool draw) { can_drop = draw; viewport()->update(); }
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
@@ -108,13 +114,30 @@ private:
   ValueTipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
-  const QString mime_type = "application/x-cabanachartview";
   SeriesType series_type = SeriesType::Line;
   bool is_scrubbing = false;
   bool resume_after_scrub = false;
   QPixmap chart_pixmap;
+  bool can_drop = false;
+  double tooltip_x = -1;
+  ChartsWidget *charts_widget;
   friend class ChartsWidget;
- };
+};
+
+class ChartsContainer : public QWidget {
+public:
+  ChartsContainer(ChartsWidget *parent);
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
+  void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator({}); }
+  void drawDropIndicator(const QPoint &pt) { drop_indictor_pos = pt; update(); }
+  void paintEvent(QPaintEvent *ev) override;
+  ChartView *getDropBefore(const QPoint &pos) const;
+
+  QGridLayout *charts_layout;
+  ChartsWidget *charts_widget;
+  QPoint drop_indictor_pos;
+};
 
 class ChartsWidget : public QFrame {
   Q_OBJECT
@@ -127,6 +150,7 @@ public:
 public slots:
   void setColumnCount(int n);
   void removeAll();
+  void setZoom(double min, double max);
 
 signals:
   void dock(bool floating);
@@ -144,11 +168,12 @@ private:
   void updateState();
   void zoomIn(double min, double max);
   void zoomReset();
-  void zoomUndo();
-  void setZoom(double min, double max);
+  void startAutoScroll();
+  void stopAutoScroll();
+  void doAutoScroll();
   void updateToolBar();
   void setMaxChartRange(int value);
-  void updateLayout();
+  void updateLayout(bool force = false);
   void settingChanged();
   void showValueTip(double sec);
   bool eventFilter(QObject *obj, QEvent *event) override;
@@ -161,22 +186,41 @@ private:
   QAction *range_slider_action;
   bool docking = true;
   QAction *dock_btn;
+
   QAction *undo_zoom_action;
+  QAction *redo_zoom_action;
   QAction *reset_zoom_action;
+  QUndoStack *zoom_undo_stack;
+
   QAction *remove_all_btn;
-  QGridLayout *charts_layout;
   QList<ChartView *> charts;
-  QWidget *charts_container;
+  ChartsContainer *charts_container;
   QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
   bool is_zoomed = false;
   std::pair<double, double> display_range;
   std::pair<double, double> zoomed_range;
-  QStack<QPair<double, double>> zoom_stack;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
+  int auto_scroll_count = 0;
+  QTimer auto_scroll_timer;
   QTimer align_timer;
+  friend class ZoomCommand;
+  friend class ChartView;
+  friend class ChartsContainer;
+};
+
+class ZoomCommand : public QUndoCommand {
+public:
+  ZoomCommand(ChartsWidget *charts, std::pair<double, double> range) : charts(charts), range(range), QUndoCommand() {
+    prev_range = charts->is_zoomed ? charts->zoomed_range : charts->display_range;
+    setText(QObject::tr("Zoom to %1-%2").arg(range.first, 0, 'f', 1).arg(range.second, 0, 'f', 1));
+  }
+  void undo() override { charts->setZoom(prev_range.first, prev_range.second); }
+  void redo() override { charts->setZoom(range.first, range.second); }
+  ChartsWidget *charts;
+  std::pair<double, double> prev_range, range;
 };
 
 class SeriesSelector : public QDialog {

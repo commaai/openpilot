@@ -205,6 +205,7 @@ FW_VERSIONS = {
       b'\xc5!dr\x07',
       b'\xaa!aw\x07',
       b'\xaa!av\x07',
+      b'\xaa\x01bt\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xe5\x46\x31\x00',
@@ -220,6 +221,7 @@ FW_VERSIONS = {
       b'\xe4\xf5\002\000\000',
       b'\xe3\xd0\x081\x00',
       b'\xe3\xf5\x06\x00\x00',
+      b'\xe3\xd5\x161\x00',
     ],
   },
   CAR.IMPREZA_2020: {
