@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 239 Supported Cars
+# 240 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -107,6 +107,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|Niro EV 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2020">Hyundai F</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Kia|Niro EV 2021|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2021">Hyundai C</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Kia|Niro EV 2022|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2022">Hyundai H</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
+|Kia|Niro EV 2023[<sup>5</sup>](#footnotes)|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2023">Hyundai A</a>||
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2021">Hyundai F</a>||
 |Kia|Niro Hybrid 2022|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2022">Hyundai H</a>||
 |Kia|Niro Hybrid 2023[<sup>5</sup>](#footnotes)|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro Hybrid 2023">Hyundai A</a>||
