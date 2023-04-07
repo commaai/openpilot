@@ -81,6 +81,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QHBoxLayout *tab_layout = new QHBoxLayout();
   tab_layout->addWidget(tabbar = new QTabBar(this));
   tabbar->setAutoHide(true);
+  tabbar->setAcceptDrops(true);
+  tabbar->setChangeCurrentOnDrag(true);
   tabbar->setTabsClosable(true);
   tabbar->setUsesScrollButtons(true);
   tab_layout->addStretch(0);
@@ -1264,7 +1266,9 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
     auto w = getDropBefore(event->pos());
     auto chart = qobject_cast<ChartView *>(event->source());
     if (w != chart) {
-      charts_widget->currentCharts().removeOne(chart);
+      for (auto &[_, list] : charts_widget->tab_charts) {
+        list.removeOne(chart);
+      }
       int to = w ? charts_widget->currentCharts().indexOf(w) : charts_widget->currentCharts().size();
       charts_widget->currentCharts().insert(to, chart);
       charts_widget->updateLayout(true);
