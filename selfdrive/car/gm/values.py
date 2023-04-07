@@ -114,7 +114,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", video_link="https://youtu.be/5HbNoBLzRwE"),
   ],
   CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22"),
-  CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2020-22", "Adaptive Cruise Control & LKAS"),
+  CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2020-22", "Adaptive Cruise Control"),
 }
 
 
