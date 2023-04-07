@@ -139,7 +139,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate in (CAR.KIA_NIRO_EV, CAR.KIA_NIRO_EV_2ND_GEN, CAR.KIA_NIRO_PHEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_NIRO_HEV_2ND_GEN):
       ret.mass = 3452. * CV.LB_TO_KG + STD_CARGO_KG  # average of all the cars
       ret.wheelbase = 2.7
-      ret.steerRatio = 13.6  # average of the platforms
+      ret.steerRatio = 13.6  # average of all the cars
       tire_stiffness_factor = 0.385
       if candidate == CAR.KIA_NIRO_PHEV:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
