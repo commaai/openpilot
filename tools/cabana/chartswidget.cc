@@ -35,8 +35,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
-  QAction *new_tab_btn = toolbar->addAction(utils::icon("window-stack"), tr("New Tab"));
   QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), tr("New Chart"));
+  QAction *new_tab_btn = toolbar->addAction(utils::icon("window-stack"), tr("New Tab"));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
