@@ -10,6 +10,15 @@ from system.hardware.tici.amplifier import Amplifier
 
 class TestAmplifier(unittest.TestCase):
 
+  def tearDown(self):
+    with Panda() as p:
+      p.set_siren(False)
+
+  def test_init_while_siren_play(self):
+    amp = Amplifier(debug=True)
+    r = amp.initialize_configuration(Tici().model)
+    assert r
+
   def test_init_while_siren_play(self):
     p = Panda()
     for _ in range(5):
