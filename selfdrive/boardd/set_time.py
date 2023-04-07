@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import datetime
 import os
-import struct
+import datetime
 from panda import Panda
 
 MIN_DATE = datetime.datetime(year=2023, month=4, day=1)
