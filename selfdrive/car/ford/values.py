@@ -84,7 +84,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Lincoln Aviator Plug-in Hybrid 2021", "Co-Pilot360 Plus"),
   ],
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
-  CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022", "Co-Pilot360 Assist"),
+  CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -165,6 +165,7 @@ FW_VERSIONS = {
       b'M1MC-14D003-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
+      b'L1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-BF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-2D053-KB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -178,6 +179,7 @@ FW_VERSIONS = {
       b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7E0, None): [
+      b'LB5A-14C204-BUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -215,6 +217,7 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x760, None): [
       b'NZ6C-2D053-AG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PZ6C-2D053-ED\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'NZ6T-14D049-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -226,6 +229,7 @@ FW_VERSIONS = {
       b'NZ6A-14C204-AAA\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6A-14C204-PA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6A-14C204-ZA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PZ6A-14C204-JC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.shiftByWire, 0x732, None): [
       b'NZ6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

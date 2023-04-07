@@ -4,12 +4,11 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QDebug>
-
-#include <limits>
 #include <cmath>
+#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
+#include "tools/cabana/settings.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -42,7 +41,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         }
 
         // Track bit level changes
-        for (int bit = 0; bit < 8; bit++){
+        for (int bit = 0; bit < 8; bit++) {
           if ((cur ^ last) & (1 << bit)) {
             bit_change_counts[i][bit] += 1;
           }
@@ -67,6 +66,39 @@ void ChangeTracker::clear() {
   colors.clear();
 }
 
+// SegmentTree
+
+void SegmentTree::build(const QVector<QPointF> &arr) {
+  size = arr.size();
+  tree.resize(4 * size);  // size of the tree is 4 times the size of the array
+  if (size > 0) {
+    build_tree(arr, 1, 0, size - 1);
+  }
+}
+
+void SegmentTree::build_tree(const QVector<QPointF> &arr, int n, int left, int right) {
+  if (left == right) {
+    const double y = arr[left].y();
+    tree[n] = {y, y};
+  } else {
+    const int mid = (left + right) >> 1;
+    build_tree(arr, 2 * n, left, mid);
+    build_tree(arr, 2 * n + 1, mid + 1, right);
+    tree[n] = {std::min(tree[2 * n].first, tree[2 * n + 1].first), std::max(tree[2 * n].second, tree[2 * n + 1].second)};
+  }
+}
+
+std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, int range_left, int range_right) const {
+  if (range_left > right || range_right < left)
+    return {std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest()};
+  if (range_left <= left && range_right >= right)
+    return tree[n];
+  int mid = (left + right) >> 1;
+  auto l = get_minmax(2 * n, left, mid, range_left, range_right);
+  auto r = get_minmax(2 * n + 1, mid + 1, right, range_left, range_right);
+  return {std::min(l.first, r.first), std::max(l.second, r.second)};
+}
+
 // MessageBytesDelegate
 
 MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
@@ -82,7 +114,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText: QPalette::Text;
+  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
   painter->setPen(option.palette.color(color_role));
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
@@ -94,7 +126,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   }
 }
 
-QColor getColor(const Signal *sig) {
+QColor getColor(const cabana::Signal *sig) {
   float h = 19 * (float)sig->lsb / 64.0;
   h = fmod(h, 1.0);
 
@@ -105,7 +137,7 @@ QColor getColor(const Signal *sig) {
   return QColor::fromHsvF(h, s, v);
 }
 
-NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) { }
+NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
@@ -114,8 +146,7 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                           QApplication::palette().color(QPalette::Background).value();
+  bool dark_theme = settings.theme == 2;
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -123,12 +154,44 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), Qt::lightGray);
+      p.fillRect(pm.rect(), Qt::white);
     }
     QPixmapCache::insert(key, pm);
   }
   return pm;
 }
+
+void setTheme(int theme) {
+  auto style = QApplication::style();
+  if (!style) return;
+
+  static int prev_theme = 0;
+  if (theme != prev_theme) {
+    prev_theme = theme;
+    if (theme == 2) {
+      // modify palette to dark
+      QPalette darkPalette;
+      darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::WindowText, Qt::white);
+      darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
+      darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+      darkPalette.setColor(QPalette::ToolTipText, QColor(41, 41, 41));
+      darkPalette.setColor(QPalette::Text, Qt::white);
+      darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
+      darkPalette.setColor(QPalette::ButtonText, Qt::white);
+      darkPalette.setColor(QPalette::BrightText, Qt::red);
+      darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
+      darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
+      darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+      qApp->setPalette(darkPalette);
+    } else {
+      qApp->setPalette(style->standardPalette());
+    }
+    style->polish(qApp);
+  }
+}
+
 }  // namespace utils
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip) {
@@ -136,9 +199,10 @@ QToolButton *toolButton(const QString &icon, const QString &tooltip) {
   btn->setIcon(utils::icon(icon));
   btn->setToolTip(tooltip);
   btn->setAutoRaise(true);
+  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
+  btn->setIconSize({metric, metric});
   return btn;
 };
-
 
 QString toHex(uint8_t byte) {
   static std::array<QString, 256> hex = []() {
@@ -147,4 +211,14 @@ QString toHex(uint8_t byte) {
     return ret;
   }();
   return hex[byte];
+}
+
+int num_decimals(double num) {
+  const QString string = QString::number(num);
+  const QStringList split = string.split('.');
+  if (split.size() == 1) {
+    return 0;
+  } else {
+    return split[1].size();
+  }
 }

@@ -116,13 +116,13 @@ class HondaCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORD: [
-    HondaCarInfo("Honda Accord 2018-22", "All", "https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
   CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-21", "All", "https://www.youtube.com/watch?v=4Iz1Mz5LGF8", [Footnote.CIVIC_DIESEL], 2. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
     HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
@@ -186,7 +186,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
       logging=True,
-      non_obd=True,
+      obd_multiplexing=False,
     ),
   ],
   extra_ecus=[
@@ -1246,6 +1246,7 @@ FW_VERSIONS = {
       b'37805-5YF-A750\x00\x00',
       b'37805-5YF-A850\x00\x00',
       b'37805-5YF-A870\x00\x00',
+      b'37805-5YF-AD20\x00\x00',
       b'37805-5YF-C210\x00\x00',
       b'37805-5YF-C220\x00\x00',
       b'37805-5YF-C410\000\000',
@@ -1254,16 +1255,20 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A030\x00\x00',
       b'57114-TJB-A040\x00\x00',
+      b'57114-TJB-A120\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TJB-A040\x00\x00',
       b'36802-TJB-A050\x00\x00',
+      b'36802-TJB-A540\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TJB-A040\x00\x00',
+      b'36161-TJB-A530\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TJB-A520\x00\x00',
+      b'54008-TJB-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-5YK-A610\x00\x00',
@@ -1271,6 +1276,7 @@ FW_VERSIONS = {
       b'28102-5YK-A630\x00\x00',
       b'28102-5YK-A700\x00\x00',
       b'28102-5YK-A711\x00\x00',
+      b'28102-5YK-A800\x00\x00',
       b'28102-5YL-A620\x00\x00',
       b'28102-5YL-A700\x00\x00',
       b'28102-5YL-A711\x00\x00',
@@ -1282,6 +1288,7 @@ FW_VERSIONS = {
       b'78109-TJB-AB10\x00\x00',
       b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
+      b'78109-TJB-AQ20\x00\x00',
       b'78109-TJB-AR10\x00\x00',
       b'78109-TJB-AS10\000\000',
       b'78109-TJB-AU10\x00\x00',
@@ -1293,22 +1300,26 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TJB-A040\x00\x00',
+      b'77959-TJB-A120\x00\x00',
       b'77959-TJB-A210\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TJB-A040\x00\x00',
       b'46114-TJB-A050\x00\x00',
       b'46114-TJB-A060\x00\x00',
+      b'46114-TJB-A120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TJB-A040\x00\x00',
       b'38897-TJB-A110\x00\x00',
       b'38897-TJB-A120\x00\x00',
+      b'38897-TJB-A220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TJB-A030\x00\x00',
       b'39990-TJB-A040\x00\x00',
-      b'39990-TJB-A130\x00\x00'
+      b'39990-TJB-A070\x00\x00',
+      b'39990-TJB-A130\x00\x00',
     ],
   },
   CAR.RIDGELINE: {

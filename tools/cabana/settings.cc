@@ -27,12 +27,14 @@ void Settings::save() {
   s.setValue("recent_files", recent_files);
   s.setValue("message_header_state", message_header_state);
   s.setValue("chart_series_type", chart_series_type);
+  s.setValue("theme", theme);
+  s.setValue("sparkline_range", sparkline_range);
 }
 
 void Settings::load() {
   QSettings s("settings", QSettings::IniFormat);
   fps = s.value("fps", 10).toInt();
-  max_cached_minutes = s.value("max_cached_minutes", 5).toInt();
+  max_cached_minutes = s.value("max_cached_minutes", 30).toInt();
   chart_height = s.value("chart_height", 200).toInt();
   chart_range = s.value("chart_range", 3 * 60).toInt();
   chart_column_count = s.value("chart_column_count", 1).toInt();
@@ -44,6 +46,8 @@ void Settings::load() {
   recent_files = s.value("recent_files").toStringList();
   message_header_state = s.value("message_header_state").toByteArray();
   chart_series_type = s.value("chart_series_type", 0).toInt();
+  theme = s.value("theme", 0).toInt();
+  sparkline_range = s.value("sparkline_range", 15).toInt();
 }
 
 // SettingsDlg
@@ -51,6 +55,12 @@ void Settings::load() {
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
   QFormLayout *form_layout = new QFormLayout(this);
+
+  theme = new QComboBox(this);
+  theme->setToolTip(tr("You may need to restart cabana after changes theme"));
+  theme->addItems({tr("Automatic"), tr("Light"), tr("Dark")});
+  theme->setCurrentIndex(settings.theme);
+  form_layout->addRow(tr("Color Theme"), theme);
 
   fps = new QSpinBox(this);
   fps->setRange(10, 100);
@@ -85,6 +95,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
+  settings.theme = theme->currentIndex();
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();

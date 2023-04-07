@@ -7,11 +7,9 @@
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/util.h"
-
-using namespace dbcmanager;
 
 class HeaderView : public QHeaderView {
 public:
@@ -64,7 +62,7 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  std::vector<const Signal *> sigs;
+  std::vector<const cabana::Signal *> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };
