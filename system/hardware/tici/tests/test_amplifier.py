@@ -5,11 +5,17 @@ import unittest
 import subprocess
 
 from panda import Panda
+from system.hardware import TICI
 from system.hardware.tici.hardware import Tici
 from system.hardware.tici.amplifier import Amplifier
 
 
 class TestAmplifier(unittest.TestCase):
+
+  @classmethod
+  def setUpClass(cls):
+    if not TICI:
+      raise unittest.SkipTest
 
   def setUp(self):
     # clear dmesg
