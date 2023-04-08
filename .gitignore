@@ -83,6 +83,3 @@ build/
 !**/.gitkeep
 
 poetry.toml
-
-sandbox/
-settings
