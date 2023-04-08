@@ -19,10 +19,11 @@ struct AlertInfo {
   QString text2;
 };
 
-class ThumbnailLabel : public QWidget {
+class InfoLabel : public QWidget {
 public:
-  ThumbnailLabel(QWidget *parent);
+  InfoLabel(QWidget *parent);
   void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert);
+  void showAlert(const AlertInfo &alert);
   void paintEvent(QPaintEvent *event) override;
   QPixmap pixmap;
   QString second;
@@ -52,8 +53,9 @@ private:
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
   QFuture<void> thumnail_future;
-  ThumbnailLabel thumbnail_label;
+  InfoLabel thumbnail_label;
   QTimer timer;
+  friend class VideoWidget;
 };
 
 class VideoWidget : public QFrame {
@@ -73,5 +75,6 @@ protected:
   QLabel *time_label;
   QHBoxLayout *slider_layout;
   QPushButton *play_btn;
+  InfoLabel *alert_label;
   Slider *slider;
 };
