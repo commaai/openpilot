@@ -6,6 +6,7 @@
 #include <QDialogButtonBox>
 #include <QDrag>
 #include <QFutureSynchronizer>
+#include <QGraphicsDropShadowEffect>
 #include <QGraphicsLayout>
 #include <QLineEdit>
 #include <QMenu>
@@ -19,6 +20,7 @@
 #include <QtConcurrent>
 
 const int MAX_COLUMN_COUNT = 4;
+const int CHART_SPACING = 10;
 const QString mime_type = "application/x-cabanachartview";
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
 
@@ -78,15 +80,15 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   main_layout->addWidget(toolbar);
 
   // tabbar
-  QHBoxLayout *tab_layout = new QHBoxLayout();
-  tab_layout->addWidget(tabbar = new QTabBar(this));
+  tabbar = new QTabBar(this);
   tabbar->setAutoHide(true);
+  tabbar->setExpanding(false);
+  tabbar->setDrawBase(true);
   tabbar->setAcceptDrops(true);
   tabbar->setChangeCurrentOnDrag(true);
   tabbar->setTabsClosable(true);
   tabbar->setUsesScrollButtons(true);
-  tab_layout->addStretch(0);
-  main_layout->addLayout(tab_layout);
+  main_layout->addWidget(tabbar);
 
   // charts
   charts_container = new ChartsContainer(this);
@@ -307,7 +309,7 @@ void ChartsWidget::updateLayout(bool force) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
       current_charts[i]->setVisible(true);
     }
-    QTimer::singleShot(0, [this]() { charts_container->setUpdatesEnabled(true); });
+    charts_container->setUpdatesEnabled(true);
   }
 }
 
@@ -784,20 +786,51 @@ void ChartView::leaveEvent(QEvent *event) {
   QChartView::leaveEvent(event);
 }
 
+QPixmap getBlankShadowPixmap(const QSize &size, int extent) {
+  QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
+  e->setColor(QColor(40, 40, 40, 245));
+  e->setOffset(0, 2);
+  e->setBlurRadius(10);
+
+  QGraphicsScene scene;
+  QGraphicsPixmapItem item;
+  QPixmap src(size);
+  src.fill(Qt::white);
+  item.setPixmap(src);
+  item.setGraphicsEffect(e);
+  scene.addItem(&item);
+  QImage target(src.size() + QSize(extent * 2, extent * 2), QImage::Format_ARGB32);
+  target.fill(Qt::transparent);
+  QPainter p(&target);
+  scene.render(&p, QRectF(), QRectF(-extent, -extent, src.width() + extent * 2, src.height() + extent * 2));
+  return QPixmap::fromImage(target);
+}
+
+static QPixmap getDropPixmap(const QPixmap &src) {
+  static QPixmap shadow_px;
+  const int extent = 10;
+  if (shadow_px.size() != src.size() + QSize(extent * 2, extent * 2)) {
+    shadow_px = getBlankShadowPixmap(src.size(), extent);
+  }
+  QPixmap px = shadow_px;
+  QPainter p(&px);
+  int delta_w = px.width() - src.width();
+  int delta_h = px.height() - src.height();
+  p.drawPixmap(QPoint(delta_w / 2, delta_h / 2), src);
+  p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
+  p.fillRect(delta_w / 2, delta_h / 2, src.width(), src.height(), QColor(0, 0, 0, 200));
+  return px;
+}
+
 void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(mime_type, QByteArray::number((qulonglong)this));
-    QPixmap pm = grab();
-    QPainter p(&pm);
-    p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-    p.fillRect(pm.rect(), QColor(0, 0, 0, 180));
-    p.end();
-
+    QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH, Qt::SmoothTransformation);
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
-    drag->setPixmap(pm);
-    drag->setHotSpot(event->pos());
+    drag->setPixmap(getDropPixmap(px));
+    drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
     charts_widget->stopAutoScroll();
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
@@ -1247,9 +1280,9 @@ void ValueTipLabel::paintEvent(QPaintEvent *ev) {
 ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent), QWidget(parent) {
   setAcceptDrops(true);
   QVBoxLayout *charts_main_layout = new QVBoxLayout(this);
-  charts_main_layout->setContentsMargins(0, 0, 0, 0);
+  charts_main_layout->setContentsMargins(0, 10, 0, 0);
   charts_layout = new QGridLayout();
-  charts_layout->setSpacing(10);
+  charts_layout->setSpacing(CHART_SPACING);
   charts_main_layout->addLayout(charts_layout);
   charts_main_layout->addStretch(0);
 }
@@ -1263,13 +1296,13 @@ void ChartsContainer::dragEnterEvent(QDragEnterEvent *event) {
 
 void ChartsContainer::dropEvent(QDropEvent *event) {
   if (event->mimeData()->hasFormat(mime_type)) {
-    auto w = getDropBefore(event->pos());
+    auto w = getDropAfter(event->pos());
     auto chart = qobject_cast<ChartView *>(event->source());
     if (w != chart) {
       for (auto &[_, list] : charts_widget->tab_charts) {
         list.removeOne(chart);
       }
-      int to = w ? charts_widget->currentCharts().indexOf(w) : charts_widget->currentCharts().size();
+      int to = w ? charts_widget->currentCharts().indexOf(w) + 1 : 0;
       charts_widget->currentCharts().insert(to, chart);
       charts_widget->updateLayout(true);
       event->acceptProposedAction();
@@ -1280,18 +1313,31 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
 
 void ChartsContainer::paintEvent(QPaintEvent *ev) {
   if (!drop_indictor_pos.isNull() && !childAt(drop_indictor_pos)) {
-    if (auto insert_after = getDropBefore(drop_indictor_pos)) {
-      auto area = insert_after->geometry();
-      QRect r = QRect(area.left(), area.top() - 10, area.width(), 10);
-      QPainter(this).fillRect(r, qApp->palette().highlight());
+    QRect r;
+    if (auto insert_after = getDropAfter(drop_indictor_pos)) {
+      QRect area = insert_after->geometry();
+      r = QRect(area.left(), area.bottom() + 1, area.width(), CHART_SPACING);
+    } else {
+      r = geometry();
+      r.setHeight(CHART_SPACING);
     }
+
+    const int margin = (CHART_SPACING - 2) / 2;
+    QPainterPath path;
+    path.addPolygon(QPolygonF({r.topLeft(), QPointF(r.left() + CHART_SPACING, r.top() + r.height() / 2), r.bottomLeft()}));
+    path.addPolygon(QPolygonF({r.topRight(), QPointF(r.right() - CHART_SPACING, r.top() + r.height() / 2), r.bottomRight()}));
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.fillPath(path, palette().highlight());
+    p.fillRect(r.adjusted(2, margin, -2, -margin), palette().highlight());
   }
 }
 
-ChartView *ChartsContainer::getDropBefore(const QPoint &pos) const {
-  auto it = std::find_if(charts_widget->currentCharts().cbegin(), charts_widget->currentCharts().cend(), [&pos](auto c) {
+ChartView *ChartsContainer::getDropAfter(const QPoint &pos) const {
+  auto it = std::find_if(charts_widget->currentCharts().crbegin(), charts_widget->currentCharts().crend(), [&pos](auto c) {
     auto area = c->geometry();
-    return pos.x() >= area.left() && pos.x() <= area.right() && pos.y() < area.top();
+    return pos.x() >= area.left() && pos.x() <= area.right() && pos.y() >= area.bottom();
   });
-  return it == charts_widget->currentCharts().cend() ? nullptr : *it;
+  return it == charts_widget->currentCharts().crend() ? nullptr : *it;
 }

@@ -97,7 +97,7 @@ private:
   void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;
-  void drawDropIndicator(bool draw) { can_drop = draw; viewport()->update(); }
+  void drawDropIndicator(bool draw) { if (std::exchange(can_drop, draw) != can_drop) viewport()->update(); }
   std::tuple<double, double, int> getNiceAxisNumbers(qreal min, qreal max, int tick_count);
   qreal niceNumber(qreal x, bool ceiling);
   QXYSeries *createSeries(SeriesType type, QColor color);
@@ -133,7 +133,7 @@ public:
   void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator({}); }
   void drawDropIndicator(const QPoint &pt) { drop_indictor_pos = pt; update(); }
   void paintEvent(QPaintEvent *ev) override;
-  ChartView *getDropBefore(const QPoint &pos) const;
+  ChartView *getDropAfter(const QPoint &pos) const;
 
   QGridLayout *charts_layout;
   ChartsWidget *charts_widget;
