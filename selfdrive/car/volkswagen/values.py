@@ -214,8 +214,8 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22"),
   CAR.POLO_MK6: [
-    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_MQB_A0]),
-    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo 2018-23", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo GTI 2018-23", footnotes=[Footnote.VW_MQB_A0]),
   ],
   CAR.SHARAN_MK2: [
     VWCarInfo("Volkswagen Sharan 2018-22"),
