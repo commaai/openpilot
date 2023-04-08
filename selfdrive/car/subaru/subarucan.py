@@ -87,6 +87,8 @@ def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   if visual_alert == VisualAlert.fcw:
     values["LKAS_State_Infotainment"] = 2
   
+  values["LKAS_State_Infotainment"] = 2
+  
   return packer.make_can_msg("INFOTAINMENT_STATUS", 0, values)
 
 # *** Subaru Pre-global ***
