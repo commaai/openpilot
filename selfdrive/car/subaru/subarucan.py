@@ -87,7 +87,7 @@ def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   if visual_alert == VisualAlert.fcw:
     infotainmentstatus_msg["LKAS_State_Infotainment"] = 2
   
-  infotainmentstatus_msg["LKAS_State_Infotainment"] = 2
+  infotainmentstatus_msg["LKAS_State_Infotainment"] = 1
   
   return packer.make_can_msg("INFOTAINMENT_STATUS", 0, infotainmentstatus_msg)
 
