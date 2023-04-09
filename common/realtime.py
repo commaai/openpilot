@@ -180,3 +180,171 @@ class ControlsTimer(DurationTimer):
   @classmethod
   def interval(cls, rate) -> bool:
     return ControlsTimer.interval_obj(rate, cls.frame)
+  
+import unittest
+class TestDurationTimer(unittest.TestCase):
+
+  def test_timer_initialization(self):
+    timer = DurationTimer(duration=5)
+    self.assertEqual(timer.duration, 5)
+    self.assertEqual(timer.timer, 0)
+
+  def test_tick_obj(self):
+    timer = DurationTimer(duration=5)
+    timer.tick_obj()
+    self.assertEqual(timer.timer, DT_CTRL)
+
+  def test_reset(self):
+    timer = DurationTimer(duration=5)
+    timer.tick_obj()
+    timer.reset()
+    self.assertEqual(timer.timer, 0)
+    self.assertTrue(timer.was_reset)
+
+  def test_active(self):
+    timer = DurationTimer(duration=5)
+    self.assertTrue(timer.active())
+    timer.timer = 5
+    self.assertFalse(timer.active())
+
+  def test_adjust(self):
+    timer = DurationTimer(duration=5)
+    timer.adjust(10)
+    self.assertEqual(timer.duration, 10)
+
+  def test_once_after_reset(self):
+    timer = DurationTimer(duration=5)
+    timer.reset()
+    self.assertTrue(timer.once_after_reset())
+    self.assertFalse(timer.once_after_reset())
+
+  def test_interval_obj(self):
+    self.assertTrue(DurationTimer.interval_obj(2, 4))
+    self.assertFalse(DurationTimer.interval_obj(2, 5))
+
+class TestModelTimer(unittest.TestCase):
+
+  def test_model_timer_initialization(self):
+    timer = ModelTimer(duration=5)
+    self.assertEqual(timer.duration, 5)
+    self.assertEqual(timer.step, DT_MDL)
+
+  def test_tick(self):
+    timer = ModelTimer(duration=5)
+    ModelTimer.tick()
+    self.assertEqual(timer.timer, DT_MDL)
+
+  def test_reset_all(self):
+    timer1 = ModelTimer(duration=5)
+    timer2 = ModelTimer(duration=10)
+    timer1.tick_obj()
+    timer2.tick_obj()
+    ModelTimer.reset_all()
+    self.assertEqual(timer1.timer, 0)
+    self.assertEqual(timer2.timer, 0)
+
+  def test_interval(self):
+    ModelTimer.frame = 4
+    self.assertTrue(ModelTimer.interval(2))
+    ModelTimer.frame = 5
+    self.assertFalse(ModelTimer.interval(2))
+
+class TestControlsTimer(unittest.TestCase):
+
+  def test_controls_timer_initialization(self):
+    timer = ControlsTimer(duration=5)
+    self.assertEqual(timer.duration, 5)
+    self.assertEqual(timer.step, DT_CTRL)
+
+  def test_tick(self):
+    timer = ControlsTimer(duration=5)
+    ControlsTimer.tick()
+    self.assertEqual(timer.timer, DT_CTRL)
+
+  def test_reset_all(self):
+    timer1 = ControlsTimer(duration=5)
+    timer2 = ControlsTimer(duration=10)
+    timer1.tick_obj()
+    timer2.tick_obj()
+    ControlsTimer.reset_all()
+    self.assertEqual(timer1.timer, 0)
+    self.assertEqual(timer2.timer, 0)
+
+  def test_interval(self):
+    ControlsTimer.frame = 4
+    self.assertTrue(ControlsTimer.interval(2))
+    ControlsTimer.frame = 5
+    self.assertFalse(ControlsTimer.interval(2))
+        
+class TestTimers(unittest.TestCase):
+
+  def test_increment_and_interval(self):
+    # Assume previous test cases passed so cls frame is not 0
+    self.assertFalse(ControlsTimer.frame == 0)
+    self.assertFalse(ModelTimer.frame == 0)
+    # reset frame for class methods
+    ControlsTimer.frame = 0
+    ModelTimer.frame = 0
+    self.assertTrue(ControlsTimer.frame == 0)
+    self.assertTrue(ModelTimer.frame == 0)
+    # Create control timers
+    control_timer1 = ControlsTimer(1)
+    control_timer2 = ControlsTimer(5)
+    # Create model timers
+    model_timer1 = ModelTimer(1)
+    model_timer2 = ModelTimer(5)
+    self.assertTrue(control_timer1.active())
+    self.assertTrue(control_timer2.active())
+    self.assertTrue(model_timer1.active())
+    self.assertTrue(model_timer2.active())
+    for i in range(0, 2001):
+      if i != 0:
+        if i % 1 == 0:
+          # Increment control timers  to simulate 100Hz
+          ControlsTimer.tick()
+        if i % 5 == 0: 
+          # Increment model timers to simulate 20Hz
+          ModelTimer.tick()
+          
+      # Test interval method for control timers
+      if i % 200 == 0:  # 1-second interval (100Hz)
+        self.assertTrue(ControlsTimer.interval(200))
+      else:
+        self.assertFalse(ControlsTimer.interval(200))
+      if i % 1000 == 0:  # 5-second interval (100Hz)
+        self.assertTrue(ControlsTimer.interval(1000))
+      else:
+        self.assertFalse(ControlsTimer.interval(1000))
+        
+      # Test interval method for model timers
+      if i % 50 == 0:  # 1-second interval (20Hz)
+        self.assertTrue(ModelTimer.interval(5))
+      elif i % 10 == 0:
+        self.assertFalse(ModelTimer.interval(5))
+      if i % 1000 == 0:  # 5-second interval (20Hz)
+        self.assertTrue(ModelTimer.interval(200))
+      elif i % 10 == 0:
+        self.assertFalse(ModelTimer.interval(200))
+        
+      # Test active method for control timers
+      if i < 100:  # 1-second duration
+        self.assertTrue(control_timer1.active())
+      else:
+        self.assertFalse(control_timer1.active())
+      if i < 500:  # 5-second duration
+        self.assertTrue(control_timer2.active())
+      else:
+        self.assertFalse(control_timer2.active())
+        
+      # Test active method for model timers
+      if i < 100:  # 1-second duration
+        self.assertTrue(model_timer1.active())
+      else:
+        self.assertFalse(model_timer1.active())
+      if i < 500:  # 5-second duration
+        self.assertTrue(model_timer2.active())
+      else:
+        self.assertFalse(model_timer2.active())
+            
+if __name__ == '__main__':
+  unittest.main()
