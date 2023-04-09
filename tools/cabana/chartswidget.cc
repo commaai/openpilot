@@ -1270,7 +1270,12 @@ QList<SeriesSelector::ListItem *> SeriesSelector::seletedItems() {
 ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::FramelessWindowHint) {
   setForegroundRole(QPalette::ToolTipText);
   setBackgroundRole(QPalette::ToolTipBase);
-  setPalette(QToolTip::palette());
+  auto palette = QToolTip::palette();
+  if (settings.theme != 2) {
+    palette.setColor(QPalette::ToolTipBase, QApplication::palette().color(QPalette::Base));
+    palette.setColor(QPalette::ToolTipText, QRgb(0x404044)); // same color as chart label brush
+  }
+  setPalette(palette);
   ensurePolished();
   setMargin(1 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this));
   setAttribute(Qt::WA_ShowWithoutActivating);
