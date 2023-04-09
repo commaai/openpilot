@@ -153,7 +153,7 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), QColor(187, 187, 187));
+      p.fillRect(pm.rect(), QColor("#bbbbbb"));
     }
     QPixmapCache::insert(key, pm);
   }
@@ -168,25 +168,23 @@ void setTheme(int theme) {
   if (theme != prev_theme) {
     prev_theme = theme;
     if (theme == 2) {
-      // modify palette to dark
       QPalette darkPalette;
-      darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::WindowText, QColor(187, 187, 187));
-      darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
-      darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::ToolTipBase, QColor(187, 187, 187));
-      darkPalette.setColor(QPalette::ToolTipText, QColor(41, 41, 41));
-      darkPalette.setColor(QPalette::Text, QColor(187, 187, 187));
-      darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::ButtonText, QColor(187, 187, 187));
-      darkPalette.setColor(QPalette::BrightText, Qt::red);
-      darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
-      darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
-      darkPalette.setColor(QPalette::HighlightedText, Qt::black);
-      darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
-      darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, Qt::darkGray);
-      darkPalette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
-      darkPalette.setColor(QPalette::Disabled, QPalette::Light, QColor(53, 53, 53));
+      // "Darcula" like dark theme
+      darkPalette.setColor(QPalette::Window, QColor("#353535"));
+      darkPalette.setColor(QPalette::WindowText, QColor("#bbbbbb"));
+      darkPalette.setColor(QPalette::Base, QColor("#3c3f41"));
+      darkPalette.setColor(QPalette::AlternateBase, QColor("#3c3f41"));
+      darkPalette.setColor(QPalette::ToolTipBase, QColor("#3c3f41"));
+      darkPalette.setColor(QPalette::ToolTipText, QColor("#bbb"));
+      darkPalette.setColor(QPalette::Text, QColor("#bbbbbb"));
+      darkPalette.setColor(QPalette::Button, QColor("#3c3f41"));
+      darkPalette.setColor(QPalette::ButtonText, QColor("#bbbbbb"));
+      darkPalette.setColor(QPalette::Highlight, QColor("#2f65ca"));
+      darkPalette.setColor(QPalette::HighlightedText, QColor("#bbbbbb"));
+      darkPalette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
+      darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
+      darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
+      darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
       qApp->setPalette(darkPalette);
     } else {
       qApp->setPalette(style->standardPalette());
