@@ -212,6 +212,7 @@ private:
   int auto_scroll_count = 0;
   QTimer auto_scroll_timer;
   QTimer align_timer;
+  int current_theme = 0;
   friend class ZoomCommand;
   friend class ChartView;
   friend class ChartsContainer;

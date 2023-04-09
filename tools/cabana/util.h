@@ -14,6 +14,7 @@
 #include <QVector>
 
 #include "tools/cabana/dbc/dbc.h"
+#include "tools/cabana/settings.h"
 
 class ChangeTracker {
 public:
@@ -103,6 +104,23 @@ inline QString formatSeconds(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
+
+class ThemeAwareToolButton : public QToolButton {
+  Q_OBJECT
+public:
+  ThemeAwareToolButton(const QString &icon, QWidget *parent = nullptr) : QToolButton(parent) {
+    setIcon(icon);
+    connect(&settings, &Settings::changed, this, &ThemeAwareToolButton::updateIcon);
+  }
+  void setIcon(const QString &icon) {
+    icon_str = icon;
+    QToolButton::setIcon(utils::icon(icon_str));
+  }
+
+private:
+  void updateIcon() { setIcon(icon_str); }
+  QString icon_str;
+};
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip);
 int num_decimals(double num);

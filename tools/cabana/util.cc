@@ -8,7 +8,6 @@
 #include <limits>
 
 #include "selfdrive/ui/qt/util.h"
-#include "tools/cabana/settings.h"
 
 static QColor blend(QColor a, QColor b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
@@ -184,19 +183,25 @@ void setTheme(int theme) {
       darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
       darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));
       darkPalette.setColor(QPalette::HighlightedText, Qt::black);
+      darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, Qt::darkGray);
+      darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, Qt::darkGray);
+      darkPalette.setColor(QPalette::Disabled, QPalette::Text, Qt::darkGray);
+      darkPalette.setColor(QPalette::Disabled, QPalette::Light, QColor(53, 53, 53));
       qApp->setPalette(darkPalette);
     } else {
       qApp->setPalette(style->standardPalette());
     }
     style->polish(qApp);
+    for (auto w : QApplication::allWidgets()) {
+      w->setPalette(qApp->palette());
+    }
   }
 }
 
 }  // namespace utils
 
 QToolButton *toolButton(const QString &icon, const QString &tooltip) {
-  auto btn = new QToolButton();
-  btn->setIcon(utils::icon(icon));
+  auto btn = new ThemeAwareToolButton(icon);
   btn->setToolTip(tooltip);
   btn->setAutoRaise(true);
   const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);

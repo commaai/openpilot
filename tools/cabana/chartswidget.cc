@@ -37,8 +37,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
-  QAction *new_plot_btn = toolbar->addAction(utils::icon("file-plus"), tr("New Chart"));
-  QAction *new_tab_btn = toolbar->addAction(utils::icon("window-stack"), tr("New Tab"));
+  QAction *new_plot_btn = toolbar->addWidget(toolButton("file-plus", tr("New Chart")));
+  QAction *new_tab_btn = toolbar->addWidget(toolButton("window-stack", tr("New Tab")));
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
@@ -71,11 +71,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   redo_zoom_action = zoom_undo_stack->createRedoAction(this);
   redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
   toolbar->addAction(redo_zoom_action);
-  reset_zoom_action = toolbar->addAction(utils::icon("zoom-out"), "");
+  reset_zoom_action = toolbar->addWidget(toolButton("zoom-out", ""));
   reset_zoom_action->setToolTip(tr("Reset zoom"));
   qobject_cast<QToolButton*>(toolbar->widgetForAction(reset_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
+  remove_all_btn = toolbar->addWidget(toolButton("x", tr("Remove all charts")));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
 
@@ -101,6 +101,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   main_layout->addWidget(charts_scroll);
 
   // init settings
+  current_theme = settings.theme;
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
   display_range = {0, max_chart_range};
@@ -235,10 +236,22 @@ void ChartsWidget::updateToolBar() {
 }
 
 void ChartsWidget::settingChanged() {
+  if (std::exchange(current_theme, settings.theme) != current_theme) {
+    undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
+    redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
+    for (auto c : charts) {
+      c->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+      for (auto &s : c->sigs) {
+        s.series->setColor(getColor(s.sig));
+      }
+    }
+    updateToolBar();
+  }
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
     c->setSeriesType((SeriesType)settings.chart_series_type);
+    c->resetChartCache();
   }
 }
 

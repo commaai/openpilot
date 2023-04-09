@@ -63,6 +63,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
   updatePlayBtnState();
 
   setWhatsThis(tr(R"(
