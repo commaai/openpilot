@@ -195,6 +195,7 @@ private:
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;
+  QToolButton *reset_zoom_btn;
   QUndoStack *zoom_undo_stack;
 
   QAction *remove_all_btn;

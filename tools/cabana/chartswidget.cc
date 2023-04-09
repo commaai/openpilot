@@ -37,8 +37,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
-  QAction *new_plot_btn = toolbar->addWidget(toolButton("file-plus", tr("New Chart")));
-  QAction *new_tab_btn = toolbar->addWidget(toolButton("window-stack", tr("New Tab")));
+  auto new_plot_btn = toolButton("file-plus", tr("New Chart"));
+  auto new_tab_btn = toolButton("window-stack", tr("New Tab"));
+  toolbar->addWidget(new_plot_btn);
+  toolbar->addWidget(new_tab_btn);
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
@@ -71,11 +73,10 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   redo_zoom_action = zoom_undo_stack->createRedoAction(this);
   redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
   toolbar->addAction(redo_zoom_action);
-  reset_zoom_action = toolbar->addWidget(toolButton("zoom-out", ""));
-  reset_zoom_action->setToolTip(tr("Reset zoom"));
-  qobject_cast<QToolButton*>(toolbar->widgetForAction(reset_zoom_action))->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = toolButton("zoom-out", tr("Reset Zoom")));
+  reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  remove_all_btn = toolbar->addWidget(toolButton("x", tr("Remove all charts")));
+  remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
   dock_btn = toolbar->addAction("");
   main_layout->addWidget(toolbar);
 
@@ -115,11 +116,11 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
-  QObject::connect(new_plot_btn, &QAction::triggered, this, &ChartsWidget::newChart);
+  QObject::connect(new_plot_btn, &QToolButton::clicked, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
-  QObject::connect(reset_zoom_action, &QAction::triggered, this, &ChartsWidget::zoomReset);
+  QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
-  QObject::connect(new_tab_btn, &QAction::triggered, this, &ChartsWidget::newTab);
+  QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
@@ -229,7 +230,7 @@ void ChartsWidget::updateToolBar() {
   undo_zoom_action->setVisible(is_zoomed);
   redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_action->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
+  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
   dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
