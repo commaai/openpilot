@@ -131,7 +131,7 @@ class DurationTimer:
 
   @staticmethod
   def interval_obj(rate, frame) -> bool:
-    if frame % rate == 0: # Highlighting shows "frame" in white
+    if frame % rate == 0:
       return True
     return False
 
