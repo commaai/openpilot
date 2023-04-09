@@ -153,7 +153,7 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), Qt::white);
+      p.fillRect(pm.rect(), QColor(187, 187, 187));
     }
     QPixmapCache::insert(key, pm);
   }
@@ -171,14 +171,14 @@ void setTheme(int theme) {
       // modify palette to dark
       QPalette darkPalette;
       darkPalette.setColor(QPalette::Window, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::WindowText, Qt::white);
+      darkPalette.setColor(QPalette::WindowText, QColor(187, 187, 187));
       darkPalette.setColor(QPalette::Base, QColor(25, 25, 25));
       darkPalette.setColor(QPalette::AlternateBase, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::ToolTipBase, Qt::white);
+      darkPalette.setColor(QPalette::ToolTipBase, QColor(187, 187, 187));
       darkPalette.setColor(QPalette::ToolTipText, QColor(41, 41, 41));
-      darkPalette.setColor(QPalette::Text, Qt::white);
+      darkPalette.setColor(QPalette::Text, QColor(187, 187, 187));
       darkPalette.setColor(QPalette::Button, QColor(53, 53, 53));
-      darkPalette.setColor(QPalette::ButtonText, Qt::white);
+      darkPalette.setColor(QPalette::ButtonText, QColor(187, 187, 187));
       darkPalette.setColor(QPalette::BrightText, Qt::red);
       darkPalette.setColor(QPalette::Link, QColor(42, 130, 218));
       darkPalette.setColor(QPalette::Highlight, QColor(42, 130, 218));

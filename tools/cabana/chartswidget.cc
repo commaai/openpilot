@@ -239,11 +239,9 @@ void ChartsWidget::settingChanged() {
   if (std::exchange(current_theme, settings.theme) != current_theme) {
     undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
     redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
+    auto theme = settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
     for (auto c : charts) {
-      c->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
-      for (auto &s : c->sigs) {
-        s.series->setColor(getColor(s.sig));
-      }
+      c->setTheme(theme);
     }
     updateToolBar();
   }
@@ -266,7 +264,6 @@ ChartView *ChartsWidget::createChart() {
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-  chart->chart()->setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomUndo, undo_zoom_action, &QAction::trigger);
@@ -479,6 +476,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
   setMouseTracking(true);
+  setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
@@ -524,6 +522,20 @@ void ChartView::createToolButtons() {
   QObject::connect(change_series_group, &QActionGroup::triggered, [this](QAction *action) {
     setSeriesType((SeriesType)action->data().toInt());
   });
+}
+
+void ChartView::setTheme(QChart::ChartTheme theme) {
+  chart()->setTheme(theme);
+  if (theme == QChart::ChartThemeDark) {
+    axis_x->setTitleBrush(palette().color(QPalette::Text));
+    axis_x->setLabelsBrush(palette().color(QPalette::Text));
+    axis_y->setTitleBrush(palette().color(QPalette::Text));
+    axis_y->setLabelsBrush(palette().color(QPalette::Text));
+    chart()->legend()->setLabelColor(palette().color(QPalette::Text));
+  }
+  for (auto &s : sigs) {
+    s.series->setColor(getColor(s.sig));
+  }
 }
 
 void ChartView::addSeries(const MessageId &msg_id, const cabana::Signal *sig) {

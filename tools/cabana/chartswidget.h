@@ -94,6 +94,7 @@ private:
   void updateAxisY();
   void updateTitle();
   void resetChartCache();
+  void setTheme(QChart::ChartTheme theme);
   void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;

@@ -6,7 +6,8 @@
 #include <QFormLayout>
 #include <QSettings>
 
-// Settings
+#include "tools/cabana/util.h"
+
 Settings settings;
 
 Settings::Settings() {
@@ -105,7 +106,10 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
-  settings.theme = theme->currentIndex();
+  if (std::exchange(settings.theme, theme->currentIndex()) != settings.theme) {
+    // set theme before emit changed
+    utils::setTheme(settings.theme);
+  }
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();
