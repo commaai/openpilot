@@ -304,7 +304,7 @@ void InfoLabel::showAlert(const AlertInfo &alert) {
 
 void InfoLabel::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setPen(QPen(Qt::white, 2));
+  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
   if (!pixmap.isNull()) {
     p.drawPixmap(0, 0, pixmap);
     p.drawRect(rect());
