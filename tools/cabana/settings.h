@@ -7,6 +7,7 @@
 
 #define LIGHT_THEME 1
 #define DARK_THEME 2
+
 class Settings : public QObject {
   Q_OBJECT
 
