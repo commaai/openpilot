@@ -287,7 +287,8 @@ void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &
   alert_info = alert;
   setVisible(!pm.isNull());
   if (isVisible()) {
-    setGeometry({pt, pm.size()});
+    resize(pm.size());
+    move(pt);
     update();
   }
 }
