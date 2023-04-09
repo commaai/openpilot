@@ -9,12 +9,11 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-static QColor blend(QColor a, QColor b) {
+static inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
 void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
-  // TODO: light color on dark theme
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
@@ -22,6 +21,11 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
     std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
     std::fill(last_change_t.begin(), last_change_t.end(), ts);
   } else {
+    int factor = settings.theme == 2 ? 135 : 0;
+    QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
+    QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
+    QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
+
     for (int i = 0; i < dat.size(); ++i) {
       const uint8_t last = prev_dat[i];
       const uint8_t cur = dat[i];
@@ -30,14 +34,10 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         double delta_t = ts - last_change_t[i];
         if (delta_t * freq > periodic_threshold) {
           // Last change was while ago, choose color based on delta up or down
-          if (cur > last) {
-            colors[i] = QColor(0, 187, 255, start_alpha);  // Cyan
-          } else {
-            colors[i] = QColor(255, 0, 0, start_alpha);  // Red
-          }
+          colors[i] = (cur > last) ? cyan : red;
         } else {
           // Periodic changes
-          colors[i] = blend(colors[i], QColor(102, 86, 169, start_alpha / 2));  // Greyish/Blue
+          colors[i] = blend(colors[i], greyish_blue);
         }
 
         // Track bit level changes
