@@ -21,7 +21,7 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
     std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
     std::fill(last_change_t.begin(), last_change_t.end(), ts);
   } else {
-    int factor = settings.theme == 2 ? 135 : 0;
+    int factor = settings.theme == DARK_THEME ? 135 : 0;
     QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
     QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
     QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
@@ -146,7 +146,7 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  bool dark_theme = settings.theme == 2;
+  bool dark_theme = settings.theme == DARK_THEME;
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -169,7 +169,7 @@ void setTheme(int theme) {
   if (theme != prev_theme) {
     prev_theme = theme;
     QPalette new_palette;
-    if (theme == 2) {
+    if (theme == DARK_THEME) {
       // "Darcula" like dark theme
       new_palette.setColor(QPalette::Window, QColor("#353535"));
       new_palette.setColor(QPalette::WindowText, QColor("#bbbbbb"));

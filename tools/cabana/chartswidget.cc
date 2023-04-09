@@ -240,7 +240,7 @@ void ChartsWidget::settingChanged() {
   if (std::exchange(current_theme, settings.theme) != current_theme) {
     undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
     redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
-    auto theme = settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
+    auto theme = settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
     for (auto c : charts) {
       c->setTheme(theme);
     }
@@ -477,7 +477,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
   setMouseTracking(true);
-  setTheme(settings.theme == 2 ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+  setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
@@ -1271,7 +1271,7 @@ ValueTipLabel::ValueTipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt:
   setForegroundRole(QPalette::ToolTipText);
   setBackgroundRole(QPalette::ToolTipBase);
   auto palette = QToolTip::palette();
-  if (settings.theme != 2) {
+  if (settings.theme != DARK_THEME) {
     palette.setColor(QPalette::ToolTipBase, QApplication::palette().color(QPalette::Base));
     palette.setColor(QPalette::ToolTipText, QRgb(0x404044)); // same color as chart label brush
   }
