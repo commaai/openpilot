@@ -136,7 +136,7 @@ class DurationTimer:
     return False
 
 class ModelTimer(DurationTimer):
-  frame = 0 # type: int
+  frame = -1 # type: int
   objects = [] # type: List[DurationTimer]
   def __init__(self, duration=0) -> None:
     self.step = DT_MDL
@@ -159,7 +159,7 @@ class ModelTimer(DurationTimer):
     return ModelTimer.interval_obj(rate, cls.frame)
 
 class ControlsTimer(DurationTimer):
-  frame = 0
+  frame = -1
   objects = [] # type: List[DurationTimer]
   def __init__(self, duration=0) -> None:
     self.step = DT_CTRL
@@ -297,14 +297,13 @@ class TestTimers(unittest.TestCase):
     self.assertTrue(control_timer2.active())
     self.assertTrue(model_timer1.active())
     self.assertTrue(model_timer2.active())
-    for i in range(0, 2001):
-      if i != 0:
-        if i % 1 == 0:
-          # Increment control timers  to simulate 100Hz
-          ControlsTimer.tick()
-        if i % 5 == 0: 
-          # Increment model timers to simulate 20Hz
-          ModelTimer.tick()
+    for i in range(1, 2002):
+      if i % 1 == 0:
+        # Increment control timers  to simulate 100Hz
+        ControlsTimer.tick()
+      if i % 5 == 0: 
+        # Increment model timers to simulate 20Hz
+        ModelTimer.tick()
           
       # Test interval method for control timers
       if i % 200 == 0:  # 1-second interval (100Hz)
