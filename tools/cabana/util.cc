@@ -14,6 +14,7 @@ static QColor blend(QColor a, QColor b) {
 }
 
 void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
+  // TODO: light color on dark theme
   if (prev_dat.size() != dat.size()) {
     colors.resize(dat.size());
     last_change_t.resize(dat.size());
