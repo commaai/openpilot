@@ -40,7 +40,7 @@ public:
 private:
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
-  void leaveEvent(QEvent *event) override;
+  bool event(QEvent *event) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
   void streamStarted();

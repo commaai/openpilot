@@ -152,7 +152,7 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(nullptr), QSlider(Qt::Horizontal, parent) {
+Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
     timeline = can->getTimeline();
     std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
@@ -264,19 +264,29 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
     }
   }
   int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
-  int y = -thumb.height() - THUMBNAIL_MARGIN - style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
-  thumbnail_label.showPixmap(mapToGlobal({x, y}), utils::formatSeconds(seconds), thumb, alert);
+  int y = -thumb.height();
+  thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);
 }
 
-void Slider::leaveEvent(QEvent *event) {
-  thumbnail_label.hide();
-  QSlider::leaveEvent(event);
+bool Slider::event(QEvent *event) {
+  switch (event->type()) {
+    case QEvent::WindowActivate:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusIn:
+    case QEvent::FocusOut:
+    case QEvent::Leave:
+      thumbnail_label.hide();
+      break;
+    default:
+      break;
+  }
+  return QSlider::event(event);
 }
 
 // InfoLabel
 
-InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint) {
+InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);
   setVisible(false);
 }
