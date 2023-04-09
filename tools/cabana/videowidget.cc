@@ -276,9 +276,8 @@ void Slider::leaveEvent(QEvent *event) {
 
 // InfoLabel
 
-InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::FramelessWindowHint) {
+InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);
-  setAttribute(Qt::WA_AlwaysStackOnTop);
   setVisible(false);
 }
 
