@@ -22,7 +22,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(0, 6, 0, 0);
+  title_layout->setContentsMargins(3, 6, 3, 0);
   time_label = new QLabel(this);
   time_label->setToolTip(tr("Current time"));
   time_label->setStyleSheet("QLabel{font-weight:bold;}");
