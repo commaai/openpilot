@@ -168,31 +168,33 @@ void setTheme(int theme) {
   static int prev_theme = 0;
   if (theme != prev_theme) {
     prev_theme = theme;
+    QPalette new_palette;
     if (theme == 2) {
-      QPalette darkPalette;
       // "Darcula" like dark theme
-      darkPalette.setColor(QPalette::Window, QColor("#353535"));
-      darkPalette.setColor(QPalette::WindowText, QColor("#bbbbbb"));
-      darkPalette.setColor(QPalette::Base, QColor("#3c3f41"));
-      darkPalette.setColor(QPalette::AlternateBase, QColor("#3c3f41"));
-      darkPalette.setColor(QPalette::ToolTipBase, QColor("#3c3f41"));
-      darkPalette.setColor(QPalette::ToolTipText, QColor("#bbb"));
-      darkPalette.setColor(QPalette::Text, QColor("#bbbbbb"));
-      darkPalette.setColor(QPalette::Button, QColor("#3c3f41"));
-      darkPalette.setColor(QPalette::ButtonText, QColor("#bbbbbb"));
-      darkPalette.setColor(QPalette::Highlight, QColor("#2f65ca"));
-      darkPalette.setColor(QPalette::HighlightedText, QColor("#bbbbbb"));
-      darkPalette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
-      darkPalette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
-      darkPalette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      darkPalette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      qApp->setPalette(darkPalette);
+      new_palette.setColor(QPalette::Window, QColor("#353535"));
+      new_palette.setColor(QPalette::WindowText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Base, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::AlternateBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipText, QColor("#bbb"));
+      new_palette.setColor(QPalette::Text, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Button, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ButtonText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Highlight, QColor("#2f65ca"));
+      new_palette.setColor(QPalette::HighlightedText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
+      new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
+      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
-      qApp->setPalette(style->standardPalette());
+      new_palette = style->standardPalette();
     }
+    qApp->setPalette(new_palette);
     style->polish(qApp);
     for (auto w : QApplication::allWidgets()) {
-      w->setPalette(qApp->palette());
+      w->setPalette(new_palette);
     }
   }
 }
