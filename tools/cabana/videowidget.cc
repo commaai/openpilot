@@ -152,7 +152,7 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
+Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(nullptr), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
     timeline = can->getTimeline();
     std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
@@ -276,8 +276,9 @@ void Slider::leaveEvent(QEvent *event) {
 
 // InfoLabel
 
-InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint) {
+InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::FramelessWindowHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);
+  setAttribute(Qt::WA_AlwaysStackOnTop);
   setVisible(false);
 }
 
