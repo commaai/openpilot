@@ -220,6 +220,12 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
 }
 
+bool ExperimentalButton::event(QEvent *event) {
+  if (event->type() == QEvent::MouseButtonDblClick) {
+    return true; // Ignore double click events
+  }
+  return QPushButton::event(event); // Process other events normally
+}
 
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
