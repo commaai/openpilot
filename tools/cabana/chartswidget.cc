@@ -170,10 +170,6 @@ void ChartsWidget::setZoom(double min, double max) {
   emit rangeChanged(min, max, is_zoomed);
 }
 
-void ChartsWidget::zoomIn(double min, double max) {
-  zoom_undo_stack->push(new ZoomCommand(this, {min, max}));
-}
-
 void ChartsWidget::zoomReset() {
   setZoom(display_range.first, display_range.second);
   zoom_undo_stack->clear();
@@ -262,11 +258,7 @@ ChartView *ChartsWidget::createChart() {
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-  QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
-  QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
-  QObject::connect(chart, &ChartView::zoomUndo, undo_zoom_action, &QAction::trigger);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
-  QObject::connect(chart, &ChartView::hovered, this, &ChartsWidget::showValueTip);
   charts.push_front(chart);
   currentCharts().push_front(chart);
   updateLayout(true);
@@ -445,7 +437,7 @@ bool ChartsWidget::event(QEvent *event) {
   }
 
   if (back_button) {
-    emit undo_zoom_action->triggered();
+    zoom_undo_stack->undo();
     return true;
   }
   return QFrame::event(event);
@@ -515,7 +507,7 @@ void ChartView::createToolButtons() {
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart()->zValue() + 11);
 
-  QObject::connect(remove_btn, &QToolButton::clicked, this, &ChartView::remove);
+  QObject::connect(remove_btn, &QToolButton::clicked, [this]() { charts_widget->removeChart(this); });
   QObject::connect(change_series_group, &QActionGroup::triggered, [this](QAction *action) {
     setSeriesType((SeriesType)action->data().toInt());
   });
@@ -562,7 +554,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
     }
   }
   if (sigs.empty()) {
-    emit remove();
+    charts_widget->removeChart(this);
   } else if (sigs.size() != prev_size) {
     emit charts_widget->seriesChanged();
     updateAxisY();
@@ -801,7 +793,7 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
 
 void ChartView::leaveEvent(QEvent *event) {
   if (tip_label.isVisible()) {
-    emit hovered(-1);
+    charts_widget->showValueTip(-1);
   }
   QChartView::leaveEvent(event);
 }
@@ -883,13 +875,13 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10) {
-      emit zoomIn(min, max);
+      charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
     } else {
       viewport()->update();
     }
     event->accept();
   } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
-    emit zoomUndo();
+    charts_widget->zoom_undo_stack->undo();
     event->accept();
   } else {
     QGraphicsView::mouseReleaseEvent(event);
@@ -918,9 +910,9 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 
   if (!is_zooming && plot_area.contains(ev->pos())) {
     const double sec = chart()->mapToValue(ev->pos()).x();
-    emit hovered(sec);
+    charts_widget->showValueTip(sec);
   } else if (tip_label.isVisible()) {
-    emit hovered(-1);
+    charts_widget->showValueTip(-1);
   }
 
   QChartView::mouseMoveEvent(ev);
@@ -999,7 +991,7 @@ void ChartView::dropEvent(QDropEvent *event) {
       updateTitle();
 
       source_chart->sigs.clear();
-      emit source_chart->remove();
+      charts_widget->removeChart(source_chart);
       event->acceptProposedAction();
     }
     can_drop = false;

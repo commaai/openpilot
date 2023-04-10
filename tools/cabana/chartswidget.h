@@ -63,11 +63,7 @@ public:
   };
 
 signals:
-  void zoomIn(double min, double max);
-  void zoomUndo();
-  void remove();
   void axisYLabelWidthChanged(int w);
-  void hovered(double sec);
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
@@ -166,7 +162,6 @@ private:
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
-  void zoomIn(double min, double max);
   void zoomReset();
   void startAutoScroll();
   void stopAutoScroll();
