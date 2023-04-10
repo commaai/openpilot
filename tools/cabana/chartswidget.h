@@ -190,15 +190,15 @@ private:
   QAction *range_lb_action;
   QAction *range_slider_action;
   bool docking = true;
-  QAction *dock_btn;
+  ToolButton *dock_btn;
 
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;
-  QToolButton *reset_zoom_btn;
+  ToolButton *reset_zoom_btn;
   QUndoStack *zoom_undo_stack;
 
-  QAction *remove_all_btn;
+  ToolButton *remove_all_btn;
   QList<ChartView *> charts;
   std::unordered_map<int, QList<ChartView *>> tab_charts;
   QTabBar *tabbar;

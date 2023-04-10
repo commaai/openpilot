@@ -67,17 +67,15 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
 
   // zoom controls
   zoom_undo_stack = new QUndoStack(this);
-  undo_zoom_action = zoom_undo_stack->createUndoAction(this);
+  toolbar->addAction(undo_zoom_action = zoom_undo_stack->createUndoAction(this));
   undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
-  toolbar->addAction(undo_zoom_action);
-  redo_zoom_action = zoom_undo_stack->createRedoAction(this);
+  toolbar->addAction(redo_zoom_action = zoom_undo_stack->createRedoAction(this));
   redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
-  toolbar->addAction(redo_zoom_action);
   reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
-  dock_btn = toolbar->addAction("");
+  toolbar->addWidget(remove_all_btn = new ToolButton("x", tr("Remove all charts")));
+  toolbar->addWidget(dock_btn = new ToolButton(""));
   main_layout->addWidget(toolbar);
 
   // tabbar
@@ -117,7 +115,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(can, &AbstractStream::updated, this, &ChartsWidget::updateState);
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QToolButton::clicked, this, &ChartsWidget::newChart);
-  QObject::connect(remove_all_btn, &QAction::triggered, this, &ChartsWidget::removeAll);
+  QObject::connect(remove_all_btn, &QToolButton::clicked, this, &ChartsWidget::removeAll);
   QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
@@ -125,7 +123,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
   });
-  QObject::connect(dock_btn, &QAction::triggered, [this]() {
+  QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
     emit dock(!docking);
     docking = !docking;
     updateToolBar();
@@ -232,7 +230,7 @@ void ChartsWidget::updateToolBar() {
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 1).arg(zoomed_range.second, 0, 'f', 1) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  dock_btn->setIcon(utils::icon(docking ? "arrow-up-right-square" : "arrow-down-left-square"));
+  dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
   dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
@@ -244,7 +242,6 @@ void ChartsWidget::settingChanged() {
     for (auto c : charts) {
       c->setTheme(theme);
     }
-    updateToolBar();
   }
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   for (auto c : charts) {
@@ -419,7 +416,7 @@ void ChartsWidget::alignCharts() {
 
 bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
   if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->triggered();
+    emit dock_btn->clicked();
     return true;
   }
   return false;
