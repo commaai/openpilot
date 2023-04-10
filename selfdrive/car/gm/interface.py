@@ -47,7 +47,8 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
-                                     lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+                                     lateral_accel_error: float, lateral_accel_deadzone: float,
+                                     steering_angle: float, vego: float, friction_compensation: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
     def sig(val):
