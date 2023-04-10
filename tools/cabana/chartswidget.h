@@ -63,13 +63,7 @@ public:
   };
 
 signals:
-  void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
-  void seriesAdded(const MessageId &id, const cabana::Signal *sig);
-  void zoomIn(double min, double max);
-  void zoomUndo();
-  void remove();
   void axisYLabelWidthChanged(int w);
-  void hovered(double sec);
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
@@ -94,6 +88,7 @@ private:
   void updateAxisY();
   void updateTitle();
   void resetChartCache();
+  void setTheme(QChart::ChartTheme theme);
   void paintEvent(QPaintEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void drawBackground(QPainter *painter, const QRectF &rect) override;
@@ -167,7 +162,6 @@ private:
   void removeChart(ChartView *chart);
   void eventsMerged();
   void updateState();
-  void zoomIn(double min, double max);
   void zoomReset();
   void startAutoScroll();
   void stopAutoScroll();
@@ -189,14 +183,15 @@ private:
   QAction *range_lb_action;
   QAction *range_slider_action;
   bool docking = true;
-  QAction *dock_btn;
+  ToolButton *dock_btn;
 
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;
+  ToolButton *reset_zoom_btn;
   QUndoStack *zoom_undo_stack;
 
-  QAction *remove_all_btn;
+  ToolButton *remove_all_btn;
   QList<ChartView *> charts;
   std::unordered_map<int, QList<ChartView *>> tab_charts;
   QTabBar *tabbar;
@@ -212,6 +207,7 @@ private:
   int auto_scroll_count = 0;
   QTimer auto_scroll_timer;
   QTimer align_timer;
+  int current_theme = 0;
   friend class ZoomCommand;
   friend class ChartView;
   friend class ChartsContainer;

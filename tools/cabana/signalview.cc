@@ -525,7 +525,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
-  auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
+  auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
 
@@ -582,8 +582,8 @@ void SignalView::rowsChanged() {
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
 
-      auto remove_btn = toolButton("x", tr("Remove signal"));
-      auto plot_btn = toolButton("graph-up", "");
+      auto remove_btn = new ToolButton("x", tr("Remove signal"));
+      auto plot_btn = new ToolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
       h->addWidget(remove_btn);
