@@ -180,12 +180,13 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
   setCheckable(true);
 
-  params = Params();
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
 
-  QObject::connect(this, &QPushButton::toggled, [=](bool checked) {
-    params.putBool("ExperimentalMode", checked);
+  QObject::connect(this, &QPushButton::toggled, [this](bool checked) {
+    setEnabled(false);
+    Params().putBool("ExperimentalMode", checked);
+    QTimer::singleShot(1000, [this]() { setEnabled(true); });
   });
 }
 
