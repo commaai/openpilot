@@ -63,6 +63,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
   updatePlayBtnState();
 
   setWhatsThis(tr(R"(
@@ -303,7 +304,7 @@ void InfoLabel::showAlert(const AlertInfo &alert) {
 
 void InfoLabel::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setPen(QPen(Qt::white, 2));
+  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
   if (!pixmap.isNull()) {
     p.drawPixmap(0, 0, pixmap);
     p.drawRect(rect());
@@ -322,9 +323,11 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
       text += "\n" + alert_info.text2;
     }
 
-    QFont font;
-    font.setPixelSize(!pixmap.isNull() ? 11 : QFont().pixelSize());
-    p.setFont(font);
+    if (!pixmap.isNull()) {
+      QFont font;
+      font.setPixelSize(11);
+      p.setFont(font);
+    }
     QRect text_rect = rect().adjusted(2, 2, -2, -2);
     QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
     p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
