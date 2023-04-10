@@ -63,8 +63,6 @@ public:
   };
 
 signals:
-  void seriesRemoved(const MessageId &id, const cabana::Signal *sig);
-  void seriesAdded(const MessageId &id, const cabana::Signal *sig);
   void zoomIn(double min, double max);
   void zoomUndo();
   void remove();

@@ -265,8 +265,6 @@ ChartView *ChartsWidget::createChart() {
   QObject::connect(chart, &ChartView::remove, [=]() { removeChart(chart); });
   QObject::connect(chart, &ChartView::zoomIn, this, &ChartsWidget::zoomIn);
   QObject::connect(chart, &ChartView::zoomUndo, undo_zoom_action, &QAction::trigger);
-  QObject::connect(chart, &ChartView::seriesRemoved, this, &ChartsWidget::seriesChanged);
-  QObject::connect(chart, &ChartView::seriesAdded, this, &ChartsWidget::seriesChanged);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, &align_timer, qOverload<>(&QTimer::start));
   QObject::connect(chart, &ChartView::hovered, this, &ChartsWidget::showValueTip);
   charts.push_front(chart);
@@ -545,7 +543,7 @@ void ChartView::addSeries(const MessageId &msg_id, const cabana::Signal *sig) {
   updateTitle();
   updateSeries(sig);
   updateSeriesPoints();
-  emit seriesAdded(msg_id, sig);
+  emit charts_widget->seriesChanged();
 }
 
 bool ChartView::hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const {
@@ -558,10 +556,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
     if (predicate(*it)) {
       chart()->removeSeries(it->series);
       it->series->deleteLater();
-      auto msg_id = it->msg_id;
-      auto sig = it->sig;
       it = sigs.erase(it);
-      emit seriesRemoved(msg_id, sig);
     } else {
       ++it;
     }
@@ -569,6 +564,7 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
   if (sigs.empty()) {
     emit remove();
   } else if (sigs.size() != prev_size) {
+    emit charts_widget->seriesChanged();
     updateAxisY();
     resetChartCache();
   }
