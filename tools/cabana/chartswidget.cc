@@ -512,6 +512,7 @@ void ChartView::createToolButtons() {
   QToolButton *manage_btn = new ToolButton("list", "");
   manage_btn->setMenu(menu);
   manage_btn->setPopupMode(QToolButton::InstantPopup);
+  manage_btn->setStyleSheet("QToolButton::menu-indicator { image: none; }");
   manage_btn_proxy = new QGraphicsProxyWidget(chart());
   manage_btn_proxy->setWidget(manage_btn);
   manage_btn_proxy->setZValue(chart()->zValue() + 11);

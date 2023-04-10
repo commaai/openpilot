@@ -115,6 +115,7 @@ public:
     setAutoRaise(true);
     const int metric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
     setIconSize({metric, metric});
+    theme = settings.theme;
     connect(&settings, &Settings::changed, this, &ToolButton::updateIcon);
   }
   void setIcon(const QString &icon) {
@@ -123,8 +124,9 @@ public:
   }
 
 private:
-  void updateIcon() { setIcon(icon_str); }
+  void updateIcon() { if (std::exchange(theme, settings.theme) != theme) setIcon(icon_str); }
   QString icon_str;
+  int theme;
 };
 
 int num_decimals(double num);
