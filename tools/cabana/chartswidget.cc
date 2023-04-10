@@ -37,8 +37,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
-  auto new_plot_btn = toolButton("file-plus", tr("New Chart"));
-  auto new_tab_btn = toolButton("window-stack", tr("New Tab"));
+  auto new_plot_btn = new ToolButton("file-plus", tr("New Chart"));
+  auto new_tab_btn = new ToolButton("window-stack", tr("New Tab"));
   toolbar->addWidget(new_plot_btn);
   toolbar->addWidget(new_tab_btn);
   toolbar->addWidget(title_label = new QLabel());
@@ -73,7 +73,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   redo_zoom_action = zoom_undo_stack->createRedoAction(this);
   redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
   toolbar->addAction(redo_zoom_action);
-  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = toolButton("zoom-out", tr("Reset Zoom")));
+  reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   remove_all_btn = toolbar->addAction(utils::icon("x"), tr("Remove all charts"));
@@ -492,7 +492,7 @@ void ChartView::createToolButtons() {
   move_icon = new QGraphicsPixmapItem(utils::icon("grip-horizontal"), chart());
   move_icon->setToolTip(tr("Drag and drop to move chart"));
 
-  QToolButton *remove_btn = toolButton("x", tr("Remove Chart"));
+  QToolButton *remove_btn = new ToolButton("x", tr("Remove Chart"));
   close_btn_proxy = new QGraphicsProxyWidget(chart());
   close_btn_proxy->setWidget(remove_btn);
   close_btn_proxy->setZValue(chart()->zValue() + 11);
@@ -512,7 +512,7 @@ void ChartView::createToolButtons() {
   menu->addSeparator();
   menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
 
-  QToolButton *manage_btn = toolButton("list", "");
+  QToolButton *manage_btn = new ToolButton("list", "");
   manage_btn->setMenu(menu);
   manage_btn->setPopupMode(QToolButton::InstantPopup);
   manage_btn_proxy = new QGraphicsProxyWidget(chart());

@@ -201,15 +201,6 @@ void setTheme(int theme) {
 
 }  // namespace utils
 
-QToolButton *toolButton(const QString &icon, const QString &tooltip) {
-  auto btn = new ThemeAwareToolButton(icon);
-  btn->setToolTip(tooltip);
-  btn->setAutoRaise(true);
-  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
-  btn->setIconSize({metric, metric});
-  return btn;
-};
-
 QString toHex(uint8_t byte) {
   static std::array<QString, 256> hex = []() {
     std::array<QString, 256> ret;

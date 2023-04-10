@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 
+#include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
 #include <QColor>
@@ -105,12 +106,16 @@ inline QString formatSeconds(int seconds) {
 }
 }
 
-class ThemeAwareToolButton : public QToolButton {
+class ToolButton : public QToolButton {
   Q_OBJECT
 public:
-  ThemeAwareToolButton(const QString &icon, QWidget *parent = nullptr) : QToolButton(parent) {
+  ToolButton(const QString &icon, const QString &tooltip = {}, QWidget *parent = nullptr) : QToolButton(parent) {
     setIcon(icon);
-    connect(&settings, &Settings::changed, this, &ThemeAwareToolButton::updateIcon);
+    setToolTip(tooltip);
+    setAutoRaise(true);
+    const int metric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    setIconSize({metric, metric});
+    connect(&settings, &Settings::changed, this, &ToolButton::updateIcon);
   }
   void setIcon(const QString &icon) {
     icon_str = icon;
@@ -122,5 +127,4 @@ private:
   QString icon_str;
 };
 
-QToolButton *toolButton(const QString &icon, const QString &tooltip);
 int num_decimals(double num);
