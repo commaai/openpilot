@@ -64,6 +64,7 @@ protected:
   void toggleFullScreen();
   void updateStatus();
   void updateLoadSaveMenus();
+  void onDockWidgetTopLevelChanged(bool topLevel);
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;

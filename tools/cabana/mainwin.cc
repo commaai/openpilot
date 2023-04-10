@@ -193,6 +193,27 @@ void MainWindow::createDockWindows() {
   video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
   video_dock->setWidget(video_splitter);
   addDockWidget(Qt::RightDockWidgetArea, video_dock);
+
+#ifdef WSL2
+  dock->setFeatures(QDockWidget::DockWidgetMovable);
+  video_dock->setFeatures(QDockWidget::DockWidgetMovable);
+  QObject::connect(dock, &QDockWidget::topLevelChanged, this, &MainWindow::onDockWidgetTopLevelChanged);
+  QObject::connect(video_dock, &QDockWidget::topLevelChanged, this, &MainWindow::onDockWidgetTopLevelChanged);
+#endif
+}
+
+// This is a workaround for a bug in WSL2
+void MainWindow::onDockWidgetTopLevelChanged(bool topLevel) {
+  QDockWidget *dockWidget = qobject_cast<QDockWidget *>(sender());
+  if (dockWidget) {
+    if (topLevel) {
+      // the floating button breaks mouse tracking when docked so I remove it when docked and add it back when floating
+      dockWidget->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable); 
+      dockWidget->setTitleBarWidget(nullptr); // this fixes the mouse tracking issue when floating
+    } else {
+      dockWidget->setFeatures(QDockWidget::DockWidgetMovable);
+    }
+  }
 }
 
 void MainWindow::createStatusBar() {
