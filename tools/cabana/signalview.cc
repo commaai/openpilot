@@ -522,11 +522,24 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   // tree view
   tree = new TreeView(this);
+
   QPalette p = palette();
   p.setColor(QPalette::Background, QApplication::palette().color(QPalette::Base));
   tree->setPalette(p);
   tree->setAutoFillBackground(true);
-  tree->setViewport(new QOpenGLWidget(this));
+  QSurfaceFormat surfaceFormat;
+  surfaceFormat.setDepthBufferSize(0);
+  surfaceFormat.setStencilBufferSize(0);
+  surfaceFormat.setRedBufferSize(8);
+  surfaceFormat.setGreenBufferSize(8);
+  surfaceFormat.setBlueBufferSize(8);
+  surfaceFormat.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+  surfaceFormat.setRenderableType(QSurfaceFormat::DefaultRenderableType);
+  surfaceFormat.setSamples(8);
+  auto glwidget = new QOpenGLWidget(this);
+  glwidget->setFormat(surfaceFormat);
+  tree->setViewport(glwidget);
+
   tree->setModel(model = new SignalModel(this));
   tree->setItemDelegate(new SignalItemDelegate(this));
   tree->setFrameShape(QFrame::NoFrame);
