@@ -1,11 +1,13 @@
 #include "tools/cabana/settings.h"
 
+#include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFormLayout>
 #include <QSettings>
 
-// Settings
+#include "tools/cabana/util.h"
+
 Settings settings;
 
 Settings::Settings() {
@@ -85,21 +87,32 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_height->setValue(settings.chart_height);
   form_layout->addRow(tr("Chart Height"), chart_height);
 
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
   form_layout->addRow(buttonBox);
 
   setFixedWidth(360);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  connect(buttonBox, &QDialogButtonBox::clicked, [=](QAbstractButton *button) {
+    auto role = buttonBox->buttonRole(button);
+    if (role == QDialogButtonBox::AcceptRole) {
+      save();
+      accept();
+    } else if (role == QDialogButtonBox::ApplyRole) {
+      save();
+    } else if (role == QDialogButtonBox::RejectRole) {
+      reject();
+    }
+  });
 }
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
-  settings.theme = theme->currentIndex();
+  if (std::exchange(settings.theme, theme->currentIndex()) != settings.theme) {
+    // set theme before emit changed
+    utils::setTheme(settings.theme);
+  }
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();
   settings.save();
-  accept();
   emit settings.changed();
 }
