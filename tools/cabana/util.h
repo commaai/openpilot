@@ -3,6 +3,7 @@
 #include <array>
 #include <cmath>
 
+#include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
 #include <QColor>
@@ -14,6 +15,7 @@
 #include <QVector>
 
 #include "tools/cabana/dbc/dbc.h"
+#include "tools/cabana/settings.h"
 
 class ChangeTracker {
 public:
@@ -104,5 +106,27 @@ inline QString formatSeconds(int seconds) {
 }
 }
 
-QToolButton *toolButton(const QString &icon, const QString &tooltip);
+class ToolButton : public QToolButton {
+  Q_OBJECT
+public:
+  ToolButton(const QString &icon, const QString &tooltip = {}, QWidget *parent = nullptr) : QToolButton(parent) {
+    setIcon(icon);
+    setToolTip(tooltip);
+    setAutoRaise(true);
+    const int metric = QApplication::style()->pixelMetric(QStyle::PM_SmallIconSize);
+    setIconSize({metric, metric});
+    theme = settings.theme;
+    connect(&settings, &Settings::changed, this, &ToolButton::updateIcon);
+  }
+  void setIcon(const QString &icon) {
+    icon_str = icon;
+    QToolButton::setIcon(utils::icon(icon_str));
+  }
+
+private:
+  void updateIcon() { if (std::exchange(theme, settings.theme) != theme) setIcon(icon_str); }
+  QString icon_str;
+  int theme;
+};
+
 int num_decimals(double num);
