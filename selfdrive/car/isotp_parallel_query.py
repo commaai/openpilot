@@ -60,7 +60,7 @@ class IsoTpParallelQuery:
     return msgs
 
   def _drain_rx(self):
-    messaging.drain_sock(self.logcan)
+    messaging.drain_sock_raw(self.logcan)
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr, sub_addr, rx_addr):
@@ -105,13 +105,14 @@ class IsoTpParallelQuery:
 
       for tx_addr, msg in msgs.items():
         try:
-          dat, updated = msg.recv()
+          dat, rx_in_progress = msg.recv()
         except Exception:
           cloudlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
-        if updated:
+        # Extend timeout for each consecutive ISO-TP frame to avoid timing out on long responses
+        if rx_in_progress:
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
@@ -123,6 +124,7 @@ class IsoTpParallelQuery:
 
         if response_valid:
           if counter + 1 < len(self.request):
+            response_timeouts[tx_addr] = time.monotonic() + timeout
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:

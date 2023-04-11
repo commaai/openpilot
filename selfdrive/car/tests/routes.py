@@ -27,6 +27,8 @@ non_tested_cars = [
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
+  TOYOTA.RAV4_TSS2_2023,
+  TOYOTA.RAV4H_TSS2_2023,
 ]
 
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
@@ -50,6 +52,7 @@ routes = [
 
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
+  CarTestRoute("75a6bcb9b8b40373|2023-03-11--22-47-33", GM.BUICK_LACROSSE),
   CarTestRoute("ef8f2185104d862e|2023-02-09--18-37-13", GM.ESCALADE),
   CarTestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
   CarTestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
@@ -126,6 +129,7 @@ routes = [
   CarTestRoute("007d5e4ad9f86d13|2021-09-30--15-09-23", HYUNDAI.KIA_K5_2021),
   CarTestRoute("c58dfc9fc16590e0|2023-01-14--13-51-48", HYUNDAI.KIA_K5_HEV_2020),
   CarTestRoute("50c6c9b85fd1ff03|2020-10-26--17-56-06", HYUNDAI.KIA_NIRO_EV),
+  CarTestRoute("b153671049a867b3|2023-04-05--10-00-30", HYUNDAI.KIA_NIRO_EV_2ND_GEN),
   CarTestRoute("173219cf50acdd7b|2021-07-05--10-27-41", HYUNDAI.KIA_NIRO_PHEV),
   CarTestRoute("34a875f29f69841a|2021-07-29--13-02-09", HYUNDAI.KIA_NIRO_HEV_2021),
   CarTestRoute("db04d2c63990e3ba|2023-02-08--16-52-39", HYUNDAI.KIA_NIRO_HEV_2ND_GEN),
@@ -182,6 +186,7 @@ routes = [
   CarTestRoute("9b36accae406390e|2021-03-30--10-41-38", TOYOTA.MIRAI),
   CarTestRoute("cd9cff4b0b26c435|2021-05-13--15-12-39", TOYOTA.CHR),
   CarTestRoute("ea8fbe72b96a185c|2023-02-08--15-11-46", TOYOTA.CHR_TSS2),
+  CarTestRoute("ea8fbe72b96a185c|2023-02-22--09-20-34", TOYOTA.CHR_TSS2),  # openpilot longitudinal, with smartDSU
   CarTestRoute("57858ede0369a261|2021-05-18--20-34-20", TOYOTA.CHRH),
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHRH_TSS2),
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),

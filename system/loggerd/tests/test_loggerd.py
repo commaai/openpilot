@@ -86,7 +86,7 @@ class TestLoggerd(unittest.TestCase):
     params.clear_all()
     for k, _, v in fake_params:
       params.put(k, v)
-    params.put("LaikadEphemerisV2", "abc")
+    params.put("LaikadEphemerisV3", "abc")
 
     lr = list(LogReader(str(self._gen_bootlog())))
     initData = lr[0].initData
@@ -103,14 +103,14 @@ class TestLoggerd(unittest.TestCase):
 
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
-    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemerisV2'}
+    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemerisV3'}
     assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
-    assert logged_params['LaikadEphemerisV2'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemerisV2'])}"
+    assert logged_params['LaikadEphemerisV3'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemerisV3'])}"
     for param_key, initData_key, v in fake_params:
       self.assertEqual(getattr(initData, initData_key), v)
       self.assertEqual(logged_params[param_key].decode(), v)
 
-    params.put("LaikadEphemerisV2", "")
+    params.put("LaikadEphemerisV3", "")
 
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
