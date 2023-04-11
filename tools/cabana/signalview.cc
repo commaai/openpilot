@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QOpenGLWidget>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -311,7 +312,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 // SignalItemDelegate
 
-SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+SignalItemDelegate::SignalItemDelegate(SignalView *parent) : signal_view(parent), QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
@@ -359,51 +360,42 @@ void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptio
 }
 
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-  int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing);
-    if (option.state & QStyle::State_Selected) {
-      painter->fillRect(option.rect, option.palette.highlight());
-    }
+  if (item && item->type == SignalModel::Item::Sig) {
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+    int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+    QRect r = option.rect.adjusted(h_margin, v_margin, -h_margin, -v_margin);
 
-    // color label
-    auto bg_color = getColor(item->sig);
-    QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
-    painter->drawRoundedRect(rc.adjusted(0, v_margin, 0, -v_margin), 3, 3);
-    painter->setPen(item->highlight ? Qt::white : Qt::black);
-    painter->setFont(label_font);
-    painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
-
-    // signal name
-    painter->setFont(option.font);
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QString text = index.data(Qt::DisplayRole).toString();
-    QRect text_rect = option.rect;
-    text_rect.setLeft(rc.right() + h_margin * 2);
-    text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
-    painter->drawText(text_rect, option.displayAlignment, text);
-    painter->restore();
-  } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
     painter->save();
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
+    if (index.column() == 0) {
+      // color label
+      QPainterPath path;
+      QRect icon_rect{r.x(), r.y(), color_label_width, r.height()};
+      path.addRoundedRect(icon_rect, 3, 3);
+      painter->setRenderHint(QPainter::Antialiasing);
+      painter->setFont(label_font);
+      painter->fillPath(path, getColor(item->sig).darker(item->highlight ? 125 : 0));
+      painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
-    SignalModel *model = (SignalModel*)index.model();
-    int adjust_right = ((SignalView *)parent())->tree->indexWidget(index)->sizeHint().width() + 2 * h_margin;
-    QRect r = option.rect.adjusted(h_margin, v_margin, -adjust_right, -v_margin);
+      r.setLeft(icon_rect.right() + h_margin * 2);
+      auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, r.width());
+      painter->setFont(option.font);
+      painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
+      painter->drawText(r, option.displayAlignment, text);
+    } else if (index.column() == 1) {
+      int button_width = signal_view->tree->indexWidget(index)->sizeHint().width();
+      int value_width = std::min<int>(signal_view->model->value_width, r.width() * 0.4);
+      r = r.adjusted(0, 0, -button_width - h_margin, 0);
+      QRect value_rect = {r.right() - value_width, r.y(), value_width, r.height()};
 
-    int value_width = std::min<int>(model->value_width, r.width() * 0.4);
-    QRect value_rect = r.adjusted(r.width() - value_width - h_margin, 0, 0, 0);
-    auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, value_rect.width());
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    painter->drawText(value_rect, Qt::AlignRight | Qt::AlignVCenter, text);
-    drawSparkline(painter, r.adjusted(0, 0, -value_width, 0), option, index);
+      auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, value_width);
+      painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
+      painter->drawText(value_rect, option.displayAlignment, text);
+      drawSparkline(painter, r.adjusted(0, 0, -value_width - h_margin, 0), option, index);
+    }
     painter->restore();
   } else {
     QStyledItemDelegate::paint(painter, option, index);
@@ -412,10 +404,9 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
 void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   static std::vector<QPointF> points;
-  const auto &msg_id = ((SignalView *)parent())->msg_id;
-  const auto &msgs = can->events().at(msg_id);
 
-  uint64_t ts = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9;
+  const auto &msgs = can->events().at(signal_view->msg_id);
+  uint64_t ts = (can->lastMessage(signal_view->msg_id).ts + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - settings.sparkline_range * 1e9, 0)});
   auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
 
@@ -445,7 +436,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
       pt.ry() = r.top() + std::abs(pt.y() - max) * yscale;
     }
 
-    auto color = item->highlight ? getColor(sig).darker(125) : getColor(sig);
+    auto color = getColor(sig).darker(item->highlight ? 125 : 0);
     painter->setPen(color);
     painter->drawPolyline(points.data(), points.size());
     if ((points.back().x() - points.front().x()) / points.size() > 10) {
@@ -531,6 +522,11 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   // tree view
   tree = new TreeView(this);
+  QPalette p = palette();
+  p.setColor(QPalette::Background, QApplication::palette().color(QPalette::Base));
+  tree->setPalette(p);
+  tree->setAutoFillBackground(true);
+  tree->setViewport(new QOpenGLWidget(this));
   tree->setModel(model = new SignalModel(this));
   tree->setItemDelegate(new SignalItemDelegate(this));
   tree->setFrameShape(QFrame::NoFrame);

@@ -79,9 +79,10 @@ private:
   QTableWidget *table;
 };
 
+class SignalView;
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
-  SignalItemDelegate(QObject *parent);
+  SignalItemDelegate(SignalView *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
@@ -92,6 +93,7 @@ public:
   QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QHash<QString, int> width_cache;
+  SignalView *signal_view;
 };
 
 class SignalView : public QFrame {
