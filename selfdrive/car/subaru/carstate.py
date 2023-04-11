@@ -50,7 +50,7 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
 
-    steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
+    steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 35
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
     cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
