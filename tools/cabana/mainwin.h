@@ -8,7 +8,7 @@
 #include <QStatusBar>
 
 #include "tools/cabana/chartswidget.h"
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/detailwidget.h"
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"

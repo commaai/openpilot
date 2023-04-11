@@ -40,8 +40,9 @@ class TestBoardd(unittest.TestCase):
         sm.update(1000)
 
     num_pandas = len(sm['pandaStates'])
-    if TICI:
-      self.assertGreater(num_pandas, 1, "connect another panda for multipanda tests")
+    expected_pandas = 2 if TICI and "SINGLE_PANDA" not in os.environ else 1
+    self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
+                                                   connect another panda for multipanda tests.")
 
     # boardd blocks on CarVin and CarParams
     cp = car.CarParams.new_message()

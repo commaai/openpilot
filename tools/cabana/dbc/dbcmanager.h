@@ -1,6 +1,8 @@
 #pragma once
 
 #include <map>
+#include <optional>
+
 #include <QList>
 #include <QMetaType>
 #include <QObject>
@@ -8,8 +10,8 @@
 #include <QSet>
 #include <QDebug>
 
-#include "tools/cabana/dbc.h"
-#include "tools/cabana/dbcfile.h"
+#include "tools/cabana/dbc/dbc.h"
+#include "tools/cabana/dbc/dbcfile.h"
 
 typedef QSet<uint8_t> SourceSet;
 const SourceSet SOURCE_ALL = {};

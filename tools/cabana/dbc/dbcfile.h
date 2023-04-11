@@ -8,7 +8,7 @@
 #include <QSet>
 #include <QDebug>
 
-#include "tools/cabana/dbc.h"
+#include "tools/cabana/dbc/dbc.h"
 
 const QString AUTO_SAVE_EXTENSION = ".tmp";
 

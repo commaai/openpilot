@@ -214,8 +214,8 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   ],
   CAR.PASSAT_NMS: VWCarInfo("Volkswagen Passat NMS 2017-22"),
   CAR.POLO_MK6: [
-    VWCarInfo("Volkswagen Polo 2020-22", footnotes=[Footnote.VW_MQB_A0]),
-    VWCarInfo("Volkswagen Polo GTI 2020-22", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo 2018-23", footnotes=[Footnote.VW_MQB_A0]),
+    VWCarInfo("Volkswagen Polo GTI 2018-23", footnotes=[Footnote.VW_MQB_A0]),
   ],
   CAR.SHARAN_MK2: [
     VWCarInfo("Volkswagen Sharan 2018-22"),
@@ -672,9 +672,11 @@ FW_VERSIONS = {
       b'\xf1\x8704C906025H \xf1\x895177',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300042D \xf1\x891612',
       b'\xf1\x870CW300050D \xf1\x891908',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AG\xf1\x890248\xf1\x82\x1218130411110411--04040404231811152H14',
       b'\xf1\x872Q0959655AJ\xf1\x890250\xf1\x82\x1248130411110416--04040404784811152H14',
     ],
     (Ecu.eps, 0x712, None): [
@@ -837,9 +839,11 @@ FW_VERSIONS = {
       b'\xf1\x8705E906018AT\xf1\x899640',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300050J \xf1\x891911',
       b'\xf1\x870CW300051M \xf1\x891925',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x1311110012333300314240681152119333463100',
       b'\xf1\x875Q0959655CG\xf1\x890421\xf1\x82\x13111100123333003142404M1152119333613100',
     ],
     (Ecu.eps, 0x712, None): [

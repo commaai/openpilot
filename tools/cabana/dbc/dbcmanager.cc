@@ -1,4 +1,4 @@
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 
 #include <QFile>
 #include <QRegularExpression>
@@ -14,7 +14,8 @@ bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error)
 
     // Check if file is already open, and merge sources
     if (dbc_file->filename == dbc_file_name) {
-      ss |= s;
+      dbc_files[i] = {ss | s, dbc_file};
+
       emit DBCFileChanged();
       return true;
     }
@@ -58,6 +59,8 @@ bool DBCManager::open(SourceSet s, const QString &name, const QString &content, 
 }
 
 void DBCManager::closeAll() {
+  if (dbc_files.isEmpty()) return;
+
   while (dbc_files.size()) {
     DBCFile *dbc_file = dbc_files.back().second;
     dbc_files.pop_back();
