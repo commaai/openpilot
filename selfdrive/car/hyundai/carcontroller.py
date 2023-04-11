@@ -179,8 +179,8 @@ class CarController:
 
         # When accelerating from very low speeds or stopped, allow more jerk to prevent a slow takeoff
         if CS.out.vEgoRaw < 4. and accel > 0:
-            lower_jerk = max(0.5, lower_jerk)
-            upper_jerk = lower_jerk + 0.5
+          lower_jerk = max(0.5, lower_jerk)
+          upper_jerk = lower_jerk + 0.5
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, upper_jerk, lower_jerk, int(self.frame / 2),
                                                         hud_control.leadVisible, set_speed_in_units, stopping, CC.cruiseControl.override))
 
