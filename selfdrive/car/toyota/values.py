@@ -1755,7 +1755,7 @@ FW_VERSIONS = {
     ],
   },
   CAR.LEXUS_ESH: {
-    (Ecu.engine, 0x7e0, None): [
+      (Ecu.engine, 0x7e0, None): [
         b'\x02333M4200\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       ],
       (Ecu.abs, 0x7b0, None): [
