@@ -6,6 +6,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 

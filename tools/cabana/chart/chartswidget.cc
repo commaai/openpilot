@@ -1,30 +1,16 @@
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 
-#include <QActionGroup>
 #include <QApplication>
-#include <QCompleter>
-#include <QDialogButtonBox>
-#include <QDrag>
 #include <QFutureSynchronizer>
-#include <QGraphicsDropShadowEffect>
-#include <QGraphicsLayout>
-#include <QLineEdit>
 #include <QMenu>
-#include <QOpenGLWidget>
-#include <QPushButton>
-#include <QRubberBand>
 #include <QScrollBar>
-#include <QStylePainter>
 #include <QToolBar>
-#include <QToolTip>
 #include <QtConcurrent>
+
+#include "tools/cabana/chart/chart.h"
 
 const int MAX_COLUMN_COUNT = 4;
 const int CHART_SPACING = 10;
-const QString mime_type = "application/x-cabanachartview";
-static inline bool xLessThan(const QPointF &p, float x) { return p.x() < x; }
-
-// ChartsWidget
 
 ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_timer(this), QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -354,7 +340,7 @@ void ChartsWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void ChartsWidget::newChart() {
-  SeriesSelector dlg(tr("New Chart"), this);
+  SignalSelector dlg(tr("New Chart"), this);
   if (dlg.exec() == QDialog::Accepted) {
     auto items = dlg.seletedItems();
     if (!items.isEmpty()) {
@@ -443,4 +429,69 @@ bool ChartsWidget::event(QEvent *event) {
   return QFrame::event(event);
 }
 
+// ChartsContainer
 
+ChartsContainer::ChartsContainer(ChartsWidget *parent) : charts_widget(parent), QWidget(parent) {
+  setAcceptDrops(true);
+  QVBoxLayout *charts_main_layout = new QVBoxLayout(this);
+  charts_main_layout->setContentsMargins(0, 10, 0, 0);
+  charts_layout = new QGridLayout();
+  charts_layout->setSpacing(CHART_SPACING);
+  charts_main_layout->addLayout(charts_layout);
+  charts_main_layout->addStretch(0);
+}
+
+void ChartsContainer::dragEnterEvent(QDragEnterEvent *event) {
+  if (event->mimeData()->hasFormat(CHART_MIME_TYPE)) {
+    event->acceptProposedAction();
+    drawDropIndicator(event->pos());
+  }
+}
+
+void ChartsContainer::dropEvent(QDropEvent *event) {
+  if (event->mimeData()->hasFormat(CHART_MIME_TYPE)) {
+    auto w = getDropAfter(event->pos());
+    auto chart = qobject_cast<ChartView *>(event->source());
+    if (w != chart) {
+      for (auto &[_, list] : charts_widget->tab_charts) {
+        list.removeOne(chart);
+      }
+      int to = w ? charts_widget->currentCharts().indexOf(w) + 1 : 0;
+      charts_widget->currentCharts().insert(to, chart);
+      charts_widget->updateLayout(true);
+      event->acceptProposedAction();
+    }
+    drawDropIndicator({});
+  }
+}
+
+void ChartsContainer::paintEvent(QPaintEvent *ev) {
+  if (!drop_indictor_pos.isNull() && !childAt(drop_indictor_pos)) {
+    QRect r;
+    if (auto insert_after = getDropAfter(drop_indictor_pos)) {
+      QRect area = insert_after->geometry();
+      r = QRect(area.left(), area.bottom() + 1, area.width(), CHART_SPACING);
+    } else {
+      r = geometry();
+      r.setHeight(CHART_SPACING);
+    }
+
+    const int margin = (CHART_SPACING - 2) / 2;
+    QPainterPath path;
+    path.addPolygon(QPolygonF({r.topLeft(), QPointF(r.left() + CHART_SPACING, r.top() + r.height() / 2), r.bottomLeft()}));
+    path.addPolygon(QPolygonF({r.topRight(), QPointF(r.right() - CHART_SPACING, r.top() + r.height() / 2), r.bottomRight()}));
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.fillPath(path, palette().highlight());
+    p.fillRect(r.adjusted(2, margin, -2, -margin), palette().highlight());
+  }
+}
+
+ChartView *ChartsContainer::getDropAfter(const QPoint &pos) const {
+  auto it = std::find_if(charts_widget->currentCharts().crbegin(), charts_widget->currentCharts().crend(), [&pos](auto c) {
+    auto area = c->geometry();
+    return pos.x() >= area.left() && pos.x() <= area.right() && pos.y() >= area.bottom();
+  });
+  return it == charts_widget->currentCharts().crend() ? nullptr : *it;
+}

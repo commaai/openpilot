@@ -2,28 +2,21 @@
 
 #include <QGridLayout>
 #include <QLabel>
-#include <QListWidget>
-#include <QGraphicsPixmapItem>
-#include <QGraphicsProxyWidget>
+#include <QScrollArea>
 #include <QTabBar>
 #include <QTimer>
 #include <QUndoCommand>
 #include <QUndoStack>
-#include <QtCharts/QChartView>
-#include <QtCharts/QLegendMarker>
-#include <QtCharts/QLineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QValueAxis>
 
+#include "tools/cabana/chart/signalselector.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace QtCharts;
 
 const int CHART_MIN_WIDTH = 300;
+const QString CHART_MIME_TYPE = "application/x-cabanachartview";
 
-
+class ChartView;
 class ChartsWidget;
-
 
 class ChartsContainer : public QWidget {
 public:

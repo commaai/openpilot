@@ -1,4 +1,12 @@
-class SeriesSelector : public QDialog {
+#pragma once
+
+#include <QComboBox>
+#include <QDialog>
+#include <QListWidget>
+
+#include "tools/cabana/dbc/dbcmanager.h"
+
+class SignalSelector : public QDialog {
 public:
   struct ListItem : public QListWidgetItem {
     ListItem(const MessageId &msg_id, const cabana::Signal *sig, QListWidget *parent) : msg_id(msg_id), sig(sig), QListWidgetItem(parent) {}
@@ -6,7 +14,7 @@ public:
     const cabana::Signal *sig;
   };
 
-  SeriesSelector(QString title, QWidget *parent);
+  SignalSelector(QString title, QWidget *parent);
   QList<ListItem *> seletedItems();
   inline void addSelected(const MessageId &id, const cabana::Signal *sig) { addItemToList(selected_list, id, sig, true); }
 

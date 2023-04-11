@@ -1,17 +1,25 @@
+#pragma once
+
+#include <QGraphicsPixmapItem>
+#include <QGraphicsProxyWidget>
+#include <QtCharts/QChartView>
+#include <QtCharts/QLegendMarker>
+#include <QtCharts/QLineSeries>
+#include <QtCharts/QScatterSeries>
+#include <QtCharts/QValueAxis>
+using namespace QtCharts;
+
+#include "tools/cabana/chart/tiplabel.h"
+#include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/streams/abstractstream.h"
+
 enum class SeriesType {
   Line = 0,
   StepLine,
   Scatter
 };
 
-class ValueTipLabel : public QLabel {
-public:
-  ValueTipLabel(QWidget *parent = nullptr);
-  void showText(const QPoint &pt, const QString &sec, int right_edge);
-  void paintEvent(QPaintEvent *ev) override;
-};
-
-
+class ChartsWidget;
 class ChartView : public QChartView {
   Q_OBJECT
 
@@ -61,7 +69,7 @@ private:
   void dropEvent(QDropEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
-  QSize sizeHint() const override { return {CHART_MIN_WIDTH, settings.chart_height}; }
+  QSize sizeHint() const override;
   void updateAxisY();
   void updateTitle();
   void resetChartCache();
@@ -84,7 +92,7 @@ private:
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  ValueTipLabel tip_label;
+  TipLabel tip_label;
   QList<SigItem> sigs;
   double cur_sec = 0;
   SeriesType series_type = SeriesType::Line;
