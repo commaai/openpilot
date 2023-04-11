@@ -1426,24 +1426,30 @@ FW_VERSIONS = {
     (Ecu.eps, 0x18DA30F1, None): [
       b'39990-3M0-G110\x00\x00',
       b'39990-3W0-A030\x00\x00',
+      b'39990-3M0-J030\x00\x00',
     ],
     (Ecu.gateway, 0x18DAEFF1, None): [
       b'38897-3M0-M110\x00\x00',
+      b'38897-3M0-Z010\x00\x00',
       b'38897-3W1-A010\x00\x00',
     ],
     (Ecu.srs, 0x18DA53F1, None): [
       b'77959-3M0-K840\x00\x00',
+      b'77959-3N1-Z840\x00\x00',
       b'77959-3V0-A820\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-3V1-A220\x00\x00',
       b'78109-3M0-M310\x00\x00',
+      b'78109-3N0-TA10\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18DAB0F1, None): [
+      b'8S102-3M3-T050\x00\x00',
       b'8S102-3M6-P030\x00\x00',
     ],
     (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-3M6-M010\x00\x00',
+      b'57114-3N1-T020\x00\x00',
       b'57114-3W0-A040\x00\x00',
     ],
     (Ecu.transmission, 0x18DA1EF1, None): [
