@@ -58,6 +58,7 @@ private:
   void newChart();
   ChartView *createChart();
   void removeChart(ChartView *chart);
+  void splitChart(ChartView *chart);
   void eventsMerged();
   void updateState();
   void zoomReset();
