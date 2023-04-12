@@ -440,12 +440,11 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
     auto color = getColor(sig).darker(item->highlight ? 125 : 0);
     painter->setPen(color);
     painter->drawPolyline(points.data(), points.size());
-    if ((points.back().x() - points.front().x()) / points.size() > 10) {
-      painter->setPen(Qt::NoPen);
-      painter->setBrush(color);
-      for (const auto &pt : points) {
-        painter->drawEllipse(pt, 2, 2);
-      }
+    painter->setPen(QPen(color, 3));
+    if ((points.back().x() - points.front().x()) / points.size() > 8) {
+      painter->drawPoints(points.data(), points.size());
+    } else {
+      painter->drawPoint(points.back());
     }
 
     if (item->highlight || option.state & QStyle::State_Selected) {
