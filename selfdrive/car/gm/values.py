@@ -73,7 +73,7 @@ class CAR:
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
   EQUINOX = "CHEVROLET EQUINOX 2019"
-  TRAILBLAZER = "CHEVROLET TRAILBLAZER 2020"
+  TRAILBLAZER = "CHEVROLET TRAILBLAZER 2021"
 
 
 class Footnote(Enum):
@@ -114,7 +114,7 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
     GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", video_link="https://youtu.be/5HbNoBLzRwE"),
   ],
   CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22"),
-  CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2020-22", "Adaptive Cruise Control"),
+  CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2021-22", "Adaptive Cruise Control"),
 }
 
 
