@@ -7,6 +7,7 @@
 #include <QHeaderView>
 #include <QMessageBox>
 #include <QOpenGLWidget>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
