@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <deque>
 #include <unordered_map>
@@ -12,6 +13,8 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
+  void compute(const char *dat, const int size, double current_sec, uint32_t in_freq = 0);
+
   double ts = 0.;
   uint32_t count = 0;
   uint32_t freq = 0;
@@ -22,9 +25,9 @@ struct CanData {
 };
 
 struct CanEvent {
-  uint64_t mono_time;
-  uint8_t size;
-  uint8_t dat[64];
+  uint64_t mono_time = 0;
+  uint8_t size = 0;
+  uint8_t dat[64] = {};
   inline bool operator<(const CanEvent &r) const { return mono_time < r.mono_time; }
   inline bool operator>(const CanEvent &r) const { return mono_time > r.mono_time; }
 };
@@ -78,9 +81,8 @@ protected:
 
   bool is_live_streaming = false;
   std::atomic<bool> processing = false;
-  QHash<MessageId, uint32_t> counters;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
-  QHash<MessageId, ChangeTracker> change_trackers;
+  QHash<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::deque<CanEvent>> events_;
   uint64_t last_event_ts = 0;
 };
