@@ -144,7 +144,7 @@ class IsoTpParallelQuery:
             cloudlog.error(f"iso-tp query timeout after receiving response: {tx_addr}")
           request_done[tx_addr] = True
 
-      # Break if all requests are done, or we've hit a max total timeout
+      # Break if all requests are done (finished or timed out), or we've hit a max total timeout
       if all(request_done.values()):
         break
 
