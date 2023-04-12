@@ -8,7 +8,7 @@
 #include <QTableWidget>
 #include <QTreeView>
 
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT
