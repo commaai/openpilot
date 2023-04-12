@@ -534,9 +534,9 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   surfaceFormat.setRedBufferSize(8);
   surfaceFormat.setGreenBufferSize(8);
   surfaceFormat.setBlueBufferSize(8);
-  surfaceFormat.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+  surfaceFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
   surfaceFormat.setRenderableType(QSurfaceFormat::DefaultRenderableType);
-  surfaceFormat.setSamples(8);
+  surfaceFormat.setSamples(11);
   auto glwidget = new QOpenGLWidget(this);
   glwidget->setFormat(surfaceFormat);
   tree->setViewport(glwidget);
