@@ -50,6 +50,7 @@ class HondaFlags(IntFlag):
   # Bosch models with alternate set of LKAS_HUD messages
   BOSCH_EXT_HUD = 1
   HONDA_BOSCH_ALT_BRAKE_SIGNAL = 2
+  HONDA_BOSCH_ALT_GEARS = 4
 
 
 # Car button codes

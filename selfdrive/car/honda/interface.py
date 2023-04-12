@@ -61,6 +61,10 @@ class CarInterface(CarInterfaceBase):
     # Detect alternate user brake msg (0x1BE)
     if any(0x1BE in f for f in fingerprint.values()):
       ret.flags |= HondaFlags.HONDA_BOSCH_ALT_BRAKE_SIGNAL.value
+      
+    # Detect alternate Bosch gearbox msg (0x1A3)
+    if any(0x1A3 in f for f in fingerprint.values()):
+      ret.flags |= HondaFlags.HONDA_BOSCH_ALT_GEARS.value
 
     # Accord 1.5T CVT has different gearbox message
     if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
