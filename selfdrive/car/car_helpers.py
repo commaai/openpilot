@@ -83,9 +83,6 @@ def fingerprint(logcan, sendcan, num_pandas):
   params = Params()
 
   if not skip_fw_query:
-    # Vin query only reliably works through OBDII
-    bus = 1
-
     cached_params = params.get("CarParamsCache")
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
@@ -94,20 +91,20 @@ def fingerprint(logcan, sendcan, num_pandas):
 
     if cached_params is not None and len(cached_params.carFw) > 0 and cached_params.carVin is not VIN_UNKNOWN:
       cloudlog.warning("Using cached CarParams")
-      vin, vin_rx_addr = cached_params.carVin, 0
+      vin, vin_rx_addr, vin_bus = cached_params.carVin, 0, -1
       car_fw = list(cached_params.carFw)
       cached = True
     else:
       cloudlog.warning("Getting VIN & FW versions")
       set_obd_multiplexing(params, True)
-      vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
+      vin_bus, vin_rx_addr, vin = get_vin(logcan, sendcan)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
       car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
-    vin, vin_rx_addr = VIN_UNKNOWN, 0
+    vin, vin_rx_addr, vin_bus = VIN_UNKNOWN, 0, -1
     exact_fw_match, fw_candidates, car_fw = True, set(), []
     cached = False
 
@@ -175,7 +172,7 @@ def fingerprint(logcan, sendcan, num_pandas):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
-                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_bus=vin_bus, error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
