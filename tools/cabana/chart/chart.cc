@@ -5,9 +5,11 @@
 #include <QDrag>
 #include <QGraphicsLayout>
 #include <QGraphicsDropShadowEffect>
+#include <QGraphicsOpacityEffect>
 #include <QMenu>
 #include <QMimeData>
 #include <QOpenGLWidget>
+#include <QPropertyAnimation>
 #include <QRubberBand>
 #include <QtMath>
 
@@ -569,6 +571,7 @@ void ChartView::dropEvent(QDropEvent *event) {
       sigs.append(source_chart->sigs);
       updateAxisY();
       updateTitle();
+      startAnimation();
 
       source_chart->sigs.clear();
       charts_widget->removeChart(source_chart);
@@ -581,6 +584,17 @@ void ChartView::dropEvent(QDropEvent *event) {
 void ChartView::resetChartCache() {
   chart_pixmap = QPixmap();
   viewport()->update();
+}
+
+void ChartView::startAnimation() {
+  QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
+  viewport()->setGraphicsEffect(eff);
+  QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
+  a->setDuration(250);
+  a->setStartValue(0.3);
+  a->setEndValue(1);
+  a->setEasingCurve(QEasingCurve::InBack);
+  a->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
 void ChartView::paintEvent(QPaintEvent *event) {

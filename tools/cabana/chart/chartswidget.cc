@@ -476,6 +476,7 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
       charts_widget->currentCharts().insert(to, chart);
       charts_widget->updateLayout(true);
       event->acceptProposedAction();
+      chart->startAnimation();
     }
     drawDropIndicator({});
   }

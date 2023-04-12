@@ -33,6 +33,7 @@ public:
   void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
+  void startAnimation();
 
   struct SigItem {
     MessageId msg_id;
