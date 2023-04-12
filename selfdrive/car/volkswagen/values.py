@@ -797,7 +797,6 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572Q \xf1\x890342',
       b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
-      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.TOURAN_MK2: {
