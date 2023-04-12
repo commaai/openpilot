@@ -5,9 +5,11 @@
 #include <QDrag>
 #include <QGraphicsLayout>
 #include <QGraphicsDropShadowEffect>
+#include <QGraphicsOpacityEffect>
 #include <QMenu>
 #include <QMimeData>
 #include <QOpenGLWidget>
+#include <QPropertyAnimation>
 #include <QRubberBand>
 #include <QtMath>
 
@@ -58,7 +60,7 @@ void ChartView::createToolButtons() {
   QMenu *menu = new QMenu(this);
   auto change_series_group = new QActionGroup(menu);
   change_series_group->setExclusive(true);
-  QStringList types{tr("line"), tr("Step Line"), tr("Scatter")};
+  QStringList types{tr("Line"), tr("Step Line"), tr("Scatter")};
   for (int i = 0; i < types.size(); ++i) {
     QAction *act = new QAction(types[i], change_series_group);
     act->setData(i);
@@ -67,7 +69,8 @@ void ChartView::createToolButtons() {
     menu->addAction(act);
   }
   menu->addSeparator();
-  menu->addAction(tr("Manage series"), this, &ChartView::manageSeries);
+  menu->addAction(tr("Manage Signals"), this, &ChartView::manageSignals);
+  split_chart_act = menu->addAction(tr("Split Chart"), [this]() { charts_widget->splitChart(this); });
 
   QToolButton *manage_btn = new ToolButton("list", "");
   manage_btn->setMenu(menu);
@@ -90,10 +93,10 @@ QSize ChartView::sizeHint() const {
 void ChartView::setTheme(QChart::ChartTheme theme) {
   chart()->setTheme(theme);
   if (theme == QChart::ChartThemeDark) {
-    axis_x->setTitleBrush(palette().color(QPalette::Text));
-    axis_x->setLabelsBrush(palette().color(QPalette::Text));
-    axis_y->setTitleBrush(palette().color(QPalette::Text));
-    axis_y->setLabelsBrush(palette().color(QPalette::Text));
+    axis_x->setTitleBrush(palette().text());
+    axis_x->setLabelsBrush(palette().text());
+    axis_y->setTitleBrush(palette().text());
+    axis_y->setLabelsBrush(palette().text());
     chart()->legend()->setLabelColor(palette().color(QPalette::Text));
   }
   for (auto &s : sigs) {
@@ -101,18 +104,18 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
   }
 }
 
-void ChartView::addSeries(const MessageId &msg_id, const cabana::Signal *sig) {
-  if (hasSeries(msg_id, sig)) return;
+void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
+  if (hasSignal(msg_id, sig)) return;
 
   QXYSeries *series = createSeries(series_type, getColor(sig));
   sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
-  updateTitle();
   updateSeries(sig);
   updateSeriesPoints();
+  updateTitle();
   emit charts_widget->seriesChanged();
 }
 
-bool ChartView::hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const {
+bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const {
   return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
@@ -139,7 +142,6 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 void ChartView::signalUpdated(const cabana::Signal *sig) {
   if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
-    // TODO: don't update series if only name changed.
     updateSeries(sig);
   }
 }
@@ -149,7 +151,7 @@ void ChartView::msgUpdated(MessageId id) {
     updateTitle();
 }
 
-void ChartView::manageSeries() {
+void ChartView::manageSignals() {
   SignalSelector dlg(tr("Mange Chart"), this);
   for (auto &s : sigs) {
     dlg.addSelected(s.msg_id, s.sig);
@@ -157,7 +159,7 @@ void ChartView::manageSeries() {
   if (dlg.exec() == QDialog::Accepted) {
     auto items = dlg.seletedItems();
     for (auto s : items) {
-      addSeries(s->msg_id, s->sig);
+      addSignal(s->msg_id, s->sig);
     }
     removeIf([&](auto &s) {
       return std::none_of(items.cbegin(), items.cend(), [&](auto &it) { return s.msg_id == it->msg_id && s.sig == it->sig; });
@@ -172,7 +174,6 @@ void ChartView::resizeEvent(QResizeEvent *event) {
   close_btn_proxy->setPos(rect().right() - right - close_btn_proxy->size().width(), top);
   int x = close_btn_proxy->pos().x() - manage_btn_proxy->size().width() - style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing);
   manage_btn_proxy->setPos(x, top);
-  chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), manage_btn_proxy->sceneBoundingRect().bottomLeft()});
   if (align_to > 0) {
     updatePlotArea(align_to, true);
   }
@@ -185,6 +186,7 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
 
     qreal left, top, right, bottom;
     chart()->layout()->getContentsMargins(&left, &top, &right, &bottom);
+    chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), manage_btn_proxy->sceneBoundingRect().bottomLeft()});
     QSizeF x_label_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, QString::number(axis_x->max(), 'f', 2));
     x_label_size += QSizeF{5, 5};
     int adjust_top = chart()->legend()->geometry().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin);
@@ -202,6 +204,7 @@ void ChartView::updateTitle() {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
     s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name, msgName(s.msg_id), s.msg_id.toString()));
   }
+  split_chart_act->setEnabled(sigs.size() > 1);
   resetChartCache();
 }
 
@@ -279,7 +282,8 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
     }
   }
   updateAxisY();
-  chart_pixmap = QPixmap();
+  // invoke resetChartCache in ui thread
+  QMetaObject::invokeMethod(this, &ChartView::resetChartCache, Qt::QueuedConnection);
 }
 
 // auto zoom on yaxis
@@ -329,10 +333,16 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int title_spacing = unit.isEmpty() ? 0 : QFontMetrics(axis_y->titleFont()).size(Qt::TextSingleLine, unit).height();
-    QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
-    y_label_width = title_spacing + qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;
+    int max_label_width = 0;
+    QFontMetrics fm(axis_y->labelsFont());
+    for (int i = 0; i < tick_count; i++) {
+      qreal value = min_y + (i * (max_y - min_y) / (tick_count - 1));
+      max_label_width = std::max(max_label_width, fm.width(QString::number(value, 'f', n)));
+    }
+
+    int title_spacing = unit.isEmpty() ? 0 : QFontMetrics(axis_y->titleFont()).size(Qt::TextSingleLine, unit).height();
+    y_label_width = title_spacing + max_label_width + 15;
     axis_y->setLabelFormat(QString("%.%1f").arg(n));
     emit axisYLabelWidthChanged(y_label_width);
   }
@@ -556,13 +566,12 @@ void ChartView::dropEvent(QDropEvent *event) {
       ChartView *source_chart = (ChartView *)event->source();
       for (auto &s : source_chart->sigs) {
         source_chart->chart()->removeSeries(s.series);
-        chart()->addSeries(s.series);
-        s.series->attachAxis(axis_x);
-        s.series->attachAxis(axis_y);
+        addSeries(s.series);
       }
       sigs.append(source_chart->sigs);
       updateAxisY();
       updateTitle();
+      startAnimation();
 
       source_chart->sigs.clear();
       charts_widget->removeChart(source_chart);
@@ -575,6 +584,17 @@ void ChartView::dropEvent(QDropEvent *event) {
 void ChartView::resetChartCache() {
   chart_pixmap = QPixmap();
   viewport()->update();
+}
+
+void ChartView::startAnimation() {
+  QGraphicsOpacityEffect *eff = new QGraphicsOpacityEffect(this);
+  viewport()->setGraphicsEffect(eff);
+  QPropertyAnimation *a = new QPropertyAnimation(eff, "opacity");
+  a->setDuration(250);
+  a->setStartValue(0.3);
+  a->setEndValue(1);
+  a->setEasingCurve(QEasingCurve::InBack);
+  a->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
 void ChartView::paintEvent(QPaintEvent *event) {
@@ -684,6 +704,11 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
   pen.setWidthF(2.0 * devicePixelRatioF());
   series->setPen(pen);
 #endif
+  addSeries(series);
+  return series;
+}
+
+void ChartView::addSeries(QXYSeries *series) {
   chart()->addSeries(series);
   series->attachAxis(axis_x);
   series->attachAxis(axis_y);
@@ -694,7 +719,6 @@ QXYSeries *ChartView::createSeries(SeriesType type, QColor color) {
   if (glwidget && !glwidget->testAttribute(Qt::WA_TransparentForMouseEvents)) {
     glwidget->setAttribute(Qt::WA_TransparentForMouseEvents);
   }
-  return series;
 }
 
 void ChartView::setSeriesType(SeriesType type) {
