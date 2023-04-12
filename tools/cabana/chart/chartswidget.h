@@ -65,6 +65,7 @@ private:
   void stopAutoScroll();
   void doAutoScroll();
   void updateToolBar();
+  void updateTabBar();
   void setMaxChartRange(int value);
   void updateLayout(bool force = false);
   void settingChanged();
