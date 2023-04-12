@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 240 Supported Cars
+# 241 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -20,10 +20,10 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Buick|LaCrosse 2017-19[<sup>3</sup>](#footnotes)|Driver Confidence Package 2|openpilot|18 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Buick&model=LaCrosse 2017-19">OBD-II</a>||
 |Cadillac|Escalade 2017[<sup>3</sup>](#footnotes)|Driver Assist Package|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Cadillac&model=Escalade 2017">OBD-II</a>||
 |Cadillac|Escalade ESV 2016[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC) & LKAS|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Cadillac&model=Escalade ESV 2016">OBD-II</a>||
-|Chevrolet|Trailblazer 2020-22|Adaptive Cruise Control (ACC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Trailblazer 2020-22">GM</a>|<a href="https://youtu.be/uK5gETxIB2Q" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Chevrolet|Bolt EUV 2022-23|Premier or Premier Redline Trim without Super Cruise Package|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Bolt EUV 2022-23">GM</a>|<a href="https://youtu.be/xvwzGMUA210" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Chevrolet|Bolt EV 2022-23|2LT Trim with Adaptive Cruise Control Package|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Bolt EV 2022-23">GM</a>||
 |Chevrolet|Silverado 1500 2020-21|Safety Package II|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Silverado 1500 2020-21">GM</a>||
+|Chevrolet|Trailblazer 2020-22|Adaptive Cruise Control|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Trailblazer 2020-22">GM</a>||
 |Chevrolet|Volt 2017-18[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chevrolet&model=Volt 2017-18">OBD-II</a>|<a href="https://youtu.be/QeMCN_4TFfQ" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Chrysler|Pacifica 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica 2017-18">FCA</a>||
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica 2019-20">FCA</a>||
