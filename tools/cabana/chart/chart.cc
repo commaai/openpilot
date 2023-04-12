@@ -331,10 +331,16 @@ void ChartView::updateAxisY() {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
 
-    int title_spacing = unit.isEmpty() ? 0 : QFontMetrics(axis_y->titleFont()).size(Qt::TextSingleLine, unit).height();
-    QFontMetrics fm(axis_y->labelsFont());
     int n = qMax(int(-qFloor(std::log10((max_y - min_y) / (tick_count - 1)))), 0) + 1;
-    y_label_width = title_spacing + qMax(fm.width(QString::number(min_y, 'f', n)), fm.width(QString::number(max_y, 'f', n))) + 15;
+    int max_label_width = 0;
+    QFontMetrics fm(axis_y->labelsFont());
+    for (int i = 0; i < tick_count; i++) {
+      qreal value = min_y + (i * (max_y - min_y) / (tick_count - 1));
+      max_label_width = std::max(max_label_width, fm.width(QString::number(value, 'f', n)));
+    }
+
+    int title_spacing = unit.isEmpty() ? 0 : QFontMetrics(axis_y->titleFont()).size(Qt::TextSingleLine, unit).height();
+    y_label_width = title_spacing + max_label_width + 15;
     axis_y->setLabelFormat(QString("%.%1f").arg(n));
     emit axisYLabelWidthChanged(y_label_width);
   }
