@@ -134,8 +134,7 @@ class IsoTpParallelQuery:
           error_code = dat[2] if len(dat) > 2 else -1
           if error_code == 0x78:
             response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
-            if self.debug:
-              cloudlog.warning(f"iso-tp query response pending: {tx_addr}")
+            cloudlog.error(f"iso-tp query response pending: {tx_addr}")
           else:
             response_timeouts[tx_addr] = 0
             request_done[tx_addr] = True
