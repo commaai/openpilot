@@ -428,7 +428,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
       max += 1;
     }
 
-    const double min_max_width = std::min(rect.width() - 10, QFontMetrics(minmax_font).width("000.00") + 5);
+    const double min_max_width = std::min(rect.width() - 10, QFontMetrics(minmax_font).width("-000.00") + 5);
     const QRect r = rect.adjusted(0, 0, -min_max_width, 0);
     const double xscale = r.width() / (double)settings.sparkline_range;
     const double yscale = r.height() / (max - min);
@@ -450,8 +450,10 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
     if (item->highlight || option.state & QStyle::State_Selected) {
       painter->setFont(minmax_font);
       painter->setPen(option.state & QStyle::State_Selected ? option.palette.color(QPalette::HighlightedText) : Qt::darkGray);
-      painter->drawLine(r.topRight(), r.bottomRight());
-      QRect minmax_rect{r.right() + 5, r.top(), 1000, r.height()};
+      QRect minmax_rect = rect.adjusted(r.width() + 1, 0, 0, 0);
+      painter->drawLine(minmax_rect.topLeft(), minmax_rect.bottomLeft());
+      int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
+      minmax_rect.adjust(5, -v_margin, 0, v_margin);
       painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignTop, QString::number(max));
       painter->drawText(minmax_rect, Qt::AlignLeft | Qt::AlignBottom, QString::number(min));
     }
