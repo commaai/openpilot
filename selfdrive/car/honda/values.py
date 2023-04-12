@@ -128,8 +128,8 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022", "All"),
-    HondaCarInfo("Honda Civic Hatchback 2022", "All"),
+    HondaCarInfo("Honda Civic 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    HondaCarInfo("Honda Civic Hatchback 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
   ],
   CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
   CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -1248,6 +1248,7 @@ FW_VERSIONS = {
       b'37805-5YF-A750\x00\x00',
       b'37805-5YF-A850\x00\x00',
       b'37805-5YF-A870\x00\x00',
+      b'37805-5YF-AD20\x00\x00',
       b'37805-5YF-C210\x00\x00',
       b'37805-5YF-C220\x00\x00',
       b'37805-5YF-C410\000\000',
@@ -1256,16 +1257,20 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A030\x00\x00',
       b'57114-TJB-A040\x00\x00',
+      b'57114-TJB-A120\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TJB-A040\x00\x00',
       b'36802-TJB-A050\x00\x00',
+      b'36802-TJB-A540\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TJB-A040\x00\x00',
+      b'36161-TJB-A530\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TJB-A520\x00\x00',
+      b'54008-TJB-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-5YK-A610\x00\x00',
@@ -1273,6 +1278,7 @@ FW_VERSIONS = {
       b'28102-5YK-A630\x00\x00',
       b'28102-5YK-A700\x00\x00',
       b'28102-5YK-A711\x00\x00',
+      b'28102-5YK-A800\x00\x00',
       b'28102-5YL-A620\x00\x00',
       b'28102-5YL-A700\x00\x00',
       b'28102-5YL-A711\x00\x00',
@@ -1284,6 +1290,7 @@ FW_VERSIONS = {
       b'78109-TJB-AB10\x00\x00',
       b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
+      b'78109-TJB-AQ20\x00\x00',
       b'78109-TJB-AR10\x00\x00',
       b'78109-TJB-AS10\000\000',
       b'78109-TJB-AU10\x00\x00',
@@ -1295,22 +1302,26 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TJB-A040\x00\x00',
+      b'77959-TJB-A120\x00\x00',
       b'77959-TJB-A210\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TJB-A040\x00\x00',
       b'46114-TJB-A050\x00\x00',
       b'46114-TJB-A060\x00\x00',
+      b'46114-TJB-A120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TJB-A040\x00\x00',
       b'38897-TJB-A110\x00\x00',
       b'38897-TJB-A120\x00\x00',
+      b'38897-TJB-A220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TJB-A030\x00\x00',
       b'39990-TJB-A040\x00\x00',
-      b'39990-TJB-A130\x00\x00'
+      b'39990-TJB-A070\x00\x00',
+      b'39990-TJB-A130\x00\x00',
     ],
   },
   CAR.RIDGELINE: {
