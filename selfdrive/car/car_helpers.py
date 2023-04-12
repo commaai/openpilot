@@ -3,6 +3,7 @@ from typing import Dict, List
 
 from cereal import car
 from common.params import Params
+from common.realtime import sec_since_boot
 from common.basedir import BASEDIR
 from system.version import is_comma_remote, is_tested_branch
 from selfdrive.car.interfaces import get_interface_attr
@@ -82,6 +83,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   ecu_rx_addrs = set()
   params = Params()
 
+  start_time = sec_since_boot()
   if not skip_fw_query:
     # Vin query only reliably works through OBDII
     bus = 1
@@ -98,7 +100,7 @@ def fingerprint(logcan, sendcan, num_pandas):
       car_fw = list(cached_params.carFw)
       cached = True
     else:
-      cloudlog.error("Getting VIN & FW versions")
+      cloudlog.warning("Getting VIN & FW versions")
       set_obd_multiplexing(params, True)
       vin_rx_addr, vin = get_vin(logcan, sendcan, bus)
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
@@ -110,6 +112,8 @@ def fingerprint(logcan, sendcan, num_pandas):
     vin, vin_rx_addr = VIN_UNKNOWN, 0
     exact_fw_match, fw_candidates, car_fw = True, set(), []
     cached = False
+
+  fingerprinting_time = sec_since_boot() - start_time
 
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
@@ -176,11 +180,11 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
-  return car_fingerprint, finger, vin, car_fw, source, exact_match
+  return car_fingerprint, finger, vin, car_fw, source, exact_match, fingerprinting_time
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+  candidate, fingerprints, vin, car_fw, source, exact_match, fingerprinting_time = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
@@ -192,5 +196,6 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
+  CP.fingerprintingTime = fingerprinting_time
 
   return CarInterface(CP, CarController, CarState), CP
