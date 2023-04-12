@@ -140,9 +140,9 @@ class IsoTpParallelQuery:
       cur_time = time.monotonic()
       for tx_addr in response_timeouts:
         if cur_time - response_timeouts[tx_addr] > 0:
-          request_done[tx_addr] = True
           if request_counter[tx_addr] > 0 and not request_done[tx_addr]:
             cloudlog.error(f"iso-tp query timeout after receiving response: {tx_addr}")
+          request_done[tx_addr] = True
 
       # Break if all requests are done, or we've hit a max total timeout
       if all(request_done.values()):
