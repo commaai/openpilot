@@ -33,6 +33,7 @@ class CarControllerParams:
 
 class ToyotaFlags(IntFlag):
   HYBRID = 1
+  SMART_DSU = 2
 
 
 class CAR:
@@ -140,7 +141,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
   CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", "https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
   ],
@@ -154,7 +155,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota RAV4 2017-18")
   ],
   CAR.RAV4H: [
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", "https://youtu.be/LhT5VzJVfNI?t=26"),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26"),
     ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
   ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
@@ -732,12 +733,14 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7a1, None): [
       b'8965B10092\x00\x00\x00\x00\x00\x00',
       b'8965B10091\x00\x00\x00\x00\x00\x00',
+      b'8965B10111\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152610041\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x0189663F438000\x00\x00\x00\x00',
+      b'\x02896631025000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x0289663F453000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 15): [
@@ -916,6 +919,7 @@ FW_VERSIONS = {
       b'\x028966312K6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312L0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966312Q3100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966312L7000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF1205001\x00\x00\x00\x00',
       b'\x038966312N1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF1203001\x00\x00\x00\x00',
@@ -926,6 +930,7 @@ FW_VERSIONS = {
       b'8965B12451\x00\x00\x00\x00\x00\x00',
       b'8965B16011\x00\x00\x00\x00\x00\x00',
       b'8965B16101\x00\x00\x00\x00\x00\x00',
+      b'8965B16170\x00\x00\x00\x00\x00\x00',
       b'8965B76012\x00\x00\x00\x00\x00\x00',
       b'8965B76050\x00\x00\x00\x00\x00\x00',
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
@@ -953,6 +958,7 @@ FW_VERSIONS = {
       b'F152612D00\x00\x00\x00\x00\x00\x00',
       b'F152616011\x00\x00\x00\x00\x00\x00',
       b'F152616060\x00\x00\x00\x00\x00\x00',
+      b'F152616030\x00\x00\x00\x00\x00\x00',
       b'F152642540\x00\x00\x00\x00\x00\x00',
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
@@ -1107,6 +1113,7 @@ FW_VERSIONS = {
       b'\x01F152648J4000\x00\x00\x00\x00',
       b'\x01F152648J5000\x00\x00\x00\x00',
       b'\x01F152648J6000\x00\x00\x00\x00',
+      b'\x01F15264872700\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630E67000\x00\x00\x00\x00',
@@ -1991,6 +1998,7 @@ FW_VERSIONS = {
       b'\x01896634D12100\x00\x00\x00\x00',
       b'\x01896634D43000\x00\x00\x00\x00',
       b'\x01896634D44000\x00\x00\x00\x00',
+      b'\x018966348X0000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',

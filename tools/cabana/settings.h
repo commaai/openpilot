@@ -5,6 +5,9 @@
 #include <QDialog>
 #include <QSpinBox>
 
+#define LIGHT_THEME 1
+#define DARK_THEME 2
+
 class Settings : public QObject {
   Q_OBJECT
 
@@ -19,6 +22,7 @@ public:
   int chart_column_count = 1;
   int chart_range = 3 * 60; // 3 minutes
   int chart_series_type = 0;
+  int theme = 0;
   int sparkline_range = 15; // 15 seconds
   QString last_dir;
   QString last_route_dir;
@@ -42,6 +46,7 @@ public:
   QSpinBox *cached_minutes;
   QSpinBox *chart_height;
   QComboBox *chart_series_type;
+  QComboBox *theme;
 };
 
 extern Settings settings;
