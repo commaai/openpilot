@@ -51,7 +51,7 @@ void Settings::load() {
   chart_series_type = s.value("chart_series_type", 0).toInt();
   theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();
-  multiple_lines_bytes = s.value("multiple_lines_bytes", false).toBool();
+  multiple_lines_bytes = s.value("multiple_lines_bytes", true).toBool();
 }
 
 // SettingsDlg
