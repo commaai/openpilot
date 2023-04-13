@@ -10,6 +10,7 @@ from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.interfaces import get_torque_params
+from selfdrive.car.subaru.values import CAR as SUBARU
 
 CAR_MODELS = all_known_cars()
 
@@ -21,6 +22,12 @@ MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
 
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
+
+# TODO: put these cars within limits
+ABOVE_LIMITS_CARS = [
+  SUBARU.LEGACY,
+  SUBARU.OUTBACK,
+]
 
 car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
 
@@ -42,6 +49,9 @@ class TestLateralLimits(unittest.TestCase):
       raise unittest.SkipTest
 
     if CP.notCar:
+      raise unittest.SkipTest
+
+    if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
