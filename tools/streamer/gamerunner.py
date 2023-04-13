@@ -43,7 +43,6 @@ class myBridge():
     self.params.put("CalibrationParams", msg.to_bytes())
     #self.params.remove("CalibrationParams")
     self.params.put_bool("WideCameraOnly", False)
-    self.params.put_bool("ObdMultiplexingDisabled", True)
     self._exit_event = threading.Event()
     self._exit_event.clear()
     self.sm = sm

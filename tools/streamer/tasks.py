@@ -72,7 +72,7 @@ class Camerad:
 
     # road
     road_cl_arg = f" -DHEIGHT={self.road_H} -DWIDTH={self.road_W} -DRGB_STRIDE={self.road_W * 3} -DUV_WIDTH={self.road_W // 2} -DUV_HEIGHT={self.road_H // 2} -DRGB_SIZE={self.road_W * self.road_H} -DCL_DEBUG "
-    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/streamer/rgb_to_nv12_road.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(road_cl_arg)
       self.road_krnl = prg.rgb_to_nv12
@@ -81,7 +81,7 @@ class Camerad:
 
     # wide
     wide_cl_arg = f" -DHEIGHT={self.wide_H} -DWIDTH={self.wide_W} -DRGB_STRIDE={self.wide_W * 3} -DUV_WIDTH={self.wide_W // 2} -DUV_HEIGHT={self.wide_H // 2} -DRGB_SIZE={self.wide_W * self.wide_H} -DCL_DEBUG "
-    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12_opy.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/streamer/rgb_to_nv12_wide.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(wide_cl_arg)
       self.wide_krnl = prg.rgb_to_nv12_opy
@@ -165,7 +165,6 @@ def peripheral_state_function(exit_event: threading.Event):
   pm = messaging.PubMaster(['peripheralState'])
   while not exit_event.is_set():
     dat = messaging.new_message('peripheralState')
-    Params().put_bool("ObdMultiplexingDisabled", True)
     dat.valid = True
     # fake peripheral state data
     dat.peripheralState = {

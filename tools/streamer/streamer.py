@@ -17,7 +17,6 @@ def streamer():
   #params.put("CalibrationParams", msg.to_bytes())
   params.remove("CalibrationParams")
   params.put_bool("WideCameraOnly", False)
-  params.put_bool("ObdMultiplexingDisabled", True)
   context = zmq.Context().instance()
   socket = context.socket(zmq.PULL)
 
