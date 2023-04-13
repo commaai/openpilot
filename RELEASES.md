@@ -5,6 +5,7 @@ Version 0.9.2 (2023-03-XX)
 * Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
 * Buick LaCrosse 2017-19 support thanks to koch-cf!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
+* Lexus ES 2017-18 support
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
 
 Version 0.9.1 (2023-02-28)
