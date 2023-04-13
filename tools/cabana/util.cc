@@ -9,7 +9,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-static QColor blend(QColor a, QColor b) {
+static inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
@@ -21,6 +21,11 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
     std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
     std::fill(last_change_t.begin(), last_change_t.end(), ts);
   } else {
+    int factor = settings.theme == DARK_THEME ? 135 : 0;
+    QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
+    QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
+    QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
+
     for (int i = 0; i < dat.size(); ++i) {
       const uint8_t last = prev_dat[i];
       const uint8_t cur = dat[i];
@@ -29,14 +34,10 @@ void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
         double delta_t = ts - last_change_t[i];
         if (delta_t * freq > periodic_threshold) {
           // Last change was while ago, choose color based on delta up or down
-          if (cur > last) {
-            colors[i] = QColor(0, 187, 255, start_alpha);  // Cyan
-          } else {
-            colors[i] = QColor(255, 0, 0, start_alpha);  // Red
-          }
+          colors[i] = (cur > last) ? cyan : red;
         } else {
           // Periodic changes
-          colors[i] = blend(colors[i], QColor(102, 86, 169, start_alpha / 2));  // Greyish/Blue
+          colors[i] = blend(colors[i], greyish_blue);
         }
 
         // Track bit level changes
@@ -145,8 +146,7 @@ QValidator::State NameValidator::validate(QString &input, int &pos) const {
 
 namespace utils {
 QPixmap icon(const QString &id) {
-  static bool dark_theme = QApplication::palette().color(QPalette::WindowText).value() >
-                           QApplication::palette().color(QPalette::Background).value();
+  bool dark_theme = settings.theme == DARK_THEME;
   QPixmap pm;
   QString key = "bootstrap_" % id % (dark_theme ? "1" : "0");
   if (!QPixmapCache::find(key, &pm)) {
@@ -154,23 +154,52 @@ QPixmap icon(const QString &id) {
     if (dark_theme) {
       QPainter p(&pm);
       p.setCompositionMode(QPainter::CompositionMode_SourceIn);
-      p.fillRect(pm.rect(), Qt::lightGray);
+      p.fillRect(pm.rect(), QColor("#bbbbbb"));
     }
     QPixmapCache::insert(key, pm);
   }
   return pm;
 }
-}  // namespace utils
 
-QToolButton *toolButton(const QString &icon, const QString &tooltip) {
-  auto btn = new QToolButton();
-  btn->setIcon(utils::icon(icon));
-  btn->setToolTip(tooltip);
-  btn->setAutoRaise(true);
-  const int metric = qApp->style()->pixelMetric(QStyle::PM_SmallIconSize);
-  btn->setIconSize({metric, metric});
-  return btn;
-};
+void setTheme(int theme) {
+  auto style = QApplication::style();
+  if (!style) return;
+
+  static int prev_theme = 0;
+  if (theme != prev_theme) {
+    prev_theme = theme;
+    QPalette new_palette;
+    if (theme == DARK_THEME) {
+      // "Darcula" like dark theme
+      new_palette.setColor(QPalette::Window, QColor("#353535"));
+      new_palette.setColor(QPalette::WindowText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Base, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::AlternateBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipBase, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ToolTipText, QColor("#bbb"));
+      new_palette.setColor(QPalette::Text, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Button, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::ButtonText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::Highlight, QColor("#2f65ca"));
+      new_palette.setColor(QPalette::HighlightedText, QColor("#bbbbbb"));
+      new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
+      new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
+      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Dark, QColor("#353535"));
+    } else {
+      new_palette = style->standardPalette();
+    }
+    qApp->setPalette(new_palette);
+    style->polish(qApp);
+    for (auto w : QApplication::allWidgets()) {
+      w->setPalette(new_palette);
+    }
+  }
+}
+
+}  // namespace utils
 
 QString toHex(uint8_t byte) {
   static std::array<QString, 256> hex = []() {
