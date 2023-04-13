@@ -73,6 +73,13 @@ procs = [
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
   PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),
+  
 ]
+
+if os.getenv("METADRIVE") is not None:
+  procs += [
+    PythonProcess("streamer", "tools.streamer.streamer", enabled=PC, offroad=True),
+    PythonProcess("gamerunner", "tools.streamer.gamerunner", enabled=PC, offroad=True),
+  ]
 
 managed_processes = {p.name: p for p in procs}

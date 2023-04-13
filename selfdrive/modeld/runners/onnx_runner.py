@@ -4,6 +4,12 @@ import os
 import sys
 import numpy as np
 
+if "METADRIVE" in os.environ:
+  try:
+    import torch # noqa: F401 pylint: disable=W0611
+  except ImportError:
+    print("torch not installed. There may be issues running the simulator", file=sys.stderr)
+
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
