@@ -216,7 +216,7 @@ int DBCManager::dbcCount() const {
 
 int DBCManager::nonEmptyDBCCount() const {
   int cnt = 0;
-  for (auto [_, dbc_file] : dbc_files) {
+  for (auto &[_, dbc_file] : dbc_files) {
     if (!dbc_file->isEmpty()) {
       cnt++;
     }
