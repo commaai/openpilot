@@ -1,11 +1,33 @@
 from common.numpy_fast import clip
 from selfdrive.car.hyundai.values import HyundaiFlags
 
-def get_e_can_bus(CP):
-  # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
-  # have a different harness than the HDA1 and non-HDA variants in order to split
-  # a different bus, since the steering is done by different ECUs.
-  return 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 4
+
+class CanBus:
+  def __init__(self, CP):
+    # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
+    # have a different harness than the HDA1 and non-HDA variants in order to split
+    # a different bus, since the steering is done by different ECUs.
+    self._a, self._e = 1, 0
+    if CP.flags & HyundaiFlags.CANFD_HDA2.value:
+      self._a, self._e = 0, 1
+
+    # offset for aux panda
+    n: int = len(CP.safetyConfigs) - 1
+    self._a += 4*n
+    self._e += 4*n
+    self._cam = 2 + 4*n
+
+  @property
+  def ECAN(self) -> int:
+    return self._e
+
+  @property
+  def ACAN(self) -> int:
+    return self._a
+
+  @property
+  def CAM(self) -> int:
+    return self._cam
 
 
 def create_steering_messages(packer, CP, enabled, lat_active, apply_steer):
@@ -26,18 +48,18 @@ def create_steering_messages(packer, CP, enabled, lat_active, apply_steer):
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
     if CP.openpilotLongitudinalControl:
-      ret.append(packer.make_can_msg("LFA", 5, values))
-    ret.append(packer.make_can_msg("LKAS", 4, values))
+      ret.append(packer.make_can_msg("LFA", CanBus(CP).ECAN, values))
+    ret.append(packer.make_can_msg("LKAS", CanBus(CP).ACAN, values))
   else:
-    ret.append(packer.make_can_msg("LFA", 4, values))
+    ret.append(packer.make_can_msg("LFA", CanBus(CP).ECAN, values))
 
   return ret
 
-def create_cam_0x2a4(packer, camera_values):
+def create_cam_0x2a4(packer, CP, camera_values):
   camera_values.update({
     "BYTE7": 0,
   })
-  return packer.make_can_msg("CAM_0x2a4", 4, camera_values)
+  return packer.make_can_msg("CAM_0x2a4", CanBus(CP).ACAN, camera_values)
 
 def create_buttons(packer, CP, cnt, btn):
   values = {
@@ -46,7 +68,7 @@ def create_buttons(packer, CP, cnt, btn):
     "CRUISE_BUTTONS": btn,
   }
 
-  bus = 5 if CP.flags & HyundaiFlags.CANFD_HDA2 else 6
+  bus = CanBus(CP).ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CanBus(CP).CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
 def create_acc_cancel(packer, CP, cruise_info_copy):
@@ -54,14 +76,14 @@ def create_acc_cancel(packer, CP, cruise_info_copy):
   values.update({
     "ACCMode": 4,
   })
-  return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
+  return packer.make_can_msg("SCC_CONTROL", CanBus(CP).ECAN, values)
 
 def create_lfahda_cluster(packer, CP, enabled):
   values = {
     "HDA_ICON": 1 if enabled else 0,
     "LFA_ICON": 2 if enabled else 0,
   }
-  return packer.make_can_msg("LFAHDA_CLUSTER", get_e_can_bus(CP), values)
+  return packer.make_can_msg("LFAHDA_CLUSTER", CanBus(CP).ECAN, values)
 
 
 def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_override, set_speed):
@@ -92,15 +114,15 @@ def create_acc_control(packer, CP, enabled, accel_last, accel, stopping, gas_ove
     "DISTANCE_SETTING": 4,
   }
 
-  return packer.make_can_msg("SCC_CONTROL", get_e_can_bus(CP), values)
+  return packer.make_can_msg("SCC_CONTROL", CanBus(CP).ECAN, values)
 
 
-def create_spas_messages(packer, frame, left_blink, right_blink):
+def create_spas_messages(packer, CP, frame, left_blink, right_blink):
   ret = []
 
   values = {
   }
-  ret.append(packer.make_can_msg("SPAS1", 5, values))
+  ret.append(packer.make_can_msg("SPAS1", CanBus(CP).ECAN, values))
 
   blink = 0
   if left_blink:
@@ -110,12 +132,12 @@ def create_spas_messages(packer, frame, left_blink, right_blink):
   values = {
     "BLINKER_CONTROL": blink,
   }
-  ret.append(packer.make_can_msg("SPAS2", 5, values))
+  ret.append(packer.make_can_msg("SPAS2", CanBus(CP).ECAN, values))
 
   return ret
 
 
-def create_adrv_messages(packer, frame):
+def create_adrv_messages(packer, CP, frame):
   # messages needed to car happy after disabling
   # the ADAS Driving ECU to do longitudinal control
 
@@ -123,7 +145,7 @@ def create_adrv_messages(packer, frame):
 
   values = {
   }
-  ret.append(packer.make_can_msg("ADRV_0x51", 4, values))
+  ret.append(packer.make_can_msg("ADRV_0x51", CanBus(CP).ACAN, values))
 
   if frame % 2 == 0:
     values = {
@@ -133,7 +155,7 @@ def create_adrv_messages(packer, frame):
       'SET_ME_FC': 0xfc,
       'SET_ME_9': 0x9,
     }
-    ret.append(packer.make_can_msg("ADRV_0x160", 5, values))
+    ret.append(packer.make_can_msg("ADRV_0x160", CanBus(CP).ECAN, values))
 
   if frame % 5 == 0:
     values = {
@@ -142,25 +164,25 @@ def create_adrv_messages(packer, frame):
       'SET_ME_TMP_F': 0xf,
       'SET_ME_TMP_F_2': 0xf,
     }
-    ret.append(packer.make_can_msg("ADRV_0x1ea", 5, values))
+    ret.append(packer.make_can_msg("ADRV_0x1ea", CanBus(CP).ECAN, values))
 
     values = {
       'SET_ME_E1': 0xe1,
       'SET_ME_3A': 0x3a,
     }
-    ret.append(packer.make_can_msg("ADRV_0x200", 5, values))
+    ret.append(packer.make_can_msg("ADRV_0x200", CanBus(CP).ECAN, values))
 
   if frame % 20 == 0:
     values = {
       'SET_ME_15': 0x15,
     }
-    ret.append(packer.make_can_msg("ADRV_0x345", 5, values))
+    ret.append(packer.make_can_msg("ADRV_0x345", CanBus(CP).ECAN, values))
 
   if frame % 100 == 0:
     values = {
       'SET_ME_22': 0x22,
       'SET_ME_41': 0x41,
     }
-    ret.append(packer.make_can_msg("ADRV_0x1da", 5, values))
+    ret.append(packer.make_can_msg("ADRV_0x1da", CanBus(CP).ECAN, values))
 
   return ret
