@@ -63,10 +63,16 @@ private:
 class MessageBytesDelegate : public QStyledItemDelegate {
   Q_OBJECT
 public:
-  MessageBytesDelegate(QObject *parent);
+  MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void setMultipleLines(bool v);
+
+private:
   QFont fixed_font;
-  int byte_width;
+  QSize byte_size = {};
+  bool multiple_lines = false;
+  mutable QSize size_cache[64] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
