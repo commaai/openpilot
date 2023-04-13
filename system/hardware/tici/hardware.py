@@ -467,7 +467,7 @@ class Tici(HardwareBase):
     os.system("sudo chmod a+w /dev/kmsg")
 
     # TODO: remove the if once agnos 7 ships
-    # Ensure fan gpio is high so fan runs until shutdown, also turned on by the ABL
+    # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
     if os.path.exists('/sys/class/gpio/gpio49/'):
       gpio_init(GPIO.SOM_ST_IO, True)
       gpio_set(GPIO.SOM_ST_IO, 1)
