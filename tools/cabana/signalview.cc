@@ -352,7 +352,7 @@ bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, c
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
-    QRect geom = option.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &option);
+    QRect geom = option.rect;
     geom.setLeft(geom.right() - editor->sizeHint().width());
     editor->setGeometry(geom);
     return;
