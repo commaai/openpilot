@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 242 Supported Cars
+# 243 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -249,6 +249,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Volkswagen|Teramont Cross Sport 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Volkswagen&model=Teramont Cross Sport 2021-22">J533</a>||
 |Volkswagen|Teramont X 2021-22|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Volkswagen&model=Teramont X 2021-22">J533</a>||
 |Volkswagen|Tiguan 2018-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Volkswagen&model=Tiguan 2018-23">J533</a>||
+|Volkswagen|Tiguan eHybrid 2021-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Volkswagen&model=Tiguan eHybrid 2021-23">J533</a>||
 |Volkswagen|Touran 2017|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Volkswagen&model=Touran 2017">J533</a>||
 
 <a id="footnotes"></a>
