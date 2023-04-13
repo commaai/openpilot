@@ -5,6 +5,7 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QHelpEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPushButton>
