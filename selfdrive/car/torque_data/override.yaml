@@ -48,6 +48,8 @@ KIA NIRO EV 2ND GEN: [2.05, 2.5, 0.14]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
+# simulated car
+SIMULATOR: [20., 1., 0.,]
 
 # Manually checked
 HONDA CIVIC 2022: [2.5, 1.2, 0.15]
