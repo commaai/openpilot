@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -86,7 +86,7 @@ class CarController:
                                                   hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
-      if self.CP.carFingerprint in GLOBAL_GEN2 and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
         self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
