@@ -16,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # These cars are dashcam only until the port is finished
-    ret.dashcamOnly = True
+    ret.dashcamOnly = False
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
