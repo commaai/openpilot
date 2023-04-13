@@ -59,6 +59,7 @@ routes = [
   CarTestRoute("f08912a233c1584f|2022-08-11--18-02-41", GM.BOLT_EUV, segment=1),
   CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
   CarTestRoute("38aa7da107d5d252|2022-08-15--16-01-12", GM.SILVERADO),
+  CarTestRoute("5085c761395d1fe6|2023-04-07--18-20-06", GM.TRAILBLAZER),
 
   CarTestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   CarTestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),

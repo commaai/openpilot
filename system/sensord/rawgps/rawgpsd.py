@@ -270,7 +270,6 @@ def main() -> NoReturn:
 
       msg = messaging.new_message('gpsLocation')
       gps = msg.gpsLocation
-      gps.flags = 1
       gps.latitude = report["t_DblFinalPosLatLon[0]"] * 180/math.pi
       gps.longitude = report["t_DblFinalPosLatLon[1]"] * 180/math.pi
       gps.altitude = report["q_FltFinalPosAlt"]
@@ -283,6 +282,8 @@ def main() -> NoReturn:
       gps.verticalAccuracy = report["q_FltVdop"]
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
+      # quectel gps verticalAccuracy is clipped to 500, set invalid if so
+      gps.flags = 1 if gps.verticalAccuracy != 500 else 0
 
       pm.send('gpsLocation', msg)
 

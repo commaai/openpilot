@@ -43,8 +43,11 @@ public:
   const cabana::Msg *msg(uint32_t address) const;
   const cabana::Msg* msg(const QString &name);
   QStringList signalNames() const;
+  int signalCount(const MessageId &id) const;
+  int signalCount() const;
   int msgCount() const;
   QString name() const;
+  bool isEmpty() const;
 
   QString filename;
 

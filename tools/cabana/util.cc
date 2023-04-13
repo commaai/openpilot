@@ -1,70 +1,10 @@
 #include "tools/cabana/util.h"
 
-#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
-#include <cmath>
-#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
-
-static inline QColor blend(const QColor &a, const QColor &b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
-}
-
-void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
-  if (prev_dat.size() != dat.size()) {
-    colors.resize(dat.size());
-    last_change_t.resize(dat.size());
-    bit_change_counts.resize(dat.size());
-    std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
-    std::fill(last_change_t.begin(), last_change_t.end(), ts);
-  } else {
-    int factor = settings.theme == DARK_THEME ? 135 : 0;
-    QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
-    QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
-    QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
-
-    for (int i = 0; i < dat.size(); ++i) {
-      const uint8_t last = prev_dat[i];
-      const uint8_t cur = dat[i];
-
-      if (last != cur) {
-        double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
-          // Last change was while ago, choose color based on delta up or down
-          colors[i] = (cur > last) ? cyan : red;
-        } else {
-          // Periodic changes
-          colors[i] = blend(colors[i], greyish_blue);
-        }
-
-        // Track bit level changes
-        for (int bit = 0; bit < 8; bit++) {
-          if ((cur ^ last) & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
-          }
-        }
-
-        last_change_t[i] = ts;
-      } else {
-        // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / fade_time;
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
-      }
-    }
-  }
-
-  prev_dat = dat;
-}
-
-void ChangeTracker::clear() {
-  prev_dat.clear();
-  last_change_t.clear();
-  bit_change_counts.clear();
-  colors.clear();
-}
 
 // SegmentTree
 
