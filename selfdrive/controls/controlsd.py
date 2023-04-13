@@ -37,6 +37,7 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
+METADRIVE = "METADRIVE" in os.environ
 IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
                     "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
                    {k for k, v in managed_processes.items() if not v.enabled}
@@ -86,6 +87,8 @@ class Controls:
       ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
+        if METADRIVE:
+          ignore += ['liveLocationKalman', 'liveParameters', 'liveTorqueParameters']
       if self.params.get_bool('WideCameraOnly'):
         ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
@@ -868,6 +871,8 @@ class Controls:
       self.step()
       self.rk.monitor_time()
       self.prof.display()
+      if SIMULATION:
+        self.rk.keep_time()
 
 
 def main(sm=None, pm=None, logcan=None):
