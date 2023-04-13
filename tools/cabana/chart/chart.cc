@@ -11,7 +11,9 @@
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
 #include <QRubberBand>
+#include <QScreen>
 #include <QtMath>
+#include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
 
@@ -40,6 +42,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
+  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -599,20 +602,19 @@ void ChartView::startAnimation() {
 
 void ChartView::paintEvent(QPaintEvent *event) {
   if (!can->liveStreaming()) {
+    const qreal dpr = viewport()->devicePixelRatioF();
     if (chart_pixmap.isNull()) {
-      const qreal dpr = viewport()->devicePixelRatioF();
       chart_pixmap = QPixmap(viewport()->size() * dpr);
-      chart_pixmap.setDevicePixelRatio(dpr);
       QPainter p(&chart_pixmap);
       p.setRenderHints(QPainter::Antialiasing);
-      drawBackground(&p, viewport()->rect());
+      drawBackground(&p, QRect(viewport()->rect().topLeft(), viewport()->rect().size() * dpr));
       scene()->setSceneRect(viewport()->rect());
       scene()->render(&p);
     }
 
     QPainter painter(viewport());
     painter.setRenderHints(QPainter::Antialiasing);
-    painter.drawPixmap(QPoint(), chart_pixmap);
+    painter.drawPixmap(0, 0, chart_pixmap.width() / dpr, chart_pixmap.height() / dpr, chart_pixmap);
     if (can_drop) {
       painter.setPen(QPen(palette().color(QPalette::Highlight), 4));
       painter.drawRect(viewport()->rect());
