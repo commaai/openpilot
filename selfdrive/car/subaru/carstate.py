@@ -82,7 +82,7 @@ class CarState(CarStateBase):
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
-    if self.CP.carFingerprint not in PREGLOBAL_CARS:
+    if self.CP.carFingerprint in GLOBAL_GEN2:
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
 
     return ret
@@ -277,8 +277,6 @@ class CarState(CarStateBase):
         ("Far_Distance", "ES_DashStatus"),
         ("Cruise_State", "ES_DashStatus"),
 
-        ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
-
         ("COUNTER", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
@@ -297,12 +295,14 @@ class CarState(CarStateBase):
       ]
 
       checks = [
-        ("INFOTAINMENT_STATUS", 10),
         ("ES_DashStatus", 10),
         ("ES_LKAS_State", 10),
       ]
 
-      if CP.carFingerprint not in GLOBAL_GEN2:
+      if CP.carFingerprint in GLOBAL_GEN2:
+        signals += [("LKAS_State_Infotainment", "INFOTAINMENT_STATUS")]
+        checks += [("INFOTAINMENT_STATUS", 10)]
+      else:
         signals += CarState.get_global_es_distance_signals()[0]
         checks += CarState.get_global_es_distance_signals()[1]
 

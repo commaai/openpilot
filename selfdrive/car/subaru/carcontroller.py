@@ -79,16 +79,16 @@ class CarController:
       if self.es_dashstatus_cnt != CS.es_dashstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
         self.es_dashstatus_cnt = CS.es_dashstatus_msg["COUNTER"]
-      
-      if self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
-        can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
-        self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
       if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
                                                   hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                   hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
+
+      if self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"] and self.CP.carFingerprint in GLOBAL_GEN2:
+        can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
+        self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
