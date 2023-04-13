@@ -689,7 +689,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
 
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
-        double value = get_raw_value(first->dat, first->size, *s.sig);
+        double value = get_scaled_value(first->dat, first->size, *s.sig);
         double ts = first->mono_time / 1e9 - route_start_time;  // seconds
         s.vals.append({ts, value});
         if (!s.step_vals.empty()) {

@@ -121,7 +121,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   QVector<double> values(sigs.size());
   for (; first != last && first->mono_time > min_time; ++first) {
     for (int i = 0; i < sigs.size(); ++i) {
-      values[i] = get_raw_value(first->dat, first->size, *sigs[i]);
+      values[i] = get_scaled_value(first->dat, first->size, *sigs[i]);
     }
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();

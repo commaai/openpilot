@@ -62,7 +62,7 @@ void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
   if (!msgs || msgs->contains(msg_id)) {
     auto &dat = can->lastMessage(msg_id).dat;
     for (auto item : root->children) {
-      double value = get_raw_value((uint8_t *)dat.constData(), dat.size(), *item->sig);
+      double value = get_scaled_value((uint8_t *)dat.constData(), dat.size(), *item->sig);
       item->sig_val = QString::number(value, 'f', item->sig->precision);
 
       // Show unit
@@ -257,7 +257,12 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     }
   }
 
-  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
+  cabana::Signal sig;
+  sig.is_little_endian = little_endian;
+  sig.factor = 1;
+  sig.min = "0";
+  sig.max = QString::number(std::pow(2, size) - 1);
+  
   for (int i = 1; /**/; ++i) {
     sig.name = QString("NEW_SIGNAL_%1").arg(i);
     if (msg->sig(sig.name) == nullptr) break;
@@ -426,7 +431,7 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
     const auto sig = item->sig;
     points.clear();
     for (auto it = first; it != last; ++it) {
-      double value = get_raw_value(it->dat, it->size, *sig);
+      double value = get_scaled_value(it->dat, it->size, *sig);
       points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
       min = std::min(min, value);
       max = std::max(max, value);

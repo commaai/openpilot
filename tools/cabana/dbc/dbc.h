@@ -46,12 +46,17 @@ struct std::hash<MessageId> {
 typedef QList<std::pair<QString, QString>> ValueDescription;
 
 namespace cabana {
-  struct Signal {
-    QString name;
+  // Core signal data
+  struct BaseSignal {
     int start_bit, msb, lsb, size;
     bool is_signed;
     double factor, offset;
     bool is_little_endian;
+  };
+
+  // Signal that UI uses
+  struct Signal : public BaseSignal {
+    QString name;
     QString min, max, unit;
     QString comment;
     ValueDescription val_desc;
@@ -76,9 +81,10 @@ namespace cabana {
 }
 
 // Helper functions
-double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
+double get_scaled_value(const uint8_t *data, size_t data_size, const cabana::BaseSignal &sig);
+int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::BaseSignal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
-void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
-std::pair<int, int> getSignalRange(const cabana::Signal *s);
+void updateSigSizeParamsFromRange(cabana::BaseSignal &s, int start_bit, int size);
+std::pair<int, int> getSignalRange(const cabana::BaseSignal *s);
 std::vector<std::string> allDBCNames();

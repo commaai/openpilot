@@ -91,6 +91,8 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
     main_layout->addLayout(search_parameters_layout);
     main_layout->addLayout(search_results_layout);
 
+    setMinimumSize({700, 500});
+
     update();
 
     QObject::connect(can, &AbstractStream::received, this, &SearchDlg::updateRowData);
@@ -122,7 +124,7 @@ void SearchDlg::updateRowData(){
 
         int row=1;
         for(auto &sig : filteredSignals){
-            setRowData(row, sig.messageID.toString(), QString("%1:%2").arg(sig.offset).arg(sig.offset+sig.size), QString::number(sig.getValue(can->currentSec())), QString::number(sig.previousValue));
+            setRowData(row, sig.messageID.toString(), sig.toString(), QString::number(sig.getValue(can->currentSec())), QString::number(sig.previousValue));
             row++;
         }
     }
@@ -163,9 +165,9 @@ std::vector<SearchSignal> getAllPossibleSignals(int bits_min, int bits_max){
     std::vector<SearchSignal> ret;
     
     for(auto msg_id : can->last_msgs.keys()) {
-        for(int i = bits_min; i < bits_max+1; i++) {
-            for(int j = 0; j < 64 - i; j++) {
-                ret.push_back(SearchSignal(msg_id, j, i));
+        for(int size = bits_min; size < bits_max + 1; size++) {
+            for(int start_bit = 0; start_bit < 64 - size; start_bit++) {
+                ret.push_back(SearchSignal(msg_id, start_bit, size, true));
             }
         }
     }
@@ -251,7 +253,6 @@ void SearchDlg::nextScan(){
     searchHistory.push_back(std::tuple<SignalFilterer*, double>(filterer, can->currentSec()));
 
     filterer->searchHistory = searchHistory;
-
 
     filteredSignals = filterer->filter(filteredSignals);
 
