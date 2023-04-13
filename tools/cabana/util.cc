@@ -65,7 +65,7 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
       size.setHeight(byte_size.height() + 2 * v_margin);
     } else {
       size.setWidth(h_margin * 2 + 8 * byte_size.width());
-      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);  // 20 * std::max(1, n / 8));
+      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
     }
     size_cache[n - 1] = size;
   }
