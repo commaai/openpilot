@@ -25,14 +25,15 @@ class ChartView : public QChartView {
 
 public:
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
-  void addSeries(const MessageId &msg_id, const cabana::Signal *sig);
-  bool hasSeries(const MessageId &msg_id, const cabana::Signal *sig) const;
+  void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
+  bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
+  void startAnimation();
 
   struct SigItem {
     MessageId msg_id;
@@ -52,7 +53,7 @@ signals:
 
 private slots:
   void signalUpdated(const cabana::Signal *sig);
-  void manageSeries();
+  void manageSignals();
   void handleMarkerClicked();
   void msgUpdated(MessageId id);
   void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id == id; }); }
@@ -60,6 +61,7 @@ private slots:
 
 private:
   void createToolButtons();
+  void addSeries(QXYSeries *series);
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -89,6 +91,7 @@ private:
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
+  QAction *split_chart_act;
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;

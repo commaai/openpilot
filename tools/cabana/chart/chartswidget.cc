@@ -235,7 +235,7 @@ void ChartsWidget::settingChanged() {
 
 ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *sig) {
   for (auto c : charts)
-    if (c->hasSeries(id, sig)) return c;
+    if (c->hasSignal(id, sig)) return c;
   return nullptr;
 }
 
@@ -256,9 +256,25 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
     chart = merge && currentCharts().size() > 0 ? currentCharts().front() : createChart();
-    chart->addSeries(id, sig);
+    chart->addSignal(id, sig);
   } else if (!show && chart) {
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
+  }
+}
+
+void ChartsWidget::splitChart(ChartView *src_chart) {
+  if (src_chart->sigs.size() > 1) {
+    for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
+      auto c = createChart();
+      src_chart->chart()->removeSeries(it->series);
+      c->addSeries(it->series);
+      c->sigs.push_back(*it);
+      c->updateAxisY();
+      c->updateTitle();
+      it = src_chart->sigs.erase(it);
+    }
+    src_chart->updateAxisY();
+    src_chart->updateTitle();
   }
 }
 
@@ -346,7 +362,7 @@ void ChartsWidget::newChart() {
     if (!items.isEmpty()) {
       auto c = createChart();
       for (auto it : items) {
-        c->addSeries(it->msg_id, it->sig);
+        c->addSignal(it->msg_id, it->sig);
       }
     }
   }
@@ -460,6 +476,7 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
       charts_widget->currentCharts().insert(to, chart);
       charts_widget->updateLayout(true);
       event->acceptProposedAction();
+      chart->startAnimation();
     }
     drawDropIndicator({});
   }
