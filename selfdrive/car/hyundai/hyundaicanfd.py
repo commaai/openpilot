@@ -8,7 +8,7 @@ class CanBus:
   def __init__(self, CP, hda2=None, fingerprint=None):
     if CP is None:
       assert None not in (hda2, fingerprint)
-      num = math.ceil(max(fingerprint.keys()) / 4)
+      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)]) / 4)
     else:
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
       num = len(CP.safetyConfigs)
