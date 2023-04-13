@@ -63,6 +63,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
   updatePlayBtnState();
 
   setWhatsThis(tr(R"(
@@ -152,7 +153,7 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(this), QSlider(Qt::Horizontal, parent) {
+Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
   timer.callOnTimeout([this]() {
     timeline = can->getTimeline();
     std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
@@ -264,19 +265,29 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
     }
   }
   int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
-  int y = -thumb.height() - THUMBNAIL_MARGIN - style()->pixelMetric(QStyle::PM_LayoutVerticalSpacing);
-  thumbnail_label.showPixmap(mapToGlobal({x, y}), utils::formatSeconds(seconds), thumb, alert);
+  int y = -thumb.height();
+  thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);
 }
 
-void Slider::leaveEvent(QEvent *event) {
-  thumbnail_label.hide();
-  QSlider::leaveEvent(event);
+bool Slider::event(QEvent *event) {
+  switch (event->type()) {
+    case QEvent::WindowActivate:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusIn:
+    case QEvent::FocusOut:
+    case QEvent::Leave:
+      thumbnail_label.hide();
+      break;
+    default:
+      break;
+  }
+  return QSlider::event(event);
 }
 
 // InfoLabel
 
-InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint) {
+InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);
   setVisible(false);
 }
@@ -287,7 +298,8 @@ void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &
   alert_info = alert;
   setVisible(!pm.isNull());
   if (isVisible()) {
-    setGeometry({pt, pm.size()});
+    resize(pm.size());
+    move(pt);
     update();
   }
 }
@@ -303,7 +315,7 @@ void InfoLabel::showAlert(const AlertInfo &alert) {
 
 void InfoLabel::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.setPen(QPen(Qt::white, 2));
+  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
   if (!pixmap.isNull()) {
     p.drawPixmap(0, 0, pixmap);
     p.drawRect(rect());
@@ -322,9 +334,11 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
       text += "\n" + alert_info.text2;
     }
 
-    QFont font;
-    font.setPixelSize(!pixmap.isNull() ? 11 : QFont().pixelSize());
-    p.setFont(font);
+    if (!pixmap.isNull()) {
+      QFont font;
+      font.setPixelSize(11);
+      p.setFont(font);
+    }
     QRect text_rect = rect().adjusted(2, 2, -2, -2);
     QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
     p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
