@@ -86,7 +86,7 @@ class CarController:
                                                   hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
 
-      if self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"] and self.CP.carFingerprint in GLOBAL_GEN2:
+      if self.CP.carFingerprint in GLOBAL_GEN2 and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
         self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
