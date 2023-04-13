@@ -161,14 +161,14 @@ void ChartsWidget::zoomReset() {
   zoom_undo_stack->clear();
 }
 
-void ChartsWidget::showValueTip(double sec) {
+QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
   const QRect visible_rect(-charts_container->pos(), charts_scroll->viewport()->size());
+  return chart->rect().intersected(QRect(chart->mapFrom(charts_container, visible_rect.topLeft()), visible_rect.size()));
+}
+
+void ChartsWidget::showValueTip(double sec) {
   for (auto c : currentCharts()) {
-    if (sec >= 0 && visible_rect.contains(QRect(c->mapTo(charts_container, QPoint(0, 0)), c->size()))) {
-      c->showTip(sec);
-    } else {
-      c->hideTip();
-    }
+    sec >= 0 ? c->showTip(sec) : c->hideTip();
   }
 }
 

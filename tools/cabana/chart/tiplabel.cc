@@ -22,18 +22,22 @@ TipLabel::TipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::Frameless
   setVisible(false);
 }
 
-void TipLabel::showText(const QPoint &pt, const QString &text, int right_edge) {
+void TipLabel::showText(const QPoint &pt, const QString &text, QWidget *w, const QRect &rect) {
   setText(text);
   if (!text.isEmpty()) {
     QSize extra(1, 1);
     resize(sizeHint() + extra);
-    QPoint tip_pos(pt.x() + 12, pt.y());
-    if (tip_pos.x() + size().width() >= right_edge) {
+    QPoint tip_pos(pt.x() + 12, rect.top() + 2);
+    if (tip_pos.x() + size().width() >= rect.right()) {
       tip_pos.rx() = pt.x() - size().width() - 12;
     }
-    move(tip_pos);
+    if (rect.contains({tip_pos, size()})) {
+      move(w->mapToGlobal(tip_pos));
+      setVisible(true);
+      return;
+    }
   }
-  setVisible(!text.isEmpty());
+  setVisible(false);
 }
 
 void TipLabel::paintEvent(QPaintEvent *ev) {

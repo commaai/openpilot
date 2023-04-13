@@ -59,6 +59,7 @@ private:
   ChartView *createChart();
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
+  QRect chartVisibleRect(ChartView *chart);
   void eventsMerged();
   void updateState();
   void zoomReset();
