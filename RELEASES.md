@@ -2,6 +2,7 @@ Version 0.9.2 (2023-03-XX)
 ========================
 * New driving model, trained on a new dataset
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+* Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
 * Buick LaCrosse 2017-19 support thanks to koch-cf!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
