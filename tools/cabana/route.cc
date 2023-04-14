@@ -5,7 +5,6 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QRadioButton>
 
 #include "tools/cabana/streams/replaystream.h"
 
@@ -18,17 +17,15 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   auto file_btn = new QPushButton(tr("Browse..."), this);
   grid_layout->addWidget(file_btn, 0, 2);
 
-  QHBoxLayout *video_btn_layout = new QHBoxLayout();
-  video_btn_group = new QButtonGroup(this);
-  QString buttons[] = {tr("No Video"), tr("Road"), tr("Wide Road"), tr("Driver"), tr("QCamera")};
-  for (int i = 0; i < std::size(buttons); ++i) {
-    auto btn = new QRadioButton(buttons[i], this);
-    btn->setChecked(i == 1);  // default is road camera
-    video_btn_group->addButton(btn, i);
-    video_btn_layout->addWidget(btn);
+  choose_video_cb = new QComboBox(this);
+  choose_video_cb->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  QString items[] = {tr("No Video"), tr("Road Camera"), tr("Wide Road Camera"), tr("Driver Camera"), tr("QCamera")};
+  for (int i = 0; i < std::size(items); ++i) {
+    choose_video_cb->addItem(items[i]);
   }
-  video_btn_layout->addStretch(1);
-  grid_layout->addLayout(video_btn_layout, 1, 1, 1, 2);
+  choose_video_cb->setCurrentIndex(1);  // default is road camera;
+  grid_layout->addWidget(new QLabel(tr("Video")), 1, 0);
+  grid_layout->addWidget(choose_video_cb, 1, 1);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
@@ -36,7 +33,8 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addLayout(grid_layout);
   main_layout->addWidget(btn_box);
-  main_layout->addStretch(1);
+  main_layout->addStretch(0);
+  setMinimumSize({550, 120});
 
   QObject::connect(btn_box, &QDialogButtonBox::accepted, this, &OpenRouteDialog::loadRoute);
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -67,7 +65,7 @@ void OpenRouteDialog::loadRoute() {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {
     uint32_t flags[] = {REPLAY_FLAG_NO_VIPC, REPLAY_FLAG_NONE, REPLAY_FLAG_ECAM, REPLAY_FLAG_DCAM, REPLAY_FLAG_QCAMERA};
-    failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir, flags[video_btn_group->checkedId()]);
+    failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()]);
     if (failed_to_load) {
       QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
     } else {
