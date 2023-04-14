@@ -46,7 +46,7 @@ int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::BaseS
   if (sig.is_signed) {
     val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
   }
-  return val * sig.factor + sig.offset;
+  return val;
 }
 
 double get_scaled_value(const uint8_t *data, size_t data_size, const cabana::BaseSignal &sig) {
