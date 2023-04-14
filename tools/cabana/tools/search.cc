@@ -85,6 +85,9 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
     data_table->setRowCount(1);
     data_table->setColumnCount(6);
 
+    data_table->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(data_table, &QTableWidget::customContextMenuRequested, this, &SearchDlg::showDataTableContextMenu);
+
     search_results_layout->addWidget(data_table);
 
     main_layout->addLayout(scan_button_layout);
@@ -97,6 +100,32 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
 
     QObject::connect(can, &AbstractStream::received, this, &SearchDlg::updateRowData);
     QObject::connect(can, &AbstractStream::seekedTo, this, &SearchDlg::updateRowData);
+}
+
+void SearchDlg::showDataTableContextMenu(const QPoint &pt){
+  int index = data_table->rowAt(pt.y());
+
+  if (index >= 0) {
+    QMenu menu(this);
+    menu.addAction(tr("Add To Signals"), [=](){
+        cabana::Signal sig;
+        sig.factor = 1;
+        sig.is_little_endian = filteredSignals[index].is_little_endian;
+        sig.lsb = filteredSignals[index].lsb;
+        sig.msb = filteredSignals[index].msb;
+        sig.size = filteredSignals[index].size;
+        sig.start_bit = filteredSignals[index].start_bit;
+        sig.start_bit = filteredSignals[index].start_bit;
+        sig.factor = filteredSignals[index].factor;
+        sig.offset = filteredSignals[index].offset;
+        sig.name = "NEW_SIG_FROM_SEARCH";
+
+        dbc()->addSignal(filteredSignals[index].messageID, sig);
+    });
+
+    if (menu.exec(data_table->mapToGlobal(pt))) {
+    }
+  }
 }
 
 void SearchDlg::setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue){
@@ -124,7 +153,7 @@ void SearchDlg::updateRowData(){
 
         int row=1;
         for(auto &sig : filteredSignals){
-            setRowData(row, sig.messageID.toString(), sig.toString(), QString::number(sig.getValue(can->currentSec())), QString::number(sig.previousValue));
+            setRowData(row, sig.messageID.toString(), sig.toString(), QString::number(sig.getValue(can->currentSec())), QString::number(sig.getValue(searchHistory[searchHistory.size() - 1]->params.ts_scan)));
             row++;
         }
     }
@@ -137,7 +166,7 @@ void SearchDlg::update(){
     ScanType selectedValue = (ScanType)(scan_type->currentData().toInt());
 
     next_scan_button->setEnabled(scanningStarted());
-    undo_scan_button->setEnabled(false);
+    undo_scan_button->setEnabled(scanningStarted());
 
     scan_type->clear();
 
@@ -155,10 +184,6 @@ void SearchDlg::update(){
     }
 
     updateRowData();
-
-    for(auto &sig : filteredSignals){
-        sig.previousValue = sig.getValue(std::get<1>(searchHistory[searchHistory.size() - 1]));
-    }
 }
 
 std::vector<SearchSignal> getAllPossibleSignals(int bits_min, int bits_max){
@@ -168,6 +193,7 @@ std::vector<SearchSignal> getAllPossibleSignals(int bits_min, int bits_max){
         for(int size = bits_min; size < bits_max + 1; size++) {
             for(int start_bit = 0; start_bit < 64 - size; start_bit++) {
                 ret.push_back(SearchSignal(msg_id, start_bit, size, true));
+                ret.push_back(SearchSignal(msg_id, start_bit, size, false));
             }
         }
     }
@@ -205,11 +231,15 @@ bool SearchDlg::scanningStarted(){
     return searchHistory.size() > 0;
 }
 
+void SearchDlg::reset(){
+    // Reset scan history and signals
+    filteredSignals.clear();
+    searchHistory.clear();
+}
+
 void SearchDlg::firstScan(){
     if(scanningStarted()){
-        // Reset scan history and signals
-        filteredSignals.clear();
-        searchHistory.clear();
+        reset();
     }
     else{
         filteredSignals = getAllPossibleSignals(scan_bits_range_min, scan_bits_range_max);
@@ -219,48 +249,65 @@ void SearchDlg::firstScan(){
 }
 
 SignalFilterer* SearchDlg::getCurrentFilterer() {
+    SignalFiltererParams params {
+        .ts_scan = can->currentSec(),
+        .ts_prev = -1,
+        .value1 = scan_value1,
+        .value2 = scan_value2
+    };
+
+    if(searchHistory.size() > 0){
+        params.ts_prev = searchHistory[searchHistory.size() - 1]->params.ts_scan;
+    }
+
     if(selectedScanType == ExactValue){
-        return new ExactValueSignalFilterer(scan_value1);
+        return new ExactValueSignalFilterer(params);
     }
     if(selectedScanType == BiggerThan){
-        return new BiggerThanSignalFilterer(scan_value1);
+        return new BiggerThanSignalFilterer(params);
     }
     if(selectedScanType == SmallerThan){
-        return new SmallerThanSignalFilterer(scan_value1);
+        return new SmallerThanSignalFilterer(params);
     }
     if(selectedScanType == UnknownInitialValue){
-        return new UnknownInitialValueSignalFilter();
+        return new UnknownInitialValueSignalFilter(params);
     }
     if(selectedScanType == UnchangedValue){
-        return new UnchangedValueSignalFilter();
+        return new UnchangedValueSignalFilter(params);
     }
     if(selectedScanType == ChangedValue){
-        return new ChangedValueSignalFilter();
+        return new ChangedValueSignalFilter(params);
     }
     if(selectedScanType == IncreasedValue){
-        return new IncreasedValueSignalFilter();
+        return new IncreasedValueSignalFilter(params);
     }
     if(selectedScanType == DecreasedValue){
-        return new DecreasedValueSignalFilter();
+        return new DecreasedValueSignalFilter(params);
     }
 
     throw std::runtime_error("Unsupported scan type...");
 }
 
 void SearchDlg::nextScan(){
-    auto filterer = getCurrentFilterer();
+    searchHistory.push_back(std::shared_ptr<SignalFilterer>(getCurrentFilterer()));
 
-    searchHistory.push_back(std::tuple<SignalFilterer*, double>(filterer, can->currentSec()));
-
-    filterer->searchHistory = searchHistory;
-
-    filteredSignals = filterer->filter(filteredSignals);
+    filteredSignals = searchHistory[searchHistory.size() - 1]->filter(filteredSignals);
 
     update();
-
-    delete filterer;
 }
 
 void SearchDlg::undoScan(){
+    auto searchToUndo = searchHistory[searchHistory.size() - 1];
 
+    // copy signals that were filtered out by this search back into the list. TODO: resort them?
+    std::copy(searchToUndo->filteredSignals.begin(), searchToUndo->filteredSignals.end(), std::back_inserter(filteredSignals));
+
+    searchHistory.pop_back();
+
+    // we have removed all scans, reset
+    if(searchHistory.size() == 0){
+        reset();
+    }
+
+    update();
 }

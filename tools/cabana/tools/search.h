@@ -11,6 +11,7 @@
 #include <QLabel>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QMenu>
 
 #include <iostream>
 
@@ -46,6 +47,9 @@ private:
   void firstScan();
   void nextScan();
   void undoScan();
+  void reset();
+
+  void showDataTableContextMenu(const QPoint &pt);
 
   void update();
   void updateRowData();
@@ -74,7 +78,7 @@ private:
   QTableWidget *data_table;
 
   // Search history, at a specific time
-  std::vector<std::tuple<SignalFilterer*, double>> searchHistory;
+  std::vector<std::shared_ptr<SignalFilterer>> searchHistory;
 
   bool scanningStarted();
 };

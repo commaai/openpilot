@@ -42,12 +42,12 @@ class SearchSignal : public cabana::BaseSignal {
 
         MessageId messageID;
 
-        int64_t previousValue;
-
         int64_t getValue(double ts){
             auto events = can->events().at(messageID);
             CanEventLessThan comp;
-            auto event = std::lower_bound(events.begin(), events.end(), (ts - can->routeStartTime()) * 1e9, comp);
+
+            // get closest event to this ts
+            auto event = std::lower_bound(events.begin(), events.end(), (can->routeStartTime() + ts) * 1e9, comp);
 
             return get_raw_value(event->dat, event->size, *this);
         }
@@ -58,123 +58,99 @@ class SearchSignal : public cabana::BaseSignal {
         }
 };
 
-class SignalFilterer {
-  public:
-    std::vector<std::tuple<SignalFilterer*, double>> searchHistory;
+struct SignalFiltererParams{
+    double ts_scan; // timestamp of current scan
+    double ts_prev; // timestamp of previous scan
 
-    virtual bool signalMatches(SearchSignal sig) = 0;
-
-    SignalFilterer(){
-
-    }
-
-    virtual ~SignalFilterer() = default;
-
-    std::vector<SearchSignal> filter(std::vector<SearchSignal> in) {
-      std::vector<SearchSignal> ret;
-
-      std::copy_if(in.begin(), in.end(), std::back_inserter(ret), [=] (SearchSignal sig) { return signalMatches(sig); });
-
-      return ret;
-    }
-
-    double currentTime(){
-      return std::get<1>(searchHistory[searchHistory.size() - 1]);
-    }
-
-     double previousTime(){
-      return std::get<1>(searchHistory[searchHistory.size() - 2]);
-    }
-};
-
-
-class ZeroInputSignalFilterer : public SignalFilterer {
-  public:
-
-    ZeroInputSignalFilterer(){
-
-    }
-};
-
-class SingleInputSignalFilterer : public SignalFilterer {
-  public:
-    SingleInputSignalFilterer(uint64_t _value) : value(_value){
-
-    }
-  protected:
-    uint64_t value;
-};
-
-class DoubleInputSignalFilterer : public SignalFilterer {
-  public:
-    DoubleInputSignalFilterer(uint64_t _value1, uint64_t _value2) : value1(_value1), value2(_value2){
-
-    }
-  protected:
-    uint64_t value1;
+    uint64_t value1; // values from UI
     uint64_t value2;
 };
 
-class ExactValueSignalFilterer : public SingleInputSignalFilterer {
-  using SingleInputSignalFilterer::SingleInputSignalFilterer;
+class SignalFilterer {
+  public:
+    // signals that were filtered out, for the abilty to undo scans
+    std::vector<SearchSignal> filteredSignals;
+
+    SignalFiltererParams params;
+
+    virtual bool signalMatches(SearchSignal sig) = 0;
+
+    SignalFilterer(SignalFiltererParams params_in) : params(params_in) {}
+
+    virtual ~SignalFilterer() = default;
+
+    std::vector<SearchSignal> filter(std::vector<SearchSignal> &in) {
+      std::vector<SearchSignal> ret;
+
+      filteredSignals.clear();
+
+      std::copy_if(in.begin(), in.end(), std::back_inserter(ret), [=] (SearchSignal sig) { return signalMatches(sig); });
+      std::copy_if(in.begin(), in.end(), std::back_inserter(filteredSignals), [=] (SearchSignal sig) { return !signalMatches(sig); });
+
+      return ret;
+    }
+};
+
+class ExactValueSignalFilterer : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) == value;
+    return sig.getValue(params.ts_scan) == params.value1;
   }
 };
 
-class BiggerThanSignalFilterer : public SingleInputSignalFilterer {
-  using SingleInputSignalFilterer::SingleInputSignalFilterer;
+class BiggerThanSignalFilterer : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) > value;
+    return sig.getValue(params.ts_scan) > params.value1;
   }
 };
 
-class SmallerThanSignalFilterer : public SingleInputSignalFilterer {
-  using SingleInputSignalFilterer::SingleInputSignalFilterer;
+class SmallerThanSignalFilterer : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) < value;
+    return sig.getValue(params.ts_scan) < params.value1;
   }
 };
 
-class UnknownInitialValueSignalFilter : public ZeroInputSignalFilterer {
-  using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
+class UnknownInitialValueSignalFilter : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
     return true;
   }
 };
 
-class IncreasedValueSignalFilter : public ZeroInputSignalFilterer {
-  using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
+class IncreasedValueSignalFilter : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) > sig.previousValue;
+    return sig.getValue(params.ts_scan) > sig.getValue(params.ts_prev);
   }
 };
 
-class DecreasedValueSignalFilter : public ZeroInputSignalFilterer {
-  using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
+class DecreasedValueSignalFilter : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) < sig.previousValue;
+    return sig.getValue(params.ts_scan) < sig.getValue(params.ts_prev);
   }
 };
 
-class ChangedValueSignalFilter : public ZeroInputSignalFilterer {
-  using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
+class ChangedValueSignalFilter : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) != sig.previousValue;
+    return sig.getValue(params.ts_scan) != sig.getValue(params.ts_prev);
   }
 };
 
-class UnchangedValueSignalFilter : public ZeroInputSignalFilterer {
-  using ZeroInputSignalFilterer::ZeroInputSignalFilterer;
+class UnchangedValueSignalFilter : public SignalFilterer {
+  using SignalFilterer::SignalFilterer;
 
   bool signalMatches(SearchSignal sig) {
-    return sig.getValue(currentTime()) == sig.previousValue;
+    return sig.getValue(params.ts_scan) == sig.getValue(params.ts_prev);
   }
 };
