@@ -30,11 +30,21 @@ class TestFwFingerprint(unittest.TestCase):
         total_time = 0
         obd_multiplexing = config.requests[0].obd_multiplexing  # only count OBD multiplexing transitions
         for r in requests:
-          total_time += 0.1
+          # TODO: put FW versions in the config, duplicate logic
+          # subaddresses must be queried one by one
+          request_sub_addrs = set()
+          for brand_versions in VERSIONS[brand].values():
+            for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
+              # Only query ecus in whitelist if whitelist is not empty
+              if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
+                request_sub_addrs.add(sub_addr)
 
-          if r.obd_multiplexing != obd_multiplexing and r.bus % 4 == 1:
-            obd_multiplexing = r.obd_multiplexing
+          for _ in range(len(request_sub_addrs)):
             total_time += 0.1
+
+            if r.obd_multiplexing != obd_multiplexing and r.bus % 4 == 1:
+              obd_multiplexing = r.obd_multiplexing
+              total_time += 0.1
 
         total_time = round(total_time, 2)
         self.assertLessEqual(total_time, 1.1)
