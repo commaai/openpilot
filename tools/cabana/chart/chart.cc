@@ -382,14 +382,14 @@ void ChartView::leaveEvent(QEvent *event) {
   QChartView::leaveEvent(event);
 }
 
-QPixmap getBlankShadowPixmap(const QPixmap &pm, int extent) {
+QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
   e->setColor(QColor(40, 40, 40, 245));
-  e->setOffset(0, 2);
-  e->setBlurRadius(10);
+  e->setOffset(0, 0);
+  e->setBlurRadius(radius);
 
-  qreal dpr = pm.devicePixelRatio();
-  QPixmap blank(pm.size());
+  qreal dpr = px.devicePixelRatio();
+  QPixmap blank(px.size());
   blank.setDevicePixelRatio(dpr);
   blank.fill(Qt::white);
 
@@ -398,29 +398,26 @@ QPixmap getBlankShadowPixmap(const QPixmap &pm, int extent) {
   item.setGraphicsEffect(e);
   scene.addItem(&item);
 
-  QSize shadow_size = pm.size() + QSize(extent * dpr * 2, extent * dpr * 2);
-  QPixmap shadow(shadow_size);
+  QPixmap shadow(px.size() + QSize(radius * dpr * 2, radius * dpr * 2));
   shadow.setDevicePixelRatio(dpr);
   shadow.fill(Qt::transparent);
   QPainter p(&shadow);
-  scene.render(&p, {QPoint(0, 0), shadow_size / dpr}, item.boundingRect().adjusted(-extent, -extent, extent, extent));
+  scene.render(&p, {QPoint(0, 0), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
   return shadow;
 }
 
 static QPixmap getDropPixmap(const QPixmap &src) {
   static QPixmap shadow_px;
-  const int extent = 10;
-  if (shadow_px.size() != src.size() + QSize(extent * 2, extent * 2)) {
-    shadow_px = getBlankShadowPixmap(src, extent);
+  const int radius = 10;
+  if (shadow_px.size() != src.size() + QSize(radius * 2, radius * 2)) {
+    shadow_px = getBlankShadowPixmap(src, radius);
   }
   QPixmap px = shadow_px;
   QPainter p(&px);
-  qreal dpr = src.devicePixelRatio();
-  int delta_w = (px.width() - src.width()) / dpr;
-  int delta_h = (px.height() - src.height()) / dpr;
-  p.drawPixmap(QPoint(delta_w / 2, delta_h / 2), src);
+  QRectF target_rect(QPointF(radius, radius), src.size() / src.devicePixelRatio());
+  p.drawPixmap(target_rect.topLeft(), src);
   p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-  p.fillRect(delta_w / 2, delta_h / 2, src.width() / dpr, src.height() / dpr, QColor(0, 0, 0, 200));
+  p.fillRect(target_rect, QColor(0, 0, 0, 200));
   return px;
 }
 
