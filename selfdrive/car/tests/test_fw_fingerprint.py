@@ -162,7 +162,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
           raise unittest.SkipTest("No multi-panda FW queries")
 
         avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], 0.1, 5)
-        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, total FW query time={avg_time} seconds')
+        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
 
 if __name__ == "__main__":
