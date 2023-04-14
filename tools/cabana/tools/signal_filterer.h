@@ -21,11 +21,11 @@ struct CanEventLessThan
     {
         return left.mono_time < right.mono_time;
     }
-    bool operator() (const CanEvent & left, double right)
+    bool operator() (const CanEvent & left, uint64_t right)
     {
         return left.mono_time < right;
     }
-    bool operator() (double left, const CanEvent & right)
+    bool operator() (uint64_t left, const CanEvent & right)
     {
         return left < right.mono_time;
     }
@@ -49,6 +49,9 @@ class SearchSignal : public cabana::BaseSignal {
             // get closest event to this ts
             auto event = std::lower_bound(events.begin(), events.end(), (can->routeStartTime() + ts) * 1e9, comp);
 
+            if(event != events.begin()){
+              event -= 1;
+            }
             return get_raw_value(event->dat, event->size, *this);
         }
 

@@ -179,7 +179,7 @@ cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
 if GetOption('debug'):
   cflags.extend(
-    ['-g', '-O0']
+    ['-g', '-O2']
   )
 else:
   cflags.extend(
