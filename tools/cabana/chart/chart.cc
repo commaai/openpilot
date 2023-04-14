@@ -512,6 +512,13 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
 }
 
 void ChartView::showTip(double sec) {
+  QRect tip_area(0, chart()->plotArea().top(), rect().width(), chart()->plotArea().height());
+  QRect visible_rect = charts_widget->chartVisibleRect(this).intersected(tip_area);
+  if (visible_rect.isEmpty()) {
+    tip_label.hide();
+    return;
+  }
+
   tooltip_x = chart()->mapToPosition({sec, 0}).x();
   qreal x = tooltip_x;
   QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
@@ -532,9 +539,9 @@ void ChartView::showTip(double sec) {
                        .arg(s.series->color().name(), name, value, min, max);
     }
   }
-  QPointF tooltip_pt(x, chart()->plotArea().top());
-  int plot_right = mapToGlobal(chart()->plotArea().topRight().toPoint()).x();
-  tip_label.showText(mapToGlobal(tooltip_pt.toPoint()), "<p style='white-space:pre'>" + text_list.join("<br />") + "</p>", plot_right);
+  QPoint pt(x, chart()->plotArea().top());
+  QString text = "<p style='white-space:pre'>" % text_list.join("<br />") % "</p>";
+  tip_label.showText(pt, text, this, visible_rect);
   viewport()->update();
 }
 
