@@ -1,70 +1,10 @@
 #include "tools/cabana/util.h"
 
-#include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
-#include <cmath>
-#include <limits>
 
 #include "selfdrive/ui/qt/util.h"
-
-static inline QColor blend(const QColor &a, const QColor &b) {
-  return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
-}
-
-void ChangeTracker::compute(const QByteArray &dat, double ts, uint32_t freq) {
-  if (prev_dat.size() != dat.size()) {
-    colors.resize(dat.size());
-    last_change_t.resize(dat.size());
-    bit_change_counts.resize(dat.size());
-    std::fill(colors.begin(), colors.end(), QColor(0, 0, 0, 0));
-    std::fill(last_change_t.begin(), last_change_t.end(), ts);
-  } else {
-    int factor = settings.theme == DARK_THEME ? 135 : 0;
-    QColor cyan = QColor(0, 187, 255, start_alpha).lighter(factor);
-    QColor red = QColor(255, 0, 0, start_alpha).lighter(factor);
-    QColor greyish_blue = QColor(102, 86, 169, start_alpha / 2).lighter(factor);
-
-    for (int i = 0; i < dat.size(); ++i) {
-      const uint8_t last = prev_dat[i];
-      const uint8_t cur = dat[i];
-
-      if (last != cur) {
-        double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
-          // Last change was while ago, choose color based on delta up or down
-          colors[i] = (cur > last) ? cyan : red;
-        } else {
-          // Periodic changes
-          colors[i] = blend(colors[i], greyish_blue);
-        }
-
-        // Track bit level changes
-        for (int bit = 0; bit < 8; bit++) {
-          if ((cur ^ last) & (1 << bit)) {
-            bit_change_counts[i][bit] += 1;
-          }
-        }
-
-        last_change_t[i] = ts;
-      } else {
-        // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / fade_time;
-        colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
-      }
-    }
-  }
-
-  prev_dat = dat;
-}
-
-void ChangeTracker::clear() {
-  prev_dat.clear();
-  last_change_t.clear();
-  bit_change_counts.clear();
-  colors.clear();
-}
 
 // SegmentTree
 
@@ -101,9 +41,35 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  byte_width = QFontMetrics(fixed_font).width("00 ");
+  byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+}
+
+void MessageBytesDelegate::setMultipleLines(bool v) {
+  if (std::exchange(multiple_lines, v) != multiple_lines) {
+    std::fill_n(size_cache, std::size(size_cache), QSize{});
+  }
+}
+
+QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int n = index.data(BytesRole).toByteArray().size();
+  if (n <= 0 || n > 64) return {};
+
+  QSize size = size_cache[n - 1];
+  if (size.isEmpty()) {
+    int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+    int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+    if (!multiple_lines) {
+      size.setWidth(h_margin * 2 + n * byte_size.width());
+      size.setHeight(byte_size.height() + 2 * v_margin);
+    } else {
+      size.setWidth(h_margin * 2 + 8 * byte_size.width());
+      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
+    }
+    size_cache[n - 1] = size;
+  }
+  return size;
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -112,18 +78,24 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
+  painter->save();
+  if (option.state & QStyle::State_Selected) {
+    painter->fillRect(option.rect, option.palette.highlight());
+    painter->setPen(option.palette.color(QPalette::HighlightedText));
+  }
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
-  painter->setPen(option.palette.color(color_role));
+  const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
+    int row = !multiple_lines ? 0 : i / 8;
+    int column = !multiple_lines ? i : i % 8;
+    QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
     if (i < colors.size() && colors[i].alpha() > 0) {
-      painter->fillRect(rc, colors[i]);
+      painter->fillRect(r, colors[i]);
     }
-    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
-    rc.moveLeft(rc.right() + 1);
+    painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
   }
+  painter->restore();
 }
 
 QColor getColor(const cabana::Signal *sig) {

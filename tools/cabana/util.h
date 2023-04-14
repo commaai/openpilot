@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cmath>
 
 #include <QApplication>
@@ -16,22 +15,6 @@
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/settings.h"
-
-class ChangeTracker {
-public:
-  void compute(const QByteArray &dat, double ts, uint32_t freq);
-  void clear();
-
-  QVector<double> last_change_t;
-  QVector<QColor> colors;
-  QVector<std::array<uint32_t, 8>> bit_change_counts;
-
-private:
-  const int periodic_threshold = 10;
-  const int start_alpha = 128;
-  const float fade_time = 2.0;
-  QByteArray prev_dat;
-};
 
 class LogSlider : public QSlider {
   Q_OBJECT
@@ -80,10 +63,16 @@ private:
 class MessageBytesDelegate : public QStyledItemDelegate {
   Q_OBJECT
 public:
-  MessageBytesDelegate(QObject *parent);
+  MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void setMultipleLines(bool v);
+
+private:
   QFont fixed_font;
-  int byte_width;
+  QSize byte_size = {};
+  bool multiple_lines = false;
+  mutable QSize size_cache[64] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
