@@ -5,7 +5,9 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QHelpEvent>
 #include <QMessageBox>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -350,7 +352,7 @@ bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, c
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
-    QRect geom = option.widget->style()->subElementRect(QStyle::SE_ItemViewItemText, &option);
+    QRect geom = option.rect;
     geom.setLeft(geom.right() - editor->sizeHint().width());
     editor->setGeometry(geom);
     return;
@@ -525,7 +527,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   sparkline_range_slider->setValue(settings.sparkline_range);
   sparkline_range_slider->setToolTip(tr("Sparkline time range"));
 
-  auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
+  auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
 
@@ -582,8 +584,8 @@ void SignalView::rowsChanged() {
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
 
-      auto remove_btn = toolButton("x", tr("Remove signal"));
-      auto plot_btn = toolButton("graph-up", "");
+      auto remove_btn = new ToolButton("x", tr("Remove signal"));
+      auto plot_btn = new ToolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
       h->addWidget(remove_btn);
