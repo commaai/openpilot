@@ -303,13 +303,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  // quectel gps verticalAccuracy is clipped to 500
-  bool gps_accuracy_insane_quectel = false;
-  if (!ublox_available) {
-    gps_accuracy_insane_quectel = log.getVerticalAccuracy() == 500;
-  }
-
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane) {
     //this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;

@@ -2,7 +2,7 @@
 
 #include <QButtonGroup>
 #include <QFileDialog>
-#include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPushButton>
@@ -11,12 +11,13 @@
 
 OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   // TODO: get route list from api.comma.ai
-  QHBoxLayout *edit_layout = new QHBoxLayout;
-  edit_layout->addWidget(new QLabel(tr("Route:")));
-  edit_layout->addWidget(route_edit = new QLineEdit(this));
+  QGridLayout *edit_layout = new QGridLayout();
+  edit_layout->addWidget(new QLabel(tr("Route:"), 0, 0));
+  edit_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
   route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
   auto file_btn = new QPushButton(tr("Browse..."), this);
-  edit_layout->addWidget(file_btn);
+  edit_layout->addWidget(file_btn, 0, 2);
+  edit_layout->addWidget(no_vipc = new QCheckBox(tr("No video")), 1, 1);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
@@ -56,7 +57,8 @@ void OpenRouteDialog::loadRoute() {
   if (!is_valid_format) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {
-    failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir);
+    uint32_t flags = no_vipc->isChecked() ? REPLAY_FLAG_NO_VIPC : REPLAY_FLAG_NONE;
+    failed_to_load = !dynamic_cast<ReplayStream *>(can)->loadRoute(route, data_dir, flags);
     if (failed_to_load) {
       QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
     } else {

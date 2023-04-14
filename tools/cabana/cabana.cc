@@ -57,13 +57,13 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
 
-    auto replay_stream = new ReplayStream(replay_flags, &app);
+    auto replay_stream = new ReplayStream(&app);
     stream.reset(replay_stream);
     if (route.isEmpty()) {
       if (OpenRouteDialog dlg(nullptr); !dlg.exec()) {
         return 0;
       }
-    } else if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"))) {
+    } else if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
       return 0;
     }
   }
