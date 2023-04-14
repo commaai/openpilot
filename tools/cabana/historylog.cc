@@ -39,7 +39,7 @@ void HistoryLogModel::refresh(bool fetch_message) {
   last_fetch_time = 0;
   has_more_data = true;
   messages.clear();
-  hex_colors.clear();
+  hex_colors = {};
   if (fetch_message) {
     updateState();
   }
@@ -146,7 +146,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -157,7 +157,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.end(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -186,6 +186,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
+  painter->setPen(palette().color(settings.theme == DARK_THEME ? QPalette::BrightText : QPalette::Text));
   painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 

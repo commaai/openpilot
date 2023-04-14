@@ -385,14 +385,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas],
+      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas],
+      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
       obd_multiplexing=False,
@@ -1656,6 +1656,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NQ5 FR_CMR AT GEN LHD 1.00 1.00 99211-P1060 665',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
