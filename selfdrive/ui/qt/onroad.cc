@@ -183,10 +183,11 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
 
-  QObject::connect(this, &QPushButton::toggled, [this](bool checked) {
+  QObject::connect(this, &QPushButton::clicked, [this](bool checked) {
     setEnabled(false);
     Params().putBool("ExperimentalMode", checked);
-    QTimer::singleShot(100, [this]() { setEnabled(true); });
+    // prevent double click and skip check for experimental mode in updateState before timeout.
+    QTimer::singleShot(1000, [this]() { setEnabled(true); });
   });
 }
 
@@ -198,7 +199,9 @@ void ExperimentalButton::updateState(const UIState &s) {
   setVisible(cs.getEngageable() || cs.getEnabled());
 
   // button is "checked" if experimental mode is enabled
-  setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
+  if (isEnabled()) {
+    setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
+  }
 
   // disable button when experimental mode is not available, or has not been confirmed for the first time
   const auto cp = sm["carParams"].getCarParams();
