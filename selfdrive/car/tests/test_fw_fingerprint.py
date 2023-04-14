@@ -128,6 +128,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         thread.start()
 
         while thread.is_alive():
+          time.sleep(0.01)
           if not params.get_bool("ObdMultiplexingChanged"):
             params.put_bool("ObdMultiplexingChanged", True)
 
