@@ -186,7 +186,7 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
   QObject::connect(this, &QPushButton::toggled, [this](bool checked) {
     setEnabled(false);
     Params().putBool("ExperimentalMode", checked);
-    QTimer::singleShot(1000, [this]() { setEnabled(true); });
+    QTimer::singleShot(100, [this]() { setEnabled(true); });
   });
 }
 
