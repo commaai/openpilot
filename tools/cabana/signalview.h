@@ -126,6 +126,10 @@ private:
       // update widget geometries in QTreeView::rowsInserted
       QTreeView::rowsInserted(parent, start, end);
     }
+    void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {
+      // Bypass the slow call to QTreeView::dataChanged.
+      QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+    }
   };
 
   TreeView *tree;
