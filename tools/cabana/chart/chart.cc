@@ -11,7 +11,9 @@
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
 #include <QRubberBand>
+#include <QScreen>
 #include <QtMath>
+#include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
 
@@ -40,6 +42,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
+  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -382,39 +385,42 @@ void ChartView::leaveEvent(QEvent *event) {
   QChartView::leaveEvent(event);
 }
 
-QPixmap getBlankShadowPixmap(const QSize &size, int extent) {
+QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
   e->setColor(QColor(40, 40, 40, 245));
-  e->setOffset(0, 2);
-  e->setBlurRadius(10);
+  e->setOffset(0, 0);
+  e->setBlurRadius(radius);
+
+  qreal dpr = px.devicePixelRatio();
+  QPixmap blank(px.size());
+  blank.setDevicePixelRatio(dpr);
+  blank.fill(Qt::white);
 
   QGraphicsScene scene;
-  QGraphicsPixmapItem item;
-  QPixmap src(size);
-  src.fill(Qt::white);
-  item.setPixmap(src);
+  QGraphicsPixmapItem item(blank);
   item.setGraphicsEffect(e);
   scene.addItem(&item);
-  QImage target(src.size() + QSize(extent * 2, extent * 2), QImage::Format_ARGB32);
-  target.fill(Qt::transparent);
-  QPainter p(&target);
-  scene.render(&p, QRectF(), QRectF(-extent, -extent, src.width() + extent * 2, src.height() + extent * 2));
-  return QPixmap::fromImage(target);
+
+  QPixmap shadow(px.size() + QSize(radius * dpr * 2, radius * dpr * 2));
+  shadow.setDevicePixelRatio(dpr);
+  shadow.fill(Qt::transparent);
+  QPainter p(&shadow);
+  scene.render(&p, {QPoint(), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
+  return shadow;
 }
 
 static QPixmap getDropPixmap(const QPixmap &src) {
   static QPixmap shadow_px;
-  const int extent = 10;
-  if (shadow_px.size() != src.size() + QSize(extent * 2, extent * 2)) {
-    shadow_px = getBlankShadowPixmap(src.size(), extent);
+  const int radius = 10;
+  if (shadow_px.size() != src.size() + QSize(radius * 2, radius * 2)) {
+    shadow_px = getBlankShadowPixmap(src, radius);
   }
   QPixmap px = shadow_px;
   QPainter p(&px);
-  int delta_w = px.width() - src.width();
-  int delta_h = px.height() - src.height();
-  p.drawPixmap(QPoint(delta_w / 2, delta_h / 2), src);
+  QRectF target_rect(QPointF(radius, radius), src.size() / src.devicePixelRatio());
+  p.drawPixmap(target_rect.topLeft(), src);
   p.setCompositionMode(QPainter::CompositionMode_DestinationIn);
-  p.fillRect(delta_w / 2, delta_h / 2, src.width(), src.height(), QColor(0, 0, 0, 200));
+  p.fillRect(target_rect, QColor(0, 0, 0, 200));
   return px;
 }
 
@@ -422,7 +428,7 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && move_icon->sceneBoundingRect().contains(event->pos())) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(CHART_MIME_TYPE, QByteArray::number((qulonglong)this));
-    QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH, Qt::SmoothTransformation);
+    QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH * viewport()->devicePixelRatio(), Qt::SmoothTransformation);
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
     drag->setPixmap(getDropPixmap(px));
@@ -614,7 +620,7 @@ void ChartView::paintEvent(QPaintEvent *event) {
       p.setRenderHints(QPainter::Antialiasing);
       drawBackground(&p, viewport()->rect());
       scene()->setSceneRect(viewport()->rect());
-      scene()->render(&p);
+      scene()->render(&p, viewport()->rect());
     }
 
     QPainter painter(viewport());
