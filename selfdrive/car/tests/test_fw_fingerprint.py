@@ -5,7 +5,7 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
-from selfdrive.car.car_helpers import get_interface_attr, interfaces
+from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car
 
