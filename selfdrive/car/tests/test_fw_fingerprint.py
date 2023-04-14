@@ -88,6 +88,24 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
 
+    if len(brand_versions - brand_configs):
+      with self.subTest():
+        self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
+
+  def test_fw_request_ecu_whitelist(self):
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand=brand):
+        whitelisted_ecus = {ecu for r in config.requests for ecu in r.whitelist_ecus}
+        brand_ecus = {fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw}
+        brand_ecus |= {ecu[0] for ecu in config.extra_ecus}
+
+        # each ecu in brand's fw versions + extra ecus needs to be whitelisted at least once
+        ecus_not_whitelisted = brand_ecus - whitelisted_ecus
+
+        ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
+        self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
+                         f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
+
 
 class FakeSocket:
   def receive(self, non_blocking=False):
