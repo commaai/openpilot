@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QCheckBox>
+#include <QButtonGroup>
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QDialog>
@@ -15,7 +15,7 @@ public:
 
 private:
   QLineEdit *route_edit;
-  QCheckBox *no_vipc;
+  QButtonGroup *video_btn_group;
   QDialogButtonBox *btn_box;
   bool failed_to_load = false;
 };
