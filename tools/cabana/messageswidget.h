@@ -1,14 +1,14 @@
 #pragma once
 
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QSet>
-#include <QTableView>
+#include <QTreeView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-using namespace dbcmanager;
 
 class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
@@ -35,14 +35,21 @@ private:
   Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
 
+class MessageView : public QTreeView {
+  Q_OBJECT
+public:
+  MessageView(QWidget *parent) : QTreeView(parent) {}
+  void drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+};
+
 class MessagesWidget : public QWidget {
   Q_OBJECT
 
 public:
   MessagesWidget(QWidget *parent);
   void selectMessage(const MessageId &message_id);
-  QByteArray saveHeaderState() const { return table_widget->horizontalHeader()->saveState(); }
-  bool restoreHeaderState(const QByteArray &state) const { return table_widget->horizontalHeader()->restoreState(state); }
+  QByteArray saveHeaderState() const { return view->header()->saveState(); }
+  bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
   void updateSuppressedButtons();
   void reset();
 
@@ -50,11 +57,11 @@ signals:
   void msgSelectionChanged(const MessageId &message_id);
 
 protected:
-  QTableView *table_widget;
+  MessageView *view;
   std::optional<MessageId> current_msg_id;
   QLineEdit *filter;
+  QCheckBox *multiple_lines_bytes;
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
-
 };
