@@ -286,3 +286,9 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
   painter->setPen(old_pen);
   painter->resetTransform();
 }
+
+void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
+   // Bypass the slow call to QTreeView::dataChanged.
+   // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
+   QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+}
