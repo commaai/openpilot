@@ -6,7 +6,7 @@ from parameterized import parameterized
 from cereal import log, car
 import cereal.messaging as messaging
 from common.params import Params
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
+from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
@@ -35,7 +35,6 @@ CX5_FW_VERSIONS = [
   (Ecu.fwdCamera, 0x706, None, b'B61L-67XK2-T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
   (Ecu.transmission, 0x7e1, None, b'PYNC-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
 ]
-
 
 class TestStartup(unittest.TestCase):
 
@@ -93,7 +92,7 @@ class TestStartup(unittest.TestCase):
       cp.carFw = car_fw
       params.put("CarParamsCache", cp.to_bytes())
 
-    time.sleep(2)  # wait for controlsd to be ready
+    time.sleep(2) # wait for controlsd to be ready
 
     pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
     time.sleep(0.1)
@@ -113,7 +112,7 @@ class TestStartup(unittest.TestCase):
       if not params.get_bool("ObdMultiplexingChanged"):
         params.put_bool("ObdMultiplexingChanged", True)
 
-      msgs = [[addr, 0, b'\x00' * length, 0] for addr, length in finger.items()]
+      msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 
       time.sleep(0.01)
@@ -125,7 +124,6 @@ class TestStartup(unittest.TestCase):
         break
     else:
       self.fail(f"failed to fingerprint {car_model}")
-
 
 if __name__ == "__main__":
   unittest.main()
