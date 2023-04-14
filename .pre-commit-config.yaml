@@ -9,6 +9,7 @@ repos:
     -   id: check-ast
         exclude: '^(third_party)/'
     -   id: check-json
+    -   id: check-toml
     -   id: check-xml
     -   id: check-yaml
     -   id: check-merge-conflict
