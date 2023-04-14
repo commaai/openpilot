@@ -394,7 +394,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, value_width);
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-      painter->drawText(value_rect, option.displayAlignment, text);
+      painter->drawText(value_rect, Qt::AlignRight | Qt::AlignVCenter, text);
       drawSparkline(painter, r.adjusted(0, 0, -value_width - h_margin, 0), option, index);
     }
     painter->restore();
