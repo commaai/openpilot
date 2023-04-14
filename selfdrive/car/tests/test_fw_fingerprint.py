@@ -131,7 +131,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
     avg_time = round((time.perf_counter() - t) / n, 2)
     self.assertLess(avg_time, ref_time + tol)
-    self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test references.")
+    self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
     return avg_time
 
   @parameterized.expand([(1,), (2,), ])
