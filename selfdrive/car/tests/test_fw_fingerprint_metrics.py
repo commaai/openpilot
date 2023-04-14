@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
-import random
 import unittest
-from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
-from selfdrive.car.car_helpers import get_interface_attr, interfaces
-from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -16,7 +12,6 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 class TestFwFingerprint(unittest.TestCase):
-  # TODO: test multiple pandas
   @parameterized.expand([(1,), (2,)])
   def test_fw_query_metrics(self, num_pandas):
     for brand, config in FW_QUERY_CONFIGS.items():
@@ -28,7 +23,7 @@ class TestFwFingerprint(unittest.TestCase):
           raise unittest.SkipTest("No multi-panda FW queries")
 
         total_time = 0
-        obd_multiplexing = config.requests[0].obd_multiplexing  # only count OBD multiplexing transitions
+        obd_multiplexing = config.requests[0].obd_multiplexing  # only count the transitions
         for r in requests:
           # TODO: put FW versions in the config, duplicate logic
           # subaddresses must be queried one by one
