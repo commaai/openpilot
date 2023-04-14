@@ -161,14 +161,14 @@ void ChartsWidget::zoomReset() {
   zoom_undo_stack->clear();
 }
 
-void ChartsWidget::showValueTip(double sec) {
+QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
   const QRect visible_rect(-charts_container->pos(), charts_scroll->viewport()->size());
+  return chart->rect().intersected(QRect(chart->mapFrom(charts_container, visible_rect.topLeft()), visible_rect.size()));
+}
+
+void ChartsWidget::showValueTip(double sec) {
   for (auto c : currentCharts()) {
-    if (sec >= 0 && visible_rect.contains(QRect(c->mapTo(charts_container, QPoint(0, 0)), c->size()))) {
-      c->showTip(sec);
-    } else {
-      c->hideTip();
-    }
+    sec >= 0 ? c->showTip(sec) : c->hideTip();
   }
 }
 
@@ -291,7 +291,7 @@ void ChartsWidget::updateLayout(bool force) {
   auto charts_layout = charts_container->charts_layout;
   int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->horizontalSpacing()) < charts_layout->geometry().width()) break;
   }
 
   bool show_column_cb = n > 1;
