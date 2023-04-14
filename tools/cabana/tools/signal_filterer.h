@@ -52,6 +52,10 @@ class SearchSignal : public cabana::BaseSignal {
             return get_raw_value(event->dat, event->size, *this);
         }
 
+        int64_t getCurrentValue(){
+          return get_raw_value((const uint8_t*)can->last_msgs[messageID].dat.constData(), can->last_msgs[messageID].dat.size(), *this);
+        }
+
         QString toString(){
             auto range = getSignalRange(this);
             return QString("%1:%2").arg(std::get<0>(range)).arg(std::get<1>(range));
