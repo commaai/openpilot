@@ -120,16 +120,15 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
     checks.append(("GAS_SENSOR", 50))
 
-  if CP.openpilotLongitudinalControl:
-    if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      signals.append(("CRUISE_FAULT", "CRUISE_RELATED"))
-      checks.append(("CRUISE_RELATED", 50))
-    else:
-      signals += [
-        ("BRAKE_ERROR_1", "STANDSTILL"),
-        ("BRAKE_ERROR_2", "STANDSTILL")
-      ]
-      checks.append(("STANDSTILL", 50))
+  if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+    signals.append(("CRUISE_FAULT", "CRUISE_FAULT_STATUS"))
+    checks.append(("CRUISE_FAULT_STATUS", 50))
+  elif CP.openpilotLongitudinalControl:
+    signals += [
+      ("BRAKE_ERROR_1", "STANDSTILL"),
+      ("BRAKE_ERROR_2", "STANDSTILL")
+    ]
+    checks.append(("STANDSTILL", 50))
 
   return signals, checks
 
@@ -196,7 +195,7 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      self.brake_error = cp.vl["CRUISE_RELATED"]["CRUISE_FAULT"]
+      self.brake_error = cp.vl["CRUISE_FAULT_STATUS"]["CRUISE_FAULT"]
     elif self.CP.openpilotLongitudinalControl:
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
