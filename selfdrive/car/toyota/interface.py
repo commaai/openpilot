@@ -138,8 +138,9 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
 
-    elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
-      stop_and_go = True
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+      if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
+        stop_and_go = True
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -201,14 +202,18 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
-    # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
-    smartDsu = 0x2FF in fingerprint[0]
-    # In TSS2 cars the camera does long control
+
+    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
+    if 0x2FF in fingerprint[0]:
+      ret.flags |= ToyotaFlags.SMART_DSU.value
+
+    # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not smartDsu
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
+
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    ret.openpilotLongitudinalControl = bool(ret.flags & ToyotaFlags.SMART_DSU) or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:

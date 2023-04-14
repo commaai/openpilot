@@ -1,6 +1,6 @@
 #include "tools/cabana/streams/replaystream.h"
 
-ReplayStream::ReplayStream(uint32_t replay_flags, QObject *parent) : replay_flags(replay_flags), AbstractStream(parent, false) {
+ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
@@ -25,7 +25,7 @@ void ReplayStream::mergeSegments() {
   }
 }
 
-bool ReplayStream::loadRoute(const QString &route, const QString &data_dir) {
+bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   replay.reset(new Replay(route, {"can", "roadEncodeIdx", "wideRoadEncodeIdx", "carParams"}, {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);

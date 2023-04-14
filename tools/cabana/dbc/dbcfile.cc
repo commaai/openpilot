@@ -186,12 +186,29 @@ QStringList DBCFile::signalNames() const {
   return ret;
 }
 
+int DBCFile::signalCount(const MessageId &id) const {
+  if (msgs.count(id.address) == 0) return 0;
+  return msgs.at(id.address).sigs.size();
+}
+
+int DBCFile::signalCount() const {
+  int total = 0;
+  for (auto const& [_, msg] : msgs) {
+    total += msg.sigs.size();
+  }
+  return total;
+}
+
 int DBCFile::msgCount() const {
   return msgs.size();
 }
 
 QString DBCFile::name() const {
   return name_;
+}
+
+bool DBCFile::isEmpty() const {
+  return (signalCount() == 0) && name().isEmpty();
 }
 
 void DBCFile::parseExtraInfo(const QString &content) {

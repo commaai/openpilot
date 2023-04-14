@@ -98,7 +98,6 @@ class CarInterface(CarInterfaceBase):
       # Tuning for experimental long
       ret.longitudinalTuning.kpV = [2.0, 1.5]
       ret.longitudinalTuning.kiV = [0.72]
-      ret.stopAccel = -2.0
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
@@ -233,6 +232,15 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.TRAILBLAZER:
+      ret.mass = 1345. + STD_CARGO_KG
+      ret.wheelbase = 2.64
+      ret.steerRatio = 16.8
+      ret.centerToFront = ret.wheelbase * 0.4
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by

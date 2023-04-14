@@ -1,11 +1,16 @@
 #include "tools/cabana/settings.h"
 
+#include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFileDialog>
 #include <QFormLayout>
+#include <QPushButton>
 #include <QSettings>
+#include <QStandardPaths>
 
-// Settings
+#include "tools/cabana/util.h"
+
 Settings settings;
 
 Settings::Settings() {
@@ -27,7 +32,11 @@ void Settings::save() {
   s.setValue("recent_files", recent_files);
   s.setValue("message_header_state", message_header_state);
   s.setValue("chart_series_type", chart_series_type);
+  s.setValue("theme", theme);
   s.setValue("sparkline_range", sparkline_range);
+  s.setValue("multiple_lines_bytes", multiple_lines_bytes);
+  s.setValue("log_livestream", log_livestream);
+  s.setValue("log_path", log_path);
 }
 
 void Settings::load() {
@@ -45,14 +54,29 @@ void Settings::load() {
   recent_files = s.value("recent_files").toStringList();
   message_header_state = s.value("message_header_state").toByteArray();
   chart_series_type = s.value("chart_series_type", 0).toInt();
+  theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();
+  multiple_lines_bytes = s.value("multiple_lines_bytes", true).toBool();
+  log_livestream = s.value("log_livestream", true).toBool();
+  log_path = s.value("log_path").toString();
+  if (log_path.isEmpty()) {
+    log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
+  }
 }
 
 // SettingsDlg
 
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
-  QFormLayout *form_layout = new QFormLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QGroupBox *groupbox = new QGroupBox("General");
+  QFormLayout *form_layout = new QFormLayout(groupbox);
+
+  theme = new QComboBox(this);
+  theme->setToolTip(tr("You may need to restart cabana after changes theme"));
+  theme->addItems({tr("Automatic"), tr("Light"), tr("Dark")});
+  theme->setCurrentIndex(settings.theme);
+  form_layout->addRow(tr("Color Theme"), theme);
 
   fps = new QSpinBox(this);
   fps->setRange(10, 100);
@@ -65,7 +89,10 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   cached_minutes->setSingleStep(1);
   cached_minutes->setValue(settings.max_cached_minutes);
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
+  main_layout->addWidget(groupbox);
 
+  groupbox = new QGroupBox("Chart");
+  form_layout = new QFormLayout(groupbox);
   chart_series_type = new QComboBox(this);
   chart_series_type->addItems({tr("Line"), tr("Step Line"), tr("Scatter")});
   chart_series_type->setCurrentIndex(settings.chart_series_type);
@@ -76,21 +103,54 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_height->setSingleStep(10);
   chart_height->setValue(settings.chart_height);
   form_layout->addRow(tr("Chart Height"), chart_height);
+  main_layout->addWidget(groupbox);
 
-  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
-  form_layout->addRow(buttonBox);
+  log_livestream = new QGroupBox(tr("Enable live stream logging"), this);
+  log_livestream->setCheckable(true);
+  QHBoxLayout *path_layout = new QHBoxLayout(log_livestream);
+  path_layout->addWidget(log_path = new QLineEdit(settings.log_path, this));
+  log_path->setReadOnly(true);
+  auto browse_btn = new QPushButton(tr("B&rowse..."));
+  path_layout->addWidget(browse_btn);
+  main_layout->addWidget(log_livestream);
 
-  setFixedWidth(360);
-  connect(buttonBox, &QDialogButtonBox::accepted, this, &SettingsDlg::save);
-  connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
+  main_layout->addWidget(buttonBox);
+  main_layout->addStretch(1);
+
+  QObject::connect(browse_btn, &QPushButton::clicked, [this]() {
+    QString fn = QFileDialog::getExistingDirectory(
+        this, tr("Log File Location"),
+        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (!fn.isEmpty()) {
+      log_path->setText(fn);
+    }
+  });
+  QObject::connect(buttonBox, &QDialogButtonBox::clicked, [=](QAbstractButton *button) {
+    auto role = buttonBox->buttonRole(button);
+    if (role == QDialogButtonBox::AcceptRole) {
+      save();
+      accept();
+    } else if (role == QDialogButtonBox::ApplyRole) {
+      save();
+    } else if (role == QDialogButtonBox::RejectRole) {
+      reject();
+    }
+  });
 }
 
 void SettingsDlg::save() {
   settings.fps = fps->value();
+  if (std::exchange(settings.theme, theme->currentIndex()) != settings.theme) {
+    // set theme before emit changed
+    utils::setTheme(settings.theme);
+  }
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();
+  settings.log_livestream = log_livestream->isChecked();
+  settings.log_path = log_path->text();
   settings.save();
-  accept();
   emit settings.changed();
 }

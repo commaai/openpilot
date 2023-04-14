@@ -1033,15 +1033,15 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation>Controle Longitudinal openpilot (Alpha)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>AVISO: o controle longitudinal openpilot está em alfa para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>Neste carro, o openpilot tem como padrão o ACC embutido do carro em vez do controle longitudinal do openpilot. Habilite isso para alternar para o controle longitudinal openpilot. Recomenda-se ativar o modo Experimental ao ativar o alfa de controle longitudinal openpilot.</translation>
     </message>
 </context>
 <context>
