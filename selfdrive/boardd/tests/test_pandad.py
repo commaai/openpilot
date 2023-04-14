@@ -47,8 +47,12 @@ class TestPandad(unittest.TestCase):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_RST_N, 1)
     time.sleep(0.5)
+    assert all(not Panda(s).is_internal() for s in Panda.list())
+
     managed_processes['pandad'].start()
     self._wait_for_boardd()
+
+    assert any(Panda(s).is_internal() for s in Panda.list())
 
   #def test_out_of_date_fw(self):
   #  pass
