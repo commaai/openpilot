@@ -8,7 +8,6 @@ import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
 
