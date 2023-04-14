@@ -11,7 +11,9 @@
 #include <QOpenGLWidget>
 #include <QPropertyAnimation>
 #include <QRubberBand>
+#include <QScreen>
 #include <QtMath>
+#include <QWindow>
 
 #include "tools/cabana/chart/chartswidget.h"
 
@@ -40,6 +42,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
   QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
+  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, [this]() { resetChartCache(); });
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
