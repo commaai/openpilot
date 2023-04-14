@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
-    C = CanBus(None, hda2, fingerprint)
+    CAN = CanBus(None, hda2, fingerprint)
 
     if candidate in CANFD_CAR:
       # detect HDA2 with ADAS Driving ECU
@@ -37,11 +37,11 @@ class CarInterface(CarInterfaceBase):
         ret.flags |= HyundaiFlags.CANFD_HDA2.value
       else:
         # non-HDA2
-        if 0x1cf not in fingerprint[C.ECAN]:
+        if 0x1cf not in fingerprint[CAN.ECAN]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
         # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
-        if 0x130 not in fingerprint[C.ECAN]:
-          if 0x40 not in fingerprint[C.ECAN]:
+        if 0x130 not in fingerprint[CAN.ECAN]:
+          if 0x40 not in fingerprint[CAN.ECAN]:
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
           else:
             ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
@@ -251,14 +251,14 @@ class CarInterface(CarInterfaceBase):
 
     # *** feature detection ***
     if candidate in CANFD_CAR:
-      ret.enableBsm = 0x1e5 in fingerprint[C.ECAN]
+      ret.enableBsm = 0x1e5 in fingerprint[CAN.ECAN]
     else:
       ret.enableBsm = 0x58b in fingerprint[0]
 
     # *** panda safety config ***
     if candidate in CANFD_CAR:
       cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ]
-      if C.ECAN >= 4:
+      if CAN.ECAN >= 4:
         cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
       ret.safetyConfigs = cfgs
 
