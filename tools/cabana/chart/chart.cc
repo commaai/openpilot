@@ -405,7 +405,7 @@ QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   shadow.setDevicePixelRatio(dpr);
   shadow.fill(Qt::transparent);
   QPainter p(&shadow);
-  scene.render(&p, {QPoint(0, 0), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
+  scene.render(&p, {QPoint(), shadow.size() / dpr}, item.boundingRect().adjusted(-radius, -radius, radius, radius));
   return shadow;
 }
 
