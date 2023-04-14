@@ -114,7 +114,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
             params.put_bool("ObdMultiplexingChanged", True)
 
         total_time = round(time.perf_counter() - t, 2)
-        self.assertLessEqual(total_time, 1.5)
+        self.assertLessEqual(total_time, 1.3)
         print(f'{brand=}, {num_pandas=}, {len(FW_QUERY_CONFIGS[brand].requests)=}, total FW query time={total_time} seconds')
 
 
