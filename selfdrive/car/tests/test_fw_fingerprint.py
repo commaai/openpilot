@@ -120,38 +120,38 @@ class TestFwFingerprintTiming(unittest.TestCase):
     params = Params()
     fake_socket = FakeSocket()
 
-    t = time.perf_counter()
-    t2 = time.process_time()
+    times = []
     for _ in range(n):
       params.put_bool("ObdMultiplexingEnabled", True)
       thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand), kwargs=dict(num_pandas=num_pandas))
       thread.start()
+      t = time.perf_counter()
       while thread.is_alive():
+        time.sleep(0.02)
         if not params.get_bool("ObdMultiplexingChanged"):
           params.put_bool("ObdMultiplexingChanged", True)
-        time.sleep(0.02)
+      times.append(time.perf_counter() - t)
 
-    avg_time = round((time.perf_counter() - t) / n, 2)
-    avg_time2 = round((time.process_time() - t2) / n, 2)
-    # self.assertLess(avg_time, ref_time + tol)
-    # self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test references.")
-    return avg_time, avg_time2
+    avg_time = round(sum(times) / len(times), 2)
+    self.assertLess(avg_time, ref_time + tol)
+    self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test references.")
+    return avg_time
 
   @parameterized.expand([(1,), (2,), ])
   def test_fw_query_timing(self, num_pandas):
     brand_ref_times = {
       1: {
-        # 'body': 0.1,
-        # 'chrysler': 0.3,
-        # 'ford': 0.2,
-        'honda': 0.41,
+        'body': 0.1,
+        'chrysler': 0.3,
+        'ford': 0.2,
+        'honda': 0.5,
         'hyundai': 0.7,
-        # 'mazda': 0.1,
-        # 'nissan': 0.3,
-        # 'subaru': 0.1,
-        # 'tesla': 0.2,
+        'mazda': 0.1,
+        'nissan': 0.3,
+        'subaru': 0.1,
+        'tesla': 0.2,
         'toyota': 0.7,
-        # 'volkswagen': 0.2,
+        'volkswagen': 0.2,
       },
       2: {
         'hyundai': 1.1,
@@ -159,15 +159,13 @@ class TestFwFingerprintTiming(unittest.TestCase):
     }
 
     for brand, config in FW_QUERY_CONFIGS.items():
-      if brand not in ('hyundai', 'honda', 'toyota'):
-        continue
       with self.subTest(brand=brand, num_pandas=num_pandas):
         multi_panda_requests = [r for r in config.requests if r.bus > 3]
         if not len(multi_panda_requests) and num_pandas > 1:
           raise unittest.SkipTest("No multi-panda FW queries")
 
-        avg_time, avg_time2 = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], 0.1, 10)
-        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds, t2={avg_time2} seconds')
+        avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], 0.1, 10)
+        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
 
 if __name__ == "__main__":
