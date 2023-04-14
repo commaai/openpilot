@@ -17,15 +17,13 @@ OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
   auto file_btn = new QPushButton(tr("Browse..."), this);
   grid_layout->addWidget(file_btn, 0, 2);
 
-  choose_video_cb = new QComboBox(this);
-  choose_video_cb->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  grid_layout->addWidget(new QLabel(tr("Video")), 1, 0);
+  grid_layout->addWidget(choose_video_cb = new QComboBox(this), 1, 1);
   QString items[] = {tr("No Video"), tr("Road Camera"), tr("Wide Road Camera"), tr("Driver Camera"), tr("QCamera")};
   for (int i = 0; i < std::size(items); ++i) {
     choose_video_cb->addItem(items[i]);
   }
   choose_video_cb->setCurrentIndex(1);  // default is road camera;
-  grid_layout->addWidget(new QLabel(tr("Video")), 1, 0);
-  grid_layout->addWidget(choose_video_cb, 1, 1);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
