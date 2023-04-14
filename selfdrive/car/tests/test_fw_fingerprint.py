@@ -5,15 +5,14 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
-from selfdrive.car.car_helpers import get_interface_attr, interfaces
+from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
-VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
 
 
 class TestFwFingerprint(unittest.TestCase):
