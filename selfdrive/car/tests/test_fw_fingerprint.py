@@ -19,6 +19,14 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 VERSIONS = get_interface_attr("FW_VERSIONS", ignore_none=True)
 
 
+class FakeSocket:
+  def receive(self, non_blocking=False):
+    pass
+
+  def send(self, msg):
+    pass
+
+
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
@@ -105,14 +113,6 @@ class TestFwFingerprint(unittest.TestCase):
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
         self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
                          f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
-
-
-class FakeSocket:
-  def receive(self, non_blocking=False):
-    pass
-
-  def send(self, msg):
-    pass
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
