@@ -34,6 +34,7 @@ void Settings::save() {
   s.setValue("chart_series_type", chart_series_type);
   s.setValue("theme", theme);
   s.setValue("sparkline_range", sparkline_range);
+  s.setValue("multiple_lines_bytes", multiple_lines_bytes);
   s.setValue("log_livestream", log_livestream);
   s.setValue("log_path", log_path);
 }
@@ -55,6 +56,7 @@ void Settings::load() {
   chart_series_type = s.value("chart_series_type", 0).toInt();
   theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();
+  multiple_lines_bytes = s.value("multiple_lines_bytes", true).toBool();
   log_livestream = s.value("log_livestream", true).toBool();
   log_path = s.value("log_path").toString();
   if (log_path.isEmpty()) {
