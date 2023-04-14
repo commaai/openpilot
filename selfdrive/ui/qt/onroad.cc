@@ -180,14 +180,15 @@ ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
   setCheckable(true);
 
+  params = Params();
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
 
   QObject::connect(this, &QPushButton::clicked, [this](bool checked) {
     setEnabled(false);
-    Params().putBool("ExperimentalMode", checked);
+    params.putBool("ExperimentalMode", checked);
     // prevent double click and skip check for experimental mode in updateState before timeout.
-    QTimer::singleShot(1000, [this]() { setEnabled(true); });
+    QTimer::singleShot(100, [this]() { setEnabled(true); });
   });
 }
 
