@@ -224,8 +224,8 @@ class CarState(CarStateBase):
     self.buttons_counter = cp.vl[cruise_btn_msg]["COUNTER"]
     ret.accFaulted = cp.vl["TCS"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
-    if self.CP.flags & HyundaiFlags.CANFD_HDA2:
-      self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
+    # if self.CP.flags & HyundaiFlags.CANFD_HDA2:
+    #   self.cam_0x2a4 = copy.copy(cp_cam.vl["CAM_0x2a4"])
 
     return ret
 
@@ -523,8 +523,9 @@ class CarState(CarStateBase):
     signals = []
     checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
-      checks += [("CAM_0x2a4", 20)]
+      pass
+      # signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      # checks += [("CAM_0x2a4", 20)]
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
       signals += [
         ("COUNTER", "SCC_CONTROL"),
