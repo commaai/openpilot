@@ -3,8 +3,11 @@
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QFileDialog>
 #include <QFormLayout>
+#include <QPushButton>
 #include <QSettings>
+#include <QStandardPaths>
 
 #include "tools/cabana/util.h"
 
@@ -32,6 +35,8 @@ void Settings::save() {
   s.setValue("theme", theme);
   s.setValue("sparkline_range", sparkline_range);
   s.setValue("multiple_lines_bytes", multiple_lines_bytes);
+  s.setValue("log_livestream", log_livestream);
+  s.setValue("log_path", log_path);
 }
 
 void Settings::load() {
@@ -52,13 +57,20 @@ void Settings::load() {
   theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();
   multiple_lines_bytes = s.value("multiple_lines_bytes", true).toBool();
+  log_livestream = s.value("log_livestream", true).toBool();
+  log_path = s.value("log_path").toString();
+  if (log_path.isEmpty()) {
+    log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
+  }
 }
 
 // SettingsDlg
 
 SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Settings"));
-  QFormLayout *form_layout = new QFormLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QGroupBox *groupbox = new QGroupBox("General");
+  QFormLayout *form_layout = new QFormLayout(groupbox);
 
   theme = new QComboBox(this);
   theme->setToolTip(tr("You may need to restart cabana after changes theme"));
@@ -77,7 +89,10 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   cached_minutes->setSingleStep(1);
   cached_minutes->setValue(settings.max_cached_minutes);
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
+  main_layout->addWidget(groupbox);
 
+  groupbox = new QGroupBox("Chart");
+  form_layout = new QFormLayout(groupbox);
   chart_series_type = new QComboBox(this);
   chart_series_type->addItems({tr("Line"), tr("Step Line"), tr("Scatter")});
   chart_series_type->setCurrentIndex(settings.chart_series_type);
@@ -88,12 +103,31 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   chart_height->setSingleStep(10);
   chart_height->setValue(settings.chart_height);
   form_layout->addRow(tr("Chart Height"), chart_height);
+  main_layout->addWidget(groupbox);
+
+  log_livestream = new QGroupBox(tr("Enable live stream logging"), this);
+  log_livestream->setCheckable(true);
+  QHBoxLayout *path_layout = new QHBoxLayout(log_livestream);
+  path_layout->addWidget(log_path = new QLineEdit(settings.log_path, this));
+  log_path->setReadOnly(true);
+  auto browse_btn = new QPushButton(tr("B&rowse..."));
+  path_layout->addWidget(browse_btn);
+  main_layout->addWidget(log_livestream);
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
-  form_layout->addRow(buttonBox);
+  main_layout->addWidget(buttonBox);
+  main_layout->addStretch(1);
 
-  setFixedWidth(360);
-  connect(buttonBox, &QDialogButtonBox::clicked, [=](QAbstractButton *button) {
+  QObject::connect(browse_btn, &QPushButton::clicked, [this]() {
+    QString fn = QFileDialog::getExistingDirectory(
+        this, tr("Log File Location"),
+        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (!fn.isEmpty()) {
+      log_path->setText(fn);
+    }
+  });
+  QObject::connect(buttonBox, &QDialogButtonBox::clicked, [=](QAbstractButton *button) {
     auto role = buttonBox->buttonRole(button);
     if (role == QDialogButtonBox::AcceptRole) {
       save();
@@ -115,6 +149,8 @@ void SettingsDlg::save() {
   settings.max_cached_minutes = cached_minutes->value();
   settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();
+  settings.log_livestream = log_livestream->isChecked();
+  settings.log_path = log_path->text();
   settings.save();
   emit settings.changed();
 }
