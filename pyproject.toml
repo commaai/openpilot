@@ -176,6 +176,7 @@ zerorpc = { git = "https://github.com/commaai/zerorpc-python.git", branch = "mas
 omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
 tritonclient = {version = "2.28.0", extras = ["http"]}
+tensorrt = "^8.6.0"
 
 
 [build-system]
