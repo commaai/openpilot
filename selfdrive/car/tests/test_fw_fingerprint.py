@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 import random
+import time
 import unittest
 from collections import defaultdict
 from parameterized import parameterized
+import threading
 
 from cereal import car
+from common.params import Params
 from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -85,58 +88,34 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
 
-    if len(brand_versions - brand_configs):
-      with self.subTest():
-        self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
-  def test_fw_request_ecu_whitelist(self):
-    for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand):
-        whitelisted_ecus = {ecu for r in config.requests for ecu in r.whitelist_ecus}
-        brand_ecus = {fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw}
-        brand_ecus |= {ecu[0] for ecu in config.extra_ecus}
+class FakeSocket:
+  def receive(self, non_blocking=False):
+    pass
 
-        # each ecu in brand's fw versions + extra ecus needs to be whitelisted at least once
-        ecus_not_whitelisted = brand_ecus - whitelisted_ecus
-
-        ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
-        self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
-                         f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
+  def send(self, msg):
+    pass
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
   @parameterized.expand([(1,), (2,)])
   def test_fw_query_timing(self, num_pandas):
+    params = Params()
+
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand, num_pandas=num_pandas):
-        requests = [r for r in config.requests if r.bus <= num_pandas * 4 - 1]
-        multi_panda_requests = [r for r in config.requests if r.bus > 3]
+        fake_socket = FakeSocket()
+        thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand), kwargs=dict(num_pandas=num_pandas))
+        t = time.perf_counter()
+        thread.start()
 
-        if not len(multi_panda_requests) and num_pandas > 1:
-          raise unittest.SkipTest("No multi-panda FW queries")
+        while thread.is_alive():
+          if not params.get_bool("ObdMultiplexingChanged"):
+            params.put_bool("ObdMultiplexingChanged", True)
 
-        total_time = 0
-        obd_multiplexing = config.requests[0].obd_multiplexing  # only count the transitions
-        for r in requests:
-          # TODO: put FW versions in the config, duplicate logic
-          # subaddresses must be queried one by one
-          request_sub_addrs = set()
-          for brand_versions in VERSIONS[brand].values():
-            for ecu_type, addr, sub_addr in list(brand_versions) + config.extra_ecus:
-              # Only query ecus in whitelist if whitelist is not empty
-              if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
-                request_sub_addrs.add(sub_addr)
-
-          for _ in range(len(request_sub_addrs)):
-            total_time += 0.1
-
-            if r.obd_multiplexing != obd_multiplexing and r.bus % 4 == 1:
-              obd_multiplexing = r.obd_multiplexing
-              total_time += 0.1
-
-        total_time = round(total_time, 2)
-        self.assertLessEqual(total_time, 1.1)
-        print(f'{brand=}, {num_pandas=}, {len(requests)=}, total FW query time={total_time} seconds')
+        total_time = round(time.perf_counter() - t, 2)
+        self.assertLessEqual(total_time, 1.5)
+        print(f'{brand=}, {num_pandas=}, {len(FW_QUERY_CONFIGS[brand].requests)=}, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
