@@ -124,9 +124,9 @@ class TestFwFingerprintTiming(unittest.TestCase):
       with self.subTest(brand=brand, num_pandas=num_pandas):
         fake_socket = FakeSocket()
         thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand), kwargs=dict(num_pandas=num_pandas))
-        t = time.perf_counter()
         thread.start()
 
+        t = time.perf_counter()
         while thread.is_alive():
           time.sleep(0.01)
           if not params.get_bool("ObdMultiplexingChanged"):
@@ -134,7 +134,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
         total_time = round(time.perf_counter() - t, 2)
         self.assertLessEqual(total_time, 1.3)
-        print(f'{brand=}, {num_pandas=}, {len(FW_QUERY_CONFIGS[brand].requests)=}, total FW query time={total_time} seconds')
+        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
