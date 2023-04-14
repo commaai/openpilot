@@ -41,9 +41,35 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent) : QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
-  byte_width = QFontMetrics(fixed_font).width("00 ");
+  byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
+}
+
+void MessageBytesDelegate::setMultipleLines(bool v) {
+  if (std::exchange(multiple_lines, v) != multiple_lines) {
+    std::fill_n(size_cache, std::size(size_cache), QSize{});
+  }
+}
+
+QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  int n = index.data(BytesRole).toByteArray().size();
+  if (n <= 0 || n > 64) return {};
+
+  QSize size = size_cache[n - 1];
+  if (size.isEmpty()) {
+    int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+    int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+    if (!multiple_lines) {
+      size.setWidth(h_margin * 2 + n * byte_size.width());
+      size.setHeight(byte_size.height() + 2 * v_margin);
+    } else {
+      size.setWidth(h_margin * 2 + 8 * byte_size.width());
+      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
+    }
+    size_cache[n - 1] = size;
+  }
+  return size;
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -52,18 +78,24 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-  QRect rc{option.rect.left() + h_margin, option.rect.top() + v_margin, byte_width, option.rect.height() - 2 * v_margin};
+  painter->save();
+  if (option.state & QStyle::State_Selected) {
+    painter->fillRect(option.rect, option.palette.highlight());
+    painter->setPen(option.palette.color(QPalette::HighlightedText));
+  }
 
-  auto color_role = option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text;
-  painter->setPen(option.palette.color(color_role));
+  const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
+    int row = !multiple_lines ? 0 : i / 8;
+    int column = !multiple_lines ? i : i % 8;
+    QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
     if (i < colors.size() && colors[i].alpha() > 0) {
-      painter->fillRect(rc, colors[i]);
+      painter->fillRect(r, colors[i]);
     }
-    painter->drawText(rc, Qt::AlignCenter, toHex(byte_list[i]));
-    rc.moveLeft(rc.right() + 1);
+    painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
   }
+  painter->restore();
 }
 
 QColor getColor(const cabana::Signal *sig) {
