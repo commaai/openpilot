@@ -1,8 +1,11 @@
 #pragma once
 
 #include <QByteArray>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
+#include <QGroupBox>
+#include <QLineEdit>
 #include <QSpinBox>
 
 #define LIGHT_THEME 1
@@ -25,6 +28,8 @@ public:
   int theme = 0;
   int sparkline_range = 15; // 15 seconds
   bool multiple_lines_bytes = true;
+  bool log_livestream = true;
+  QString log_path;
   QString last_dir;
   QString last_route_dir;
   QByteArray geometry;
@@ -48,6 +53,8 @@ public:
   QSpinBox *chart_height;
   QComboBox *chart_series_type;
   QComboBox *theme;
+  QGroupBox *log_livestream;
+  QLineEdit *log_path;
 };
 
 extern Settings settings;
