@@ -38,8 +38,11 @@ public:
   const cabana::Msg* msg(uint8_t source, const QString &name);
 
   QStringList signalNames() const;
+  int signalCount(const MessageId &id) const;
+  int signalCount() const;
   int msgCount() const;
   int dbcCount() const;
+  int nonEmptyDBCCount() const;
 
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;

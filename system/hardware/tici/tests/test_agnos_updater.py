@@ -4,8 +4,8 @@ import os
 import unittest
 import requests
 
-AGNOS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-MANIFEST = os.path.join(AGNOS_DIR, "agnos.json")
+TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+MANIFEST = os.path.join(TEST_DIR, "../agnos.json")
 
 
 class TestAgnosUpdater(unittest.TestCase):

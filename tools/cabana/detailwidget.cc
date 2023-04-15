@@ -22,7 +22,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(0, 6, 0, 0);
+  title_layout->setContentsMargins(3, 6, 3, 0);
   time_label = new QLabel(this);
   time_label->setToolTip(tr("Current time"));
   time_label->setStyleSheet("QLabel{font-weight:bold;}");
@@ -32,9 +32,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   title_layout->addWidget(name_label);
-  auto edit_btn = toolButton("pencil", tr("Edit Message"));
+  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
   title_layout->addWidget(edit_btn);
-  remove_btn = toolButton("x-lg", tr("Remove Message"));
+  remove_btn = new ToolButton("x-lg", tr("Remove Message"));
   title_layout->addWidget(remove_btn);
   main_layout->addLayout(title_layout);
 
