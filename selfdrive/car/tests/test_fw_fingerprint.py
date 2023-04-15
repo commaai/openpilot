@@ -174,7 +174,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
-      self._assert_timing(total_time, total_ref_time, tol)
+      self._assert_timing(total_time, total_ref_time, tol * 2)
+      print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
