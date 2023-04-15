@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
-
+from cereal.messaging import SubMaster
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from system.swaglog import cloudlog
@@ -58,11 +58,30 @@ T_FOLLOW = 1.45
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
+class liveBehavior():
+  def __init__(self):
+    self.comfort_brake = COMFORT_BRAKE
+    self.sm = SubMaster(['behavior'])
+  
+  def get_live_comfort_brake(self):
+    self.sm.update(0)
+    if self.sm.updated['behavior']:
+      cb = self.sm['behavior'].comfortBrake
+      self.comfort_brake = cb if cb > 1 and cb < 2.8 else COMFORT_BRAKE
+    print("comfort_brake: ", self.comfort_brake)
+    return self.comfort_brake
+
+lb = liveBehavior()
+
+def get_comfort_brake():
+  
+  return lb.get_live_comfort_brake()
+
 def get_stopped_equivalence_factor(v_lead):
-  return (v_lead**2) / (2 * COMFORT_BRAKE)
+  return (v_lead**2) / (2 * get_comfort_brake())
 
 def get_safe_obstacle_distance(v_ego, t_follow=T_FOLLOW):
-  return (v_ego**2) / (2 * COMFORT_BRAKE) + t_follow * v_ego + STOP_DISTANCE
+  return (v_ego**2) / (2 * get_comfort_brake()) + t_follow * v_ego + STOP_DISTANCE
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)

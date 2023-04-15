@@ -91,6 +91,17 @@
     </message>
 </context>
 <context>
+    <name>BehaviorPanel</name>
+    <message>
+        <source>Comfort Brake:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Accel Target Offset:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -99,6 +110,21 @@
     <message>
         <source>Cancel</source>
         <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>CustomSlider</name>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished">重置</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="unfinished">重置</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -627,6 +653,10 @@ This may take up to a minute.</source>
     <message>
         <source>Navigation</source>
         <translation>导航</translation>
+    </message>
+    <message>
+        <source>Behavior</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

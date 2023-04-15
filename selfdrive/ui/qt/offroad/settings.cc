@@ -21,6 +21,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
+#include "selfdrive/ui/qt/widgets/slider.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -313,6 +314,68 @@ void DevicePanel::poweroff() {
   }
 }
 
+BehaviorPanel::BehaviorPanel(SettingsWindow *parent) : ListWidget(parent){
+  
+  // Add sliders here
+  // name, label, units, min, max, default, setter function
+  std::vector<SliderDefinition> slider_defs{
+    {
+      "ComfortBrake", tr("Comfort Brake:"), "m/s", 1.0, 2.8, 2.5,
+      [](cereal::Behavior::Builder &behavior, double value) {
+        behavior.setComfortBrake(static_cast<float>(value));
+      }
+    },
+  };
+  
+  // Loop through the slider definitions and create sliders
+  for (const auto &slider_def : slider_defs) {
+    QString param = slider_def.paramName;
+    
+    // Get the setter function from the map
+    CustomSlider::CerealSetterFunction cerealSetFunc = slider_def.cerealSetFunc;
+
+    CustomSlider *slider = new CustomSlider(param, \
+                                            cerealSetFunc, \
+                                            slider_def.unit,\
+                                            slider_def.title,\
+                                            slider_def.paramMin,\
+                                            slider_def.paramMax, \
+                                            slider_def.defaultVal,\
+                                            this);
+    sliders[param] = slider; // Store the slider pointer in the map
+    sliderItems[param.toStdString()] = slider->getSliderItem(); // Store the slider item pointer in the map
+    addItem(slider->getSliderItem()); // Add the slider item to the list widget
+
+  }
+
+  // create a pubmaster for all the sliders
+  pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>(
+        {"behavior"});
+
+  timer = new QTimer(this);
+  timer->setInterval(1000); // Send all slider values every interval
+  timer->start();
+
+  connect(timer, &QTimer::timeout, this, &BehaviorPanel::sendAllSliderValues);
+}
+
+void BehaviorPanel::sendAllSliderValues()
+{
+  MessageBuilder msg;
+  auto behavior = msg.initEvent().initBehavior();
+
+  // Iterate through all sliders and call their setter functions
+  for (const auto &slider : sliders)
+  {
+    double dValue = slider->paramMin + (slider->paramMax - slider->paramMin) * (slider->value() - slider->sliderMin) / (slider->sliderMax - slider->sliderMin);
+    slider->cerealSetFunc(behavior, dValue);
+  }
+
+  // Send the message with all slider values
+  pm->send("behavior", msg);
+}
+
+
 void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
@@ -371,6 +434,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
+    {tr("Behavior"), new BehaviorPanel(this)},
   };
 
 #ifdef ENABLE_MAPS
