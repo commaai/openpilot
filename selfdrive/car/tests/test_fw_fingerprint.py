@@ -138,6 +138,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.05
+    total_ref_time = 4.5
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -169,9 +170,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
           total_time += avg_time
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    can_fp_time = 4.5
-    self.assertLess(total_time, can_fp_time + tol)
-    self.assertGreater(total_time, can_fp_time - tol, "Performance seems to have improved, update test refs.")
+    self.assertLess(total_ref_time, total_ref_time + tol)
+    self.assertGreater(total_ref_time, total_ref_time - tol, "Performance seems to have improved, update test refs.")
 
 
 if __name__ == "__main__":
