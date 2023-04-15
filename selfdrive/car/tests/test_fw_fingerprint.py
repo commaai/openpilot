@@ -115,7 +115,8 @@ class TestFwFingerprint(unittest.TestCase):
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  def _benchmark(self, brand, num_pandas, ref_time, tol, n):
+  @staticmethod
+  def _benchmark(brand, num_pandas, n):
     params = Params()
     fake_socket = FakeSocket()
 
@@ -131,13 +132,15 @@ class TestFwFingerprintTiming(unittest.TestCase):
           params.put_bool("ObdMultiplexingChanged", True)
       times.append(time.perf_counter() - t)
 
-    avg_time = round(sum(times) / len(times), 2)
+    return round(sum(times) / len(times), 2)
+
+  def _assert_timing(self, avg_time, ref_time, tol):
     self.assertLess(avg_time, ref_time + tol)
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
-    return avg_time
 
-  @parameterized.expand([(1,), (2,), ])
-  def test_fw_query_timing(self, num_pandas):
+  def test_fw_query_timing(self):
+    tol = 0.1
+    total_ref_time = 4.6
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -157,14 +160,22 @@ class TestFwFingerprintTiming(unittest.TestCase):
       }
     }
 
-    for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand, num_pandas=num_pandas):
-        multi_panda_requests = [r for r in config.requests if r.bus > 3]
-        if not len(multi_panda_requests) and num_pandas > 1:
-          raise unittest.SkipTest("No multi-panda FW queries")
+    total_time = 0
+    for num_pandas in (1, 2):
+      for brand, config in FW_QUERY_CONFIGS.items():
+        with self.subTest(brand=brand, num_pandas=num_pandas):
+          multi_panda_requests = [r for r in config.requests if r.bus > 3]
+          if not len(multi_panda_requests) and num_pandas > 1:
+            raise unittest.SkipTest("No multi-panda FW queries")
 
-        avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], 0.1, 10)
-        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
+          avg_time = self._benchmark(brand, num_pandas, 10)
+          total_time += avg_time
+          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
+          print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
+
+    with self.subTest(brand='all_brands'):
+      self._assert_timing(total_time, total_ref_time, tol)
+      print(f'all brands, total FW query time={total_time} seconds')
 
 
 if __name__ == "__main__":
