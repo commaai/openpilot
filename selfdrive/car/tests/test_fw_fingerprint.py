@@ -136,8 +136,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
     return avg_time
 
-  @parameterized.expand([(1,), (2,), ])
-  def test_fw_query_timing(self, num_pandas):
+  def test_fw_query_timing(self):
+    tol = 0.05
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -157,14 +157,21 @@ class TestFwFingerprintTiming(unittest.TestCase):
       }
     }
 
-    for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand, num_pandas=num_pandas):
-        multi_panda_requests = [r for r in config.requests if r.bus > 3]
-        if not len(multi_panda_requests) and num_pandas > 1:
-          raise unittest.SkipTest("No multi-panda FW queries")
+    total_time = 0
+    for num_pandas in (1, 2):
+      for brand, config in FW_QUERY_CONFIGS.items():
+        with self.subTest(brand=brand, num_pandas=num_pandas):
+          multi_panda_requests = [r for r in config.requests if r.bus > 3]
+          if not len(multi_panda_requests) and num_pandas > 1:
+            raise unittest.SkipTest("No multi-panda FW queries")
 
-        avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], 0.1, 10)
-        print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
+          avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], tol, 10)
+          total_time += avg_time
+          print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
+
+    can_fp_time = 4.5
+    self.assertLess(total_time, can_fp_time - tol)
+    self.assertGreater(total_time, can_fp_time - tol, "Performance seems to have improved, update test refs.")
 
 
 if __name__ == "__main__":
