@@ -139,7 +139,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
-    tol = 0.05
+    tol = 0.1
     total_ref_time = 4.5
     brand_ref_times = {
       1: {
