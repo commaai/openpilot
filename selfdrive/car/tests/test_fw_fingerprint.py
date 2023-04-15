@@ -140,7 +140,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 4.5
+    total_ref_time = 4.6
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -174,7 +174,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
-      self._assert_timing(total_time, total_ref_time, tol * 2)
+      self._assert_timing(total_time, total_ref_time, tol)
       print(f'all brands, total FW query time={total_time} seconds')
 
 
