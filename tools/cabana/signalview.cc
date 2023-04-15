@@ -418,11 +418,12 @@ void SignalItemDelegate::drawSparkline(QPainter *painter, const QRect &rect, con
     const auto item = (const SignalModel::Item *)index.internalPointer();
     const auto sig = item->sig;
     points.clear();
+    points.reserve(std::distance(first, last));
     for (auto it = first; it != last; ++it) {
       double value = get_raw_value(it->dat, it->size, *sig);
       points.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
-      min = std::min(min, value);
-      max = std::max(max, value);
+      if (min > value) min = value;
+      if (max < value) max = value;
     }
     if (min == max) {
       min -= 1;
