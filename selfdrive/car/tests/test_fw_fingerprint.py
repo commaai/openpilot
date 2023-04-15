@@ -115,7 +115,8 @@ class TestFwFingerprint(unittest.TestCase):
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  def _benchmark(self, brand, num_pandas, ref_time, tol, n):
+  @staticmethod
+  def _benchmark(brand, num_pandas, n):
     params = Params()
     fake_socket = FakeSocket()
 
@@ -131,10 +132,11 @@ class TestFwFingerprintTiming(unittest.TestCase):
           params.put_bool("ObdMultiplexingChanged", True)
       times.append(time.perf_counter() - t)
 
-    avg_time = round(sum(times) / len(times), 2)
+    return round(sum(times) / len(times), 2)
+
+  def _assert_timing(self, avg_time, ref_time, tol):
     self.assertLess(avg_time, ref_time + tol)
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
-    return avg_time
 
   def test_fw_query_timing(self):
     tol = 0.05
@@ -166,12 +168,13 @@ class TestFwFingerprintTiming(unittest.TestCase):
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
-          avg_time = self._benchmark(brand, num_pandas, brand_ref_times[num_pandas][brand], tol, 10)
+          avg_time = self._benchmark(brand, num_pandas, 10)
           total_time += avg_time
+          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
-    self.assertLess(total_ref_time, total_ref_time + tol)
-    self.assertGreater(total_ref_time, total_ref_time - tol, "Performance seems to have improved, update test refs.")
+    with self.subTest(brand='total_time'):
+      self._assert_timing(total_time, total_ref_time, tol)
 
 
 if __name__ == "__main__":
