@@ -24,7 +24,6 @@ def set_time(logger):
 
         # Set system time from panda RTC time
         panda_time = p.get_datetime()
-        logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
         if panda_time > MIN_DATE:
           logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
           os.system(f"TZ=UTC date -s '{panda_time}'")

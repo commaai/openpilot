@@ -1,6 +1,7 @@
 #include "tools/cabana/messageswidget.h"
 
 #include <QHBoxLayout>
+#include <QPainter>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -9,29 +10,30 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(0 ,0, 0, 0);
 
   // message filter
-  filter = new QLineEdit(this);
+  QHBoxLayout *title_layout = new QHBoxLayout();
+  title_layout->addWidget(filter = new QLineEdit(this));
   QRegularExpression re("\\S+");
   filter->setValidator(new QRegularExpressionValidator(re, this));
   filter->setClearButtonEnabled(true);
   filter->setPlaceholderText(tr("filter messages"));
-  main_layout->addWidget(filter);
+  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
+  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
+  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
+  main_layout->addLayout(title_layout);
 
   // message table
-  table_widget = new QTableView(this);
+  view = new MessageView(this);
   model = new MessageListModel(this);
-  table_widget->setModel(model);
-  table_widget->setItemDelegateForColumn(5, new MessageBytesDelegate(table_widget));
-  table_widget->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table_widget->setSelectionMode(QAbstractItemView::SingleSelection);
-  table_widget->setSortingEnabled(true);
-  table_widget->sortByColumn(0, Qt::AscendingOrder);
-  table_widget->setColumnWidth(0, 150);
-  table_widget->setColumnWidth(1, 50);
-  table_widget->setColumnWidth(2, 50);
-  table_widget->setColumnWidth(3, 50);
-  table_widget->horizontalHeader()->setStretchLastSection(true);
-  table_widget->verticalHeader()->hide();
-  main_layout->addWidget(table_widget);
+  auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
+  view->setItemDelegateForColumn(5, delegate);
+  view->setModel(model);
+  view->setSortingEnabled(true);
+  view->sortByColumn(0, Qt::AscendingOrder);
+  view->setItemsExpandable(false);
+  view->setIndentation(0);
+  view->setRootIsDecorated(false);
+  view->header()->setStretchLastSection(true);
+  main_layout->addWidget(view);
 
   // suppress
   QHBoxLayout *suppress_layout = new QHBoxLayout();
@@ -43,6 +45,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(filter, &QLineEdit::textEdited, model, &MessageListModel::setFilterString);
+  QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
+    settings.multiple_lines_bytes = (state == Qt::Checked);
+    delegate->setMultipleLines(settings.multiple_lines_bytes);
+    model->sortMessages();
+  });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
@@ -53,7 +60,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
       selectMessage(*current_msg_id);
     }
   });
-  QObject::connect(table_widget->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
+  QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
       auto &id = model->msgs[current.row()];
       if (!current_msg_id || id != *current_msg_id) {
@@ -85,7 +92,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
   if (int row = model->msgs.indexOf(msg_id); row != -1) {
-    table_widget->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    view->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
 }
 
@@ -101,7 +108,7 @@ void MessagesWidget::updateSuppressedButtons() {
 
 void MessagesWidget::reset() {
   current_msg_id = std::nullopt;
-  table_widget->selectionModel()->clear();
+  view->selectionModel()->clear();
   model->reset();
   filter->clear();
   updateSuppressedButtons();
@@ -111,8 +118,10 @@ void MessagesWidget::reset() {
 // MessageListModel
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-    return (QString[]){"Name", "Bus", "ID", "Freq", "Count", "Bytes"}[section];
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+    static const QString titles[] = {"Name", "Bus", "ID", "Freq", "Count", "Bytes"};
+    return titles[section];
+  }
   return {};
 }
 
@@ -253,4 +262,23 @@ void MessageListModel::reset() {
   msgs.clear();
   clearSuppress();
   endResetModel();
+}
+
+// MessageView
+
+void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  QTreeView::drawRow(painter, option, index);
+  painter->save();
+  const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
+  const QColor gridColor = QColor::fromRgba(static_cast<QRgb>(gridHint));
+  painter->setPen(gridColor);
+  painter->drawLine(option.rect.left(), option.rect.bottom(), option.rect.right(), option.rect.bottom());
+
+  auto y = option.rect.y();
+  painter->translate(visualRect(model()->index(0, 0)).x() - indentation() - .5, -.5);
+  for (int i = 0; i < header()->count(); ++i) {
+    painter->translate(header()->sectionSize(i), 0);
+    painter->drawLine(0, y, 0, y + option.rect.height());
+  }
+  painter->restore();
 }

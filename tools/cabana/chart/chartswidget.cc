@@ -105,6 +105,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(reset_zoom_btn, &QToolButton::clicked, this, &ChartsWidget::zoomReset);
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
+  QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateTabBar);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
@@ -126,10 +127,8 @@ void ChartsWidget::newTab() {
   static int tab_unique_id = 0;
   int idx = tabbar->addTab("");
   tabbar->setTabData(idx, tab_unique_id++);
-  for (int i = 0; i < tabbar->count(); ++i) {
-    tabbar->setTabText(i, QString("Tab %1").arg(i + 1));
-  }
   tabbar->setCurrentIndex(idx);
+  updateTabBar();
 }
 
 void ChartsWidget::removeTab(int index) {
@@ -139,6 +138,14 @@ void ChartsWidget::removeTab(int index) {
   }
   tab_charts.erase(id);
   tabbar->removeTab(index);
+  updateTabBar();
+}
+
+void ChartsWidget::updateTabBar() {
+  for (int i = 0; i < tabbar->count(); ++i) {
+    const auto &charts_in_tab = tab_charts[tabbar->tabData(i).toInt()];
+    tabbar->setTabText(i, QString("Tab %1 (%2)").arg(i + 1).arg(charts_in_tab.count()));
+  }
 }
 
 void ChartsWidget::eventsMerged() {
@@ -161,14 +168,14 @@ void ChartsWidget::zoomReset() {
   zoom_undo_stack->clear();
 }
 
-void ChartsWidget::showValueTip(double sec) {
+QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
   const QRect visible_rect(-charts_container->pos(), charts_scroll->viewport()->size());
+  return chart->rect().intersected(QRect(chart->mapFrom(charts_container, visible_rect.topLeft()), visible_rect.size()));
+}
+
+void ChartsWidget::showValueTip(double sec) {
   for (auto c : currentCharts()) {
-    if (sec >= 0 && visible_rect.contains(QRect(c->mapTo(charts_container, QPoint(0, 0)), c->size()))) {
-      c->showTip(sec);
-    } else {
-      c->hideTip();
-    }
+    sec >= 0 ? c->showTip(sec) : c->hideTip();
   }
 }
 
@@ -291,7 +298,7 @@ void ChartsWidget::updateLayout(bool force) {
   auto charts_layout = charts_container->charts_layout;
   int n = MAX_COLUMN_COUNT;
   for (; n > 1; --n) {
-    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->spacing()) < charts_layout->geometry().width()) break;
+    if ((n * CHART_MIN_WIDTH + (n - 1) * charts_layout->horizontalSpacing()) < charts_layout->geometry().width()) break;
   }
 
   bool show_column_cb = n > 1;
@@ -381,17 +388,18 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
+  while (tabbar->count() > 1) {
+    tabbar->removeTab(1);
+  }
+  tab_charts.clear();
+
   if (!charts.isEmpty()) {
     for (auto c : charts) {
       c->deleteLater();
     }
     charts.clear();
-    tab_charts.clear();
     updateToolBar();
     emit seriesChanged();
-  }
-  while (tabbar->count() > 1) {
-    tabbar->removeTab(1);
   }
 }
 
@@ -475,6 +483,7 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
       int to = w ? charts_widget->currentCharts().indexOf(w) + 1 : 0;
       charts_widget->currentCharts().insert(to, chart);
       charts_widget->updateLayout(true);
+      charts_widget->updateTabBar();
       event->acceptProposedAction();
       chart->startAnimation();
     }
