@@ -53,13 +53,17 @@ void MessageBytesDelegate::setMultipleLines(bool v) {
 }
 
 QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  int n = index.data(BytesRole).toByteArray().size();
-  if (n <= 0 || n > 64) return {};
+  int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    return {1, byte_size.height() + 2 * v_margin};
+  }
+  int n = data.toByteArray().size();
+  assert(n > 0 && n <= 64);
 
   QSize size = size_cache[n - 1];
   if (size.isEmpty()) {
     int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
     if (!multiple_lines) {
       size.setWidth(h_margin * 2 + n * byte_size.width());
       size.setHeight(byte_size.height() + 2 * v_margin);
@@ -73,18 +77,25 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    return QStyledItemDelegate::paint(painter, option, index);
+  }
+
+  auto byte_list = data.toByteArray();
   auto colors = index.data(ColorsRole).value<QVector<QColor>>();
-  auto byte_list = index.data(BytesRole).toByteArray();
 
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
-  painter->save();
   if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, option.palette.highlight());
     painter->setPen(option.palette.color(QPalette::HighlightedText));
+  } else {
+    painter->setPen(option.palette.color(QPalette::Text));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
+  QFont old_font = painter->font();
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
     int row = !multiple_lines ? 0 : i / 8;
@@ -95,7 +106,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     }
     painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
   }
-  painter->restore();
+  painter->setFont(old_font);
 }
 
 QColor getColor(const cabana::Signal *sig) {
