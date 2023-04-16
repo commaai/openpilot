@@ -108,7 +108,6 @@ public:
   void selectSignal(const cabana::Signal *sig, bool expand = false);
   void rowClicked(const QModelIndex &index);
   SignalModel *model = nullptr;
-  MessageId msg_id;
 
 signals:
   void highlight(const cabana::Signal *sig);

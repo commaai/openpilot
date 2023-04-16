@@ -491,7 +491,6 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 }
 
 void SignalView::setMessage(const MessageId &id) {
-  msg_id = id;
   max_value_width = 0;
   filter_edit->clear();
   model->setMessage(id);
@@ -519,7 +518,7 @@ void SignalView::rowsChanged() {
       auto sig = model->getItem(index)->sig;
       QObject::connect(remove_btn, &QToolButton::clicked, [=]() { model->removeSignal(sig); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
-        emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
+        emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
       });
     }
   }
@@ -552,7 +551,7 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    bool chart_opened = charts->hasSignal(msg_id, item->sig);
+    bool chart_opened = charts->hasSignal(model->msg_id, item->sig);
     auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
     if (buttons.size() > 0) {
       buttons[0]->setChecked(chart_opened);
@@ -594,9 +593,9 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 }
 
 void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(msg_id))) return;
+  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id))) return;
 
-  const auto &last_msg = can->lastMessage(msg_id);
+  const auto &last_msg = can->lastMessage(model->msg_id);
   for (auto item : model->root->children) {
     double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
     item->sig_val = QString::number(value, 'f', item->sig->precision);
@@ -630,7 +629,7 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   for (int i = start_row; i <= end_row; ++i) {
     auto item = model->getItem(model->index(i, 1));
     if (item->sparkline.last_ts != last_msg.ts || item->sparkline.size() != size || item->sparkline.time_range != settings.sparkline_range) {
-      synchronizer.addFuture(QtConcurrent::run(&item->sparkline, &Sparkline::update, msg_id, item->sig, settings.sparkline_range, size));
+      synchronizer.addFuture(QtConcurrent::run(&item->sparkline, &Sparkline::update, model->msg_id, item->sig, settings.sparkline_range, size));
     }
   }
   synchronizer.waitForFinished();
