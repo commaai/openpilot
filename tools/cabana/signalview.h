@@ -9,6 +9,7 @@
 #include <QTreeView>
 
 #include "tools/cabana/chart/chartswidget.h"
+#include "tools/cabana/chart/sparkline.h"
 
 class SignalModel : public QAbstractItemModel {
   Q_OBJECT
@@ -27,6 +28,7 @@ public:
     bool highlight = false;
     bool extra_expanded = false;
     QString sig_val = "-";
+    Sparkline sparkline;
   };
 
   SignalModel(QObject *parent);
@@ -54,7 +56,6 @@ private:
   void handleSignalRemoved(const cabana::Signal *sig);
   void handleMsgChanged(MessageId id);
   void refresh();
-  void updateState(const QHash<MessageId, CanData> *msgs);
 
   MessageId msg_id;
   QString filter_str;
@@ -79,19 +80,21 @@ private:
   QTableWidget *table;
 };
 
+class SignalView;
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
-  SignalItemDelegate(QObject *parent);
+  SignalItemDelegate(SignalView *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
-  void drawSparkline(QPainter *painter, const QRect &rect, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  void 	updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+
   QValidator *name_validator, *double_validator;
   QFont label_font, minmax_font;
   const int color_label_width = 18;
   mutable QHash<QString, int> width_cache;
+  SignalView *signal_view;
 };
 
 class SignalView : public QFrame {
@@ -113,9 +116,12 @@ signals:
 
 private:
   void rowsChanged();
-  void leaveEvent(QEvent *event);
+  void leaveEvent(QEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
   void setSparklineRange(int value);
+  void handleSignalUpdated(const cabana::Signal *sig);
+  void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
 
   struct TreeView : public QTreeView {
     TreeView(QWidget *parent) : QTreeView(parent) {}
@@ -124,13 +130,19 @@ private:
       // update widget geometries in QTreeView::rowsInserted
       QTreeView::rowsInserted(parent, start, end);
     }
+    void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {
+      // Bypass the slow call to QTreeView::dataChanged.
+      QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+    }
   };
-
+  int max_value_width = 0;
+  QSize button_size;
   TreeView *tree;
   QLabel *sparkline_label;
   QSlider *sparkline_range_slider;
   QLineEdit *filter_edit;
   ChartsWidget *charts;
   QLabel *signal_count_lb;
+  SignalItemDelegate *delegate;
   friend SignalItemDelegate;
 };
