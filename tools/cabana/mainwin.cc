@@ -432,6 +432,7 @@ void MainWindow::saveAs() {
     QString fn = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
     if (!fn.isEmpty()) {
       dbc_file->saveAs(fn);
+      updateRecentFiles(fn);
     }
   }
 }
