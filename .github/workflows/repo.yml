@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: "0 15 * * 2"
   workflow_dispatch:
-  push:
 
 jobs:
   pre-commit-autoupdate:
