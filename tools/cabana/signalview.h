@@ -60,7 +60,6 @@ private:
   MessageId msg_id;
   QString filter_str;
   std::unique_ptr<Item> root;
-  int value_width = 0;
   friend class SignalView;
   friend class SignalItemDelegate;
 };
@@ -80,10 +79,9 @@ private:
   QTableWidget *table;
 };
 
-class SignalView;
 class SignalItemDelegate : public QStyledItemDelegate {
 public:
-  SignalItemDelegate(SignalView *parent);
+  SignalItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
@@ -93,8 +91,8 @@ public:
   QValidator *name_validator, *double_validator;
   QFont label_font, minmax_font;
   const int color_label_width = 18;
+  mutable QSize button_size;
   mutable QHash<QString, int> width_cache;
-  SignalView *signal_view;
 };
 
 class SignalView : public QFrame {
@@ -135,7 +133,6 @@ private:
     }
   };
   int max_value_width = 0;
-  QSize button_size;
   TreeView *tree;
   QLabel *sparkline_label;
   QSlider *sparkline_range_slider;

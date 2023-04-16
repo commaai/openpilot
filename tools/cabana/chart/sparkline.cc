@@ -4,9 +4,8 @@
 
 #include "tools/cabana/streams/abstractstream.h"
 
-void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, int range, QSize size) {
+void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
   const auto &msgs = can->events().at(msg_id);
-  double last_msg_ts = can->lastMessage(msg_id).ts;
   uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - range * 1e9, 0)});
   auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});

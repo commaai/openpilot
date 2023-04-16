@@ -8,7 +8,7 @@
 
 class Sparkline {
 public:
-  void update(const MessageId &msg_id, const cabana::Signal *sig, int range, QSize size);
+  void update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size);
   const QSize size() const { return pixmap.size() / pixmap.devicePixelRatio(); }
 
   QPixmap pixmap;

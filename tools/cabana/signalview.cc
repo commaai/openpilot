@@ -38,7 +38,6 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const caba
 void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
   filter_str = "";
-  value_width = 0;
   refresh();
 }
 
@@ -285,7 +284,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 // SignalItemDelegate
 
-SignalItemDelegate::SignalItemDelegate(SignalView *parent) : signal_view(parent), QStyledItemDelegate(parent) {
+SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
@@ -327,6 +326,7 @@ void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptio
     QRect geom = option.rect;
     geom.setLeft(geom.right() - editor->sizeHint().width());
     editor->setGeometry(geom);
+    button_size = geom.size();
     return;
   }
   QStyledItemDelegate::updateEditorGeometry(editor, option, index);
@@ -379,7 +379,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       }
       // value
       painter->setFont(option.font);
-      rect.adjust(value_adjust, 0, -signal_view->button_size.width(), 0);
+      rect.adjust(value_adjust, 0, -button_size.width(), 0);
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rect.width());
       painter->drawText(rect, Qt::AlignRight | Qt::AlignVCenter, text);
     }
@@ -514,7 +514,6 @@ void SignalView::rowsChanged() {
       h->addWidget(remove_btn);
 
       tree->setIndexWidget(index, w);
-      button_size = w->sizeHint();
       auto sig = model->getItem(index)->sig;
       QObject::connect(remove_btn, &QToolButton::clicked, [=]() { model->removeSignal(sig); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
@@ -613,7 +612,7 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   }
 
   // update visible sparkline
-  QSize size(tree->header()->sectionSize(1) - button_size.width(), button_size.height());
+  QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
   int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
   int value_width = std::min<int>(max_value_width, size.width() * 0.35);
   size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
@@ -628,8 +627,10 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   QFutureSynchronizer<void> synchronizer;
   for (int i = start_row; i <= end_row; ++i) {
     auto item = model->getItem(model->index(i, 1));
-    if (item->sparkline.last_ts != last_msg.ts || item->sparkline.size() != size || item->sparkline.time_range != settings.sparkline_range) {
-      synchronizer.addFuture(QtConcurrent::run(&item->sparkline, &Sparkline::update, model->msg_id, item->sig, settings.sparkline_range, size));
+    auto &s = item->sparkline;
+    if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
+      synchronizer.addFuture(QtConcurrent::run(
+          &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
     }
   }
   synchronizer.waitForFinished();
