@@ -314,7 +314,12 @@ void ChartsWidget::updateLayout(bool force) {
     }
     for (int i = 0; i < current_charts.size(); ++i) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
-      current_charts[i]->setVisible(true);
+      if (current_charts[i]->sigs.isEmpty()) {
+        // the chart will be resized after add signal. delay setVisible to reduce flicker.
+        QTimer::singleShot(0, [c = current_charts[i]]() { c->setVisible(true); });
+      } else {
+        current_charts[i]->setVisible(true);
+      }
     }
     charts_container->setUpdatesEnabled(true);
   }
