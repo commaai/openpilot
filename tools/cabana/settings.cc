@@ -30,7 +30,7 @@ void Settings::save() {
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
   s.setValue("recent_files", recent_files);
-  s.setValue("message_header_state", message_header_state);
+  s.setValue("message_header_state_v2", message_header_state);
   s.setValue("chart_series_type", chart_series_type);
   s.setValue("theme", theme);
   s.setValue("sparkline_range", sparkline_range);
@@ -52,7 +52,7 @@ void Settings::load() {
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();
   recent_files = s.value("recent_files").toStringList();
-  message_header_state = s.value("message_header_state").toByteArray();
+  message_header_state = s.value("message_header_state_v2").toByteArray();
   chart_series_type = s.value("chart_series_type", 0).toInt();
   theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();

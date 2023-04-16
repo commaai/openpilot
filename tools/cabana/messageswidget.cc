@@ -25,14 +25,16 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view = new MessageView(this);
   model = new MessageListModel(this);
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
-  view->setItemDelegateForColumn(5, delegate);
+  view->setItemDelegate(delegate);
   view->setModel(model);
   view->setSortingEnabled(true);
   view->sortByColumn(0, Qt::AscendingOrder);
+  view->setAllColumnsShowFocus(true);
+  view->setEditTriggers(QAbstractItemView::NoEditTriggers);
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->header()->setStretchLastSection(true);
+  view->header()->setSectionsMovable(false);
   main_layout->addWidget(view);
 
   // suppress
@@ -48,6 +50,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
+    view->setUniformRowHeights(!settings.multiple_lines_bytes);
     model->sortMessages();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
@@ -148,7 +151,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       }
     }
     return QVariant::fromValue(colors);
-  } else if (role == BytesRole) {
+  } else if (role == BytesRole && index.column() == 5) {
     return can_data.dat;
   }
   return {};
@@ -268,9 +271,9 @@ void MessageListModel::reset() {
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   QTreeView::drawRow(painter, option, index);
-  painter->save();
   const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
   const QColor gridColor = QColor::fromRgba(static_cast<QRgb>(gridHint));
+  QPen old_pen = painter->pen();
   painter->setPen(gridColor);
   painter->drawLine(option.rect.left(), option.rect.bottom(), option.rect.right(), option.rect.bottom());
 
@@ -280,5 +283,12 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
     painter->translate(header()->sectionSize(i), 0);
     painter->drawLine(0, y, 0, y + option.rect.height());
   }
-  painter->restore();
+  painter->setPen(old_pen);
+  painter->resetTransform();
+}
+
+void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
+   // Bypass the slow call to QTreeView::dataChanged.
+   // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
+   QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
 }
