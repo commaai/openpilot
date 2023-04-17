@@ -474,7 +474,7 @@ void MainWindow::updateLoadSaveMenus() {
   open_dbc_for_source->setEnabled(sources.size() > 0);
   open_dbc_for_source->clear();
 
-  QStringList dbc_files;
+  std::map<QString, QStringList> dbc_files;
   for (uint8_t source : sources_sorted) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly
     QAction *action = new QAction(this);
@@ -487,7 +487,7 @@ void MainWindow::updateLoadSaveMenus() {
       name = "untitled";
     }
 
-    dbc_files.push_back("[" % name % "]");
+    dbc_files[d->second->filename].push_back(QString::number(source));
     action->setText(tr("Bus %1 (current: %2)").arg(source).arg(name));
     action->setData(source);
 
@@ -495,8 +495,11 @@ void MainWindow::updateLoadSaveMenus() {
     open_dbc_for_source->addAction(action);
   }
 
-  dbc_files.removeDuplicates();
-  setWindowFilePath(dbc_files.join(" "));
+  QStringList title;
+  for (auto &[filename, sources] : dbc_files) {
+    title.push_back("[" % sources.join(",") + "]" + QFileInfo(filename).baseName());
+  }
+  setWindowFilePath(title.join(" | "));
 }
 
 void MainWindow::updateRecentFiles(const QString &fn) {
