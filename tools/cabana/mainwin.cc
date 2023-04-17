@@ -17,7 +17,7 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/route.h"
+#include "tools/cabana/streams/replaystream.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {

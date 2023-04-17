@@ -4,7 +4,7 @@
 #include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/route.h"
+#include "tools/cabana/streamselector.h"
 #include "tools/cabana/streams/livestream.h"
 #include "tools/cabana/streams/replaystream.h"
 
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
     if (route.isEmpty()) {
       AbstractStream *out_stream = nullptr;
-      StreamDialog dlg(&out_stream, nullptr);
+      StreamSelector dlg(&out_stream, nullptr);
       if (!dlg.exec()) {
         return 0;
       }

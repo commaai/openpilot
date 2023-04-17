@@ -87,5 +87,16 @@ protected:
   uint64_t last_event_ts = 0;
 };
 
+class AbstractOpenStreamWidget : public QWidget {
+  Q_OBJECT
+public:
+  AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent) : stream(stream), QWidget(parent) {}
+  virtual bool open() = 0;
+  virtual QString title() = 0;
+
+protected:
+  AbstractStream **stream = nullptr;
+};
+
 // A global pointer referring to the unique AbstractStream object
 extern AbstractStream *can;

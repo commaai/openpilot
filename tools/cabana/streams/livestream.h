@@ -44,3 +44,17 @@ protected:
   const QString zmq_address;
   QThread *stream_thread;
 };
+
+// OpenDeviceWidget
+class OpenDeviceWidget : public AbstractOpenStreamWidget {
+  Q_OBJECT
+
+public:
+  OpenDeviceWidget(AbstractStream **stream, QWidget *parent);
+  bool open() override;
+  QString title() override { return tr("Device"); }
+
+private:
+  QLineEdit *ip_address;
+  QButtonGroup *group;
+};
