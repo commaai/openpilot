@@ -38,7 +38,7 @@ class OpenReplayWidget : public AbstractOpenStreamWidget {
 public:
   OpenReplayWidget(AbstractStream **stream, QWidget *parent);
   bool open() override;
-  QString title() override { return tr("Replay"); }
+  QString title() override { return tr("&Replay"); }
   inline bool failedToLoad() const { return failed_to_load; }
 
 private:

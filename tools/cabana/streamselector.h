@@ -11,7 +11,7 @@ class OpenPandaWidget : public AbstractOpenStreamWidget {
 public:
   OpenPandaWidget(AbstractStream **stream, QWidget *parent);
   bool open() override;
-  QString title() override { return tr("Panda"); }
+  QString title() override { return tr("&Panda"); }
 
 private:
   QLineEdit *serial_edit;

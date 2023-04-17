@@ -66,10 +66,16 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 // OpenPandaWidget
 
 OpenPandaWidget::OpenPandaWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
-  QFormLayout *form_layout = new QFormLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addStretch(1);
+
+  QFormLayout *form_layout = new QFormLayout();
   serial_edit = new QLineEdit(this);
   serial_edit->setPlaceholderText(tr("Leave empty to use default serial"));
   form_layout->addRow(tr("Serial"), serial_edit);
+
+  main_layout->addLayout(form_layout);
+  main_layout->addStretch(1);
 }
 
 bool OpenPandaWidget::open() {

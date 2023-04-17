@@ -52,7 +52,7 @@ class OpenDeviceWidget : public AbstractOpenStreamWidget {
 public:
   OpenDeviceWidget(AbstractStream **stream, QWidget *parent);
   bool open() override;
-  QString title() override { return tr("Device"); }
+  QString title() override { return tr("&Device"); }
 
 private:
   QLineEdit *ip_address;
