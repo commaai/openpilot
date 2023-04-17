@@ -133,7 +133,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   auto &can_data = can->lastMessage(id);
 
   auto getFreq = [](const CanData &d) -> QString {
-    if (d.freq > 0 && (can->currentSec() - d.ts) < (5.0 / d.freq)) {
+    if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
       return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
     } else {
       return "--";
