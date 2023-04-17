@@ -11,7 +11,7 @@ public:
     return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
   }
 
-  protected:
-    void streamThread() override;
-    const QString zmq_address;
+protected:
+  void streamThread() override;
+  const QString zmq_address;
 };

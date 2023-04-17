@@ -24,6 +24,9 @@ protected:
       event = ::new Event(aligned_buf.align(m));
       delete m;
     }
+    Msg(const char *data, const size_t size) {
+      event = ::new Event(aligned_buf.align(data, size));
+    }
     ~Msg() { ::delete event; }
     Event *event;
     AlignedBuffer aligned_buf;
