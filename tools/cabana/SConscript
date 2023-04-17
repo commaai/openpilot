@@ -17,7 +17,7 @@ qt_libs = ['qt_util'] + base_libs
 
 cabana_env = qt_env.Clone()
 cabana_env["LIBPATH"] += ['../../opendbc/can']
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'libdbc_static', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'panda', 'libdbc_static', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -29,7 +29,7 @@ cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "asset
 
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
-cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc', 
+cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc', 
                                                'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                                                'commands.cc', 'messageswidget.cc', 'route.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)

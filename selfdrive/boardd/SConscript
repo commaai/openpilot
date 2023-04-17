@@ -1,7 +1,9 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
 libs = ['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj']
-env.Program('boardd', ['main.cc', 'boardd.cc', 'panda.cc', 'panda_comms.cc', 'spi.cc'], LIBS=libs)
+panda = env.Library('panda', ['panda.cc', 'panda_comms.cc', 'spi.cc'])
+
+env.Program('boardd', ['main.cc', 'boardd.cc'], LIBS=[panda] + libs)
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
 envCython.Program('boardd_api_impl.so', 'boardd_api_impl.pyx', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'] + envCython["LIBS"])
