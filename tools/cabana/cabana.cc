@@ -5,7 +5,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/route.h"
-#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/replaystream.h"
 
 int main(int argc, char *argv[]) {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<AbstractStream> stream;
 
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
+    stream.reset(new DeviceStream(&app, cmd_parser.value("zmq")));
   } else {
     // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
