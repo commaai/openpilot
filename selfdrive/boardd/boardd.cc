@@ -193,10 +193,6 @@ Panda *connect(std::string serial="", uint32_t index=0) {
     return nullptr;
   }
 
-  assert((panda->hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
-         (panda->hw_type != cereal::PandaState::PandaType::GREY_PANDA));
-
-
   // common panda config
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
