@@ -3,6 +3,7 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPixmapCache>
+#include <QToolTip>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -76,6 +77,17 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   return size;
 }
 
+bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
+  if (e->type() == QEvent::ToolTip && index.column() == 0) {
+    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
+      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
+      return true;
+    }
+  }
+  QToolTip::hideText();
+  return false;
+}
+
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto data = index.data(BytesRole);
   if (!data.isValid()) {
@@ -89,24 +101,29 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, option.palette.highlight());
-    painter->setPen(option.palette.color(QPalette::HighlightedText));
-  } else {
-    painter->setPen(option.palette.color(QPalette::Text));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
   QFont old_font = painter->font();
+  QPen old_pen = painter->pen();
   painter->setFont(fixed_font);
   for (int i = 0; i < byte_list.size(); ++i) {
     int row = !multiple_lines ? 0 : i / 8;
     int column = !multiple_lines ? i : i % 8;
     QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
     if (i < colors.size() && colors[i].alpha() > 0) {
+      if (option.state & QStyle::State_Selected) {
+        painter->setPen(option.palette.color(QPalette::Text));
+        painter->fillRect(r, option.palette.color(QPalette::Window));
+      }
       painter->fillRect(r, colors[i]);
+    } else if (option.state & QStyle::State_Selected) {
+      painter->setPen(option.palette.color(QPalette::HighlightedText));
     }
     painter->drawText(r, Qt::AlignCenter, toHex(byte_list[i]));
   }
   painter->setFont(old_font);
+  painter->setPen(old_pen);
 }
 
 QColor getColor(const cabana::Signal *sig) {
