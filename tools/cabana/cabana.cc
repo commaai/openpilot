@@ -26,6 +26,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
+  cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
@@ -37,9 +38,12 @@ int main(int argc, char *argv[]) {
 
   if (cmd_parser.isSet("stream")) {
     stream.reset(new DeviceStream(&app, cmd_parser.value("zmq")));
-  } else if (cmd_parser.isSet("panda")) {
-    // TODO: get optional serial from argument
-    stream.reset(new PandaStream(&app));
+  } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
+    PandaStreamConfig config = {};
+    if (cmd_parser.isSet("panda-serial")) {
+      config.serial = cmd_parser.value("panda-serial");
+    }
+    stream.reset(new PandaStream(&app, config));
   } else {
     // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
