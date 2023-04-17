@@ -2,7 +2,13 @@
 
 #include <QTimer>
 
-LiveStream::LiveStream(QObject *parent, QString address) : zmq_address(address), AbstractStream(parent, true) {
+LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
+  if (settings.log_livestream) {
+    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
+    util::create_directories(path, 0755);
+    fs.reset(new std::ofstream(path + "/rlog" , std::ios::binary | std::ios::out));
+  }
+
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -15,39 +21,12 @@ LiveStream::~LiveStream() {
   stream_thread->wait();
 }
 
-void LiveStream::streamThread() {
-  if (!zmq_address.isEmpty()) {
-    setenv("ZMQ", "1", 1);
-  }
-
-  std::unique_ptr<std::ofstream> fs;
-  if (settings.log_livestream) {
-    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
-    util::create_directories(path, 0755);
-    fs.reset(new std::ofstream(path + "/rlog" , std::ios::binary | std::ios::out));
-  }
-  std::unique_ptr<Context> context(Context::create());
-  std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
-  std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
-  assert(sock != NULL);
-  sock->setTimeout(50);
-  // run as fast as messages come in
-  while (!QThread::currentThread()->isInterruptionRequested()) {
-    Message *msg = sock->receive(true);
-    if (!msg) {
-      QThread::msleep(50);
-      continue;
-    }
-
-    if (fs) {
-      fs->write(msg->getData(), msg->getSize());
-    }
-    std::lock_guard lk(lock);
-    handleEvent(messages.emplace_back(msg).event);
-  }
-}
-
 void LiveStream::handleEvent(Event *evt) {
+  if (fs) {
+    auto bytes = evt->words.asChars();
+    fs->write(bytes.begin(), bytes.size());
+  }
+
   if (start_ts == 0 || evt->mono_time < start_ts) {
     if (evt->mono_time < start_ts) {
       qDebug() << "stream is looping back to old time stamp";

@@ -5,7 +5,8 @@
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/route.h"
-#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
 
 int main(int argc, char *argv[]) {
@@ -24,6 +25,8 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
+  cmd_parser.addOption({"panda", "read can messages from panda"});
+  cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
@@ -34,7 +37,13 @@ int main(int argc, char *argv[]) {
   std::unique_ptr<AbstractStream> stream;
 
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
+    stream.reset(new DeviceStream(&app, cmd_parser.value("zmq")));
+  } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
+    PandaStreamConfig config = {};
+    if (cmd_parser.isSet("panda-serial")) {
+      config.serial = cmd_parser.value("panda-serial");
+    }
+    stream.reset(new PandaStream(&app, config));
   } else {
     // TODO: Remove when OpenpilotPrefix supports ZMQ
 #ifndef __APPLE__
