@@ -133,6 +133,20 @@ void DBCManager::removeMsg(const MessageId &id) {
   }
 }
 
+QString DBCManager::newMsgName(const MessageId &id) {
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [_, dbc_file] = *sources_dbc_file;
+  return dbc_file->newMsgName(id);
+}
+
+QString DBCManager::newSignalName(const MessageId &id) {
+  auto sources_dbc_file = findDBCFile(id);
+  assert(sources_dbc_file); // This should be impossible
+  auto [_, dbc_file] = *sources_dbc_file;
+  return dbc_file->newSignalName(id);
+}
+
 std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
   std::map<MessageId, cabana::Msg> ret;
 
