@@ -132,12 +132,20 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   const auto &id = msgs[index.row()];
   auto &can_data = can->lastMessage(id);
 
+  auto getFreq = [](const CanData &d) -> QString {
+    if (d.freq > 0 && (can->currentSec() - d.ts) < (5.0 / d.freq)) {
+      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+    } else {
+      return "--";
+    }
+  };
+
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id.source;
-      case 2: return QString::number(id.address, 16);;
-      case 3: return can_data.freq;
+      case 2: return QString::number(id.address, 16);
+      case 3: return getFreq(can_data);
       case 4: return can_data.count;
       case 5: return toHex(can_data.dat);
     }
