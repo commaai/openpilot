@@ -60,6 +60,7 @@ StreamDialog::StreamDialog(AbstractStream **stream, QWidget *parent) : QDialog(p
     QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
     if (!fn.isEmpty()) {
       dbc_file->setText(fn);
+      settings.last_dir = QFileInfo(fn).absolutePath();
     }
   });
 }
