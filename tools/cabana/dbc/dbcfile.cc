@@ -149,6 +149,24 @@ void DBCFile::removeMsg(const MessageId &id) {
   msgs.erase(id.address);
 }
 
+QString DBCFile::newMsgName(const MessageId &id) {
+  return QString("NEW_MSG_") + QString::number(id.address, 16).toUpper();
+}
+
+QString DBCFile::newSignalName(const MessageId &id) {
+  auto m = msg(id);
+  assert(m != nullptr);
+
+  QString name;
+
+  for (int i = 1; /**/; ++i) {
+    name = QString("NEW_SIGNAL_%1").arg(i);
+    if (m->sig(name) == nullptr) break;
+  }
+
+  return name;
+}
+
 std::map<uint32_t, cabana::Msg> DBCFile::getMessages() {
   return msgs;
 }

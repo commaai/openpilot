@@ -40,6 +40,8 @@ class MessageView : public QTreeView {
 public:
   MessageView(QWidget *parent) : QTreeView(parent) {}
   void drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
+  void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
 };
 
 class MessagesWidget : public QWidget {
