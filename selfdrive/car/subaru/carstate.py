@@ -304,7 +304,12 @@ class CarState(CarStateBase):
         checks += CarState.get_global_es_distance_signals()[1]
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-        signals.append(("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"))
+        signals += [
+          ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
+          ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
+          ("Signal1", "INFOTAINMENT_STATUS"),
+          ("Signal2", "INFOTAINMENT_STATUS"),
+        ]
         checks.append(("INFOTAINMENT_STATUS", 10))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
