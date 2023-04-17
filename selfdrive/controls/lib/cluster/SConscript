@@ -1,8 +1,0 @@
-Import('env')
-
-fc = env.SharedLibrary("fastcluster", "fastcluster.cpp")
-
-# TODO: how do I gate on test
-#env.Program("test", ["test.cpp"], LIBS=[fc])
-#valgrind --leak-check=full ./test
-

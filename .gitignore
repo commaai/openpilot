@@ -36,6 +36,7 @@ a.out
 config.json
 clcache
 compile_commands.json
+compare_runtime*.html
 
 persist
 board/obj/
@@ -45,17 +46,14 @@ selfdrive/mapd/default_speeds_by_region.json
 system/proclogd/proclogd
 selfdrive/ui/_ui
 selfdrive/test/longitudinal_maneuvers/out
-selfdrive/visiond/visiond
-selfdrive/sensord/_gpsd
-selfdrive/sensord/_sensord
 system/camerad/camerad
 system/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
+selfdrive/modeld/_navmodeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
 
 one
-/body/
 openpilot
 notebooks
 xx
@@ -83,3 +81,5 @@ selfdrive/modeld/models/*.thneed
 build/
 
 !**/.gitkeep
+
+poetry.toml

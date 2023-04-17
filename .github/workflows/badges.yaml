@@ -7,38 +7,18 @@ on:
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
-
-  BUILD: |
-      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
-      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
-      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $DOCKER_REGISTRY/$BASE_IMAGE:latest /bin/sh -c
 
 jobs:
   badges:
     name: create badges
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-
-    - name: Cache scons
-      id: scons-cache
-      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-      env:
-        CACHE_SKIP_SAVE: true
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: |
-          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-          scons-
-
-    - name: Build Docker image
-      run: eval "$BUILD"
-
+    - uses: ./.github/workflows/setup
     - name: Push badges
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/ui/translations/create_badges.py"
@@ -48,6 +28,6 @@ jobs:
         git config user.email "badge-researcher@comma.ai"
         git config user.name "Badge Researcher"
 
-        git add translation_badge_*.svg
+        git add translation_badge.svg
         git commit -m "Add/Update badges"
         git push -f origin HEAD

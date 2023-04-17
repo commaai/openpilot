@@ -5,14 +5,12 @@ import sysconfig
 import platform
 import numpy as np
 
+import SCons.Errors
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
 Decider('MD5-timestamp')
-
-AddOption('--test',
-          action='store_true',
-          help='build test files')
 
 AddOption('--extras',
           action='store_true',
@@ -53,6 +51,17 @@ AddOption('--no-thneed',
           dest='no_thneed',
           help='avoid using thneed')
 
+AddOption('--pc-thneed',
+          action='store_true',
+          dest='pc_thneed',
+          help='use thneed on pc')
+
+AddOption('--no-test',
+          action='store_false',
+          dest='test',
+          default=os.path.islink(Dir('#laika/').abspath),
+          help='skip building test files')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -60,16 +69,15 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+  "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
+  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
@@ -93,9 +101,6 @@ if arch == "larch64":
     "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cpppath += [
-    "#system/camerad/include",
-  ]
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   rpath += ["/usr/local/lib"]
@@ -106,6 +111,9 @@ else:
 
   # MacOS
   if arch == "Darwin":
+    if real_arch == "x86_64":
+      lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/Darwin_x86_64/t_renderer"
+
     brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
@@ -114,9 +122,13 @@ else:
       f"{brew_prefix}/Library",
       f"{brew_prefix}/opt/openssl/lib",
       f"{brew_prefix}/Cellar",
-      f"#third_party/acados/{arch}/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
+    if real_arch == "x86_64":
+      libpath.append(f"#third_party/acados/Darwin_x86_64/lib")
+    else:
+      libpath.append(f"#third_party/acados/{arch}/lib")
+
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
@@ -187,10 +199,6 @@ env = Environment(
     "#third_party/libyuv/include",
     "#third_party/json11",
     "#third_party/curl/include",
-    "#third_party/libgralloc/include",
-    "#third_party/android_frameworks_native/include",
-    "#third_party/android_hardware_libhardware/include",
-    "#third_party/android_system_core/include",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
@@ -253,7 +261,7 @@ def abspath(x):
     # rpath works elsewhere
     return x[0].path.rsplit("/", 1)[1][:-3]
 
-# Cython build enviroment
+# Cython build environment
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
@@ -272,7 +280,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -288,20 +296,28 @@ if arch == "Darwin":
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
   qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
 else:
-  qt_env['QTDIR'] = "/usr"
+  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
+  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
+
+  qt_env['QTDIR'] = qt_install_prefix
   qt_dirs = [
-    f"/usr/include/{real_arch}-linux-gnu/qt5",
-    f"/usr/include/{real_arch}-linux-gnu/qt5/QtGui/5.12.8/QtGui",
+    f"{qt_install_headers}",
+    f"{qt_install_headers}/QtGui/5.12.8/QtGui",
   ]
-  qt_dirs += [f"/usr/include/{real_arch}-linux-gnu/qt5/Qt{m}" for m in qt_modules]
+  qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
 
-qt_env.Tool('qt')
+try:
+  qt_env.Tool('qt3')
+except SCons.Errors.UserError:
+  qt_env.Tool('qt')
+
 qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
@@ -317,6 +333,7 @@ qt_flags = [
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
+qt_env['QT_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
 
 if GetOption("clazy"):
   checks = [
@@ -329,7 +346,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
 
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
@@ -373,10 +390,10 @@ rednose_config = {
 if arch != "larch64":
   rednose_config['to_build'].update({
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
+    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
   })
 
 Export('rednose_config')
@@ -387,15 +404,20 @@ SConscript([
   'system/camerad/SConscript',
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
+  'system/ubloxd/SConscript',
 ])
 if arch != "Darwin":
   SConscript(['system/logcatd/SConscript'])
 
 # Build openpilot
 
-SConscript(['cereal/SConscript'])
-SConscript(['panda/board/SConscript'])
-SConscript(['opendbc/can/SConscript'])
+# build submodules
+SConscript([
+  'body/board/SConscript',
+  'cereal/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
 SConscript(['third_party/SConscript'])
 
@@ -404,23 +426,21 @@ SConscript(['common/transformations/SConscript'])
 
 SConscript(['selfdrive/modeld/SConscript'])
 
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 
-SConscript(['selfdrive/loggerd/SConscript'])
+SConscript(['system/loggerd/SConscript'])
 
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/sensord/SConscript'])
+SConscript(['system/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
-SConscript(['tools/replay/SConscript'])
-
-if GetOption('test'):
-  SConscript('panda/tests/safety/SConscript')
+if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+  SConscript(['tools/replay/SConscript'])
+  SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
