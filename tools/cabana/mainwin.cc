@@ -481,13 +481,14 @@ void MainWindow::updateLoadSaveMenus() {
 
     auto d = dbc()->findDBCFile(source);
     QString name = tr("no DBC");
-    if (d && !d->second->name().isEmpty()) {
-      name = tr("%1").arg(d->second->name());
-    } else if (d) {
-      name = "untitled";
+    if (d) {
+      if (!d->second->name().isEmpty()) {
+        name = tr("%1").arg(d->second->name());
+      } else {
+        name = "untitled";
+      }
+      dbc_files[d->second->filename].push_back(QString::number(source));
     }
-
-    dbc_files[d->second->filename].push_back(QString::number(source));
     action->setText(tr("Bus %1 (current: %2)").arg(source).arg(name));
     action->setData(source);
 
@@ -497,7 +498,8 @@ void MainWindow::updateLoadSaveMenus() {
 
   QStringList title;
   for (auto &[filename, sources] : dbc_files) {
-    title.push_back("[" % sources.join(",") + "]" + QFileInfo(filename).baseName());
+    QString bus = dbc_files.size() == 1 ? "all" : sources.join(",");
+    title.push_back("[" + bus + "]" + QFileInfo(filename).baseName());
   }
   setWindowFilePath(title.join(" | "));
 }
