@@ -239,7 +239,19 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
   if (index.column() == 8) {
     index = model->index(index.row(), 7);
   }
-  bool is_lb = (resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index);
+  bool is_lb = true;
+  if (resize_sig) {
+    is_lb = resize_sig->is_little_endian;
+  } else if (settings.drag_direction == Settings::DragDirection::MsbFirst) {
+    is_lb = index < anchor_index;
+  } else if (settings.drag_direction == Settings::DragDirection::LsbFirst) {
+    is_lb = !(index < anchor_index);
+  } else if (settings.drag_direction == Settings::DragDirection::AlwaysLE) {
+    is_lb = true;
+  } else if (settings.drag_direction == Settings::DragDirection::AlwaysBE) {
+    is_lb = false;
+  }
+
   int cur_bit_idx = get_bit_index(index, is_lb);
   int anchor_bit_idx = get_bit_index(anchor_index, is_lb);
   auto [start_bit, end_bit] = std::minmax(cur_bit_idx, anchor_bit_idx);

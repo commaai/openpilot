@@ -37,6 +37,7 @@ void Settings::save() {
   s.setValue("multiple_lines_bytes", multiple_lines_bytes);
   s.setValue("log_livestream", log_livestream);
   s.setValue("log_path", log_path);
+  s.setValue("drag_direction", drag_direction);
 }
 
 void Settings::load() {
@@ -59,6 +60,7 @@ void Settings::load() {
   multiple_lines_bytes = s.value("multiple_lines_bytes", true).toBool();
   log_livestream = s.value("log_livestream", true).toBool();
   log_path = s.value("log_path").toString();
+  drag_direction = (Settings::DragDirection)s.value("drag_direction", 0).toInt();
   if (log_path.isEmpty()) {
     log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
   }
@@ -91,6 +93,14 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   form_layout->addRow(tr("Max Cached Minutes"), cached_minutes);
   main_layout->addWidget(groupbox);
 
+  groupbox = new QGroupBox("New Signal Settings");
+  form_layout = new QFormLayout(groupbox);
+  drag_direction = new QComboBox(this);
+  drag_direction->addItems({tr("MSB First"), tr("LSB First"), tr("Always Little Endian"), tr("Always Big Endian")});
+  drag_direction->setCurrentIndex(settings.drag_direction);
+  form_layout->addRow(tr("Drag Direction"), drag_direction);
+  main_layout->addWidget(groupbox);
+
   groupbox = new QGroupBox("Chart");
   form_layout = new QFormLayout(groupbox);
   chart_series_type = new QComboBox(this);
@@ -113,6 +123,7 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
   auto browse_btn = new QPushButton(tr("B&rowse..."));
   path_layout->addWidget(browse_btn);
   main_layout->addWidget(log_livestream);
+
 
   auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Apply);
   main_layout->addWidget(buttonBox);
@@ -151,6 +162,7 @@ void SettingsDlg::save() {
   settings.chart_height = chart_height->value();
   settings.log_livestream = log_livestream->isChecked();
   settings.log_path = log_path->text();
+  settings.drag_direction = (Settings::DragDirection)drag_direction->currentIndex();
   settings.save();
   emit settings.changed();
 }
