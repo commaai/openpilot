@@ -36,10 +36,6 @@ int main(int argc, char *argv[]) {
   if (cmd_parser.isSet("stream")) {
     stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
   } else {
-    // TODO: Remove when OpenpilotPrefix supports ZMQ
-#ifndef __APPLE__
-    op_prefix.reset(new OpenpilotPrefix());
-#endif
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
       replay_flags |= REPLAY_FLAG_ECAM;
@@ -57,14 +53,22 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
 
-    auto replay_stream = new ReplayStream(&app);
-    stream.reset(replay_stream);
     if (route.isEmpty()) {
-      if (OpenRouteDialog dlg(nullptr); !dlg.exec()) {
+      AbstractStream *out_stream = nullptr;
+      if (StreamDialog dlg(&out_stream, nullptr); !dlg.exec()) {
         return 0;
       }
-    } else if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
-      return 0;
+      stream.reset(out_stream);
+    } else {
+      // TODO: Remove when OpenpilotPrefix supports ZMQ
+#ifndef __APPLE__
+      op_prefix.reset(new OpenpilotPrefix());
+#endif
+      auto replay_stream = new ReplayStream(&app);
+      stream.reset(replay_stream);
+      if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
+        return 0;
+      }
     }
   }
 
