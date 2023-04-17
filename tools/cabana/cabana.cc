@@ -88,7 +88,6 @@ int main(int argc, char *argv[]) {
   MainWindow w;
 
   // Load DBC
-  qDebug() << dbc_file;
   if (!dbc_file.isEmpty()) {
     w.loadFile(dbc_file);
   }
