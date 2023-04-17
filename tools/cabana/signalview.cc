@@ -8,6 +8,7 @@
 #include <QHelpEvent>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
 #include <QScrollBar>
 #include <QtConcurrent>
@@ -223,19 +224,13 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
 
 void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
-  for (int i = 0; !msg; ++i) {
-    QString name = QString("NEW_MSG_") + QString::number(msg_id.address, 16).toUpper();
-    if (!dbc()->msg(msg_id.source, name)) {
-      UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
-      msg = dbc()->msg(msg_id);
-    }
+  if (!msg) {
+    QString name = dbc()->newMsgName(msg_id);
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
-  for (int i = 1; /**/; ++i) {
-    sig.name = QString("NEW_SIGNAL_%1").arg(i);
-    if (msg->sig(sig.name) == nullptr) break;
-  }
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
