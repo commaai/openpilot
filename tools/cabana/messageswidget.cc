@@ -144,7 +144,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id.source;
-      case 2: return QString::number(id.address, 16);;
+      case 2: return QString::number(id.address, 16);
       case 3: return getFreq(can_data);
       case 4: return can_data.count;
       case 5: return toHex(can_data.dat);
