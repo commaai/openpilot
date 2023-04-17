@@ -1,5 +1,6 @@
 #include "tools/cabana/streamselector.h"
 
+#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QLabel>
@@ -19,10 +20,11 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
   setWindowTitle(tr("Open stream"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  widgets << new OpenReplayWidget(stream, this)
-          << new OpenPandaWidget(stream, this)
-          << new OpenDeviceWidget(stream, this);
-
+  AbstractOpenStreamWidget *widgets[] = {
+      new OpenReplayWidget(stream, this),
+      new OpenPandaWidget(stream, this),
+      new OpenDeviceWidget(stream, this),
+  };
   QTabWidget *tab = new QTabWidget(this);
   for (auto w : widgets) {
     tab->addTab(w, w->title());
@@ -43,7 +45,7 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   main_layout->addWidget(line);
 
-  btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
+  auto btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   main_layout->addWidget(btn_box);
 
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -60,8 +62,6 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
     }
   });
 }
-
-
 
 // OpenPandaWidget
 

@@ -68,7 +68,7 @@ static std::unique_ptr<OpenpilotPrefix> op_prefix;
 OpenReplayWidget::OpenReplayWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
   // TODO: get route list from api.comma.ai
   QGridLayout *grid_layout = new QGridLayout();
-  grid_layout->addWidget(new QLabel(tr("Name")), 0, 0);
+  grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
   route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
   auto file_btn = new QPushButton(tr("Browse..."), this);

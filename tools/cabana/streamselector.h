@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QDialog>
-#include <QDialogButtonBox>
 #include <QLineEdit>
 
 #include "tools/cabana/streams/abstractstream.h"
@@ -27,7 +26,5 @@ public:
   QString dbcFile() const { return dbc_file->text(); }
 
  private:
-  QList<AbstractOpenStreamWidget *> widgets;
-  QDialogButtonBox *btn_box;
   QLineEdit *dbc_file;
 };
