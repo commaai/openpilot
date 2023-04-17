@@ -1,6 +1,7 @@
 #include "tools/cabana/streams/pandastream.h"
 
 #include <QFormLayout>
+#include <QMessageBox>
 #include <QVBoxLayout>
 
 PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
@@ -103,7 +104,12 @@ OpenPandaWidget::OpenPandaWidget(AbstractStream **stream, QWidget *parent) : Abs
 }
 
 bool OpenPandaWidget::open() {
-  PandaStreamConfig config = {.serial = serial_edit->text()};
-  *stream = new PandaStream(qApp, config);
+  try {
+    PandaStreamConfig config = {.serial = serial_edit->text()};
+    *stream = new PandaStream(qApp, config);
+  } catch (std::exception &e) {
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
+    return false;
+  }
   return true;
 }
