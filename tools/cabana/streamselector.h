@@ -5,19 +5,6 @@
 
 #include "tools/cabana/streams/abstractstream.h"
 
-class OpenPandaWidget : public AbstractOpenStreamWidget {
-  Q_OBJECT
-
-public:
-  OpenPandaWidget(AbstractStream **stream, QWidget *parent);
-  bool open() override;
-  QString title() override { return tr("&Panda"); }
-
-private:
-  QLineEdit *serial_edit;
-};
-
-
 class StreamSelector : public QDialog {
   Q_OBJECT
 

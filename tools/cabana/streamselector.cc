@@ -7,12 +7,9 @@
 #include <QPushButton>
 #include <QTabWidget>
 
-#include "tools/cabana/streams/livestream.h"
-// #include "tools/cabana/streams/devicestream.h"
-// #include "tools/cabana/streams/pandastream.h"
+#include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
-
-// StreamSelector
 
 StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDialog(parent) {
   assert(*stream == nullptr);
@@ -61,25 +58,4 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
       settings.last_dir = QFileInfo(fn).absolutePath();
     }
   });
-}
-
-// OpenPandaWidget
-
-OpenPandaWidget::OpenPandaWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addStretch(1);
-
-  QFormLayout *form_layout = new QFormLayout();
-  serial_edit = new QLineEdit(this);
-  serial_edit->setPlaceholderText(tr("Leave empty to use default serial"));
-  form_layout->addRow(tr("Serial"), serial_edit);
-
-  main_layout->addLayout(form_layout);
-  main_layout->addStretch(1);
-}
-
-bool OpenPandaWidget::open() {
-  // PandaStreamConfig config = {.serial = serial_edit->text()};
-  // stream.reset(new PandaStream(qApp, config));
-  return true;
 }

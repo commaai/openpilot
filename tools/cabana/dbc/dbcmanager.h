@@ -33,6 +33,9 @@ public:
   void updateMsg(const MessageId &id, const QString &name, uint32_t size);
   void removeMsg(const MessageId &id);
 
+  QString newMsgName(const MessageId &id);
+  QString newSignalName(const MessageId &id);
+
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
   const cabana::Msg* msg(uint8_t source, const QString &name);

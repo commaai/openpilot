@@ -17,7 +17,7 @@ struct CanData {
 
   double ts = 0.;
   uint32_t count = 0;
-  uint32_t freq = 0;
+  double freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
   QVector<double> last_change_t;

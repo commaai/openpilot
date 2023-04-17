@@ -1,5 +1,14 @@
 #include "tools/cabana/streams/replaystream.h"
 
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QFileDialog>
+#include <QGridLayout>
+#include <QMessageBox>
+#include <QPushButton>
+
+#include "common/prefix.h"
+
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
@@ -51,17 +60,7 @@ void ReplayStream::pause(bool pause) {
   emit(pause ? paused() : resume());
 }
 
-
 // OpenReplayWidget
-
-#include <QDialogButtonBox>
-#include <QLabel>
-#include <QFileDialog>
-#include <QGridLayout>
-#include <QMessageBox>
-#include <QPushButton>
-
-#include "common/prefix.h"
 
 static std::unique_ptr<OpenpilotPrefix> op_prefix;
 
@@ -126,7 +125,6 @@ bool OpenReplayWidget::open() {
   }
   return !failed_to_load;
 }
-
 
 // OpenRouteDiloag
 
