@@ -26,12 +26,26 @@ StreamDialog::StreamDialog(AbstractStream **stream, QWidget *parent) : QDialog(p
   assert(*stream == nullptr);
 
   setWindowTitle(tr("Open stream"));
-  QFormLayout *main_layout = new QFormLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   QTabWidget *tab = new QTabWidget(this);
   tab->addTab(route_widget = new OpenRouteWidget(stream, this), tr("Route"));
   tab->addTab(panda_widget = new OpenPandaWidget(stream, this), tr("Panda"));
   tab->addTab(device_widget = new OpenDeviceWidget(stream, this), tr("Device"));
   main_layout->addWidget(tab);
+
+  QHBoxLayout *dbc_layout = new QHBoxLayout();
+  dbc_file = new QLineEdit(this);
+  dbc_file->setReadOnly(true);
+  dbc_file->setPlaceholderText(tr("Choose a dbc file to open"));
+  QPushButton *file_btn = new QPushButton(tr("Browse..."));
+  dbc_layout->addWidget(new QLabel(tr("dbc File")));
+  dbc_layout->addWidget(dbc_file);
+  dbc_layout->addWidget(file_btn);
+  main_layout->addLayout(dbc_layout);
+
+  QFrame *line = new QFrame(this);
+  line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
+  main_layout->addWidget(line);
 
   btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   main_layout->addWidget(btn_box);
@@ -40,6 +54,12 @@ StreamDialog::StreamDialog(AbstractStream **stream, QWidget *parent) : QDialog(p
   QObject::connect(btn_box, &QDialogButtonBox::accepted, [=]() {
     if (((AbstractOpenWidget *)tab->currentWidget())->open()) {
       accept();
+    }
+  });
+  QObject::connect(file_btn, &QPushButton::clicked, [this]() {
+    QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+    if (!fn.isEmpty()) {
+      dbc_file->setText(fn);
     }
   });
 }
@@ -128,8 +148,7 @@ OpenRouteWidget::OpenRouteWidget(AbstractStream **stream, QWidget *parent) : Abs
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addLayout(grid_layout);
-  main_layout->addStretch(0);
-  setMinimumSize({550, 120});
+  setMinimumWidth(550);
 
   QObject::connect(file_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);

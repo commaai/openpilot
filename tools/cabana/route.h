@@ -60,12 +60,14 @@ class StreamDialog : public QDialog {
 
 public:
   StreamDialog(AbstractStream **stream, QWidget *parent);
+  QString dbcFile() const { return dbc_file->text(); }
 
  private:
   OpenRouteWidget *route_widget;
   OpenPandaWidget *panda_widget;
   OpenDeviceWidget *device_widget;
   QDialogButtonBox *btn_box;
+  QLineEdit *dbc_file;
 };
 
 class OpenRouteDialog : public QDialog {

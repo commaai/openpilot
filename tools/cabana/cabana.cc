@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
   cmd_parser.process(app);
 
+  QString dbc_file = cmd_parser.isSet("dbc") ? cmd_parser.value("dbc") : "";
+
   std::unique_ptr<OpenpilotPrefix> op_prefix;
   std::unique_ptr<AbstractStream> stream;
 
@@ -55,9 +57,11 @@ int main(int argc, char *argv[]) {
 
     if (route.isEmpty()) {
       AbstractStream *out_stream = nullptr;
-      if (StreamDialog dlg(&out_stream, nullptr); !dlg.exec()) {
+      StreamDialog dlg(&out_stream, nullptr);
+      if (!dlg.exec()) {
         return 0;
       }
+      dbc_file = dlg.dbcFile();
       stream.reset(out_stream);
     } else {
       // TODO: Remove when OpenpilotPrefix supports ZMQ
@@ -75,8 +79,9 @@ int main(int argc, char *argv[]) {
   MainWindow w;
 
   // Load DBC
-  if (cmd_parser.isSet("dbc")) {
-    w.loadFile(cmd_parser.value("dbc"));
+  qDebug() << dbc_file;
+  if (!dbc_file.isEmpty()) {
+    w.loadFile(dbc_file);
   }
 
   w.show();
