@@ -6,6 +6,8 @@ from typing import Dict, List, Union
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+
 Ecu = car.CarParams.Ecu
 
 
@@ -140,6 +142,33 @@ class CanBus:
   SW_GMLAN = 3
   LOOPBACK = 128
   DROPPED = 192
+
+
+GM_SOFTWARE_MODULE_1_REQUEST = b'\x1a\xc1'
+GM_SOFTWARE_MODULE_2_REQUEST = b'\x1a\xc2'
+GM_SOFTWARE_MODULE_3_REQUEST = b'\x1a\xc3'
+GM_END_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcb'
+GM_BASE_MODEL_PART_NUMBER_REQUEST = b'\x1a\xcc'
+GM_FW_RESPONSE = b'\x5a'
+
+GM_FW_REQUESTS = [
+  GM_SOFTWARE_MODULE_1_REQUEST,
+  GM_SOFTWARE_MODULE_2_REQUEST,
+  GM_SOFTWARE_MODULE_3_REQUEST,
+  GM_END_MODEL_PART_NUMBER_REQUEST,
+  GM_BASE_MODEL_PART_NUMBER_REQUEST,
+]
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, request],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE],
+      rx_offset=0x400,
+      bus=0,
+    ) for request in GM_FW_REQUESTS],
+  extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
+)
 
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [
