@@ -248,6 +248,9 @@ void SignalModel::resizeSignal(const cabana::Signal *sig, int start_bit, int siz
 
 void SignalModel::removeSignal(const cabana::Signal *sig) {
   UndoStack::push(new RemoveSigCommand(msg_id, sig));
+  if (dbc()->signalCount(msg_id) == 0) {
+    UndoStack::push(new RemoveMsgCommand(msg_id));
+  }
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
