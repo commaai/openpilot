@@ -41,5 +41,7 @@ protected:
   std::atomic<bool> pause_ = false;
   uint64_t last_update_ts = 0;
 
+  std::unique_ptr<std::ofstream> fs;
+
   QThread *stream_thread;
 };

@@ -3,6 +3,12 @@
 #include <QTimer>
 
 LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
+  if (settings.log_livestream) {
+    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
+    util::create_directories(path, 0755);
+    fs.reset(new std::ofstream(path + "/rlog" , std::ios::binary | std::ios::out));
+  }
+
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
@@ -16,6 +22,11 @@ LiveStream::~LiveStream() {
 }
 
 void LiveStream::handleEvent(Event *evt) {
+  if (fs) {
+    auto bytes = evt->words.asChars();
+    fs->write(bytes.begin(), bytes.size());
+  }
+
   if (start_ts == 0 || evt->mono_time < start_ts) {
     if (evt->mono_time < start_ts) {
       qDebug() << "stream is looping back to old time stamp";
