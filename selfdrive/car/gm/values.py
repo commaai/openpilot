@@ -164,11 +164,12 @@ GM_FW_REQUESTS = [
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, request],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, GM_FW_RESPONSE],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST] + GM_FW_REQUESTS,
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE] + [GM_FW_RESPONSE] * len(GM_FW_REQUESTS),
       rx_offset=0x400,
       bus=0,
-    ) for request in GM_FW_REQUESTS],
+    ),
+  ],
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
