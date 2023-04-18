@@ -13,6 +13,7 @@ public:
   void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
   bool isPaused() const override { return pause_; }
   void pause(bool pause) override;
+  void startStreamThread();
 
 protected:
   virtual void handleEvent(Event *evt);

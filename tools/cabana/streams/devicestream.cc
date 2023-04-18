@@ -1,6 +1,7 @@
 #include "tools/cabana/streams/devicestream.h"
 
 DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(address), LiveStream(parent) {
+  startStreamThread();
 }
 
 void DeviceStream::streamThread() {
