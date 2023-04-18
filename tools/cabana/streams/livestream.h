@@ -11,6 +11,7 @@ public:
   inline double routeStartTime() const override { return start_ts / (double)1e9; }
   inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
   void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
+  double getSpeed() override { return speed_; }
   bool isPaused() const override { return pause_; }
   void pause(bool pause) override;
 
