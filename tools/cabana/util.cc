@@ -53,6 +53,11 @@ void MessageBytesDelegate::setMultipleLines(bool v) {
   }
 }
 
+int MessageBytesDelegate::widthForBytes(int n) const {
+  int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  return n * byte_size.width() + h_margin * 2;
+}
+
 QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
   int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
   auto data = index.data(BytesRole);
@@ -64,12 +69,11 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 
   QSize size = size_cache[n - 1];
   if (size.isEmpty()) {
-    int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
     if (!multiple_lines) {
-      size.setWidth(h_margin * 2 + n * byte_size.width());
+      size.setWidth(widthForBytes(n));
       size.setHeight(byte_size.height() + 2 * v_margin);
     } else {
-      size.setWidth(h_margin * 2 + 8 * byte_size.width());
+      size.setWidth(widthForBytes(8));
       size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
     }
     size_cache[n - 1] = size;

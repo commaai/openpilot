@@ -62,6 +62,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
+    view->updateBytesSectionSize();
   });
   QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
@@ -296,7 +297,21 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
 }
 
 void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
-   // Bypass the slow call to QTreeView::dataChanged.
-   // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
-   QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+  // Bypass the slow call to QTreeView::dataChanged.
+  // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
+  QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+}
+
+void MessageView::updateBytesSectionSize() {
+  auto delegate = ((MessageBytesDelegate *)itemDelegate());
+  int max_bytes = 8;
+  if (!delegate->multipleLines()) {
+    for (auto it = can->last_msgs.constBegin(); it != can->last_msgs.constEnd(); ++it) {
+      max_bytes = std::max(max_bytes, it.value().dat.size());
+    }
+  }
+  int width = delegate->widthForBytes(max_bytes);
+  if (header()->sectionSize(5) != width) {
+    header()->resizeSection(5, width);
+  }
 }
