@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -10,9 +10,10 @@ class CarController:
     self.apply_steer_last = 0
     self.frame = 0
 
-    self.es_lkas_cnt = -1
+    self.es_lkas_state_cnt = -1
     self.es_distance_cnt = -1
     self.es_dashstatus_cnt = -1
+    self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
 
@@ -79,11 +80,15 @@ class CarController:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
         self.es_dashstatus_cnt = CS.es_dashstatus_msg["COUNTER"]
 
-      if self.es_lkas_cnt != CS.es_lkas_msg["COUNTER"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, CC.enabled, hud_control.visualAlert,
-                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-        self.es_lkas_cnt = CS.es_lkas_msg["COUNTER"]
+      if self.es_lkas_state_cnt != CS.es_lkas_state_msg["COUNTER"]:
+        can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
+                                                        hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                        hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+        self.es_lkas_state_cnt = CS.es_lkas_state_msg["COUNTER"]
+
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
+        can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
+        self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
