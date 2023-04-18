@@ -53,7 +53,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     view->setUniformRowHeights(!settings.multiple_lines_bytes);
     model->sortMessages();
   });
-  QObject::connect(can, &AbstractStream::msgsReceived, view, &MessageView::msgsReceived);
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
@@ -63,6 +62,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
+    view->updateBytesSectionSize();
   });
   QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
@@ -302,11 +302,11 @@ void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bot
   QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
 }
 
-void MessageView::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
+void MessageView::updateBytesSectionSize() {
   auto delegate = ((MessageBytesDelegate *)itemDelegate());
   int max_bytes = 8;
   if (!delegate->multipleLines()) {
-    for (auto it = new_msgs->constBegin(); it != new_msgs->constEnd(); ++it) {
+    for (auto it = can->last_msgs.constBegin(); it != can->last_msgs.constEnd(); ++it) {
       max_bytes = std::max(max_bytes, it.value().dat.size());
     }
   }
