@@ -9,6 +9,7 @@
 // DeviceStream
 
 DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(address), LiveStream(parent) {
+  startStreamThread();
 }
 
 void DeviceStream::streamThread() {
