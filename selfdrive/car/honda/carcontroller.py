@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams, HondaFlags
 from selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -19,11 +19,12 @@ def compute_gb_honda_bosch(accel, speed):
 
 
 def compute_accel_honda_bosch_radarless(accel, speed):
-  creep_brake = 0.0
+  creep_brake = 0
+  creep_speed_transition = 4
   creep_speed = 2.3
   creep_brake_value = 0.4
   if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+    creep_brake = clip((creep_speed_transition - speed) / (creep_speed_transition - creep_speed), 0, 1) * creep_brake_value
   return float(accel) - creep_brake
 
 
@@ -44,8 +45,8 @@ def compute_gas_brake(accel, speed, fingerprint):
     return compute_gb_honda_nidec(accel, speed)
 
 
-def compute_accel(accel, speed, fingerprint):
-  if fingerprint in HONDA_BOSCH_RADARLESS:
+def compute_accel(accel, speed, CP):
+  if CP.carFingerprint in HONDA_BOSCH_RADARLESS and not CP.flags & HondaFlags.HONDA_BOSCH_ALT_BRAKE_SIGNAL:
     return compute_accel_honda_bosch_radarless(accel, speed)
   return accel
 
@@ -147,7 +148,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
-      accel = compute_accel(actuators.accel, CS.vEgo, self.CP.carFingerprint)
+      accel = compute_accel(actuators.accel, CS.vEgo, self.CP)
       gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
     else:
       accel = 0.0
