@@ -84,4 +84,5 @@ private:
   std::map<std::string, double> observation_values_invalid;
   bool standstill = true;
   int32_t orientation_reset_count = 0;
+  float gps_std_factor;
 };
