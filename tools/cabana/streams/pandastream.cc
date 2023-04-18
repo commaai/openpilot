@@ -95,9 +95,8 @@ OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWi
   main_layout->addStretch(1);
 
   QFormLayout *form_layout = new QFormLayout();
-  serial_edit = new QLineEdit(this);
+  form_layout->addRow(tr("Serial"), serial_edit = new QLineEdit(this));
   serial_edit->setPlaceholderText(tr("Leave empty to use default serial"));
-  form_layout->addRow(tr("Serial"), serial_edit);
 
   main_layout->addLayout(form_layout);
   main_layout->addStretch(1);

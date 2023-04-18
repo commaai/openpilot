@@ -61,6 +61,7 @@ OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream) : AbstractOpenStream
 
 bool OpenDeviceWidget::open() {
   QString ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text();
-  *stream = new DeviceStream(qApp, group->checkedId() == 0 ? "" : ip);
+  bool msgq = group->checkedId() == 0;
+  *stream = new DeviceStream(qApp, msgq ? "" : ip);
   return true;
 }

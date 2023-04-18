@@ -16,7 +16,6 @@ protected:
   const QString zmq_address;
 };
 
-// OpenDeviceWidget
 class OpenDeviceWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
