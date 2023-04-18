@@ -1,9 +1,13 @@
 #pragma once
 
+#include <QtSerialBus/QCanBus>
+#include <QtSerialBus/QCanBusDevice>
+#include <QtSerialBus/QCanBusFrame>
+
 #include "tools/cabana/streams/livestream.h"
 
 struct SocketCanStreamConfig {
-  QString device = "";
+  QString device = ""; // TODO: support multiple devices/buses at once
   std::vector<BusConfig> bus_config;
 };
 
@@ -21,4 +25,5 @@ protected:
   bool connect();
 
   SocketCanStreamConfig config = {};
+  std::unique_ptr<QCanBusDevice> device;
 };

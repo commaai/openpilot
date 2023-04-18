@@ -12,6 +12,7 @@ if arch == "Darwin":
 else:
   base_libs.append('OpenCL')
   base_libs.append('Qt5Charts')
+  base_libs.append('Qt5SerialBus')
 
 qt_libs = ['qt_util'] + base_libs
 
