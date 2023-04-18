@@ -6,15 +6,16 @@
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 class EditMessageDialog : public QDialog {
 public:
   EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent);
   void validateName(const QString &text);
 
+  MessageId msg_id;
   QString original_name;
   QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
@@ -29,7 +30,6 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &message_id);
   void refresh();
-  QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:
   void showTabBarContextMenu(const QPoint &pt);

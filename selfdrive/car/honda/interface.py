@@ -37,13 +37,11 @@ class CarInterface(CarInterfaceBase):
     if candidate in HONDA_BOSCH:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
-
-      if candidate not in HONDA_BOSCH_RADARLESS:
-        # Disable the radar and let openpilot control longitudinal
-        # WARNING: THIS DISABLES AEB!
-        ret.experimentalLongitudinalAvailable = True
-        ret.openpilotLongitudinalControl = experimental_long
-
+      # Disable the radar and let openpilot control longitudinal
+      # WARNING: THIS DISABLES AEB!
+      # If Bosch radarless, this blocks ACC messages from the camera
+      ret.experimentalLongitudinalAvailable = True
+      ret.openpilotLongitudinalControl = experimental_long
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
@@ -75,6 +73,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [0.25]
       ret.longitudinalTuning.kiV = [0.05]
       ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+      if candidate in HONDA_BOSCH_RADARLESS:
+        ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
@@ -193,15 +193,18 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
-    elif candidate == CAR.HRV:
+    elif candidate in (CAR.HRV, CAR.HRV_3G):
       ret.mass = 3125 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.61
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 15.2
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       tire_stiffness_factor = 0.5
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
-      ret.wheelSpeedFactor = 1.025
+      if candidate == CAR.HRV:
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
+        ret.wheelSpeedFactor = 1.025
+      else:
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]  # TODO: can probably use some tuning
 
     elif candidate == CAR.ACURA_RDX:
       ret.mass = 3935. * CV.LB_TO_KG + STD_CARGO_KG

@@ -193,7 +193,7 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    rWarning("%s at %d s", pause ? "paused..." : "resuming", currentSeconds());
+    rWarning("%s at %.2f s", pause ? "paused..." : "resuming", currentSeconds());
     paused_ = pause;
     return true;
   });

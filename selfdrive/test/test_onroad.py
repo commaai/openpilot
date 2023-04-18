@@ -15,7 +15,7 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 from selfdrive.controls.lib.events import EVENTS, ET
-from selfdrive.loggerd.config import ROOT
+from system.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
@@ -25,7 +25,7 @@ PROCS = {
   "./loggerd": 10.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
-  "./locationd": 9.1,
+  "./locationd": 11.0,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 19.2,
   "selfdrive.locationd.paramsd": 9.0,

@@ -1,5 +1,7 @@
+import time
 from smbus2 import SMBus
 from collections import namedtuple
+from typing import List
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 
@@ -24,13 +26,10 @@ BASE_CONFIG = [
   AmpConfig("MCLK prescaler", 0b01, 0x10, 4, 0b00110000),
   AmpConfig("PM: enable speakers", 0b11, 0x4D, 4, 0b00110000),
   AmpConfig("PM: enable DACs", 0b11, 0x4D, 0, 0b00000011),
-  AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
-  AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
   AmpConfig("Enable PLL1", 0b1, 0x12, 7, 0b10000000),
   AmpConfig("Enable PLL2", 0b1, 0x1A, 7, 0b10000000),
   AmpConfig("DAI1: I2S mode", 0b00100, 0x14, 2, 0b01111100),
   AmpConfig("DAI2: I2S mode", 0b00100, 0x1C, 2, 0b01111100),
-  AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
   AmpConfig("DAI1 Passband filtering: music mode", 0b1, 0x18, 7, 0b10000000),
   AmpConfig("DAI1 voice mode gain (DV1G)", 0b00, 0x2F, 4, 0b00110000),
   AmpConfig("DAI1 attenuation (DV1)", 0x0, 0x2F, 0, 0b00001111),
@@ -41,7 +40,6 @@ BASE_CONFIG = [
   AmpConfig("ALC/excursion limiter release time", 0b101, 0x43, 4, 0b01110000),
   AmpConfig("ALC multiband enable", 0b1, 0x43, 3, 0b00001000),
   AmpConfig("DAI1 EQ enable", 0b0, 0x49, 0, 0b00000001),
-  AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
   AmpConfig("DAI2 EQ clip detection disabled", 0b1, 0x32, 4, 0b00010000),
   AmpConfig("DAI2 EQ attenuation", 0x5, 0x32, 0, 0b00001111),
   AmpConfig("Excursion limiter upper corner freq", 0b100, 0x41, 4, 0b01110000),
@@ -64,6 +62,11 @@ BASE_CONFIG = [
 
 CONFIGS = {
   "tici": [
+    AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
+    AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
+    AmpConfig("Right speaker output volume", 0x1c, 0x3E, 0, 0b00011111),
+    AmpConfig("DAI2 EQ enable", 0b1, 0x49, 1, 0b00000010),
+
     *configs_from_eq_params(0x84, EQParams(0x274F, 0xC0FF, 0x3BF9, 0x0B3C, 0x1656)),
     *configs_from_eq_params(0x8E, EQParams(0x1009, 0xC6BF, 0x2952, 0x1C97, 0x30DF)),
     *configs_from_eq_params(0x98, EQParams(0x0F75, 0xCBE5, 0x0ED2, 0x2528, 0x3E42)),
@@ -72,11 +75,13 @@ CONFIGS = {
   ],
   "tizi": [
     AmpConfig("Left speaker output from left DAC", 0b1, 0x2B, 0, 0b11111111),
+    AmpConfig("Right speaker output from right DAC", 0b1, 0x2C, 0, 0b11111111),
     AmpConfig("Left Speaker Mixer Gain", 0b00, 0x2D, 0, 0b00000011),
-    AmpConfig("Left speaker output volume", 0x1F, 0x3D, 0, 0b00011111),
-    AmpConfig("Right speaker output volume", 0x1F, 0x3E, 0, 0b00011111),
-    AmpConfig("DAI1 attenuation (DV1)", 0x4, 0x2F, 0, 0b00001111),
-    AmpConfig("DAI2 attenuation (DV2)", 0x4, 0x31, 0, 0b00001111),
+    AmpConfig("Right Speaker Mixer Gain", 0b00, 0x2D, 2, 0b00001100),
+    AmpConfig("Left speaker output volume", 0x17, 0x3D, 0, 0b00011111),
+    AmpConfig("Right speaker output volume", 0x17, 0x3E, 0, 0b00011111),
+
+    AmpConfig("DAI2 EQ enable", 0b0, 0x49, 1, 0b00000010),
     AmpConfig("DAI2: DC blocking", 0b0, 0x20, 0, 0b00000001),
     AmpConfig("ALC enable", 0b0, 0x43, 7, 0b10000000),
     AmpConfig("DAI2 EQ attenuation", 0x2, 0x32, 0, 0b00001111),
@@ -91,12 +96,6 @@ CONFIGS = {
     AmpConfig("Right DAC input mixer: DAI2 left", 0b0, 0x22, 1, 0b00000010),
     AmpConfig("Right DAC input mixer: DAI2 right", 0b1, 0x22, 0, 0b00000001),
     AmpConfig("Volume adjustment smoothing disabled", 0b1, 0x49, 6, 0b01000000),
-
-    *configs_from_eq_params(0x84, EQParams(0x3084, 0xC023, 0x3D60, 0x042B, 0x1222)),
-    *configs_from_eq_params(0x8E, EQParams(0x2FB2, 0xC05C, 0x3BD3, 0x06C5, 0x16BB)),
-    *configs_from_eq_params(0x98, EQParams(0x21F5, 0xDF73, 0x2DFE, 0x371A, 0x2C80)),
-    *configs_from_eq_params(0xA2, EQParams(0x2A5A, 0x0AD0, 0x14FA, 0x3F14, 0x3C76)),
-    *configs_from_eq_params(0xAC, EQParams(0x1577, 0x3FAE, 0xEE60, 0x0664, 0x3D86)),
   ],
 }
 
@@ -107,28 +106,50 @@ class Amplifier:
   def __init__(self, debug=False):
     self.debug = debug
 
-  def set_config(self, config):
+  def _get_shutdown_config(self, amp_disabled: bool) -> AmpConfig:
+    return AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000)
+
+  def _set_configs(self, configs: List[AmpConfig]) -> None:
     with SMBus(self.AMP_I2C_BUS) as bus:
-      if self.debug:
-        print(f"Setting \"{config.name}\" to {config.value}:")
+      for config in configs:
+        if self.debug:
+          print(f"Setting \"{config.name}\" to {config.value}:")
 
-      old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
-      new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
-      bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
+        old_value = bus.read_byte_data(self.AMP_ADDRESS, config.register, force=True)
+        new_value = (old_value & (~config.mask)) | ((config.value << config.offset) & config.mask)
+        bus.write_byte_data(self.AMP_ADDRESS, config.register, new_value, force=True)
 
-      if self.debug:
-        print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
+        if self.debug:
+          print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
 
-  def set_global_shutdown(self, amp_disabled):
-    self.set_config(AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000))
+  def set_configs(self, configs: List[AmpConfig]) -> bool:
+    # retry in case panda is using the amp
+    for _ in range(10):
+      try:
+        self._set_configs(configs)
+        return True
+      except OSError:
+        print("Failed to set amp config, retrying...")
+        time.sleep(0.02)
+    return False
 
-  def initialize_configuration(self, model):
-    self.set_global_shutdown(amp_disabled=True)
+  def set_global_shutdown(self, amp_disabled: bool) -> bool:
+    return self.set_configs([self._get_shutdown_config(amp_disabled), ])
 
-    for config in BASE_CONFIG:
-      self.set_config(config)
+  def initialize_configuration(self, model: str) -> bool:
+    cfgs = [
+      self._get_shutdown_config(True),
+      *BASE_CONFIG,
+      *CONFIGS[model],
+      self._get_shutdown_config(False),
+    ]
+    return self.set_configs(cfgs)
 
-    for config in CONFIGS[model]:
-      self.set_config(config)
 
-    self.set_global_shutdown(amp_disabled=False)
+if __name__ == "__main__":
+  with open("/sys/firmware/devicetree/base/model") as f:
+    model = f.read().strip('\x00')
+  model = model.split('comma ')[-1]
+
+  amp = Amplifier()
+  amp.initialize_configuration(model)
