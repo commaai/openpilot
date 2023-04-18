@@ -13,7 +13,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, uint32_t in_freq = 0);
+  void compute(const char *dat, const int size, double current_sec, double playback_speed, uint32_t in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -51,6 +51,7 @@ public:
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
   virtual void setSpeed(float speed) {}
+  virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
   virtual const std::vector<Event*> *rawEvents() const { return nullptr; }
