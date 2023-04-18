@@ -82,8 +82,8 @@ class CarController:
 
       if self.es_lkas_state_cnt != CS.es_lkas_state_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
-                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+                                                        hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                        hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_state_cnt = CS.es_lkas_state_msg["COUNTER"]
 
       if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
