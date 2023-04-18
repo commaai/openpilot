@@ -90,7 +90,7 @@ void PandaStream::streamThread() {
 
 // OpenPandaWidget
 
-OpenPandaWidget::OpenPandaWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
+OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addStretch(1);
 

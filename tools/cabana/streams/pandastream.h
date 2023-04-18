@@ -35,7 +35,7 @@ class OpenPandaWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
 public:
-  OpenPandaWidget(AbstractStream **stream, QWidget *parent);
+  OpenPandaWidget(AbstractStream **stream);
   bool open() override;
   QString title() override { return tr("&Panda"); }
 

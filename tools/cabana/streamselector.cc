@@ -5,27 +5,13 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QPushButton>
-#include <QTabWidget>
 
-#include "tools/cabana/streams/devicestream.h"
-#include "tools/cabana/streams/pandastream.h"
-#include "tools/cabana/streams/replaystream.h"
-
-StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDialog(parent) {
-  assert(*stream == nullptr);
-
+StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Open stream"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  AbstractOpenStreamWidget *widgets[] = {
-      new OpenReplayWidget(stream, this),
-      new OpenPandaWidget(stream, this),
-      new OpenDeviceWidget(stream, this),
-  };
-  QTabWidget *tab = new QTabWidget(this);
-  for (auto w : widgets) {
-    tab->addTab(w, w->title());
-  }
+  tab = new QTabWidget(this);
+  tab->setTabBarAutoHide(true);
   main_layout->addWidget(tab);
 
   QHBoxLayout *dbc_layout = new QHBoxLayout();
@@ -47,7 +33,8 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(btn_box, &QDialogButtonBox::accepted, [=]() {
-    if (((AbstractOpenStreamWidget *)tab->currentWidget())->open()) {
+    success = ((AbstractOpenStreamWidget *)tab->currentWidget())->open();
+    if (success) {
       accept();
     }
   });
@@ -58,4 +45,8 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
       settings.last_dir = QFileInfo(fn).absolutePath();
     }
   });
+}
+
+void StreamSelector::addStream(AbstractOpenStreamWidget *w) {
+  tab->addTab(w, w->title());
 }

@@ -36,25 +36,11 @@ class OpenReplayWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
 public:
-  OpenReplayWidget(AbstractStream **stream, QWidget *parent);
+  OpenReplayWidget(AbstractStream **stream);
   bool open() override;
   QString title() override { return tr("&Replay"); }
-  inline bool failedToLoad() const { return failed_to_load; }
 
 private:
   QLineEdit *route_edit;
   QComboBox *choose_video_cb;
-  bool failed_to_load = false;
-};
-
-
-class OpenRouteDialog : public QDialog {
-  Q_OBJECT
-
- public:
-  OpenRouteDialog(QWidget *parent);
-  inline bool failedToLoad() const { return replay_widget->failedToLoad(); }
-
- private:
-  OpenReplayWidget *replay_widget;
 };

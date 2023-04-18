@@ -36,7 +36,7 @@ void DeviceStream::streamThread() {
 
 // OpenDeviceWidget
 
-OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
+OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   QRadioButton *msgq = new QRadioButton(tr("MSGQ"));
   QRadioButton *zmq = new QRadioButton(tr("ZMQ"));
   ip_address = new QLineEdit(this);

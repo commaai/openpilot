@@ -21,7 +21,7 @@ class OpenDeviceWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
 public:
-  OpenDeviceWidget(AbstractStream **stream, QWidget *parent);
+  OpenDeviceWidget(AbstractStream **stream);
   bool open() override;
   QString title() override { return tr("&Device"); }
 

@@ -1,6 +1,5 @@
 #include "tools/cabana/streams/replaystream.h"
 
-#include <QDialogButtonBox>
 #include <QLabel>
 #include <QFileDialog>
 #include <QGridLayout>
@@ -64,7 +63,7 @@ void ReplayStream::pause(bool pause) {
 
 static std::unique_ptr<OpenpilotPrefix> op_prefix;
 
-OpenReplayWidget::OpenReplayWidget(AbstractStream **stream, QWidget *parent) : AbstractOpenStreamWidget(stream, parent) {
+OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   // TODO: get route list from api.comma.ai
   QGridLayout *grid_layout = new QGridLayout();
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
@@ -102,7 +101,7 @@ bool OpenReplayWidget::open() {
     route = route.mid(idx + 1);
   }
 
-  failed_to_load = true;
+  bool ret = false;
   bool is_valid_format = Route::parseRoute(route).str.size() > 0;
   if (!is_valid_format) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
@@ -113,8 +112,8 @@ bool OpenReplayWidget::open() {
 #endif
     uint32_t flags[] = {REPLAY_FLAG_NO_VIPC, REPLAY_FLAG_NONE, REPLAY_FLAG_ECAM, REPLAY_FLAG_DCAM, REPLAY_FLAG_QCAMERA};
     ReplayStream *replay_stream = *stream ? (ReplayStream *)*stream : new ReplayStream(qApp);
-    failed_to_load = !replay_stream->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()]);
-    if (failed_to_load) {
+    ret = replay_stream->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()]);
+    if (!ret) {
       if (replay_stream != *stream) {
         delete replay_stream;
       }
@@ -123,22 +122,5 @@ bool OpenReplayWidget::open() {
       *stream = replay_stream;
     }
   }
-  return !failed_to_load;
-}
-
-// OpenRouteDiloag
-
-OpenRouteDialog::OpenRouteDialog(QWidget *parent) : QDialog(parent) {
-  setWindowTitle(tr("Open Route"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addWidget(replay_widget = new OpenReplayWidget(&can, this));
-  auto btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
-  main_layout->addWidget(btn_box);
-
-  QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  QObject::connect(btn_box, &QDialogButtonBox::accepted, [=]() {
-    if (replay_widget->open()) {
-      accept();
-    }
-  });
+  return ret;
 }

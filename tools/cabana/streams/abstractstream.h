@@ -90,7 +90,7 @@ protected:
 class AbstractOpenStreamWidget : public QWidget {
   Q_OBJECT
 public:
-  AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent) : stream(stream), QWidget(parent) {}
+  AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
   virtual bool open() = 0;
   virtual QString title() = 0;
 
