@@ -497,8 +497,8 @@ void MainWindow::updateLoadSaveMenus() {
   }
 
   QStringList title;
-  for (auto &[filename, sources] : dbc_files) {
-    QString bus = dbc_files.size() == 1 ? "all" : sources.join(",");
+  for (auto &[filename, src] : dbc_files) {
+    QString bus = dbc_files.size() == 1 ? "all" : src.join(",");
     title.push_back("[" + bus + "]" + QFileInfo(filename).baseName());
   }
   setWindowFilePath(title.join(" | "));
