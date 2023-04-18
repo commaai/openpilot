@@ -8,10 +8,15 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent, true) {
     util::create_directories(path, 0755);
     fs.reset(new std::ofstream(path + "/rlog" , std::ios::binary | std::ios::out));
   }
-
   stream_thread = new QThread(this);
   QObject::connect(stream_thread, &QThread::started, [=]() { streamThread(); });
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
+}
+
+void LiveStream::startStreamThread() {
+  // delay the start of the thread to avoid calling startStreamThread
+  // in the constructor when other classes' slots have not been connected to
+  // the signals of the livestream.
   QTimer::singleShot(0, [this]() { stream_thread->start(); });
 }
 

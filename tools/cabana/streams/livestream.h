@@ -14,6 +14,7 @@ public:
   double getSpeed() override { return speed_; }
   bool isPaused() const override { return pause_; }
   void pause(bool pause) override;
+  void startStreamThread();
 
 protected:
   virtual void handleEvent(Event *evt);
