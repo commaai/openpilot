@@ -56,11 +56,8 @@ def create_es_lkas(packer, es_lkas_msg, enabled, visual_alert, left_line, right_
     elif right_lane_depart:
       values["LKAS_Alert"] = 11 # Right lane departure dash alert
 
-  if enabled:
-    values["LKAS_ACTIVE"] = 1 # Show LKAS lane lines
-    values["LKAS_Dash_State"] = 2 # Green enabled indicator
-  else:
-    values["LKAS_Dash_State"] = 0 # LKAS Not enabled
+  values["LKAS_ACTIVE"] = 1 # Show LKAS lane lines
+  values["LKAS_Dash_State"] = 2 if enabled else 0 # Green enabled indicator
 
   values["LKAS_Left_Line_Visible"] = int(left_line)
   values["LKAS_Right_Line_Visible"] = int(right_line)
