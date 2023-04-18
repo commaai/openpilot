@@ -77,7 +77,7 @@ class CarState(CarStateBase):
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
-      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+      self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
@@ -250,7 +250,7 @@ class CarState(CarStateBase):
       ]
     else:
       signals = [
-        ("Counter", "ES_DashStatus"),
+        ("COUNTER", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
