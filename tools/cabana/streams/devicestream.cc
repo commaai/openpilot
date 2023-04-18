@@ -35,6 +35,10 @@ void DeviceStream::streamThread() {
   }
 }
 
+AbstractOpenStreamWidget *DeviceStream::widget(AbstractStream **stream) {
+  return new OpenDeviceWidget(stream);
+}
+
 // OpenDeviceWidget
 
 OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {

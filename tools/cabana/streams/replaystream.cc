@@ -59,6 +59,11 @@ void ReplayStream::pause(bool pause) {
   emit(pause ? paused() : resume());
 }
 
+
+AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
+  return new OpenReplayWidget(stream);
+}
+
 // OpenReplayWidget
 
 static std::unique_ptr<OpenpilotPrefix> op_prefix;

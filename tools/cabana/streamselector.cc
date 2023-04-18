@@ -47,6 +47,6 @@ StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
   });
 }
 
-void StreamSelector::addStream(AbstractOpenStreamWidget *w) {
+void StreamSelector::addStreamWidget(AbstractOpenStreamWidget *w) {
   tab->addTab(w, w->title());
 }

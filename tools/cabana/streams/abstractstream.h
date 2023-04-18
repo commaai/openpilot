@@ -32,6 +32,8 @@ struct CanEvent {
   inline bool operator>(const CanEvent &r) const { return mono_time > r.mono_time; }
 };
 
+class AbstractOpenStreamWidget;
+
 class AbstractStream : public QObject {
   Q_OBJECT
 

@@ -11,7 +11,7 @@ class StreamSelector : public QDialog {
 
 public:
   StreamSelector(QWidget *parent = nullptr);
-  void addStream(AbstractOpenStreamWidget *w);
+  void addStreamWidget(AbstractOpenStreamWidget *w);
   QString dbcFile() const { return dbc_file->text(); }
   inline bool failed() const { return !success; }
 

@@ -25,6 +25,7 @@ public:
   void pause(bool pause) override;
   const std::vector<Event*> *rawEvents() const override { return replay->events(); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
+  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 private:
   void mergeSegments();

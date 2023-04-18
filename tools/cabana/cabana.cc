@@ -67,9 +67,9 @@ int main(int argc, char *argv[]) {
     if (route.isEmpty()) {
       AbstractStream *out_stream = nullptr;
       StreamSelector dlg;
-      dlg.addStream(new OpenReplayWidget(&out_stream));
-      dlg.addStream(new OpenPandaWidget(&out_stream));
-      dlg.addStream(new OpenDeviceWidget(&out_stream));
+      dlg.addStreamWidget(ReplayStream::widget(&out_stream));
+      dlg.addStreamWidget(PandaStream::widget(&out_stream));
+      dlg.addStreamWidget(DeviceStream::widget(&out_stream));
       if (!dlg.exec()) {
         return 0;
       }

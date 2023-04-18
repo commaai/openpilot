@@ -89,6 +89,10 @@ void PandaStream::streamThread() {
   }
 }
 
+AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
+  return new OpenPandaWidget(stream);
+}
+
 // OpenPandaWidget
 
 OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {

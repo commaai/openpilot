@@ -251,7 +251,7 @@ void MainWindow::DBCFileChanged() {
 
 void MainWindow::openRoute() {
   StreamSelector dlg(this);
-  dlg.addStream(new OpenReplayWidget(&can));
+  dlg.addStreamWidget(ReplayStream::widget(&can));
   if (dlg.exec()) {
     center_widget->clear();
     charts_widget->removeAll();
