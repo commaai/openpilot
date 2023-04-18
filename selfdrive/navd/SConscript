@@ -1,4 +1,4 @@
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'transformations')
+Import('qt_env', 'arch', 'cache_dir', 'common', 'messaging', 'visionipc', 'cereal', 'transformations')
 
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -18,4 +18,6 @@ if arch in ['larch64', 'x86_64']:
   nav_src = ["main.cc", "map_renderer.cc"]
   qt_env.Program("map_renderer", nav_src, LIBS=qt_libs + ['common', 'json11'])
 
-  qt_env.SharedLibrary("map_renderer", ["map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])
+  shared_env = qt_env.Clone()
+  shared_env['QT_MOCHPREFIX'] = cache_dir + '/moc_files/moc_shared_'
+  shared_env.SharedLibrary("map_renderer", ['map_renderer.cc'], LIBS=qt_libs + ['common', 'messaging'])
