@@ -117,8 +117,20 @@ def split_name(name: str) -> Tuple[str, str, str]:
 
 @dataclass
 class CarInfo:
+  # make + model + model years
   name: str
+
+  # Example for Toyota Corolla MY20
+  # requirements: Lane Tracing Assist (LTA) and Dynamic Radar Cruise Control (DRCC)
+  # US Market reference: "All", since all Corolla in the US come standard with LTA and DRCC
+
+  # the simplest description of the requirements for the US market
   package: str
+
+  # the minimum compatibility requirements for this model, regardless
+  # of market. can be a package, trim, or list of features
+  requirements: Optional[str] = None
+
   video_link: Optional[str] = None
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None

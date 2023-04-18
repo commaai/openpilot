@@ -1,12 +1,17 @@
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 #include <QApplication>
 #include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QHelpEvent>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
+#include <QScrollBar>
+#include <QtConcurrent>
 #include <QVBoxLayout>
 
 #include "tools/cabana/commands.h"
@@ -20,7 +25,6 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalModel::handleSignalAdded);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalModel::handleSignalUpdated);
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalModel::updateState);
 }
 
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
@@ -36,7 +40,6 @@ void SignalModel::setMessage(const MessageId &id) {
   msg_id = id;
   filter_str = "";
   refresh();
-  updateState(nullptr);
 }
 
 void SignalModel::setFilter(const QString &txt) {
@@ -55,24 +58,6 @@ void SignalModel::refresh() {
     }
   }
   endResetModel();
-}
-
-void SignalModel::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (!msgs || msgs->contains(msg_id)) {
-    auto &dat = can->lastMessage(msg_id).dat;
-    int row = 0;
-    for (auto item : root->children) {
-      QString value = QString::number(get_raw_value((uint8_t *)dat.begin(), dat.size(), *item->sig), 'f', item->sig->precision);
-      if (!item->sig->unit.isEmpty()){
-        value += " " + item->sig->unit;
-      }
-      if (value != item->sig_val) {
-        item->sig_val = value;
-        emit dataChanged(index(row, 1), index(row, 1), {Qt::DisplayRole});
-      }
-      ++row;
-    }
-  }
 }
 
 SignalModel::Item *SignalModel::getItem(const QModelIndex &index) const {
@@ -160,6 +145,8 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
       if (item->type == Item::Signed) return item->sig->is_signed ? Qt::Checked : Qt::Unchecked;
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
+    } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
+      return (index.column() == 0) ? item->sig->name : item->sig_val;
     }
   }
   return {};
@@ -237,19 +224,13 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
 
 void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
-  for (int i = 0; !msg; ++i) {
-    QString name = QString("NEW_MSG_") + QString::number(msg_id.address, 16).toUpper();
-    if (!dbc()->msg(msg_id.source, name)) {
-      UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
-      msg = dbc()->msg(msg_id);
-    }
+  if (!msg) {
+    QString name = dbc()->newMsgName(msg_id);
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
-  for (int i = 1; /**/; ++i) {
-    sig.name = QString("NEW_SIGNAL_%1").arg(i);
-    if (msg->sig(sig.name) == nullptr) break;
-  }
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
@@ -262,6 +243,9 @@ void SignalModel::resizeSignal(const cabana::Signal *sig, int start_bit, int siz
 
 void SignalModel::removeSignal(const cabana::Signal *sig) {
   UndoStack::push(new RemoveSigCommand(msg_id, sig));
+  if (dbc()->signalCount(msg_id) == 0) {
+    UndoStack::push(new RemoveMsgCommand(msg_id));
+  }
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
@@ -279,7 +263,6 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
-    updateState(nullptr);
   }
 }
 
@@ -303,7 +286,8 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   name_validator = new NameValidator(this);
   double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
-  small_font.setPointSize(8);
+  label_font.setPointSize(8);
+  minmax_font.setPixelSize(10);
 }
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -315,50 +299,88 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
       int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
       it = width_cache.insert(text, option.fontMetrics.width(text) + spacing);
     }
-    width = std::min(width, it.value());
+    width = std::min<int>(option.widget->size().width() / 3.0, it.value());
   }
   return {width, QApplication::fontMetrics().height()};
 }
 
+bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
+  if (event && event->type() == QEvent::ToolTip && index.isValid()) {
+    auto item = (SignalModel::Item *)index.internalPointer();
+    if (item->type == SignalModel::Item::Sig && index.column() == 1) {
+      QRect rc = option.rect.adjusted(0, 0, -option.rect.width() * 0.4, 0);
+      if (rc.contains(event->pos())) {
+        event->setAccepted(false);
+        return false;
+      }
+    }
+  }
+  return QStyledItemDelegate::helpEvent(event, view, option, index);
+}
+
+void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
+    QRect geom = option.rect;
+    geom.setLeft(geom.right() - editor->sizeHint().width());
+    editor->setGeometry(geom);
+    button_size = geom.size();
+    return;
+  }
+  QStyledItemDelegate::updateEditorGeometry(editor, option, index);
+}
+
 void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
-  if (index.column() == 0 && item && item->type == SignalModel::Item::Sig) {
-    painter->save();
+  if (item && item->type == SignalModel::Item::Sig) {
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
       painter->fillRect(option.rect, option.palette.highlight());
     }
 
-    // color label
-    auto bg_color = getColor(item->sig);
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
     int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
-    QRect rc{option.rect.left() + h_margin, option.rect.top(), color_label_width, option.rect.height()};
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(item->highlight ? bg_color.darker(125) : bg_color);
-    painter->drawRoundedRect(rc.adjusted(0, v_margin, 0, -v_margin), 3, 3);
-    painter->setPen(item->highlight ? Qt::white : Qt::black);
-    painter->setFont(small_font);
-    painter->drawText(rc, Qt::AlignCenter, QString::number(item->row() + 1));
+    QRect r = option.rect.adjusted(h_margin, v_margin, -h_margin, -v_margin);
+    if (index.column() == 0) {
+      // color label
+      QPainterPath path;
+      QRect icon_rect{r.x(), r.y(), color_label_width, r.height()};
+      path.addRoundedRect(icon_rect, 3, 3);
+      painter->setPen(item->highlight ? Qt::white : Qt::black);
+      painter->setFont(label_font);
+      painter->fillPath(path, getColor(item->sig).darker(item->highlight ? 125 : 0));
+      painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
-    // signal name
-    painter->setFont(option.font);
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QString text = index.data(Qt::DisplayRole).toString();
-    QRect text_rect = option.rect;
-    text_rect.setLeft(rc.right() + h_margin * 2);
-    text = painter->fontMetrics().elidedText(text, Qt::ElideRight, text_rect.width());
-    painter->drawText(text_rect, option.displayAlignment, text);
-    painter->restore();
-  } else if (index.column() == 1 && item && item->type == SignalModel::Item::Sig) {
-    // draw signal value
-    if (option.state & QStyle::State_Selected) {
-      painter->fillRect(option.rect, option.palette.highlight());
+      r.setLeft(icon_rect.right() + h_margin * 2);
+      auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, r.width());
+      painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
+      painter->setFont(option.font);
+      painter->drawText(r, option.displayAlignment, text);
+    } else if (index.column() == 1) {
+      // sparkline
+      QSize sparkline_size = item->sparkline.pixmap.size() / item->sparkline.pixmap.devicePixelRatio();
+      painter->drawPixmap(QRect(r.topLeft(), sparkline_size), item->sparkline.pixmap);
+      // min-max value
+      painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
+      QRect rect = r.adjusted(sparkline_size.width() + 1, 0, 0, 0);
+      int value_adjust = 10;
+      if (item->highlight || option.state & QStyle::State_Selected) {
+        painter->drawLine(rect.topLeft(), rect.bottomLeft());
+        rect.adjust(5, -v_margin, 0, v_margin);
+        painter->setFont(minmax_font);
+        QString min = QString::number(item->sparkline.min_val);
+        QString max = QString::number(item->sparkline.max_val);
+        painter->drawText(rect, Qt::AlignLeft | Qt::AlignTop, max);
+        painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
+        QFontMetrics fm(minmax_font);
+        value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
+      }
+      // value
+      painter->setFont(option.font);
+      rect.adjust(value_adjust, 0, -button_size.width(), 0);
+      auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rect.width());
+      painter->drawText(rect, Qt::AlignRight | Qt::AlignVCenter, text);
     }
-    painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
-    QRect rc = option.rect.adjusted(0, 0, -70, 0);
-    auto text = painter->fontMetrics().elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rc.width());
-    painter->drawText(rc, Qt::AlignRight | Qt::AlignVCenter, text);
   } else {
     QStyledItemDelegate::paint(painter, option, index);
   }
@@ -411,14 +433,25 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   filter_edit->setPlaceholderText(tr("filter signals"));
   hl->addWidget(filter_edit);
   hl->addStretch(1);
-  auto collapse_btn = toolButton("dash-square", tr("Collapse All"));
+
+  // WARNING: increasing the maximum range can result in severe performance degradation.
+  // 30s is a reasonable value at present.
+  const int max_range = 30; // 30s
+  settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
+  hl->addWidget(sparkline_label = new QLabel());
+  hl->addWidget(sparkline_range_slider = new QSlider(Qt::Horizontal, this));
+  sparkline_range_slider->setRange(1, max_range);
+  sparkline_range_slider->setValue(settings.sparkline_range);
+  sparkline_range_slider->setToolTip(tr("Sparkline time range"));
+
+  auto collapse_btn = new ToolButton("dash-square", tr("Collapse All"));
   collapse_btn->setIconSize({12, 12});
   hl->addWidget(collapse_btn);
 
   // tree view
   tree = new TreeView(this);
   tree->setModel(model = new SignalModel(this));
-  tree->setItemDelegate(new SignalItemDelegate(this));
+  tree->setItemDelegate(delegate = new SignalItemDelegate(this));
   tree->setFrameShape(QFrame::NoFrame);
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
@@ -433,8 +466,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->setSpacing(0);
   main_layout->addWidget(title_bar);
   main_layout->addWidget(tree);
+  updateToolBar();
 
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
+  QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
   QObject::connect(tree, &QAbstractItemView::clicked, this, &SignalView::rowClicked);
   QObject::connect(tree, &QTreeView::viewportEntered, [this]() { emit highlight(nullptr); });
@@ -442,6 +477,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
+  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
+  QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
+  QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -450,7 +489,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 }
 
 void SignalView::setMessage(const MessageId &id) {
-  msg_id = id;
+  max_value_width = 0;
   filter_edit->clear();
   model->setMessage(id);
 }
@@ -465,10 +504,9 @@ void SignalView::rowsChanged() {
       int h_margin = style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
-      h->addStretch(0);
 
-      auto remove_btn = toolButton("x", tr("Remove signal"));
-      auto plot_btn = toolButton("graph-up", "");
+      auto remove_btn = new ToolButton("x", tr("Remove signal"));
+      auto plot_btn = new ToolButton("graph-up", "");
       plot_btn->setCheckable(true);
       h->addWidget(plot_btn);
       h->addWidget(remove_btn);
@@ -477,12 +515,13 @@ void SignalView::rowsChanged() {
       auto sig = model->getItem(index)->sig;
       QObject::connect(remove_btn, &QToolButton::clicked, [=]() { model->removeSignal(sig); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
-        emit showChart(msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
+        emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
       });
     }
   }
-  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  updateToolBar();
   updateChartState();
+  updateState();
 }
 
 void SignalView::rowClicked(const QModelIndex &index) {
@@ -509,7 +548,7 @@ void SignalView::selectSignal(const cabana::Signal *sig, bool expand) {
 void SignalView::updateChartState() {
   int i = 0;
   for (auto item : model->root->children) {
-    bool chart_opened = charts->hasSignal(msg_id, item->sig);
+    bool chart_opened = charts->hasSignal(model->msg_id, item->sig);
     auto buttons = tree->indexWidget(model->index(i, 1))->findChildren<QToolButton *>();
     if (buttons.size() > 0) {
       buttons[0]->setChecked(chart_opened);
@@ -525,8 +564,83 @@ void SignalView::signalHovered(const cabana::Signal *sig) {
     bool highlight = children[i]->sig == sig;
     if (std::exchange(children[i]->highlight, highlight) != highlight) {
       emit model->dataChanged(model->index(i, 0), model->index(i, 0), {Qt::DecorationRole});
+      emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
     }
   }
+}
+
+void SignalView::updateToolBar() {
+  signal_count_lb->setText(tr("Signals: %1").arg(model->rowCount()));
+  sparkline_label->setText(utils::formatSeconds(settings.sparkline_range));
+}
+
+void SignalView::setSparklineRange(int value) {
+  settings.sparkline_range = value;
+  updateToolBar();
+  updateState();
+}
+
+void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
+  if (int row = model->signalRow(sig); row != -1) {
+    auto item = model->getItem(model->index(row, 1));
+    // invalidate the sparkline
+    item->sparkline.last_ts = 0;
+    updateState();
+  }
+}
+
+void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
+  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id))) return;
+
+  const auto &last_msg = can->lastMessage(model->msg_id);
+  for (auto item : model->root->children) {
+    double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
+    item->sig_val = QString::number(value, 'f', item->sig->precision);
+    // Show unit
+    if (!item->sig->unit.isEmpty()) {
+      item->sig_val += " " + item->sig->unit;
+    }
+    // Show enum string
+    for (auto &[val, desc] : item->sig->val_desc) {
+      if (std::abs(value - val.toInt()) < 1e-6) {
+        item->sig_val = desc;
+      }
+    }
+    max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
+  }
+
+  // update visible sparkline
+  QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
+  int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
+  int value_width = std::min<int>(max_value_width, size.width() * 0.35);
+  size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
+
+  QModelIndex top = tree->indexAt(QPoint(0, 0));
+  QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
+  int start_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
+  int end_row = model->rowCount() - 1;
+  if (bottom.isValid()) {
+    end_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
+  }
+  QFutureSynchronizer<void> synchronizer;
+  for (int i = start_row; i <= end_row; ++i) {
+    auto item = model->getItem(model->index(i, 1));
+    auto &s = item->sparkline;
+    if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
+      synchronizer.addFuture(QtConcurrent::run(
+          &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+    }
+  }
+  synchronizer.waitForFinished();
+
+  for (int i = 0; i < model->rowCount(); ++i) {
+    emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
+  }
+}
+
+void SignalView::resizeEvent(QResizeEvent* event) {
+  updateState();
+  QFrame::resizeEvent(event);
 }
 
 void SignalView::leaveEvent(QEvent *event) {

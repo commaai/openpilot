@@ -232,6 +232,7 @@ void MainWindow::undoStackIndexChanged(int index) {
   prev_undostack_index = index;
   prev_undostack_count = count;
   autoSave();
+  updateLoadSaveMenus();
 }
 
 void MainWindow::undoStackCleanChanged(bool clean) {
@@ -411,7 +412,7 @@ void MainWindow::saveFile() {
     if (!dbc_file->filename.isEmpty()) {
       dbc_file->save();
       updateRecentFiles(dbc_file->filename);
-    } else {
+    } else if (!dbc_file->isEmpty()) {
       QString fn = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
       if (!fn.isEmpty()) {
         dbc_file->saveAs(fn);
@@ -426,22 +427,23 @@ void MainWindow::saveFile() {
 
 void MainWindow::saveAs() {
   // Assume only one file is open
-  assert(dbc()->dbcCount() > 0);
-  auto &[_, dbc_file] = dbc()->dbc_files.first();
-
-  QString fn = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
-  if (!fn.isEmpty()) {
-    dbc_file->saveAs(fn);
+  for (auto &[s, dbc_file] : dbc()->dbc_files) {
+    if (dbc_file->isEmpty()) continue;
+    QString fn = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
+    if (!fn.isEmpty()) {
+      dbc_file->saveAs(fn);
+      updateRecentFiles(fn);
+    }
   }
 }
 
 void MainWindow::saveDBCToClipboard() {
   // Assume only one file is open
-  assert(dbc()->dbcCount() > 0);
-
-  auto &[_, dbc_file] = dbc()->dbc_files.first();
-  QGuiApplication::clipboard()->setText(dbc_file->generateDBC());
-  QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+  for (auto &[s, dbc_file] : dbc()->dbc_files) {
+    if (dbc_file->isEmpty()) continue;
+    QGuiApplication::clipboard()->setText(dbc_file->generateDBC());
+    QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+  }
 }
 
 void MainWindow::updateSources(const SourceSet &s) {
@@ -450,17 +452,20 @@ void MainWindow::updateSources(const SourceSet &s) {
 }
 
 void MainWindow::updateLoadSaveMenus() {
-  if (dbc()->dbcCount() > 1) {
+  int cnt = dbc()->nonEmptyDBCCount();
+  save_dbc->setEnabled(cnt > 0);
+
+  if (cnt > 1) {
     save_dbc->setText(tr("Save %1 DBCs...").arg(dbc()->dbcCount()));
   } else {
     save_dbc->setText(tr("Save DBC..."));
   }
 
   // TODO: Support save as for multiple files
-  save_dbc_as->setEnabled(dbc()->dbcCount() == 1);
+  save_dbc_as->setEnabled(cnt == 1);
 
   // TODO: Support clipboard for multiple files
-  copy_dbc_to_clipboard->setEnabled(dbc()->dbcCount() == 1);
+  copy_dbc_to_clipboard->setEnabled(cnt == 1);
 
 
   QList<uint8_t> sources_sorted = sources.toList();
@@ -469,24 +474,34 @@ void MainWindow::updateLoadSaveMenus() {
   open_dbc_for_source->setEnabled(sources.size() > 0);
   open_dbc_for_source->clear();
 
+  std::map<QString, QStringList> dbc_files;
   for (uint8_t source : sources_sorted) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly
     QAction *action = new QAction(this);
 
     auto d = dbc()->findDBCFile(source);
     QString name = tr("no DBC");
-    if (d && !d->second->name().isEmpty()) {
-      name = tr("%1").arg(d->second->name());
-    } else if (d) {
-      name = "untitled";
+    if (d) {
+      if (!d->second->name().isEmpty()) {
+        name = tr("%1").arg(d->second->name());
+      } else {
+        name = "untitled";
+      }
+      dbc_files[d->second->filename].push_back(QString::number(source));
     }
-
     action->setText(tr("Bus %1 (current: %2)").arg(source).arg(name));
     action->setData(source);
 
     QObject::connect(action, &QAction::triggered, this, &MainWindow::openFileForSource);
     open_dbc_for_source->addAction(action);
   }
+
+  QStringList title;
+  for (auto &[filename, sources] : dbc_files) {
+    QString bus = dbc_files.size() == 1 ? "all" : sources.join(",");
+    title.push_back("[" + bus + "]" + QFileInfo(filename).baseName());
+  }
+  setWindowFilePath(title.join(" | "));
 }
 
 void MainWindow::updateRecentFiles(const QString &fn) {
