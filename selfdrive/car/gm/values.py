@@ -173,6 +173,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[(Ecu.fwdCamera, 0x24b, None)],
 )
 
+FW_VERSIONS = {
+  CAR.BOLT_EUV: {}
+}
+
 FINGERPRINTS = {
   CAR.HOLDEN_ASTRA: [
   # Astra BK MY17, ASCM unplugged
