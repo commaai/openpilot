@@ -21,9 +21,9 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
     values["Cruise_Cancel"] = 1
   return packer.make_can_msg("ES_Distance", bus, values)
 
-def create_es_lkas(packer, es_lkas_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
+def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
-  values = copy.copy(es_lkas_msg)
+  values = copy.copy(es_lkas_state_msg)
 
   # Filter the stock LKAS "Keep hands on wheel" alert
   if values["LKAS_Alert_Msg"] == 1:
