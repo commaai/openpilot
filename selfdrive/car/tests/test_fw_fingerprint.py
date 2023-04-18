@@ -184,9 +184,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
     total_time = 0
     for num_pandas in (1, 2):
-      present_ecu_time = self._benchmark_present_ecus(num_pandas, self.N)
-      print(f'func=get_present_ecus, {num_pandas=}, avg time={present_ecu_time} seconds')
-      self._assert_timing(present_ecu_time, present_ecu_ref_time, self.TOL)
+      # present_ecu_time = self._benchmark_present_ecus(num_pandas, self.N)
+      total_time += self._benchmark_present_ecus(num_pandas, self.N)
+      print(f'func=get_present_ecus, {num_pandas=}, avg time={total_time} seconds')
+      self._assert_timing(total_time, present_ecu_ref_time, self.TOL)
 
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
