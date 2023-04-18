@@ -77,19 +77,21 @@ def create_es_dashstatus(packer, dashstatus_msg):
   return packer.make_can_msg("ES_DashStatus", 0, values)
 
 def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
+  values = copy.copy(infotainmentstatus_msg)
+
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
-  if infotainmentstatus_msg["LKAS_State_Infotainment"] in (3, 4):
-    infotainmentstatus_msg["LKAS_State_Infotainment"] = 0
+  if values["LKAS_State_Infotainment"] in (3, 4):
+    values["LKAS_State_Infotainment"] = 0
 
   # Show Keep hands on wheel alert for openpilot steerRequired alert
   if visual_alert == VisualAlert.steerRequired:
-    infotainmentstatus_msg["LKAS_State_Infotainment"] = 3
+    values["LKAS_State_Infotainment"] = 3
 
   # Show Obstacle Detected for fcw
   if visual_alert == VisualAlert.fcw:
-    infotainmentstatus_msg["LKAS_State_Infotainment"] = 2
+    values["LKAS_State_Infotainment"] = 2
 
-  return packer.make_can_msg("INFOTAINMENT_STATUS", 0, infotainmentstatus_msg)
+  return packer.make_can_msg("INFOTAINMENT_STATUS", 0, values)
 
 # *** Subaru Pre-global ***
 
