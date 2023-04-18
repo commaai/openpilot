@@ -1,6 +1,7 @@
 #include "tools/cabana/util.h"
 
 #include <QFontDatabase>
+#include <QHelpEvent>
 #include <QPainter>
 #include <QPixmapCache>
 #include <QToolTip>
