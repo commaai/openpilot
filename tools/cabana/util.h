@@ -76,7 +76,7 @@ private:
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
-  mutable QSize size_cache[64] = {};
+  mutable QSize size_cache[65] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }

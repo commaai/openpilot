@@ -65,9 +65,9 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
     return {1, byte_size.height() + 2 * v_margin};
   }
   int n = data.toByteArray().size();
-  assert(n > 0 && n <= 64);
+  assert(n >= 0 && n <= 64);
 
-  QSize size = size_cache[n - 1];
+  QSize size = size_cache[n];
   if (size.isEmpty()) {
     if (!multiple_lines) {
       size.setWidth(widthForBytes(n));
@@ -76,7 +76,7 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
       size.setWidth(widthForBytes(8));
       size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
     }
-    size_cache[n - 1] = size;
+    size_cache[n] = size;
   }
   return size;
 }
