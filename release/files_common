@@ -411,6 +411,7 @@ selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
+selfdrive/assets/navigation/*
 
 third_party/.gitignore
 third_party/SConscript
