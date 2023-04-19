@@ -17,7 +17,8 @@
 #include <QWidgetAction>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/route.h"
+#include "tools/cabana/streamselector.h"
+#include "tools/cabana/streams/replaystream.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -248,12 +249,13 @@ void MainWindow::DBCFileChanged() {
 }
 
 void MainWindow::openRoute() {
-  OpenRouteDialog dlg(this);
+  StreamSelector dlg(this);
+  dlg.addStreamWidget(ReplayStream::widget(&can));
   if (dlg.exec()) {
     center_widget->clear();
     charts_widget->removeAll();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
-  } else if (dlg.failedToLoad()) {
+  } else if (dlg.failed()) {
     close();
   }
 }
