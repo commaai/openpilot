@@ -254,9 +254,11 @@ class Laikad:
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
       est_pos = self.last_fix_pos
+      correct_delay = True
     else:
       est_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
-    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+      correct_delay = False
+    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, correct_delay=correct_delay)
     return corrected_measurements
 
   def calc_fix(self, t, measurements):
