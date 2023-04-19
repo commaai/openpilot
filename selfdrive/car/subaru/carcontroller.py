@@ -89,7 +89,7 @@ class CarController:
         brake_cmd = True
 
       # AEB passthrough
-      if CC.enabled and CS.aeb:
+      if CC.enabled and CS.out.stockAeb:
         brake_cmd = False
 
       if CC.longActive and gas > 0:
@@ -154,7 +154,7 @@ class CarController:
           self.cruise_control_cnt = CS.cruise_control_msg["COUNTER"]
 
         if self.brake_status_cnt != CS.brake_status_msg["COUNTER"]:
-          can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, CS.aeb))
+          can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, CS.out.stockAeb))
           self.brake_status_cnt = CS.brake_status_msg["COUNTER"]
 
         if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:

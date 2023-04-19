@@ -82,7 +82,6 @@ class CarState(CarStateBase):
 
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-      self.aeb = cp_es_brake.vl["ES_Brake"]["Cruise_Brake_Active"]
       self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
       cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
       self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
