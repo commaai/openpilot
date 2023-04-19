@@ -273,27 +273,18 @@ void MainWindow::openFile() {
   }
 }
 
-void MainWindow::openFileForSource() {
-  if (auto action = qobject_cast<QAction *>(sender())) {
-    uint8_t source = action->data().value<uint8_t>();
-    assert(source < 64);
-
-    QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
-    if (!fn.isEmpty()) {
-      loadFile(fn, {source, uint8_t(source + 128), uint8_t(source + 192)}, false);
-    }
+void MainWindow::openFileForSource(SourceSet s) {
+  QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");
+  if (!fn.isEmpty()) {
+    loadFile(fn, s, false);
   }
 }
 
-void MainWindow::newFileForSource() {
+void MainWindow::newFileForSource(SourceSet s) {
   remindSaveChanges();
-  if (auto action = qobject_cast<QAction *>(sender())) {
-    uint8_t source = action->data().value<uint8_t>();
-    assert(source < 64);
-    SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};
-    dbc()->close(ss);
-    dbc()->open(ss, "", "");
-  }
+
+  dbc()->close(s);
+  dbc()->open(s, "", "");
 }
 
 void MainWindow::loadFile(const QString &fn, SourceSet s, bool close_all) {
@@ -543,26 +534,26 @@ void MainWindow::updateLoadSaveMenus() {
   for (uint8_t source : sources_sorted) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly
 
+    SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};
+
     QMenu *bus_menu = new QMenu(this);
 
     // New
     QAction *new_action = new QAction(this);
     new_action->setText(tr("New DBC File..."));
-    new_action->setData(source);
-    QObject::connect(new_action, &QAction::triggered, this, &MainWindow::newFileForSource);
+    QObject::connect(new_action, &QAction::triggered, [=]() { newFileForSource(ss); });
     bus_menu->addAction(new_action);
 
     // Open
     QAction *open_action = new QAction(this);
     open_action->setText(tr("Open DBC File..."));
-    open_action->setData(source);
-    QObject::connect(open_action, &QAction::triggered, this, &MainWindow::openFileForSource);
+    QObject::connect(open_action, &QAction::triggered, [=]() { openFileForSource(ss); });
     bus_menu->addAction(open_action);
 
     // Open
     QAction *load_clipboard_action = new QAction(this);
     load_clipboard_action->setText(tr("Load DBC From Clipboard..."));
-    QObject::connect(load_clipboard_action, &QAction::triggered, [=]() { loadFromClipboard({source, uint8_t(source + 128), uint8_t(source + 192)}, false); });
+    QObject::connect(load_clipboard_action, &QAction::triggered, [=]() { loadFromClipboard(ss, false); });
     bus_menu->addAction(load_clipboard_action);
 
     // Show sub-menu for each dbc for this source.
