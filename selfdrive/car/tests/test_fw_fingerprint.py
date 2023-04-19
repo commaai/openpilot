@@ -11,6 +11,7 @@ from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car, get_fw_versions, get_present_ecus
+from selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -115,18 +116,18 @@ class FakeSocket:
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  N = 1
+  N = 2
   TOL = 0.1
 
   @staticmethod
-  def _benchmark_present_ecus(num_pandas, n):
+  def _benchmark_fingerprinting_function(func, args, kwargs, n):
     params = Params()
     fake_socket = FakeSocket()
 
     times = []
     for _ in range(n):
       params.put_bool("ObdMultiplexingEnabled", True)
-      thread = threading.Thread(target=get_present_ecus, args=(fake_socket, fake_socket, num_pandas))
+      thread = threading.Thread(target=func, args=(fake_socket, fake_socket, *args), kwargs=kwargs)
       thread.start()
       t = time.perf_counter()
       while thread.is_alive():
@@ -137,32 +138,30 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
     return round(sum(times) / len(times), 2)
 
-  @staticmethod
-  def _benchmark_brand(brand, num_pandas, n):
-    params = Params()
-    fake_socket = FakeSocket()
+  def _benchmark_vin(self, n):
+    return self._benchmark_fingerprinting_function(get_vin, (1,), {}, n)
 
-    times = []
-    for _ in range(n):
-      params.put_bool("ObdMultiplexingEnabled", True)
-      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand), kwargs=dict(num_pandas=num_pandas))
-      thread.start()
-      t = time.perf_counter()
-      while thread.is_alive():
-        time.sleep(0.02)
-        if not params.get_bool("ObdMultiplexingChanged"):
-          params.put_bool("ObdMultiplexingChanged", True)
-      times.append(time.perf_counter() - t)
+  def _benchmark_present_ecus(self, num_pandas, n):
+    return self._benchmark_fingerprinting_function(get_present_ecus, (num_pandas,), {}, n)
 
-    return round(sum(times) / len(times), 2)
+  def _benchmark_brand(self, brand, num_pandas, n):
+    return self._benchmark_fingerprinting_function(get_fw_versions, (brand,), dict(num_pandas=num_pandas), n)
 
   def _assert_timing(self, avg_time, ref_time, tol):
     self.assertLess(avg_time, ref_time + tol)
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
-    total_ref_time = 4.6
-    present_ecu_ref_time = 0.5
+    # total_ref_time = {
+    #   1: 4.6,
+    #   2: 4.6
+    # }
+    ref_times = {
+      'vin': 1.06,
+      'present_ecus': 0.5,
+      'total': 6.3,
+    }
+    # present_ecu_ref_time = 0.5
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -182,12 +181,18 @@ class TestFwFingerprintTiming(unittest.TestCase):
       }
     }
 
+    # total_time = 0
+    # print('vin', self._benchmark_vin(self.N))
+    # print('present ecus', self._benchmark_present_ecus(self.N))
+
     total_time = 0
     for num_pandas in (1, 2):
+
       # present_ecu_time = self._benchmark_present_ecus(num_pandas, self.N)
-      total_time += self._benchmark_present_ecus(num_pandas, self.N)
-      print(f'func=get_present_ecus, {num_pandas=}, avg time={total_time} seconds')
-      self._assert_timing(total_time, present_ecu_ref_time, self.TOL)
+      # total_time += self._benchmark_vin(num_pandas, self.N)
+      # total_time += self._benchmark_present_ecus(num_pandas, self.N)
+      # print(f'func=get_present_ecus, {num_pandas=}, avg time={total_time} seconds')
+      # self._assert_timing(total_time, present_ecu_ref_time, self.TOL)
 
       for brand, config in FW_QUERY_CONFIGS.items():
         with self.subTest(brand=brand, num_pandas=num_pandas):
@@ -200,8 +205,16 @@ class TestFwFingerprintTiming(unittest.TestCase):
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], self.TOL)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
+    vin_time = self._benchmark_vin(self.N)
+    present_ecu_time = self._benchmark_present_ecus(2, self.N)
+    print('present ecus', present_ecu_time)
+    self._assert_timing(vin_time, ref_times['vin'], self.TOL)
+    self._assert_timing(present_ecu_time, ref_times['present_ecus'], self.TOL)
+    total_time += vin_time
+    total_time += present_ecu_time
+
     with self.subTest(brand='all_brands'):
-      self._assert_timing(total_time, total_ref_time, self.TOL)
+      self._assert_timing(total_time, ref_times['total'], self.TOL)
       print(f'all brands, total FW query time={total_time} seconds')
 
 
