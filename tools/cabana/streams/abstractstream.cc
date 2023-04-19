@@ -68,13 +68,15 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   all_msgs.clear();
   last_msgs.clear();
 
-  CanEvent last_event = {.mono_time = uint64_t((sec + routeStartTime()) * 1e9)};
+  uint64_t last_ts = (sec + routeStartTime()) * 1e9;
   for (auto &[id, e] : events_) {
-    auto it = std::lower_bound(e.crbegin(), e.crend(), last_event, std::greater<CanEvent>());
+    auto it = std::lower_bound(e.crbegin(), e.crend(), last_ts, [](auto e, uint64_t ts) {
+      return e->mono_time > ts;
+    });
     if (it != e.crend()) {
-      double ts = it->mono_time / 1e9 - routeStartTime();
+      double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute((const char *)it->dat, it->size, ts, getSpeed());
+      m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed());
       m.count = std::distance(it, e.crend());
       m.freq = m.count / std::max(1.0, ts);
     }
@@ -87,18 +89,30 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   });
 }
 
-void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<CanEvent>> &msgs,
+void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<CanEvent *>> &msgs,
                                  std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
+  size_t memory_size = 0;
+  for (auto it = first; it != last; ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        memory_size += sizeof(CanEvent) + sizeof(uint8_t) * c.getDat().size();
+      }
+    }
+  }
+
+  char *ptr = memory_blocks.emplace_back(new char[memory_size]).get();
   uint64_t ts = 0;
-  for (; first != last; ++first) {
-    if ((*first)->which == cereal::Event::Which::CAN) {
-      ts = (*first)->mono_time;
-      for (const auto &c : (*first)->event.getCan()) {
+  for (auto it = first; it != last; ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      ts = (*it)->mono_time;
+      for (const auto &c : (*it)->event.getCan()) {
         auto dat = c.getDat();
-        auto &m = msgs[{.source = c.getSrc(), .address = c.getAddress()}].emplace_back();
-        m.size = std::min(dat.size(), std::size(m.dat));
-        memcpy(m.dat, (uint8_t *)dat.begin(), m.size);
-        m.mono_time = ts;
+        CanEvent *e = (CanEvent *)ptr;
+        e->mono_time = ts;
+        e->size = dat.size();
+        memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
+        msgs[{.source = c.getSrc(), .address = c.getAddress()}].push_back(e);
+        ptr += sizeof(CanEvent) + sizeof(uint8_t) * e->size;
       }
     }
   }
@@ -111,7 +125,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
   if (append) {
     parseEvents(events_, first, last);
   } else {
-    std::unordered_map<MessageId, std::deque<CanEvent>> new_events;
+    std::unordered_map<MessageId, std::deque<CanEvent *>> new_events;
     parseEvents(new_events, first, last);
     for (auto &[id, new_e] : new_events) {
       auto &e = events_[id];
