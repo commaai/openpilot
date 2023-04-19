@@ -21,6 +21,7 @@ public:
   inline QDateTime currentDateTime() const override { return replay->currentDateTime(); }
   inline const Route *route() const override { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
+  inline float getSpeed() const { return replay->getSpeed(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
   const std::vector<Event*> *rawEvents() const override { return replay->events(); }

@@ -33,7 +33,7 @@ bool AbstractStream::updateEvent(const Event *event) {
     for (const auto &c : event->event.getCan()) {
       MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
       const auto dat = c.getDat();
-      all_msgs[id].compute((const char *)dat.begin(), dat.size(), current_sec);
+      all_msgs[id].compute((const char *)dat.begin(), dat.size(), current_sec, getSpeed());
       if (!new_msgs->contains(id)) {
         new_msgs->insert(id, {});
       }
@@ -74,7 +74,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     if (it != e.crend()) {
       double ts = it->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute((const char *)it->dat, it->size, ts);
+      m.compute((const char *)it->dat, it->size, ts, getSpeed());
       m.count = std::distance(it, e.crend());
       m.freq = m.count / std::max(1.0, ts);
     }
@@ -138,7 +138,7 @@ static inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-void CanData::compute(const char *can_data, const int size, double current_sec, uint32_t in_freq) {
+void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, uint32_t in_freq) {
   ts = current_sec;
   ++count;
   freq = in_freq == 0 ? count / std::max(1.0, current_sec) : in_freq;
@@ -178,7 +178,7 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
         last_change_t[i] = ts;
       } else {
         // Fade out
-        float alpha_delta = 1.0 / (freq + 1) / fade_time;
+        float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
         colors[i].setAlphaF(std::max(0.0, colors[i].alphaF() - alpha_delta));
       }
     }
