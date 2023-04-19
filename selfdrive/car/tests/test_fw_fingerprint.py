@@ -117,7 +117,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N = 10
-  TOL = 0.1
+  TOLERANCE = 0.1
 
   def _benchmark_function(self, func, args, kwargs):
     params = Params()
@@ -138,8 +138,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
     return round(sum(times) / len(times), 2)
 
   def _assert_timing(self, avg_time, ref_time):
-    self.assertLess(avg_time, ref_time + self.TOL)
-    self.assertGreater(avg_time, ref_time - self.TOL, "Performance seems to have improved, update test refs.")
+    self.assertLess(avg_time, ref_time + self.TOLERANCE)
+    self.assertGreater(avg_time, ref_time - self.TOLERANCE, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
     """
