@@ -152,12 +152,11 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
-    ref_times = {
-      'vin': 1.05,
-      'present_ecus': 0.5,
-      'total': 6.2,
+    total_ref_time = 6.2
+    func_ref_times = {
+      'get_vin': 1.05,
+      'get_present_ecus': 0.5,
     }
-
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -190,21 +189,17 @@ class TestFwFingerprintTiming(unittest.TestCase):
           self._assert_timing(brand_time, brand_ref_times[num_pandas][brand], self.TOL)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={brand_time} seconds')
 
-    with self.subTest(func='get_vin'):
-      vin_time = self._benchmark_vin(self.N)
-      total_time += vin_time
-      self._assert_timing(vin_time, ref_times['vin'], self.TOL)
-      print(f'get_vin, avg query time={vin_time} seconds')
-
-    with self.subTest(func='get_present_ecus'):
-      present_ecu_time = self._benchmark_present_ecus(2, self.N)
-      total_time += present_ecu_time
-      self._assert_timing(present_ecu_time, ref_times['present_ecus'], self.TOL)
-      print(f'get_present_ecus, avg query time={present_ecu_time} seconds')
+    for name, func, args, kwargs in (('get_vin', get_vin, (1,), {}),
+                                     ('get_present_ecus', get_present_ecus, (2,), {})):
+      with self.subTest(func=name):
+        vin_time = self._benchmark_fingerprinting_function(func, args, kwargs, self.N)
+        total_time += vin_time
+        self._assert_timing(vin_time, func_ref_times[name], self.TOL)
+        print(f'func={name}, avg query time={vin_time} seconds')
 
     with self.subTest(brand='all_brands'):
       total_time = round(total_time, 2)
-      self._assert_timing(total_time, ref_times['total'], self.TOL)
+      self._assert_timing(total_time, total_ref_time, self.TOL)
       print(f'all brands, total FW query time={total_time} seconds')
 
 
