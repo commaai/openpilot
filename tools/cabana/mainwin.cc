@@ -529,7 +529,6 @@ void MainWindow::updateLoadSaveMenus() {
   QList<uint8_t> sources_sorted = sources.toList();
   std::sort(sources_sorted.begin(), sources_sorted.end());
 
-  // open_dbc_for_source->setEnabled(sources.size() > 0);
   manage_dbcs_menu->clear();
 
   for (uint8_t source : sources_sorted) {
