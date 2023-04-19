@@ -5,6 +5,7 @@
 #include <QHeaderView>
 #include <QLineEdit>
 #include <QSet>
+#include <QSortFilterProxyModel>
 #include <QTreeView>
 
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -19,8 +20,8 @@ public:
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 6; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
-  void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
-  void setFilterString(const QString &string);
+  // void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
+  // void setFilterString(const QString &string);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs = nullptr);
   void sortMessages();
   void suppress();
@@ -29,10 +30,10 @@ public:
   QList<MessageId> msgs;
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
-private:
-  QString filter_str;
-  int sort_column = 0;
-  Qt::SortOrder sort_order = Qt::AscendingOrder;
+// private:
+  // QString filter_str;
+  // int sort_column = 0;
+  // Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
 
 class MessageView : public QTreeView {
@@ -65,6 +66,7 @@ protected:
   QLineEdit *filter;
   QCheckBox *multiple_lines_bytes;
   MessageListModel *model;
+  QSortFilterProxyModel *proxy_model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
 };
