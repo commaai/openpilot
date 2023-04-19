@@ -120,7 +120,7 @@ else:
       f"#third_party/libyuv/{yuv_dir}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/Library",
-      f"{brew_prefix}/opt/openssl/lib",
+      f"{brew_prefix}/opt/openssl@3.0/lib",
       f"{brew_prefix}/Cellar",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
@@ -133,7 +133,7 @@ else:
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
       f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl/include",
+      f"{brew_prefix}/opt/openssl@3.0/include",
     ]
   # Linux 86_64
   else:
