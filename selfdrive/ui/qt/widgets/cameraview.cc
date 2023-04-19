@@ -120,8 +120,7 @@ int CameraWidget::glWidth() {
     return width() * devicePixelRatio();
 }
 
-int CameraWidget::glHeight()
-{
+int CameraWidget::glHeight() {
   return height() * devicePixelRatio();
 }
 
