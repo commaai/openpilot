@@ -222,11 +222,11 @@ int DBCFile::msgCount() const {
 }
 
 QString DBCFile::name() const {
-  return name_;
+  return name_.isEmpty() ? "untitled" : name_;
 }
 
 bool DBCFile::isEmpty() const {
-  return (signalCount() == 0) && name().isEmpty();
+  return (signalCount() == 0) && name_.isEmpty();
 }
 
 void DBCFile::parseExtraInfo(const QString &content) {
