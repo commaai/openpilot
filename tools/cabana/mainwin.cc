@@ -565,36 +565,42 @@ void MainWindow::updateLoadSaveMenus() {
       }
 
       QString fn = dbc_file->filename.isEmpty() ? "untitled" : QFileInfo(dbc_file->filename).baseName();
-      QMenu *manage_menu = bus_menu->addMenu(fn + " (" + toString(src) + ")");
+      // QMenu *manage_menu = bus_menu;
+
+      bus_menu->addSeparator();
+      QAction *fn_action = new QAction(this);
+      fn_action->setText(fn + " (" + toString(src) + ")");
+      fn_action->setEnabled(false);
+      bus_menu->addAction(fn_action);
 
       // Save
       QAction *save_action = new QAction(this);
       save_action->setText(tr("Save..."));
-      manage_menu->addAction(save_action);
+      bus_menu->addAction(save_action);
       QObject::connect(save_action, &QAction::triggered, [=](){ saveFile(it.second); });
 
       // Save as
       QAction *save_as_action = new QAction(this);
       save_as_action->setText(tr("Save As..."));
-      manage_menu->addAction(save_as_action);
+      bus_menu->addAction(save_as_action);
       QObject::connect(save_as_action, &QAction::triggered, [=](){ saveFileAs(it.second); });
 
       // Copy to clipboard
       QAction *save_clipboard_action = new QAction(this);
       save_clipboard_action->setText(tr("Copy to Clipboard..."));
-      manage_menu->addAction(save_clipboard_action);
+      bus_menu->addAction(save_clipboard_action);
       QObject::connect(save_clipboard_action, &QAction::triggered, [=](){ saveFileToClipboard(it.second); });
 
       // Remove from this bus
       QAction *remove_action = new QAction(this);
       remove_action->setText(tr("Remove from this bus..."));
-      manage_menu->addAction(remove_action);
+      bus_menu->addAction(remove_action);
       QObject::connect(remove_action, &QAction::triggered, [=](){ removeBusFromFile(it.second, source); });
 
       // Close/Remove from all buses
       QAction *close_action = new QAction(this);
       close_action->setText(tr("Remove from all buses..."));
-      manage_menu->addAction(close_action);
+      bus_menu->addAction(close_action);
       QObject::connect(close_action, &QAction::triggered, [=](){ closeFile(it.second); });
 
       bus_menu_fns << fn;
