@@ -101,6 +101,29 @@ void DBCManager::closeAll() {
   emit DBCFileChanged();
 }
 
+void DBCManager::removeSourcesFromFile(DBCFile *dbc_file, SourceSet s) {
+  assert(dbc_file != nullptr);
+
+  // Build new list of dbc files, removing the ones that match the sourceset
+  QList<std::pair<SourceSet, DBCFile*>> new_dbc_files;
+  for (auto entry : dbc_files) {
+    if (entry.second == dbc_file) {
+      SourceSet ss = (entry.first == SOURCE_ALL) ? sources : entry.first;
+      ss -= s;
+      if (ss.empty()) { // Close file if no more sources remain
+        delete dbc_file;
+      } else {
+        new_dbc_files.push_back({ss, dbc_file});
+      }
+    } else {
+      new_dbc_files.push_back(entry);
+    }
+  }
+
+  dbc_files = new_dbc_files;
+  emit DBCFileChanged();
+}
+
 
 void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   auto sources_dbc_file = findDBCFile(id);

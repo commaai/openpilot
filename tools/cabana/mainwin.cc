@@ -487,6 +487,13 @@ void MainWindow::saveFileAs(DBCFile *dbc_file) {
   }
 }
 
+void MainWindow::removeBusFromFile(DBCFile *dbc_file, uint8_t source) {
+  assert(dbc_file != nullptr);
+  SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};
+  dbc()->removeSourcesFromFile(dbc_file, ss);
+  updateLoadSaveMenus();
+}
+
 void MainWindow::saveDBCToClipboard() {
   // Assume only one file is open
   for (auto &[s, dbc_file] : dbc()->dbc_files) {
@@ -543,7 +550,7 @@ void MainWindow::updateLoadSaveMenus() {
     QObject::connect(new_action, &QAction::triggered, this, &MainWindow::newFileForSource);
     bus_menu->addAction(new_action);
 
-    // Show sub-menu for each dbc for this source. Currently this will only show one
+    // Show sub-menu for each dbc for this source.
     QStringList bus_menu_fns;
     for (auto it : dbc()->dbc_files) {
       auto &[src, dbc_file] = it;
@@ -551,8 +558,9 @@ void MainWindow::updateLoadSaveMenus() {
         continue;
       }
 
+
       QString fn = dbc_file->filename.isEmpty() ? "untitled" : QFileInfo(dbc_file->filename).baseName();
-      QMenu *manage_menu = bus_menu->addMenu(fn);
+      QMenu *manage_menu = bus_menu->addMenu(fn + " (" + toString(src) + ")");
 
       // Save
       QAction *save_action = new QAction(this);
@@ -566,9 +574,15 @@ void MainWindow::updateLoadSaveMenus() {
       manage_menu->addAction(save_as_action);
       QObject::connect(save_as_action, &QAction::triggered, [=](){ saveFileAs(it.second); });
 
-      // Close
+      // Remove from this bus
+      QAction *remove_action = new QAction(this);
+      remove_action->setText(tr("Remove from this bus..."));
+      manage_menu->addAction(remove_action);
+      QObject::connect(remove_action, &QAction::triggered, [=](){ removeBusFromFile(it.second, source); });
+
+      // Close/Remove from all buses
       QAction *close_action = new QAction(this);
-      close_action->setText(tr("Close..."));
+      close_action->setText(tr("Remove from all buses..."));
       manage_menu->addAction(close_action);
       QObject::connect(close_action, &QAction::triggered, [=](){ closeFile(it.second); });
 

@@ -48,6 +48,7 @@ protected:
   void closeFile(DBCFile *dbc_file);
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
+  void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
