@@ -143,11 +143,22 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
+    """
+    Tests timing if full timeout time is taken for:
+      - VIN query
+      - Present ECU queries
+      - FW queries for each brand
+      - Total time taken for a car which doesn't match to any brand (CAN fp)
+    """
+
+    # Includes all FW queries + queries in functions
     total_ref_time = 6.2
     func_ref_times = {
       'get_vin': 1.05,
       'get_present_ecus': 0.5,
     }
+
+    # Does not include queries from other functions
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -181,7 +192,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={brand_time} seconds')
 
     for func, args, kwargs in ((get_vin, (1,)),            # bus
-                               (get_present_ecus, (2,))):  # worst case num_pandas
+                               (get_present_ecus, (2,))):  # num_pandas
       func_name = func.__name__
       with self.subTest(func_name=func_name):
         vin_time = self._benchmark_function(func, args, {}, self.N)
