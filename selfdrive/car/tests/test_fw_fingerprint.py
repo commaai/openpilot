@@ -119,13 +119,12 @@ class TestFwFingerprintTiming(unittest.TestCase):
   N = 10
   TOL = 0.1
 
-  @staticmethod
-  def _benchmark_function(func, args, kwargs, n):
+  def _benchmark_function(self, func, args, kwargs):
     params = Params()
     fake_socket = FakeSocket()
 
     times = []
-    for _ in range(n):
+    for _ in range(self.N):
       params.put_bool("ObdMultiplexingEnabled", True)
       thread = threading.Thread(target=func, args=(fake_socket, fake_socket, *args), kwargs=kwargs)
       thread.start()
@@ -138,9 +137,9 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
     return round(sum(times) / len(times), 2)
 
-  def _assert_timing(self, avg_time, ref_time, tol):
-    self.assertLess(avg_time, ref_time + tol)
-    self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
+  def _assert_timing(self, avg_time, ref_time):
+    self.assertLess(avg_time, ref_time + self.TOL)
+    self.assertGreater(avg_time, ref_time - self.TOL, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
     """
@@ -186,23 +185,23 @@ class TestFwFingerprintTiming(unittest.TestCase):
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
-          brand_time = self._benchmark_function(get_fw_versions, (brand,), dict(num_pandas=num_pandas), self.N)
+          brand_time = self._benchmark_function(get_fw_versions, (brand,), dict(num_pandas=num_pandas))
           total_time += brand_time
-          self._assert_timing(brand_time, brand_ref_times[num_pandas][brand], self.TOL)
+          self._assert_timing(brand_time, brand_ref_times[num_pandas][brand])
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={brand_time} seconds')
 
     for func, args in ((get_vin, (1,)),            # bus
                        (get_present_ecus, (2,))):  # num_pandas
       func_name = func.__name__
       with self.subTest(func_name=func_name):
-        vin_time = self._benchmark_function(func, args, {}, self.N)
+        vin_time = self._benchmark_function(func, args, {})
         total_time += vin_time
-        self._assert_timing(vin_time, func_ref_times[func_name], self.TOL)
+        self._assert_timing(vin_time, func_ref_times[func_name])
         print(f'{func_name=}, avg query time={vin_time} seconds')
 
     with self.subTest(brand='all_brands'):
       total_time = round(total_time, 2)
-      self._assert_timing(total_time, total_ref_time, self.TOL)
+      self._assert_timing(total_time, total_ref_time)
       print(f'all brands, total FW query time={total_time} seconds')
 
 
