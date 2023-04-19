@@ -7,8 +7,13 @@
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
   const auto &msgs = can->events().at(msg_id);
   uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - range * 1e9, 0)});
-  auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+  uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, [](auto e, uint64_t ts) {
+    return e->mono_time < ts;
+  });
+  auto last = std::upper_bound(first, msgs.cend(), ts, [](uint64_t ts, auto e) {
+    return ts < e->mono_time;
+  });
 
   bool update_values = last_ts != last_msg_ts || time_range != range;
   last_ts = last_msg_ts;
@@ -21,8 +26,9 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
       min_val = std::numeric_limits<double>::max();
       max_val = std::numeric_limits<double>::lowest();
       for (auto it = first; it != last; ++it) {
-        double value = get_raw_value(it->dat, it->size, *sig);
-        values.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
+        const CanEvent *e = *it;
+        double value = get_raw_value(e->dat, e->size, *sig);
+        values.emplace_back((e->mono_time - (*first)->mono_time) / 1e9, value);
         if (min_val > value) min_val = value;
         if (max_val < value) max_val = value;
       }
