@@ -112,7 +112,7 @@ void MainWindow::createActions() {
     load_opendbc_menu->addAction(QString::fromStdString(name), this, &MainWindow::openOpendbcFile);
   }
 
-  file_menu->addAction(tr("Load DBC From Clipboard"), this, &MainWindow::loadDBCFromClipboard);
+  file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });
 
   file_menu->addSeparator();
   save_dbc = file_menu->addAction(tr("Save DBC..."), this, &MainWindow::save);
@@ -121,7 +121,7 @@ void MainWindow::createActions() {
   save_dbc_as = file_menu->addAction(tr("Save DBC As..."), this, &MainWindow::saveAs);
   save_dbc_as->setShortcuts(QKeySequence::SaveAs);
 
-  copy_dbc_to_clipboard = file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveDBCToClipboard);
+  copy_dbc_to_clipboard = file_menu->addAction(tr("Copy DBC To Clipboard"), this, &MainWindow::saveToClipboard);
 
   file_menu->addSeparator();
   file_menu->addAction(tr("Settings..."), this, &MainWindow::setOption)->setShortcuts(QKeySequence::Preferences);
@@ -356,13 +356,17 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
   updateLoadSaveMenus();
 }
 
-void MainWindow::loadDBCFromClipboard() {
+void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
   remindSaveChanges();
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
 
-  dbc()->closeAll();
-  bool ret = dbc()->open(SOURCE_ALL, "", dbc_str, &error);
+  if (close_all) {
+    dbc()->closeAll();
+  }
+
+  dbc()->close(s);
+  bool ret = dbc()->open(s, "", dbc_str, &error);
   if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
@@ -495,13 +499,19 @@ void MainWindow::removeBusFromFile(DBCFile *dbc_file, uint8_t source) {
   updateLoadSaveMenus();
 }
 
-void MainWindow::saveDBCToClipboard() {
-  // Assume only one file is open
+
+void MainWindow::saveToClipboard() {
+  // Copy all open DBC files to clipboard. Should not be called with more than 1 file open
   for (auto &[s, dbc_file] : dbc()->dbc_files) {
     if (dbc_file->isEmpty()) continue;
-    QGuiApplication::clipboard()->setText(dbc_file->generateDBC());
-    QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
+    saveFileToClipboard(dbc_file);
   }
+}
+
+void MainWindow::saveFileToClipboard(DBCFile *dbc_file) {
+  assert(dbc_file != nullptr);
+  QGuiApplication::clipboard()->setText(dbc_file->generateDBC());
+  QMessageBox::information(this, tr("Copy To Clipboard"), tr("DBC Successfully copied!"));
 }
 
 void MainWindow::updateSources(const SourceSet &s) {
@@ -519,7 +529,6 @@ void MainWindow::updateLoadSaveMenus() {
     save_dbc->setText(tr("Save DBC..."));
   }
 
-  // TODO: Support save as for multiple files
   save_dbc_as->setEnabled(cnt == 1);
 
   // TODO: Support clipboard for multiple files
@@ -550,6 +559,12 @@ void MainWindow::updateLoadSaveMenus() {
     QObject::connect(open_action, &QAction::triggered, this, &MainWindow::openFileForSource);
     bus_menu->addAction(open_action);
 
+    // Open
+    QAction *load_clipboard_action = new QAction(this);
+    load_clipboard_action->setText(tr("Load DBC From Clipboard..."));
+    QObject::connect(load_clipboard_action, &QAction::triggered, [=]() { loadFromClipboard({source, uint8_t(source + 128), uint8_t(source + 192)}, false); });
+    bus_menu->addAction(load_clipboard_action);
+
     // Show sub-menu for each dbc for this source.
     QStringList bus_menu_fns;
     for (auto it : dbc()->dbc_files) {
@@ -569,9 +584,15 @@ void MainWindow::updateLoadSaveMenus() {
 
       // Save as
       QAction *save_as_action = new QAction(this);
-      save_as_action->setText(tr("Save as..."));
+      save_as_action->setText(tr("Save As..."));
       manage_menu->addAction(save_as_action);
       QObject::connect(save_as_action, &QAction::triggered, [=](){ saveFileAs(it.second); });
+
+      // Copy to clipboard
+      QAction *save_clipboard_action = new QAction(this);
+      save_clipboard_action->setText(tr("Copy to Clipboard..."));
+      manage_menu->addAction(save_clipboard_action);
+      QObject::connect(save_clipboard_action, &QAction::triggered, [=](){ saveFileToClipboard(it.second); });
 
       // Remove from this bus
       QAction *remove_action = new QAction(this);

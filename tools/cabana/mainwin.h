@@ -33,10 +33,9 @@ public slots:
   void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
   void loadDBCFromFingerprint();
-  void loadDBCFromClipboard();
   void save();
   void saveAs();
-  void saveDBCToClipboard();
+  void saveToClipboard();
   void updateSources(const SourceSet &s);
 
 signals:
@@ -48,7 +47,9 @@ protected:
   void closeFile(DBCFile *dbc_file);
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
+  void saveFileToClipboard(DBCFile *dbc_file);
   void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
+  void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
