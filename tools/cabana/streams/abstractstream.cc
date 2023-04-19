@@ -69,15 +69,15 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   last_msgs.clear();
 
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
-  for (auto &[id, e] : events_) {
-    auto it = std::lower_bound(e.crbegin(), e.crend(), last_ts, [](auto e, uint64_t ts) {
+  for (auto &[id, ev] : events_) {
+    auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
       return e->mono_time > ts;
     });
-    if (it != e.crend()) {
+    if (it != ev.crend()) {
       double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
       m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed());
-      m.count = std::distance(it, e.crend());
+      m.count = std::distance(it, ev.crend());
       m.freq = m.count / std::max(1.0, ts);
     }
   }
