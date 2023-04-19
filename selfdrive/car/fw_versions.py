@@ -58,36 +58,51 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(list)
+  included_fw_versions = defaultdict(list)
+  excluded_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
 
     for addr, fws in fw_by_addr.items():
-      if addr[0] in exclude_types:
-        continue
       for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
-
-  match_count = 0
+        if addr[0] not in exclude_types:
+          included_fw_versions[(addr[1], addr[2], f)].append(candidate)
+        else:
+          excluded_fw_versions[(addr[1], addr[2], f)].append(candidate)
   candidate = None
+  included_match_count = 0
+  excluded_match_count = 0
+  included_candidate = None
+  excluded_candidate = None
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
-      candidates = all_fw_versions[(addr[0], addr[1], version)]
-
-      if len(candidates) == 1:
-        match_count += 1
-        if candidate is None:
-          candidate = candidates[0]
+      included_candidates = included_fw_versions[(addr[0], addr[1], version)]
+      excluded_candidates = excluded_fw_versions[(addr[0], addr[1], version)]
+      if len(included_candidates) == 1:
+        included_match_count += 1
+        if included_candidate is None:
+          included_candidate = included_candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
-        elif candidate != candidates[0]:
+        elif included_candidate != included_candidates[0]:
           return set()
-
-  if match_count >= 2:
+      
+      if len(excluded_candidates) == 1:
+        excluded_match_count += 1
+        if excluded_candidate is None:
+          excluded_candidate = excluded_candidates[0]
+        elif excluded_candidate != excluded_candidates[0]:
+          return set()
+      
+  if included_match_count >= 2:
     if log:
-      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
-    return {candidate}
+      cloudlog.error(f"Fingerprinted {included_candidate} using fuzzy match. {included_match_count} matching ECUs")
+    return {included_candidate}
+  elif included_match_count == 1 and excluded_match_count >= 3 and excluded_candidate == included_candidate:
+    if log:
+      cloudlog.error(f"Fingerprinted {excluded_candidate} using fuzzy match. {included_match_count} matching ECUs and {excluded_match_count} excluded matching ECUs")
+    return {excluded_candidate}
   else:
     return set()
 
