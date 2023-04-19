@@ -320,7 +320,18 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   text = "Enable Adaptive Cruise to Engage"
   if CP.carName == "honda":
     text = "Enable Main Switch to Engage"
+  elif CP.carName == "gm" and CP.enableGasInterceptor:
+    text = "Turn CC Off To Use Pedal Interceptor"
   return NoEntryAlert(text)
+
+
+def no_braking_alert(alert_type, default_text):
+  def _no_braking_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int):
+    text = default_text
+    if CP.carName == "gm" and CP.enableGasInterceptor:
+      text = "Shift To L To Use Pedal Interceptor"
+    return alert_type(text)
+  return _no_braking_alert
 
 
 def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
@@ -878,9 +889,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.brakeUnavailable: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
-    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
+    ET.IMMEDIATE_DISABLE: no_braking_alert(ImmediateDisableAlert, "Cruise Fault: Restart the Car"),
+    ET.PERMANENT: no_braking_alert(NormalPermanentAlert, "Cruise Fault: Restart the car to engage"),
+    ET.NO_ENTRY: no_braking_alert(NoEntryAlert, "Cruise Fault: Restart the Car"),
   },
 
   EventName.reverseGear: {
