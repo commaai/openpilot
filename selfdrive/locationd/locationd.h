@@ -14,7 +14,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-#include "selfdrive/sensord/sensors/constants.h"
+#include "system/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10
 #include "selfdrive/locationd/models/live_kf.h"
@@ -84,4 +84,5 @@ private:
   std::map<std::string, double> observation_values_invalid;
   bool standstill = true;
   int32_t orientation_reset_count = 0;
+  float gps_std_factor;
 };
