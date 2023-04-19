@@ -537,19 +537,19 @@ void MainWindow::updateLoadSaveMenus() {
 
     QMenu *bus_menu = new QMenu(this);
 
-    // Open
-    QAction *open_action = new QAction(this);
-    open_action->setText(tr("Open DBC File..."));
-    open_action->setData(source);
-    QObject::connect(open_action, &QAction::triggered, this, &MainWindow::openFileForSource);
-    bus_menu->addAction(open_action);
-
     // New
     QAction *new_action = new QAction(this);
     new_action->setText(tr("New DBC File..."));
     new_action->setData(source);
     QObject::connect(new_action, &QAction::triggered, this, &MainWindow::newFileForSource);
     bus_menu->addAction(new_action);
+
+    // Open
+    QAction *open_action = new QAction(this);
+    open_action->setText(tr("Open DBC File..."));
+    open_action->setData(source);
+    QObject::connect(open_action, &QAction::triggered, this, &MainWindow::openFileForSource);
+    bus_menu->addAction(open_action);
 
     // Show sub-menu for each dbc for this source.
     QStringList bus_menu_fns;
