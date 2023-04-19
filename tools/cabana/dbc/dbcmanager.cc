@@ -76,7 +76,7 @@ void DBCManager::close(SourceSet s) {
 void DBCManager::close(DBCFile *dbc_file) {
   assert(dbc_file != nullptr);
 
-  // Build new list of dbc files, removing the ones that match the sourceset
+  // Build new list of dbc files, removing the one that matches dbc_file*
   QList<std::pair<SourceSet, DBCFile*>> new_dbc_files;
   for (auto entry : dbc_files) {
     if (entry.second == dbc_file) {
@@ -104,7 +104,7 @@ void DBCManager::closeAll() {
 void DBCManager::removeSourcesFromFile(DBCFile *dbc_file, SourceSet s) {
   assert(dbc_file != nullptr);
 
-  // Build new list of dbc files, removing the ones that match the sourceset
+  // Build new list of dbc files, for the given dbc_file* remove s from the current sources
   QList<std::pair<SourceSet, DBCFile*>> new_dbc_files;
   for (auto entry : dbc_files) {
     if (entry.second == dbc_file) {
