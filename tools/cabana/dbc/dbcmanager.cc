@@ -19,20 +19,6 @@ bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error)
       emit DBCFileChanged();
       return true;
     }
-
-    // Check if there is already a file for this sourceset, then replace it
-    if (ss == s) {
-      try {
-        dbc_files[i] = {s, new DBCFile(dbc_file_name, this)};
-        delete dbc_file;
-
-        emit DBCFileChanged();
-        return true;
-      } catch (std::exception &e) {
-        if (error) *error = e.what();
-        return false;
-      }
-    }
   }
 
   try {

@@ -316,6 +316,7 @@ void MainWindow::loadFile(const QString &fn, SourceSet s, bool close_all) {
       dbc()->closeAll();
     }
 
+    dbc()->close(s);
     bool ret = dbc()->open(s, dbc_fn, &error);
     if (ret) {
       updateRecentFiles(fn);
