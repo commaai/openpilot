@@ -116,8 +116,7 @@ CameraWidget::~CameraWidget() {
 
 // Qt uses device-independent pixels, depending on platform this may be
 // different to what OpenGL uses
-int CameraWidget::glWidth()
-{
+int CameraWidget::glWidth() {
     return width() * devicePixelRatio();
 }
 
