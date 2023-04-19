@@ -58,6 +58,38 @@ bool DBCManager::open(SourceSet s, const QString &name, const QString &content, 
   return true;
 }
 
+void DBCManager::close(SourceSet s) {
+  // Build new list of dbc files, removing the ones that match the sourceset
+  QList<std::pair<SourceSet, DBCFile*>> new_dbc_files;
+  for (auto entry : dbc_files) {
+    if (entry.first == s) {
+      delete entry.second;
+    } else {
+      new_dbc_files.push_back(entry);
+    }
+  }
+
+  dbc_files = new_dbc_files;
+  emit DBCFileChanged();
+}
+
+void DBCManager::close(DBCFile *dbc_file) {
+  assert(dbc_file != nullptr);
+
+  // Build new list of dbc files, removing the ones that match the sourceset
+  QList<std::pair<SourceSet, DBCFile*>> new_dbc_files;
+  for (auto entry : dbc_files) {
+    if (entry.second == dbc_file) {
+      delete entry.second;
+    } else {
+      new_dbc_files.push_back(entry);
+    }
+  }
+
+  dbc_files = new_dbc_files;
+  emit DBCFileChanged();
+}
+
 void DBCManager::closeAll() {
   if (dbc_files.isEmpty()) return;
 

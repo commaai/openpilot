@@ -27,6 +27,7 @@ public slots:
   void openRoute();
   void newFile();
   void openFile();
+  void newFileForSource();
   void openFileForSource();
   void openRecentFile();
   void openOpendbcFile();
@@ -44,7 +45,9 @@ signals:
 
 protected:
   void remindSaveChanges();
-  void saveFile();
+  void closeFile(DBCFile *dbc_file);
+  void saveFile(DBCFile *dbc_file);
+  void saveFileAs(DBCFile *dbc_file);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
@@ -79,7 +82,7 @@ protected:
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
-  QMenu *open_dbc_for_source = nullptr;
+  QMenu *manage_dbcs_menu = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
