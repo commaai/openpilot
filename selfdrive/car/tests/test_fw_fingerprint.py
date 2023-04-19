@@ -191,8 +191,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
           self._assert_timing(brand_time, brand_ref_times[num_pandas][brand], self.TOL)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={brand_time} seconds')
 
-    for func, args, kwargs in ((get_vin, (1,)),            # bus
-                               (get_present_ecus, (2,))):  # num_pandas
+    for func, args in ((get_vin, (1,)),            # bus
+                       (get_present_ecus, (2,))):  # num_pandas
       func_name = func.__name__
       with self.subTest(func_name=func_name):
         vin_time = self._benchmark_function(func, args, {}, self.N)
