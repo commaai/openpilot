@@ -614,7 +614,7 @@ void MainWindow::updateLoadSaveMenus() {
   QStringList title;
   for (auto &[src, dbc_file] : dbc()->dbc_files) {
     QString fn = dbc_file->filename.isEmpty() ? "untitled" : QFileInfo(dbc_file->filename).baseName();
-    title.push_back(tr("[%1] %2").arg(toString(src)).arg(fn));
+    title.push_back(tr("(%1) %2").arg(toString(src)).arg(fn));
   }
   setWindowFilePath(title.join(" | "));
 }
