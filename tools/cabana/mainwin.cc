@@ -559,7 +559,6 @@ void MainWindow::updateLoadSaveMenus() {
         continue;
       }
 
-
       QString fn = dbc_file->filename.isEmpty() ? "untitled" : QFileInfo(dbc_file->filename).baseName();
       QMenu *manage_menu = bus_menu->addMenu(fn + " (" + toString(src) + ")");
 
