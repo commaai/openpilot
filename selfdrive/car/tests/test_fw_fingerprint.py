@@ -152,16 +152,12 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
   def test_fw_query_timing(self):
-    # total_ref_time = {
-    #   1: 4.6,
-    #   2: 4.6
-    # }
     ref_times = {
-      'vin': 1.06,
+      'vin': 1.05,
       'present_ecus': 0.5,
-      'total': 6.3,
+      'total': 6.2,
     }
-    # present_ecu_ref_time = 0.5
+
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -177,13 +173,9 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'hyundai': 1.1,
+        'hyundai': 1.15,
       }
     }
-
-    # total_time = 0
-    # print('vin', self._benchmark_vin(self.N))
-    # print('present ecus', self._benchmark_present_ecus(self.N))
 
     total_time = 0
     for num_pandas in (1, 2):
@@ -200,20 +192,25 @@ class TestFwFingerprintTiming(unittest.TestCase):
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
-          avg_time = self._benchmark_brand(brand, num_pandas, self.N)
-          total_time += avg_time
-          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], self.TOL)
-          print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
+          brand_time = self._benchmark_brand(brand, num_pandas, self.N)
+          total_time += brand_time
+          self._assert_timing(brand_time, brand_ref_times[num_pandas][brand], self.TOL)
+          print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={brand_time} seconds')
 
-    vin_time = self._benchmark_vin(self.N)
-    present_ecu_time = self._benchmark_present_ecus(2, self.N)
-    print('present ecus', present_ecu_time)
-    self._assert_timing(vin_time, ref_times['vin'], self.TOL)
-    self._assert_timing(present_ecu_time, ref_times['present_ecus'], self.TOL)
-    total_time += vin_time
-    total_time += present_ecu_time
+    with self.subTest(func='get_vin'):
+      vin_time = self._benchmark_vin(self.N)
+      total_time += vin_time
+      self._assert_timing(vin_time, ref_times['vin'], self.TOL)
+      print(f'get_vin, avg query time={vin_time} seconds')
+
+    with self.subTest(func='get_present_ecus'):
+      present_ecu_time = self._benchmark_present_ecus(2, self.N)
+      total_time += present_ecu_time
+      self._assert_timing(present_ecu_time, ref_times['present_ecus'], self.TOL)
+      print(f'get_present_ecus, avg query time={present_ecu_time} seconds')
 
     with self.subTest(brand='all_brands'):
+      total_time = round(total_time, 2)
       self._assert_timing(total_time, ref_times['total'], self.TOL)
       print(f'all brands, total FW query time={total_time} seconds')
 
