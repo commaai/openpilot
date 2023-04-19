@@ -432,12 +432,12 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(CHART_MIME_TYPE, QByteArray::number((qulonglong)this));
     QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH * viewport()->devicePixelRatio(), Qt::SmoothTransformation);
+    charts_widget->stopAutoScroll();
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
     drag->setPixmap(getDropPixmap(px));
     drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
-    charts_widget->stopAutoScroll();
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
     if (!can->liveStreaming()) {
       // Save current playback state when scrubbing
