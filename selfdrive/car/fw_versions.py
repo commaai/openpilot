@@ -189,10 +189,7 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
 
 
 def get_brand_ecu_matches(ecu_rx_addrs):
-  """
-  Returns dictionary of brands and matches with ECUs in their FW versions.
-  Excludes brands with no matches.
-  """
+  """Returns dictionary of brands and matches with ECUs in their FW versions"""
 
   brand_addrs = get_brand_addrs()
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
@@ -205,7 +202,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
       if a in brand_addrs[brand]:
         brand_matches[brand].add(a)
 
-  return {brand: matches for brand, matches in brand_matches.items() if len(matches)}
+  return brand_matches
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
@@ -224,6 +221,10 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
+    # Skip this brand if there are no matching present ECUs
+    if not len(brand_matches[brand]):
+      continue
+
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only
