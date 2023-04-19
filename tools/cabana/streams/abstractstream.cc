@@ -161,6 +161,8 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     bit_change_counts.resize(size);
     colors = QVector(size, QColor(0, 0, 0, 0));
     last_change_t = QVector(size, ts);
+    last_delta.resize(size);
+    same_delta_counter.resize(size);
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -170,10 +172,20 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     for (int i = 0; i < size; ++i) {
       const uint8_t last = dat[i];
       const uint8_t cur = can_data[i];
+      const int delta = cur - last;
 
       if (last != cur) {
         double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
+
+        // Keep track if signal is changing randomly, or mostly moving in the same direction
+        if (std::signbit(delta) == std::signbit(last_delta[i])) {
+          same_delta_counter[i] = std::min(16, same_delta_counter[i] + 1);
+        } else {
+          same_delta_counter[i] = std::max(0, same_delta_counter[i] - 4);
+        }
+
+        // Mostly moves in the same direction, color based on delta up/down
+        if (delta_t * freq > periodic_threshold || same_delta_counter[i] > 8) {
           // Last change was while ago, choose color based on delta up or down
           colors[i] = (cur > last) ? cyan : red;
         } else {
@@ -190,6 +202,7 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
         }
 
         last_change_t[i] = ts;
+        last_delta[i] = delta;
       } else {
         // Fade out
         float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);
