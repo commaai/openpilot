@@ -1,4 +1,4 @@
-ULTIMATEMATE-BOLT is stock openpilot modified
+ULTIMATE-BOLT is stock openpilot modified
 to work with 2017-2021 non acc Chevy Bolt.
 
 ![](https://i.imgur.com/b0ZyIx5.jpg)
