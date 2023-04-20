@@ -385,6 +385,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
+    ps.setFanStallCount(health.fan_stall_count);
     ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
     ps.setSpiChecksumErrorCount(health.spi_checksum_error_count);
 
