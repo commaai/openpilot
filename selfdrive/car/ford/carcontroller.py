@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_dist_to_meas_limits
+from selfdrive.car import apply_dist_to_meas_limits, apply_std_steer_angle_limits
 from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
@@ -59,8 +59,11 @@ class CarController:
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
         current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
-        # apply driver torque blending, rate limits, and max curvature limits
-        apply_curvature = apply_ford_curvature_limits(actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgo, CarControllerParams)
+        # apply rate limits, curvature error limit, and clip to signal range.
+        # note that we do curvature error limiting after the rate limits which are just for tuning
+        apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
+        apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR, current_curvature + CarControllerParams.CURVATURE_ERROR)
+        apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
 
