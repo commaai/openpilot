@@ -58,11 +58,13 @@ class CarController:
     # send steering commands at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
-        current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
         # apply rate limits, curvature error limit, and clip to signal range.
         # note that we do curvature error limiting after the rate limits which are just for tuning
         apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
-        apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR, current_curvature + CarControllerParams.CURVATURE_ERROR)
+        # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
+        if CS.out.vEgoRaw > 9:
+          current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
+          apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR, current_curvature + CarControllerParams.CURVATURE_ERROR)
         apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
       else:
         apply_curvature = 0.
