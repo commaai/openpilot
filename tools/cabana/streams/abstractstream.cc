@@ -68,14 +68,16 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   all_msgs.clear();
   last_msgs.clear();
 
-  CanEvent last_event = {.mono_time = uint64_t((sec + routeStartTime()) * 1e9)};
-  for (auto &[id, e] : events_) {
-    auto it = std::lower_bound(e.crbegin(), e.crend(), last_event, std::greater<CanEvent>());
-    if (it != e.crend()) {
-      double ts = it->mono_time / 1e9 - routeStartTime();
+  uint64_t last_ts = (sec + routeStartTime()) * 1e9;
+  for (auto &[id, ev] : events_) {
+    auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
+      return e->mono_time > ts;
+    });
+    if (it != ev.crend()) {
+      double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute((const char *)it->dat, it->size, ts, getSpeed());
-      m.count = std::distance(it, e.crend());
+      m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed());
+      m.count = std::distance(it, ev.crend());
       m.freq = m.count / std::max(1.0, ts);
     }
   }
@@ -87,18 +89,30 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   });
 }
 
-void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<CanEvent>> &msgs,
+void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<CanEvent *>> &msgs,
                                  std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last) {
+  size_t memory_size = 0;
+  for (auto it = first; it != last; ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      for (const auto &c : (*it)->event.getCan()) {
+        memory_size += sizeof(CanEvent) + sizeof(uint8_t) * c.getDat().size();
+      }
+    }
+  }
+
+  char *ptr = memory_blocks.emplace_back(new char[memory_size]).get();
   uint64_t ts = 0;
-  for (; first != last; ++first) {
-    if ((*first)->which == cereal::Event::Which::CAN) {
-      ts = (*first)->mono_time;
-      for (const auto &c : (*first)->event.getCan()) {
+  for (auto it = first; it != last; ++it) {
+    if ((*it)->which == cereal::Event::Which::CAN) {
+      ts = (*it)->mono_time;
+      for (const auto &c : (*it)->event.getCan()) {
         auto dat = c.getDat();
-        auto &m = msgs[{.source = c.getSrc(), .address = c.getAddress()}].emplace_back();
-        m.size = std::min(dat.size(), std::size(m.dat));
-        memcpy(m.dat, (uint8_t *)dat.begin(), m.size);
-        m.mono_time = ts;
+        CanEvent *e = (CanEvent *)ptr;
+        e->mono_time = ts;
+        e->size = dat.size();
+        memcpy(e->dat, (uint8_t *)dat.begin(), e->size);
+        msgs[{.source = c.getSrc(), .address = c.getAddress()}].push_back(e);
+        ptr += sizeof(CanEvent) + sizeof(uint8_t) * e->size;
       }
     }
   }
@@ -111,7 +125,7 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
   if (append) {
     parseEvents(events_, first, last);
   } else {
-    std::unordered_map<MessageId, std::deque<CanEvent>> new_events;
+    std::unordered_map<MessageId, std::deque<CanEvent *>> new_events;
     parseEvents(new_events, first, last);
     for (auto &[id, new_e] : new_events) {
       auto &e = events_[id];
@@ -147,6 +161,8 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     bit_change_counts.resize(size);
     colors = QVector(size, QColor(0, 0, 0, 0));
     last_change_t = QVector(size, ts);
+    last_delta.resize(size);
+    same_delta_counter.resize(size);
   } else {
     bool lighter = settings.theme == DARK_THEME;
     const QColor &cyan = !lighter ? CYAN : CYAN_LIGHTER;
@@ -156,10 +172,20 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     for (int i = 0; i < size; ++i) {
       const uint8_t last = dat[i];
       const uint8_t cur = can_data[i];
+      const int delta = cur - last;
 
       if (last != cur) {
         double delta_t = ts - last_change_t[i];
-        if (delta_t * freq > periodic_threshold) {
+
+        // Keep track if signal is changing randomly, or mostly moving in the same direction
+        if (std::signbit(delta) == std::signbit(last_delta[i])) {
+          same_delta_counter[i] = std::min(16, same_delta_counter[i] + 1);
+        } else {
+          same_delta_counter[i] = std::max(0, same_delta_counter[i] - 4);
+        }
+
+        // Mostly moves in the same direction, color based on delta up/down
+        if (delta_t * freq > periodic_threshold || same_delta_counter[i] > 8) {
           // Last change was while ago, choose color based on delta up or down
           colors[i] = (cur > last) ? cyan : red;
         } else {
@@ -176,6 +202,7 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
         }
 
         last_change_t[i] = ts;
+        last_delta[i] = delta;
       } else {
         // Fade out
         float alpha_delta = 1.0 / (freq + 1) / (fade_time * playback_speed);

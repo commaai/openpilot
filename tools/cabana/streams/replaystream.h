@@ -26,9 +26,23 @@ public:
   void pause(bool pause) override;
   const std::vector<Event*> *rawEvents() const override { return replay->events(); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
+  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 private:
   void mergeSegments();
   std::unique_ptr<Replay> replay = nullptr;
   std::set<int> processed_segments;
+};
+
+class OpenReplayWidget : public AbstractOpenStreamWidget {
+  Q_OBJECT
+
+public:
+  OpenReplayWidget(AbstractStream **stream);
+  bool open() override;
+  QString title() override { return tr("&Replay"); }
+
+private:
+  QLineEdit *route_edit;
+  QComboBox *choose_video_cb;
 };

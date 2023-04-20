@@ -1,5 +1,9 @@
 #include "tools/cabana/streams/pandastream.h"
 
+#include <QFormLayout>
+#include <QMessageBox>
+#include <QVBoxLayout>
+
 PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
   if (config.serial.isEmpty()) {
     auto serials = Panda::list();
@@ -83,4 +87,33 @@ void PandaStream::streamThread() {
 
     panda->send_heartbeat(false);
   }
+}
+
+AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
+  return new OpenPandaWidget(stream);
+}
+
+// OpenPandaWidget
+
+OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->addStretch(1);
+
+  QFormLayout *form_layout = new QFormLayout();
+  form_layout->addRow(tr("Serial"), serial_edit = new QLineEdit(this));
+  serial_edit->setPlaceholderText(tr("Leave empty to use default serial"));
+
+  main_layout->addLayout(form_layout);
+  main_layout->addStretch(1);
+}
+
+bool OpenPandaWidget::open() {
+  try {
+    PandaStreamConfig config = {.serial = serial_edit->text()};
+    *stream = new PandaStream(qApp, config);
+  } catch (std::exception &e) {
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
+    return false;
+  }
+  return true;
 }

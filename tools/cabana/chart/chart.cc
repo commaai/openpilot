@@ -260,7 +260,9 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
       s.series->setColor(getColor(s.sig));
 
       const auto &msgs = can->events().at(s.msg_id);
-      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = s.last_value_mono_time});
+      auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
+        return ts < e->mono_time;
+      });
       int new_size = std::max<int>(s.vals.size() + std::distance(first, msgs.cend()), settings.max_cached_minutes * 60 * 100);
       if (s.vals.capacity() <= new_size) {
         s.vals.reserve(new_size * 2);
@@ -269,14 +271,15 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
 
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
-        double value = get_raw_value(first->dat, first->size, *s.sig);
-        double ts = first->mono_time / 1e9 - route_start_time;  // seconds
+        const CanEvent *e = *first;
+        double value = get_raw_value(e->dat, e->size, *s.sig);
+        double ts = e->mono_time / 1e9 - route_start_time;  // seconds
         s.vals.append({ts, value});
         if (!s.step_vals.empty()) {
           s.step_vals.append({ts, s.step_vals.back().y()});
         }
         s.step_vals.append({ts, value});
-        s.last_value_mono_time = first->mono_time;
+        s.last_value_mono_time = e->mono_time;
       }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
@@ -331,7 +334,7 @@ void ChartView::updateAxisY() {
   }
 
   double delta = std::abs(max - min) < 1e-3 ? 1 : (max - min) * 0.05;
-  auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, axis_y->tickCount());
+  auto [min_y, max_y, tick_count] = getNiceAxisNumbers(min - delta, max + delta, 3);
   if (min_y != axis_y->min() || max_y != axis_y->max() || y_label_width == 0) {
     axis_y->setRange(min_y, max_y);
     axis_y->setTickCount(tick_count);
@@ -429,12 +432,12 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     QMimeData *mimeData = new QMimeData;
     mimeData->setData(CHART_MIME_TYPE, QByteArray::number((qulonglong)this));
     QPixmap px = grab().scaledToWidth(CHART_MIN_WIDTH * viewport()->devicePixelRatio(), Qt::SmoothTransformation);
+    charts_widget->stopAutoScroll();
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
     drag->setPixmap(getDropPixmap(px));
     drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
-    charts_widget->stopAutoScroll();
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
     if (!can->liveStreaming()) {
       // Save current playback state when scrubbing
