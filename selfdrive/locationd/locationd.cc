@@ -312,7 +312,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   // Log time to first fix
   if (std::isnan(this->ttff) && !std::isnan(this->first_log_time)) {
-    this->ttff = current_time - this->first_log_time;
+    this->ttff = std::max(1e-3, current_time - this->first_log_time);
   }
 
   double sensor_time = current_time - sensor_time_offset;
