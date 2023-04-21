@@ -314,10 +314,11 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
   if use_route_meta:
-    lr = LogReader(route.log_paths()[sidx])
-    fr = FrameReader(route.camera_paths()[sidx])
-    if route.ecamera_paths()[sidx] is not None:
-      wfr = FrameReader(route.ecamera_paths()[sidx])
+    r = Route(route)
+    lr = LogReader(r.log_paths()[sidx])
+    fr = FrameReader(r.camera_paths()[sidx])
+    if r.ecamera_paths()[sidx] is not None:
+      wfr = FrameReader(r.ecamera_paths()[sidx])
     else:
       wfr = None
   else:
