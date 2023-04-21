@@ -138,7 +138,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
 }
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
-  const auto &events = can->events().at(msg_id);
+  const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
