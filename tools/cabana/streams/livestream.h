@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QBasicTimer>
+
 #include "tools/cabana/streams/abstractstream.h"
 
 class LiveStream : public AbstractStream {
@@ -8,24 +10,25 @@ class LiveStream : public AbstractStream {
 public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
-  inline double routeStartTime() const override { return start_ts / (double)1e9; }
-  inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
-  void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
+  inline double routeStartTime() const override { return begin_event_ts / 1e9; }
+  inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
+  void setSpeed(float speed) override { speed_ = speed; }
   double getSpeed() override { return speed_; }
-  bool isPaused() const override { return pause_; }
+  bool isPaused() const override { return paused_; }
   void pause(bool pause) override;
-  void startStreamThread();
+  void seekTo(double sec) override;
 
 protected:
-  virtual void handleEvent(Event *evt);
   virtual void streamThread() = 0;
-  void process(QHash<MessageId, CanData> *) override;
+  void startStreamThread();
+  void handleEvent(const char *data, const size_t size);
+
+private:
+  void startUpdateTimer();
+  void timerEvent(QTimerEvent *event) override;
+  void updateEvents();
 
   struct Msg {
-    Msg(Message *m) {
-      event = ::new Event(aligned_buf.align(m));
-      delete m;
-    }
     Msg(const char *data, const size_t size) {
       event = ::new Event(aligned_buf.align(data, size));
     }
@@ -34,16 +37,19 @@ protected:
     AlignedBuffer aligned_buf;
   };
 
-  mutable std::mutex lock;
-  std::vector<Event *> received;
-  std::deque<Msg> messages;
-  std::atomic<uint64_t> start_ts = 0;
-  std::atomic<uint64_t> current_ts = 0;
-  std::atomic<float> speed_ = 1;
-  std::atomic<bool> pause_ = false;
-  uint64_t last_update_ts = 0;
+  std::mutex lock;
+  QThread *stream_thread;
+  std::vector<Event *> receivedEvents;
+  std::deque<Msg> receivedMessages;
 
   std::unique_ptr<std::ofstream> fs;
+  int timer_id;
+  QBasicTimer update_timer;
 
-  QThread *stream_thread;
+  uint64_t begin_event_ts = 0;
+  uint64_t current_event_ts = 0;
+  uint64_t first_event_ts = 0;
+  uint64_t first_update_ts = 0;
+  double speed_ = 1;
+  bool paused_ = false;
 };

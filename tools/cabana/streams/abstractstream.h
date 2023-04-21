@@ -27,6 +27,8 @@ struct CanData {
 };
 
 struct CanEvent {
+  uint8_t src;
+  uint32_t address;
   uint64_t mono_time;
   uint8_t size;
   uint8_t dat[];
@@ -36,28 +38,26 @@ class AbstractStream : public QObject {
   Q_OBJECT
 
 public:
-  AbstractStream(QObject *parent, bool is_live_streaming);
+  AbstractStream(QObject *parent);
   virtual ~AbstractStream() {};
-  inline bool liveStreaming() const { return is_live_streaming; }
-  inline double lastEventSecond() const { return last_event_ts / 1e9 - routeStartTime(); }
+  inline bool liveStreaming() const { return route() == nullptr; }
+  inline double lastEventSecond() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
-  virtual double totalSeconds() const { return 0; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  virtual QDateTime currentDateTime() const { return {}; }
-  virtual const CanData &lastMessage(const MessageId &id);
+  double totalSeconds() const { return total_sec; }
+  const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  virtual const std::vector<Event*> *rawEvents() const { return nullptr; }
-  const std::unordered_map<MessageId, std::deque<CanEvent *>> &events() const { return events_; }
+  const std::deque<const CanEvent *> &allEvents() const { return all_events_; }
+  const std::deque<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
 
 signals:
   void paused();
@@ -67,7 +67,6 @@ signals:
   void eventsMerged();
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *);
-  void received(QHash<MessageId, CanData> *);
   void sourcesUpdated(const SourceSet &s);
 
 public:
@@ -75,17 +74,20 @@ public:
   SourceSet sources;
 
 protected:
-  virtual void process(QHash<MessageId, CanData> *);
-  bool updateEvent(const Event *event);
+  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
+  bool postEvents();
+  uint64_t lastEventMonoTime() const { return all_events_.empty() ? 0 : all_events_.back()->mono_time; }
+  void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
+  void updateMessages(QHash<MessageId, CanData> *);
+  void parseEvents(std::unordered_map<MessageId, std::deque<const CanEvent *>> &msgs, std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   void updateLastMsgsTo(double sec);
-  void parseEvents(std::unordered_map<MessageId, std::deque<CanEvent *>> &msgs, std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
 
-  bool is_live_streaming = false;
+  double total_sec = 0;
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, CanData> all_msgs;
-  std::unordered_map<MessageId, std::deque<CanEvent *>> events_;
-  uint64_t last_event_ts = 0;
+  std::unordered_map<MessageId, std::deque<const CanEvent *>> events_;
+  std::deque<const CanEvent *> all_events_;
   std::deque<std::unique_ptr<char[]>> memory_blocks;
 };
 
