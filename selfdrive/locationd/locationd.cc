@@ -705,8 +705,16 @@ int Localizer::locationd_thread() {
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
       // Log time to first fix
+      std::cout << "gpsOK: " << gpsOK << "\n";
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_log_time)) {
-        this->ttff = std::max(1e-3, (sm.rcv_time(trigger_msg) / 1e9) - this->first_log_time);
+        std::cout << "first_log_time: " << this->first_log_time << "\n";
+        std::cout << "now time: " << sm.rcv_time(trigger_msg) << "\n";
+        std::cout << "now time2: " << sm[trigger_msg].getLogMonoTime() << "\n";
+        const cereal::Event::Reader log = sm[trigger_msg];
+        double t_test = log.getLogMonoTime() * 1e-9;
+        double t_test_div = log.getLogMonoTime() / 1e9;
+        std::cout << "now time3: " << t_test << " div: " << t_test_div << "\n";
+        this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() / 1e9) - this->first_log_time);
       }
 
       MessageBuilder msg_builder;
