@@ -180,6 +180,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
   fix.setDeviceStable(!this->device_fell);
   fix.setExcessiveResets(this->reset_tracker > MAX_RESET_TRACKER);
+  fix.setTimeToFirstFix(std::isnan(this->ttff) ? -1 : this->ttff);
   this->device_fell = false;
 
   //fix.setGpsWeek(this->time.week);
@@ -309,7 +310,10 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     return;
   }
 
-  ttff = current_time;// - start_time;
+  // Log time to first fix
+  if (std::isnan(this->ttff) && !std::isnan(this->start_time)) {
+    this->ttff = current_time - this->start_time;
+  }
 
   double sensor_time = current_time - sensor_time_offset;
 
@@ -531,6 +535,9 @@ void Localizer::time_check(double current_time) {
   if (std::isnan(this->last_reset_time)) {
     this->last_reset_time = current_time;
   }
+  if (std::isnan(this->start_time)) {
+    this->start_time = current_time;
+  }
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = !std::isnan(filter_time) && (current_time - filter_time > 10);
   if (big_time_gap) {
@@ -585,6 +592,10 @@ void Localizer::handle_msg_bytes(const char *data, const size_t size) {
 
 void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
+//  if (start_time < -1) {
+//    start_time = t;
+//  }
+
   this->time_check(t);
   if (log.isAccelerometer()) {
     this->handle_sensor(t, log.getAccelerometer());
