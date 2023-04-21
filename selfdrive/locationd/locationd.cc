@@ -310,11 +310,6 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     return;
   }
 
-  // Log time to first fix
-  if (std::isnan(this->ttff) && !std::isnan(this->first_log_time)) {
-    this->ttff = std::max(1e-3, current_time - this->first_log_time);
-  }
-
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
@@ -708,6 +703,11 @@ int Localizer::locationd_thread() {
       bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
+
+      // Log time to first fix
+      if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_log_time)) {
+        this->ttff = std::max(1e-3, current_time - this->first_log_time);
+      }
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);
