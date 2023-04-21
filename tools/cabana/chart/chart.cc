@@ -36,7 +36,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 
   createToolButtons();
   // TODO: enable zoomIn/seekTo in live streaming mode.
-  setRubberBand(can->liveStreaming() ? QChartView::NoRubberBand : QChartView::HorizontalRubberBand);
+  setRubberBand(QChartView::HorizontalRubberBand);
   setMouseTracking(true);
   setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
 
@@ -259,7 +259,7 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
       }
       s.series->setColor(getColor(s.sig));
 
-      const auto &msgs = can->events().at(s.msg_id);
+      const auto &msgs = can->events(s.msg_id);
       auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
         return ts < e->mono_time;
       });
@@ -439,14 +439,12 @@ void ChartView::mousePressEvent(QMouseEvent *event) {
     drag->setHotSpot(-QPoint(5, 5));
     drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::MoveAction);
   } else if (event->button() == Qt::LeftButton && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
-    if (!can->liveStreaming()) {
-      // Save current playback state when scrubbing
-      resume_after_scrub = !can->isPaused();
-      if (resume_after_scrub) {
-        can->pause(true);
-      }
-      is_scrubbing = true;
+    // Save current playback state when scrubbing
+    resume_after_scrub = !can->isPaused();
+    if (resume_after_scrub) {
+      can->pause(true);
     }
+    is_scrubbing = true;
   } else {
     QChartView::mousePressEvent(event);
   }
@@ -473,7 +471,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       viewport()->update();
     }
     event->accept();
-  } else if (!can->liveStreaming() && event->button() == Qt::RightButton) {
+  } else if (event->button() == Qt::RightButton) {
     charts_widget->zoom_undo_stack->undo();
     event->accept();
   } else {

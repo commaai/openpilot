@@ -30,8 +30,8 @@ void DeviceStream::streamThread() {
       continue;
     }
 
-    std::lock_guard lk(lock);
-    handleEvent(messages.emplace_back(msg).event);
+    handleEvent(msg->getData(), msg->getSize());
+    delete msg;
   }
 }
 
