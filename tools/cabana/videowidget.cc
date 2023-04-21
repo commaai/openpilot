@@ -48,8 +48,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QButtonGroup *group = new QButtonGroup(this);
   group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
-    if (can->liveStreaming() && speed > 1) continue;
-
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
     QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
@@ -117,7 +115,7 @@ QWidget *VideoWidget::createCameraWidget() {
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::streamStarted, [this]() {
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
     end_time_label->setText(utils::formatSeconds(can->totalSeconds()));
     slider->setRange(0, can->totalSeconds() * 1000);
   });
@@ -125,6 +123,8 @@ QWidget *VideoWidget::createCameraWidget() {
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+  if (can->liveStreaming()) return;
+
   if (!is_zoomed) {
     min = 0;
     max = can->totalSeconds();

@@ -161,7 +161,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", harness=Harness.hyundai_c),
   CAR.IONIQ_EV_2020: HyundaiCarInfo("Hyundai Ioniq Electric 2020", "All", harness=Harness.hyundai_h),
   CAR.IONIQ_PHEV_2019: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2019", harness=Harness.hyundai_c),
-  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-21", "All", harness=Harness.hyundai_h),
+  CAR.IONIQ_PHEV: HyundaiCarInfo("Hyundai Ioniq Plug-in Hybrid 2020-22", "All", harness=Harness.hyundai_h),
   CAR.KONA: HyundaiCarInfo("Hyundai Kona 2020", harness=Harness.hyundai_b),
   CAR.KONA_EV: HyundaiCarInfo("Hyundai Kona Electric 2018-21", harness=Harness.hyundai_g),
   CAR.KONA_EV_2022: HyundaiCarInfo("Hyundai Kona Electric 2022", harness=Harness.hyundai_o),
@@ -210,8 +210,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Plug-in Hybrid 2020", "All", harness=Harness.hyundai_d),
   ],
   CAR.KIA_NIRO_HEV_2021: [
-    HyundaiCarInfo("Kia Niro Hybrid 2021", harness=Harness.hyundai_f),  # TODO: could be hyundai_d, verify
-    HyundaiCarInfo("Kia Niro Hybrid 2022", harness=Harness.hyundai_h),
+    HyundaiCarInfo("Kia Niro Hybrid 2021-22", harness=Harness.hyundai_f),  # TODO: 2021 could be hyundai_d, verify
   ],
   CAR.KIA_NIRO_HEV_2ND_GEN: HyundaiCarInfo("Kia Niro Hybrid 2023", harness=Harness.hyundai_a),
   CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", harness=Harness.hyundai_b),  # TODO: may support 2016, 2018
@@ -455,6 +454,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2200         ',
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2600         ',
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.02 99110-G2100         ',
+      b'\xf1\x00AEhe SCC FHCUP      1.00 1.00 99110-G2600         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
