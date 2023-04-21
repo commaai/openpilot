@@ -21,6 +21,7 @@ class TestCalibrationd(unittest.TestCase):
     np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
     self.assertEqual(msg.liveCalibration.validBlocks, c.valid_blocks)
 
+
   def test_calibration_basics(self):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
@@ -30,6 +31,7 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3])
     self.assertEqual(c.valid_blocks, INPUTS_WANTED)
+    np.testing.assert_allclose(c.rpy, np.zeros(3))
     c.reset()
 
   def test_calibration_low_speed_reject(self):
@@ -47,6 +49,7 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3])
     self.assertEqual(c.valid_blocks, 0)
+    np.testing.assert_allclose(c.rpy, np.zeros(3))
 
 
   def test_calibration_yaw_rate_reject(self):
@@ -58,6 +61,8 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3])
     self.assertEqual(c.valid_blocks, 0)
+    np.testing.assert_allclose(c.rpy, np.zeros(3))
+
   
   def test_calibration_speed_std_reject(self):
     c = Calibrator(param_put=False)
@@ -68,8 +73,27 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [1e3, 1e3, 1e3])
     self.assertEqual(c.valid_blocks, INPUTS_NEEDED)
+    np.testing.assert_allclose(c.rpy, np.zeros(3))
 
 
+  def test_calibration_auto_reset(self):
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    self.assertEqual(c.valid_blocks, INPUTS_WANTED)
+    np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
+    for _ in range(BLOCK_SIZE):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, -0.05 * MIN_SPEED_FILTER, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    self.assertEqual(c.valid_blocks, INPUTS_NEEDED)
+    np.testing.assert_allclose(c.rpy, [0.0, 0.0, -0.05], atol=1e-2)
 
 if __name__ == "__main__":
   unittest.main()
