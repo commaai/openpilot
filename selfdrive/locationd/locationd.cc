@@ -309,6 +309,8 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     return;
   }
 
+  ttff = current_time;// - start_time;
+
   double sensor_time = current_time - sensor_time_offset;
 
   // Process message
