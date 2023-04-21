@@ -270,7 +270,454 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.controlsInitializing: {
     ET.NO_ENTRY: NoEntryAlert("System Initializing"),
   },
- @@ -878,9 +889,9 @@
+  EventName.startup: {
+    ET.PERMANENT: StartupAlert("Be ready to take over at any time")
+  },
+  EventName.startupMaster: {
+    ET.PERMANENT: startup_master_alert,
+  },
+  # Car is recognized, but marked as dashcam only
+  EventName.startupNoControl: {
+    ET.PERMANENT: StartupAlert("Dashcam mode"),
+  },
+  # Car is not recognized
+  EventName.startupNoCar: {
+    ET.PERMANENT: StartupAlert("Dashcam mode for unsupported car"),
+  },
+  EventName.startupNoFw: {
+    ET.PERMANENT: StartupAlert("Car Unrecognized",
+                               "Check comma power connections",
+                               alert_status=AlertStatus.userPrompt),
+  },
+  EventName.dashcamMode: {
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       priority=Priority.LOWEST),
+  },
+  EventName.invalidLkasSetting: {
+    ET.PERMANENT: NormalPermanentAlert("Stock LKAS is on",
+                                       "Turn off stock LKAS to engage"),
+  },
+  EventName.cruiseMismatch: {
+    #ET.PERMANENT: ImmediateDisableAlert("openpilot failed to cancel cruise"),
+  },
+  # openpilot doesn't recognize the car. This switches openpilot into a
+  # read-only mode. This can be solved by adding your fingerprint.
+  # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information
+  EventName.carUnrecognized: {
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       "Car Unrecognized",
+                                       priority=Priority.LOWEST),
+  },
+  EventName.stockAeb: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Stock AEB: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
+  },
+  EventName.fcw: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.warningSoft, 2.),
+  },
+  EventName.ldw: {
+    ET.PERMANENT: Alert(
+      "Lane Departure Detected",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.ldw, AudibleAlert.prompt, 3.),
+  },
+  # ********** events only containing alerts that display while engaged **********
+  # openpilot tries to learn certain parameters about your car by observing
+  # how the car behaves to steering inputs from both human and openpilot driving.
+  # This includes:
+  # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
+  # - tire stiffness: how much grip your tires have
+  # - angle offset: most steering angle sensors are offset and measure a non zero angle when driving straight
+  # This alert is thrown when any of these values exceed a sanity check. This can be caused by
+  # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
+  EventName.vehicleModelInvalid: {
+    ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
+    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Parameter Identification Failed"),
+  },
+  EventName.steerTempUnavailableSilent: {
+    ET.WARNING: Alert(
+      "Steering Temporarily Unavailable",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 1.8),
+  },
+  EventName.preDriverDistracted: {
+    ET.WARNING: Alert(
+      "Pay Attention",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.promptDriverDistracted: {
+    ET.WARNING: Alert(
+      "Pay Attention",
+      "Driver Distracted",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
+  },
+  EventName.driverDistracted: {
+    ET.WARNING: Alert(
+      "DISENGAGE IMMEDIATELY",
+      "Driver Distracted",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
+  },
+  EventName.preDriverUnresponsive: {
+    ET.WARNING: Alert(
+      "Touch Steering Wheel: No Face Detected",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .1, alert_rate=0.75),
+  },
+  EventName.promptDriverUnresponsive: {
+    ET.WARNING: Alert(
+      "Touch Steering Wheel",
+      "Driver Unresponsive",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.promptDistracted, .1),
+  },
+  EventName.driverUnresponsive: {
+    ET.WARNING: Alert(
+      "DISENGAGE IMMEDIATELY",
+      "Driver Unresponsive",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediate, .1),
+  },
+  EventName.manualRestart: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Resume Driving Manually",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+  },
+  EventName.resumeRequired: {
+    ET.WARNING: Alert(
+      "Press Resume to Exit Standstill",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+  },
+  EventName.belowSteerSpeed: {
+    ET.WARNING: below_steer_speed_alert,
+  },
+  EventName.preLaneChangeLeft: {
+    ET.WARNING: Alert(
+      "Steer Left to Start Lane Change Once Safe",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+  },
+  EventName.preLaneChangeRight: {
+    ET.WARNING: Alert(
+      "Steer Right to Start Lane Change Once Safe",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+  },
+  EventName.laneChangeBlocked: {
+    ET.WARNING: Alert(
+      "Car Detected in Blindspot",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, .1),
+  },
+  EventName.laneChange: {
+    ET.WARNING: Alert(
+      "Changing Lanes",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.steerSaturated: {
+    ET.WARNING: Alert(
+      "Take Control",
+      "Turn Exceeds Steering Limit",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 1.),
+  },
+  # Thrown when the fan is driven at >50% but is not rotating
+  EventName.fanMalfunction: {
+    ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Likely Hardware Issue"),
+  },
+  # Camera is not outputting frames
+  EventName.cameraMalfunction: {
+    ET.PERMANENT: camera_malfunction_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Camera Malfunction"),
+    ET.NO_ENTRY: NoEntryAlert("Camera Malfunction: Reboot Your Device"),
+  },
+  # Camera framerate too low
+  EventName.cameraFrameRate: {
+    ET.PERMANENT: NormalPermanentAlert("Camera Frame Rate Low", "Reboot your Device"),
+    ET.SOFT_DISABLE: soft_disable_alert("Camera Frame Rate Low"),
+    ET.NO_ENTRY: NoEntryAlert("Camera Frame Rate Low: Reboot Your Device"),
+  },
+  # Unused
+  EventName.gpsMalfunction: {
+    ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Likely Hardware Issue"),
+  },
+  # When the GPS position and localizer diverge the localizer is reset to the
+  # current GPS position. This alert is thrown when the localizer is reset
+  # more often than expected.
+  EventName.localizerMalfunction: {
+    # ET.PERMANENT: NormalPermanentAlert("Sensor Malfunction", "Hardware Malfunction"),
+  },
+  # ********** events that affect controls state transitions **********
+  EventName.pcmEnable: {
+    ET.ENABLE: EngagementAlert(AudibleAlert.engage),
+  },
+  EventName.buttonEnable: {
+    ET.ENABLE: EngagementAlert(AudibleAlert.engage),
+  },
+  EventName.pcmDisable: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+  },
+  EventName.buttonCancel: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Cancel Pressed"),
+  },
+  EventName.brakeHold: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
+  },
+  EventName.parkBrake: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Parking Brake Engaged"),
+  },
+  EventName.pedalPressed: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Pedal Pressed",
+                              visual_alert=VisualAlert.brakePressed),
+  },
+  EventName.preEnableStandstill: {
+    ET.PRE_ENABLE: Alert(
+      "Release Brake to Engage",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, creation_delay=1.),
+  },
+  EventName.gasPressedOverride: {
+    ET.OVERRIDE_LONGITUDINAL: Alert(
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.steerOverride: {
+    ET.OVERRIDE_LATERAL: Alert(
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.wrongCarMode: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: wrong_car_mode_alert,
+  },
+  EventName.resumeBlocked: {
+    ET.NO_ENTRY: NoEntryAlert("Press Set to Engage"),
+  },
+  EventName.wrongCruiseMode: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Adaptive Cruise Disabled"),
+  },
+  EventName.steerTempUnavailable: {
+    ET.SOFT_DISABLE: soft_disable_alert("Steering Temporarily Unavailable"),
+    ET.NO_ENTRY: NoEntryAlert("Steering Temporarily Unavailable"),
+  },
+  EventName.steerTimeLimit: {
+    ET.SOFT_DISABLE: soft_disable_alert("Vehicle Steering Time Limit"),
+    ET.NO_ENTRY: NoEntryAlert("Vehicle Steering Time Limit"),
+  },
+  EventName.outOfSpace: {
+    ET.PERMANENT: out_of_space_alert,
+    ET.NO_ENTRY: NoEntryAlert("Out of Storage"),
+  },
+  EventName.belowEngageSpeed: {
+    ET.NO_ENTRY: below_engage_speed_alert,
+  },
+  EventName.sensorDataInvalid: {
+    ET.PERMANENT: Alert(
+      "Sensor Data Invalid",
+      "Ensure device is mounted securely",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=1.),
+    ET.NO_ENTRY: NoEntryAlert("Sensor Data Invalid"),
+    ET.SOFT_DISABLE: soft_disable_alert("Sensor Data Invalid"),
+  },
+  EventName.noGps: {
+    ET.PERMANENT: no_gps_alert,
+  },
+  EventName.soundsUnavailable: {
+    ET.PERMANENT: NormalPermanentAlert("Speaker not found", "Reboot your Device"),
+    ET.NO_ENTRY: NoEntryAlert("Speaker not found"),
+  },
+  EventName.tooDistracted: {
+    ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
+  },
+  EventName.overheat: {
+    ET.PERMANENT: overheat_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("System Overheated"),
+    ET.NO_ENTRY: NoEntryAlert("System Overheated"),
+  },
+  EventName.wrongGear: {
+    ET.SOFT_DISABLE: user_soft_disable_alert("Gear not D"),
+    ET.NO_ENTRY: NoEntryAlert("Gear not D"),
+  },
+  # This alert is thrown when the calibration angles are outside of the acceptable range.
+  # For example if the device is pointed too much to the left or the right.
+  # Usually this can only be solved by removing the mount from the windshield completely,
+  # and attaching while making sure the device is pointed straight forward and is level.
+  # See https://comma.ai/setup for more information
+  EventName.calibrationInvalid: {
+    ET.PERMANENT: calibration_invalid_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Calibration Invalid: Remount Device & Recalibrate"),
+    ET.NO_ENTRY: NoEntryAlert("Calibration Invalid: Remount Device & Recalibrate"),
+  },
+  EventName.calibrationIncomplete: {
+    ET.PERMANENT: calibration_incomplete_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Calibration in Progress"),
+    ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
+  },
+  EventName.doorOpen: {
+    ET.SOFT_DISABLE: user_soft_disable_alert("Door Open"),
+    ET.NO_ENTRY: NoEntryAlert("Door Open"),
+  },
+  EventName.seatbeltNotLatched: {
+    ET.SOFT_DISABLE: user_soft_disable_alert("Seatbelt Unlatched"),
+    ET.NO_ENTRY: NoEntryAlert("Seatbelt Unlatched"),
+  },
+  EventName.espDisabled: {
+    ET.SOFT_DISABLE: soft_disable_alert("Electronic Stability Control Disabled"),
+    ET.NO_ENTRY: NoEntryAlert("Electronic Stability Control Disabled"),
+  },
+  EventName.lowBattery: {
+    ET.SOFT_DISABLE: soft_disable_alert("Low Battery"),
+    ET.NO_ENTRY: NoEntryAlert("Low Battery"),
+  },
+  # Different openpilot services communicate between each other at a certain
+  # interval. If communication does not follow the regular schedule this alert
+  # is thrown. This can mean a service crashed, did not broadcast a message for
+  # ten times the regular interval, or the average interval is more than 10% too high.
+  EventName.commIssue: {
+    ET.SOFT_DISABLE: soft_disable_alert("Communication Issue between Processes"),
+    ET.NO_ENTRY: comm_issue_alert,
+  },
+  EventName.commIssueAvgFreq: {
+    ET.SOFT_DISABLE: soft_disable_alert("Low Communication Rate between Processes"),
+    ET.NO_ENTRY: NoEntryAlert("Low Communication Rate between Processes"),
+  },
+  EventName.controlsdLagging: {
+    ET.SOFT_DISABLE: soft_disable_alert("Controls Lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Controls Process Lagging: Reboot Your Device"),
+  },
+  # Thrown when manager detects a service exited unexpectedly while driving
+  EventName.processNotRunning: {
+    ET.NO_ENTRY: process_not_running_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Process Not Running"),
+  },
+  EventName.radarFault: {
+    ET.SOFT_DISABLE: soft_disable_alert("Radar Error: Restart the Car"),
+    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
+  },
+  # Every frame from the camera should be processed by the model. If modeld
+  # is not processing frames fast enough they have to be dropped. This alert is
+  # thrown when over 20% of frames are dropped.
+  EventName.modeldLagging: {
+    ET.SOFT_DISABLE: soft_disable_alert("Driving Model Lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Driving Model Lagging"),
+    ET.PERMANENT: modeld_lagging_alert,
+  },
+  # Besides predicting the path, lane lines and lead car data the model also
+  # predicts the current velocity and rotation speed of the car. If the model is
+  # very uncertain about the current velocity while the car is moving, this
+  # usually means the model has trouble understanding the scene. This is used
+  # as a heuristic to warn the driver.
+  EventName.posenetInvalid: {
+    ET.SOFT_DISABLE: soft_disable_alert("Posenet Speed Invalid"),
+    ET.NO_ENTRY: posenet_invalid_alert,
+  },
+  # When the localizer detects an acceleration of more than 40 m/s^2 (~4G) we
+  # alert the driver the device might have fallen from the windshield.
+  EventName.deviceFalling: {
+    ET.SOFT_DISABLE: soft_disable_alert("Device Fell Off Mount"),
+    ET.NO_ENTRY: NoEntryAlert("Device Fell Off Mount"),
+  },
+  EventName.lowMemory: {
+    ET.SOFT_DISABLE: soft_disable_alert("Low Memory: Reboot Your Device"),
+    ET.PERMANENT: low_memory_alert,
+    ET.NO_ENTRY: NoEntryAlert("Low Memory: Reboot Your Device"),
+  },
+  EventName.highCpuUsage: {
+    #ET.SOFT_DISABLE: soft_disable_alert("System Malfunction: Reboot Your Device"),
+    #ET.PERMANENT: NormalPermanentAlert("System Malfunction", "Reboot your Device"),
+    ET.NO_ENTRY: high_cpu_usage_alert,
+  },
+  EventName.accFaulted: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
+    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
+    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
+  },
+  EventName.controlsMismatch: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
+    ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
+  },
+  EventName.roadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road",
+                                       duration=1.,
+                                       creation_delay=30.),
+  },
+  EventName.wideRoadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
+                                       duration=1.,
+                                       creation_delay=30.),
+  },
+  EventName.driverCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Driver",
+                                       duration=1.,
+                                       creation_delay=30.),
+  },
+  # Sometimes the USB stack on the device can get into a bad state
+  # causing the connection to the panda to be lost
+  EventName.usbError: {
+    ET.SOFT_DISABLE: soft_disable_alert("USB Error: Reboot Your Device"),
+    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Your Device", ""),
+    ET.NO_ENTRY: NoEntryAlert("USB Error: Reboot Your Device"),
+  },
+  # This alert can be thrown for the following reasons:
+  # - No CAN data received at all
+  # - CAN data is received, but some message are not received at the right frequency
+  # If you're not writing a new car port, this is usually cause by faulty wiring
+  EventName.canError: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Error"),
+    ET.PERMANENT: Alert(
+      "CAN Error: Check Connections",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
+    ET.NO_ENTRY: NoEntryAlert("CAN Error: Check Connections"),
+  },
+  EventName.canBusMissing: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN Bus Disconnected"),
+    ET.PERMANENT: Alert(
+      "CAN Bus Disconnected: Likely Faulty Cable",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
+    ET.NO_ENTRY: NoEntryAlert("CAN Bus Disconnected: Check Connections"),
+  },
+  EventName.steerUnavailable: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
+    ET.PERMANENT: NormalPermanentAlert("LKAS Fault: Restart the car to engage"),
+    ET.NO_ENTRY: NoEntryAlert("LKAS Fault: Restart the Car"),
    },
 
    EventName.brakeUnavailable: {
