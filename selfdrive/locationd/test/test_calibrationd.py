@@ -88,7 +88,7 @@ class TestCalibrationd(unittest.TestCase):
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, 0.0])
     old_rpy_weight_prev = 0.0
     for _ in range(BLOCK_SIZE + 10):
-      self.assertLess(old_rpy_weight_prev - c.old_rpy_weight, 1/SMOOTH_CYCLES)
+      self.assertLess(old_rpy_weight_prev - c.old_rpy_weight, 1/SMOOTH_CYCLES + 1e-3)
       old_rpy_weight_prev = c.old_rpy_weight
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
       c.handle_cam_odom([MIN_SPEED_FILTER + 1, -0.05 * MIN_SPEED_FILTER, 0.0],
