@@ -1,6 +1,6 @@
+@@ -1,28 +1,30 @@
 #!/usr/bin/env python3
 from collections import namedtuple
-
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.ford.values import CAR as FORD
@@ -13,29 +13,27 @@ from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 from selfdrive.car.tesla.values import CAR as TESLA
 from selfdrive.car.body.values import CAR as COMMA
-
 # TODO: add routes for these cars
 non_tested_cars = [
   FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
   FORD.MAVERICK_MK1,
   GM.CADILLAC_ATS,
-  GM.HOLDEN_ASTRA,
-  GM.MALIBU,
-  GM.EQUINOX,
-  HYUNDAI.GENESIS_G90,
-  HYUNDAI.KIA_OPTIMA_H,
-  HONDA.ODYSSEY_CHN,
+   GM.HOLDEN_ASTRA,
+   GM.MALIBU,
+   GM.EQUINOX,
+   GM.VOLT_CC,
+   GM.BOLT_CC,
+   HYUNDAI.GENESIS_G90,
+   HYUNDAI.KIA_OPTIMA_H,
+   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
   TOYOTA.RAV4_TSS2_2023,
   TOYOTA.RAV4H_TSS2_2023,
 ]
-
 CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
-
 routes = [
   CarTestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
-
   CarTestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_CHEROKEE),
   CarTestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_CHEROKEE_2019),
   CarTestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.PACIFICA_2017_HYBRID),
@@ -45,11 +43,9 @@ routes = [
   CarTestRoute("3d84727705fecd04|2021-05-25--08-38-56", CHRYSLER.PACIFICA_2020),
   CarTestRoute("221c253375af4ee9|2022-06-15--18-38-24", CHRYSLER.RAM_1500),
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
-
   CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
-
   CarTestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   CarTestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
   CarTestRoute("75a6bcb9b8b40373|2023-03-11--22-47-33", GM.BUICK_LACROSSE),
@@ -60,7 +56,6 @@ routes = [
   CarTestRoute("555d4087cf86aa91|2022-12-02--12-15-07", GM.BOLT_EUV, segment=14),  # Bolt EV
   CarTestRoute("38aa7da107d5d252|2022-08-15--16-01-12", GM.SILVERADO),
   CarTestRoute("5085c761395d1fe6|2023-04-07--18-20-06", GM.TRAILBLAZER),
-
   CarTestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   CarTestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),
   CarTestRoute("a859a044a447c2b0|2020-03-03--18-42-45", HONDA.CRV_EU),
@@ -87,7 +82,6 @@ routes = [
   CarTestRoute("54fd8451b3974762|2021-04-01--14-50-10", HONDA.RIDGELINE),
   CarTestRoute("2d5808fae0b38ac6|2021-09-01--17-14-11", HONDA.HONDA_E),
   CarTestRoute("f44aa96ace22f34a|2021-12-22--06-22-31", HONDA.CIVIC_2022),
-
   CarTestRoute("6fe86b4e410e4c37|2020-07-22--16-27-13", HYUNDAI.HYUNDAI_GENESIS),
   CarTestRoute("b5d6dc830ad63071|2022-12-12--21-28-25", HYUNDAI.GENESIS_GV60_EV_1ST_GEN, segment=12),
   CarTestRoute("70c5bec28ec8e345|2020-08-08--12-22-23", HYUNDAI.GENESIS_G70),
@@ -144,7 +138,6 @@ routes = [
   CarTestRoute("715ac05b594e9c59|2021-06-20--16-21-07", HYUNDAI.ELANTRA_HEV_2021),
   CarTestRoute("7120aa90bbc3add7|2021-08-02--07-12-31", HYUNDAI.SONATA_HYBRID),
   CarTestRoute("715ac05b594e9c59|2021-10-27--23-24-56", HYUNDAI.GENESIS_G70_2020),
-
   CarTestRoute("00c829b1b7613dea|2021-06-24--09-10-10", TOYOTA.ALPHARD_TSS2),
   CarTestRoute("912119ebd02c7a42|2022-03-19--07-24-50", TOYOTA.ALPHARDH_TSS2),
   CarTestRoute("000cf3730200c71c|2021-05-24--10-42-05", TOYOTA.AVALON),
@@ -194,7 +187,6 @@ routes = [
   CarTestRoute("57858ede0369a261|2021-05-18--20-34-20", TOYOTA.CHRH),
   CarTestRoute("6719965b0e1d1737|2023-02-09--22-44-05", TOYOTA.CHRH_TSS2),
   CarTestRoute("14623aae37e549f3|2021-10-24--01-20-49", TOYOTA.PRIUS_V),
-
   CarTestRoute("202c40641158a6e5|2021-09-21--09-43-24", VOLKSWAGEN.ARTEON_MK1),
   CarTestRoute("2c68dda277d887ac|2021-05-11--15-22-20", VOLKSWAGEN.ATLAS_MK1),
   CarTestRoute("cae14e88932eb364|2021-03-26--14-43-28", VOLKSWAGEN.GOLF_MK7),  # Stock ACC
@@ -222,7 +214,6 @@ routes = [
   CarTestRoute("66e5edc3a16459c5|2021-05-25--19-00-29", VOLKSWAGEN.SKODA_OCTAVIA_MK3),
   CarTestRoute("026b6d18fba6417f|2021-03-26--09-17-04", VOLKSWAGEN.SKODA_SCALA_MK1),
   CarTestRoute("b2e9858e29db492b|2021-03-26--16-58-42", VOLKSWAGEN.SKODA_SUPERB_MK3),
-
   CarTestRoute("3c8f0c502e119c1c|2020-06-30--12-58-02", SUBARU.ASCENT),
   CarTestRoute("c321c6b697c5a5ff|2020-06-23--11-04-33", SUBARU.FORESTER),
   CarTestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
@@ -234,23 +225,19 @@ routes = [
   CarTestRoute("df5ca7660000fba8|2020-06-16--17-37-19", SUBARU.LEGACY_PREGLOBAL),
   CarTestRoute("5ab784f361e19b78|2020-06-08--16-30-41", SUBARU.OUTBACK_PREGLOBAL),
   CarTestRoute("e19eb5d5353b1ac1|2020-08-09--14-37-56", SUBARU.OUTBACK_PREGLOBAL_2018),
-
   CarTestRoute("fbbfa6af821552b9|2020-03-03--08-09-43", NISSAN.XTRAIL),
   CarTestRoute("5b7c365c50084530|2020-03-25--22-10-13", NISSAN.LEAF),
   CarTestRoute("22c3dcce2dd627eb|2020-12-30--16-38-48", NISSAN.LEAF_IC),
   CarTestRoute("059ab9162e23198e|2020-05-30--09-41-01", NISSAN.ROGUE),
   CarTestRoute("b72d3ec617c0a90f|2020-12-11--15-38-17", NISSAN.ALTIMA),
-
   CarTestRoute("32a319f057902bb3|2020-04-27--15-18-58", MAZDA.CX5),
   CarTestRoute("10b5a4b380434151|2020-08-26--17-11-45", MAZDA.CX9),
   CarTestRoute("74f1038827005090|2020-08-26--20-05-50", MAZDA.MAZDA3),
   CarTestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA6),
   CarTestRoute("f6d5b1a9d7a1c92e|2021-07-08--06-56-59", MAZDA.CX9_2021),
   CarTestRoute("a4af1602d8e668ac|2022-02-03--12-17-07", MAZDA.CX5_2022),
-
   CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
-
   # Segments that test specific issues
   # Controls mismatch due to interceptor threshold
   CarTestRoute("cfb32f0fb91b173b|2022-04-06--14-54-45", HONDA.CIVIC, segment=21),
