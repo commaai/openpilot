@@ -6,7 +6,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 from common.params import Params
-from selfdrive.locationd.calibrationd import Calibrator
+from selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, MAX_YAW_RATE_FILTER
 
 
 class TestCalibrationd(unittest.TestCase):
@@ -20,6 +20,55 @@ class TestCalibrationd(unittest.TestCase):
 
     np.testing.assert_allclose(msg.liveCalibration.rpyCalib, c.rpy)
     self.assertEqual(msg.liveCalibration.validBlocks, c.valid_blocks)
+
+  def test_calibration_basics(self):
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    self.assertEqual(c.valid_blocks, INPUTS_WANTED)
+    c.reset()
+
+  def test_calibration_low_speed_reject(self):
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER - 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER - 1, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    self.assertEqual(c.valid_blocks, 0)
+
+
+  def test_calibration_yaw_rate_reject(self):
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                         [0.0, 0.0, MAX_YAW_RATE_FILTER ],
+                         [0.0, 0.0, 0.0],
+                         [1e-3, 1e-3, 1e-3])
+    self.assertEqual(c.valid_blocks, 0)
+  
+  def test_calibration_speed_std_reject(self):
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      c.handle_v_ego(MIN_SPEED_FILTER + 1)
+      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0],
+                         [1e3, 1e3, 1e3])
+    self.assertEqual(c.valid_blocks, INPUTS_NEEDED)
+
 
 
 if __name__ == "__main__":
