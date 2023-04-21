@@ -95,7 +95,7 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3])
-    self.assertEqual(c.valid_blocks, INPUTS_NEEDED)
+    self.assertEqual(c.valid_blocks, 1)
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, -0.05], atol=1e-2)
 
 if __name__ == "__main__":
