@@ -178,7 +178,7 @@ class Uploader:
 
     return self.last_resp
 
-  def upload(self, name, key, fn, network_type, metered):
+  def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
       sz = os.path.getsize(fn)
     except OSError:
