@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 from pathlib import Path
-from typing import Iterator, List, Optional, Tuple, Union
+from typing import BinaryIO, Iterator, List, Optional, Tuple, Union
 
 from cereal import log
 import cereal.messaging as messaging
@@ -109,7 +109,7 @@ class Uploader:
         fn = os.path.join(path, name)
         # skip files already uploaded
         try:
-          is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME)
+          is_uploaded = bool(getxattr(fn, UPLOAD_ATTR_NAME))
         except OSError:
           cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
           is_uploaded = True  # deleter could have deleted
@@ -155,9 +155,10 @@ class Uploader:
         self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
+          data: BinaryIO
           if key.endswith('.bz2') and not fn.endswith('.bz2'):
-            data = bz2.compress(f.read())
-            data = io.BytesIO(data)
+            compressed = bz2.compress(f.read())
+            data = io.BytesIO(compressed)
           else:
             data = f
 
