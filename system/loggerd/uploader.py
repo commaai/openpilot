@@ -185,7 +185,8 @@ class Uploader:
       cloudlog.exception("upload: getsize failed")
       return False
 
-    with cloudlog.ctx(key=key, fn=fn, sz=sz, network_type=network_type, metered=metered):
+    with cloudlog.ctx():
+      cloudlog.bind(key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
       cloudlog.event("upload_start")
       if sz == 0:
         # tag files of 0 size as uploaded
