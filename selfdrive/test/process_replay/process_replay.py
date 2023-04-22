@@ -279,7 +279,7 @@ CONFIGS = [
     fake_pubsubmaster=True,
     submaster_config={
       'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
-      'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
+      'ignore_alive': [], 
     }
   ),
   ProcessConfig(

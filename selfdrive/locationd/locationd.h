@@ -78,6 +78,8 @@ private:
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
+  double first_valid_log_time = NAN;
+  double ttff = NAN;
   double last_gps_msg = 0;
   bool ublox_available = true;
   bool observation_timings_invalid = false;
