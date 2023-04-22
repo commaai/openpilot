@@ -95,8 +95,8 @@ def manager_init() -> None:
   sentry.init(sentry.SentryProject.SELFDRIVE)
   cloudlog.bind_global(dongle_id=dongle_id,
                        version=get_version(),
-                       branch=get_short_branch(),
                        origin=get_normalized_origin(),
+                       branch=get_short_branch(),
                        commit=get_commit(),
                        dirty=is_dirty(),
                        device=HARDWARE.get_device_type())
