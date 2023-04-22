@@ -55,7 +55,6 @@ if [[ -n "$XX" ]] || [[ "$(basename "$(dirname "$(pwd)")")" == "xx" ]]; then
 fi
 
 POETRY_INSTALL_ARGS="--no-cache --no-root"
-RUN=""
 
 if [ -n "$XX" ]; then
   echo "WARNING: using xx dependency group, installing globally"
@@ -64,12 +63,13 @@ if [ -n "$XX" ]; then
 else
   echo "PYTHONPATH=${PWD}" > .env
   poetry self add poetry-dotenv-plugin@^0.1.0
-  RUN="poetry run"
 fi
 
 echo "pip packages install..."
 poetry install $POETRY_INSTALL_ARGS
 pyenv rehash
+
+[ -n "$XX" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "pre-commit hooks install..."
