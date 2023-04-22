@@ -15,9 +15,7 @@ if arch in ['larch64', 'x86_64']:
   map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
   qt_libs = ["qt_widgets", "qt_util", "qmapboxgl"] + base_libs
 
-  maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])
   map_env["RPATH"].append(Dir('.').abspath)
   map_env["LIBPATH"].append(Dir('.').abspath)
-
-  a = map_env.Program("map_renderer", ["main.cc", ], LIBS=['maprender', ] + qt_libs + ['common', 'json11'])
-  map_env.Depends(a, maplib)
+  maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])
+  map_env.Program("map_renderer", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + qt_libs + ['common', 'json11'])

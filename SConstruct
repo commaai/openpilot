@@ -440,7 +440,7 @@ SConscript(['system/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if (arch in ['x86_64', 'Darwin'] and Dir('tools/cabana').exists()) and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

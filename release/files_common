@@ -398,11 +398,7 @@ selfdrive/monitoring/driver_monitor.py
 
 selfdrive/navd/.gitignore
 selfdrive/navd/__init__.py
-selfdrive/navd/SConscript
-selfdrive/navd/*.py
-selfdrive/navd/*.h
-selfdrive/navd/*.cc
-selfdrive/navd/style.json
+selfdrive/navd/**
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
