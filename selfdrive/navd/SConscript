@@ -1,10 +1,10 @@
 Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'transformations')
 
 map_env = qt_env.Clone()
-base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + map_env["LIBS"]
+libs = ['qt_widgets', 'qt_util', 'qmapboxgl', common, messaging, cereal, visionipc, transformations,
+        'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'json11'] + map_env["LIBS"]
 if arch == 'larch64':
-  base_libs.append('EGL')
+  libs.append('EGL')
 
 if arch in ['larch64', 'x86_64']:
   if arch == 'x86_64':
@@ -13,9 +13,8 @@ if arch in ['larch64', 'x86_64']:
 
   style_path = File("style.json").abspath
   map_env['CXXFLAGS'].append(f'-DSTYLE_PATH=\\"{style_path}\\"')
-  qt_libs = ["qt_widgets", "qt_util", "qmapboxgl"] + base_libs
 
   map_env["RPATH"].append(Dir('.').abspath)
   map_env["LIBPATH"].append(Dir('.').abspath)
-  maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])
-  map_env.Program("map_renderer", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + qt_libs + ['common', 'json11'])
+  maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
+  map_env.Program("map_renderer", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
