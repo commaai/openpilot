@@ -178,40 +178,40 @@ class Uploader:
 
     return self.last_resp
 
-  def upload(self, name, key, fn, network_type, metered):
+  def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
       sz = os.path.getsize(fn)
     except OSError:
       cloudlog.exception("upload: getsize failed")
       return False
 
-    cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
-
-    if sz == 0:
-      # tag files of 0 size as uploaded
-      success = True
-    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
-      cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
-      success = True
-    else:
-      start_time = time.monotonic()
-      stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
-        self.last_filename = fn
-        self.last_time = time.monotonic() - start_time
-        self.last_speed = (sz / 1e6) / self.last_time
+    with cloudlog.ctx(key=key, fn=fn, sz=sz, network_type=network_type, metered=metered):
+      cloudlog.event("upload_start")
+      if sz == 0:
+        # tag files of 0 size as uploaded
         success = True
-        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+      elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
+        cloudlog.event("uploader_too_large")
+        success = True
       else:
-        success = False
-        cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+        start_time = time.monotonic()
+        stat = self.normal_upload(key, fn)
+        if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
+          self.last_filename = fn
+          self.last_time = time.monotonic() - start_time
+          self.last_speed = (sz / 1e6) / self.last_time
+          success = True
+          cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored")
+        else:
+          success = False
+          cloudlog.event("upload_failed", stat=stat, exc=self.last_exc)
 
-    if success:
-      # tag file as uploaded
-      try:
-        setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
-      except OSError:
-        cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
+      if success:
+        # tag file as uploaded
+        try:
+          setxattr(fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE)
+        except OSError:
+          cloudlog.event("uploader_setxattr_failed", exc=self.last_exc)
 
     return success
 
