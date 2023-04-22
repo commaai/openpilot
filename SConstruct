@@ -7,6 +7,8 @@ import numpy as np
 
 import SCons.Errors
 
+SCons.Warnings.warningAsException(True)
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
