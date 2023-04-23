@@ -15,8 +15,10 @@ class CarController:
     self.es_dashstatus_cnt = -1
     self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
+    self.prev_cruise_state = 0
     self.last_cancel_frame = 0
     self.throttle_cnt = -1
+    self.manual_hold = False
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -50,7 +52,15 @@ class CarController:
 
     # *** stop and go ***
 
-    throttle_cmd = True if CC.enabled and CC.cruiseControl.resume else False
+    if self.CP.carFingerprint not in PREGLOBAL_CARS:
+      # Record manual hold set while in standstill and no car in front
+      if CS.out.standstill and self.prev_cruise_state == 1 and CS.cruise_state == 3 and CS.car_follow == 0:
+        self.manual_hold = True
+      if not CS.out.standstill:
+        self.manual_hold = False
+      self.prev_cruise_state = CS.cruise_state
+
+    throttle_cmd = True if CC.enabled and CC.cruiseControl.resume and not self.manual_hold else False
 
     # *** alerts and pcm cancel ***
 
