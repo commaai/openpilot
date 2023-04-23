@@ -10,30 +10,80 @@ pm = messaging.PubMaster(['testJoystick'])
 
 index = """
 <html>
-<head>
-<script src="https://github.com/bobboteck/JoyStick/releases/download/v1.1.6/joy.min.js"></script>
-</head>
 <body>
-<div id="joyDiv" style="width:100%;height:100%"></div>
+<span style="font-size:18px;">Press wasd to control body</span><p id="output"></p>
+
 <script type="text/javascript">
-// Set up gamepad handlers
-let gamepad = null;
-window.addEventListener("gamepadconnected", function(e) {
-  gamepad = e.gamepad;
-});
-window.addEventListener("gamepaddisconnected", function(e) {
-  gamepad = null;
-});
-// Create JoyStick object into the DIV 'joyDiv'
-var joy = new JoyStick('joyDiv');
+var keyEnum = { W_Key:0, A_Key:1, S_Key:2, D_Key:3 };
+var keyArray = new Array(4).fill(false);
+
+
+window.addEventListener('keydown', keydown_ivent);
+window.addEventListener('keyup', keyup_ivent);
+
+function keydown_ivent(e) {
+	let key = '';
+	switch (e.key) {
+		case 'w':
+                        keyArray[keyEnum.W_Key] = true;
+                        break;
+	}
+	switch (e.key) {
+		case 'a':
+                        keyArray[keyEnum.A_Key] = true;
+                        break;
+	}
+	switch (e.key) {
+		case 's':
+                        keyArray[keyEnum.S_Key] = true;
+                        break;
+	}
+	switch (e.key) {
+		case 'd':
+                        keyArray[keyEnum.D_Key] = true;
+                        break;
+	}
+}
+function keyup_ivent(e) {
+	let key = '';
+	switch (e.key) {
+		case 'w':
+                        keyArray[keyEnum.W_Key] = false;
+                        break;
+	}
+	switch (e.key) {
+		case 'a':
+                        keyArray[keyEnum.A_Key] = false;
+                        break;
+	}
+	switch (e.key) {
+		case 's':
+                        keyArray[keyEnum.S_Key] = false;
+                        break;
+	}
+	switch (e.key) {
+		case 'd':
+                        keyArray[keyEnum.D_Key] = false;
+                        break;
+	}
+}
+
+function isKeyDown(key)
+{
+    return keyArray[key];
+}
+
 setInterval(function(){
-  var x = -joy.GetX()/100;
-  var y = joy.GetY()/100;
-  if (x === 0 && y === 0 && gamepad !== null) {
-    let gamepadstate = navigator.getGamepads()[gamepad.index];
-    x = -gamepadstate.axes[0];
-    y = -gamepadstate.axes[1];
-  }
+  var x = 0;
+  var y = 0;
+  if (isKeyDown(keyEnum.W_Key))
+    x += 1;
+  if (isKeyDown(keyEnum.S_Key))
+    x -= 1;
+  if (isKeyDown(keyEnum.D_Key))
+    y += 1;
+  if (isKeyDown(keyEnum.A_Key))
+    y -= 1;
   let xhr = new XMLHttpRequest();
   xhr.open("GET", "/control/"+x+"/"+y);
   xhr.send();
