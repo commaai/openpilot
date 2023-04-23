@@ -22,7 +22,7 @@ class CarState(CarStateBase):
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
     else:
       cp_brakes = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
-      ret.brakePressed = cp_brakes.vl["Brake_Status"]["ES_Brake"] == 1
+      ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
 
     cp_wheels = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     ret.wheelSpeeds = self.get_wheel_speeds(
