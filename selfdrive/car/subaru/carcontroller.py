@@ -16,8 +16,6 @@ class CarController:
     self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
-    self.acc_resume = False
-    self.acc_resume_cnt = 0
     self.throttle_cnt = -1
 
     self.p = CarControllerParams(CP)
@@ -52,17 +50,7 @@ class CarController:
 
     # *** stop and go ***
 
-    throttle_cmd = False
-
-    if CC.cruiseControl.resume:
-      self.acc_resume = True
-
-    if CC.enabled and self.acc_resume:
-      if self.acc_resume_cnt < 6:
-        throttle_cmd = True
-        self.acc_resume_cnt += 1
-      else:
-        self.acc_resume_cnt = 0
+    throttle_cmd = True if CC.enabled and CC.cruiseControl.resume else False
 
     # *** alerts and pcm cancel ***
 
