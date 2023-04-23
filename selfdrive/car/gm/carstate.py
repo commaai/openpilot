@@ -125,7 +125,7 @@ class CarState(CarStateBase):
         ("ASCMActiveCruiseControlStatus", 25),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, messages, CanBus.CAMERA)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.CAMERA)
 
   @staticmethod
   def get_can_parser(CP):
@@ -163,4 +163,4 @@ class CarState(CarStateBase):
       ("ASCMLKASteeringCmd", 0),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.LOOPBACK, enforce_checks=False)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.LOOPBACK)
