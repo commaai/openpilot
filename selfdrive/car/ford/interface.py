@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = True
 
     # These cars are dashcam only until the port is finished
-    ret.dashcamOnly = True
+    # ret.dashcamOnly = True
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
