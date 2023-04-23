@@ -79,10 +79,10 @@ class CarState(CarStateBase):
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       self.cruise_state = cp_cam.vl["ES_DashStatus"]["Cruise_State"]
-    self.car_follow = cp_cam.vl["ES_Distance"]["Car_Follow"]
 
     self.throttle_msg = copy.copy(cp.vl["Throttle"])
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+    self.car_follow = cp_es_distance.vl["ES_Distance"]["Car_Follow"]
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
