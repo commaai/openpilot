@@ -79,6 +79,7 @@ class CarState(CarStateBase):
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
+    self.throttle_msg = copy.copy(cp.vl["Throttle"])
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
@@ -180,6 +181,16 @@ class CarState(CarStateBase):
         checks += CarState.get_common_global_signals()[1]
 
       signals += [
+        ("COUNTER", "Throttle"),
+        ("Signal1", "Throttle"),
+        ("Engine_RPM", "Throttle"),
+        ("Signal2", "Throttle"),
+        ("Throttle_Pedal", "Throttle"),
+        ("Throttle_Cruise", "Throttle"),
+        ("Throttle_Combo", "Throttle"),
+        ("Signal1", "Throttle"),
+        ("Off_Accel", "Throttle"),
+
         ("Steer_Warning", "Steering_Torque"),
         ("UNITS", "Dashlights"),
       ]
@@ -190,6 +201,20 @@ class CarState(CarStateBase):
       ]
     else:
       signals += [
+        ("Throttle_Pedal", "Throttle"),
+        ("COUNTER", "Throttle"),
+        ("Signal1", "Throttle"),
+        ("Not_Full_Throttle", "Throttle"),
+        ("Signal2", "Throttle"),
+        ("Engine_RPM", "Throttle"),
+        ("Off_Throttle", "Throttle"),
+        ("Signal3", "Throttle"),
+        ("Throttle_Cruise", "Throttle"),
+        ("Throttle_Combo", "Throttle"),
+        ("Throttle_Body", "Throttle"),
+        ("Off_Throttle_2", "Throttle"),
+        ("Signal4", "Throttle"),
+
         ("FL", "Wheel_Speeds"),
         ("FR", "Wheel_Speeds"),
         ("RL", "Wheel_Speeds"),

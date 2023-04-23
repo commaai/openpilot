@@ -16,6 +16,9 @@ class CarController:
     self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
+    self.acc_resume = False
+    self.acc_resume_cnt = 0
+    self.throttle_cnt = -1
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -47,6 +50,19 @@ class CarController:
 
       self.apply_steer_last = apply_steer
 
+    # *** stop and go ***
+
+    throttle_cmd = False
+
+    if CC.cruiseControl.resume:
+      self.acc_resume = True
+
+    if CC.enabled and self.acc_resume:
+      if self.acc_resume_cnt < 6:
+        throttle_cmd = True
+        self.acc_resume_cnt += 1
+      else:
+        self.acc_resume_cnt = 0
 
     # *** alerts and pcm cancel ***
 
@@ -70,6 +86,10 @@ class CarController:
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
         self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
+      if self.throttle_cnt != CS.throttle_msg["COUNTER"]:
+        can_sends.append(subarucan.create_preglobal_throttle(self.packer, CS.throttle_msg, throttle_cmd))
+        self.throttle_cnt = CS.throttle_msg["COUNTER"]
+
     else:
       if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
         bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
@@ -89,6 +109,10 @@ class CarController:
       if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
         self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
+
+      if self.throttle_cnt != CS.throttle_msg["COUNTER"]:
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, throttle_cmd))
+        self.throttle_cnt = CS.throttle_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
