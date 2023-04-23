@@ -81,9 +81,9 @@ setInterval(function(){
   if (isKeyDown(keyEnum.S_Key))
     x -= 1;
   if (isKeyDown(keyEnum.D_Key))
-    y += 1;
-  if (isKeyDown(keyEnum.A_Key))
     y -= 1;
+  if (isKeyDown(keyEnum.A_Key))
+    y += 1;
   let xhr = new XMLHttpRequest();
   xhr.open("GET", "/control/"+x+"/"+y);
   xhr.send();
@@ -96,7 +96,7 @@ def hello_world():
   return index
 
 last_send_time = time.monotonic()
-@app.route("/control/<x>/<y>")
+@app.route("/control/<y>/<x>")
 def control(x, y):
   global last_send_time
   x,y = float(x), float(y)
