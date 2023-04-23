@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    ret.dashcamOnly = candidate in PREGLOBAL_CARS
+    #ret.dashcamOnly = candidate in PREGLOBAL_CARS
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
