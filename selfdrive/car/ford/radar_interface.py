@@ -14,30 +14,16 @@ DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 def _create_delphi_esr_radar_can_parser():
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
-  signals = list(zip(['X_Rel'] * msg_n + ['Angle'] * msg_n + ['V_Rel'] * msg_n,
-                     DELPHI_ESR_RADAR_MSGS * 3))
   checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
-
-  return CANParser(RADAR.DELPHI_ESR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_ESR, checks, CANBUS.radar)
 
 
 def _create_delphi_mrr_radar_can_parser():
-  signals = []
   checks = []
-
   for i in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
-    signals += [
-      (f"CAN_DET_VALID_LEVEL_{i:02d}", msg),
-      (f"CAN_DET_AZIMUTH_{i:02d}", msg),
-      (f"CAN_DET_RANGE_{i:02d}", msg),
-      (f"CAN_DET_RANGE_RATE_{i:02d}", msg),
-      (f"CAN_DET_AMPLITUDE_{i:02d}", msg),
-      (f"CAN_SCAN_INDEX_2LSB_{i:02d}", msg),
-    ]
     checks += [(msg, 20)]
-
-  return CANParser(RADAR.DELPHI_MRR, signals, checks, CANBUS.radar)
+  return CANParser(RADAR.DELPHI_MRR, checks, CANBUS.radar)
 
 
 class RadarInterface(RadarInterfaceBase):
