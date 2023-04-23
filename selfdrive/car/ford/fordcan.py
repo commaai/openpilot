@@ -198,6 +198,9 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   values = {
     **stock_values,
     "Tja_D_Stat": status,
+    "AccFllwMde_B_Dsply": 1,  # lead?
+    # TODO: when at standstill
+    # "AccStopMde_B_Dsply": 1,
   }
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
