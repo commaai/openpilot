@@ -180,6 +180,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
   fix.setDeviceStable(!this->device_fell);
   fix.setExcessiveResets(this->reset_tracker > MAX_RESET_TRACKER);
+  fix.setTimeToFirstFix(std::isnan(this->ttff) ? -1. : this->ttff);
   this->device_fell = false;
 
   //fix.setGpsWeek(this->time.week);
@@ -303,13 +304,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  // quectel gps verticalAccuracy is clipped to 500
-  bool gps_accuracy_insane_quectel = false;
-  if (!ublox_available) {
-    gps_accuracy_insane_quectel = log.getVerticalAccuracy() == 500;
-  }
-
-  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane || gps_accuracy_insane_quectel) {
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane) {
     //this->gps_valid = false;
     this->determine_gps_mode(current_time);
     return;
@@ -535,6 +530,9 @@ void Localizer::time_check(double current_time) {
   if (std::isnan(this->last_reset_time)) {
     this->last_reset_time = current_time;
   }
+  if (std::isnan(this->first_valid_log_time)) {
+    this->first_valid_log_time = current_time;
+  }
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = !std::isnan(filter_time) && (current_time - filter_time > 10);
   if (big_time_gap) {
@@ -705,6 +703,11 @@ int Localizer::locationd_thread() {
       bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
+
+      // Log time to first fix
+      if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
+        this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
+      }
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);

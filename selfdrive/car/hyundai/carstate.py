@@ -6,8 +6,8 @@ from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.hyundai.hyundaicanfd import get_e_can_bus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, FEATURES, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.hyundaicanfd import CanBus
+from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
@@ -27,9 +27,9 @@ class CarState(CarStateBase):
                           "GEAR_SHIFTER"
     if CP.carFingerprint in CANFD_CAR:
       self.shifter_values = can_define.dv[self.gear_msg_canfd]["GEAR"]
-    elif self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    elif self.CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
     else:  # preferred and elect gear methods use same definition
       self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
@@ -123,11 +123,11 @@ class CarState(CarStateBase):
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
     # as this seems to be standard over all cars, but is not the preferred method.
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
+    if self.CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+    elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
       gear = cp.vl["TCU12"]["CUR_GR"]
-    elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif self.CP.carFingerprint in CAN_GEARS["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
@@ -234,7 +234,62 @@ class CarState(CarStateBase):
     if CP.carFingerprint in CANFD_CAR:
       return CarState.get_can_parser_canfd(CP)
 
-    messages = [
+    signals = [
+      # signal_name, signal_address
+      ("WHL_SPD_FL", "WHL_SPD11"),
+      ("WHL_SPD_FR", "WHL_SPD11"),
+      ("WHL_SPD_RL", "WHL_SPD11"),
+      ("WHL_SPD_RR", "WHL_SPD11"),
+
+      ("YAW_RATE", "ESP12"),
+
+      ("CF_Gway_DrvSeatBeltInd", "CGW4"),
+
+      ("CF_Gway_DrvSeatBeltSw", "CGW1"),
+      ("CF_Gway_DrvDrSw", "CGW1"),       # Driver Door
+      ("CF_Gway_AstDrSw", "CGW1"),       # Passenger Door
+      ("CF_Gway_RLDrSw", "CGW2"),        # Rear left Door
+      ("CF_Gway_RRDrSw", "CGW2"),        # Rear right Door
+      ("CF_Gway_TurnSigLh", "CGW1"),
+      ("CF_Gway_TurnSigRh", "CGW1"),
+      ("CF_Gway_ParkBrakeSw", "CGW1"),
+
+      ("CYL_PRES", "ESP12"),
+
+      ("CF_Clu_CruiseSwState", "CLU11"),
+      ("CF_Clu_CruiseSwMain", "CLU11"),
+      ("CF_Clu_SldMainSW", "CLU11"),
+      ("CF_Clu_ParityBit1", "CLU11"),
+      ("CF_Clu_VanzDecimal" , "CLU11"),
+      ("CF_Clu_Vanz", "CLU11"),
+      ("CF_Clu_SPEED_UNIT", "CLU11"),
+      ("CF_Clu_DetentOut", "CLU11"),
+      ("CF_Clu_RheostatLevel", "CLU11"),
+      ("CF_Clu_CluInfo", "CLU11"),
+      ("CF_Clu_AmpInfo", "CLU11"),
+      ("CF_Clu_AliveCnt1", "CLU11"),
+
+      ("CF_Clu_VehicleSpeed", "CLU15"),
+
+      ("ACCEnable", "TCS13"),
+      ("ACC_REQ", "TCS13"),
+      ("DriverBraking", "TCS13"),
+      ("StandStill", "TCS13"),
+      ("PBRAKE_ACT", "TCS13"),
+
+      ("ESC_Off_Step", "TCS15"),
+      ("AVH_LAMP", "TCS15"),
+
+      ("CR_Mdps_StrColTq", "MDPS12"),
+      ("CF_Mdps_ToiActive", "MDPS12"),
+      ("CF_Mdps_ToiUnavail", "MDPS12"),
+      ("CF_Mdps_ToiFlt", "MDPS12"),
+      ("CR_Mdps_OutTq", "MDPS12"),
+
+      ("SAS_Angle", "SAS11"),
+      ("SAS_Speed", "SAS11"),
+    ]
+    checks = [
       # address, frequency
       ("MDPS12", 50),
       ("TCS13", 50),
@@ -250,58 +305,163 @@ class CarState(CarStateBase):
     ]
 
     if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR:
-      messages += [
+      signals += [
+        ("MainMode_ACC", "SCC11"),
+        ("VSetDis", "SCC11"),
+        ("SCCInfoDisplay", "SCC11"),
+        ("ACC_ObjDist", "SCC11"),
+        ("ACCMode", "SCC12"),
+      ]
+      checks += [
         ("SCC11", 50),
         ("SCC12", 50),
       ]
 
       if CP.flags & HyundaiFlags.USE_FCA.value:
-        messages.append(("FCA11", 50))
+        signals += [
+          ("FCA_CmdAct", "FCA11"),
+          ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
+        ]
+        checks.append(("FCA11", 50))
+      else:
+        signals += [
+          ("AEB_CmdAct", "SCC12"),
+          ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
+        ]
 
     if CP.enableBsm:
-      messages.append(("LCA11", 50))
+      signals += [
+        ("CF_Lca_IndLeft", "LCA11"),
+        ("CF_Lca_IndRight", "LCA11"),
+      ]
+      checks.append(("LCA11", 50))
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
-      messages.append(("E_EMS11", 50))
+      if CP.carFingerprint in HYBRID_CAR:
+        signals.append(("CR_Vcu_AccPedDep_Pos", "E_EMS11"))
+      else:
+        signals.append(("Accel_Pedal_Pos", "E_EMS11"))
+      checks.append(("E_EMS11", 50))
+    else:
+      signals += [
+        ("PV_AV_CAN", "EMS12"),
+        ("CF_Ems_AclAct", "EMS16"),
+      ]
+      checks += [
+        ("EMS12", 100),
+        ("EMS16", 100),
+      ]
 
-    if CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      messages.append(("TCU12", 100))
-    elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-      messages.append(("ELECT_GEAR", 20))
-    elif CP.carFingerprint not in FEATURES["use_cluster_gears"]:
-      messages.append(("LVR12", 100))
+    if CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
+      signals.append(("CF_Clu_Gear", "CLU15"))
+    elif CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
+      signals.append(("CUR_GR", "TCU12"))
+      checks.append(("TCU12", 100))
+    elif CP.carFingerprint in CAN_GEARS["use_elect_gears"]:
+      signals.append(("Elect_Gear_Shifter", "ELECT_GEAR"))
+      checks.append(("ELECT_GEAR", 20))
+    else:
+      signals.append(("CF_Lvr_Gear", "LVR12"))
+      checks.append(("LVR12", 100))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
     if CP.carFingerprint in CANFD_CAR:
       return CarState.get_cam_can_parser_canfd(CP)
 
-    messages = [
+    signals = [
+      # signal_name, signal_address
+      ("CF_Lkas_LdwsActivemode", "LKAS11"),
+      ("CF_Lkas_LdwsSysState", "LKAS11"),
+      ("CF_Lkas_SysWarning", "LKAS11"),
+      ("CF_Lkas_LdwsLHWarning", "LKAS11"),
+      ("CF_Lkas_LdwsRHWarning", "LKAS11"),
+      ("CF_Lkas_HbaLamp", "LKAS11"),
+      ("CF_Lkas_FcwBasReq", "LKAS11"),
+      ("CF_Lkas_HbaSysState", "LKAS11"),
+      ("CF_Lkas_FcwOpt", "LKAS11"),
+      ("CF_Lkas_HbaOpt", "LKAS11"),
+      ("CF_Lkas_FcwSysState", "LKAS11"),
+      ("CF_Lkas_FcwCollisionWarning", "LKAS11"),
+      ("CF_Lkas_FusionState", "LKAS11"),
+      ("CF_Lkas_FcwOpt_USM", "LKAS11"),
+      ("CF_Lkas_LdwsOpt_USM", "LKAS11"),
+    ]
+    checks = [
       ("LKAS11", 100)
     ]
 
     if not CP.openpilotLongitudinalControl and CP.carFingerprint in CAMERA_SCC_CAR:
-
-      messages += [
+      signals += [
+        ("MainMode_ACC", "SCC11"),
+        ("VSetDis", "SCC11"),
+        ("SCCInfoDisplay", "SCC11"),
+        ("ACC_ObjDist", "SCC11"),
+        ("ACCMode", "SCC12"),
+      ]
+      checks += [
         ("SCC11", 50),
         ("SCC12", 50),
       ]
 
       if CP.flags & HyundaiFlags.USE_FCA.value:
+        signals += [
+          ("FCA_CmdAct", "FCA11"),
+          ("CF_VSM_Warn", "FCA11"),
+          ("CF_VSM_DecCmdAct", "FCA11"),
+        ]
+        checks.append(("FCA11", 50))
+      else:
+        signals += [
+          ("AEB_CmdAct", "SCC12"),
+          ("CF_VSM_Warn", "SCC12"),
+          ("CF_VSM_DecCmdAct", "SCC12"),
+        ]
 
-        messages.append(("FCA11", 50))
-
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
   @staticmethod
   def get_can_parser_canfd(CP):
+
+    cruise_btn_msg = "CRUISE_BUTTONS_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS else "CRUISE_BUTTONS"
     gear_msg = "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
                "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
                "GEAR_SHIFTER"
+    signals = [
+      ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_3", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_4", "WHEEL_SPEEDS"),
 
-    messages = [
+      ("GEAR", gear_msg),
+
+      ("STEERING_RATE", "STEERING_SENSORS"),
+      ("STEERING_ANGLE", "STEERING_SENSORS"),
+      ("STEERING_COL_TORQUE", "MDPS"),
+      ("STEERING_OUT_TORQUE", "MDPS"),
+      ("LKA_FAULT", "MDPS"),
+
+      ("DriverBraking", "TCS"),
+      ("ACCEnable", "TCS"),
+      ("ACC_REQ", "TCS"),
+
+      ("COUNTER", cruise_btn_msg),
+      ("CRUISE_BUTTONS", cruise_btn_msg),
+      ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
+      ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
+
+      ("LEFT_LAMP", "BLINKERS"),
+      ("RIGHT_LAMP", "BLINKERS"),
+
+      ("DRIVER_DOOR_OPEN", "DOORS_SEATBELTS"),
+      ("DRIVER_SEATBELT_LATCHED", "DOORS_SEATBELTS"),
+    ]
+
+    checks = [
       ("WHEEL_SPEEDS", 100),
       (gear_msg, 100),
       ("STEERING_SENSORS", 100),
@@ -313,41 +473,74 @@ class CarState(CarStateBase):
     ]
 
     if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
-      messages.append(("CRUISE_BUTTONS", 50))
+      checks.append(("CRUISE_BUTTONS", 50))
 
     if CP.enableBsm:
-      messages += [
+      signals += [
+        ("FL_INDICATOR", "BLINDSPOTS_REAR_CORNERS"),
+        ("FR_INDICATOR", "BLINDSPOTS_REAR_CORNERS"),
+      ]
+      checks += [
         ("BLINDSPOTS_REAR_CORNERS", 20),
       ]
 
     if not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value) and not CP.openpilotLongitudinalControl:
-      messages += [
+      signals += [
+        ("ACCMode", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
+        ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+      ]
+      checks += [
         ("SCC_CONTROL", 50),
       ]
 
     if CP.carFingerprint in EV_CAR:
-      messages += [
+      signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR"),
+      ]
+      checks += [
         ("ACCELERATOR", 100),
       ]
     elif CP.carFingerprint in HYBRID_CAR:
-      messages += [
+      signals += [
+        ("ACCELERATOR_PEDAL", "ACCELERATOR_ALT"),
+      ]
+      checks += [
         ("ACCELERATOR_ALT", 100),
       ]
     else:
-      messages += [
+      signals += [
+        ("ACCELERATOR_PEDAL_PRESSED", "ACCELERATOR_BRAKE_ALT"),
+      ]
+      checks += [
         ("ACCELERATOR_BRAKE_ALT", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, get_e_can_bus(CP))
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).ECAN)
 
   @staticmethod
   def get_cam_can_parser_canfd(CP):
-    messages = []
+    signals = []
+    checks = []
     if CP.flags & HyundaiFlags.CANFD_HDA2:
-      messages += [("CAM_0x2a4", 20)]
+      signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      checks += [("CAM_0x2a4", 20)]
     elif CP.flags & HyundaiFlags.CANFD_CAMERA_SCC:
-      messages += [
+      signals += [
+        ("COUNTER", "SCC_CONTROL"),
+        ("NEW_SIGNAL_1", "SCC_CONTROL"),
+        ("MainMode_ACC", "SCC_CONTROL"),
+        ("ACCMode", "SCC_CONTROL"),
+        ("CRUISE_INACTIVE", "SCC_CONTROL"),
+        ("ZEROS_9", "SCC_CONTROL"),
+        ("CRUISE_STANDSTILL", "SCC_CONTROL"),
+        ("ZEROS_5", "SCC_CONTROL"),
+        ("DISTANCE_SETTING", "SCC_CONTROL"),
+        ("VSetDis", "SCC_CONTROL"),
+      ]
+
+      checks += [
         ("SCC_CONTROL", 50),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 6)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).CAM)

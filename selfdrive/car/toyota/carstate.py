@@ -115,7 +115,8 @@ class CarState(CarStateBase):
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
-      self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+      if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
+        self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -150,7 +151,40 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    messages = [
+    signals = [
+      # sig_name, sig_address
+      ("STEER_ANGLE", "STEER_ANGLE_SENSOR"),
+      ("GEAR", "GEAR_PACKET"),
+      ("BRAKE_PRESSED", "BRAKE_MODULE"),
+      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS"),
+      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS"),
+      ("DOOR_OPEN_FL", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_FR", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_RL", "BODY_CONTROL_STATE"),
+      ("DOOR_OPEN_RR", "BODY_CONTROL_STATE"),
+      ("SEATBELT_DRIVER_UNLATCHED", "BODY_CONTROL_STATE"),
+      ("PARKING_BRAKE", "BODY_CONTROL_STATE"),
+      ("UNITS", "BODY_CONTROL_STATE_2"),
+      ("TC_DISABLED", "ESP_CONTROL"),
+      ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL"),
+      ("STEER_FRACTION", "STEER_ANGLE_SENSOR"),
+      ("STEER_RATE", "STEER_ANGLE_SENSOR"),
+      ("CRUISE_ACTIVE", "PCM_CRUISE"),
+      ("CRUISE_STATE", "PCM_CRUISE"),
+      ("GAS_RELEASED", "PCM_CRUISE"),
+      ("UI_SET_SPEED", "PCM_CRUISE_SM"),
+      ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR"),
+      ("STEER_TORQUE_EPS", "STEER_TORQUE_SENSOR"),
+      ("STEER_ANGLE", "STEER_TORQUE_SENSOR"),
+      ("STEER_ANGLE_INITIALIZING", "STEER_TORQUE_SENSOR"),
+      ("TURN_SIGNALS", "BLINKERS_STATE"),
+      ("LKA_STATE", "EPS_STATUS"),
+      ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
+    ]
+
+    checks = [
       ("GEAR_PACKET", 1),
       ("LIGHT_STALK", 1),
       ("BLINKERS_STATE", 0.15),
@@ -167,50 +201,94 @@ class CarState(CarStateBase):
     ]
 
     if CP.flags & ToyotaFlags.HYBRID:
-      messages.append(("GAS_PEDAL_HYBRID", 33))
+      signals.append(("GAS_PEDAL", "GAS_PEDAL_HYBRID"))
+      checks.append(("GAS_PEDAL_HYBRID", 33))
     else:
-      messages.append(("GAS_PEDAL", 33))
+      signals.append(("GAS_PEDAL", "GAS_PEDAL"))
+      checks.append(("GAS_PEDAL", 33))
 
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
-      messages.append(("DSU_CRUISE", 5))
-      messages.append(("PCM_CRUISE_ALT", 1))
+      signals.append(("MAIN_ON", "DSU_CRUISE"))
+      signals.append(("SET_SPEED", "DSU_CRUISE"))
+      signals.append(("UI_SET_SPEED", "PCM_CRUISE_ALT"))
+      checks.append(("DSU_CRUISE", 5))
+      checks.append(("PCM_CRUISE_ALT", 1))
     else:
-      messages.append(("PCM_CRUISE_2", 33))
+      signals.append(("MAIN_ON", "PCM_CRUISE_2"))
+      signals.append(("SET_SPEED", "PCM_CRUISE_2"))
+      signals.append(("ACC_FAULTED", "PCM_CRUISE_2"))
+      signals.append(("LOW_SPEED_LOCKOUT", "PCM_CRUISE_2"))
+      checks.append(("PCM_CRUISE_2", 33))
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
-      messages.append(("GAS_SENSOR", 50))
+      signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR"))
+      signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
+      checks.append(("GAS_SENSOR", 50))
 
     if CP.enableBsm:
-      messages.append(("BSM", 1))
+      signals += [
+        ("L_ADJACENT", "BSM"),
+        ("L_APPROACHING", "BSM"),
+        ("R_ADJACENT", "BSM"),
+        ("R_APPROACHING", "BSM"),
+      ]
+      checks.append(("BSM", 1))
 
     if CP.carFingerprint in RADAR_ACC_CAR:
-      messages += [
-        ("ACC_CONTROL", 33),
+      if not CP.flags & ToyotaFlags.SMART_DSU.value:
+        signals += [
+          ("ACC_TYPE", "ACC_CONTROL"),
+        ]
+        checks += [
+          ("ACC_CONTROL", 33),
+        ]
+      signals += [
+        ("FCW", "ACC_HUD"),
+      ]
+      checks += [
         ("ACC_HUD", 1),
       ]
 
     if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu:
-      messages += [
+      signals += [
+        ("FORCE", "PRE_COLLISION"),
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+      ]
+      checks += [
         ("PRE_COLLISION", 33),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    messages = []
+    signals = []
+    checks = []
 
     if CP.carFingerprint != CAR.PRIUS_V:
-      messages += [
+      signals += [
+        ("LANE_SWAY_FLD", "LKAS_HUD"),
+        ("LANE_SWAY_BUZZER", "LKAS_HUD"),
+        ("LANE_SWAY_WARNING", "LKAS_HUD"),
+        ("LANE_SWAY_SENSITIVITY", "LKAS_HUD"),
+        ("LANE_SWAY_TOGGLE", "LKAS_HUD"),
+      ]
+      checks += [
         ("LKAS_HUD", 1),
       ]
 
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-      messages += [
+      signals += [
+        ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
+        ("FORCE", "PRE_COLLISION"),
+        ("ACC_TYPE", "ACC_CONTROL"),
+        ("FCW", "ACC_HUD"),
+      ]
+      checks += [
         ("PRE_COLLISION", 33),
         ("ACC_CONTROL", 33),
         ("ACC_HUD", 1),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
