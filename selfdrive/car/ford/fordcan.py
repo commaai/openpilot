@@ -111,6 +111,7 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, precharg
     "AccBrkTot_A_Rq": accel,                          # Brake total accel request: [-20|11.9449] m/s^2
     "Cmbb_B_Enbl": 1 if long_active else 0,           # Enabled: 0=No, 1=Yes
     "AccPrpl_A_Rq": gas,                              # Acceleration request: [-5|5.23] m/s^2
+    "AccResumEnbl_B_Rq": 1 if long_active else 0,
     "AccBrkPrchg_B_Rq": 1 if precharge_brake else 0,  # Pre-charge brake request: 0=No, 1=Yes
     "AccBrkDecel_B_Rq": 1 if decel else 0,            # Deceleration request: 0=Inactive, 1=Active
   }
@@ -198,7 +199,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   values = {
     **stock_values,
     "Tja_D_Stat": status,
-    "AccFllwMde_B_Dsply": 1,  # lead?
+    # "AccFllwMde_B_Dsply": 1,  # lead?
     # TODO: when at standstill
     # "AccStopMde_B_Dsply": 1,
   }
