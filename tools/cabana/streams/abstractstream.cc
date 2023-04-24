@@ -124,7 +124,9 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
     parseEvents(new_events, first, last);
     for (auto &[id, new_e] : new_events) {
       auto &e = events_[id];
-      auto it = std::upper_bound(e.cbegin(), e.cend(), new_e.front());
+      auto it = std::upper_bound(e.cbegin(), e.cend(), new_e.front(), [](const CanEvent *l, const CanEvent *r) {
+        return l->mono_time < r->mono_time;
+      });
       e.insert(it, new_e.cbegin(), new_e.cend());
     }
   }
