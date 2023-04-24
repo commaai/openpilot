@@ -313,6 +313,17 @@ void Params::clearAll(ParamKeyType key_type) {
         unlink(getParamPath(key).c_str());
       }
     }
+
+    // delete files that are not defined in the keys.
+    if (DIR *d = opendir(getParamPath().c_str())) {
+      struct dirent *de = NULL;
+      while ((de = readdir(d))) {
+        if (de->d_type != DT_DIR && keys.count(de->d_name) == 0) {
+          unlink(getParamPath(de->d_name).c_str());
+        }
+      }
+      closedir(d);
+    }
   }
 
   fsync_dir(getParamPath());

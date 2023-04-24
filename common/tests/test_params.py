@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 import tempfile
@@ -28,9 +29,15 @@ class TestParams(unittest.TestCase):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("CarParams") == b"test"
+
+    undefined_param = self.tmpdir + "/d/undefined"
+    with open(undefined_param, "w") as f:
+      f.write("test")
+
     self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
+    assert os.path.isfile(undefined_param) is False
 
   def test_params_two_things(self):
     self.params.put("DongleId", "bob")
