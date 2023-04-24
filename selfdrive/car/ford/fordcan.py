@@ -97,7 +97,7 @@ def create_lat_ctl2_msg(packer, mode: int, path_offset: float, path_angle: float
   return packer.make_can_msg("LateralMotionControl2", CANBUS.main, values)
 
 
-def create_acc_command(packer, long_active: bool, gas: float, accel: float, precharge_brake: bool, decel: bool):
+def create_acc_msg(packer, long_active: bool, gas: float, accel: float, precharge_brake: bool, decel: bool):
   """
   Creates a CAN message for the Ford ACC Command.
 
