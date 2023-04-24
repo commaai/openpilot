@@ -50,6 +50,7 @@ class CarControllerParams:
       self.STEER_DELTA_DOWN = 3
       self.STEER_MAX = 261  # higher than this faults the EPS
 
+
 STEER_THRESHOLD = 120
 
 RAM_DT = {CAR.RAM_1500, }
@@ -62,6 +63,7 @@ class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
   harness: Enum = Harness.fca
 
+
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   CAR.PACIFICA_2017_HYBRID: ChryslerCarInfo("Chrysler Pacifica Hybrid 2017-18"),
   CAR.PACIFICA_2018_HYBRID: None,  # same platforms
@@ -73,10 +75,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-22", harness=Harness.ram),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
   CAR.RAM_HD: [
     ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
-    ChryslerCarInfo("Ram 3500 2020-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 3500 2019-22", harness=Harness.ram),
   ],
 }
 
@@ -180,79 +182,153 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
-  CAR.RAM_1500: {
+  CAR.JEEP_CHEROKEE_2019: {
     (Ecu.combinationMeter, 0x742, None): [
-      b'68294063AH',
-      b'68294063AG',
-      b'68434860AC',
-      b'68527375AD',
-      b'68453503AC',
+      b'68402971AD',
     ],
     (Ecu.srs, 0x744, None): [
-      b'68441329AB',
-      b'68490898AA',
-      b'68428609AB',
-      b'68500728AA',
+      b'68355363AB',
     ],
     (Ecu.abs, 0x747, None): [
-      b'68432418AD',
-      b'68432418AB',
-      b'68436004AE',
-      b'68438454AD',
-      b'68436004AD',
-      b'68535469AB',
-      b'68438454AC',
+      b'68408639AD',
     ],
     (Ecu.fwdRadar, 0x753, None): [
-      b'68320950AL',
-      b'68320950AJ',
-      b'68454268AB',
-      b'68475160AG',
-      b'04672892AB',
-      b'68475160AE',
+      b'68456722AC',
     ],
     (Ecu.eps, 0x75A, None): [
-      b'68273275AG',
-      b'68469901AA',
-      b'68552788AA',
+      b'68453431AA',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'68448163AJ',
-      b'68500630AD',
-      b'68539650AD',
+      b'05035674AB ',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'05035707AA',
+    ],
+  },
+
+  CAR.RAM_1500: {
+    (Ecu.combinationMeter, 0x742, None): [
+      b'68294051AG',
+      b'68294051AI',
+      b'68294052AG',
+      b'68294063AG',
+      b'68294063AH',
+      b'68294063AI',
+      b'68434846AC',
+      b'68434858AC',
+      b'68434860AC',
+      b'68453503AC',
+      b'68453505AC',
+      b'68453511AC',
+      b'68453513AD',
+      b'68453514AD',
+      b'68510283AG',
+      b'68527375AD',
+    ],
+    (Ecu.srs, 0x744, None): [
+      b'68428609AB',
+      b'68441329AB',
+      b'68473844AB',
+      b'68490898AA',
+      b'68500728AA',
+      b'68615033AA',
+    ],
+    (Ecu.abs, 0x747, None): [
+      b'68292406AH',
+      b'68432418AB',
+      b'68432418AD',
+      b'68436004AD',
+      b'68436004AE',
+      b'68438454AC',
+      b'68438454AD',
+      b'68438456AE',
+      b'68438456AF',
+      b'68535469AB',
+      b'68535470AC',
+      b'68586307AB',
+    ],
+    (Ecu.fwdRadar, 0x753, None): [
+      b'04672892AB',
+      b'04672932AB',
+      b'68320950AH',
+      b'68320950AI',
+      b'68320950AJ',
+      b'68320950AL',
+      b'68320950AM',
+      b'68454268AB',
+      b'68475160AE',
+      b'68475160AF',
+      b'68475160AG',
+    ],
+    (Ecu.eps, 0x75A, None): [
+      b'68273275AF',
+      b'68273275AG',
+      b'68312176AE',
+      b'68312176AG',
+      b'68440789AC',
+      b'68466110AB',
+      b'68469901AA',
+      b'68522583AB',
+      b'68522585AB',
+      b'68552788AA',
+      b'68552790AA',
+      b'68585112AB',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'05036065AE ',
+      b'05036066AE ',
+      b'68378701AI ',
       b'68378758AM ',
+      b'68448163AJ',
+      b'68448165AK',
+      b'68500630AD',
+      b'68500630AE',
+      b'68539650AD',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
-      b'68384328AD',
-      b'68360085AL',
+      b'68360080AM',
       b'68360081AM',
-      b'68502994AD',
+      b'68360085AL',
+      b'68384328AD',
+      b'68384332AD',
       b'68445533AB',
-      b'68540431AB',
       b'68484467AC',
+      b'68502994AD',
+      b'68540431AB',
     ],
   },
 
   CAR.RAM_HD: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68361606AH',
+      b'68437735AC',
       b'68492693AD',
+      b'68525485AB',
+      b'68525487AB',
+      b'68525498AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68399794AC',
       b'68428503AA',
       b'68428505AA',
+      b'68428507AA',
     ],
     (Ecu.abs, 0x747, None): [
       b'68334977AH',
+      b'68455481AC',
+      b'68504022AA',
       b'68504022AB',
-      b'68530686AB',
       b'68504022AC',
+      b'68530686AB',
+      b'68530686AC',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',
       b'56029827AG',
+      b'56029827AH',
+      b'68462657AE',
+      b'68484694AD',
       b'68484694AE',
     ],
     (Ecu.eps, 0x761, None): [
@@ -260,7 +336,13 @@ FW_VERSIONS = {
       b'68507906AB',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'52370131AF',
+      b'52370231AF',
+      b'52370231AG',
+      b'52370931CT',
+      b'52401032AE',
       b'52421132AF',
+      b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
     ],

@@ -10,6 +10,8 @@ class GPIO:
   STM_RST_N = 124
   STM_BOOT0 = 134
 
+  SOM_ST_IO = 49
+
   LTE_RST_N = 50
   LTE_PWRKEY = 116
   LTE_BOOT = 52
