@@ -104,7 +104,9 @@ class opParams:
       'SETME_X64': Param(100, NUMBER, 'Unsure', live=True),
       'ANGLE': Param(0, NUMBER, 'Rate limit? Lower is better?', live=True),
       # 'LKA_REQUEST': Param(1, NUMBER, '1 when using LTA for LKA', live=True),
-      'BIT': Param(0, NUMBER, '1: LTA, 2: LTA for lane keeping', live=True),
+      'BIT': Param(0, NUMBER, 'unknown', live=True),
+      'LKA_ACTIVE': Param(0, NUMBER, 'unknown', live=True),
+      'USE_ALT_ANGLE_CMD': Param(False, bool, 'True for alt angle command (not steering wheel, path angle?)', live=True),
     }
 
     self._to_delete = []  # a list of unused params you want to delete from users' params file
