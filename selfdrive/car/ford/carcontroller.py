@@ -76,10 +76,10 @@ class CarController:
         gas = -5.0
         decel = True
 
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel, CC.cruiseState.standstill))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel, CS.out.cruiseState.standstill))
 
     if self.frame % CarControllerParams.ACC_UI_STEP == 0:
-      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, CC.cruiseState.standstill, hud_control, CS.acc_tja_status_stock_values))
+      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, CS.out.cruiseState.standstill, hud_control, CS.acc_tja_status_stock_values))
 
     ### ui ###
     # send lkas ui command at 1Hz or if ui state changes
