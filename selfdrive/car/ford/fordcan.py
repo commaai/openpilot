@@ -205,6 +205,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, standstill: bool, hu
     "AccTGap_B_Dsply": 0,  # do not show distance control
     "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,
     "AccStopMde_B_Dsply": 1 if standstill else 0,
+    "AccTGap_D_Dsply": 2,  # constant time gap 2
   }
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
