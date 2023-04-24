@@ -314,7 +314,9 @@ else:
     qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
+qt_env['QT3DIR'] = qt_env['QTDIR']
 
+# compatibility for older SCons versions
 try:
   qt_env.Tool('qt3')
 except SCons.Errors.UserError:
