@@ -34,7 +34,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->header()->setSectionsMovable(false);
+  // Must be called before setting any header parameters to avoid overriding
+  restoreHeaderState(settings.message_header_state);
+
+  view->header()->setSectionsMovable(true);
+
   main_layout->addWidget(view);
 
   // suppress
@@ -289,7 +293,7 @@ void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option,
   auto y = option.rect.y();
   painter->translate(visualRect(model()->index(0, 0)).x() - indentation() - .5, -.5);
   for (int i = 0; i < header()->count(); ++i) {
-    painter->translate(header()->sectionSize(i), 0);
+    painter->translate(header()->sectionSize(header()->logicalIndex(i)), 0);
     painter->drawLine(0, y, 0, y + option.rect.height());
   }
   painter->setPen(old_pen);

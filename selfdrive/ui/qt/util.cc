@@ -110,7 +110,7 @@ void sigTermHandler(int s) {
   qApp->quit();
 }
 
-void initApp(int argc, char *argv[]) {
+void initApp(int argc, char *argv[], bool disable_hidpi) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
 
@@ -118,13 +118,13 @@ void initApp(int argc, char *argv[]) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
+  if (disable_hidpi) {
 #ifdef __APPLE__
-  {
     // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
     QApplication tmp(argc, argv);
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
-  }
 #endif
+  }
 
   setQtSurfaceFormat();
 }

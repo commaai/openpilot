@@ -18,7 +18,7 @@ class PandaStream : public LiveStream {
   Q_OBJECT
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
-
+  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
   inline QString routeName() const override {
     return QString("Live Streaming From Panda %1").arg(config.serial);
   }
@@ -31,3 +31,14 @@ protected:
   PandaStreamConfig config = {};
 };
 
+class OpenPandaWidget : public AbstractOpenStreamWidget {
+  Q_OBJECT
+
+public:
+  OpenPandaWidget(AbstractStream **stream);
+  bool open() override;
+  QString title() override { return tr("&Panda"); }
+
+private:
+  QLineEdit *serial_edit;
+};

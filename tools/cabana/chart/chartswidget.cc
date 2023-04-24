@@ -191,7 +191,7 @@ void ChartsWidget::updateState() {
     double max_sec = std::min(std::floor(display_range.first + max_chart_range), can->lastEventSecond());
     display_range.first = std::max(0.0, max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
-  } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
+  } else if (cur_sec < (zoomed_range.first - 0.1) || cur_sec >= zoomed_range.second) {
     // loop in zoomed range
     can->seekTo(zoomed_range.first);
   }
