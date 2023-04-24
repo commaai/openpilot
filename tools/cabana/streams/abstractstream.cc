@@ -130,7 +130,6 @@ void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std
       e.insert(it, new_e.cbegin(), new_e.cend());
     }
   }
-  total_sec = (all_events_.back()->mono_time - all_events_.front()->mono_time) / 1e9;
   emit eventsMerged();
 }
 

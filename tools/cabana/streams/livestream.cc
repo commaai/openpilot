@@ -58,6 +58,7 @@ void LiveStream::timerEvent(QTimerEvent *event) {
     }
     if (!all_events_.empty()) {
       begin_event_ts = all_events_.front()->mono_time;
+      total_sec = (all_events_.back()->mono_time - all_events_.front()->mono_time) / 1e9;
       updateEvents();
       return;
     }

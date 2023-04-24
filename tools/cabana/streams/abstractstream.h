@@ -47,7 +47,7 @@ public:
   virtual QString carFingerprint() const { return ""; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  double totalSeconds() const { return total_sec; }
+  virtual double totalSeconds() const { return 0; }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
@@ -82,7 +82,6 @@ protected:
   void parseEvents(std::unordered_map<MessageId, std::deque<const CanEvent *>> &msgs, std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   void updateLastMsgsTo(double sec);
 
-  double total_sec = 0;
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, CanData> all_msgs;
