@@ -94,9 +94,10 @@ void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<const 
   }
 
   char *ptr = memory_blocks.emplace_back(new char[memory_size]).get();
+  uint64_t ts = 0;
   for (auto it = first; it != last; ++it) {
     if ((*it)->which == cereal::Event::Which::CAN) {
-      uint64_t ts = (*it)->mono_time;
+      ts = (*it)->mono_time;
       for (const auto &c : (*it)->event.getCan()) {
         CanEvent *e = (CanEvent *)ptr;
         e->src = c.getSrc();
@@ -112,6 +113,7 @@ void AbstractStream::parseEvents(std::unordered_map<MessageId, std::deque<const 
       }
     }
   }
+  lastest_event_ts = std::max(lastest_event_ts, ts);
 }
 
 void AbstractStream::mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append) {
