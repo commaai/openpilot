@@ -1,99 +1,65 @@
 #!/usr/bin/env python3
 import time
 import threading
-from flask import Flask
+from flask import Flask, Response, render_template
 
 import cereal.messaging as messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
+
+IMG_H, IMG_W = 540, 960
 
 app = Flask(__name__)
 pm = messaging.PubMaster(['testJoystick'])
 
-index = """
-<html>
-<body>
-<span style="font-size:18px;">Press wasd to control body</span><p id="output"></p>
-
-<script type="text/javascript">
-var keyEnum = { W_Key:0, A_Key:1, S_Key:2, D_Key:3 };
-var keyArray = new Array(4).fill(false);
-
-
-window.addEventListener('keydown', keydown_ivent);
-window.addEventListener('keyup', keyup_ivent);
-
-function keydown_ivent(e) {
-	let key = '';
-	switch (e.key) {
-		case 'w':
-                        keyArray[keyEnum.W_Key] = true;
-                        break;
-	}
-	switch (e.key) {
-		case 'a':
-                        keyArray[keyEnum.A_Key] = true;
-                        break;
-	}
-	switch (e.key) {
-		case 's':
-                        keyArray[keyEnum.S_Key] = true;
-                        break;
-	}
-	switch (e.key) {
-		case 'd':
-                        keyArray[keyEnum.D_Key] = true;
-                        break;
-	}
-}
-function keyup_ivent(e) {
-	let key = '';
-	switch (e.key) {
-		case 'w':
-                        keyArray[keyEnum.W_Key] = false;
-                        break;
-	}
-	switch (e.key) {
-		case 'a':
-                        keyArray[keyEnum.A_Key] = false;
-                        break;
-	}
-	switch (e.key) {
-		case 's':
-                        keyArray[keyEnum.S_Key] = false;
-                        break;
-	}
-	switch (e.key) {
-		case 'd':
-                        keyArray[keyEnum.D_Key] = false;
-                        break;
-	}
-}
-
-function isKeyDown(key)
-{
-    return keyArray[key];
-}
-
-setInterval(function(){
-  var x = 0;
-  var y = 0;
-  if (isKeyDown(keyEnum.W_Key))
-    x += 1;
-  if (isKeyDown(keyEnum.S_Key))
-    x -= 1;
-  if (isKeyDown(keyEnum.D_Key))
-    y -= 1;
-  if (isKeyDown(keyEnum.A_Key))
-    y += 1;
-  let xhr = new XMLHttpRequest();
-  xhr.open("GET", "/control/"+x+"/"+y);
-  xhr.send();
-}, 50);
-</script>
-"""
-
 @app.route("/")
 def hello_world():
-  return index
+  return render_template('index.html')
+
+
+#camera.py
+# import the necessary packages
+import cv2
+import numpy as np
+
+class VideoCamera(object):
+  def __init__(self):
+    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
+
+
+  def __del__(self):
+    pass
+
+  def get_frame(self):
+    if not self.vipc_client.is_connected():
+      self.vipc_client.connect(True)
+    yuv_img_raw = self.vipc_client.recv()
+
+    if yuv_img_raw is None or not yuv_img_raw.any():
+      return np.zeros((IMG_H, IMG_W, 3), np.uint8)
+
+    imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
+    imgff = imgff.reshape((self.vipc_client.height * 3 // 2, self.vipc_client.width))
+    frame = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_NV12)
+    frame = cv2.resize(frame, (IMG_W, IMG_H))
+
+    _, jpeg = cv2.imencode('.jpg', frame)
+    return jpeg.tobytes()
+      
+
+def gen(camera):
+  while True:
+      
+    #get camera frame
+    frame = camera.get_frame()
+    yield (b'--frame\r\n'
+           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+
+@app.route('/video_feed')
+def video_feed():
+  return Response(gen(VideoCamera()),
+                  mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 last_send_time = time.monotonic()
 @app.route("/control/<y>/<x>")
@@ -113,7 +79,6 @@ def handle_timeout():
   while 1:
     this_time = time.monotonic()
     if (last_send_time+0.5) < this_time:
-      #print("timeout, no web in %.2f s" % (this_time-last_send_time))
       dat = messaging.new_message('testJoystick')
       dat.testJoystick.axes = [0,0]
       dat.testJoystick.buttons = [False]
