@@ -200,7 +200,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   values = {
     **stock_values,
     "Tja_D_Stat": status,
-    # "AccFllwMde_B_Dsply": 1,  # lead?
+    "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,
     # TODO: when at standstill
     # "AccStopMde_B_Dsply": 1,
   }
