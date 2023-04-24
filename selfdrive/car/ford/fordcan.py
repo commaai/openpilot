@@ -170,7 +170,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
   return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
 
-def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
+def create_acc_ui_msg(packer, main_on: bool, enabled: bool, standstill: bool, hud_control, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
 
@@ -201,8 +201,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
     **stock_values,
     "Tja_D_Stat": status,
     "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,
-    # TODO: when at standstill
-    # "AccStopMde_B_Dsply": 1,
+    "AccStopMde_B_Dsply": 1 if standstill else 0,
   }
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
