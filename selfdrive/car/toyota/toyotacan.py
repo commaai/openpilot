@@ -34,8 +34,8 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
     # stock system sometimes uses this signal to wind down torque
     # TODO: figure out why 99 is so much less torque than 100
-    # "SETME_X64": 99 if limit_torque else 100,
-    "SETME_X64": op_params.get("SETME_X64"),
+    "SETME_X64": 99 if limit_torque else 100,
+    # "SETME_X64": op_params.get("SETME_X64"),
 
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
