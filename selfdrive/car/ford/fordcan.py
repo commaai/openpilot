@@ -199,7 +199,9 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, standstill: bool, hu
 
   values = {
     **stock_values,
+    "AccStopStat_D_Dsply": 2 if standstill else 0,  # stopped txt
     "Tja_D_Stat": status,
+    "AccMsgTxt_D2_Rq": 0,  # no text
     "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,
     "AccStopMde_B_Dsply": 1 if standstill else 0,
   }
