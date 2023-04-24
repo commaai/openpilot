@@ -33,6 +33,7 @@ class TestParams(unittest.TestCase):
     undefined_param = self.tmpdir + "/d/undefined"
     with open(undefined_param, "w") as f:
       f.write("test")
+    assert os.path.isfile(undefined_param) is True
 
     self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
