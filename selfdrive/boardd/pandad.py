@@ -115,6 +115,14 @@ def main() -> NoReturn:
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
           panda.reset()
 
+      # Ensure internal panda is present if expected
+      internal_pandas = [panda for panda in pandas if panda.is_internal()]
+      if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
+        cloudlog.error("Internal panda is missing, resetting")
+        HARDWARE.reset_internal_panda()
+        time.sleep(2)  # wait to come back up
+        continue
+
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
       panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))  # type: ignore
