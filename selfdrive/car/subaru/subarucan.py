@@ -2,13 +2,6 @@ from cereal import car
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-INFOTAINMENT_STATUS_SIGNALS = [
-  "LKAS_State_Infotainment",
-  "LKAS_Blue_Lines",
-  "Signal1",
-  "Signal2",
-]
-
 ES_DISTANCE_SIGNALS = [
   "COUNTER",
   "Signal1",
@@ -78,6 +71,13 @@ ES_DASHSTATUS_SIGNALS = [
   "Cruise_State",
 ]
 
+INFOTAINMENT_STATUS_SIGNALS = [
+  "LKAS_State_Infotainment",
+  "LKAS_Blue_Lines",
+  "Signal1",
+  "Signal2",
+]
+
 
 def create_steering_control(packer, apply_steer):
   values = {
@@ -99,7 +99,7 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
 
 def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
-  values = {k: es_lkas_state_msg[k] for k in ES_DASHSTATUS_SIGNALS}
+  values = {k: es_lkas_state_msg[k] for k in ES_LKAS_STATE_SIGNALS}
 
   # Filter the stock LKAS "Keep hands on wheel" alert
   if values["LKAS_Alert_Msg"] == 1:
