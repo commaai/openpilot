@@ -195,7 +195,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", harness=Harness.hyundai_n),
 
   # Kia
-  CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
+  CAR.KIA_FORTE: [
+    HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
+    HyundaiCarInfo("Kia Forte 2023", harness=Harness.hyundai_e),
+  ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", harness=Harness.hyundai_a),
   CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
