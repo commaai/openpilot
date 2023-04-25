@@ -312,7 +312,7 @@ void Params::clearAll(ParamKeyType key_type) {
     while ((de = readdir(d))) {
       if (de->d_type != DT_DIR) {
         auto it = keys.find(de->d_name);
-        if (it == keys.end() || (key_type & it->second)) {
+        if (it == keys.end() || (it->second & key_type)) {
           unlink(getParamPath(de->d_name).c_str());
         }
       }
