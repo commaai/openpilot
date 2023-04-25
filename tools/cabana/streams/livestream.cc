@@ -52,7 +52,7 @@ void LiveStream::timerEvent(QTimerEvent *event) {
     {
       // merge events received from live stream thread.
       std::lock_guard lk(lock);
-      mergeEvents(receivedEvents.cbegin(), receivedEvents.cend(), true);
+      mergeEvents(receivedEvents.cbegin(), receivedEvents.cend());
       receivedEvents.clear();
       receivedMessages.clear();
     }
