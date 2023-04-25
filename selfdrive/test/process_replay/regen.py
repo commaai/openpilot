@@ -233,6 +233,7 @@ def migrate_sensorEvents(lr, old_logtime=False):
 
   return all_msgs
 
+
 def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=False):
   if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
@@ -271,6 +272,10 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
     'thermald': [
       multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
     ],
+    'rawgpsd': [
+      multiprocessing.Process(target=replay_service, args=('qcomGnss', lr)),
+      multiprocessing.Process(target=replay_service, args=('gpsLocation', lr)),
+    ],
     'camerad': [
       *cam_procs,
     ],
@@ -278,7 +283,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   # TODO add configs for modeld, dmonitoringmodeld, rawgpsd
   fakeable_daemons = {}
   for config in CONFIGS:
-    replayable_messages = [msg for sub in config.pub_sub.values() for msg in sub]
+    replayable_messages = set([msg for sub in config.pub_sub.values() for msg in sub])
     processes = [
       multiprocessing.Process(target=replay_service, args=(msg, lr)) 
       for msg in replayable_messages
