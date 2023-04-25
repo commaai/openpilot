@@ -49,12 +49,6 @@ ES_LKAS_STATE_SIGNALS = [
   "Signal3",
 ]
 
-# TODO: only used in carstate?
-ES_DASHSTATUS_PREGLOBAL_SIGNALS = [
-  "Cruise_Set_Speed",
-  "Not_Ready_Startup",
-]
-
 ES_DASHSTATUS_SIGNALS = [
   "COUNTER",
   "PCB_Off",
