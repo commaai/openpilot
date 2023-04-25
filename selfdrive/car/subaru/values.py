@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
@@ -28,6 +28,10 @@ class CarControllerParams:
       self.STEER_MAX = 1439
     else:
       self.STEER_MAX = 2047
+
+
+class SubaruFlags(IntFlag):
+  SEND_INFOTAINMENT = 1
 
 
 class CAR:
@@ -185,6 +189,7 @@ FW_VERSIONS = {
       b'\x00\x00d\xdc\x00\x00\x00\x00',
       b'\x00\x00dd\x00\x00\x00\x00',
       b'\x00\x00c\xf4\x1f@ \x07',
+      b'\x00\x00e\x1c\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
@@ -206,6 +211,7 @@ FW_VERSIONS = {
       b'\xaa!aw\x07',
       b'\xaa!av\x07',
       b'\xaa\x01bt\x07',
+      b'\xc5!ap\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xe5\x46\x31\x00',
@@ -276,6 +282,7 @@ FW_VERSIONS = {
       b'\xa3  \x14\x01',
       b'\xf1\x00\xbb\r\x05',
       b'\xa3 \x18&\x00',
+      b'\xa3 \x19&\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x8d\xc0\x04\x00',
@@ -288,6 +295,8 @@ FW_VERSIONS = {
       b'\xf1\x00\xac\x02\x00',
       b'\x00\x00e!\x00\x00\x00\x00',
       b'\x00\x00e\x97\x00\x00\x00\x00',
+      b'\x00\x00e^\x1f@ !',
+      b'\x00\x00e^\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb6"`A\x07',
@@ -305,6 +314,7 @@ FW_VERSIONS = {
       b'\x1a\xf6B`\x00',
       b'\x1a\xf6b0\x00',
       b'\x1a\xe6B1\x00',
+      b'\x1a\xe6F1\x00',
     ],
   },
   CAR.FORESTER_PREGLOBAL: {
@@ -472,6 +482,7 @@ FW_VERSIONS = {
       b'\xa1 "\t\x01',
       b'\xa1  \x08\x02',
       b'\xa1 \x06\x02',
+      b'\xa1  \x07\x02',
       b'\xa1  \x08\x00',
       b'\xa1 "\t\x00',
     ],
@@ -483,6 +494,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00eJ\x00\x1f@ \x19\x00',
       b'\000\000e\x80\000\037@ \031\000',
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
       b'\x00\x00e\x9a\x00\x1f@ 1\x00',
       b'\x00\x00eJ\x00\x00\x00\x00\x00\x00',
     ],
@@ -492,6 +504,7 @@ FW_VERSIONS = {
       b'\xde"`0\a',
       b'\xf1\x82\xbc,\xa0q\a',
       b'\xf1\x82\xe3,\xa0@\x07',
+      b'\xe2"`0\x07',
       b'\xe2"`p\x07',
       b'\xf1\x82\xe2,\xa0@\x07',
       b'\xbc"`q\x07',
@@ -503,6 +516,7 @@ FW_VERSIONS = {
       b'\xa5\xfe\xf6@\x00',
       b'\xa7\x8e\xf40\x00',
       b'\xf1\x82\xa7\xf6D@\x00',
+      b'\xa7\xf6D@\x00',
       b'\xa7\xfe\xf4@\x00',
     ],
   },

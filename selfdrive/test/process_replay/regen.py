@@ -14,7 +14,7 @@ from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 from panda.python import Panda
 from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
@@ -123,8 +123,9 @@ def replay_cameras(lr, frs, disable_tqdm=False):
     ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, False),
+    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD, False),
+    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
@@ -311,15 +312,28 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   return seg_path
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=True, outdir=FAKEDATA, disable_tqdm=False):
+def regen_and_save(route, sidx, upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
     fr = FrameReader(r.camera_paths()[sidx])
+    if r.ecamera_paths()[sidx] is not None:
+      wfr = FrameReader(r.ecamera_paths()[sidx])
+    else:
+      wfr = None
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
+    device_type = next(iter(lr)).initData.deviceType
+    if device_type == 'tici':
+      wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+    else:
+      wfr = None
+  
+  frs = {'roadCameraState': fr}
+  if wfr is not None:
+    frs['wideRoadCameraState'] = wfr
+  rpath = regen_segment(lr, frs, outdir=outdir, disable_tqdm=disable_tqdm)
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
@@ -344,7 +358,8 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=True, outdir=FAKEDA
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
+  parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
   parser.add_argument("route", type=str, help="The source route")
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
-  regen_and_save(args.route, args.seg, args.upload)
+  regen_and_save(args.route, args.seg, args.upload, outdir=args.outdir)

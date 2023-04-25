@@ -1,14 +1,27 @@
 #pragma once
 
 #include <QByteArray>
+#include <QCheckBox>
 #include <QComboBox>
 #include <QDialog>
+#include <QGroupBox>
+#include <QLineEdit>
 #include <QSpinBox>
+
+#define LIGHT_THEME 1
+#define DARK_THEME 2
 
 class Settings : public QObject {
   Q_OBJECT
 
 public:
+  enum DragDirection {
+    MsbFirst,
+    LsbFirst,
+    AlwaysLE,
+    AlwaysBE,
+  };
+
   Settings();
   void save();
   void load();
@@ -21,6 +34,9 @@ public:
   int chart_series_type = 0;
   int theme = 0;
   int sparkline_range = 15; // 15 seconds
+  bool multiple_lines_bytes = true;
+  bool log_livestream = true;
+  QString log_path;
   QString last_dir;
   QString last_route_dir;
   QByteArray geometry;
@@ -28,6 +44,7 @@ public:
   QByteArray window_state;
   QStringList recent_files;
   QByteArray message_header_state;
+  DragDirection drag_direction;
 
 signals:
   void changed();
@@ -44,6 +61,9 @@ public:
   QSpinBox *chart_height;
   QComboBox *chart_series_type;
   QComboBox *theme;
+  QGroupBox *log_livestream;
+  QLineEdit *log_path;
+  QComboBox *drag_direction;
 };
 
 extern Settings settings;

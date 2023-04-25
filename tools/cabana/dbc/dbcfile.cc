@@ -149,6 +149,24 @@ void DBCFile::removeMsg(const MessageId &id) {
   msgs.erase(id.address);
 }
 
+QString DBCFile::newMsgName(const MessageId &id) {
+  return QString("NEW_MSG_") + QString::number(id.address, 16).toUpper();
+}
+
+QString DBCFile::newSignalName(const MessageId &id) {
+  auto m = msg(id);
+  assert(m != nullptr);
+
+  QString name;
+
+  for (int i = 1; /**/; ++i) {
+    name = QString("NEW_SIGNAL_%1").arg(i);
+    if (m->sig(name) == nullptr) break;
+  }
+
+  return name;
+}
+
 std::map<uint32_t, cabana::Msg> DBCFile::getMessages() {
   return msgs;
 }
@@ -186,12 +204,29 @@ QStringList DBCFile::signalNames() const {
   return ret;
 }
 
+int DBCFile::signalCount(const MessageId &id) const {
+  if (msgs.count(id.address) == 0) return 0;
+  return msgs.at(id.address).sigs.size();
+}
+
+int DBCFile::signalCount() const {
+  int total = 0;
+  for (auto const& [_, msg] : msgs) {
+    total += msg.sigs.size();
+  }
+  return total;
+}
+
 int DBCFile::msgCount() const {
   return msgs.size();
 }
 
 QString DBCFile::name() const {
-  return name_;
+  return name_.isEmpty() ? "untitled" : name_;
+}
+
+bool DBCFile::isEmpty() const {
+  return (signalCount() == 0) && name_.isEmpty();
 }
 
 void DBCFile::parseExtraInfo(const QString &content) {

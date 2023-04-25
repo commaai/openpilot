@@ -8,13 +8,11 @@ import traceback
 from tqdm import tqdm
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.car_helpers import interface_names
-from selfdrive.car.fw_versions import match_fw_to_car
+from selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
 
 
 NO_API = "NO_API" in os.environ
-VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 UNKNOWN_BRAND = "unknown"

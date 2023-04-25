@@ -24,7 +24,10 @@ public:
   ~DBCManager() {}
   bool open(SourceSet s, const QString &dbc_file_name, QString *error = nullptr);
   bool open(SourceSet s, const QString &name, const QString &content, QString *error = nullptr);
+  void close(SourceSet s);
+  void close(DBCFile *dbc_file);
   void closeAll();
+  void removeSourcesFromFile(DBCFile *dbc_file, SourceSet s);
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
@@ -33,13 +36,19 @@ public:
   void updateMsg(const MessageId &id, const QString &name, uint32_t size);
   void removeMsg(const MessageId &id);
 
+  QString newMsgName(const MessageId &id);
+  QString newSignalName(const MessageId &id);
+
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
   const cabana::Msg* msg(uint8_t source, const QString &name);
 
   QStringList signalNames() const;
+  int signalCount(const MessageId &id) const;
+  int signalCount() const;
   int msgCount() const;
   int dbcCount() const;
+  int nonEmptyDBCCount() const;
 
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
   std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
@@ -66,4 +75,18 @@ DBCManager *dbc();
 inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
+}
+
+inline QString toString(SourceSet ss) {
+  if (ss == SOURCE_ALL) {
+    return "all";
+  } else {
+    QStringList ret;
+    QList source_list = ss.values();
+    std::sort(source_list.begin(), source_list.end());
+    for (auto s : source_list) {
+      ret << QString::number(s);
+    }
+    return ret.join(", ");
+  }
 }
