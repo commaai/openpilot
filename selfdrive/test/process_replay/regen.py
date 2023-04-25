@@ -280,7 +280,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
       *cam_procs,
     ],
   }
-  # TODO add configs for modeld, dmonitoringmodeld, rawgpsd
+  # TODO add configs for modeld, dmonitoringmodeld
   fakeable_daemons = {}
   for config in CONFIGS:
     replayable_messages = set([msg for sub in config.pub_sub.values() for msg in sub])
