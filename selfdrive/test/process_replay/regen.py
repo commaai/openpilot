@@ -19,7 +19,7 @@ from panda.python import Panda
 from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -275,67 +275,15 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
       *cam_procs,
     ],
   }
-  fakeable_daemons = {
-    'controlsd': [
-      multiprocessing.Process(target=replay_service, args=('sendcan', lr)),
-      multiprocessing.Process(target=replay_service, args=('controlsState', lr)),
-      multiprocessing.Process(target=replay_service, args=('carState', lr)),
-      multiprocessing.Process(target=replay_service, args=('carControl', lr)),
-      multiprocessing.Process(target=replay_service, args=('carEvents', lr)),
-      multiprocessing.Process(target=replay_service, args=('carParams', lr)),
-    ],
-    'modeld': [
-      multiprocessing.Process(target=replay_service, args=('modelV2', lr)),
-      multiprocessing.Process(target=replay_service, args=('cameraOdometry', lr)),
-    ],
-    'dmonitoringmodeld': [
-      multiprocessing.Process(target=replay_service, args=('driverStateV2', lr)),
-    ],
-    'dmonitoringd': [
-      multiprocessing.Process(target=replay_service, args=('driverMonitoringState', lr)),
-    ],
-    'radard': [
-      multiprocessing.Process(target=replay_service, args=('radarState', lr)),
-      multiprocessing.Process(target=replay_service, args=('liveTracks', lr)),
-    ],
-    'plannerd': [
-      multiprocessing.Process(target=replay_service, args=('longitudinalPlan', lr)),
-      multiprocessing.Process(target=replay_service, args=('lateralPlan', lr)),
-      multiprocessing.Process(target=replay_service, args=('uiPlan', lr))
-    ],
-    'calibrationd': [
-      multiprocessing.Process(target=replay_service, args=('liveCalibration', lr)),
-    ],
-    'rawgpsd': [
-      multiprocessing.Process(target=replay_service, args=('qcomGnss', lr)),
-      multiprocessing.Process(target=replay_service, args=('gpsLocation', lr)),
-    ],
-    'ubloxd': [
-      multiprocessing.Process(target=replay_service, args=('ubloxGnss', lr)),
-      multiprocessing.Process(target=replay_service, args=('gpsLocationExternal', lr)),
-    ],
-    'laikad': [
-      multiprocessing.Process(target=replay_service, args=('gnssMeasurements', lr)),
-    ],
-    'locationd': [
-      multiprocessing.Process(target=replay_service, args=('liveLocationKalman', lr)),
-    ],
-    'paramsd': [
-      multiprocessing.Process(target=replay_service, args=('liveParameters', lr)),
-    ],
-    'clocksd': [
-      multiprocessing.Process(target=replay_service, args=('clocks', lr)),
-    ],
-    'torqued': [
-      multiprocessing.Process(target=replay_service, args=('liveTorqueParameters', lr)),
-    ],
-    'navd': [
-      multiprocessing.Process(target=replay_service, args=('navInstruction', lr)),
-      # this has frequency of 0 Hz in cereal/services.py
-      # multiprocessing.Process(target=replay_service, args=('navRoute', lr)),
+  # TODO add configs for modeld, dmonitoringmodeld, rawgpsd
+  fakeable_daemons = {}
+  for config in CONFIGS:
+    replayable_messages = [msg for sub in config.pub_sub.values() for msg in sub]
+    processes = [
+      multiprocessing.Process(target=replay_service, args=(msg, lr)) 
+      for msg in replayable_messages
     ]
-    # ...
-  }
+    fakeable_daemons[config.proc_name] = processes
 
   additional_fake_daemons = {}
   if daemons != "all":
@@ -362,7 +310,10 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
 
     # start procs up
     ignore = list(all_fake_daemons.keys()) \
-           + ['ui', 'manage_athenad', 'uploader', 'soundd', 'micd']
+           + ['ui', 'manage_athenad', 'uploader', 'soundd', 'micd', 'navd']
+    
+    print("Faked daemons:", ", ".join(all_fake_daemons.keys()))
+    print("Running daemons:", ", ".join([key for key in managed_processes.keys() if key not in ignore]))
 
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in all_fake_daemons.values():
