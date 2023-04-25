@@ -220,16 +220,28 @@ class Laikad:
       # TODO this is not robust to gps week rollover
       if self.gps_week is None:
         return
-      ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
-      self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
+      try:
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+        self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
+      except Exception:
+        cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
+        return
 
     else:
       if gnss_msg.which() == 'ephemeris':
         data_struct = ephemeris_structs.Ephemeris.new_message(**gnss_msg.ephemeris.to_dict())
-        ephem = GPSEphemeris(data_struct, file_name='ublox')
+        try:
+          ephem = GPSEphemeris(data_struct, file_name='ublox')
+        except Exception:
+          cloudlog.exception("Error parsing GPS ephemeris from ublox")
+          return
       elif gnss_msg.which() == 'glonassEphemeris':
         data_struct = ephemeris_structs.GlonassEphemeris.new_message(**gnss_msg.glonassEphemeris.to_dict())
-        ephem = GLONASSEphemeris(data_struct, file_name='ublox')
+        try:
+          ephem = GLONASSEphemeris(data_struct, file_name='ublox')
+        except Exception:
+          cloudlog.exception("Error parsing GLONASS ephemeris from ublox")
+          return
       else:
         cloudlog.error(f"Unsupported ephemeris type: {gnss_msg.which()}")
         return
@@ -242,9 +254,11 @@ class Laikad:
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
       est_pos = self.last_fix_pos
+      correct_delay = True
     else:
       est_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
-    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+      correct_delay = False
+    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, correct_delay=correct_delay)
     return corrected_measurements
 
   def calc_fix(self, t, measurements):
