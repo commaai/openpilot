@@ -41,13 +41,12 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {};
   inline bool liveStreaming() const { return route() == nullptr; }
-  inline double lastEventSecond() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  virtual double totalSeconds() const { return 0; }
+  virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
