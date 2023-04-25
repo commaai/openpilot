@@ -117,48 +117,71 @@ def replay_service(s, msgs):
       rk.keep_time()
 
 
-def replay_cameras(lr, frs, disable_tqdm=False):
+def replay_single_camera(s, stream, dt, vipc_server, frames, size):
+  services = [(s, stream)]
+  pm = messaging.PubMaster([s for s, _ in services])
+  rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+
+  img = b"\x00" * int(size[0] * size[1] * 3 / 2)
+  while True:
+    if frames is not None:
+      img = frames[rk.frame % len(frames)]
+
+    rk.keep_time()
+
+    m = messaging.new_message(s)
+    msg = getattr(m, s)
+    msg.frameId = rk.frame
+    msg.timestampSof = m.logMonoTime
+    msg.timestampEof = m.logMonoTime
+    pm.send(s, m)
+
+    vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+
+  
+def replay_dual_camera(keys, streams, frames, sizes, dt, vipc_server):
+  if len(keys) != len(streams) != len(frames) != len(sizes) != 2:
+    raise ValueError("keys, streams, frames, and sizes must all be length 2")
+
+  pm = messaging.PubMaster(keys)
+  rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+
+  size1, size2 = sizes
+  frames1, frames2 = frames
+
+  img1 = b"\x00" * int(size1[0] * size1[1] * 3 / 2)
+  img2 = b"\x00" * int(size2[0] * size2[1] * 3 / 2)
+  while True:
+    if frames1 is not None:
+      img1 = frames1[rk.frame % len(frames1)]
+    if frames2 is not None:
+      img2 = frames2[rk.frame % len(frames2)]
+    
+    rk.keep_time()
+
+    logMonoTime = int(sec_since_boot() * 1e9)
+    for index in range(len(keys)):
+      s, stream, img = keys[index], streams[index], [img1, img2][index]
+      m = messaging.new_message(s)
+      m.logMonoTime = logMonoTime
+      msg = getattr(m, s)
+      msg.frameId = rk.frame
+      msg.timestampSof = m.logMonoTime
+      msg.timestampEof = m.logMonoTime
+      pm.send(s, m)
+
+      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
+
+
+def replay_eon_cameras(frs, disable_tqdm=False):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
-  ]
-  tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, False),
-    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD, False),
-    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
-    services = [(s, stream)]
-    if use_extra_client:
-      services.append(("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD))
-    pm = messaging.PubMaster([s for s, _ in services])
-    rk = Ratekeeper(1 / dt, print_delay_threshold=None)
-
-    img = b"\x00" * int(size[0] * size[1] * 3 / 2)
-    while True:
-      if frames is not None:
-        img = frames[rk.frame % len(frames)]
-
-      rk.keep_time()
-
-      for s, stream in services:
-        m = messaging.new_message(s)
-        msg = getattr(m, s)
-        msg.frameId = rk.frame
-        msg.timestampSof = m.logMonoTime
-        msg.timestampEof = m.logMonoTime
-        pm.send(s, m)
-
-        vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-
-  init_data = [m for m in lr if m.which() == 'initData'][0]
-  cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
-
-  # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream, use_extra_client) in cameras:
+  for (s, dt, size, stream) in eon_cameras:
     fr = frs.get(s, None)
 
     frames = None
@@ -170,13 +193,61 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
-    if use_extra_client:
-      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
-    p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
+    p.append(multiprocessing.Process(target=replay_single_camera,
+                                     args=(s, stream, dt, vs, frames, size)))
 
   vs.start_listener()
   return vs, p
+
+def replay_tici_cameras(frs, disable_tqdm):
+  tici_cameras = {
+    "roadCameraState": (DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    "wideRoadCameraState": (DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    "driverCameraState": (DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER)
+  }
+  tici_camera_groups = [["roadCameraState", "wideRoadCameraState"], ["driverCameraState"]]
+
+  p = []
+  state_frames = {}
+  vs = VisionIpcServer("camerad")
+  for s, (_, size, stream) in tici_cameras.items():
+    fr = frs.get(s, None)
+
+    frames = None
+    if fr is not None:
+      print(f"Decompressing frames {s}")
+      frames = []
+      for i in tqdm(range(fr.frame_count), disable=disable_tqdm):
+        img = fr.get(i, pix_fmt='nv12')[0]
+        frames.append(img.flatten().tobytes())
+
+    state_frames[s] = frames
+    vs.create_buffers(stream, 40, False, size[0], size[1])
+
+  for group in tici_camera_groups:
+    if len(group) == 1:
+      s, (dt, size, stream) = group[0], tici_cameras[group[0]]
+      p.append(multiprocessing.Process(
+        target=replay_single_camera,
+        args=(s, stream, dt, vs, state_frames[s], size)))
+    elif len(group) == 2:
+      s1, s2 = group
+      dt1, size1, stream1 = tici_cameras[s1]
+      dt2, size2, stream2 = tici_cameras[s2]
+      assert(dt1 == dt2)
+      p.append(multiprocessing.Process(
+        target=replay_dual_camera,
+        args=([s1, s2], [stream1, stream2], [state_frames[s1], state_frames[s2]], [size1, size2], dt1, vs)))
+    
+  vs.start_listener()
+  return vs, p
+  
+
+def replay_cameras(frs, is_tici=False, disable_tqdm=False):
+  if is_tici:
+    return replay_tici_cameras(frs, disable_tqdm)
+  else:
+    return replay_eon_cameras(frs, disable_tqdm)
 
 
 def migrate_carparams(lr):
@@ -246,11 +317,14 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   CP = [m for m in lr if m.which() == 'carParams'][0].carParams
   controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
   liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
+  initData = [m for m in lr if m.which() == 'initData'][0].initData
+  is_tici = initData.deviceType == 'tici'
 
   setup_env(CP=CP, controlsState=controlsState)
+  params.put_bool("WideCameraOnly", not is_tici)
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
-  vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
+  vs, cam_procs = replay_cameras(frs, is_tici=is_tici, disable_tqdm=disable_tqdm)
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_sensor_event, args=('accelerometer', lr)),
