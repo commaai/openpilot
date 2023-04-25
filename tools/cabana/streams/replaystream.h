@@ -1,7 +1,6 @@
 #pragma once
 
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/settings.h"
 
 class ReplayStream : public AbstractStream {
   Q_OBJECT
@@ -15,16 +14,13 @@ public:
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   inline VisionStreamType visionStreamType() const override { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
-  inline double totalSeconds() const override { return replay->totalSeconds(); }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const override { return replay->currentSeconds(); }
-  inline QDateTime currentDateTime() const override { return replay->currentDateTime(); }
   inline const Route *route() const override { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  const std::vector<Event*> *rawEvents() const override { return replay->events(); }
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 

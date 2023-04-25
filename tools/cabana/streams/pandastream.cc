@@ -79,11 +79,8 @@ void PandaStream::streamThread() {
       canData[i].setSrc(raw_can_data[i].src);
     }
 
-    {
-      std::lock_guard lk(lock);
-      auto bytes = msg.toBytes();
-      handleEvent(messages.emplace_back((const char*)bytes.begin(), bytes.size()).event);
-    }
+    auto bytes = msg.toBytes();
+    handleEvent((const char*)bytes.begin(), bytes.size());
 
     panda->send_heartbeat(false);
   }

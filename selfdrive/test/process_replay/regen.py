@@ -400,7 +400,10 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
     fr = FrameReader(r.camera_paths()[sidx])
-    wfr = FrameReader(r.ecamera_paths()[sidx])
+    if r.ecamera_paths()[sidx] is not None:
+      wfr = FrameReader(r.ecamera_paths()[sidx])
+    else:
+      wfr = None
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
