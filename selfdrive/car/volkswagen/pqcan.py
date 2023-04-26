@@ -12,9 +12,9 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   return packer.make_can_msg("HCA_1", bus, values)
 
 
-def create_lka_hud_control(packer, bus, CP, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
+def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
   values = {}
-  if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
+  if len(ldw_stock_values):
     values = {s: ldw_stock_values[s] for s in [
       "LDW_SW_Warnung_links",   # Blind spot in warning mode on left side due to lane departure
       "LDW_SW_Warnung_rechts",  # Blind spot in warning mode on right side due to lane departure
