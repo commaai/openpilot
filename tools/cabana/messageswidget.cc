@@ -27,9 +27,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
-
   view->header()->setSectionsMovable(true);
-  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -56,7 +54,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
     view->setUniformRowHeights(!settings.multiple_lines_bytes);
-    model->fetchData(); // Why?
+
+    // Reset model to force recalculation of the width of the bytes column
+    model->forceResetModel();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
@@ -336,6 +336,11 @@ void MessageListModel::reset() {
   filter_str.clear();
   msgs.clear();
   clearSuppress();
+  endResetModel();
+}
+
+void MessageListModel::forceResetModel() {
+  beginResetModel();
   endResetModel();
 }
 

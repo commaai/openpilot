@@ -38,6 +38,7 @@ public:
   void suppress();
   void clearSuppress();
   void reset();
+  void forceResetModel();
   QList<MessageId> msgs;
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
