@@ -2,8 +2,10 @@
 
 #include <QAbstractTableModel>
 #include <QCheckBox>
+#include <QContextMenuEvent>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMenu>
 #include <QSet>
 #include <QTreeView>
 
@@ -43,6 +45,7 @@ public:
   void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
   void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
   void updateBytesSectionSize();
+  void headerContextMenuEvent(const QPoint &pos);
 };
 
 class MessagesWidget : public QWidget {
