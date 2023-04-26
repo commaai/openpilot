@@ -1,4 +1,3 @@
-import copy
 import crcmod
 from selfdrive.car.nissan.values import CAR
 
@@ -23,7 +22,22 @@ def create_steering_control(packer, apply_steer, frame, steer_on, lkas_max_torqu
 
 
 def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
-  values = copy.copy(cruise_throttle_msg)
+  values = {s: cruise_throttle_msg[s] for s in [
+    "PROPILOT_BUTTON",
+    "CANCEL_BUTTON",
+    "GAS_PEDAL_INVERTED",
+    "SET_BUTTON",
+    "RES_BUTTON",
+    "FOLLOW_DISTANCE_BUTTON",
+    "NO_BUTTON_PRESSED",
+    "GAS_PEDAL",
+    "USER_BRAKE_PRESSED",
+    "NEW_SIGNAL_2",
+    "GAS_PRESSED_INVERTED",
+    "unsure1",
+    "unsure2",
+    "unsure3",
+  ]}
   can_bus = 1 if car_fingerprint == CAR.ALTIMA else 2
 
   values["CANCEL_BUTTON"] = 1
@@ -37,7 +51,12 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
 
 
 def create_cancel_msg(packer, cancel_msg, cruise_cancel):
-  values = copy.copy(cancel_msg)
+  values = {s: cancel_msg[s] for s in [
+    "CANCEL_SEATBELT",
+    "NEW_SIGNAL_1",
+    "NEW_SIGNAL_2",
+    "NEW_SIGNAL_3",
+  ]}
 
   if cruise_cancel:
     values["CANCEL_SEATBELT"] = 1
