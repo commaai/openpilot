@@ -99,9 +99,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
-  // if (int row = model->msgs.indexOf(msg_id); row != -1) {
-  //   view->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
-  // }
+  if (int row = model->msgs.indexOf(msg_id); row != -1) {
+    view->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+  }
 }
 
 void MessagesWidget::updateSuppressedButtons() {
