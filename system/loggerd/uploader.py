@@ -35,6 +35,7 @@ fake_upload = os.getenv("FAKEUPLOAD") is not None
 class FakeResponse:
   def __init__(self):
     self.status_code = 200
+    self.request = {"headers": {"Content-Length": "0"}}
 
 
 UploadResponse = Union[requests.Response, FakeResponse]
