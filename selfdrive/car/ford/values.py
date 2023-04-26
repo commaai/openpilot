@@ -12,7 +12,7 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  STEER_STEP = 2        # LateralMotionControl, 50Hz
+  STEER_STEP = 5        # LateralMotionControl, 20Hz
   LKA_STEP = 3          # Lane_Assist_Data1, 33Hz
   ACC_CONTROL_STEP = 2  # ACCDATA, 50Hz
   LKAS_UI_STEP = 100    # IPMA_Data, 1Hz
