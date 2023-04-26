@@ -143,6 +143,7 @@ def create_es_dashstatus(packer, dashstatus_msg):
 def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   values = {s: infotainmentstatus_msg[s] for s in [
+    "COUNTER",
     "LKAS_State_Infotainment",
     "LKAS_Blue_Lines",
     "Signal1",
