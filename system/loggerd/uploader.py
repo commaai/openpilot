@@ -204,7 +204,7 @@ class Uploader:
           self.last_speed = 0
           cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
         else:
-          content_length = int(stat.request.headers.get('Content-Length', 0))
+          content_length = int(stat.request.headers.get("Content-Length", 0))
           self.last_speed = (content_length / 1e6) / self.last_time
           cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered, speed=self.last_speed)
         success = True
