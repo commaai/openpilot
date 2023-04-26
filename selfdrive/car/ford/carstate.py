@@ -216,7 +216,7 @@ class CarState(CarStateBase):
       ("FcwMemStat_B_Actl", "ACCDATA_3"),           # FCW enabled setting
       ("AccTGap_B_Dsply", "ACCDATA_3"),             # ACC time gap display setting
       ("CadsAlignIncplt_B_Actl", "ACCDATA_3"),
-      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC follow mode display setting
+      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC lead icon
       ("CadsRadrBlck_B_Actl", "ACCDATA_3"),
       ("CmbbPostEvnt_B_Dsply", "ACCDATA_3"),        # AEB event status
       ("AccStopMde_B_Dsply", "ACCDATA_3"),          # ACC stop mode display setting
@@ -224,7 +224,7 @@ class CarState(CarStateBase):
       ("FcwMsgTxt_D_Rq", "ACCDATA_3"),              # FCW text
       ("AccWarn_D_Dsply", "ACCDATA_3"),             # ACC warning
       ("FcwVisblWarn_B_Rq", "ACCDATA_3"),           # FCW visible alert
-      ("FcwAudioWarn_B_Rq", "ACCDATA_3"),           # FCW audio alert
+      ("FcwAudioWarn_B_Rq", "ACCDATA_3"),           # FCW audible alert
       ("AccTGap_D_Dsply", "ACCDATA_3"),             # ACC time gap
       ("AccMemEnbl_B_RqDrv", "ACCDATA_3"),          # ACC adaptive/normal setting
       ("FdaMem_B_Stat", "ACCDATA_3"),               # FDA enabled setting
