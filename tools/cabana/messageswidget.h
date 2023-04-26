@@ -43,6 +43,8 @@ public:
 
 private:
   void sortMessages(QList<MessageId> &new_msgs);
+  static bool matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters);
+
   QMap<int, QString> filter_str;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;

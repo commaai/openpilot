@@ -215,58 +215,59 @@ void MessageListModel::sortMessages(QList<MessageId> &new_msgs) {
   }
 }
 
-void MessageListModel::fetchData() {
-  auto contains = [](const MessageId &id, const CanData &data, QMap<int, QString> &f) {
-    auto cs = Qt::CaseInsensitive;
+bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters) {
+  auto cs = Qt::CaseInsensitive;
 
-    bool match = true;
-    bool name_match;
-    bool convert_ok;
+  bool match = true;
+  bool name_match;
+  bool convert_ok;
 
-    // TODO: support advanced filtering such as ranges (e.g. >50, 100-200, 100-, 5xx, etc)
+  // TODO: support advanced filtering such as ranges (e.g. >50, 100-200, 100-, 5xx, etc)
 
-    for (int column = Column::NAME; column <= Column::DATA; column++) {
-      if (!f.contains(column)) continue;
-      QString txt = f[column];
+  for (int column = Column::NAME; column <= Column::DATA; column++) {
+    if (!filters.contains(column)) continue;
+    QString txt = filters[column];
 
-      switch (column) {
-        case Column::NAME:
-          name_match = msgName(id).contains(txt, cs);
+    switch (column) {
+      case Column::NAME:
+        name_match = msgName(id).contains(txt, cs);
 
-          // Message signals
-          if (const auto msg = dbc()->msg(id)) {
-            for (auto s : msg->getSignals()) {
-              if (s->name.contains(txt, cs)) {
-                name_match = true;
-                break;
-              }
+        // Message signals
+        if (const auto msg = dbc()->msg(id)) {
+          for (auto s : msg->getSignals()) {
+            if (s->name.contains(txt, cs)) {
+              name_match = true;
+              break;
             }
           }
-          if (!name_match) match = false;
-          break;
-        case Column::SOURCE:
-          {
-            int source = txt.toInt(&convert_ok);
-            if (id.source != source || !convert_ok) match = false;
-          }
-          break;
-        case Column::ADDRESS:
-          {
-            int address = txt.toInt(&convert_ok, 16);
-            if (id.address != address || !convert_ok) match = false;
-          }
-          break;
-        case Column::DATA:
-          if (!QString(data.dat.toHex()).contains(txt, cs)) match = false;
-          break;
-      }
+        }
+        if (!name_match) match = false;
+        break;
+      case Column::SOURCE:
+        {
+          int source = txt.toInt(&convert_ok);
+          if (id.source != source || !convert_ok) match = false;
+        }
+        break;
+      case Column::ADDRESS:
+        {
+          int address = txt.toInt(&convert_ok, 16);
+          if (id.address != address || !convert_ok) match = false;
+        }
+        break;
+      case Column::DATA:
+        if (!QString(data.dat.toHex()).contains(txt, cs)) match = false;
+        break;
     }
-    return match;
-  };
+  }
+  return match;
+}
 
+
+void MessageListModel::fetchData() {
   QList<MessageId> new_msgs;
   for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
-    if (contains(it.key(), it.value(), filter_str)) {
+    if (matchMessage(it.key(), it.value(), filter_str)) {
       new_msgs.push_back(it.key());
     }
   }
