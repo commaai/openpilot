@@ -32,7 +32,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
-  void setFilterString(const QString &string);
+  void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs = nullptr);
   void sortMessages();
   void suppress();
@@ -42,7 +42,7 @@ public:
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
-  QString filter_str;
+  QMap<int, QString> filter_str;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
@@ -72,7 +72,12 @@ public:
   void updateGeometries() override;
   QSize sizeHint() const override;
 
+signals:
+  void filtersUpdated(const QMap<int, QString> &filters);
+
 private:
+  void updateFilters();
+
   QMap<int, QLineEdit *> editors;
   QMap<int, QSet<QString>> values;
   MessageListModel *model;
@@ -96,7 +101,6 @@ protected:
   MessageView *view;
   MessageViewHeader *header;
   std::optional<MessageId> current_msg_id;
-  QLineEdit *filter;
   QCheckBox *multiple_lines_bytes;
   MessageListModel *model;
   QPushButton *suppress_add;

@@ -1,5 +1,4 @@
 #include "tools/cabana/messageswidget.h"
-
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
@@ -8,18 +7,6 @@
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0 ,0, 0, 0);
-
-  // message filter
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->addWidget(filter = new QLineEdit(this));
-  QRegularExpression re("\\S+");
-  filter->setValidator(new QRegularExpressionValidator(re, this));
-  filter->setClearButtonEnabled(true);
-  filter->setPlaceholderText(tr("filter messages"));
-  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
-  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
-  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
-  main_layout->addLayout(title_layout);
 
   // message table
   view = new MessageView(this);
@@ -55,10 +42,15 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   suppress_clear = new QPushButton();
   suppress_layout->addWidget(suppress_add);
   suppress_layout->addWidget(suppress_clear);
+
+  suppress_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
+  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
+  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
+
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
-  QObject::connect(filter, &QLineEdit::textEdited, model, &MessageListModel::setFilterString);
+  QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
@@ -126,7 +118,6 @@ void MessagesWidget::reset() {
   current_msg_id = std::nullopt;
   view->selectionModel()->clear();
   model->reset();
-  filter->clear();
   updateSuppressedButtons();
 }
 
@@ -184,23 +175,59 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   return {};
 }
 
-void MessageListModel::setFilterString(const QString &string) {
-  auto contains = [](const MessageId &id, const QString &txt) {
+void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
+  auto contains = [](const MessageId &id, const CanData &data, QMap<int, QString> &f) {
     auto cs = Qt::CaseInsensitive;
-    if (id.toString().contains(txt, cs) || msgName(id).contains(txt, cs)) return true;
-    // Search by signal name
-    if (const auto msg = dbc()->msg(id)) {
-      for (auto s : msg->getSignals()) {
-        if (s->name.contains(txt, cs)) return true;
+
+    bool match = true;
+    bool name_match;
+    bool convert_ok;
+
+    // TODO: support advanced filtering such as ranges (e.g. >50, 100-200, 100-, 5xx, etc)
+
+    for (int column = Column::NAME; column <= Column::DATA; column++) {
+      if (!f.contains(column)) continue;
+      QString txt = f[column];
+
+      switch (column) {
+        case Column::NAME:
+          name_match = msgName(id).contains(txt, cs);
+
+          // Message signals
+          if (const auto msg = dbc()->msg(id)) {
+            for (auto s : msg->getSignals()) {
+              if (s->name.contains(txt, cs)) {
+                name_match = true;
+                break;
+              }
+            }
+          }
+          if (!name_match) match = false;
+          break;
+        case Column::SOURCE:
+          {
+            int source = txt.toInt(&convert_ok);
+            if (id.source != source || !convert_ok) match = false;
+          }
+          break;
+        case Column::ADDRESS:
+          {
+            int address = txt.toInt(&convert_ok, 16);
+            if (id.address != address || !convert_ok) match = false;
+          }
+          break;
+        case Column::DATA:
+          if (!QString(data.dat.toHex()).contains(txt, cs)) match = false;
+          break;
       }
     }
-    return false;
+    return match;
   };
 
-  filter_str = string;
+  filter_str = filters;
   msgs.clear();
   for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
-    if (filter_str.isEmpty() || contains(it.key(), filter_str)) {
+    if (contains(it.key(), it.value(), filter_str)) {
       msgs.push_back(it.key());
     }
   }
@@ -245,6 +272,8 @@ void MessageListModel::sortMessages() {
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   int prev_row_count = msgs.size();
+
+  // TODO: Run filter on new messages that come in
   if (filter_str.isEmpty() && msgs.size() != can->last_msgs.size()) {
     msgs = can->last_msgs.keys();
   }
@@ -288,7 +317,7 @@ void MessageListModel::clearSuppress() {
 
 void MessageListModel::reset() {
   beginResetModel();
-  filter_str = "";
+  filter_str.clear();
   msgs.clear();
   clearSuppress();
   endResetModel();
@@ -375,17 +404,33 @@ MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) :
 
 void MessageViewHeader::showEvent(QShowEvent *e) {
 
-  for (int i=0; i < count(); i++) {
+  for (int i = 0; i < count(); i++) {
     if (!editors[i]) {
       editors[i] = new QLineEdit(this);
 
       QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
       editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
+
+      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
     }
     editors[i]->show();
   }
   QHeaderView::showEvent(e);
 }
+
+void MessageViewHeader::updateFilters() {
+  QMap<int, QString> filters;
+  for (int i = 0; i < count(); i++) {
+    if (editors[i]) {
+      QString filter = editors[i]->text();
+      if (!filter.isEmpty()) {
+        filters[i] = filter;
+      }
+    }
+  }
+  emit filtersUpdated(filters);
+}
+
 
 
 void MessageViewHeader::handleSectionResized(int logicalIndex, int oldSize, int newSize) {
