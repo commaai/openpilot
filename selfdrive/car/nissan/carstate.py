@@ -14,8 +14,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    self.lkas_hud_msg = None
-    self.lkas_hud_info_msg = None
+    self.lkas_hud_msg = {}
+    self.lkas_hud_info_msg = {}
 
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
