@@ -219,7 +219,6 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
   auto cs = Qt::CaseInsensitive;
 
   bool match = true;
-  bool name_match;
   bool convert_ok;
 
   // TODO: support advanced filtering such as ranges (e.g. >50, 100-200, 100-, 5xx, etc)
@@ -230,18 +229,20 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
 
     switch (column) {
       case Column::NAME:
-        name_match = msgName(id).contains(txt, cs);
+        {
+          bool name_match = msgName(id).contains(txt, cs);
 
-        // Message signals
-        if (const auto msg = dbc()->msg(id)) {
-          for (auto s : msg->getSignals()) {
-            if (s->name.contains(txt, cs)) {
-              name_match = true;
-              break;
+          // Message signals
+          if (const auto msg = dbc()->msg(id)) {
+            for (auto s : msg->getSignals()) {
+              if (s->name.contains(txt, cs)) {
+                name_match = true;
+                break;
+              }
             }
           }
+          if (!name_match) match = false;
         }
-        if (!name_match) match = false;
         break;
       case Column::SOURCE:
         {
@@ -256,7 +257,18 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
         }
         break;
       case Column::DATA:
-        if (!QString(data.dat.toHex()).contains(txt, cs)) match = false;
+        {
+          bool data_match = false;
+          data_match |= QString(data.dat.toHex()).contains(txt, cs);
+
+          QRegularExpression re(txt);
+          if (re.isValid()) {
+            data_match |= re.match(QString(data.dat.toHex())).hasMatch();
+            data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
+          }
+
+          if (!data_match) match = false;
+        }
         break;
     }
   }
