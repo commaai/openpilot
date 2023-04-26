@@ -216,7 +216,7 @@ void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, Q
 }
 
 static std::pair<unsigned int, unsigned int> parseRange(QString &filter, bool *ok = nullptr, int base = 10) {
-  // Parse out filter string into a range (e.g. "1-3" -> {1, 3}, "1-" -> {1, inf})
+  // Parse out filter string into a range (e.g. "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf})
   bool ok1 = true, ok2 = true;
   unsigned int parsed1 = std::numeric_limits<unsigned int>::min();
   unsigned int parsed2 = std::numeric_limits<unsigned int>::max();
