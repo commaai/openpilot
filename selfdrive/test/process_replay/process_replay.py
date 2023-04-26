@@ -565,6 +565,7 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
+  log_msgs = []
   try:
     # Wait for process to startup
     with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
