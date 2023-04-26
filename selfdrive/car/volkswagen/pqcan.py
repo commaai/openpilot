@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import PQ_CARS
+
 
 def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
@@ -34,7 +34,7 @@ def create_lka_hud_control(packer, bus, CP, ldw_stock_values, enabled, steering_
   return packer.make_can_msg("LDW_Status", bus, values)
 
 
-def create_acc_buttons_control(packer, bus, CP, gra_stock_values, counter, cancel=False, resume=False):
+def create_acc_buttons_control(packer, bus, gra_stock_values, counter, cancel=False, resume=False):
   values = {s: gra_stock_values[s] for s in [
     "GRA_Hauptschalt",      # ACC button, on/off
     "GRA_Typ_Hauptschalt",  # ACC button, momentary vs latching

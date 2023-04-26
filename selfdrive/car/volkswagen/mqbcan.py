@@ -1,3 +1,6 @@
+from cereal import car
+
+
 def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
     "HCA_01_Status_HCA": 5 if lkas_enabled else 3,
@@ -10,8 +13,16 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   return packer.make_can_msg("HCA_01", bus, values)
 
 
-def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
-  values = ldw_stock_values.copy()
+def create_lka_hud_control(packer, bus, CP, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
+  values = {}
+  if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
+    values = {s: ldw_stock_values[s] for s in [
+      "LDW_SW_Warnung_links",   # Blind spot in warning mode on left side due to lane departure
+      "LDW_SW_Warnung_rechts",  # Blind spot in warning mode on right side due to lane departure
+      "LDW_Seite_DLCTLC",       # Direction of most likely lane departure (left or right)
+      "LDW_DLC",                # Lane departure, distance to line crossing
+      "LDW_TLC",                # Lane departure, time to line crossing
+    ]}
 
   values.update({
     "LDW_Status_LED_gelb": 1 if enabled and steering_pressed else 0,
