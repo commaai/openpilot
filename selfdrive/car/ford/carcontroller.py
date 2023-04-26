@@ -71,13 +71,11 @@ class CarController:
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-      precharge_brake = accel < -0.1
-      if accel > -0.5:
-        gas = accel
-        decel = False
-      else:
-        gas = -5.0
-        decel = True
+      gas = accel
+      decel = accel < 0
+      precharge_brake = decel  # accel < -0.1
+      if accel < -0.5:
+        gas = -5
 
       can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel, CS.out.cruiseState.standstill))
 
