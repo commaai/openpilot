@@ -26,7 +26,7 @@ def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
   return CV.MPH_TO_MS if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.KPH_TO_MS
 
 
-def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
+def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake_chime):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
   brake_rq = apply_brake > 0
@@ -41,7 +41,7 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
     "COMPUTER_BRAKE_REQUEST": brake_rq,
     "SET_ME_1": 1,
     "BRAKE_LIGHTS": brakelights,
-    "CHIME": stock_brake["CHIME"] if fcw else 0,  # send the chime for stock fcw
+    "CHIME": stock_brake_chime if fcw else 0,  # send the chime for stock fcw
     "FCW": fcw << 1,  # TODO: Why are there two bits for fcw?
     "AEB_REQ_1": 0,
     "AEB_REQ_2": 0,

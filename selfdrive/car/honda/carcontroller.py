@@ -229,7 +229,7 @@ class CarController:
           pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
                                                          pcm_override, pcm_cancel_cmd, fcw_display,
-                                                         self.CP.carFingerprint, CS.stock_brake))
+                                                         self.CP.carFingerprint, CS.stock_brake_chime))
           self.apply_brake_last = apply_brake
           self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
 

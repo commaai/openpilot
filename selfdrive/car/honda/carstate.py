@@ -294,7 +294,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint not in HONDA_BOSCH:
       ret.stockFcw = cp_cam.vl["BRAKE_COMMAND"]["FCW"] != 0
       self.acc_hud = cp_cam.vl["ACC_HUD"]
-      self.stock_brake = cp_cam.vl["BRAKE_COMMAND"]
+      self.stock_brake_chime = cp_cam.vl["BRAKE_COMMAND"]["CHIME"]
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       self.lkas_hud = cp_cam.vl["LKAS_HUD"]
 
