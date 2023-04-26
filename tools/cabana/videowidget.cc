@@ -113,13 +113,17 @@ QWidget *VideoWidget::createCameraWidget() {
   l->addLayout(slider_layout);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
+  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
-    end_time_label->setText(utils::formatSeconds(can->totalSeconds()));
-    slider->setRange(0, can->totalSeconds() * 1000);
-  });
+  QObject::connect(can, &AbstractStream::streamStarted, [this]() { setMaximumTime(can->totalSeconds()); });
   return w;
+}
+
+void VideoWidget::setMaximumTime(double sec) {
+  maximum_time = sec;
+  end_time_label->setText(utils::formatSeconds(sec));
+  slider->setRange(0, sec * 1000);
 }
 
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
@@ -127,7 +131,7 @@ void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
 
   if (!is_zoomed) {
     min = 0;
-    max = can->totalSeconds();
+    max = maximum_time;
   }
   end_time_label->setText(utils::formatSeconds(max));
   slider->setRange(min * 1000, max * 1000);
@@ -180,10 +184,15 @@ void Slider::streamStarted() {
 
 void Slider::loadThumbnails() {
   const auto &segments = can->route()->segments();
+  double max_time = 0;
   for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
     LogReader log;
     std::string qlog = it->second.qlog.toStdString();
     if (!qlog.empty() && log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
+      if (max_time == 0 && !log.events.empty()) {
+        max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
+        emit updateMaximumTime(max_time);
+      }
       for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
         if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
           auto thumb = (*ev)->event.getThumbnail();
