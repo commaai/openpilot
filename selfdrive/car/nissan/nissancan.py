@@ -65,7 +65,7 @@ def create_cancel_msg(packer, cancel_msg, cruise_cancel):
 
 
 def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart):
-  values = {k: lkas_hud_msg[k] for k in [
+  values = {s: lkas_hud_msg[s] for s in [
     "LARGE_WARNING_FLASHING",
     "SIDE_RADAR_ERROR_FLASHING1",
     "SIDE_RADAR_ERROR_FLASHING2",
