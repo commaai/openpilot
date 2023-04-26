@@ -182,7 +182,6 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
 }
 
 void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, QList<MessageId> &new_msgs) {
-  // QList<MessageId> new_msgs = msgs;
   if (sort_column == Column::NAME) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{msgName(l), l};
@@ -216,27 +215,48 @@ void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, Q
   }
 }
 
+static std::pair<unsigned int, unsigned int> parseRange(QString &filter, bool *ok = nullptr, int base = 10) {
+  // Parse out filter string into a range (e.g. "1-3" -> {1, 3}, "1-" -> {1, inf})
+  bool ok1 = true, ok2 = true;
+  unsigned int parsed1 = std::numeric_limits<unsigned int>::min();
+  unsigned int parsed2 = std::numeric_limits<unsigned int>::max();
+
+  auto s = filter.split('-');
+  if (s.size() == 1) {
+    parsed1 = s[0].toUInt(ok, base);
+    return {parsed1, parsed1};
+  } else if (s.size() == 2) {
+    if (!s[0].isEmpty()) parsed1 = s[0].toUInt(&ok1, base);
+    if (!s[1].isEmpty()) parsed2 = s[1].toUInt(&ok2, base);
+
+    *ok = ok1 & ok2;
+    return {parsed1, parsed2};
+  } else {
+    *ok = false;
+    return {0, 0};
+  }
+}
+
 bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters) {
   auto cs = Qt::CaseInsensitive;
-
   bool match = true;
   bool convert_ok;
-
-  // TODO: support advanced filtering such as ranges (e.g. >50, 100-200, 100-, 5xx, etc)
 
   for (int column = Column::NAME; column <= Column::DATA; column++) {
     if (!filters.contains(column)) continue;
     QString txt = filters[column];
 
+    QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
+
     switch (column) {
       case Column::NAME:
         {
-          bool name_match = msgName(id).contains(txt, cs);
+          bool name_match = re.match(msgName(id)).hasMatch();
 
           // Message signals
           if (const auto msg = dbc()->msg(id)) {
             for (auto s : msg->getSignals()) {
-              if (s->name.contains(txt, cs)) {
+              if (re.match(s->name).hasMatch()) {
                 name_match = true;
                 break;
               }
@@ -247,26 +267,43 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
         break;
       case Column::SOURCE:
         {
-          int source = txt.toInt(&convert_ok);
-          if (id.source != source || !convert_ok) match = false;
+          auto source = parseRange(txt, &convert_ok);
+          bool source_match = convert_ok && (id.source >= source.first && id.source <= source.second);
+          if (!source_match) match = false;
         }
         break;
       case Column::ADDRESS:
         {
-          int address = txt.toInt(&convert_ok, 16);
-          if (id.address != address || !convert_ok) match = false;
+          QString address_str = QString::number(id.address, 16);
+          bool address_re_match = re.match(address_str).capturedLength() == address_str.length();
+
+          auto address = parseRange(txt, &convert_ok, 16);
+          bool address_match = convert_ok && (id.address >= address.first && id.address <= address.second);
+
+          if (!address_re_match && !address_match) match = false;
+        }
+        break;
+      case Column::FREQ:
+        {
+          // TODO: Hide stale messages?
+          auto freq = parseRange(txt, &convert_ok);
+          bool freq_match = convert_ok && (data.freq >= freq.first && data.freq <= freq.second);
+          if (!freq_match) match = false;
+        }
+        break;
+      case Column::COUNT:
+        {
+          auto count = parseRange(txt, &convert_ok);
+          bool count_match = convert_ok && (data.count >= count.first && data.count <= count.second);
+          if (!count_match) match = false;
         }
         break;
       case Column::DATA:
         {
           bool data_match = false;
           data_match |= QString(data.dat.toHex()).contains(txt, cs);
-
-          QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
-          if (re.isValid()) {
-            data_match |= re.match(QString(data.dat.toHex())).hasMatch();
-            data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
-          }
+          data_match |= re.match(QString(data.dat.toHex())).hasMatch();
+          data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
 
           if (!data_match) match = false;
         }
