@@ -227,7 +227,6 @@ class TestOnroad(unittest.TestCase):
 
     # Ensure there's no missing procs
     all_procs = set([p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning])
-    procs_copy = PROCS.copy()
     for p in all_procs:
       with self.subTest(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
