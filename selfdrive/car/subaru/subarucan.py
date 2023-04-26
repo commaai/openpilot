@@ -110,7 +110,7 @@ def create_es_dashstatus(packer, dashstatus_msg):
     "LKAS_State_Msg",
     "Signal2",
     "Cruise_Soft_Disable",
-    # "EyeSight_Status_Msg",  # TODO: missing
+    "Cruise_Status_Msg",
     "Signal3",
     "Cruise_Distance",
     "Signal4",
