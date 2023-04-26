@@ -5,6 +5,7 @@ from flask import Flask, Response, render_template
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
+from system.camerad.snapshot.snapshot import yuv_to_rgb, extract_image
 
 IMG_H, IMG_W = 540, 960
 
@@ -23,7 +24,7 @@ import numpy as np
 
 class VideoCamera(object):
   def __init__(self):
-    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
+    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
 
 
   def __del__(self):
@@ -37,9 +38,14 @@ class VideoCamera(object):
     if yuv_img_raw is None or not yuv_img_raw.any():
       return np.zeros((IMG_H, IMG_W, 3), np.uint8)
 
-    imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
-    imgff = imgff.reshape((self.vipc_client.height * 3 // 2, self.vipc_client.width))
-    frame = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_NV12)
+    #imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
+
+    #imgff = imgff[:3493536].reshape((self.vipc_client.height * 3 // 2, self.vipc_client.width))
+    #frame = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_NV12)
+    c = self.vipc_client
+    frame = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
+    #frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
+
     frame = cv2.resize(frame, (IMG_W, IMG_H))
 
     _, jpeg = cv2.imencode('.jpg', frame)
@@ -64,6 +70,7 @@ def video_feed():
 last_send_time = time.monotonic()
 @app.route("/control/<y>/<x>")
 def control(x, y):
+  print(x,y)
   global last_send_time
   x,y = float(x), float(y)
   x = max(-1, min(1, x))
@@ -86,7 +93,7 @@ def handle_timeout():
     time.sleep(0.1)
 
 def main():
-  threading.Thread(target=handle_timeout, daemon=True).start()
+  #threading.Thread(target=handle_timeout, daemon=True).start()
   app.run(host="0.0.0.0")
 
 if __name__ == '__main__':

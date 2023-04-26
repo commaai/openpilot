@@ -81,7 +81,10 @@ setInterval(function(){
     y += 1;
   let xhr = new XMLHttpRequest();
   xhr.open("GET", "/control/"+x+"/"+y);
-  xhr.send();
+  xhr.send(null);
+  if (request.status === 200) {
+    console.log(request.responseText);
+  }
   document.getElementById("move_str").innerHTML = `Commanded motion: ${x}, ${y}`;
 
 }, 50);

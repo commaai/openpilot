@@ -45,6 +45,7 @@ def yuv_to_rgb(y, u, v):
 
 def extract_image(buf, w, h, stride, uv_offset):
   y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
+  return y
   u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
   v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
 
