@@ -68,7 +68,7 @@ class Uploader:
     self.api = Api(dongle_id)
     self.root = root
 
-    self.last_result: Tuple[Optional[UploadResponse], int] = (None, 0)
+    self.last_resp: Optional[UploadResponse] = None
     self.last_exc: Optional[Tuple[Exception, str]] = None
 
     self.immediate_size = 0
@@ -142,7 +142,7 @@ class Uploader:
     try:
       url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       if url_resp.status_code == 412:
-        self.last_result = (url_resp, 0)
+        self.last_resp = url_resp
         return
 
       url_resp_json = json.loads(url_resp.text)
@@ -152,7 +152,7 @@ class Uploader:
 
       if fake_upload:
         cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
-        self.last_result = (FakeResponse(), 123)
+        self.last_resp = FakeResponse()
       else:
         with open(fn, "rb") as f:
           data: BinaryIO
@@ -162,14 +162,13 @@ class Uploader:
           else:
             data = f
 
-          response = requests.put(url, data=data, headers=headers, timeout=10)
-          self.last_result = (response, int(response.request.headers.get('Content-Length', 0)))
+          self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
 
-  def normal_upload(self, key: str, fn: str) -> Tuple[Optional[UploadResponse], int]:
-    self.last_result = (None, 0)
+  def normal_upload(self, key: str, fn: str) -> Optional[UploadResponse], int:
+    self.last_resp = None
     self.last_exc = None
 
     try:
@@ -177,7 +176,7 @@ class Uploader:
     except Exception:
       pass
 
-    return self.last_result
+    return self.last_resp
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
@@ -196,7 +195,7 @@ class Uploader:
       success = True
     else:
       start_time = time.monotonic()
-      stat, content_length = self.normal_upload(key, fn)
+      stat = self.normal_upload(key, fn)
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         self.last_filename = fn
         self.last_time = time.monotonic() - start_time
@@ -204,8 +203,9 @@ class Uploader:
           self.last_speed = 0
           cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
         else:
+          content_length = int(stat.request.headers.get('Content-Length', 0))
           self.last_speed = (content_length / 1e6) / self.last_time
-          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered)
+          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered, speed=self.last_speed)
         success = True
       else:
         success = False
