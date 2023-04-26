@@ -281,16 +281,8 @@ void MessageListModel::fetchData() {
 }
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
-  // int prev_row_count = msgs.size();
   QList<MessageId> prev_msgs = msgs;
   fetchData();
-
-
-  for (int i = 0; i < msgs.size(); ++i) {
-    if (i >= prev_msgs.size() || msgs[i] != prev_msgs[i]) {
-      emit dataChanged(index(i, Column::NAME), index(i, Column::DATA), {Qt::DisplayRole});
-    }
-  }
 
   for (int i = 0; i < msgs.size(); ++i) {
     if (new_msgs->contains(msgs[i])) {
