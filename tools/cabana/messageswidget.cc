@@ -261,7 +261,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
           bool data_match = false;
           data_match |= QString(data.dat.toHex()).contains(txt, cs);
 
-          QRegularExpression re(txt);
+          QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
           if (re.isValid()) {
             data_match |= re.match(QString(data.dat.toHex())).hasMatch();
             data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
