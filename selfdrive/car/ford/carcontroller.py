@@ -43,10 +43,7 @@ class CarController:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
-<<<<<<< HEAD
-=======
     # send steer msg at 20Hz
->>>>>>> origin/master
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
         # apply limits to curvature and clip to signal range
