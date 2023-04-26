@@ -37,7 +37,7 @@ def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
 def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
-  values = {k: es_distance_msg[k] for k in ES_DISTANCE_SIGNALS}
+  values = {s: es_distance_msg[s] for s in ES_DISTANCE_SIGNALS}
   values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
@@ -45,7 +45,7 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
 
 def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
-  values = {k: es_lkas_state_msg[k] for k in [
+  values = {s: es_lkas_state_msg[s] for s in [
     "COUNTER",
     "LKAS_Alert_Msg",
     "Signal1",
@@ -103,7 +103,7 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
   return packer.make_can_msg("ES_LKAS_State", 0, values)
 
 def create_es_dashstatus(packer, dashstatus_msg):
-  values = {k: dashstatus_msg[k] for k in [
+  values = {s: dashstatus_msg[s] for s in [
     "COUNTER",
     "PCB_Off",
     "LDW_Off",
@@ -140,7 +140,7 @@ def create_es_dashstatus(packer, dashstatus_msg):
 
 def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
-  values = {k: infotainmentstatus_msg[k] for k in [
+  values = {s: infotainmentstatus_msg[s] for s in [
     "LKAS_State_Infotainment",
     "LKAS_Blue_Lines",
     "Signal1",
@@ -176,7 +176,7 @@ def create_preglobal_steering_control(packer, apply_steer):
 
 def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
 
-  values = {k: es_distance_msg[k] for k in ES_DISTANCE_SIGNALS}
+  values = {s: es_distance_msg[s] for s in ES_DISTANCE_SIGNALS}
   values["Cruise_Button"] = cruise_button
 
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
