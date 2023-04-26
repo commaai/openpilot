@@ -16,9 +16,19 @@ class MessageListModel : public QAbstractTableModel {
 Q_OBJECT
 
 public:
+
+  enum Column {
+    NAME = 0,
+    SOURCE,
+    ADDRESS,
+    FREQ,
+    COUNT,
+    DATA,
+  };
+
   MessageListModel(QObject *parent) : QAbstractTableModel(parent) {}
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return 6; }
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return Column::DATA + 1; }
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
@@ -48,6 +58,26 @@ public:
   void headerContextMenuEvent(const QPoint &pos);
 };
 
+class MessageViewHeader : public QHeaderView {
+  // https://stackoverflow.com/a/44346317
+
+  Q_OBJECT
+public:
+  MessageViewHeader(QWidget *parent, MessageListModel *model);
+  void showEvent(QShowEvent *e) override;
+  void handleSectionResized(int logicalIndex, int oldSize, int newSize);
+  void handleSectionMoved(int logicalIndex, int oldVisualIndex, int newVisualIndex);
+  void updateHeaderPositions();
+
+  void updateGeometries() override;
+  QSize sizeHint() const override;
+
+private:
+  QMap<int, QLineEdit *> editors;
+  QMap<int, QSet<QString>> values;
+  MessageListModel *model;
+};
+
 class MessagesWidget : public QWidget {
   Q_OBJECT
 
@@ -64,6 +94,7 @@ signals:
 
 protected:
   MessageView *view;
+  MessageViewHeader *header;
   std::optional<MessageId> current_msg_id;
   QLineEdit *filter;
   QCheckBox *multiple_lines_bytes;

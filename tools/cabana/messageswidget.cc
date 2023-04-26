@@ -24,11 +24,13 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // message table
   view = new MessageView(this);
   model = new MessageListModel(this);
+  header = new MessageViewHeader(this, model);
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
+
   view->setItemDelegate(delegate);
   view->setModel(model);
   view->setSortingEnabled(true);
-  view->sortByColumn(0, Qt::AscendingOrder);
+  view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
   view->setEditTriggers(QAbstractItemView::NoEditTriggers);
   view->setItemsExpandable(false);
@@ -37,7 +39,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
 
+  view->setHeader(header);
   view->header()->setSectionsMovable(true);
+  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -131,8 +135,14 @@ void MessagesWidget::reset() {
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
   if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    static const QString titles[] = {"Name", "Bus", "ID", "Freq", "Count", "Bytes"};
-    return titles[section];
+    switch (section) {
+      case Column::NAME: return tr("Name");
+      case Column::SOURCE: return tr("Bus");
+      case Column::ADDRESS: return tr("ID");
+      case Column::FREQ: return tr("Freq");
+      case Column::COUNT: return tr("Count");
+      case Column::DATA: return tr("Bytes");
+    }
   }
   return {};
 }
@@ -151,12 +161,12 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
 
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
-      case 0: return msgName(id);
-      case 1: return id.source;
-      case 2: return QString::number(id.address, 16);
-      case 3: return getFreq(can_data);
-      case 4: return can_data.count;
-      case 5: return toHex(can_data.dat);
+      case Column::NAME: return msgName(id);
+      case Column::SOURCE: return id.source;
+      case Column::ADDRESS: return QString::number(id.address, 16);
+      case Column::FREQ: return getFreq(can_data);
+      case Column::COUNT: return can_data.count;
+      case Column::DATA: return toHex(can_data.dat);
     }
   } else if (role == ColorsRole) {
     QVector<QColor> colors = can_data.colors;
@@ -168,7 +178,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       }
     }
     return QVariant::fromValue(colors);
-  } else if (role == BytesRole && index.column() == 5) {
+  } else if (role == BytesRole && index.column() == Column::DATA) {
     return can_data.dat;
   }
   return {};
@@ -199,31 +209,31 @@ void MessageListModel::setFilterString(const QString &string) {
 
 void MessageListModel::sortMessages() {
   beginResetModel();
-  if (sort_column == 0) {
+  if (sort_column == Column::NAME) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{msgName(l), l};
       auto rr = std::pair{msgName(r), r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
-  } else if (sort_column == 1) {
+  } else if (sort_column == Column::SOURCE) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{l.source, l};
       auto rr = std::pair{r.source, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
-  } else if (sort_column == 2) {
+  } else if (sort_column == Column::ADDRESS) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{l.address, l};
       auto rr = std::pair{r.address, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
-  } else if (sort_column == 3) {
+  } else if (sort_column == Column::FREQ) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).freq, l};
       auto rr = std::pair{can->lastMessage(r).freq, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
-  } else if (sort_column == 4) {
+  } else if (sort_column == Column::COUNT) {
     std::sort(msgs.begin(), msgs.end(), [this](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).count, l};
       auto rr = std::pair{can->lastMessage(r).count, r};
@@ -244,7 +254,7 @@ void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
   }
   for (int i = 0; i < msgs.size(); ++i) {
     if (new_msgs->contains(msgs[i])) {
-      for (int col = 3; col < columnCount(); ++col)
+      for (int col = Column::FREQ; col < columnCount(); ++col)
         emit dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
     }
   }
@@ -353,4 +363,65 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
   }
 
   menu->popup(header()->mapToGlobal(pos));
+}
+
+MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
+  QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::handleSectionResized);
+  QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::handleSectionMoved);
+
+    // TODO: handle hiding columns
+    // TODO: handle horizontal scrolling
+}
+
+void MessageViewHeader::showEvent(QShowEvent *e) {
+
+  for (int i=0; i < count(); i++) {
+    if (!editors[i]) {
+      editors[i] = new QLineEdit(this);
+
+      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
+    }
+    editors[i]->show();
+  }
+  QHeaderView::showEvent(e);
+}
+
+
+void MessageViewHeader::handleSectionResized(int logicalIndex, int oldSize, int newSize) {
+  updateHeaderPositions();
+}
+
+void MessageViewHeader::handleSectionMoved(int logicalIndex, int oldVisualIndex, int newVisualIndex) {
+  updateHeaderPositions();
+}
+
+void MessageViewHeader::updateHeaderPositions() {
+  QSize sz = QHeaderView::sizeHint();
+  for (int i = 0; i < count(); i++) {
+    if (editors[i]) {
+      int h = editors[i]->sizeHint().height();
+      editors[i]->move(sectionViewportPosition(i), sz.height());
+      editors[i]->resize(sectionSize(i), h);
+    }
+  }
+}
+
+void MessageViewHeader::updateGeometries() {
+  if (editors[0]) {
+    setViewportMargins(0, 0, 0, editors[0]->sizeHint().height());
+  } else {
+    setViewportMargins(0, 0, 0, 0);
+  }
+  QHeaderView::updateGeometries();
+  updateHeaderPositions();
+}
+
+
+QSize MessageViewHeader::sizeHint() const {
+  QSize sz = QHeaderView::sizeHint();
+  if (editors[0]) {
+    sz.setHeight(sz.height() + editors[0]->minimumSizeHint().height());
+  }
+  return sz;
 }
