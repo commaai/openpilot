@@ -44,7 +44,6 @@ MainWindow::MainWindow() : QMainWindow() {
   qRegisterMetaType<uint64_t>("uint64_t");
   qRegisterMetaType<SourceSet>("SourceSet");
   qRegisterMetaType<ReplyMsgType>("ReplyMsgType");
-
   installMessageHandler([this](ReplyMsgType type, const std::string msg) {
     // use queued connection to recv the log messages from replay.
     emit showMessage(QString::fromStdString(msg), 2000);
