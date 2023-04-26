@@ -82,8 +82,8 @@ void LiveStream::updateEvents() {
   }
 
   uint64_t last_ts = post_last_event && speed_ == 1.0
-                         ? all_events_.back()->mono_time
-                         : first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
+                       ? all_events_.back()->mono_time
+                       : first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
   auto first = std::upper_bound(all_events_.cbegin(), all_events_.cend(), current_event_ts, [](uint64_t ts, auto e) {
     return ts < e->mono_time;
   });
