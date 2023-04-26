@@ -86,7 +86,7 @@ def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, le
 
 
 def create_lkas_hud_info_msg(packer, lkas_hud_info_msg, steer_hud_alert):
-  values = {k: lkas_hud_info_msg[k] for k in [
+  values = {s: lkas_hud_info_msg[s] for s in [
     "NA_HIGH_ACCEL_TEMP",
     "SIDE_RADAR_NA_HIGH_CABIN_TEMP",
     "SIDE_RADAR_MALFUNCTION",
