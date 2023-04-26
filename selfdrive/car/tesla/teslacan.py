@@ -1,4 +1,3 @@
-import copy
 import crcmod
 
 from common.conversions import Conversions as CV
