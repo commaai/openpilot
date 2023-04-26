@@ -180,34 +180,34 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
   fetchData();
 }
 
-void MessageListModel::sortMessages(QList<MessageId> &new_msgs) {
+void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, QList<MessageId> &new_msgs) {
   // QList<MessageId> new_msgs = msgs;
   if (sort_column == Column::NAME) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [this](auto &l, auto &r) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{msgName(l), l};
       auto rr = std::pair{msgName(r), r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::SOURCE) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [this](auto &l, auto &r) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{l.source, l};
       auto rr = std::pair{r.source, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::ADDRESS) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [this](auto &l, auto &r) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{l.address, l};
       auto rr = std::pair{r.address, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::FREQ) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [this](auto &l, auto &r) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).freq, l};
       auto rr = std::pair{can->lastMessage(r).freq, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
     });
   } else if (sort_column == Column::COUNT) {
-    std::sort(new_msgs.begin(), new_msgs.end(), [this](auto &l, auto &r) {
+    std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{can->lastMessage(l).count, l};
       auto rr = std::pair{can->lastMessage(r).count, r};
       return sort_order == Qt::AscendingOrder ? ll < rr : ll > rr;
@@ -271,7 +271,7 @@ void MessageListModel::fetchData() {
       new_msgs.push_back(it.key());
     }
   }
-  sortMessages(new_msgs);
+  sortMessages(sort_order, sort_column, new_msgs);
 
   if (msgs != new_msgs) {
     beginResetModel();

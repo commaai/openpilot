@@ -42,7 +42,7 @@ public:
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
-  void sortMessages(QList<MessageId> &new_msgs);
+  static void sortMessages(Qt::SortOrder sort_order, int sort_column, QList<MessageId> &new_msgs);
   static bool matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters);
 
   QMap<int, QString> filter_str;
