@@ -23,10 +23,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
+  view->setHeader(header);
+
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
 
-  view->setHeader(header);
   view->header()->setSectionsMovable(true);
   view->header()->setStretchLastSection(true);
 
