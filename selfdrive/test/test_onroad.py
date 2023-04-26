@@ -46,6 +46,15 @@ PROCS = {
   "./ubloxd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
+  "systemd.micd": 0,
+  "systemd.timezoned": 0,
+  "system.sensord.pigeond": 6.0,
+  "selfdrive.boardd.pandad": 0,
+  "selfdrive.statsd": 0.4,
+  "selfdrive.navd.navd": 0.4,
+  "system.loggerd.uploader": 20.0,
+  "system.loggerd.deleter": 0.1,
+  "selfdrive.locationd.laikad": 25.0,
 }
 
 TIMINGS = {
@@ -215,6 +224,13 @@ class TestOnroad(unittest.TestCase):
       if len(err) > 0:
         cpu_ok = False
 
+    # Ensure there's no missing procs
+    all_procs = set([p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning])
+    procs_copy = PROCS.copy()
+    for p in all_procs:
+      with self.subTest(proc=p):
+        assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
+
     result += "------------------------------------------------\n"
     print(result)
 
@@ -242,7 +258,7 @@ class TestOnroad(unittest.TestCase):
 
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in service_msg[s]]
+      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.service_msg[s]]
       self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
