@@ -35,37 +35,21 @@ def create_lka_hud_control(packer, bus, CP, ldw_stock_values, enabled, steering_
 
 
 def create_acc_buttons_control(packer, bus, CP, gra_stock_values, counter, cancel=False, resume=False):
-  if CP.carFingerprint in PQ_CARS:
-    values = {s: gra_stock_values[s] for s in [
-      "GRA_Hauptschalt",      # ACC button, on/off
-      "GRA_Typ_Hauptschalt",  # ACC button, momentary vs latching
-      "GRA_Kodierinfo",       # ACC button, configuration
-      "GRA_Abbrechen",        # ACC button, cancel
-      "GRA_Neu_Setzen",       # ACC button, set
-      "GRA_Up_lang",          # ACC button, increase or accel, long press
-      "GRA_Down_lang",        # ACC button, decrease or decel, long press
-      "GRA_Up_kurz",          # ACC button, increase or accel, short press
-      "GRA_Down_kurz",        # ACC button, decrease or decel, short press
-      "GRA_Recall",           # ACC button, resume
-      "GRA_Zeitluecke",       # ACC button, time gap adj
-      "COUNTER",              # ACC button, message counter
-      "GRA_Sender",           # ACC button, CAN message originator
-    ]}
-  else:
-    values = {s: gra_stock_values[s] for s in [
-      "GRA_Hauptschalter",           # ACC button, on/off
-      "GRA_Abbrechen",               # ACC button, cancel
-      "GRA_Tip_Setzen",              # ACC button, set
-      "GRA_Tip_Hoch",                # ACC button, increase or accel
-      "GRA_Tip_Runter",              # ACC button, decrease or decel
-      "GRA_Tip_Wiederaufnahme",      # ACC button, resume
-      "GRA_Verstellung_Zeitluecke",  # ACC button, time gap adj
-      "GRA_Typ_Hauptschalter",       # ACC main button type
-      "GRA_Codierung",               # ACC button configuration/coding
-      "GRA_Tip_Stufe_2",             # unknown related to stalk type
-      "GRA_ButtonTypeInfo",          # unknown related to stalk type
-      "COUNTER",                     # GRA_ACC_01 CAN message counter
-    ]}
+  values = {s: gra_stock_values[s] for s in [
+    "GRA_Hauptschalt",      # ACC button, on/off
+    "GRA_Typ_Hauptschalt",  # ACC button, momentary vs latching
+    "GRA_Kodierinfo",       # ACC button, configuration
+    "GRA_Abbrechen",        # ACC button, cancel
+    "GRA_Neu_Setzen",       # ACC button, set
+    "GRA_Up_lang",          # ACC button, increase or accel, long press
+    "GRA_Down_lang",        # ACC button, decrease or decel, long press
+    "GRA_Up_kurz",          # ACC button, increase or accel, short press
+    "GRA_Down_kurz",        # ACC button, decrease or decel, short press
+    "GRA_Recall",           # ACC button, resume
+    "GRA_Zeitluecke",       # ACC button, time gap adj
+    "COUNTER",              # ACC button, message counter
+    "GRA_Sender",           # ACC button, CAN message originator
+  ]}
 
   values.update({
     "COUNTER": counter,
