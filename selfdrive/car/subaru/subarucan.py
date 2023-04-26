@@ -2,28 +2,6 @@ from cereal import car
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-ES_DISTANCE_SIGNALS = [
-  "COUNTER",
-  "Signal1",
-  "Cruise_Fault",
-  "Cruise_Throttle",
-  "Signal2",
-  "Car_Follow",
-  "Signal3",
-  "Cruise_Soft_Disable",
-  "Signal7",
-  "Cruise_Brake_Active",
-  "Distance_Swap",
-  "Cruise_EPB",
-  "Signal4",
-  "Close_Distance",
-  "Signal5",
-  "Cruise_Cancel",
-  "Cruise_Set",
-  "Cruise_Resume",
-  "Signal6",
-]
-
 
 def create_steering_control(packer, apply_steer):
   values = {
@@ -37,7 +15,27 @@ def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
 def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
-  values = {s: es_distance_msg[s] for s in ES_DISTANCE_SIGNALS}
+  values = {s: es_distance_msg[s] for s in [
+    "COUNTER",
+    "Signal1",
+    "Cruise_Fault",
+    "Cruise_Throttle",
+    "Signal2",
+    "Car_Follow",
+    "Signal3",
+    "Cruise_Soft_Disable",
+    "Signal7",
+    "Cruise_Brake_Active",
+    "Distance_Swap",
+    "Cruise_EPB",
+    "Signal4",
+    "Close_Distance",
+    "Signal5",
+    "Cruise_Cancel",
+    "Cruise_Set",
+    "Cruise_Resume",
+    "Signal6",
+  ]}
   values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
@@ -176,7 +174,25 @@ def create_preglobal_steering_control(packer, apply_steer):
 
 def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
 
-  values = {s: es_distance_msg[s] for s in ES_DISTANCE_SIGNALS}
+  values = {s: es_distance_msg[s] for s in [
+    "Cruise_Throttle",
+    "Signal1",
+    "Car_Follow",
+    "Signal2",
+    "Brake_On",
+    "Distance_Swap",
+    "Standstill",
+    "Signal3",
+    "Close_Distance",
+    "Signal4",
+    "Standstill_2",
+    "Cruise_Fault",
+    "Signal5",
+    "COUNTER",
+    "Signal6",
+    "Cruise_Button",
+    "Signal7",
+  ]}
   values["Cruise_Button"] = cruise_button
 
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
