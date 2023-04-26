@@ -63,11 +63,10 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
 
   return ret
 
-def create_cam_0x2a4(packer, CAN, camera_values):
-  camera_values.update({
-    "BYTE7": 0,
-  })
-  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, camera_values)
+def create_cam_0x2a4(packer, CAN, cam_0x2a4):
+  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24)}
+  values["BYTE7"] = 0
+  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
@@ -79,8 +78,26 @@ def create_buttons(packer, CP, CAN, cnt, btn):
   bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CAN.CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
-def create_acc_cancel(packer, CAN, cruise_info_copy):
-  values = cruise_info_copy
+def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
+  if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
+    values = {k: cruise_info_copy[k] for k in [
+      "COUNTER",
+      "NEW_SIGNAL_1",
+      "MainMode_ACC",
+      "ACCMode",
+      "CRUISE_INACTIVE",
+      "ZEROS_9",
+      "CRUISE_STANDSTILL",
+      "ZEROS_5",
+      "DISTANCE_SETTING",
+      "VSetDis",
+    ]}
+  else:
+    values = {k: cruise_info_copy[k] for k in [
+      "ACCMode",
+      "VSetDis",
+      "CRUISE_STANDSTILL",
+    ]}
   values.update({
     "ACCMode": 4,
   })
