@@ -46,7 +46,34 @@ def create_cancel_msg(packer, cancel_msg, cruise_cancel):
 
 
 def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, left_lane_depart, right_lane_depart):
-  values = lkas_hud_msg
+  values = {k: lkas_hud_msg[k] for k in [
+    "LARGE_WARNING_FLASHING",
+    "SIDE_RADAR_ERROR_FLASHING1",
+    "SIDE_RADAR_ERROR_FLASHING2",
+    "LEAD_CAR",
+    "LEAD_CAR_ERROR",
+    "FRONT_RADAR_ERROR",
+    "FRONT_RADAR_ERROR_FLASHING",
+    "SIDE_RADAR_ERROR_FLASHING3",
+    "LKAS_ERROR_FLASHING",
+    "SAFETY_SHIELD_ACTIVE",
+    "RIGHT_LANE_GREEN_FLASH",
+    "LEFT_LANE_GREEN_FLASH",
+    "FOLLOW_DISTANCE",
+    "AUDIBLE_TONE",
+    "SPEED_SET_ICON",
+    "SMALL_STEERING_WHEEL_ICON",
+    "unknown59",
+    "unknown55",
+    "unknown26",
+    "unknown28",
+    "unknown31",
+    "SET_SPEED",
+    "unknown43",
+    "unknown08",
+    "unknown05",
+    "unknown02",
+  ]}
 
   values["RIGHT_LANE_YELLOW_FLASH"] = 1 if right_lane_depart else 0
   values["LEFT_LANE_YELLOW_FLASH"] = 1 if left_lane_depart else 0
@@ -59,7 +86,47 @@ def create_lkas_hud_msg(packer, lkas_hud_msg, enabled, left_line, right_line, le
 
 
 def create_lkas_hud_info_msg(packer, lkas_hud_info_msg, steer_hud_alert):
-  values = lkas_hud_info_msg
+  values = {k: lkas_hud_info_msg[k] for k in [
+    "NA_HIGH_ACCEL_TEMP",
+    "SIDE_RADAR_NA_HIGH_CABIN_TEMP",
+    "SIDE_RADAR_MALFUNCTION",
+    "LKAS_MALFUNCTION",
+    "FRONT_RADAR_MALFUNCTION",
+    "SIDE_RADAR_NA_CLEAN_REAR_CAMERA",
+    "NA_POOR_ROAD_CONDITIONS",
+    "CURRENTLY_UNAVAILABLE",
+    "SAFETY_SHIELD_OFF",
+    "FRONT_COLLISION_NA_FRONT_RADAR_OBSTRUCTION",
+    "PEDAL_MISSAPPLICATION_SYSTEM_ACTIVATED",
+    "SIDE_IMPACT_NA_RADAR_OBSTRUCTION",
+    "WARNING_DO_NOT_ENTER",
+    "SIDE_IMPACT_SYSTEM_OFF",
+    "SIDE_IMPACT_MALFUNCTION",
+    "FRONT_COLLISION_MALFUNCTION",
+    "SIDE_RADAR_MALFUNCTION2",
+    "LKAS_MALFUNCTION2",
+    "FRONT_RADAR_MALFUNCTION2",
+    "PROPILOT_NA_MSGS",
+    "BOTTOM_MSG",
+    "HANDS_ON_WHEEL_WARNING",
+    "WARNING_STEP_ON_BRAKE_NOW",
+    "PROPILOT_NA_FRONT_CAMERA_OBSTRUCTED",
+    "PROPILOT_NA_HIGH_CABIN_TEMP",
+    "WARNING_PROPILOT_MALFUNCTION",
+    "ACC_UNAVAILABLE_HIGH_CABIN_TEMP",
+    "ACC_NA_FRONT_CAMERA_IMPARED",
+    "unknown07",
+    "unknown10",
+    "unknown15",
+    "unknown23",
+    "unknown19",
+    "unknown31",
+    "unknown32",
+    "unknown46",
+    "unknown61",
+    "unknown55",
+    "unknown50",
+  ]}
 
   if steer_hud_alert:
     values["HANDS_ON_WHEEL_WARNING"] = 1
