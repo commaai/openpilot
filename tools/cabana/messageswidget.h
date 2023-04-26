@@ -34,7 +34,7 @@ public:
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
   void msgsReceived(const QHash<MessageId, CanData> *new_msgs = nullptr);
-  void sortMessages();
+  void fetchData();
   void suppress();
   void clearSuppress();
   void reset();
@@ -42,6 +42,7 @@ public:
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
+  void sortMessages(QList<MessageId> &new_msgs);
   QMap<int, QString> filter_str;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
