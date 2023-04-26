@@ -1,6 +1,3 @@
-from cereal import car
-
-
 def create_steering_control(packer, bus, apply_steer, lkas_enabled):
   values = {
     "HCA_01_Status_HCA": 5 if lkas_enabled else 3,
