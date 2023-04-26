@@ -167,7 +167,7 @@ class Uploader:
       self.last_exc = (e, traceback.format_exc())
       raise
 
-  def normal_upload(self, key: str, fn: str) -> Optional[UploadResponse], int:
+  def normal_upload(self, key: str, fn: str) -> Optional[UploadResponse]:
     self.last_resp = None
     self.last_exc = None
 
