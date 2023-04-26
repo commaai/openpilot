@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
+from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
@@ -76,7 +76,7 @@ class CarController:
         gas = -5.0
         decel = True
 
-      can_sends.append(create_acc_command(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
