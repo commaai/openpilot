@@ -24,60 +24,6 @@ ES_DISTANCE_SIGNALS = [
   "Signal6",
 ]
 
-ES_LKAS_STATE_SIGNALS = [
-  "COUNTER",
-  "LKAS_Alert_Msg",
-  "Signal1",
-  "LKAS_ACTIVE",
-  "LKAS_Dash_State",
-  "Signal2",
-  "Backward_Speed_Limit_Menu",
-  "LKAS_Left_Line_Enable",
-  "LKAS_Left_Line_Light_Blink",
-  "LKAS_Right_Line_Enable",
-  "LKAS_Right_Line_Light_Blink",
-  "LKAS_Left_Line_Visible",
-  "LKAS_Right_Line_Visible",
-  "LKAS_Alert",
-  "Signal3",
-]
-
-ES_DASHSTATUS_SIGNALS = [
-  "COUNTER",
-  "PCB_Off",
-  "LDW_Off",
-  "Signal1",
-  "Cruise_State_Msg",
-  "LKAS_State_Msg",
-  "Signal2",
-  "Cruise_Soft_Disable",
-  "EyeSight_Status_Msg",
-  "Signal3",
-  "Cruise_Distance",
-  "Signal4",
-  "Conventional_Cruise",
-  "Signal5",
-  "Cruise_Disengaged",
-  "Cruise_Activated",
-  "Signal6",
-  "Cruise_Set_Speed",
-  "Cruise_Fault",
-  "Cruise_On",
-  "Display_Own_Car",
-  "Brake_Lights",
-  "Car_Follow",
-  "Signal7",
-  "Far_Distance",
-  "Cruise_State",
-]
-
-INFOTAINMENT_STATUS_SIGNALS = [
-  "LKAS_State_Infotainment",
-  "LKAS_Blue_Lines",
-  "Signal1",
-  "Signal2",
-]
-
 
 def create_steering_control(packer, apply_steer):
   values = {
@@ -99,7 +45,23 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
 
 def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
-  values = {k: es_lkas_state_msg[k] for k in ES_LKAS_STATE_SIGNALS}
+  values = {k: es_lkas_state_msg[k] for k in [
+    "COUNTER",
+    "LKAS_Alert_Msg",
+    "Signal1",
+    "LKAS_ACTIVE",
+    "LKAS_Dash_State",
+    "Signal2",
+    "Backward_Speed_Limit_Menu",
+    "LKAS_Left_Line_Enable",
+    "LKAS_Left_Line_Light_Blink",
+    "LKAS_Right_Line_Enable",
+    "LKAS_Right_Line_Light_Blink",
+    "LKAS_Left_Line_Visible",
+    "LKAS_Right_Line_Visible",
+    "LKAS_Alert",
+    "Signal3",
+  ]}
 
   # Filter the stock LKAS "Keep hands on wheel" alert
   if values["LKAS_Alert_Msg"] == 1:
@@ -141,7 +103,34 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
   return packer.make_can_msg("ES_LKAS_State", 0, values)
 
 def create_es_dashstatus(packer, dashstatus_msg):
-  values = {k: dashstatus_msg[k] for k in ES_DASHSTATUS_SIGNALS}
+  values = {k: dashstatus_msg[k] for k in [
+    "COUNTER",
+    "PCB_Off",
+    "LDW_Off",
+    "Signal1",
+    "Cruise_State_Msg",
+    "LKAS_State_Msg",
+    "Signal2",
+    "Cruise_Soft_Disable",
+    "EyeSight_Status_Msg",
+    "Signal3",
+    "Cruise_Distance",
+    "Signal4",
+    "Conventional_Cruise",
+    "Signal5",
+    "Cruise_Disengaged",
+    "Cruise_Activated",
+    "Signal6",
+    "Cruise_Set_Speed",
+    "Cruise_Fault",
+    "Cruise_On",
+    "Display_Own_Car",
+    "Brake_Lights",
+    "Car_Follow",
+    "Signal7",
+    "Far_Distance",
+    "Cruise_State",
+  ]}
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   if values["LKAS_State_Msg"] in (2, 3):
@@ -151,7 +140,12 @@ def create_es_dashstatus(packer, dashstatus_msg):
 
 def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
-  values = {k: infotainmentstatus_msg[k] for k in INFOTAINMENT_STATUS_SIGNALS}
+  values = {k: infotainmentstatus_msg[k] for k in [
+    "LKAS_State_Infotainment",
+    "LKAS_Blue_Lines",
+    "Signal1",
+    "Signal2",
+  ]}
   if values["LKAS_State_Infotainment"] in (3, 4):
     values["LKAS_State_Infotainment"] = 0
 
