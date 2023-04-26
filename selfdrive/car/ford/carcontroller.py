@@ -29,6 +29,7 @@ class CarController:
 
     main_on = CS.out.cruiseState.available
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
 
     ### acc buttons ###
     if CC.cruiseControl.cancel:
@@ -88,7 +89,7 @@ class CarController:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
     # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
+      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, fcw_alert, hud_control, CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
