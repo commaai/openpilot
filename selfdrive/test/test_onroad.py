@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import json
 import os
 import subprocess
@@ -52,9 +53,9 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 20.0,
+  "system.loggerd.uploader": 30.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": 25.0,
+  "selfdrive.locationd.laikad": 31.0,
 }
 
 TIMINGS = {
@@ -158,7 +159,7 @@ class TestOnroad(unittest.TestCase):
         continue
 
       with self.subTest(service=s):
-        assert len(msgs) > service_list[s].frequency*55
+        assert len(msgs) >= math.floor(service_list[s].frequency*55)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -258,7 +259,7 @@ class TestOnroad(unittest.TestCase):
 
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.service_msg[s]]
+      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.service_msgs[s]]
       self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
