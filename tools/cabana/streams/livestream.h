@@ -50,6 +50,7 @@ private:
   uint64_t current_event_ts = 0;
   uint64_t first_event_ts = 0;
   uint64_t first_update_ts = 0;
+  bool post_last_event = true;
   double speed_ = 1;
   bool paused_ = false;
 };

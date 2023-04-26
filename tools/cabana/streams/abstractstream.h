@@ -41,13 +41,12 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {};
   inline bool liveStreaming() const { return route() == nullptr; }
-  inline double lastEventSecond() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  double totalSeconds() const { return total_sec; }
+  virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
@@ -55,8 +54,8 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  const std::deque<const CanEvent *> &allEvents() const { return all_events_; }
-  const std::deque<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
+  const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+  const std::vector<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
 
 signals:
@@ -74,20 +73,19 @@ public:
   SourceSet sources;
 
 protected:
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
+  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   bool postEvents();
-  uint64_t lastEventMonoTime() const { return all_events_.empty() ? 0 : all_events_.back()->mono_time; }
+  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateMessages(QHash<MessageId, CanData> *);
-  void parseEvents(std::unordered_map<MessageId, std::deque<const CanEvent *>> &msgs, std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   void updateLastMsgsTo(double sec);
 
-  double total_sec = 0;
+  uint64_t lastest_event_ts = 0;
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, CanData> all_msgs;
-  std::unordered_map<MessageId, std::deque<const CanEvent *>> events_;
-  std::deque<const CanEvent *> all_events_;
+  std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
+  std::vector<const CanEvent *> all_events_;
   std::deque<std::unique_ptr<char[]>> memory_blocks;
 };
 
