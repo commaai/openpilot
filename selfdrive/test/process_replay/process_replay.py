@@ -254,9 +254,9 @@ def torqued_rcv_callback(msg, CP, cfg, fsm):
 
 def ublox_rcv_callback(msg, CP, cfg, fsm):
   msg_class, msg_id = msg.ubloxRaw[2:4]
-  if (msg_class, msg_id) in {(1, 7 * 16)}:
+  if (msg_class, msg_id) in {(0x1, 0x7)}:
     return ["gpsLocationExternal"], True
-  elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
+  elif (msg_class, msg_id) in {(0x2, 0x13), (0x2, 0x15), (0xa, 0x9), (0xa, 0xb), (0x1, 0x35)}:
     return ["ubloxGnss"], True
   else:
     return [], False
@@ -565,7 +565,6 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
-  log_msgs = []
   try:
     # Wait for process to startup
     with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
