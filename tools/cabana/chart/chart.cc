@@ -687,7 +687,7 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
     painter->setPen(Qt::white);
     auto rubber_rect = rubber->geometry().normalized();
     for (const auto &pt : {rubber_rect.bottomLeft(), rubber_rect.bottomRight()}) {
-      QString sec = QString::number(chart()->mapToValue(pt).x(), 'f', 1);
+      QString sec = QString::number(chart()->mapToValue(pt).x(), 'f', 2);
       auto r = painter->fontMetrics().boundingRect(sec).adjusted(-6, -AXIS_X_TOP_MARGIN, 6, AXIS_X_TOP_MARGIN);
       pt == rubber_rect.bottomLeft() ? r.moveTopRight(pt + QPoint{0, 2}) : r.moveTopLeft(pt + QPoint{0, 2});
       painter->fillRect(r, Qt::gray);
@@ -709,7 +709,7 @@ void ChartView::drawTimeline(QPainter *painter) {
   QRect time_str_rect(QPoint(x - time_str_size.width() / 2, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
   QPainterPath path;
   path.addRoundedRect(time_str_rect, 3, 3);
-  painter->fillPath(path, Qt::darkGray);
+  painter->fillPath(path, settings.theme == DARK_THEME ? Qt::darkGray : Qt::gray);
   painter->setPen(palette().color(QPalette::BrightText));
   painter->setFont(axis_x->labelsFont());
   painter->drawText(time_str_rect, Qt::AlignCenter, time_str);

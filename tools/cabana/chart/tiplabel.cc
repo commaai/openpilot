@@ -10,7 +10,7 @@ TipLabel::TipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::Frameless
   setForegroundRole(QPalette::ToolTipText);
   setBackgroundRole(QPalette::ToolTipBase);
   QFont font;
-  font.setPointSize(9);
+  font.setPointSize(8.34563465);
   setFont(font);
   auto palette = QToolTip::palette();
   if (settings.theme != DARK_THEME) {
