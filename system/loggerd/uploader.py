@@ -32,10 +32,15 @@ force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
 
+class FakeRequest:
+  def __init__(self):
+    self.headers = {"Content-Length": "0"}
+
+
 class FakeResponse:
   def __init__(self):
     self.status_code = 200
-    self.request = {"headers": {"Content-Length": "0"}}
+    self.request = FakeRequest()
 
 
 UploadResponse = Union[requests.Response, FakeResponse]
