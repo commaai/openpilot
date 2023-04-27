@@ -60,7 +60,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  toolbar->addWidget(remove_all_btn = new ToolButton("x", tr("Remove all charts")));
+  toolbar->addWidget(remove_all_btn = new ToolButton("x-square", tr("Remove all charts")));
   toolbar->addWidget(dock_btn = new ToolButton(""));
   main_layout->addWidget(toolbar);
 
