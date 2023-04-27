@@ -15,7 +15,8 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
   # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
   if v_ego_raw > 9:
-    apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR, current_curvature + CarControllerParams.CURVATURE_ERROR)
+    apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR,
+                           current_curvature + CarControllerParams.CURVATURE_ERROR)
 
   return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
