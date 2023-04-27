@@ -39,6 +39,10 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   view->header()->setSectionsMovable(true);
 
+  // Header context menu
+  view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
+  QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, view, &MessageView::headerContextMenuEvent);
+
   main_layout->addWidget(view);
 
   // suppress
@@ -318,4 +322,35 @@ void MessageView::updateBytesSectionSize() {
   if (header()->sectionSize(5) != width) {
     header()->resizeSection(5, width);
   }
+}
+
+void MessageView::headerContextMenuEvent(const QPoint &pos) {
+  QMenu *menu = new QMenu(this);
+  int cur_index = header()->logicalIndexAt(pos);
+
+  QString column_name;
+  QAction *action;
+  for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
+    int logical_index = header()->logicalIndex(visual_index);
+    column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
+
+    // Hide show action
+    if (header()->isSectionHidden(logical_index)) {
+      action = menu->addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
+    } else {
+      action = menu->addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
+    }
+
+    // Can't hide the name column
+    action->setEnabled(logical_index > 0);
+
+    // Make current column bold
+    if (logical_index == cur_index) {
+      QFont font = action->font();
+      font.setBold(true);
+      action->setFont(font);
+    }
+  }
+
+  menu->popup(header()->mapToGlobal(pos));
 }
