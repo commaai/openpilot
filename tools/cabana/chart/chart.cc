@@ -260,15 +260,12 @@ void ChartView::updateSeries(const cabana::Signal *sig) {
       s.series->setColor(getColor(s.sig));
 
       const auto &msgs = can->events(s.msg_id);
+      s.vals.reserve(msgs.capacity());
+      s.step_vals.reserve(msgs.capacity() * 2);
+
       auto first = std::upper_bound(msgs.cbegin(), msgs.cend(), s.last_value_mono_time, [](uint64_t ts, auto e) {
         return ts < e->mono_time;
       });
-      int new_size = std::max<int>(s.vals.size() + std::distance(first, msgs.cend()), settings.max_cached_minutes * 60 * 100);
-      if (s.vals.capacity() <= new_size) {
-        s.vals.reserve(new_size * 2);
-        s.step_vals.reserve(new_size * 4);
-      }
-
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
