@@ -1740,8 +1740,6 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00PSBG2433  G16\x00\x00\x00\x00\x00\x00\x00SJX1T35XXXG16NB6\xa6Upc',
-      b'\xf1\x8795441-4JAC0\x00\xf1\x81G16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2433  G16\x00\x00\x00',
-      b'\x00\x00\x00\x00SJX1T35XXXG16NB6\xa6Upc',
       b'SJX1T35XXXG16NB6',
       b'\xf1\x8795441-4JAC0\x00\xf1\x89G16\x00\x00\x00\x00\x00\x00\x00\xf1\x82SJX1T35XXXG16NB6',
     ],
