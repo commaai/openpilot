@@ -125,6 +125,7 @@ class CAR:
   GENESIS_GV70_1ST_GEN = "GENESIS GV70 1ST GEN"
   GENESIS_G80 = "GENESIS G80 2017"
   GENESIS_G90 = "GENESIS G90 2017"
+  GENESIS_GV80 = "GENESIS GV80 2023"
 
 
 class Footnote(Enum):
@@ -247,6 +248,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_l),
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
+  CAR.GENESIS_GV80: HyundaiCarInfo("Genesis GV80 2023", "All", harness=Harness.hyundai_m),
 }
 
 class Buttons:
