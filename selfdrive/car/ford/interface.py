@@ -15,6 +15,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
     ret.experimentalLongitudinalAvailable = True
+    ret.openpilotLongitudinalControl = experimental_long
 
     # These cars are dashcam only until the port is finished
     # ret.dashcamOnly = True
