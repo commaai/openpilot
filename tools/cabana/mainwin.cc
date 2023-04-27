@@ -203,6 +203,9 @@ void MainWindow::createStatusBar() {
 
   statusBar()->addPermanentWidget(status_label = new QLabel(this));
   updateStatus();
+  QTimer *timer = new QTimer(this);
+  timer->callOnTimeout(this, &MainWindow::updateStatus);
+  timer->start(1000);
 }
 
 void MainWindow::createShortcuts() {
@@ -669,7 +672,15 @@ void MainWindow::updateDownloadProgress(uint64_t cur, uint64_t total, bool succe
 }
 
 void MainWindow::updateStatus() {
-  status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
+  QString text = tr("Cached Minutes: %1  FPS: %2").arg(settings.max_cached_minutes).arg(settings.fps);
+  auto [cpu_usage, mem] = cpuAndMemoryUsage();
+  if (cpu_usage > 0) {
+    text += QString("  CPU: %1%").arg(cpu_usage, 0, 'f', 1);
+  }
+  if (mem > 0) {
+    text += QString("  RES: %1").arg(formattedDataSize(mem).c_str());
+  }
+  status_label->setText(text);
 }
 
 void MainWindow::dockCharts(bool dock) {

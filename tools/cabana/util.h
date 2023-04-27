@@ -123,3 +123,4 @@ private:
 };
 
 int num_decimals(double num);
+std::pair<double, uint64_t> cpuAndMemoryUsage();

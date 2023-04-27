@@ -127,8 +127,10 @@ std::string formattedDataSize(size_t size) {
     return std::to_string(size) + " B";
   } else if (size < 1024 * 1024) {
     return util::string_format("%.2f KB", (float)size / 1024);
-  } else {
+  } else if (size < 1024 * 1024 * 1024) {
     return util::string_format("%.2f MB", (float)size / (1024 * 1024));
+  } else {
+    return util::string_format("%.2f GB", (float)size / (1024 * 1024 * 1024));
   }
 }
 
