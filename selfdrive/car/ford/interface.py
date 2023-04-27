@@ -16,7 +16,6 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
     ret.experimentalLongitudinalAvailable = True
-    ret.openpilotLongitudinalControl = experimental_long
 
     if experimental_long:
       ret.openpilotLongitudinalControl = True
