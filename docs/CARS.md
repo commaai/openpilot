@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 243 Supported Cars
+# 244 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -103,6 +103,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Kia|EV6 (with HDA II) 2022-23[<sup>5</sup>](#footnotes)|Highway Driving Assist II|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=EV6 (with HDA II) 2022-23">Hyundai P</a>||
 |Kia|EV6 (without HDA II) 2022-23[<sup>5</sup>](#footnotes)|Highway Driving Assist|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=EV6 (without HDA II) 2022-23">Hyundai L</a>||
 |Kia|Forte 2019-21|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Forte 2019-21">Hyundai G</a>||
+|Kia|Forte 2023|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Forte 2023">Hyundai E</a>||
 |Kia|K5 2021-22|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=K5 2021-22">Hyundai A</a>||
 |Kia|K5 Hybrid 2020|Smart Cruise Control (SCC)|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=K5 Hybrid 2020">Hyundai A</a>||
 |Kia|Niro EV 2019|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Kia&model=Niro EV 2019">Hyundai H</a>|<a href="https://www.youtube.com/watch?v=lT7zcG6ZpGo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
