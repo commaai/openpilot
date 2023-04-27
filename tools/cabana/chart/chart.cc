@@ -194,12 +194,13 @@ void ChartView::updatePlotArea(int left_pos, bool force) {
     QSizeF legend_size = chart()->legend()->layout()->minimumSize();
     legend_size.setWidth(manage_btn_proxy->sceneBoundingRect().left() - move_icon->sceneBoundingRect().right());
     chart()->legend()->setGeometry({move_icon->sceneBoundingRect().topRight(), legend_size});
-    QSizeF x_label_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, QString::number(axis_x->max(), 'f', 2));
-    x_label_size += QSizeF{5, 5};
 
-    // add space for signal value
+    // add top space for signal value
     int adjust_top = chart()->legend()->geometry().height() + QFontMetrics(signal_value_font).height() + 3;
     adjust_top = std::max<int>(adjust_top, manage_btn_proxy->sceneBoundingRect().height() + style()->pixelMetric(QStyle::PM_LayoutTopMargin));
+    // add right space for x-axis label
+    QSizeF x_label_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, QString::number(axis_x->max(), 'f', 2));
+    x_label_size += QSizeF{5, 5};
     chart()->setPlotArea(rect().adjusted(align_to + left, adjust_top + top, -x_label_size.width() / 2 - right, -x_label_size.height() - bottom));
     chart()->layout()->invalidate();
     resetChartCache();
@@ -646,49 +647,6 @@ void ChartView::drawBackground(QPainter *painter, const QRectF &rect) {
   painter->fillRect(rect, palette().color(QPalette::Base));
 }
 
-void ChartView::drawTimeline(QPainter *painter) {
-  // draw line
-  qreal x = chart()->mapToPosition(QPointF{cur_sec, 0}).x();
-  auto plot_area = chart()->plotArea();
-  x = std::clamp(x, plot_area.left(), plot_area.right());
-  painter->setPen(QPen(chart()->titleBrush().color(), 2));
-  painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom()});
-
-  // draw current time
-  QString time_str = QString::number(cur_sec, 'f', 2);
-  QFont x_label_font = axis_x->labelsFont();
-  QSize time_str_size = QFontMetrics(x_label_font).size(Qt::TextSingleLine, time_str) + QSize(8, 2);
-  QRect time_str_rect(QPoint(x - time_str_size.width() / 2, plot_area.bottom() + 3), time_str_size);
-  QPainterPath path;
-  path.addRoundedRect(time_str_rect, 3, 3);
-  painter->fillPath(path, Qt::darkGray);
-  painter->setPen(QPen(Qt::white));
-  painter->setFont(x_label_font);
-  painter->drawText(time_str_rect, Qt::AlignCenter, time_str);
-
-  // draw signal value
-  auto item_group = qgraphicsitem_cast<QGraphicsItemGroup*>(chart()->legend()->childItems()[0]);
-  assert(item_group != nullptr);
-  auto marker_items = item_group->childItems();
-
-  painter->setFont(signal_value_font);
-  painter->setPen(chart()->legend()->labelColor());
-  int i = 0;
-  for (auto &s : sigs) {
-    QString value = "--";
-    if (s.series->isVisible()) {
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
-        value = s.sig->formatValue(it->y());
-      }
-    }
-    QRectF marker_rect = marker_items[i++]->sceneBoundingRect();
-    QRectF value_rect(marker_rect.bottomLeft(), marker_rect.size());
-    QString value_str = painter->fontMetrics().elidedText(value, Qt::ElideRight, value_rect.width());
-    painter->drawText(value_rect, Qt::AlignHCenter | Qt::AlignTop, value_str);
-  }
-}
-
 void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   drawTimeline(painter);
   // draw track points
@@ -734,6 +692,48 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
       painter->fillRect(r, Qt::gray);
       painter->drawText(r, Qt::AlignCenter, sec);
     }
+  }
+}
+
+void ChartView::drawTimeline(QPainter *painter) {
+  const auto plot_area = chart()->plotArea();
+  // draw line
+  qreal x = std::clamp(chart()->mapToPosition(QPointF{cur_sec, 0}).x(), plot_area.left(), plot_area.right());
+  painter->setPen(QPen(chart()->titleBrush().color(), 2));
+  painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom()});
+
+  // draw current time
+  QString time_str = QString::number(cur_sec, 'f', 2);
+  QSize time_str_size = QFontMetrics(axis_x->labelsFont()).size(Qt::TextSingleLine, time_str) + QSize(8, 2);
+  QRect time_str_rect(QPoint(x - time_str_size.width() / 2, plot_area.bottom() + 3), time_str_size);
+  QPainterPath path;
+  path.addRoundedRect(time_str_rect, 3, 3);
+  painter->fillPath(path, Qt::darkGray);
+  painter->setPen(QPen(Qt::white));
+  painter->setFont(axis_x->labelsFont());
+  painter->drawText(time_str_rect, Qt::AlignCenter, time_str);
+
+  // draw signal value
+  auto item_group = qgraphicsitem_cast<QGraphicsItemGroup *>(chart()->legend()->childItems()[0]);
+  assert(item_group != nullptr);
+  auto legend_markers = item_group->childItems();
+  assert(legend_markers.size() == sigs.size());
+
+  painter->setFont(signal_value_font);
+  painter->setPen(chart()->legend()->labelColor());
+  int i = 0;
+  for (auto &s : sigs) {
+    QString value = "--";
+    if (s.series->isVisible()) {
+      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+        value = s.sig->formatValue(it->y());
+      }
+    }
+    QRectF marker_rect = legend_markers[i++]->sceneBoundingRect();
+    QRectF value_rect(marker_rect.bottomLeft(), marker_rect.size());
+    QString elided_val = painter->fontMetrics().elidedText(value, Qt::ElideRight, value_rect.width());
+    painter->drawText(value_rect, Qt::AlignHCenter | Qt::AlignTop, elided_val);
   }
 }
 

@@ -26,7 +26,6 @@ QString cabana::Signal::formatValue(double value) const {
   }
 
   QString val_str = QString::number(value, 'f', precision);
-  // Show unit
   if (!unit.isEmpty()) {
     val_str += " " + unit;
   }
