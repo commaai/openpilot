@@ -14,14 +14,10 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
-    ret.experimentalLongitudinalAvailable = True
-
-    if experimental_long:
-      ret.openpilotLongitudinalControl = True
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
-
     ret.radarUnavailable = True
+    ret.openpilotLongitudinalControl = True
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford, Panda.FLAG_FORD_LONG_CONTROL)]
+
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
