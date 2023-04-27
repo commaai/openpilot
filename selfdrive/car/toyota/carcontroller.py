@@ -105,7 +105,6 @@ class CarController:
           apply_angle = clip(torque_sensor_angle, -max_steer_angle, max_steer_angle)
         self.last_angle = apply_angle
 
-
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
       self.steer_rate_counter += 1
@@ -150,7 +149,8 @@ class CarController:
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req and not angle_control))
     if TSS2_CAR and self.frame % self.params.STEER_STEP == 0:
       limit_torque = CS.out.steeringPressed
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque, self.op_params))
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque, self.op_params,
+                                                self.frame // self.params.STEER_STEP))
 
     self.last_steer = apply_steer
     self.last_standstill = CS.out.standstill
@@ -205,7 +205,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
-    new_actuators.steeringAngleDeg = apply_angle
+    new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
