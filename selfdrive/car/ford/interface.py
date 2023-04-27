@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu
@@ -17,8 +18,9 @@ class CarInterface(CarInterfaceBase):
     ret.experimentalLongitudinalAvailable = True
     ret.openpilotLongitudinalControl = experimental_long
 
-    # These cars are dashcam only until the port is finished
-    # ret.dashcamOnly = True
+    if experimental_long:
+      ret.openpilotLongitudinalControl = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
