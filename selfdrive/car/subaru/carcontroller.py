@@ -2,7 +2,7 @@ from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
 ACCEL_HYST_GAP = 10  # don't change accel command for small oscilalitons within this value
 
@@ -33,6 +33,7 @@ class CarController:
     self.brake_status_cnt = -1
     self.es_status_cnt = -1
     self.es_brake_cnt = -1
+    self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
     self.steer_rate_limited = False
     self.cruise_rpm_last = 0
@@ -136,8 +137,8 @@ class CarController:
 
       if self.es_lkas_state_cnt != CS.es_lkas_state_msg["COUNTER"]:
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
-                                                  hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                  hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+                                                        hud_control.leftLaneVisible, hud_control.rightLaneVisible,
+                                                        hud_control.leftLaneDepart, hud_control.rightLaneDepart))
         self.es_lkas_state_cnt = CS.es_lkas_state_msg["COUNTER"]
 
       if self.CP.openpilotLongitudinalControl:
@@ -166,6 +167,10 @@ class CarController:
           bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle))
           self.last_cancel_frame = self.frame
+
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.infotainmentstatus_cnt != CS.es_infotainmentstatus_msg["COUNTER"]:
+        can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
+        self.infotainmentstatus_cnt = CS.es_infotainmentstatus_msg["COUNTER"]
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX

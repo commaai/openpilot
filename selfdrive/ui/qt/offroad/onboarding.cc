@@ -40,7 +40,6 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
-  img_path = width() == WIDE_WIDTH ? "../assets/training_wide/" : "../assets/training/";
   boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
 
   currentIndex = 0;
