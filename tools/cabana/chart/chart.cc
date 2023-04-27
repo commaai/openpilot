@@ -701,7 +701,7 @@ void ChartView::drawTimeline(QPainter *painter) {
   // draw line
   qreal x = std::clamp(chart()->mapToPosition(QPointF{cur_sec, 0}).x(), plot_area.left(), plot_area.right());
   painter->setPen(QPen(chart()->titleBrush().color(), 2));
-  painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom() + 2});
+  painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom() + 1});
 
   // draw current time
   QString time_str = QString::number(cur_sec, 'f', 2);
@@ -732,7 +732,7 @@ void ChartView::drawTimeline(QPainter *painter) {
       }
     }
     QRectF marker_rect = legend_markers[i++]->sceneBoundingRect();
-    QRectF value_rect(marker_rect.bottomLeft(), marker_rect.size());
+    QRectF value_rect(marker_rect.bottomLeft() - QPoint(0, 1), marker_rect.size());
     QString elided_val = painter->fontMetrics().elidedText(value, Qt::ElideRight, value_rect.width());
     painter->drawText(value_rect, Qt::AlignHCenter | Qt::AlignTop, elided_val);
   }
