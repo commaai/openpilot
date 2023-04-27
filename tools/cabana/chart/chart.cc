@@ -710,7 +710,7 @@ void ChartView::drawTimeline(QPainter *painter) {
   QPainterPath path;
   path.addRoundedRect(time_str_rect, 3, 3);
   painter->fillPath(path, Qt::darkGray);
-  painter->setPen(QPen(Qt::white));
+  painter->setPen(palette().color(QPalette::BrightText));
   painter->setFont(axis_x->labelsFont());
   painter->drawText(time_str_rect, Qt::AlignCenter, time_str);
 
