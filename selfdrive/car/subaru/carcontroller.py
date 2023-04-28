@@ -25,7 +25,7 @@ class CarController:
       "ES_DashStatus": 10
     }
 
-    return self.frame % frequency[message_name] == 0
+    return self.frame % (100 / frequency[message_name]) == 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
