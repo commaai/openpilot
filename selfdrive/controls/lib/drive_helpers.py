@@ -204,4 +204,6 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
 
 def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
   # ToDo: Try relative error, and absolute speed
-  return float(modelV2.temporalPose.trans[0] - v_ego)
+  if len(modelV2.temporalPose.trans):
+    return float(modelV2.temporalPose.trans[0] - v_ego)
+  return 0.0
