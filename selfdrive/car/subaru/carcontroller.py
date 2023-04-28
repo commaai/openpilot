@@ -16,7 +16,7 @@ class CarController:
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
-  def send_message(self, message_name):
+  def should_send_message(self, message_name):
     # message frequency
     frequency = {
       "ES_Distance": 20,
@@ -57,7 +57,7 @@ class CarController:
     # *** alerts and pcm cancel ***
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      if self.send_message("ES_Distance"):
+      if self.should_send_message("ES_Distance"):
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
@@ -79,17 +79,17 @@ class CarController:
       if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
         bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
-        self.last_cancel_frame = self.frame
+        self.last_cancel_frame = self.frame 
 
-      if self.send_message("ES_DashStatus"):
+      if self.should_send_message("ES_DashStatus"):
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
 
-      if self.send_message("ES_LKAS_State"):
+      if self.should_send_message("ES_LKAS_State"):
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
-      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.send_message("INFOTAINMENT_STATUS"):
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.should_send_message("INFOTAINMENT_STATUS"):
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
 
     new_actuators = actuators.copy()
