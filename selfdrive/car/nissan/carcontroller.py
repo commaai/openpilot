@@ -61,7 +61,7 @@ class CarController:
       can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, pcm_cancel_cmd))
 
     can_sends.append(nissancan.create_steering_control(
-      self.packer, apply_angle, self.frame, CC.enabled, self.lkas_max_torque))
+      self.packer, apply_angle, self.frame, CC.latActive, self.lkas_max_torque))
 
     if self.CP.carFingerprint != CAR.ALTIMA:
       if self.frame % 2 == 0:
