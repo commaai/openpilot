@@ -230,7 +230,7 @@ int num_decimals(double num) {
 std::pair<double, uint64_t> cpuAndMemoryUsage() {
   static const double hertz = sysconf(_SC_CLK_TCK);
   static const size_t page_size = sysconf(_SC_PAGE_SIZE);
-  static double prev_cputime = 0;
+  static uint64_t prev_cputime = 0;
   static double prev_ts = 0;
 
   double cpu_usage = 0;
@@ -240,9 +240,9 @@ std::pair<double, uint64_t> cpuAndMemoryUsage() {
   if (stats.size() == 52) {
     const double current_ts = seconds_since_boot();
     res = stats[23].toULong() * page_size;
-    double cpu_time = (stats[13].toULong() + stats[14].toULong() + stats[15].toLong() + stats[16].toLong()) / hertz;
+    uint64_t cpu_time = stats[13].toULong() + stats[14].toULong() + stats[15].toLong() + stats[16].toLong();
     if (prev_ts > 0) {
-      cpu_usage = ((cpu_time - prev_cputime) / (current_ts - prev_ts)) * 100;
+      cpu_usage = (((cpu_time - prev_cputime) / hertz) / (current_ts - prev_ts)) * 100;
     }
     prev_cputime = cpu_time;
     prev_ts = current_ts;
