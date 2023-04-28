@@ -1325,9 +1325,18 @@ FW_VERSIONS = {
   CAR.KIA_NIRO_EV_2ND_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
+      b'\xf1\x8799110AT000\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
+      b'\xf1\x00SG2EMFC  AT USA LHD 1.01 1.09 99211-AT000 220801',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00SG2 MDPS C A.00 1.03 56310AO000  4SGVC103',
+      b'\xf1\x8756310AO000 \xf1\x00SG2 MDPS C A.00 1.03 56310AO000  4SGVC103',
+    ],
+    (Ecu.cornerRadar, 0x7b7, None): [
+      b'\xf1\x00SG2 BCW RR 1.01 , 1.04 (wQ\x83"\x02\x16\x00c',
     ],
   },
   CAR.KIA_NIRO_PHEV: {
