@@ -21,7 +21,8 @@ class CarController:
     frequency = {
       "ES_Distance": 20,
       "ES_LKAS_State": 10,
-      "INFOTAINMENT_STATUS": 10
+      "INFOTAINMENT_STATUS": 10,
+      "ES_DashStatus": 10
     }
 
     return self.frame % frequency[message_name] == 0
