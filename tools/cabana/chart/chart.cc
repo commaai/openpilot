@@ -123,7 +123,7 @@ void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
 }
 
 bool ChartView::hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const {
-  return std::any_of(sigs.begin(), sigs.end(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
+  return std::any_of(sigs.cbegin(), sigs.cend(), [&](auto &s) { return s.msg_id == msg_id && s.sig == sig; });
 }
 
 void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
@@ -147,14 +147,14 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 }
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
-  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.sig == sig; })) {
+  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
     updateTitle();
     updateSeries(sig);
   }
 }
 
 void ChartView::msgUpdated(MessageId id) {
-  if (std::any_of(sigs.begin(), sigs.end(), [=](auto &s) { return s.msg_id == id; }))
+  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id == id; }))
     updateTitle();
 }
 
@@ -239,11 +239,11 @@ void ChartView::updatePlot(double cur, double min, double max) {
 void ChartView::updateSeriesPoints() {
   // Show points when zoomed in enough
   for (auto &s : sigs) {
-    auto begin = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
-    auto end = std::lower_bound(begin, s.vals.end(), axis_x->max(), xLessThan);
+    auto begin = std::lower_bound(s.vals.cbegin(), s.vals.cend(), axis_x->min(), xLessThan);
+    auto end = std::lower_bound(begin, s.vals.cend(), axis_x->max(), xLessThan);
     if (begin != end) {
       int num_points = std::max<int>((end - begin), 1);
-      QPointF right_pt = end == s.vals.end() ? s.vals.back() : *end;
+      QPointF right_pt = end == s.vals.cend() ? s.vals.back() : *end;
       double pixels_per_point = (chart()->mapToPosition(right_pt).x() - chart()->mapToPosition(*begin).x()) / num_points;
 
       if (series_type == SeriesType::Scatter) {
@@ -315,8 +315,8 @@ void ChartView::updateAxisY() {
       unit.clear();
     }
 
-    auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
-    auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+    auto first = std::lower_bound(s.vals.cbegin(), s.vals.cend(), axis_x->min(), xLessThan);
+    auto last = std::lower_bound(first, s.vals.cend(), axis_x->max(), xLessThan);
     s.min = std::numeric_limits<double>::max();
     s.max = std::numeric_limits<double>::lowest();
     if (can->liveStreaming()) {
@@ -325,7 +325,7 @@ void ChartView::updateAxisY() {
         if (it->y() > s.max) s.max = it->y();
       }
     } else {
-      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.begin(), first), std::distance(s.vals.begin(), last));
+      auto [min_y, max_y] = s.segment_tree.minmax(std::distance(s.vals.cbegin(), first), std::distance(s.vals.cbegin(), last));
       s.min = min_y;
       s.max = max_y;
     }
@@ -540,8 +540,8 @@ void ChartView::showTip(double sec) {
     if (s.series->isVisible()) {
       QString value = "--";
       // use reverse iterator to find last item <= sec.
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.crend() && it->x() >= axis_x->min()) {
         value = QString::number(it->y());
         s.track_pt = *it;
         x = std::max(x, chart()->mapToPosition(*it).x());
@@ -672,8 +672,8 @@ void ChartView::drawForeground(QPainter *painter, const QRectF &rect) {
   painter->setPen(Qt::NoPen);
   for (auto &s : sigs) {
     if (s.series->useOpenGL() && s.series->isVisible() && s.series->pointsVisible()) {
-      auto first = std::lower_bound(s.vals.begin(), s.vals.end(), axis_x->min(), xLessThan);
-      auto last = std::lower_bound(first, s.vals.end(), axis_x->max(), xLessThan);
+      auto first = std::lower_bound(s.vals.cbegin(), s.vals.cend(), axis_x->min(), xLessThan);
+      auto last = std::lower_bound(first, s.vals.cend(), axis_x->max(), xLessThan);
       painter->setBrush(s.series->color());
       for (auto it = first; it != last; ++it) {
         painter->drawEllipse(chart()->mapToPosition(*it), 4, 4);
@@ -726,8 +726,8 @@ void ChartView::drawTimeline(QPainter *painter) {
   for (auto &s : sigs) {
     QString value = "--";
     if (s.series->isVisible()) {
-      auto it = std::lower_bound(s.vals.rbegin(), s.vals.rend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
-      if (it != s.vals.rend() && it->x() >= axis_x->min()) {
+      auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), cur_sec, [](auto &p, double x) { return p.x() > x; });
+      if (it != s.vals.crend() && it->x() >= axis_x->min()) {
         value = s.sig->formatValue(it->y());
       }
     }

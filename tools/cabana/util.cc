@@ -191,7 +191,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#777777"));
+      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();
