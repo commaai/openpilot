@@ -279,7 +279,7 @@ CONFIGS = [
     fake_pubsubmaster=True,
     submaster_config={
       'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
-      'ignore_alive': ['wideRoadCameraState'],  # TODO: Add to regen
+      'ignore_alive': [], 
     }
   ),
   ProcessConfig(
@@ -421,11 +421,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   if lr is not None:
     services = {m.which() for m in lr}
     params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-
-  if lr is not None:
-    services = {m.which() for m in lr}
-    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-
+  
   if cfg is not None:
     # Clear all custom processConfig environment variables
     for config in CONFIGS:

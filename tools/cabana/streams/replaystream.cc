@@ -8,7 +8,7 @@
 
 #include "common/prefix.h"
 
-ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent, false) {
+ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
@@ -25,10 +25,9 @@ static bool event_filter(const Event *e, void *opaque) {
 void ReplayStream::mergeSegments() {
   for (auto &[n, seg] : replay->segments()) {
     if (seg && seg->isLoaded() && !processed_segments.count(n)) {
-      const auto &events = seg->log->events;
-      bool append = processed_segments.empty() || *processed_segments.rbegin() < n;
       processed_segments.insert(n);
-      mergeEvents(events.cbegin(), events.cend(), append);
+      const auto &events = seg->log->events;
+      mergeEvents(events.cbegin(), events.cend());
     }
   }
 }
@@ -48,8 +47,21 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
+  static double prev_update_ts = 0;
+  // delay posting CAN message if UI thread is busy
   if (event->which == cereal::Event::Which::CAN) {
-    updateEvent(event);
+    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    for (const auto &c : event->event.getCan()) {
+      MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
+      const auto dat = c.getDat();
+      updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
+    }
+    double ts = millis_since_boot();
+    if ((ts - prev_update_ts) > (1000.0 / settings.fps)) {
+      if (postEvents()) {
+        prev_update_ts = ts;
+      }
+    }
   }
   return true;
 }
