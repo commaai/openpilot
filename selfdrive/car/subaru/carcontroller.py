@@ -16,17 +16,6 @@ class CarController:
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
-  def should_send_message(self, message_name):
-    # message frequency
-    frequency = {
-      "ES_Distance": 20,
-      "ES_LKAS_State": 10,
-      "INFOTAINMENT_STATUS": 10,
-      "ES_DashStatus": 10
-    }
-
-    return self.frame % (100 / frequency[message_name]) == 0
-
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
@@ -57,7 +46,7 @@ class CarController:
     # *** alerts and pcm cancel ***
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      if self.should_send_message("ES_Distance"):
+      if self.frame % 5 == 0:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
@@ -81,15 +70,15 @@ class CarController:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
         self.last_cancel_frame = self.frame 
 
-      if self.should_send_message("ES_DashStatus"):
+      if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
 
-      if self.should_send_message("ES_LKAS_State"):
+      if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
-      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.should_send_message("INFOTAINMENT_STATUS"):
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT and self.frame % 10 == 0::
         can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
 
     new_actuators = actuators.copy()
