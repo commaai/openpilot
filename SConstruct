@@ -58,11 +58,6 @@ AddOption('--pc-thneed',
           dest='pc_thneed',
           help='use thneed on pc')
 
-AddOption('--enable-debug',
-          action='store_true',
-          dest='debug',
-          help='enable debugging')
-
 AddOption('--no-test',
           action='store_false',
           dest='test',
@@ -179,19 +174,12 @@ if arch != "Darwin":
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
-if GetOption('debug'):
-  cflags.extend(
-    ['-g', '-O2']
-  )
-else:
-  cflags.extend(
-    ['-O2']
-  )
-
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
+    "-g",
     "-fPIC",
+    "-O2",
     "-Wunused",
     "-Werror",
     "-Wshadow",
