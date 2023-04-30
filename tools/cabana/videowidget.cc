@@ -262,7 +262,8 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 void Slider::mouseMoveEvent(QMouseEvent *e) {
   QPixmap thumb;
   AlertInfo alert;
-  double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
+  int pos = std::clamp(e->pos().x(), 0, width());
+  double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / 1000.0;
   {
     std::lock_guard lk(thumbnail_lock);
     uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
@@ -273,7 +274,7 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
       alert = alert_it->second;
     }
   }
-  int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
+  int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
   int y = -thumb.height();
   thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);

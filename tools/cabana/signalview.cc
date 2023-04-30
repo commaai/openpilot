@@ -595,17 +595,7 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   for (auto item : model->root->children) {
     double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
-    item->sig_val = QString::number(value, 'f', item->sig->precision);
-    // Show unit
-    if (!item->sig->unit.isEmpty()) {
-      item->sig_val += " " + item->sig->unit;
-    }
-    // Show enum string
-    for (auto &[val, desc] : item->sig->val_desc) {
-      if (std::abs(value - val.toInt()) < 1e-6) {
-        item->sig_val = desc;
-      }
-    }
+    item->sig_val = item->sig->formatValue(value);
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 
