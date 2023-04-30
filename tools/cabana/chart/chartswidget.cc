@@ -188,10 +188,10 @@ void ChartsWidget::updateState() {
     if (pos < 0 || pos > 0.8) {
       display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
     }
-    double max_sec = std::min(std::floor(display_range.first + max_chart_range), can->lastEventSecond());
+    double max_sec = std::min(std::floor(display_range.first + max_chart_range), can->totalSeconds());
     display_range.first = std::max(0.0, max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
-  } else if (cur_sec < zoomed_range.first || cur_sec >= zoomed_range.second) {
+  } else if (cur_sec < (zoomed_range.first - 0.1) || cur_sec >= zoomed_range.second) {
     // loop in zoomed range
     can->seekTo(zoomed_range.first);
   }
@@ -314,7 +314,12 @@ void ChartsWidget::updateLayout(bool force) {
     }
     for (int i = 0; i < current_charts.size(); ++i) {
       charts_layout->addWidget(current_charts[i], i / n, i % n);
-      current_charts[i]->setVisible(true);
+      if (current_charts[i]->sigs.isEmpty()) {
+        // the chart will be resized after add signal. delay setVisible to reduce flicker.
+        QTimer::singleShot(0, [c = current_charts[i]]() { c->setVisible(true); });
+      } else {
+        current_charts[i]->setVisible(true);
+      }
     }
     charts_container->setUpdatesEnabled(true);
   }

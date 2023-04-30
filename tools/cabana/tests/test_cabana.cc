@@ -52,7 +52,8 @@ TEST_CASE("Parse can messages") {
       }
 
       can_parser.UpdateCans(e->mono_time, e->event.getCan());
-      auto values_2 = can_parser.query_latest();
+      std::vector<SignalValue> values_2;
+      can_parser.query_latest(values_2);
       for (auto &[key, v1] : values_1) {
         bool found = false;
         for (auto &v2 : values_2) {

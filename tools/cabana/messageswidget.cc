@@ -25,14 +25,24 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view = new MessageView(this);
   model = new MessageListModel(this);
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
-  view->setItemDelegateForColumn(5, delegate);
+  view->setItemDelegate(delegate);
   view->setModel(model);
   view->setSortingEnabled(true);
   view->sortByColumn(0, Qt::AscendingOrder);
+  view->setAllColumnsShowFocus(true);
+  view->setEditTriggers(QAbstractItemView::NoEditTriggers);
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->header()->setStretchLastSection(true);
+  // Must be called before setting any header parameters to avoid overriding
+  restoreHeaderState(settings.message_header_state);
+
+  view->header()->setSectionsMovable(true);
+
+  // Header context menu
+  view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
+  QObject::connect(view->header(), &QHeaderView::customContextMenuRequested, view, &MessageView::headerContextMenuEvent);
+
   main_layout->addWidget(view);
 
   // suppress
@@ -48,6 +58,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
+    view->setUniformRowHeights(!settings.multiple_lines_bytes);
     model->sortMessages();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
@@ -59,6 +70,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
     }
+    view->updateBytesSectionSize();
   });
   QObject::connect(view->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &current, const QModelIndex &previous) {
     if (current.isValid() && current.row() < model->msgs.size()) {
@@ -129,12 +141,20 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   const auto &id = msgs[index.row()];
   auto &can_data = can->lastMessage(id);
 
+  auto getFreq = [](const CanData &d) -> QString {
+    if (d.freq > 0 && (can->currentSec() - d.ts - 1.0 / settings.fps) < (5.0 / d.freq)) {
+      return d.freq >= 1 ? QString::number(std::nearbyint(d.freq)) : QString::number(d.freq, 'f', 2);
+    } else {
+      return "--";
+    }
+  };
+
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case 0: return msgName(id);
       case 1: return id.source;
-      case 2: return QString::number(id.address, 16);;
-      case 3: return can_data.freq;
+      case 2: return QString::number(id.address, 16);
+      case 3: return getFreq(can_data);
       case 4: return can_data.count;
       case 5: return toHex(can_data.dat);
     }
@@ -148,7 +168,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       }
     }
     return QVariant::fromValue(colors);
-  } else if (role == BytesRole) {
+  } else if (role == BytesRole && index.column() == 5) {
     return can_data.dat;
   }
   return {};
@@ -268,17 +288,69 @@ void MessageListModel::reset() {
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   QTreeView::drawRow(painter, option, index);
-  painter->save();
   const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
   const QColor gridColor = QColor::fromRgba(static_cast<QRgb>(gridHint));
+  QPen old_pen = painter->pen();
   painter->setPen(gridColor);
   painter->drawLine(option.rect.left(), option.rect.bottom(), option.rect.right(), option.rect.bottom());
 
   auto y = option.rect.y();
   painter->translate(visualRect(model()->index(0, 0)).x() - indentation() - .5, -.5);
   for (int i = 0; i < header()->count(); ++i) {
-    painter->translate(header()->sectionSize(i), 0);
+    painter->translate(header()->sectionSize(header()->logicalIndex(i)), 0);
     painter->drawLine(0, y, 0, y + option.rect.height());
   }
-  painter->restore();
+  painter->setPen(old_pen);
+  painter->resetTransform();
+}
+
+void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
+  // Bypass the slow call to QTreeView::dataChanged.
+  // QTreeView::dataChanged will invalidate the height cache and that's what we don't need in MessageView.
+  QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+}
+
+void MessageView::updateBytesSectionSize() {
+  auto delegate = ((MessageBytesDelegate *)itemDelegate());
+  int max_bytes = 8;
+  if (!delegate->multipleLines()) {
+    for (auto it = can->last_msgs.constBegin(); it != can->last_msgs.constEnd(); ++it) {
+      max_bytes = std::max(max_bytes, it.value().dat.size());
+    }
+  }
+  int width = delegate->widthForBytes(max_bytes);
+  if (header()->sectionSize(5) != width) {
+    header()->resizeSection(5, width);
+  }
+}
+
+void MessageView::headerContextMenuEvent(const QPoint &pos) {
+  QMenu *menu = new QMenu(this);
+  int cur_index = header()->logicalIndexAt(pos);
+
+  QString column_name;
+  QAction *action;
+  for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
+    int logical_index = header()->logicalIndex(visual_index);
+    column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
+
+    // Hide show action
+    if (header()->isSectionHidden(logical_index)) {
+      action = menu->addAction(tr("  %1").arg(column_name), [=]() { header()->showSection(logical_index); });
+    } else {
+      action = menu->addAction(tr("✓ %1").arg(column_name), [=]() { header()->hideSection(logical_index); });
+    }
+
+    // Can't hide the name column
+    action->setEnabled(logical_index > 0);
+
+    // Make current column bold
+    if (logical_index == cur_index) {
+      QFont font = action->font();
+      font.setBold(true);
+      action->setFont(font);
+    }
+  }
+
+  menu->popup(header()->mapToGlobal(pos));
 }

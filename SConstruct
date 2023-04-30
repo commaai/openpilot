@@ -7,6 +7,8 @@ import numpy as np
 
 import SCons.Errors
 
+SCons.Warnings.warningAsException(True)
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -125,7 +127,7 @@ else:
       f"#third_party/libyuv/{yuv_dir}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/Library",
-      f"{brew_prefix}/opt/openssl/lib",
+      f"{brew_prefix}/opt/openssl@3.0/lib",
       f"{brew_prefix}/Cellar",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
@@ -138,7 +140,7 @@ else:
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
       f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl/include",
+      f"{brew_prefix}/opt/openssl@3.0/include",
     ]
   # Linux 86_64
   else:
@@ -324,7 +326,9 @@ else:
     qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
+qt_env['QT3DIR'] = qt_env['QTDIR']
 
+# compatibility for older SCons versions
 try:
   qt_env.Tool('qt3')
 except SCons.Errors.UserError:
@@ -450,7 +454,7 @@ SConscript(['system/sensord/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
 
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if (arch in ['x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 

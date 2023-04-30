@@ -15,6 +15,13 @@ class Settings : public QObject {
   Q_OBJECT
 
 public:
+  enum DragDirection {
+    MsbFirst,
+    LsbFirst,
+    AlwaysLE,
+    AlwaysBE,
+  };
+
   Settings();
   void save();
   void load();
@@ -37,6 +44,7 @@ public:
   QByteArray window_state;
   QStringList recent_files;
   QByteArray message_header_state;
+  DragDirection drag_direction;
 
 signals:
   void changed();
@@ -55,6 +63,7 @@ public:
   QComboBox *theme;
   QGroupBox *log_livestream;
   QLineEdit *log_path;
+  QComboBox *drag_direction;
 };
 
 extern Settings settings;
