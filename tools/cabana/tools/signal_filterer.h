@@ -17,17 +17,17 @@
 
 struct CanEventLessThan
 {
-    bool operator() (const CanEvent & left, const CanEvent & right)
+    bool operator() (const CanEvent *left, const CanEvent *right)
     {
-        return left.mono_time < right.mono_time;
+        return left->mono_time < right->mono_time;
     }
-    bool operator() (const CanEvent & left, uint64_t right)
+    bool operator() (const CanEvent *left, uint64_t right)
     {
-        return left.mono_time < right;
+        return left->mono_time < right;
     }
-    bool operator() (uint64_t left, const CanEvent & right)
+    bool operator() (uint64_t left, const CanEvent *right)
     {
-        return left < right.mono_time;
+        return left < right->mono_time;
     }
 };
 
@@ -43,7 +43,7 @@ class SearchSignal : public cabana::BaseSignal {
         MessageId messageID;
 
         int64_t getValue(double ts){
-            auto events = can->events().at(messageID);
+            auto events = can->events(messageID);
             CanEventLessThan comp;
 
             // get closest event to this ts
@@ -52,7 +52,9 @@ class SearchSignal : public cabana::BaseSignal {
             if(event != events.begin()){
               event -= 1;
             }
-            return get_raw_value(event->dat, event->size, *this);
+
+
+            return get_raw_value((*event)->dat, (*event)->size, *this);
         }
 
         int64_t getCurrentValue(){
