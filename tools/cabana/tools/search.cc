@@ -98,7 +98,7 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
 
     update();
 
-    QObject::connect(can, &AbstractStream::received, this, &SearchDlg::updateRowData);
+    QObject::connect(can, &AbstractStream::msgsReceived, this, &SearchDlg::updateRowData);
     QObject::connect(can, &AbstractStream::seekedTo, this, &SearchDlg::updateRowData);
 }
 
