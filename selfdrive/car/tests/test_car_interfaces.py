@@ -8,7 +8,6 @@ from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars, _FINGERPRINTS as FINGERPRINTS
-from selfdrive.car.interfaces import get_torque_params
 
 
 class TestCarInterfaces(unittest.TestCase):
@@ -44,9 +43,6 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
-      torque_params = get_torque_params(car_name)
-      self.assertNotEqual(torque_params['FRICTION'], 0)
-
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
         self.assertTrue(not math.isnan(tune.pid.kf) and tune.pid.kf > 0)
@@ -55,7 +51,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
-        self.assertTrue(not math.isnan(tune.torque.friction))
+        self.assertGreater(tune.torque.friction, 0)
 
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
