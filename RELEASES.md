@@ -1,6 +1,8 @@
-Version 0.9.2 (2023-03-XX)
+Version 0.9.2 (2023-05-XX)
 ========================
-* New driving model, trained on a new dataset
+* New driving model
+  * fixes turn diving
+  * trained on a new dataset
 * Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
 * Buick LaCrosse 2017-19 support thanks to koch-cf!
 * Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
