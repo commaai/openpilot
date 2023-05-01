@@ -62,7 +62,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     model->sortMessages();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::sortMessages);
   QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::sortMessages);
@@ -117,15 +116,6 @@ void MessagesWidget::updateSuppressedButtons() {
     suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
   }
 }
-
-void MessagesWidget::reset() {
-  current_msg_id = std::nullopt;
-  view->selectionModel()->clear();
-  model->reset();
-  filter->clear();
-  updateSuppressedButtons();
-}
-
 
 // MessageListModel
 
@@ -274,14 +264,6 @@ void MessageListModel::suppress() {
 
 void MessageListModel::clearSuppress() {
   suppressed_bytes.clear();
-}
-
-void MessageListModel::reset() {
-  beginResetModel();
-  filter_str = "";
-  msgs.clear();
-  clearSuppress();
-  endResetModel();
 }
 
 // MessageView

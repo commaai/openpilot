@@ -22,15 +22,16 @@ public:
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
-
+  ChartsWidget *charts_widget = nullptr;
 public slots:
-  void openRoute();
+  void openStream();
+  void changingStream();
+  void streamStarted();
   void newFile();
   void openFile();
   void openRecentFile();
   void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
-  void loadDBCFromFingerprint();
   void save();
   void saveAs();
   void saveToClipboard();
@@ -69,18 +70,19 @@ protected:
   void toggleFullScreen();
   void updateStatus();
   void updateLoadSaveMenus();
+  void createDockWidgets();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
-  MessagesWidget *messages_widget;
+  QDockWidget *messages_dock;
+  MessagesWidget *messages_widget = nullptr;
   CenterWidget *center_widget;
-  ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
-  QSplitter *video_splitter;;
+  QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;

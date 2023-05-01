@@ -10,6 +10,7 @@
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
 
+class MainWindow;
 class EditMessageDialog : public QDialog {
 public:
   EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent);
@@ -54,7 +55,7 @@ private:
 class CenterWidget : public QWidget {
   Q_OBJECT
 public:
-  CenterWidget(ChartsWidget* charts, QWidget *parent);
+  CenterWidget(QWidget *parent);
   void setMessage(const MessageId &msg_id);
   void clear();
 
@@ -62,5 +63,4 @@ private:
   QWidget *createWelcomeWidget();
   DetailWidget *detail_widget = nullptr;
   QWidget *welcome_widget = nullptr;
-  ChartsWidget *charts;
 };

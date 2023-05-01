@@ -27,7 +27,6 @@ public:
   void sortMessages();
   void suppress();
   void clearSuppress();
-  void reset();
   QList<MessageId> msgs;
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
@@ -57,7 +56,6 @@ public:
   QByteArray saveHeaderState() const { return view->header()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
   void updateSuppressedButtons();
-  void reset();
 
 signals:
   void msgSelectionChanged(const MessageId &message_id);
