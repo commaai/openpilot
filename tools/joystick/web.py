@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import time
-import threading
 from flask import Flask, Response, render_template
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from system.camerad.snapshot.snapshot import yuv_to_rgb, extract_image
+from system.camerad.snapshot.snapshot import  extract_image
+from flask_socketio import SocketIO
 
 IMG_H, IMG_W = 540, 960
 
 app = Flask(__name__)
 pm = messaging.PubMaster(['testJoystick'])
+socketio = SocketIO(app)
 
 @app.route("/")
 def hello_world():
@@ -34,19 +35,18 @@ class VideoCamera(object):
     if not self.vipc_client.is_connected():
       self.vipc_client.connect(True)
     yuv_img_raw = self.vipc_client.recv()
-
     if yuv_img_raw is None or not yuv_img_raw.any():
-      return np.zeros((IMG_H, IMG_W, 3), np.uint8)
+      frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
+    else:
+      #imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
 
-    #imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
+      #imgff = imgff[:3493536].reshape((self.vipc_client.height * 3 // 2, self.vipc_client.width))
+      #frame = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_NV12)
+      c = self.vipc_client
+      frame = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
+      #frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
 
-    #imgff = imgff[:3493536].reshape((self.vipc_client.height * 3 // 2, self.vipc_client.width))
-    #frame = cv2.cvtColor(imgff, cv2.COLOR_YUV2BGR_NV12)
-    c = self.vipc_client
-    frame = extract_image(c.recv(), c.width, c.height, c.stride, c.uv_offset)
-    #frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
-
-    frame = cv2.resize(frame, (IMG_W, IMG_H))
+      frame = cv2.resize(frame, (IMG_W, IMG_H))
 
     _, jpeg = cv2.imencode('.jpg', frame)
     return jpeg.tobytes()
@@ -68,9 +68,11 @@ def video_feed():
 
 
 last_send_time = time.monotonic()
-@app.route("/control/<y>/<x>")
-def control(x, y):
-  print(x,y)
+@socketio.on('control_command')
+def hand_control_command(data):
+  print(data)
+  x = data['x']
+  y = data['y']
   global last_send_time
   x,y = float(x), float(y)
   x = max(-1, min(1, x))
@@ -97,4 +99,4 @@ def main():
   app.run(host="0.0.0.0")
 
 if __name__ == '__main__':
-  main()
+  socketio.run(app)
