@@ -151,7 +151,7 @@ class TestCarModelBase(unittest.TestCase):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC, msg.logMonoTime)
 
-      if CS.canValid: 
+      if CS.canValid:
         can_valid = True
 
       # wait max of 2s for low frequency msgs to be seen
