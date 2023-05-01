@@ -1744,20 +1744,6 @@ FW_VERSIONS = {
       b'\xf1\x8799110T6100\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
       b'\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
     ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00JX1 MDPS R 1.00 1.06 56370-T6200 0715',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00PSBG2433  G16\x00\x00\x00\x00\x00\x00\x00SJX1T35XXXG16NB6\xa6Upc',
-      b'\xf1\x8795441-4JAC0\x00\xf1\x81G16\x00\x00\x00\x00\x00\x00\x00\xf1\x00PSBG2433  G16\x00\x00\x00\x00\x00\x00\x00SJX1T35XXXG16NB6\xa6Upc',
-      b'SJX1T35XXXG16NB6',
-      b'\xf1\x8795441-4JAC0\x00\xf1\x89G16\x00\x00\x00\x00\x00\x00\x00\xf1\x82SJX1T35XXXG16NB6',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x87           \xf1\x81 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'TJX-3NU0HF100M0K',
-      b'\xf1\x87           \xf1\x8908A02_23MY_001\x00\x00\xf1\x82TJX-3NU0HF100M0K',
-    ],
     (Ecu.cornerRadar, 0x7b7, None): [
       b'\xf1\x00JX1 BCW RR 1.00 , 1.00 (t\x94\x99"\x02q\x10y',
     ],
