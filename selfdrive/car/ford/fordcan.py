@@ -19,7 +19,7 @@ def create_lka_msg(packer):
 
   This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the PSCM lockout.
 
-  Frequency is 20Hz.
+  Frequency is 33Hz.
   """
 
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, {})
@@ -123,7 +123,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
 
   Stock functionality is maintained by passing through unmodified signals.
 
-  Frequency is 20Hz.
+  Frequency is 5Hz.
   """
 
   # Tja_D_Stat
@@ -208,6 +208,8 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
   Creates a CAN message for the Ford SCCM buttons/switches.
 
   Includes cruise control buttons, turn lights and more.
+
+  Frequency is 10Hz.
   """
 
   values = {

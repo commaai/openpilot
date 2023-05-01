@@ -25,10 +25,9 @@ static bool event_filter(const Event *e, void *opaque) {
 void ReplayStream::mergeSegments() {
   for (auto &[n, seg] : replay->segments()) {
     if (seg && seg->isLoaded() && !processed_segments.count(n)) {
-      const auto &events = seg->log->events;
-      bool append = processed_segments.empty() || *processed_segments.rbegin() < n;
       processed_segments.insert(n);
-      mergeEvents(events.cbegin(), events.cend(), append);
+      const auto &events = seg->log->events;
+      mergeEvents(events.cbegin(), events.cend());
     }
   }
 }

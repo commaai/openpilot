@@ -17,6 +17,21 @@ void cabana::Signal::updatePrecision() {
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
+QString cabana::Signal::formatValue(double value) const {
+  // Show enum string
+  for (auto &[val, desc] : val_desc) {
+    if (std::abs(value - val.toInt()) < 1e-6) {
+      return desc;
+    }
+  }
+
+  QString val_str = QString::number(value, 'f', precision);
+  if (!unit.isEmpty()) {
+    val_str += " " + unit;
+  }
+  return val_str;
+}
+
 // helper functions
 
 static QVector<int> BIG_ENDIAN_START_BITS = []() {

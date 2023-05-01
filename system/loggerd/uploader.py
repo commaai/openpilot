@@ -32,9 +32,15 @@ force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
 
 
+class FakeRequest:
+  def __init__(self):
+    self.headers = {"Content-Length": "0"}
+
+
 class FakeResponse:
   def __init__(self):
     self.status_code = 200
+    self.request = FakeRequest()
 
 
 UploadResponse = Union[requests.Response, FakeResponse]
@@ -199,9 +205,14 @@ class Uploader:
       if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
         self.last_filename = fn
         self.last_time = time.monotonic() - start_time
-        self.last_speed = (sz / 1e6) / self.last_time
+        if stat.status_code == 412:
+          self.last_speed = 0
+          cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+        else:
+          content_length = int(stat.request.headers.get("Content-Length", 0))
+          self.last_speed = (content_length / 1e6) / self.last_time
+          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length, network_type=network_type, metered=metered, speed=self.last_speed)
         success = True
-        cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
       else:
         success = False
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)

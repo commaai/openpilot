@@ -52,7 +52,7 @@ void LiveStream::timerEvent(QTimerEvent *event) {
     {
       // merge events received from live stream thread.
       std::lock_guard lk(lock);
-      mergeEvents(receivedEvents.cbegin(), receivedEvents.cend(), true);
+      mergeEvents(receivedEvents.cbegin(), receivedEvents.cend());
       receivedEvents.clear();
       receivedMessages.clear();
     }
@@ -67,7 +67,6 @@ void LiveStream::timerEvent(QTimerEvent *event) {
 
 void LiveStream::updateEvents() {
   static double prev_speed = 1.0;
-  static uint64_t prev_newest_event_ts = all_events_.back()->mono_time;
 
   if (first_update_ts == 0) {
     first_update_ts = nanos_since_boot();
@@ -82,16 +81,13 @@ void LiveStream::updateEvents() {
     return;
   }
 
-  uint64_t last_event_ts = all_events_.back()->mono_time;
-  bool at_the_end = current_event_ts == prev_newest_event_ts;
-  if (!at_the_end) {
-    last_event_ts = first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
-  }
-
+  uint64_t last_ts = post_last_event && speed_ == 1.0
+                       ? all_events_.back()->mono_time
+                       : first_event_ts + (nanos_since_boot() - first_update_ts) * speed_;
   auto first = std::upper_bound(all_events_.cbegin(), all_events_.cend(), current_event_ts, [](uint64_t ts, auto e) {
     return ts < e->mono_time;
   });
-  auto last = std::upper_bound(first, all_events_.cend(), last_event_ts, [](uint64_t ts, auto e) {
+  auto last = std::upper_bound(first, all_events_.cend(), last_ts, [](uint64_t ts, auto e) {
     return ts < e->mono_time;
   });
 
@@ -102,14 +98,13 @@ void LiveStream::updateEvents() {
     current_event_ts = e->mono_time;
   }
   postEvents();
-  prev_newest_event_ts = all_events_.back()->mono_time;
 }
 
 void LiveStream::seekTo(double sec) {
   sec = std::max(0.0, sec);
   first_update_ts = nanos_since_boot();
-  first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastEventMonoTime());
-  current_event_ts = first_event_ts;
+  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastEventMonoTime());
+  post_last_event = (first_event_ts == lastEventMonoTime());
   emit seekedTo((current_event_ts - begin_event_ts) / 1e9);
 }
 

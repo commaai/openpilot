@@ -258,7 +258,7 @@ class CarState(CarStateBase):
         ("LKAS_State_Msg", "ES_DashStatus"),
         ("Signal2", "ES_DashStatus"),
         ("Cruise_Soft_Disable", "ES_DashStatus"),
-        ("EyeSight_Status_Msg", "ES_DashStatus"),
+        ("Cruise_Status_Msg", "ES_DashStatus"),
         ("Signal3", "ES_DashStatus"),
         ("Cruise_Distance", "ES_DashStatus"),
         ("Signal4", "ES_DashStatus"),

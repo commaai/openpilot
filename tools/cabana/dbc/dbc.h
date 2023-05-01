@@ -57,6 +57,7 @@ namespace cabana {
     ValueDescription val_desc;
     int precision = 0;
     void updatePrecision();
+    QString formatValue(double value) const;
   };
 
   struct Msg {
