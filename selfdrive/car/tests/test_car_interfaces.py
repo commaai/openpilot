@@ -51,7 +51,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
-        self.assertGreater(tune.torque.friction, 0)
+        self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
 
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
