@@ -449,7 +449,7 @@ def main(sm=None, pm=None):
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
-    for in_msg in messaging.drain_sock(raw_gnss_sock):
+    for in_msg in messaging.drain_sock(raw_gnss_sock, wait_for_one=True):
       out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), in_msg.logMonoTime, replay)
       pm.send('gnssMeasurements', out_msg)
 
