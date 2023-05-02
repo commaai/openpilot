@@ -5,7 +5,7 @@ from flask import Flask, render_template
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import  extract_image
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
 IMG_H, IMG_W = 540, 960
 
@@ -75,11 +75,10 @@ def hand_control_command(data):
   x = max(-1, min(1, x))
   y = max(-1, min(1, y))
   dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = [y,x]
+  dat.testJoystick.axes = [x,y]
   dat.testJoystick.buttons = [False]
   pm.send('testJoystick', dat)
   last_send_time = time.monotonic()
-  emit('my response', {'data': 'got it!'})
 
 def handle_timeout():
   while 1:
