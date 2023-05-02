@@ -264,6 +264,7 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   if (show && !chart) {
     chart = merge && currentCharts().size() > 0 ? currentCharts().front() : createChart();
     chart->addSignal(id, sig);
+    updateState();
   } else if (!show && chart) {
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }
