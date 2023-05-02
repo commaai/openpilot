@@ -483,12 +483,26 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition = *ignition_opt;
 
-    // TODO: make this check fast, currently takes 16ms
-    // check if we have new pandas and are offroad
-    if (!ignition && (pandas.size() != Panda::list().size())) {
-      LOGW("Reconnecting to changed amount of pandas!");
-      do_exit = true;
-      break;
+    // check if we should have pandad reconnect
+    if (!ignition) {
+      bool comms_healthy = true;
+      for (const auto &panda : pandas) {
+        comms_healthy &= panda->comms_healthy();
+      }
+
+      if (!comms_healthy) {
+        LOGE("Reconnecting, communication to pandas not healthy");
+        do_exit = true;
+
+      // TODO: list is slow, takes 16ms
+      } else if (pandas.size() != Panda::list().size()) {
+        LOGW("Reconnecting to changed amount of pandas!");
+        do_exit = true;
+      }
+
+      if (do_exit) {
+        break;
+      }
     }
 
     // clear ignition-based params and set new safety on car start
