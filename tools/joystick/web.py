@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import time
-from flask import Flask, Response, render_template
+from flask import Flask, render_template
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import  extract_image
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, emit
 
 IMG_H, IMG_W = 540, 960
 
 app = Flask(__name__)
 pm = messaging.PubMaster(['testJoystick'])
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')
 
 @app.route("/")
 def hello_world():
@@ -22,6 +22,7 @@ def hello_world():
 # import the necessary packages
 import cv2
 import numpy as np
+import base64
 
 class VideoCamera(object):
   def __init__(self):
@@ -37,6 +38,7 @@ class VideoCamera(object):
     yuv_img_raw = self.vipc_client.recv()
     if yuv_img_raw is None or not yuv_img_raw.any():
       frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
+      time.sleep(0.05)
     else:
       #imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8)
 
@@ -52,20 +54,15 @@ class VideoCamera(object):
     return jpeg.tobytes()
       
 
-def gen(camera):
+def gen():
+  camera = VideoCamera()
   while True:
-      
     #get camera frame
     frame = camera.get_frame()
-    yield (b'--frame\r\n'
-           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+    frame_base64 = base64.b64encode(frame).decode('utf-8')
 
-
-@app.route('/video_feed')
-def video_feed():
-  return Response(gen(VideoCamera()),
-                  mimetype='multipart/x-mixed-replace; boundary=frame')
-
+    print('emitting')
+    socketio.emit('video_frame', {'image_data': frame_base64}, broadcast=True)
 
 last_send_time = time.monotonic()
 @socketio.on('control_command')
@@ -82,7 +79,7 @@ def hand_control_command(data):
   dat.testJoystick.buttons = [False]
   pm.send('testJoystick', dat)
   last_send_time = time.monotonic()
-  return ""
+  emit('my response', {'data': 'got it!'})
 
 def handle_timeout():
   while 1:
@@ -96,6 +93,8 @@ def handle_timeout():
 
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
+  socketio.start_background_task(gen)
+
   socketio.run(app, host="0.0.0.0")
 
 
