@@ -534,8 +534,8 @@ void ChartView::showTip(double sec) {
   }
 
   tooltip_x = chart()->mapToPosition({sec, 0}).x();
-  qreal x = tooltip_x;
-  QStringList text_list(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
+  qreal x = -1;
+  QStringList text_list;
   for (auto &s : sigs) {
     if (s.series->isVisible()) {
       QString value = "--";
@@ -553,7 +553,11 @@ void ChartView::showTip(double sec) {
                        .arg(s.series->color().name(), name, value, min, max);
     }
   }
+  if (x < 0) {
+    x = tooltip_x;
+  }
   QPoint pt(x, chart()->plotArea().top());
+  text_list.push_front(QString::number(chart()->mapToValue({x, 0}).x(), 'f', 3));
   QString text = "<p style='white-space:pre'>" % text_list.join("<br />") % "</p>";
   tip_label.showText(pt, text, this, visible_rect);
   viewport()->update();
