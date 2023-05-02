@@ -76,10 +76,13 @@ def panda_sort_cmp(a: Panda, b: Panda):
 
 
 def main() -> NoReturn:
+  count = 0
   first_run = True
   params = Params()
 
   while True:
+    count += 1
+    cloudlog.event("pandad.flash_and_connect", count=count)
     try:
       params.remove("PandaSignatures")
 

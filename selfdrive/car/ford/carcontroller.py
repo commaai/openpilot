@@ -2,11 +2,23 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.ford.fordcan import create_acc_command, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
+from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+
+
+def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
+  # Note that we do curvature error limiting after the rate limits since they are just for tuning reasons
+  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, CarControllerParams)
+
+  # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
+  if v_ego_raw > 9:
+    apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR,
+                           current_curvature + CarControllerParams.CURVATURE_ERROR)
+
+  return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
 
 class CarController:
@@ -43,17 +55,16 @@ class CarController:
       can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
-    # send steering commands at 20Hz
+    # send steer msg at 20Hz
     if (self.frame % CarControllerParams.STEER_STEP) == 0:
       if CC.latActive:
-        # apply limits to curvature and clip to signal range
-        apply_curvature = apply_std_steer_angle_limits(actuators.curvature, self.apply_curvature_last, CS.out.vEgo, CarControllerParams)
-        apply_curvature = clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
+        # apply rate limits, curvature error limit, and clip to signal range
+        current_curvature = -CS.out.yawRate / max(CS.out.vEgoRaw, 0.1)
+        apply_curvature = apply_ford_curvature_limits(actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgoRaw)
       else:
         apply_curvature = 0.
 
       self.apply_curvature_last = apply_curvature
-      can_sends.append(create_lka_msg(self.packer))
 
       if self.CP.carFingerprint in CANFD_CARS:
         # TODO: extended mode
@@ -63,8 +74,12 @@ class CarController:
       else:
         can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
 
+    # send lka msg at 33Hz
+    if (self.frame % CarControllerParams.LKA_STEP) == 0:
+      can_sends.append(create_lka_msg(self.packer))
+
     ### longitudinal control ###
-    # send acc command at 50Hz
+    # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
@@ -76,16 +91,14 @@ class CarController:
         gas = -5.0
         decel = True
 
-      can_sends.append(create_acc_command(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
-
-    # send lkas ui command at 1Hz or if ui state changes
+    # send lkas ui msg at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
-
-    # send acc ui command at 20Hz or if ui state changes
+    # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
 
