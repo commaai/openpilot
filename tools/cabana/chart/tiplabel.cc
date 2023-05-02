@@ -30,9 +30,9 @@ void TipLabel::showText(const QPoint &pt, const QString &text, QWidget *w, const
   if (!text.isEmpty()) {
     QSize extra(1, 1);
     resize(sizeHint() + extra);
-    QPoint tip_pos(pt.x() + 12, rect.top() + 2);
+    QPoint tip_pos(pt.x() + 8, rect.top() + 2);
     if (tip_pos.x() + size().width() >= rect.right()) {
-      tip_pos.rx() = pt.x() - size().width() - 12;
+      tip_pos.rx() = pt.x() - size().width() - 8;
     }
     if (rect.contains({tip_pos, size()})) {
       move(w->mapToGlobal(tip_pos));
