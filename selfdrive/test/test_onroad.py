@@ -216,6 +216,7 @@ class TestOnroad(unittest.TestCase):
 
         if expected_cpu is None:
           result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({expected_cpu}) SKIPPED\n"
+          continue
         elif cpu_usage > max(expected_cpu * 1.15, expected_cpu + 5.0):
           # cpu usage is high while playing sounds
           if not (proc_name == "./_soundd" and cpu_usage < 65.):
