@@ -485,7 +485,12 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     // check if we should have pandad reconnect
     if (!ignition) {
-      if (!comms_healthy()) {
+      bool comms_healthy = true;
+      for (const auto &panda : pandas) {
+        comms_healthy &= panda->comms_healthy();
+      }
+
+      if (!comms_healthy) {
         LOGE("Reconnecting, communication to pandas not healthy");
         do_exit = true;
 
