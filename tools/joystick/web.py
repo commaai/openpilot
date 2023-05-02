@@ -35,7 +35,7 @@ class VideoCamera(object):
     if not self.vipc_client.is_connected():
       self.vipc_client.connect(True)
     yuv_img_raw = self.vipc_client.recv()
-    if True or yuv_img_raw is None or not yuv_img_raw.any():
+    if yuv_img_raw is None or not yuv_img_raw.any():
       frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
       time.sleep(0.05)
     else:
