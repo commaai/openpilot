@@ -62,7 +62,7 @@ def gen():
     frame_base64 = base64.b64encode(frame).decode('utf-8')
 
     print('emitting')
-    socketio.emit('video_frame', {'image_data': frame_base64}, broadcast=True)
+    socketio.emit('video_frame', {'image_data': frame_base64})
 
 last_send_time = time.monotonic()
 @socketio.on('control_command')
@@ -93,7 +93,6 @@ def handle_timeout():
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
-
   socketio.run(app, host="0.0.0.0")
 
 
