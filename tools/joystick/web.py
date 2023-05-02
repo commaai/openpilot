@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-from flask import Flask, render_template
+from flask import Flask, render_template, Response
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
@@ -22,7 +22,6 @@ def hello_world():
 # import the necessary packages
 import cv2
 import numpy as np
-import base64
 
 class VideoCamera(object):
   def __init__(self):
@@ -36,7 +35,7 @@ class VideoCamera(object):
     if not self.vipc_client.is_connected():
       self.vipc_client.connect(True)
     yuv_img_raw = self.vipc_client.recv()
-    if yuv_img_raw is None or not yuv_img_raw.any():
+    if True or yuv_img_raw is None or not yuv_img_raw.any():
       frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
       time.sleep(0.05)
     else:
@@ -59,10 +58,14 @@ def gen():
   while True:
     #get camera frame
     frame = camera.get_frame()
-    frame_base64 = base64.b64encode(frame).decode('utf-8')
+    yield (b'--frame\r\n'
+           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
-    print('emitting')
-    socketio.emit('video_frame', {'image_data': frame_base64})
+@app.route('/video_feed')
+def video_feed():
+  return Response(gen(),
+                  mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 last_send_time = time.monotonic()
 @socketio.on('control_command')

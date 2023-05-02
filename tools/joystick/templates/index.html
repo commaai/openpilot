@@ -1,7 +1,7 @@
 <html>
 <body>
 <h1>CONTROL YOUR BODY</h1>
-<img id="video" src="" alt="Video stream">
+<img id="bg" src="{{ url_for('video_feed') }}">
 
 <h1>Press wasd to move body</h1>
 <p id="move_str"></p>
@@ -16,9 +16,6 @@ var keyArray = new Array(4).fill(false);
 
 const socket = io.connect('http://' + document.domain + ':' + location.port);
 
-socket.on('video_frame', (data) => {
-    $('#video').attr('src', 'data:image/jpeg;base64,' + data.image_data);
-});
 window.addEventListener('keydown', keydown_ivent);
 window.addEventListener('keyup', keyup_ivent);
 
