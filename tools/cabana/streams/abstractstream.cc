@@ -45,8 +45,7 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
 
 bool AbstractStream::postEvents() {
   // delay posting CAN message if UI thread is busy
-  if (!processing) {
-    processing = true;
+  if (processing.exchange(true) == false) {
     for (auto it = new_msgs->begin(); it != new_msgs->end(); ++it) {
       it.value() = all_msgs[it.key()];
     }
