@@ -2,6 +2,7 @@
 import math
 import json
 import os
+import shutil
 import subprocess
 import time
 import numpy as np
@@ -53,7 +54,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 30.0,
+  "system.loggerd.uploader": 4.0,
   "system.loggerd.deleter": 0.1,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
@@ -102,6 +103,8 @@ class TestOnroad(unittest.TestCase):
     params = Params()
     params.clear_all()
     set_params_enabled()
+    if os.path.exists(ROOT):
+      shutil.rmtree(ROOT)
 
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
