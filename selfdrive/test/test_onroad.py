@@ -95,10 +95,11 @@ class TestOnroad(unittest.TestCase):
       return
 
     # setup env
+    os.environ['PASSIVE'] = "0"
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
-    os.environ['LOGPRINT'] = 'debug'
+    os.environ['LOGPRINT'] = "debug"
 
     params = Params()
     params.clear_all()
