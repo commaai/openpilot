@@ -21,7 +21,7 @@ bool DBCManager::open(const SourceSet &source, const QString &dbc_file_name, QSt
 bool DBCManager::open(const SourceSet &source, const QString &name, const QString &content, QString *error) {
   try {
     auto file = std::make_shared<DBCFile>(name, content, this);
-    for (auto s : souce) {
+    for (auto s : source) {
       dbc_files[s].emplace_back(file);
     }
     emit DBCFileChanged();
@@ -68,6 +68,7 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
   for (auto &f : findDBCFile(id.source)) {
     if (auto s = f->updateSignal(id, sig_name, sig)) {
       emit signalUpdated(s);
+      break;
     }
   }
 }
@@ -77,6 +78,7 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
     if (auto s = f->getSignal(id, sig_name)) {
       f->removeSignal(id, sig_name);
       emit signalRemoved(s);
+      break;
     }
   }
 }
@@ -88,6 +90,7 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
     if (auto m = f->msg(id)) {
       f->updateMsg(id, name, size);
       updated = true;
+      break;
     }
   }
 
@@ -99,7 +102,10 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
 
 void DBCManager::removeMsg(const MessageId &id) {
   for (auto &f : findDBCFile(id.source)) {
-    f->removeMsg(id);
+    if (auto m = f->msg(id)) {
+      f->removeMsg(id);
+      break;
+    }
   }
   emit msgRemoved(id);
 }
