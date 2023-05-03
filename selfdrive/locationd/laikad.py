@@ -429,7 +429,7 @@ def main(sm=None, pm=None):
     raw_name = "qcomGnss"
   else:
     raw_name = "ubloxGnss"
-  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False, timeout=1000)
+  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False)
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
