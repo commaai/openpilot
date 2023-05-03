@@ -5,10 +5,12 @@ import sys
 import threading
 import time
 import signal
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
 
 import capnp
+from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -29,6 +31,83 @@ TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+class ReplayContext:
+  def __init__(self, cfg):
+    self.pubs = list(cfg.pub_sub.keys())
+    self.polled_pubs = cfg.polled_pubs
+    self.non_polled_pubs = set(self.pubs) - set(self.polled_pubs)
+    self.subs = [s for sub in cfg.pub_sub.values() for s in sub]
+    self.recv_called_events = {
+      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
+      for s in cfg.pub_sub.keys() if s not in cfg.polled_pubs
+    }
+    self.recv_ready_events = {
+      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
+      for s in cfg.pub_sub.keys() if s not in cfg.polled_pubs
+    }
+    if len(cfg.polled_pubs) > 0:
+      self.poll_called_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_CALLED)
+      self.poll_ready_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_READY)
+  
+  def __enter__(self):
+    messaging.toggle_fake_events(True)
+    return self
+
+  def __exit__(self, exc_type, exc_obj, exc_tb):
+    messaging.toggle_fake_events(False)
+
+  def unlock_sockets(self, msg_type):
+    if len(self.pubs) <= 1:
+      return
+    
+    if len(self.polled_pubs) > 0:
+      self.poll_called_event.wait()
+      self.poll_called_event.clear()
+      if msg_type not in self.polled_pubs:
+        self.poll_ready_event.set()
+
+    for pub in self.non_polled_pubs:
+      if pub == msg_type:
+        continue
+
+      self.recv_ready_events[pub].set()
+
+  def wait_for_next_recv(self, msg_type):
+    if len(self.polled_pubs) > 0:
+      return self._wait_for_next_recv_using_polls(msg_type)
+    else:
+      return self._wait_for_next_recv_standard(msg_type)
+
+  def _wait_for_next_recv_standard(self, msg_type):
+    if len(self.pubs) <= 1:
+      return self.recv_called_events[self.pubs[0]].wait()
+
+    values = defaultdict(int)
+    # expected sets is len(self.pubs) - 1 (current) + 1 (next)
+    if len(self.non_polled_pubs) == 0:
+      return
+
+    expected_total_sets = len(self.non_polled_pubs)
+    while expected_total_sets > 0:
+      for pub in self.non_polled_pubs:
+        if not self.recv_called_events[pub].peek():
+          continue
+
+        value = self.recv_called_events[pub].clear()
+        print(value)
+        values[pub] += value
+        expected_total_sets -= value
+      time.sleep(0)
+
+    max_key = max(values.keys(), key=lambda k: values[k])
+    self.recv_called_events[max_key].set()
+
+  def _wait_for_next_recv_using_polls(self, msg_type):
+    if msg_type in self.polled_pubs:
+      self.poll_ready_event.set()
+    self.poll_called_event.wait()
+
+
 @dataclass
 class ProcessConfig:
   proc_name: str
@@ -43,6 +122,7 @@ class ProcessConfig:
   subtest_name: str = ""
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
+  polled_pubs: List[str] = field(default_factory=list)
 
 
 def wait_for_event(evt):
@@ -305,6 +385,7 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    polled_pubs=["radarState", "modelV2"],
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -318,6 +399,7 @@ CONFIGS = [
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
     fake_pubsubmaster=True,
+    polled_pubs=["cameraOdometry"],
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -330,6 +412,7 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    polled_pubs=["driverStateV2"],
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -355,6 +438,7 @@ CONFIGS = [
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    polled_pubs=["liveLocationKalman"],
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -391,6 +475,7 @@ CONFIGS = [
     should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
+    polled_pubs=["liveLocationKalman"],
   ),
 ]
 
@@ -513,7 +598,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     fsm.wait_for_update()
 
   log_msgs, msg_queue = [], []
-  for msg in pub_msgs:
+  for msg in tqdm(pub_msgs):
     if cfg.should_recv_callback is not None:
       recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
@@ -539,6 +624,99 @@ def python_replay_process(cfg, lr, fingerprint=None):
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
   return log_msgs
+
+
+def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
+  with ReplayContext(cfg) as rc:
+    pm = messaging.PubMaster(cfg.pub_sub.keys())
+    sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
+    sockets = {s: messaging.sub_sock(s, timeout=100) for s in sub_sockets}
+
+    all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+    pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
+
+    # We need to fake SubMaster alive since we can't inject a fake clock
+    setup_env(simulation=True, cfg=cfg, lr=lr)
+
+    if cfg.proc_name == "laikad":
+      ublox = Params().get_bool("UbloxAvailable")
+      keys = set(cfg.pub_sub.keys()) - ({"qcomGnss", } if ublox else {"ubloxGnss", })
+      pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
+
+    controlsState = None
+    initialized = False
+    for msg in lr:
+      if msg.which() == 'controlsState':
+        controlsState = msg.controlsState
+        if initialized:
+          break
+      elif msg.which() == 'carEvents':
+        initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+    assert controlsState is not None and initialized, "controlsState never initialized"
+
+    if fingerprint is not None:
+      os.environ['SKIP_FW_QUERY'] = "1"
+      os.environ['FINGERPRINT'] = fingerprint
+      setup_env(cfg=cfg, controlsState=controlsState, lr=lr)
+    else:
+      CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+      setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
+
+    managed_processes[cfg.proc_name].prepare()
+    managed_processes[cfg.proc_name].start()
+
+    if cfg.init_callback is not None:
+      cfg.init_callback(all_msgs, None, None, fingerprint)
+
+    CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+
+    log_msgs = []
+    try:
+      # Wait for process to startup
+      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+        while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+          time.sleep(0)
+      
+      for s in sockets.values():
+        messaging.recv_one_or_none(s)
+
+      # Do the replay
+      cnt = 0
+      for msg in tqdm(pub_msgs):
+        with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
+          resp_sockets = cfg.pub_sub[msg.which()]
+          if cfg.should_recv_callback is not None:
+            resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, None)
+          else:
+            resp_sockets = [s for s in cfg.pub_sub[msg.which()] if
+                    cnt % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
+            should_recv = bool(len(resp_sockets))
+
+          if len(log_msgs) == 0 and len(resp_sockets) > 0:
+            for s in sockets.values():
+              messaging.recv_one_or_none(s)
+
+          if not should_recv:
+            continue
+
+          rc.unlock_sockets(msg.which())
+          pm.send(msg.which(), msg.as_builder())
+          # wait for the next receive on the process side
+          rc.wait_for_next_recv(msg.which())
+
+          for s in resp_sockets:
+            ms = messaging.drain_sock(sockets[s])
+            for m in ms:
+              m = m.as_builder()
+              m.logMonoTime = msg.logMonoTime
+              log_msgs.append(m.as_reader())
+          cnt += 1
+    finally:
+      managed_processes[cfg.proc_name].signal(signal.SIGKILL)
+      managed_processes[cfg.proc_name].stop()
+
+    return log_msgs
 
 
 def replay_process_with_sockets(cfg, lr, fingerprint=None):
@@ -572,7 +750,7 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
 
     # Do the replay
     cnt = 0
-    for msg in pub_msgs:
+    for msg in tqdm(pub_msgs):
       with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
         resp_sockets = cfg.pub_sub[msg.which()]
         if cfg.should_recv_callback is not None:
