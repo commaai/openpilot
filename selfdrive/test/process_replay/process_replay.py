@@ -372,7 +372,6 @@ CONFIGS = [
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
       "qcomGnss": ["gnssMeasurements"],
-      "clocks": []
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
