@@ -302,11 +302,7 @@ class TestOnroad(unittest.TestCase):
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      msgs = [m.logMonoTime for m in self.lr if m.which() == s]
-      if not len(msgs):
-        raise Exception(f"missing {s}")
-
-      ts = np.diff(msgs) / 1e9
+      ts = np.diff(self.service_msgs[s]) / 1e9
       dt = 1 / service_list[s].frequency
 
       try:
