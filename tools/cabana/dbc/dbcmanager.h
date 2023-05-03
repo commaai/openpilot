@@ -25,7 +25,7 @@ public:
   void close(const SourceSet &source);
   void closeAll();
   inline void close(DBCFile *file) { removeSourcesFromFile(file, {}); }
-  void removeSourcesFromFile(DBCFile *file, const SourceSet &s);
+  void removeSourcesFromFile(DBCFile *file, const SourceSet &source);
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
