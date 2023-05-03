@@ -20,6 +20,10 @@ if [ -f /TICI ]; then
   source /etc/profile
 fi
 
+if [ -d /data/openpilot ]; then
+  source /data/openpilot/launch_env.sh
+fi
+
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
