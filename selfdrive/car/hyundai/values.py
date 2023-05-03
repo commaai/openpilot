@@ -1744,9 +1744,6 @@ FW_VERSIONS = {
       b'\xf1\x8799110T6100\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
       b'\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
     ],
-    (Ecu.cornerRadar, 0x7b7, None): [
-      b'\xf1\x00JX1 BCW RR 1.00 , 1.00 (t\x94\x99"\x02q\x10y',
-    ],
   },
 }
 
