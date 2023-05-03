@@ -73,7 +73,7 @@ private:
     QRect(108, 804, 426, 164),
   };
 
-  QString img_path;
+  const QString img_path = "../assets/training/";
   QVector<QRect> boundingRect;
   QElapsedTimer click_timer;
 

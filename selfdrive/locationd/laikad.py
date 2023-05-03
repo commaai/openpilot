@@ -254,9 +254,11 @@ class Laikad:
     processed_measurements = process_measurements(new_meas, self.astro_dog)
     if self.last_fix_pos is not None:
       est_pos = self.last_fix_pos
+      correct_delay = True
     else:
       est_pos = self.gnss_kf.x[GStates.ECEF_POS].tolist()
-    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog)
+      correct_delay = False
+    corrected_measurements = correct_measurements(processed_measurements, est_pos, self.astro_dog, correct_delay=correct_delay)
     return corrected_measurements
 
   def calc_fix(self, t, measurements):
@@ -441,7 +443,7 @@ def main(sm=None, pm=None):
   use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
-  if replay or "CI" in os.environ:
+  if replay:
     use_internet = True
 
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)

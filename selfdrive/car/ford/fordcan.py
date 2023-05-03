@@ -19,7 +19,7 @@ def create_lka_msg(packer):
 
   This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the PSCM lockout.
 
-  Frequency is 20Hz.
+  Frequency is 33Hz.
   """
 
   return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, {})
@@ -97,7 +97,7 @@ def create_lat_ctl2_msg(packer, mode: int, path_offset: float, path_angle: float
   return packer.make_can_msg("LateralMotionControl2", CANBUS.main, values)
 
 
-def create_acc_command(packer, long_active: bool, gas: float, accel: float, precharge_brake: bool, decel: bool):
+def create_acc_msg(packer, long_active: bool, gas: float, accel: float, precharge_brake: bool, decel: bool):
   """
   Creates a CAN message for the Ford ACC Command.
 
@@ -115,6 +115,40 @@ def create_acc_command(packer, long_active: bool, gas: float, accel: float, prec
     "AccBrkDecel_B_Rq": 1 if decel else 0,            # Deceleration request: 0=Inactive, 1=Active
   }
   return packer.make_can_msg("ACCDATA", CANBUS.main, values)
+
+
+def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
+  """
+  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
+
+  Stock functionality is maintained by passing through unmodified signals.
+
+  Frequency is 5Hz.
+  """
+
+  # Tja_D_Stat
+  if enabled:
+    if hud_control.leftLaneDepart:
+      status = 3  # ActiveInterventionLeft
+    elif hud_control.rightLaneDepart:
+      status = 4  # ActiveInterventionRight
+    else:
+      status = 2  # Active
+  elif main_on:
+    if hud_control.leftLaneDepart:
+      status = 5  # ActiveWarningLeft
+    elif hud_control.rightLaneDepart:
+      status = 6  # ActiveWarningRight
+    else:
+      status = 1  # Standby
+  else:
+    status = 0    # Off
+
+  values = {
+    **stock_values,
+    "Tja_D_Stat": status,
+  }
+  return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
 def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, hud_control, stock_values: dict):
@@ -158,8 +192,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
     else:
       lines = 30  # LA_Off
 
-  # TODO: use level 1 for no sound when less severe?
-  hands_on_wheel_dsply = 2 if steer_alert else 0
+  hands_on_wheel_dsply = 1 if steer_alert else 0
 
   values = {
     **stock_values,
@@ -169,46 +202,14 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
   return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
 
 
-def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
-  """
-  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
-
-  Stock functionality is maintained by passing through unmodified signals.
-
-  Frequency is 20Hz.
-  """
-
-  # Tja_D_Stat
-  if enabled:
-    if hud_control.leftLaneDepart:
-      status = 3  # ActiveInterventionLeft
-    elif hud_control.rightLaneDepart:
-      status = 4  # ActiveInterventionRight
-    else:
-      status = 2  # Active
-  elif main_on:
-    if hud_control.leftLaneDepart:
-      status = 5  # ActiveWarningLeft
-    elif hud_control.rightLaneDepart:
-      status = 6  # ActiveWarningRight
-    else:
-      status = 1  # Standby
-  else:
-    status = 0    # Off
-
-  values = {
-    **stock_values,
-    "Tja_D_Stat": status,
-  }
-  return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
-
-
 def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False,
                       bus: int = CANBUS.camera):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
   Includes cruise control buttons, turn lights and more.
+
+  Frequency is 10Hz.
   """
 
   values = {

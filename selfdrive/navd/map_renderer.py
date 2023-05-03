@@ -15,7 +15,7 @@ METERS_PER_PIXEL = 2
 
 
 def get_ffi():
-  lib = os.path.join(BASEDIR, "selfdrive", "navd", "libmap_renderer" + suffix())
+  lib = os.path.join(BASEDIR, "selfdrive", "navd", "libmaprender" + suffix())
 
   ffi = FFI()
   ffi.cdef("""
