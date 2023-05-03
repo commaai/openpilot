@@ -2,13 +2,13 @@
 
 #include <numeric>
 
-bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
+bool DBCManager::open(const SourceSet &source, const QString &dbc_file_name, QString *error) {
   try {
     auto all = allDBCFiles();
     auto exist_file = std::find_if(all.begin(), all.end(), [&fn = dbc_file_name](auto &f) { return f->filename == fn; });
     auto file = exist_file != all.end() ? *exist_file : std::make_shared<DBCFile>(dbc_file_name, this);
-    for (auto source : s) {
-      dbc_files[source].emplace_back(file);
+    for (auto s : source) {
+      dbc_files[s].emplace_back(file);
     }
     emit DBCFileChanged();
     return true;
@@ -18,11 +18,11 @@ bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error)
   }
 }
 
-bool DBCManager::open(SourceSet s, const QString &name, const QString &content, QString *error) {
+bool DBCManager::open(const SourceSet &source, const QString &name, const QString &content, QString *error) {
   try {
     auto file = std::make_shared<DBCFile>(name, content, this);
-    for (auto source : s) {
-      dbc_files[source].emplace_back(file);
+    for (auto s : souce) {
+      dbc_files[s].emplace_back(file);
     }
     emit DBCFileChanged();
     return true;
@@ -32,9 +32,9 @@ bool DBCManager::open(SourceSet s, const QString &name, const QString &content, 
   }
 }
 
-void DBCManager::close(SourceSet s) {
-  for (auto source : s) {
-    dbc_files.erase(source);
+void DBCManager::close(const SourceSet &source) {
+  for (auto s : source) {
+    dbc_files.erase(s);
   }
   emit DBCFileChanged();
 }

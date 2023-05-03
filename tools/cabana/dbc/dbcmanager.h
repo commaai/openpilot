@@ -20,9 +20,9 @@ class DBCManager : public QObject {
 public:
   DBCManager(QObject *parent) {}
   ~DBCManager() {}
-  bool open(SourceSet s, const QString &dbc_file_name, QString *error = nullptr);
-  bool open(SourceSet s, const QString &name, const QString &content, QString *error = nullptr);
-  void close(SourceSet s);
+  bool open(const SourceSet &source, const QString &dbc_file_name, QString *error = nullptr);
+  bool open(const SourceSet &source, const QString &name, const QString &content, QString *error = nullptr);
+  void close(const SourceSet &source);
   void closeAll();
   inline void close(DBCFile *file) { removeSourcesFromFile(file, {}); }
   void removeSourcesFromFile(DBCFile *file, const SourceSet &s);
