@@ -7,7 +7,6 @@
 
 const QString AUTO_SAVE_EXTENSION = ".tmp";
 
-
 class DBCFile : public QObject {
   Q_OBJECT
 

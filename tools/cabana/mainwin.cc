@@ -494,7 +494,6 @@ void MainWindow::updateLoadSaveMenus() {
   save_dbc->setEnabled(cnt > 0);
   save_dbc->setText(cnt > 1 ? tr("Save %1 DBCs...").arg(dbc()->dbcCount()) : tr("Save DBC..."));
   save_dbc_as->setEnabled(cnt == 1);
-
   // TODO: Support clipboard for multiple files
   copy_dbc_to_clipboard->setEnabled(cnt == 1);
 
@@ -514,7 +513,7 @@ void MainWindow::updateLoadSaveMenus() {
 
     // Show sub-menu for each dbc for this source.
     QStringList bus_menu_fns;
-    for (auto &file : dbc()->findDBCFile(source)) {
+    for (auto &file : dbc()->findDBCFiles(source)) {
       auto f = file.get();
       QString fn = f->filename.isEmpty() ? "untitled" : QFileInfo(f->filename).baseName();
       bus_menu->addSeparator();
@@ -524,7 +523,6 @@ void MainWindow::updateLoadSaveMenus() {
       bus_menu->addAction(tr("Copy to Clipboard..."), [=]() { saveFileToClipboard(f); });
       bus_menu->addAction(tr("Remove from this bus..."), [=]() { removeBusFromFile(f, source); });
       bus_menu->addAction(tr("Remove from all buses..."), [=]() { closeFile(f); });
-
       bus_menu_fns << fn;
     }
 

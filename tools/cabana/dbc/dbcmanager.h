@@ -49,9 +49,10 @@ public:
   SourceSet sources(DBCFile *file) const;
 
   const std::set<std::shared_ptr<DBCFile>> allDBCFiles() const;
-  const std::vector<std::shared_ptr<DBCFile>> &findDBCFile(const uint8_t source) const;
+  const std::vector<std::shared_ptr<DBCFile>> &findDBCFiles(const uint8_t source) const;
+  DBCFile *findDBCFile(const MessageId &id) const;
 
-signals:
+ signals:
   void signalAdded(MessageId id, const cabana::Signal *sig);
   void signalRemoved(const cabana::Signal *sig);
   void signalUpdated(const cabana::Signal *sig);

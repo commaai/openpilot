@@ -7,7 +7,6 @@
 #include <limits>
 #include <sstream>
 
-
 DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
@@ -164,10 +163,8 @@ const cabana::Msg* DBCFile::msg(const QString &name) {
       return &msg;
     }
   }
-
   return nullptr;
 }
-
 
 QStringList DBCFile::signalNames() const {
   // Used for autocompletion
