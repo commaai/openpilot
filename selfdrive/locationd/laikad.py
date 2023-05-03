@@ -5,7 +5,6 @@ import time
 import shutil
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
-from datetime import datetime
 from enum import IntEnum
 from typing import List, Optional, Dict, Any
 
@@ -88,7 +87,6 @@ class Laikad:
     self.auto_fetch_navs = auto_fetch_navs
     self.orbit_fetch_executor: Optional[ProcessPoolExecutor] = None
     self.orbit_fetch_future: Optional[Future] = None
-    self.got_first_gnss_msg = False
 
     self.last_report_time = GPSTime(0, 0)
     self.last_fetch_navs_t = GPSTime(0, 0)
@@ -284,7 +282,6 @@ class Laikad:
       week, tow, new_meas = self.read_report(gnss_msg)
       self.gps_week = week
       if week > 0:
-        self.got_first_gnss_msg = True
         latest_msg_t = GPSTime(week, tow)
         if self.auto_fetch_navs:
           self.fetch_navs(latest_msg_t, block)
@@ -432,10 +429,7 @@ def main(sm=None, pm=None):
     raw_name = "qcomGnss"
   else:
     raw_name = "ubloxGnss"
-  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False, timeout=1000)
-
-  if sm is None:
-    sm = messaging.SubMaster(['clocks',])
+  raw_gnss_sock = messaging.sub_sock(raw_name, conflate=False)
   if pm is None:
     pm = messaging.PubMaster(['gnssMeasurements'])
 
@@ -449,16 +443,9 @@ def main(sm=None, pm=None):
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:
-    for in_msg in messaging.drain_sock(raw_gnss_sock):
+    for in_msg in messaging.drain_sock(raw_gnss_sock, wait_for_one=True):
       out_msg = laikad.process_gnss_msg(getattr(in_msg, raw_name), in_msg.logMonoTime, replay)
       pm.send('gnssMeasurements', out_msg)
-
-    sm.update(0)
-    if not laikad.got_first_gnss_msg and sm.updated['clocks']:
-      clocks_msg = sm['clocks']
-      t = GPSTime.from_datetime(datetime.utcfromtimestamp(clocks_msg.wallTimeNanos * 1E-9))
-      if laikad.auto_fetch_navs:
-        laikad.fetch_navs(t, block=replay)
 
 
 if __name__ == "__main__":
