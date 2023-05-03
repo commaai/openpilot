@@ -1741,7 +1741,6 @@ FW_VERSIONS = {
       b'\xf1\x00JX1 MFC  AT USA LHD 1.00 1.02 99211-T6110 220513',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x8799110T6100\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
       b'\xf1\x00JX1_ SCC FHCUP      1.00 1.01 99110-T6100         ',
     ],
   },
