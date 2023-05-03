@@ -1,12 +1,7 @@
 #pragma once
 
 #include <map>
-#include <QList>
-#include <QMetaType>
-#include <QObject>
 #include <QString>
-#include <QSet>
-#include <QDebug>
 
 #include "tools/cabana/dbc/dbc.h"
 
@@ -37,9 +32,6 @@ public:
 
   void updateMsg(const MessageId &id, const QString &name, uint32_t size);
   void removeMsg(const MessageId &id);
-
-  QString newMsgName(const MessageId &id);
-  QString newSignalName(const MessageId &id);
 
   std::map<uint32_t, cabana::Msg> getMessages();
   const cabana::Msg *msg(const MessageId &id) const;

@@ -1,9 +1,6 @@
 #pragma once
 
-#include <map>
 #include <QList>
-#include <QMetaType>
-#include <QObject>
 #include <QString>
 
 #include "opendbc/can/common_dbc.h"

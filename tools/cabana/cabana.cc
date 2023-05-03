@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   // Load DBC
   if (!dbc_file.isEmpty()) {
-    w.loadFile(dbc_file);
+    w.loadFile({dbc_file});
   }
 
   w.show();

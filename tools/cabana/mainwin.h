@@ -6,6 +6,7 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <QStringList>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -21,7 +22,7 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QStringList &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
 
 public slots:
   void openRoute();
