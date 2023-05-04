@@ -3,7 +3,6 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QScrollArea>
-#include <QTabBar>
 #include <QTimer>
 #include <QUndoCommand>
 #include <QUndoStack>
@@ -95,7 +94,7 @@ private:
   ToolButton *remove_all_btn;
   QList<ChartView *> charts;
   std::unordered_map<int, QList<ChartView *>> tab_charts;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   ChartsContainer *charts_container;
   QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
