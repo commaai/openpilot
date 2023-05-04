@@ -58,7 +58,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
-
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(clear_filters, &QPushButton::clicked, header, &MessageViewHeader::clearFilters);
