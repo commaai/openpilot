@@ -72,11 +72,10 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
 }
 
 void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
-  for (auto &f : findDBCFiles(id.source)) {
+  if (auto f = findDBCFile(id)) {
     if (auto s = f->getSignal(id, sig_name)) {
       f->removeSignal(id, sig_name);
       emit signalRemoved(s);
-      break;
     }
   }
 }
