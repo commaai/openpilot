@@ -384,7 +384,7 @@ void MessageListModel::fetchData() {
 }
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids) {
-  if (has_new_ids || !filter_str[Column::FREQ].isEmpty() || !filter_str[Column::COUNT].isEmpty() || !filter_str[Column::DATA].isEmpty()) {
+  if (has_new_ids || filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) || filter_str.contains(Column::DATA)) {
     fetchData();
   }
   for (int i = 0; i < msgs.size(); ++i) {
