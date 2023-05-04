@@ -25,16 +25,16 @@ source_segments = [
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA_2018_HYBRID
-  ("RAM", "2f4452b03ccb98f0|2022-09-07--13-55-08--10"),        # CHRYSLER.RAM_1500
+  ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500
   ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.BOLT_EUV
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
+  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.BRONCO_SPORT_MK1
 
   # Enable when port is tested and dashcamOnly is no longer set
-  #("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),  # FORD.BRONCO_SPORT_MK1
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.PASSAT_NMS
 ]
@@ -49,13 +49,14 @@ segments = [
   ("HONDA", "regenC7D5645EB17|2022-09-27--15-47-29--0"),
   ("HONDA2", "regenCC2ECCE5742|2022-09-27--16-18-01--0"),
   ("CHRYSLER", "regenC253C4DAC90|2022-09-27--15-51-03--0"),
-  ("RAM", "regen20490083AE7|2022-09-27--15-53-15--0"),
+  ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),
   ("SUBARU", "regen1E72BBDCED5|2022-09-27--15-55-31--0"),
   ("GM", "regen45B05A80EF6|2022-09-27--15-57-22--0"),
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),
   ("NISSAN", "regenC19D899B46D|2022-09-27--15-59-13--0"),
   ("VOLKSWAGEN", "regenD8F7AC4BD0D|2022-09-27--16-41-45--0"),
   ("MAZDA", "regenFC3F9ECBB64|2022-09-27--16-03-09--0"),
+  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done

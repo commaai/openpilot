@@ -191,11 +191,14 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Tucson 2022", harness=Harness.hyundai_n),
     HyundaiCarInfo("Hyundai Tucson 2023", "All", harness=Harness.hyundai_n),
   ],
-  CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022", "All", harness=Harness.hyundai_n),
+  CAR.TUCSON_HYBRID_4TH_GEN: HyundaiCarInfo("Hyundai Tucson Hybrid 2022-23", "All", harness=Harness.hyundai_n),
   CAR.SANTA_CRUZ_1ST_GEN: HyundaiCarInfo("Hyundai Santa Cruz 2022-23", harness=Harness.hyundai_n),
 
   # Kia
-  CAR.KIA_FORTE: HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
+  CAR.KIA_FORTE: [
+    HyundaiCarInfo("Kia Forte 2019-21", harness=Harness.hyundai_g),
+    HyundaiCarInfo("Kia Forte 2023", harness=Harness.hyundai_e),
+  ],
   CAR.KIA_K5_2021: HyundaiCarInfo("Kia K5 2021-22", harness=Harness.hyundai_a),
   CAR.KIA_K5_HEV_2020: HyundaiCarInfo("Kia K5 Hybrid 2020", harness=Harness.hyundai_a),
   CAR.KIA_NIRO_EV: [
@@ -782,7 +785,6 @@ FW_VERSIONS = {
   CAR.SANTA_FE_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
-      b'\xf1\x8799110S1500\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.abs, 0x7d1, None): [
@@ -796,6 +798,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x04 101 \x08\x04 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81HM6M1_0a0_H00',
       b'\xf1\x82TACVN5GMI3XXXH0A',
       b'\xf1\x82TMBZN5TMD3XXXG2E',
       b'\xf1\x82TACVN5GSI3XXXH0A',
@@ -816,6 +819,7 @@ FW_VERSIONS = {
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.01 99211-S2500 210205',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00HT6WA280BLHT6WAD00A1STM4G25NH1\x00\x00\x00\x00\x00\x00\x9cl\x04\xbc',
       b'\xf1\x00T02601BL  T02900A1  VTMPT25XXX900NSA\xf3\xf4Uj',
       b'\xf1\x87SDMXCA9087684GN1VfvgUUeVwwgwwwwwffffU?\xfb\xff\x97\x88\x7f\xff+\xa4\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
@@ -1156,21 +1160,27 @@ FW_VERSIONS = {
       b'\xf1\x00BD  MDPS C 1.00 1.02 56310-XX000 4BD2C102',
       b'\xf1\x00BD  MDPS C 1.00 1.08 56310/M6300 4BDDC108',
       b'\xf1\x00BD  MDPS C 1.00 1.08 56310M6300\x00 4BDDC108',
+      b'\xf1\x00BDm MDPS C A.01 1.03 56310M7800\x00 4BPMC103',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00BD  LKAS AT USA LHD 1.00 1.04 95740-M6000 J33',
+      b'\xf1\x00BDP LKAS AT USA LHD 1.00 1.05 99211-M6500 744',
     ],
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\x00BD__ SCC H-CUP      1.00 1.02 99110-M6000         ',
+      b'\xf1\x00BDPE_SCC FHCUPC     1.00 1.04 99110-M6500\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\x01TBDM1NU06F200H01',
       b'391182B945\x00',
+      b'\xf1\x81616F2051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x816VGRAH00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x8758900-M7AB0 \xf1\x816VQRAD00127.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x006V2B0_C2\x00\x006V2C6051\x00\x00CBD0N20NL1\x00\x00\x00\x00',
       b'\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DBD0T16SS0\x00\x00\x00\x00',
       b"\xf1\x816U2VC051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VC051\x00\x00DBD0T16SS0\xcf\x1e'\xc3",
     ],
@@ -1319,6 +1329,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
+      b'\xf1\x00SG2EMFC  AT USA LHD 1.01 1.09 99211-AT000 220801',
     ],
   },
   CAR.KIA_NIRO_PHEV: {
@@ -1503,6 +1514,7 @@ FW_VERSIONS = {
       b'\xf1\000CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.07 99210-AA000 220426',
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.08 99210-AA000 220728',
+      b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.09 99210-AA000 221108',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
@@ -1615,6 +1627,7 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT EUR RHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.04 99210-CV000 210823',
+      b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
@@ -1649,9 +1662,11 @@ FW_VERSIONS = {
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9240 14Q',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9220 14K',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.01 99211-N9100 14A',
+      b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9250 14W',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NX4__               1.00 1.00 99110-N9100         ',
+      b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
     ],
   },
   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN: {
@@ -1681,6 +1696,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
       b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
+      b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
   },
   CAR.GENESIS_GV70_1ST_GEN: {

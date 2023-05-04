@@ -57,12 +57,16 @@ namespace cabana {
     ValueDescription val_desc;
     int precision = 0;
     void updatePrecision();
+    QString formatValue(double value) const;
   };
 
   struct Msg {
     QString name;
     uint32_t size;
     QList<cabana::Signal> sigs;
+
+    QList<uint8_t> mask;
+    void updateMask();
 
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {

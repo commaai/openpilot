@@ -595,43 +595,35 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   for (auto item : model->root->children) {
     double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
-    item->sig_val = QString::number(value, 'f', item->sig->precision);
-    // Show unit
-    if (!item->sig->unit.isEmpty()) {
-      item->sig_val += " " + item->sig->unit;
-    }
-    // Show enum string
-    for (auto &[val, desc] : item->sig->val_desc) {
-      if (std::abs(value - val.toInt()) < 1e-6) {
-        item->sig_val = desc;
-      }
-    }
+    item->sig_val = item->sig->formatValue(value);
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 
-  // update visible sparkline
-  QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
-  int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
-  int value_width = std::min<int>(max_value_width, size.width() * 0.35);
-  size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
-
   QModelIndex top = tree->indexAt(QPoint(0, 0));
-  QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
-  int start_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
-  int end_row = model->rowCount() - 1;
-  if (bottom.isValid()) {
-    end_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
-  }
-  QFutureSynchronizer<void> synchronizer;
-  for (int i = start_row; i <= end_row; ++i) {
-    auto item = model->getItem(model->index(i, 1));
-    auto &s = item->sparkline;
-    if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-      synchronizer.addFuture(QtConcurrent::run(
-          &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+  if (top.isValid()) {
+    // update visible sparkline
+    int first_visible_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
+    int last_visible_row = model->rowCount() - 1;
+    QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
+    if (bottom.isValid()) {
+      last_visible_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
+    }
+
+    QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
+    int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
+    int value_width = std::min<int>(max_value_width, size.width() * 0.35);
+    size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
+
+    QFutureSynchronizer<void> synchronizer;
+    for (int i = first_visible_row; i <= last_visible_row; ++i) {
+      auto item = model->getItem(model->index(i, 1));
+      auto &s = item->sparkline;
+      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
+        synchronizer.addFuture(QtConcurrent::run(
+            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+      }
     }
   }
-  synchronizer.waitForFinished();
 
   for (int i = 0; i < model->rowCount(); ++i) {
     emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
