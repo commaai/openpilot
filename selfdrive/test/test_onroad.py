@@ -2,6 +2,7 @@
 import math
 import json
 import os
+import shutil
 import subprocess
 import time
 import numpy as np
@@ -53,7 +54,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 30.0,
+  "system.loggerd.uploader": 4.0,
   "system.loggerd.deleter": 0.1,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
@@ -94,14 +95,17 @@ class TestOnroad(unittest.TestCase):
       return
 
     # setup env
+    os.environ['PASSIVE'] = "0"
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
-    os.environ['LOGPRINT'] = 'debug'
+    os.environ['LOGPRINT'] = "debug"
 
     params = Params()
     params.clear_all()
     set_params_enabled()
+    if os.path.exists(ROOT):
+      shutil.rmtree(ROOT)
 
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
@@ -299,7 +303,7 @@ class TestOnroad(unittest.TestCase):
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      msgs = [m.logMonoTime for m in self.lr if m.which() == s]
+      msgs = [m.logMonoTime for m in self.service_msgs[s]]
       if not len(msgs):
         raise Exception(f"missing {s}")
 
