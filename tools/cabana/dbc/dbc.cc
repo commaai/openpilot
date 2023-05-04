@@ -64,8 +64,31 @@ double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal
   return val * sig.factor + sig.offset;
 }
 
-void set_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig, double value) {
+void set_raw_value(uint8_t *data, size_t data_size, const cabana::Signal &sig, double value) {
+  // CANPacker::pack
+  int64_t ival = (int64_t)(round((value - sig.offset) / sig.factor));
+  if (ival < 0) {
+    ival = (1ULL << sig.size) + ival;
+  }
 
+  // packer.cc set_value
+  int i = sig.lsb / 8;
+  int bits = sig.size;
+  if (sig.size < 64) {
+    ival &= ((1ULL << sig.size) - 1);
+  }
+
+  while (i >= 0 && i < data_size && bits > 0) {
+    int shift = (int)(sig.lsb / 8) == i ? sig.lsb % 8 : 0;
+    int size = std::min(bits, 8 - shift);
+
+    data[i] &= ~(((1ULL << size) - 1) << shift);
+    data[i] |= (ival & ((1ULL << size) - 1)) << shift;
+
+    bits -= size;
+    ival >>= size;
+    i = sig.is_little_endian ? i+1 : i-1;
+  }
 }
 
 bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {

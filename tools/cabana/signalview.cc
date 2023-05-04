@@ -619,10 +619,16 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
     if (should_transmit) {
       MessageId msg_id = model->msg_id;
       auto msg = dbc()->msg(msg_id);
+      auto last_msg = can->lastMessage(msg_id);
 
       if (msg != nullptr) {
         QByteArray data;
         data.resize(msg->size);
+
+        for (auto &sig : msg->sigs) {
+          double value = sig.tx_value.value_or(get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), sig));
+          set_raw_value((uint8_t *)data.constData(), data.size(), sig, value);
+        }
         can->transmit(msg_id, data);
       }
     }
