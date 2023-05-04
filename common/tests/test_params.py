@@ -3,6 +3,7 @@ import threading
 import time
 import tempfile
 import shutil
+import uuid
 import unittest
 
 from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
@@ -30,15 +31,15 @@ class TestParams(unittest.TestCase):
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("CarParams") == b"test"
 
-    undefined_param = self.tmpdir + "/d/undefined"
+    undefined_param = self.params.get_param_path(uuid.uuid4().hex)
     with open(undefined_param, "w") as f:
       f.write("test")
-    assert os.path.isfile(undefined_param) is True
+    assert os.path.isfile(undefined_param)
 
     self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
-    assert os.path.isfile(undefined_param) is False
+    assert not os.path.isfile(undefined_param)
 
   def test_params_two_things(self):
     self.params.put("DongleId", "bob")
