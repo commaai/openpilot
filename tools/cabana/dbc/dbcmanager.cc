@@ -45,8 +45,11 @@ void DBCManager::closeAll() {
 
 void DBCManager::removeSourcesFromFile(DBCFile *file, const SourceSet &source) {
   for (auto &[s, files] : dbc_files) {
-    if ((source.empty() || source.contains(s)) && !files.empty()) {
-      files.erase(std::find_if(files.begin(), files.end(), [=](auto &f) { return f.get() == file; }));
+    if ((source.empty() || source.contains(s))) {
+      auto it = std::find_if(files.begin(), files.end(), [=](auto &f) { return f.get() == file; });
+      if (it != files.end()) {
+        files.erase(it);
+      }
     }
   }
   emit DBCFileChanged();
