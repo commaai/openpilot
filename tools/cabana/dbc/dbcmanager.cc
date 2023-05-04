@@ -188,7 +188,7 @@ QString DBCManager::newSignalName(const MessageId &id) {
   return dbc_file->newSignalName(id);
 }
 
-const QList<uint8_t> DBCManager::mask(const MessageId &id) const {
+const QList<uint8_t>& DBCManager::mask(const MessageId &id) const {
   auto sources_dbc_file = findDBCFile(id);
   assert(sources_dbc_file); // This should be impossible
   auto [_, dbc_file] = *sources_dbc_file;

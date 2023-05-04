@@ -41,7 +41,7 @@ public:
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
 
-  const QList<uint8_t> mask(const MessageId &id) const;
+  const QList<uint8_t>& mask(const MessageId &id) const;
 
   std::map<uint32_t, cabana::Msg> getMessages();
   const cabana::Msg *msg(const MessageId &id) const;
@@ -60,4 +60,5 @@ private:
   void parseExtraInfo(const QString &content);
   std::map<uint32_t, cabana::Msg> msgs;
   QString name_;
+  QList<uint8_t> empty_mask;
 };

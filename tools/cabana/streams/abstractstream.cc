@@ -155,7 +155,7 @@ static inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, QList<uint8_t> mask, uint32_t in_freq) {
+void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq) {
   ts = current_sec;
   ++count;
   freq = in_freq == 0 ? count / std::max(1.0, current_sec) : in_freq;

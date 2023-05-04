@@ -167,8 +167,13 @@ QString DBCFile::newSignalName(const MessageId &id) {
   return name;
 }
 
-const QList<uint8_t> DBCFile::mask(const MessageId &id) const {
-  return {0x00, 0x00};
+const QList<uint8_t>& DBCFile::mask(const MessageId &id) const {
+  const cabana::Msg *m = msg(id);
+  if (m != nullptr) {
+    return m->mask;
+  } else {
+    return empty_mask;
+  }
 }
 
 std::map<uint32_t, cabana::Msg> DBCFile::getMessages() {
