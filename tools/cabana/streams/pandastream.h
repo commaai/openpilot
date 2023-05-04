@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QComboBox>
+
 #include "tools/cabana/streams/livestream.h"
 #include "selfdrive/boardd/panda.h"
 
@@ -40,5 +42,7 @@ public:
   QString title() override { return tr("&Panda"); }
 
 private:
-  QLineEdit *serial_edit;
+  void refreshSerials();
+
+  QComboBox *serial_edit;
 };

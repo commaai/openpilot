@@ -3,6 +3,7 @@
 #include <QFormLayout>
 #include <QMessageBox>
 #include <QVBoxLayout>
+#include <QPushButton>
 
 PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
   if (config.serial.isEmpty()) {
@@ -97,16 +98,36 @@ OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWi
   main_layout->addStretch(1);
 
   QFormLayout *form_layout = new QFormLayout();
-  form_layout->addRow(tr("Serial"), serial_edit = new QLineEdit(this));
-  serial_edit->setPlaceholderText(tr("Leave empty to use default serial"));
+
+  QHBoxLayout *serial_layout = new QHBoxLayout();
+  serial_edit = new QComboBox();
+  serial_edit->setFixedWidth(300);
+  serial_layout->addWidget(serial_edit);
+
+  QPushButton *refresh = new QPushButton(tr("Refresh"));
+  refresh->setFixedWidth(100);
+  serial_layout->addWidget(refresh);
+  form_layout->addRow(tr("Serial"), serial_layout);
 
   main_layout->addLayout(form_layout);
   main_layout->addStretch(1);
+
+  QObject::connect(refresh, &QPushButton::clicked, this, &OpenPandaWidget::refreshSerials);
+
+  // Populate serials
+  refreshSerials();
+}
+
+void OpenPandaWidget::refreshSerials() {
+  serial_edit->clear();
+  for (auto serial : Panda::list()) {
+    serial_edit->addItem(QString::fromStdString(serial));
+  }
 }
 
 bool OpenPandaWidget::open() {
   try {
-    PandaStreamConfig config = {.serial = serial_edit->text()};
+    PandaStreamConfig config = {.serial = serial_edit->currentText()};
     *stream = new PandaStream(qApp, config);
   } catch (std::exception &e) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
