@@ -433,12 +433,7 @@ void MainWindow::saveFile(DBCFile *dbc_file) {
     dbc_file->save();
     updateRecentFiles(dbc_file->filename);
   } else if (!dbc_file->isEmpty()) {
-    SourceSet s = dbc()->sources(dbc_file);
-    QString fn = QFileDialog::getSaveFileName(this, tr("Save File (bus: %1)").arg(toString(s)), QDir::cleanPath(settings.last_dir + "/untitled.dbc"), tr("DBC (*.dbc)"));
-    if (!fn.isEmpty()) {
-      dbc_file->saveAs(fn);
-      updateRecentFiles(fn);
-    }
+    saveFileAs(dbc_file);
   }
 
   UndoStack::instance()->setClean();
