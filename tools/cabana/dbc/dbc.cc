@@ -1,8 +1,6 @@
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/util.h"
 
-#include <QDebug>
-
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
