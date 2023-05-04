@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 244 Supported Cars
+# 248 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -31,6 +31,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2017-18">FCA</a>||
 |Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2019-22">FCA</a>||
 |comma|body|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
+|Ford|Bronco Sport 2021-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Bronco Sport 2021-22">Ford Q3</a>||
+|Ford|Explorer 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer 2020-22">Ford Q3</a>||
 |Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2018-19">Hyundai F</a>||
 |Genesis|G70 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2020">Hyundai F</a>||
 |Genesis|G80 2017|All|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G80 2017">Hyundai J</a>||
@@ -145,6 +147,8 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Lexus|RX Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=RX Hybrid 2017-19">Toyota</a>||
 |Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=RX Hybrid 2020-21">Toyota</a>||
 |Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=UX Hybrid 2019-22">Toyota</a>||
+|Lincoln|Aviator 2021|Co-Pilot360 Plus|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lincoln&model=Aviator 2021">Ford Q3</a>||
+|Lincoln|Aviator Plug-in Hybrid 2021|Co-Pilot360 Plus|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lincoln&model=Aviator Plug-in Hybrid 2021">Ford Q3</a>||
 |MAN|eTGE 2020-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=MAN&model=eTGE 2020-23">J533</a>|<a href="https://youtu.be/4100gLeabmo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |MAN|TGE 2017-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=MAN&model=TGE 2017-23">J533</a>|<a href="https://youtu.be/4100gLeabmo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Mazda|CX-5 2022-23|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Mazda&model=CX-5 2022-23">Mazda</a>||
