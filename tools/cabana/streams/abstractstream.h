@@ -57,6 +57,8 @@ public:
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
+  virtual bool canTransmit() const {return false; }
+  virtual void transmit(const MessageId &id, const QByteArray &dat) {};
 
 signals:
   void paused();

@@ -436,6 +436,12 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   // WARNING: increasing the maximum range can result in severe performance degradation.
   // 30s is a reasonable value at present.
+
+  // TODO: add transmit settings here
+  // CheckBox -> Enable Transmit
+  // DropDown -> Rate. Single, On RX, 100 ms, 50 ms, 20 ms, 10ms, 1 ms
+  // Button -> Send now
+
   const int max_range = 30; // 30s
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
   hl->addWidget(sparkline_label = new QLabel());
