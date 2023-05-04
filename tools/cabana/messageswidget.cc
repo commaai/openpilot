@@ -475,9 +475,7 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
 MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
   QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::handleSectionResized);
   QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::handleSectionMoved);
-
-    // TODO: handle hiding columns
-    // TODO: handle horizontal scrolling
+  // TODO: handle horizontal scrolling
 }
 
 void MessageViewHeader::showEvent(QShowEvent *e) {
@@ -530,6 +528,7 @@ void MessageViewHeader::updateHeaderPositions() {
       int h = editors[i]->sizeHint().height();
       editors[i]->move(sectionViewportPosition(i), sz.height());
       editors[i]->resize(sectionSize(i), h);
+      editors[i]->setHidden(isSectionHidden(i));
     }
   }
 }
