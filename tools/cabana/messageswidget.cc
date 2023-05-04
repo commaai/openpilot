@@ -43,6 +43,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
   view->header()->setSectionsMovable(true);
+  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
