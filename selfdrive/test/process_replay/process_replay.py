@@ -35,7 +35,9 @@ class ReplayContext:
   def __init__(self, cfg):
     self.non_polled_pubs = list(set(cfg.pub_sub.keys()) - set(cfg.polled_pubs))
     self.polled_pubs = cfg.polled_pubs
+    self.drained_pubs = cfg.drained_pubs
     assert(len(self.non_polled_pubs) != 0 or len(self.polled_pubs) != 0)
+    assert(set(self.drained_pubs) & set(self.polled_pubs) == set())
     self.subs = [s for sub in cfg.pub_sub.values() for s in sub]
     self.recv_called_events = {
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
@@ -45,7 +47,7 @@ class ReplayContext:
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
       for s in cfg.pub_sub.keys() if s not in cfg.polled_pubs
     }
-    if len(cfg.polled_pubs) > 0:
+    if len(cfg.polled_pubs) > 0 and len(cfg.drained_pubs) == 0:
       self.poll_called_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_CALLED)
       self.poll_ready_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_READY)
   
@@ -59,8 +61,8 @@ class ReplayContext:
   def unlock_sockets(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
       return
-
-    if len(self.polled_pubs) > 0:
+    
+    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
       self.poll_called_event.wait()
       self.poll_called_event.clear()
       if msg_type not in self.polled_pubs:
@@ -72,11 +74,22 @@ class ReplayContext:
 
       self.recv_ready_events[pub].set()
 
-  def wait_for_next_recv(self, msg_type):
-    if len(self.polled_pubs) > 0:
+  def wait_for_next_recv(self, msg_type, next_msg_type):
+    if len(self.drained_pubs) > 0:
+      return self._wait_for_next_recv_drained(msg_type, next_msg_type)
+    elif len(self.polled_pubs) > 0:
       return self._wait_for_next_recv_using_polls(msg_type)
     else:
       return self._wait_for_next_recv_standard(msg_type)
+
+  def _wait_for_next_recv_drained(self, msg_type, next_msg_type):
+    # if the next message is also drained message, then we need to fake the recv_ready event
+    # in order to start the next cycle
+    if msg_type in self.drained_pubs and next_msg_type == msg_type:
+      self.recv_called_events[self.drained_pubs[0]].wait()
+      self.recv_called_events[self.drained_pubs[0]].clear()
+      self.recv_ready_events[self.drained_pubs[0]].set()
+    self.recv_called_events[self.drained_pubs[0]].wait()
 
   def _wait_for_next_recv_standard(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
@@ -122,6 +135,7 @@ class ProcessConfig:
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
   polled_pubs: List[str] = field(default_factory=list)
+  drained_pubs: List[str] = field(default_factory=list)
 
 
 def wait_for_event(evt):
@@ -365,7 +379,14 @@ CONFIGS = [
     submaster_config={
       'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
       'ignore_alive': [], 
-    }
+    },
+    polled_pubs=[
+      "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "longitudinalPlan", "lateralPlan", "liveLocationKalman", "liveParameters", "radarState",
+      "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
+      "testJoystick", "liveTorqueParameters"
+    ],
+    drained_pubs=["can"]
   ),
   ProcessConfig(
     proc_name="radard",
@@ -379,6 +400,7 @@ CONFIGS = [
     tolerance=None,
     fake_pubsubmaster=True,
     polled_pubs=["carState", "modelV2"],
+    drained_pubs=["can"]
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -474,6 +496,7 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
     timeout=60*10,  # first messages are blocked on internet assistance
+    drained_pubs=["ubloxGnss", "qcomGnss"],
   ),
   ProcessConfig(
     proc_name="torqued",
@@ -651,8 +674,11 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
 
     if cfg.proc_name == "laikad":
       ublox = Params().get_bool("UbloxAvailable")
-      keys = set(cfg.pub_sub.keys()) - ({"qcomGnss", } if ublox else {"ubloxGnss", })
+      sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
+      keys = set(rc.non_polled_pubs) - sub_keys
+      d_keys = set(rc.drained_pubs) - sub_keys
       rc.non_polled_pubs = list(keys)
+      rc.drained_pubs = list(d_keys)
       pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
 
     if cfg.proc_name == "locationd":
@@ -704,7 +730,7 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
 
       # Do the replay
       cnt = 0
-      for msg in tqdm(pub_msgs):
+      for i, msg in enumerate(tqdm(pub_msgs)):
         with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
           resp_sockets = cfg.pub_sub[msg.which()]
           should_recv = True
@@ -714,11 +740,11 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
           if len(log_msgs) == 0 and len(resp_sockets) > 0:
             for s in sockets.values():
               messaging.recv_one_or_none(s)
-
+          
           rc.unlock_sockets(msg.which())
           pm.send(msg.which(), msg.as_builder())
           # wait for the next receive on the process side
-          rc.wait_for_next_recv(msg.which())
+          rc.wait_for_next_recv(msg.which(), pub_msgs[i+1].which() if i+1 < len(pub_msgs) else None)
 
           if should_recv:
             for s in resp_sockets:
