@@ -64,6 +64,10 @@ double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal
   return val * sig.factor + sig.offset;
 }
 
+void set_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig, double value) {
+
+}
+
 bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {
   return l.name == r.name && l.size == r.size &&
          l.start_bit == r.start_bit &&

@@ -609,6 +609,25 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 }
 
 void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
+  if (transmit_enable) {
+    bool should_transmit = false;
+    // Transmit on RX
+    if ((transmit_rate == -1) && msgs->contains(model->msg_id)) {
+      should_transmit = true;
+    }
+
+    if (should_transmit) {
+      MessageId msg_id = model->msg_id;
+      auto msg = dbc()->msg(msg_id);
+
+      if (msg != nullptr) {
+        QByteArray data;
+        data.resize(msg->size);
+        can->transmit(msg_id, data);
+      }
+    }
+  }
+
   if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id))) return;
 
   const auto &last_msg = can->lastMessage(model->msg_id);
