@@ -612,7 +612,7 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   if (transmit_enable) {
     bool should_transmit = false;
     // Transmit on RX
-    if ((transmit_rate == -1) && msgs->contains(model->msg_id)) {
+    if ((transmit_rate == -1) && (msgs != nullptr) && msgs->contains(model->msg_id)) {
       should_transmit = true;
     }
 
