@@ -68,10 +68,11 @@ void AbstractStream::updateLastMsgsTo(double sec) {
     auto it = std::lower_bound(ev.crbegin(), ev.crend(), last_ts, [](auto e, uint64_t ts) {
       return e->mono_time > ts;
     });
+    QList<uint8_t> mask = settings.suppress_defined_signals ? dbc()->mask(id) : QList<uint8_t>();
     if (it != ev.crend()) {
       double ts = (*it)->mono_time / 1e9 - routeStartTime();
       auto &m = all_msgs[id];
-      m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed(), {});
+      m.compute((const char *)(*it)->dat, (*it)->size, ts, getSpeed(), mask);
       m.count = std::distance(it, ev.crend());
       m.freq = m.count / std::max(1.0, ts);
     }
