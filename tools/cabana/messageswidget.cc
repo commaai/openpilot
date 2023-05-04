@@ -51,6 +51,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   suppress_clear = new QPushButton();
   suppress_layout->addWidget(suppress_add);
   suppress_layout->addWidget(suppress_clear);
+  QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Defined Signals"), this);
+  suppress_defined_signals->setChecked(settings.suppress_defined_signals);
+  suppress_layout->addWidget(suppress_defined_signals);
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
@@ -60,6 +63,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     delegate->setMultipleLines(settings.multiple_lines_bytes);
     view->setUniformRowHeights(!settings.multiple_lines_bytes);
     model->sortMessages();
+  });
+  QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [=](int state) {
+    settings.suppress_defined_signals = (state == Qt::Checked);
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
