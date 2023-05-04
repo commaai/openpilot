@@ -11,8 +11,8 @@
 const QString UNTITLED = "untitled";
 
 struct MessageId {
-  uint8_t source;
-  uint32_t address;
+  uint8_t source = 0;
+  uint32_t address = 0;
 
   QString toString() const {
     return QString("%1:%2").arg(source).arg(address, 1, 16);
@@ -57,12 +57,16 @@ namespace cabana {
     ValueDescription val_desc;
     int precision = 0;
     void updatePrecision();
+    QString formatValue(double value) const;
   };
 
   struct Msg {
     QString name;
     uint32_t size;
     QList<cabana::Signal> sigs;
+
+    QList<uint8_t> mask;
+    void updateMask();
 
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {

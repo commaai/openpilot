@@ -20,6 +20,10 @@ if [ -f /TICI ]; then
   source /etc/profile
 fi
 
+if [ -d /data/openpilot ]; then
+  source /data/openpilot/launch_env.sh
+fi
+
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
@@ -125,6 +129,21 @@ pipeline {
         }
         */
 
+        stage('tizi-tests') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tizi", [
+              ["build openpilot", "cd selfdrive/manager && ./build.py"],
+              ["test boardd loopback", "SINGLE_PANDA=1 python selfdrive/boardd/tests/test_boardd_loopback.py"],
+              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
+              ["test camerad", "python system/camerad/test/test_camerad.py"],
+              ["test exposure", "python system/camerad/test/test_exposure.py"],
+              ["test amp", "python system/hardware/tici/tests/test_amplifier.py"],
+            ])
+          }
+        }
+
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           environment {
@@ -156,7 +175,7 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test power draw", "python system/hardware/tici/test_power_draw.py"],
+              ["test power draw", "python system/hardware/tici/tests/test_power_draw.py"],
               ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python system/loggerd/tests/test_encoder.py"],
               ["test pigeond", "python system/sensord/tests/test_pigeond.py"],
@@ -166,7 +185,7 @@ pipeline {
           }
         }
 
-        stage('camerad-ar') {
+        stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-ar0231", [
@@ -174,12 +193,6 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
-          }
-        }
-
-        stage('camerad-ox') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
             phone_steps("tici-ox03c10", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],

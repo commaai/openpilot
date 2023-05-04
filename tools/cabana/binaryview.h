@@ -26,6 +26,7 @@ public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
   void refresh();
   void updateState();
+  void updateItem(int row, int col, const QString &val, const QColor &color);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }

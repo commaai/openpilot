@@ -6,7 +6,7 @@
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
 #include "tools/cabana/signalview.h"
 
@@ -41,7 +41,7 @@ private:
   QLabel *time_label, *warning_icon, *warning_label;
   ElidedLabel *name_label;
   QWidget *warning_widget;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   QTabWidget *tab_widget;
   QToolButton *remove_btn;
   LogsWidget *history_log;

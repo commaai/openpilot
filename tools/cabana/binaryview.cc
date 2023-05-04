@@ -239,7 +239,19 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
   if (index.column() == 8) {
     index = model->index(index.row(), 7);
   }
-  bool is_lb = (resize_sig && resize_sig->is_little_endian) || (!resize_sig && index < anchor_index);
+  bool is_lb = true;
+  if (resize_sig) {
+    is_lb = resize_sig->is_little_endian;
+  } else if (settings.drag_direction == Settings::DragDirection::MsbFirst) {
+    is_lb = index < anchor_index;
+  } else if (settings.drag_direction == Settings::DragDirection::LsbFirst) {
+    is_lb = !(index < anchor_index);
+  } else if (settings.drag_direction == Settings::DragDirection::AlwaysLE) {
+    is_lb = true;
+  } else if (settings.drag_direction == Settings::DragDirection::AlwaysBE) {
+    is_lb = false;
+  }
+
   int cur_bit_idx = get_bit_index(index, is_lb);
   int anchor_bit_idx = get_bit_index(anchor_index, is_lb);
   auto [start_bit, end_bit] = std::minmax(cur_bit_idx, anchor_bit_idx);
@@ -281,11 +293,19 @@ void BinaryViewModel::refresh() {
   updateState();
 }
 
+void BinaryViewModel::updateItem(int row, int col, const QString &val, const QColor &color) {
+  auto &item = items[row * column_count + col];
+  if (item.val != val || item.bg_color != color) {
+    item.val = val;
+    item.bg_color = color;
+    auto idx = index(row, col);
+    emit dataChanged(idx, idx, {Qt::DisplayRole});
+  }
+}
+
 void BinaryViewModel::updateState() {
-  auto prev_items = items;
   const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
-
   // data size may changed.
   if (binary.size() > row_count) {
     beginInsertRows({}, row_count, binary.size() - 1);
@@ -294,29 +314,23 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
-  double max_f = 255.0;
-  double factor = 0.25;
-  double scaler = max_f / log2(1.0 + factor);
+  const double max_f = 255.0;
+  const double factor = 0.25;
+  const double scaler = max_f / log2(1.0 + factor);
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
-      item.val = ((binary[i] >> (7 - j)) & 1) != 0 ? '1' : '0';
+      QString val = ((binary[i] >> (7 - j)) & 1) != 0 ? "1" : "0";
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
       auto n = last_msg.bit_change_counts[i][7 - j];
       double min_f = n == 0 ? offset : offset + 25;
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
-      item.bg_color.setAlpha(alpha);
+      auto color = item.bg_color;
+      color.setAlpha(alpha);
+      updateItem(i, j, val, color);
     }
-    items[i * column_count + 8].val = toHex(binary[i]);
-    items[i * column_count + 8].bg_color = last_msg.colors[i];
-  }
-
-  for (int i = 0; i < items.size(); ++i) {
-    if (i >= prev_items.size() || prev_items[i].val != items[i].val || prev_items[i].bg_color != items[i].bg_color) {
-      auto idx = index(i / column_count, i % column_count);
-      emit dataChanged(idx, idx);
-    }
+    updateItem(i, 8, toHex(binary[i]), last_msg.colors[i]);
   }
 }
 
