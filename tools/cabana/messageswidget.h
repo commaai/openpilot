@@ -4,6 +4,7 @@
 #include <QCheckBox>
 #include <QContextMenuEvent>
 #include <QHeaderView>
+#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
 #include <QSet>
@@ -76,6 +77,9 @@ public:
   void updateGeometries() override;
   QSize sizeHint() const override;
 
+public slots:
+  void clearFilters();
+
 signals:
   void filtersUpdated(const QMap<int, QString> &filters);
 
@@ -98,6 +102,9 @@ public:
   void updateSuppressedButtons();
   void reset();
 
+public slots:
+  void dbcModified();
+
 signals:
   void msgSelectionChanged(const MessageId &message_id);
 
@@ -109,4 +116,5 @@ protected:
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
+  QLabel *num_msg_label;
 };

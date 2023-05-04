@@ -8,6 +8,19 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0 ,0, 0, 0);
 
+  QHBoxLayout *title_layout = new QHBoxLayout();
+  num_msg_label = new QLabel(this);
+  title_layout->addSpacing(10);
+  title_layout->addWidget(num_msg_label);
+
+  title_layout->addStretch();
+  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
+  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
+  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
+  QPushButton *clear_filters = new QPushButton(tr("Clear Filters"));
+  title_layout->addWidget(clear_filters);
+  main_layout->addLayout(title_layout);
+
   // message table
   view = new MessageView(this);
   model = new MessageListModel(this);
@@ -43,13 +56,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   suppress_layout->addWidget(suppress_clear);
 
   suppress_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
-  multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
-  multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
-
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
+  QObject::connect(clear_filters, &QPushButton::clicked, header, &MessageViewHeader::clearFilters);
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
     delegate->setMultipleLines(settings.multiple_lines_bytes);
@@ -60,9 +71,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
-  QObject::connect(dbc(), &DBCManager::DBCFileChanged, model, &MessageListModel::fetchData);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, model, &MessageListModel::fetchData);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, model, &MessageListModel::fetchData);
+  QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::signalAdded, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &MessagesWidget::dbcModified);
+  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &MessagesWidget::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -88,6 +102,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
 
   updateSuppressedButtons();
+  dbcModified();
 
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
@@ -97,6 +112,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     <span style="color:blue;">■ </span> increasing<br />
     <span style="color:red;">■ </span> decreasing
   )"));
+}
+
+void MessagesWidget::dbcModified() {
+  num_msg_label->setText(tr("%1 Messages, %2 Signals").arg(dbc()->msgCount()).arg(dbc()->signalCount()));
+  model->fetchData();
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
@@ -464,9 +484,9 @@ void MessageViewHeader::showEvent(QShowEvent *e) {
 
   for (int i = 0; i < count(); i++) {
     if (!editors[i]) {
-      editors[i] = new QLineEdit(this);
-
       QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      editors[i] = new QLineEdit(this);
+      editors[i]->setClearButtonEnabled(true);
       editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
 
       QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
@@ -489,7 +509,11 @@ void MessageViewHeader::updateFilters() {
   emit filtersUpdated(filters);
 }
 
-
+void MessageViewHeader::clearFilters() {
+  for (QLineEdit *editor : editors) {
+    editor->clear();
+  }
+}
 
 void MessageViewHeader::handleSectionResized(int logicalIndex, int oldSize, int newSize) {
   updateHeaderPositions();
