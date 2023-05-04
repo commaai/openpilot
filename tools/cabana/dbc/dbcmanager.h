@@ -59,6 +59,7 @@ public:
 
 private:
   SourceSet sources;
+  QList<uint8_t> empty_mask;
 
 public slots:
   void updateSources(const SourceSet &s);

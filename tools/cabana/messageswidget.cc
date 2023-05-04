@@ -52,6 +52,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   suppress_layout->addWidget(suppress_add);
   suppress_layout->addWidget(suppress_clear);
   QCheckBox *suppress_defined_signals = new QCheckBox(tr("Suppress Defined Signals"), this);
+  suppress_defined_signals->setChecked(settings.suppress_defined_signals);
   suppress_layout->addWidget(suppress_defined_signals);
   main_layout->addLayout(suppress_layout);
 
