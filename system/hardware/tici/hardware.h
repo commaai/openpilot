@@ -16,8 +16,16 @@ public:
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   };
-  static std::string get_name() { return "tici"; };
-  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::TICI; };
+
+  static std::string get_name() {
+    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
+    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+  };
+
+  static cereal::InitData::DeviceType get_device_type() {
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+  };
+
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
   static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
 
