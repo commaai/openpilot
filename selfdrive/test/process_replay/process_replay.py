@@ -33,9 +33,9 @@ FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 class ReplayContext:
   def __init__(self, cfg):
-    self.pubs = list(cfg.pub_sub.keys())
+    self.non_polled_pubs = list(set(cfg.pub_sub.keys()) - set(cfg.polled_pubs))
     self.polled_pubs = cfg.polled_pubs
-    self.non_polled_pubs = set(self.pubs) - set(self.polled_pubs)
+    assert(len(self.non_polled_pubs) != 0 or len(self.polled_pubs) != 0)
     self.subs = [s for sub in cfg.pub_sub.values() for s in sub]
     self.recv_called_events = {
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
@@ -57,9 +57,9 @@ class ReplayContext:
     messaging.toggle_fake_events(False)
 
   def unlock_sockets(self, msg_type):
-    if len(self.pubs) <= 1:
+    if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
       return
-    
+
     if len(self.polled_pubs) > 0:
       self.poll_called_event.wait()
       self.poll_called_event.clear()
@@ -79,8 +79,8 @@ class ReplayContext:
       return self._wait_for_next_recv_standard(msg_type)
 
   def _wait_for_next_recv_standard(self, msg_type):
-    if len(self.pubs) <= 1:
-      return self.recv_called_events[self.pubs[0]].wait()
+    if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
+      return self.recv_called_events[self.non_polled_pubs[0]].wait()
 
     values = defaultdict(int)
     # expected sets is len(self.pubs) - 1 (current) + 1 (next)
@@ -94,7 +94,6 @@ class ReplayContext:
           continue
 
         value = self.recv_called_events[pub].clear()
-        print(value)
         values[pub] += value
         expected_total_sets -= value
       time.sleep(0)
@@ -286,16 +285,16 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
   Params().put("CarParams", CP.to_bytes())
 
 
-def controlsd_rcv_callback(msg, CP, cfg, fsm):
+def controlsd_rcv_callback(msg, CP, cfg, frame):
   # no sendcan until controlsd is initialized
   socks = [s for s in cfg.pub_sub[msg.which()] if
-           (fsm.frame + 1) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
-  if "sendcan" in socks and fsm.frame < 2000:
+           (frame) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+  if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
   return socks, len(socks) > 0
 
 
-def radar_rcv_callback(msg, CP, cfg, fsm):
+def radar_rcv_callback(msg, CP, cfg, frame):
   if msg.which() != "can":
     return [], False
   elif CP.radarUnavailable:
@@ -313,26 +312,24 @@ def radar_rcv_callback(msg, CP, cfg, fsm):
   return [], False
 
 
-def calibration_rcv_callback(msg, CP, cfg, fsm):
+def calibration_rcv_callback(msg, CP, cfg, frame):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   recv_socks = []
-  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
   if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
     recv_socks = ["liveCalibration"]
-  return recv_socks, fsm.frame == 0 or msg.which() == 'cameraOdometry'
+  return recv_socks, (frame - 1) == 0 or msg.which() == 'cameraOdometry'
 
 
-def torqued_rcv_callback(msg, CP, cfg, fsm):
+def torqued_rcv_callback(msg, CP, cfg, frame):
   # should_recv always true to increment frame
   recv_socks = []
-  frame = fsm.frame + 1 # incrementing hasn't happened yet in SubMaster
   if msg.which() == 'liveLocationKalman' and (frame % 5) == 0:
     recv_socks = ["liveTorqueParameters"]
-  return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
+  return recv_socks, (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
 
-def ublox_rcv_callback(msg, CP, cfg, fsm):
+def ublox_rcv_callback(msg, CP, cfg, frame):
   msg_class, msg_id = msg.ubloxRaw[2:4]
   if (msg_class, msg_id) in {(1, 7 * 16)}:
     return ["gpsLocationExternal"], True
@@ -340,6 +337,14 @@ def ublox_rcv_callback(msg, CP, cfg, fsm):
     return ["ubloxGnss"], True
   else:
     return [], False
+
+
+def rate_based_rcv_callback(msg, CP, cfg, frame):
+  resp_sockets = [s for s in cfg.pub_sub[msg.which()] if
+          frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
+  should_recv = bool(len(resp_sockets))
+
+  return resp_sockets, should_recv
 
 
 CONFIGS = [
@@ -366,13 +371,14 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters": [], "carState": [], "modelV2": [],
+      "carState": [], "modelV2": [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
     fake_pubsubmaster=True,
+    polled_pubs=["carState", "modelV2"],
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -382,7 +388,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
     polled_pubs=["radarState", "modelV2"],
@@ -409,7 +415,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
     polled_pubs=["driverStateV2"],
@@ -419,13 +425,18 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [], "gpsLocation": [],
+      "gpsLocationExternal": [], "liveCalibration": [], 
+      "carState": [], "carParams": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
+    polled_pubs=[
+      "cameraOdometry", "gpsLocationExternal", "gyroscope",
+      "accelerometer", "liveCalibration", "carState", "carParams", "gpsLocation"
+    ],
   ),
   ProcessConfig(
     proc_name="paramsd",
@@ -435,7 +446,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
     polled_pubs=["liveLocationKalman"],
@@ -447,7 +458,7 @@ CONFIGS = [
     },
     ignore=["logMonoTime"],
     init_callback=None,
-    should_recv_callback=ublox_rcv_callback,
+    should_recv_callback=None,
     tolerance=None,
     fake_pubsubmaster=False,
   ),
@@ -468,7 +479,7 @@ CONFIGS = [
     proc_name="torqued",
     pub_sub={
       "liveLocationKalman": ["liveTorqueParameters"],
-      "carState": [], "controlsState": [],
+      "carState": [], "carControl": [],
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
@@ -600,7 +611,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
   log_msgs, msg_queue = [], []
   for msg in tqdm(pub_msgs):
     if cfg.should_recv_callback is not None:
-      recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
+      recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm.frame + 1)
     else:
       recv_socks = [s for s in cfg.pub_sub[msg.which()] if
                     (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
@@ -641,6 +652,17 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
     if cfg.proc_name == "laikad":
       ublox = Params().get_bool("UbloxAvailable")
       keys = set(cfg.pub_sub.keys()) - ({"qcomGnss", } if ublox else {"ubloxGnss", })
+      rc.non_polled_pubs = list(keys)
+      pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
+
+    if cfg.proc_name == "locationd":
+      ublox = Params().get_bool("UbloxAvailable")
+      sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
+      np_keys = set(rc.non_polled_pubs) - sub_keys
+      p_keys = set(rc.polled_pubs) - sub_keys
+      keys = np_keys | p_keys
+      rc.non_polled_pubs = list(np_keys)
+      rc.polled_pubs = list(p_keys)
       pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
 
     controlsState = None
@@ -668,8 +690,7 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
 
     if cfg.init_callback is not None:
       cfg.init_callback(all_msgs, None, None, fingerprint)
-
-    CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+      CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
     log_msgs = []
     try:
@@ -686,32 +707,27 @@ def replay_process_with_fake_sockets(cfg, lr, fingerprint=None):
       for msg in tqdm(pub_msgs):
         with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
           resp_sockets = cfg.pub_sub[msg.which()]
+          should_recv = True
           if cfg.should_recv_callback is not None:
-            resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, None)
-          else:
-            resp_sockets = [s for s in cfg.pub_sub[msg.which()] if
-                    cnt % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
-            should_recv = bool(len(resp_sockets))
+            resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, cnt)
 
           if len(log_msgs) == 0 and len(resp_sockets) > 0:
             for s in sockets.values():
               messaging.recv_one_or_none(s)
-
-          if not should_recv:
-            continue
 
           rc.unlock_sockets(msg.which())
           pm.send(msg.which(), msg.as_builder())
           # wait for the next receive on the process side
           rc.wait_for_next_recv(msg.which())
 
-          for s in resp_sockets:
-            ms = messaging.drain_sock(sockets[s])
-            for m in ms:
-              m = m.as_builder()
-              m.logMonoTime = msg.logMonoTime
-              log_msgs.append(m.as_reader())
-          cnt += 1
+          if should_recv:
+            for s in resp_sockets:
+              ms = messaging.drain_sock(sockets[s])
+              for m in ms:
+                m = m.as_builder()
+                m.logMonoTime = msg.logMonoTime
+                log_msgs.append(m.as_reader())
+            cnt += 1
     finally:
       managed_processes[cfg.proc_name].signal(signal.SIGKILL)
       managed_processes[cfg.proc_name].stop()
