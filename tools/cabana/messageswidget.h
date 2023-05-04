@@ -70,8 +70,6 @@ class MessageViewHeader : public QHeaderView {
 public:
   MessageViewHeader(QWidget *parent, MessageListModel *model);
   void showEvent(QShowEvent *e) override;
-  void handleSectionResized(int logicalIndex, int oldSize, int newSize);
-  void handleSectionMoved(int logicalIndex, int oldVisualIndex, int newVisualIndex);
   void updateHeaderPositions();
 
   void updateGeometries() override;

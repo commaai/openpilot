@@ -2,6 +2,7 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QVBoxLayout>
 
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
@@ -54,12 +55,12 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   suppress_clear = new QPushButton();
   suppress_layout->addWidget(suppress_add);
   suppress_layout->addWidget(suppress_clear);
-
-  suppress_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
   main_layout->addLayout(suppress_layout);
 
   // signals/slots
+
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
+  QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(clear_filters, &QPushButton::clicked, header, &MessageViewHeader::clearFilters);
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
     settings.multiple_lines_bytes = (state == Qt::Checked);
@@ -191,6 +192,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
     return QVariant::fromValue(colors);
   } else if (role == BytesRole && index.column() == Column::DATA) {
+    if (QSet<int>({1, 3, 6, 7}).contains(index.row())) {
+      QByteArray dat(64, 0);
+      memcpy(dat.data(), can_data.dat.data(), can_data.dat.size());
+      return dat;
+    }
     return can_data.dat;
   }
   return {};
@@ -473,9 +479,8 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
 }
 
 MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
-  QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::handleSectionResized);
-  QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::handleSectionMoved);
-  // TODO: handle horizontal scrolling
+  QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::updateHeaderPositions);
+  QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::updateHeaderPositions);
 }
 
 void MessageViewHeader::showEvent(QShowEvent *e) {
@@ -511,14 +516,6 @@ void MessageViewHeader::clearFilters() {
   for (QLineEdit *editor : editors) {
     editor->clear();
   }
-}
-
-void MessageViewHeader::handleSectionResized(int logicalIndex, int oldSize, int newSize) {
-  updateHeaderPositions();
-}
-
-void MessageViewHeader::handleSectionMoved(int logicalIndex, int oldVisualIndex, int newVisualIndex) {
-  updateHeaderPositions();
 }
 
 void MessageViewHeader::updateHeaderPositions() {
