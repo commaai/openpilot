@@ -191,11 +191,6 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
     return QVariant::fromValue(colors);
   } else if (role == BytesRole && index.column() == Column::DATA) {
-    if (QSet<int>({1, 3, 6, 7}).contains(index.row())) {
-      QByteArray dat(64, 0);
-      memcpy(dat.data(), can_data.dat.data(), can_data.dat.size());
-      return dat;
-    }
     return can_data.dat;
   }
   return {};
