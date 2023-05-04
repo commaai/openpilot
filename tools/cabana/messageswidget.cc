@@ -358,6 +358,7 @@ void MessageListModel::fetchData() {
   new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
 
   QSet<uint32_t> last_msg_address;
+  last_msg_address.reserve(can->last_msgs.size());
   for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
     if (filter_str.isEmpty() || matchMessage(it.key(), it.value(), filter_str)) {
       new_msgs.push_back(it.key());
@@ -383,7 +384,7 @@ void MessageListModel::fetchData() {
 }
 
 void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids) {
-  if (has_new_ids || !filter_str[Column::FREQ].isEmpty() || !filter_str[Column::COUNT].isEmpty() || !filter_str[Column::DATA].isEmpty() {
+  if (has_new_ids || !filter_str[Column::FREQ].isEmpty() || !filter_str[Column::COUNT].isEmpty() || !filter_str[Column::DATA].isEmpty()) {
     fetchData();
   }
   for (int i = 0; i < msgs.size(); ++i) {
