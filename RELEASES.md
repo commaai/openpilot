@@ -11,7 +11,7 @@ Version 0.9.2 (2023-05-XX)
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
-* Lincoln Aviator 2021 supuport
+* Lincoln Aviator 2021 support
 * Lincoln Aviator Plug-in Hybrid 2021 support
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
 
