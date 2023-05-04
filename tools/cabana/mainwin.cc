@@ -260,7 +260,6 @@ void MainWindow::newFile() {
   remindSaveChanges();
   dbc()->closeAll();
   dbc()->open(SOURCE_ALL, "", "");
-  updateLoadSaveMenus();
 }
 
 void MainWindow::openFile() {
@@ -312,7 +311,6 @@ void MainWindow::loadFile(const QStringList &fn, SourceSet s, bool close_all) {
 
   statusBar()->showMessage(tr("DBC File %1 loaded").arg(fn.join(",")), 2000);
   updateRecentFiles(fn[0]);
-  updateLoadSaveMenus();
 }
 
 void MainWindow::openOpendbcFile() {
@@ -336,8 +334,6 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 
   dbc()->closeAll();
   dbc()->open(SOURCE_ALL, opendbc_file_path);
-
-  updateLoadSaveMenus();
 }
 
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
@@ -458,7 +454,6 @@ void MainWindow::saveFileAs(DBCFile *dbc_file) {
   if (!fn.isEmpty()) {
     dbc_file->saveAs(fn);
     updateRecentFiles(fn);
-    updateLoadSaveMenus();
   }
 }
 
@@ -466,7 +461,6 @@ void MainWindow::removeBusFromFile(DBCFile *dbc_file, uint8_t source) {
   assert(dbc_file != nullptr);
   SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};
   dbc()->removeSourcesFromFile(dbc_file, ss);
-  updateLoadSaveMenus();
 }
 
 
