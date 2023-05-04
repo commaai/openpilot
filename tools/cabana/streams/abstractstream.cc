@@ -173,7 +173,7 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     const QColor &greyish_blue = !lighter ? GREYISH_BLUE : GREYISH_BLUE_LIGHTER;
 
     for (int i = 0; i < size; ++i) {
-      const uint8_t mask_byte = (i < mask.size()) ? mask[i] : 0xff;
+      const uint8_t mask_byte = (i < mask.size()) ? (~mask[i]) : 0xff;
       const uint8_t last = dat[i] & mask_byte;
       const uint8_t cur = can_data[i] & mask_byte;
       const int delta = cur - last;

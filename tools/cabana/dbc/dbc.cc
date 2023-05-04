@@ -1,6 +1,8 @@
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/util.h"
 
+#include <QDebug>
+
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
@@ -11,6 +13,11 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
   return ret;
+}
+
+void cabana::Msg::updateMask() {
+  qDebug() << "update mask" << name;
+  mask = {0xff, 0xff};
 }
 
 void cabana::Signal::updatePrecision() {
