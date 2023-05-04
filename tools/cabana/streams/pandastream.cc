@@ -86,6 +86,10 @@ void PandaStream::streamThread() {
   }
 }
 
+void PandaStream::transmit(const MessageId &id, const QByteArray &dat) {
+  qDebug() << "TX" << id.source << id.address << dat;
+}
+
 AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
   return new OpenPandaWidget(stream);
 }

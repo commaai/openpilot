@@ -119,6 +119,7 @@ private:
   void setSparklineRange(int value);
   void handleSignalUpdated(const cabana::Signal *sig);
   void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
+  void updateTransmitSettings();
 
   struct TreeView : public QTreeView {
     TreeView(QWidget *parent) : QTreeView(parent) {}
@@ -134,6 +135,12 @@ private:
   };
   int max_value_width = 0;
   TreeView *tree;
+
+  QCheckBox *transmit_enable_cb;
+  QComboBox *transmit_rate_cb;
+  bool transmit_enable;
+  int transmit_rate;
+
   QLabel *sparkline_label;
   QSlider *sparkline_range_slider;
   QLineEdit *filter_edit;

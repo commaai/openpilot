@@ -434,14 +434,22 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   hl->addWidget(filter_edit);
   hl->addStretch(1);
 
+  transmit_enable_cb = new QCheckBox(tr("Transmit"), this);
+  transmit_enable_cb->setEnabled(can->hasTransmit());
+  hl->addWidget(transmit_enable_cb);
+
+  transmit_rate_cb = new QComboBox(this);
+  transmit_rate_cb->setEnabled(can->hasTransmit());
+  transmit_rate_cb->addItem(tr("On Rx"), -1);
+  transmit_rate_cb->addItem(tr("100 ms"), 100);
+  transmit_rate_cb->addItem(tr("50 ms"), 50);
+  transmit_rate_cb->addItem(tr("20 ms"), 20);
+  transmit_rate_cb->addItem(tr("10 ms"), 10);
+  transmit_rate_cb->addItem(tr("1 ms"), 1);
+  hl->addWidget(transmit_rate_cb);
+
   // WARNING: increasing the maximum range can result in severe performance degradation.
   // 30s is a reasonable value at present.
-
-  // TODO: add transmit settings here
-  // CheckBox -> Enable Transmit
-  // DropDown -> Rate. Single, On RX, 100 ms, 50 ms, 20 ms, 10ms, 1 ms
-  // Button -> Send now
-
   const int max_range = 30; // 30s
   settings.sparkline_range = std::clamp(settings.sparkline_range, 1, max_range);
   hl->addWidget(sparkline_label = new QLabel());
@@ -474,6 +482,8 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   main_layout->addWidget(tree);
   updateToolBar();
 
+  QObject::connect(transmit_enable_cb, &QCheckBox::toggled, this, &SignalView::updateTransmitSettings);
+  QObject::connect(transmit_rate_cb, qOverload<int>(&QComboBox::currentIndexChanged), this, &SignalView::updateTransmitSettings);
   QObject::connect(filter_edit, &QLineEdit::textEdited, model, &SignalModel::setFilter);
   QObject::connect(sparkline_range_slider, &QSlider::valueChanged, this, &SignalView::setSparklineRange);
   QObject::connect(collapse_btn, &QPushButton::clicked, tree, &QTreeView::collapseAll);
@@ -496,6 +506,9 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
 void SignalView::setMessage(const MessageId &id) {
   max_value_width = 0;
+  transmit_enable_cb->setChecked(false);
+  transmit_enable = false;
+
   filter_edit->clear();
   model->setMessage(id);
 }
@@ -634,6 +647,11 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   for (int i = 0; i < model->rowCount(); ++i) {
     emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
   }
+}
+
+void SignalView::updateTransmitSettings() {
+  transmit_enable = transmit_enable_cb->isChecked();
+  transmit_rate =  transmit_rate_cb->currentData().toInt();
 }
 
 void SignalView::resizeEvent(QResizeEvent* event) {

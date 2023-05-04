@@ -22,6 +22,8 @@ public:
   inline QString routeName() const override {
     return QString("Live Streaming From Panda %1").arg(config.serial);
   }
+  inline bool hasTransmit() const override { return true; }
+  void transmit(const MessageId &id, const QByteArray &dat) override;
 
 protected:
   void streamThread() override;

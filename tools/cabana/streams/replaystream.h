@@ -25,6 +25,10 @@ public:
   inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
+  // TODO: remove this after testing
+  inline bool hasTransmit() const override { return true; }
+  virtual void transmit(const MessageId &id, const QByteArray &dat) {qDebug() << "transmit" << id.source << id.address << dat;};
+
 private:
   void mergeSegments();
   std::unique_ptr<Replay> replay = nullptr;
