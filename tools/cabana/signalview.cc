@@ -440,6 +440,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 
   transmit_rate_cb = new QComboBox(this);
   transmit_rate_cb->setEnabled(can->hasTransmit());
+  transmit_rate_cb->addItem(tr("Manual"), 0);
   transmit_rate_cb->addItem(tr("On Rx"), -1);
   transmit_rate_cb->addItem(tr("100 ms"), 100);
   transmit_rate_cb->addItem(tr("50 ms"), 50);
@@ -517,12 +518,30 @@ void SignalView::rowsChanged() {
   for (int i = 0; i < model->rowCount(); ++i) {
     auto index = model->index(i, 1);
     if (!tree->indexWidget(index)) {
+      auto sig = model->getItem(index)->sig;
+
       QWidget *w = new QWidget(this);
       QHBoxLayout *h = new QHBoxLayout(w);
       int v_margin = style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
       int h_margin = style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
       h->setContentsMargins(0, v_margin, -h_margin, v_margin);
       h->setSpacing(style()->pixelMetric(QStyle::PM_ToolBarItemSpacing));
+
+      // TODO: Hide when transmit is not enabled
+      // TODO: Handle this through the model. This is a hack.
+      auto tx_value = new QLineEdit();
+      tx_value->setFixedWidth(50);
+      tx_value->setClearButtonEnabled(true);
+      h->addWidget(tx_value);
+      QObject::connect(tx_value, &QLineEdit::editingFinished, [=]() {
+        bool ok = false;
+        cabana::Signal s = *sig;
+
+        s.tx_value = tx_value->text().toDouble(&ok);
+        if (!ok) s.tx_value = std::nullopt;
+
+        model->saveSignal(sig, s);
+      });
 
       auto remove_btn = new ToolButton("x", tr("Remove signal"));
       auto plot_btn = new ToolButton("graph-up", "");
@@ -531,7 +550,6 @@ void SignalView::rowsChanged() {
       h->addWidget(remove_btn);
 
       tree->setIndexWidget(index, w);
-      auto sig = model->getItem(index)->sig;
       QObject::connect(remove_btn, &QToolButton::clicked, [=]() { model->removeSignal(sig); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
         emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
