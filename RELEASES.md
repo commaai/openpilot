@@ -11,6 +11,7 @@ Version 0.9.2 (2023-05-XX)
 * Ford Escape Hybrid 2020-22 support
 * Ford Escape Plug-in Hybrid 2021-22 support
 * Ford Explorer 2020-22 support
+* Ford Explorer Hybrid 2020-22 support
 * Ford Kuga 2020-22 support
 * Ford Kuga Hybrid 2020-22 support
 * Ford Kuga Plug-in Hybrid 2020-22 support

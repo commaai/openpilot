@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 254 Supported Cars
+# 255 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -36,6 +36,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Ford|Escape Hybrid 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Escape Hybrid 2020-22">Ford Q3</a>||
 |Ford|Escape Plug-in Hybrid 2021-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Escape Plug-in Hybrid 2021-22">Ford Q3</a>||
 |Ford|Explorer 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer 2020-22">Ford Q3</a>||
+|Ford|Explorer Hybrid 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer Hybrid 2020-22">Ford Q3</a>||
 |Ford|Kuga 2020-22|Adaptive Cruise Control with Lane Centering|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga 2020-22">Ford Q3</a>||
 |Ford|Kuga Hybrid 2020-22|Adaptive Cruise Control with Lane Centering|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga Hybrid 2020-22">Ford Q3</a>||
 |Ford|Kuga Plug-in Hybrid 2020-22|Adaptive Cruise Control with Lane Centering|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga Plug-in Hybrid 2020-22">Ford Q3</a>||
