@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import threading
 import time
 import signal
 from collections import defaultdict
@@ -135,35 +134,18 @@ class ProcessConfig:
   drained_pubs: List[str] = field(default_factory=list)
 
 
-class FakeSocket:
-  def __init__(self, wait=True):
+class DummySocket:
+  def __init__(self):
     self.data = []
-    self.wait = wait
-    self.recv_called = threading.Event()
-    self.recv_ready = threading.Event()
 
   def receive(self, non_blocking=False):
     if non_blocking:
       return None
 
-    if self.wait:
-      self.recv_called.set()
-      wait_for_event(self.recv_ready)
-      self.recv_ready.clear()
     return self.data.pop()
 
   def send(self, data):
-    if self.wait:
-      wait_for_event(self.recv_called)
-      self.recv_called.clear()
-
     self.data.append(data)
-
-    if self.wait:
-      self.recv_ready.set()
-
-  def wait_for_recv(self):
-    wait_for_event(self.recv_called)
 
 
 def fingerprint(rc, pm, msgs, fingerprint):
@@ -183,8 +165,8 @@ def get_car_params(rc, pm, msgs, fingerprint):
     CarInterface, _, _ = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
-    can = FakeSocket(wait=False)
-    sendcan = FakeSocket(wait=False)
+    can = DummySocket()
+    sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
