@@ -4,7 +4,7 @@ import os
 import subprocess
 import time
 from enum import IntEnum
-from functools import cached_property
+from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
@@ -91,8 +91,12 @@ class Tici(HardwareBase):
   def amplifier(self):
     return Amplifier()
 
-  @cached_property
-  def model(self):
+  def get_os_version(self):
+    with open("/VERSION") as f:
+      return f.read().strip()
+
+  @lru_cache
+  def get_device_type(self):
     with open("/sys/firmware/devicetree/base/model") as f:
       model = f.read().strip('\x00')
     model = model.split('comma ')[-1]
@@ -100,13 +104,6 @@ class Tici(HardwareBase):
     if model.startswith('Qualcomm'):
       model = 'tici'
     return model
-
-  def get_os_version(self):
-    with open("/VERSION") as f:
-      return f.read().strip()
-
-  def get_device_type(self):
-    return "tici"
 
   def get_sound_card_online(self):
     return (os.path.isfile('/proc/asound/card0/state') and
@@ -424,7 +421,7 @@ class Tici(HardwareBase):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
     if not powersave_enabled:
-      self.amplifier.initialize_configuration(self.model)
+      self.amplifier.initialize_configuration(self.get_device_type())
 
     # *** CPU config ***
 
@@ -445,7 +442,7 @@ class Tici(HardwareBase):
     # boardd core
     affine_irq(4, "spi_geni")         # SPI
     affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
-    if "tici" in self.model:
+    if "tici" in self.get_device_type():
       affine_irq(4, "xhci-hcd:usb1")  # internal panda USB
 
     # camerad core
@@ -461,7 +458,7 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration(self.model)
+    self.amplifier.initialize_configuration(self.get_device_type())
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")

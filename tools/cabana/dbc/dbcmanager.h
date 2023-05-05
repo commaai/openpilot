@@ -39,6 +39,8 @@ public:
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
 
+  const QList<uint8_t>& mask(const MessageId &id) const;
+
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
   const cabana::Msg* msg(uint8_t source, const QString &name);
@@ -57,6 +59,7 @@ public:
 
 private:
   SourceSet sources;
+  QList<uint8_t> empty_mask;
 
 public slots:
   void updateSources(const SourceSet &s);

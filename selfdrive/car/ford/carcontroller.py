@@ -6,6 +6,7 @@ from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
+LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
@@ -83,15 +84,13 @@ class CarController:
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-      precharge_brake = accel < -0.1
-      if accel > -0.5:
-        gas = accel
-        decel = False
-      else:
+      gas = accel
+      decel = accel < 0.0
+      if accel < -0.5:
         gas = -5.0
-        decel = True
 
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+      stopping = CC.actuators.longControlState == LongCtrlState.stopping
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, decel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)

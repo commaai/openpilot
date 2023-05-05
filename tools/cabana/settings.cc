@@ -38,6 +38,7 @@ void Settings::save() {
   s.setValue("log_livestream", log_livestream);
   s.setValue("log_path", log_path);
   s.setValue("drag_direction", drag_direction);
+  s.setValue("suppress_defined_signals", suppress_defined_signals);
 }
 
 void Settings::load() {
@@ -61,6 +62,7 @@ void Settings::load() {
   log_livestream = s.value("log_livestream", true).toBool();
   log_path = s.value("log_path").toString();
   drag_direction = (Settings::DragDirection)s.value("drag_direction", 0).toInt();
+  suppress_defined_signals = s.value("suppress_defined_signals", false).toBool();
   if (log_path.isEmpty()) {
     log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
   }
