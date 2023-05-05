@@ -522,7 +522,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
 
-      // flip so 0 is bottom of frame
+      // Flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
 
       // speed up: 120, slow down: 0
