@@ -36,9 +36,13 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
-  QObject::connect(replay.get(), &Replay::streamStarted, this, &AbstractStream::streamStarted);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
   return replay->load();
+}
+
+void ReplayStream::start() {
+  emit streamStarted();
+  replay->start();
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
