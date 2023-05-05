@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Callable
 from tqdm import tqdm
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car
 from cereal.services import service_list
 from common.params import Params
 from common.timeout import Timeout
