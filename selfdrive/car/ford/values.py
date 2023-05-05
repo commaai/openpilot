@@ -72,16 +72,18 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),
-    FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-    FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
-    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Driver Assistance Pack"),
+    FordCarInfo("Ford Escape Hybrid 2020"),
+    FordCarInfo("Ford Escape Plug-in Hybrid 2021-22"),
+    FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga 2020-22 Hybrid", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
   ],
   CAR.EXPLORER_MK6: [
     FordCarInfo("Ford Explorer 2020-22"),
     FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
     FordCarInfo("Lincoln Aviator Plug-in Hybrid 2021", "Co-Pilot360 Plus"),
   ],
-  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Driver Assistance Pack"),
+  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Adaptive Cruise Control with Lane Centering"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
 
