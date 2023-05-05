@@ -787,7 +787,6 @@ FW_VERSIONS = {
   CAR.SANTA_FE_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
-      b'\xf1\x8799110S1500\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.abs, 0x7d1, None): [
@@ -801,6 +800,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x04 101 \x08\x04 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x81HM6M1_0a0_H00',
       b'\xf1\x82TACVN5GMI3XXXH0A',
       b'\xf1\x82TMBZN5TMD3XXXG2E',
       b'\xf1\x82TACVN5GSI3XXXH0A',
@@ -821,6 +821,7 @@ FW_VERSIONS = {
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.01 99211-S2500 210205',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00HT6WA280BLHT6WAD00A1STM4G25NH1\x00\x00\x00\x00\x00\x00\x9cl\x04\xbc',
       b'\xf1\x00T02601BL  T02900A1  VTMPT25XXX900NSA\xf3\xf4Uj',
       b'\xf1\x87SDMXCA9087684GN1VfvgUUeVwwgwwwwwffffU?\xfb\xff\x97\x88\x7f\xff+\xa4\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
@@ -1330,6 +1331,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
+      b'\xf1\x00SG2EMFC  AT USA LHD 1.01 1.09 99211-AT000 220801',
     ],
   },
   CAR.KIA_NIRO_PHEV: {
@@ -1627,6 +1629,7 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT EUR RHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.04 99210-CV000 210823',
+      b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
@@ -1695,6 +1698,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
       b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
+      b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
   },
   CAR.GENESIS_GV70_1ST_GEN: {

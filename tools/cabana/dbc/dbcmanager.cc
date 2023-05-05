@@ -188,6 +188,15 @@ QString DBCManager::newSignalName(const MessageId &id) {
   return dbc_file->newSignalName(id);
 }
 
+const QList<uint8_t>& DBCManager::mask(const MessageId &id) const {
+  auto sources_dbc_file = findDBCFile(id);
+  if (!sources_dbc_file) {
+    return empty_mask;
+  }
+  auto [_, dbc_file] = *sources_dbc_file;
+  return dbc_file->mask(id);
+}
+
 std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
   std::map<MessageId, cabana::Msg> ret;
 

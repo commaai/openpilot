@@ -13,8 +13,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // tabbar
-  tabbar = new QTabBar(this);
-  tabbar->setTabsClosable(true);
+  tabbar = new TabBar(this);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
