@@ -357,18 +357,17 @@ void MessageListModel::fetchData() {
   std::vector<MessageId> new_msgs;
   new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
 
-  QSet<uint32_t> last_msg_address;
-  last_msg_address.reserve(can->last_msgs.size());
+  auto address = dbc_address;
   for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
     if (filter_str.isEmpty() || matchMessage(it.key(), it.value(), filter_str)) {
       new_msgs.push_back(it.key());
     }
-    last_msg_address.insert(it.key().address);
+    address.remove(it.key().address);
   }
 
   // merge all DBC messages
-  for (auto &address : (dbc_address - last_msg_address)) {
-    MessageId id{.source = INVALID_SOURCE, .address = address};
+  for (auto &addr : address) {
+    MessageId id{.source = INVALID_SOURCE, .address = addr};
     if (filter_str.isEmpty() || matchMessage(id, {}, filter_str)) {
       new_msgs.push_back(id);
     }
