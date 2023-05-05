@@ -531,13 +531,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
                  [&](const QPointF &point) { return point.y() >= 0 && point.y() <= height(); });
     qDebug() << "valid_points len:" << valid_points.length() << "right_points len:" << right_points.length();
 
-    float prev_y_pos = -1;
     int drawn = 0;
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
       if (i >= acceleration.size()) {qDebug() << "breaking"; break; };
-
-//      if (right_points[i].y() - prev_y_pos < 0.1) continue;
 
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
@@ -545,9 +542,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       // flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
       qDebug() << "lin_grad_point:" << lin_grad_point;
-
-//      if (lin_grad_point - prev_y_pos < 0.01) continue;
-      prev_y_pos = lin_grad_point;
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
