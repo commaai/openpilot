@@ -525,28 +525,94 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     assert(track_vertices_len % 2 == 0);
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
 
-    for (int i = 0; i < right_points.length(); i++) {
-      const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-      if (i >= acceleration.size()) break;
+    const float MAX_UI_POINTS = 8;
 
-      // Some points are out of frame
-      if (right_points[i].y() < 0 || right_points[i].y() > height()) {
-        continue;
-      }
+    qDebug() << "\n";
+    int i2 = 0;
+    while (i2 < right_points.length()) {
+      qDebug() << "new i:" << i2 << "len points:" << right_points.length();
 
-      // flip so 0 is bottom of frame
-      float lin_grad_point = (height() - right_points[i].y()) / height();
-
-      // speed up: 120, slow down: 0
-      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
-      // FIXME: painter.drawPolygon can be slow if hue is not rounded
-      path_hue = int(path_hue * 100 + 0.5) / 100;
-
-      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-      float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
-      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
-      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+      i2 += (i2 < right_points.length() - 2) ? 2 : 1;
     }
+    qDebug() << " ";
+
+//    int i = 0;
+
+//    int drawn = 0;
+
+
+
+    // Filter out points out of frame
+    QVector<QPointF> valid_points;
+    std::copy_if(right_points.begin(), right_points.end(), std::back_inserter(valid_points),
+                 [&](const QPointF &point) { return point.y() >= 0 && point.y() <= height(); });
+    qDebug() << "valid_points len:" << valid_points.length() << "right_points len:" << right_points.length();
+
+//    float cur_pos = 0;
+//    while (cur_pos < )
+
+    int drawn2 = 0;
+    int final_idx = 0;
+    if (!valid_points.isEmpty()) {
+      for (int p = 0; p < MAX_UI_POINTS; p++) {
+        int i = (p / (MAX_UI_POINTS - 1)) * (valid_points.length() - 1);
+        final_idx = i;
+
+        qDebug() << "i:" << i << "len points:" << valid_points.length();
+        const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+        if (i >= acceleration.size()) break;
+
+        drawn2 += 1;
+
+        // flip so 0 is bottom of frame
+        float lin_grad_point = (height() - valid_points[i].y()) / height();
+        qDebug() << "lin_grad_point:" << lin_grad_point;
+
+        // speed up: 120, slow down: 0
+        float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
+        // FIXME: painter.drawPolygon can be slow if hue is not rounded
+        path_hue = int(path_hue * 100 + 0.5) / 100;
+
+        float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+        float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
+        float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
+        bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+  //      i += ((right_points.length() - drawn) > MAX_UI_POINTS ? fmax((right_points.length() - drawn) / MAX_UI_POINTS, 1) : 1);
+        if (i == valid_points.length() - 1) break;
+      }
+      assert(final_idx == (valid_points.length() - 1));
+      assert(drawn2 <= MAX_UI_POINTS);
+    }
+
+//    while (i < right_points.length()) {
+//      qDebug() << "i:" << i << "len points:" << right_points.length();
+//      const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+//      if (i >= acceleration.size()) break;
+//
+//      // Some points are out of frame
+//      if (right_points[i].y() < 0 || right_points[i].y() > height()) {
+//        i += 1;
+//        qDebug() << "skipping";
+//        continue;
+//      }
+//      drawn += 1;
+//
+//      // flip so 0 is bottom of frame
+//      float lin_grad_point = (height() - right_points[i].y()) / height();
+//
+//      // speed up: 120, slow down: 0
+//      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
+//      // FIXME: painter.drawPolygon can be slow if hue is not rounded
+//      path_hue = int(path_hue * 100 + 0.5) / 100;
+//
+//      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+//      float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
+//      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
+//      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+////      i += ((right_points.length() - drawn) > MAX_UI_POINTS ? fmax((right_points.length() - drawn) / MAX_UI_POINTS, 1) : 1);
+//      i += fmax((right_points.length() - drawn) / MAX_UI_POINTS, 1);
+//    }
+//    qDebug() << "total pts drawn:" << drawn;
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
