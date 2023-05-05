@@ -517,7 +517,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-//  double t = millis_since_boot();
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
@@ -558,8 +557,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
-//  double dt = millis_since_boot() - t;
-//  qDebug() << "Took" << dt << "ms to draw path";
 
   painter.restore();
 }
