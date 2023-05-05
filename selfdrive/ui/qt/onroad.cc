@@ -517,7 +517,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  double t = millis_since_boot();
+//  double t = millis_since_boot();
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
 
@@ -528,14 +528,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     int drawn = 0;
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-      if (i >= acceleration.size()) {qDebug() << "breaking"; break; };
+      if (i >= acceleration.size()) break;
 
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
 
       // flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
-      qDebug() << "lin_grad_point:" << lin_grad_point;
+//      qDebug() << "lin_grad_point:" << lin_grad_point;
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
@@ -547,12 +547,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
       drawn += 1;
-      qDebug() << "i:" << i << "len points:" << right_points.length();
+//      qDebug() << "i:" << i << "len points:" << right_points.length();
       // Skip a point, unless next is last
       i += (i + 2) < right_points.length() ? 1 : 0;
 
     }
-    qDebug() << "drawn:" << drawn;
+//    qDebug() << "drawn:" << drawn;
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
@@ -562,8 +562,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
-  double dt = millis_since_boot() - t;
-  qDebug() << "Took" << dt << "ms to draw path";
+//  double dt = millis_since_boot() - t;
+//  qDebug() << "Took" << dt << "ms to draw path";
 
   painter.restore();
 }
