@@ -65,6 +65,9 @@ namespace cabana {
     uint32_t size;
     QList<cabana::Signal> sigs;
 
+    QList<uint8_t> mask;
+    void updateMask();
+
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {
         auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });

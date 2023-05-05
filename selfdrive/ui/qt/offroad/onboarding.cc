@@ -40,8 +40,6 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
-  boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
-
   currentIndex = 0;
   image.load(img_path + "step0.png");
   click_timer.start();
