@@ -492,12 +492,6 @@ void AnnotatedCameraWidget::updateFrameMat() {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-float interp1d(float value, float start_min, float start_max, float end_min, float end_max) {
-  value = std::max(start_min, std::min(start_max, value));
-  float factor = (value - start_min) / (start_max - start_min);
-  return end_min + factor * (end_max - end_min);
-}
-
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.save();
 
@@ -540,8 +534,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       path_hue = int(path_hue * 100 + 0.5) / 100;
 
       float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
-      float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
-      float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
+      float lightness = util::map_val(saturation, 0.0f, 1.0f, 0.95f, 0.62f);  // lighter when grey
+      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 0.0f);  // matches previous alpha fade
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
