@@ -525,26 +525,21 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     assert(track_vertices_len % 2 == 0);
     QVector<QPointF> right_points = scene.track_vertices.mid(0, track_vertices_len / 2);
 
-    const float MAX_UI_POINTS = 8;
-
     // Filter out points out of frame
     QVector<QPointF> valid_points;
     std::copy_if(right_points.begin(), right_points.end(), std::back_inserter(valid_points),
                  [&](const QPointF &point) { return point.y() >= 0 && point.y() <= height(); });
     qDebug() << "valid_points len:" << valid_points.length() << "right_points len:" << right_points.length();
 
-    int drawn = 0;
     int final_idx = 0;
     if (!valid_points.isEmpty()) {
-      for (int p = 0; p < MAX_UI_POINTS; p++) {
-        int i = (p / (MAX_UI_POINTS - 1)) * (valid_points.length() - 1);
+      for (int p = 0; p < MAX_PATH_POINTS; p++) {
+        int i = (p / (MAX_PATH_POINTS - 1)) * (valid_points.length() - 1);
         final_idx = i;
 
         qDebug() << "i:" << i << "len points:" << valid_points.length();
         const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
         if (i >= acceleration.size()) break;
-
-        drawn += 1;
 
         // flip so 0 is bottom of frame
         float lin_grad_point = (height() - valid_points[i].y()) / height();
@@ -562,7 +557,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
         if (i == valid_points.length() - 1) break;
       }
       assert(final_idx == (valid_points.length() - 1));
-      assert(drawn <= MAX_UI_POINTS);
     }
 
   } else {
