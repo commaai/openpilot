@@ -34,24 +34,32 @@ class ReplayContext:
     assert(len(self.non_polled_pubs) != 0 or len(self.polled_pubs) != 0)
     assert(set(self.drained_pubs) & set(self.polled_pubs) == set())
     self.subs = [s for sub in cfg.pub_sub.values() for s in sub]
-    self.recv_called_events = {
-      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
-      for s in cfg.pub_sub.keys() if s not in cfg.polled_pubs
-    }
-    self.recv_ready_events = {
-      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
-      for s in cfg.pub_sub.keys() if s not in cfg.polled_pubs
-    }
-    if len(cfg.polled_pubs) > 0 and len(cfg.drained_pubs) == 0:
-      self.poll_called_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_CALLED)
-      self.poll_ready_event = messaging.fake_event(cfg.proc_name, messaging.FAKE_EVENT_POLL_READY)
   
   def __enter__(self):
     messaging.toggle_fake_events(True)
+
+    self.recv_called_events = {
+      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
+      for s in self.non_polled_pubs
+    }
+    self.recv_ready_events = {
+      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
+      for s in self.non_polled_pubs
+    }
+    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
+      self.poll_called_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_CALLED)
+      self.poll_ready_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_READY)
+
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
     messaging.toggle_fake_events(False)
+
+    del self.recv_called_events
+    del self.recv_ready_events
+    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
+      del self.poll_called_event
+      del self.poll_ready_event
 
   def unlock_sockets(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
