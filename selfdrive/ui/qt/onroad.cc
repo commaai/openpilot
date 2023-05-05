@@ -559,7 +559,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
       drawn += 1;
-      qDebug() << "i:" << i << "len points:" << valid_points.length();
+      qDebug() << "i:" << i << "len points:" << right_points.length();
+      // Draw every other point, ensuring we draw the last
+      i += (i + 2) < right_points.length() ? 1 : 0;
 
 //      if (i == valid_points.length() - 1) break;
     }
