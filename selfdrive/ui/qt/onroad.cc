@@ -528,12 +528,12 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     int drawn = 0;
     for (int i = 0; i < right_points.length(); i++) {
       const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-      if (i >= acceleration.size()) {qDebug() << "breaking"; break; };
+      if (i >= acceleration.size()) break;
 
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
 
-      // flip so 0 is bottom of frame
+      // Flip so 0 is bottom of frame
       float lin_grad_point = (height() - right_points[i].y()) / height();
       qDebug() << "lin_grad_point:" << lin_grad_point;
 
@@ -546,13 +546,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       float lightness = interp1d(saturation, 0.0, 1.0, 0.95, 0.62);  // lighter when grey
       float alpha = interp1d(lin_grad_point, 0.75 / 2., 0.75, 0.4, 0.0);  // matches previous alpha fade
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
-      drawn += 1;
-      qDebug() << "i:" << i << "len points:" << right_points.length();
+
       // Skip a point, unless next is last
       i += (i + 2) < right_points.length() ? 1 : 0;
-
     }
-    qDebug() << "drawn:" << drawn;
 
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));

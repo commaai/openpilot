@@ -11,7 +11,6 @@
 
 const int btn_size = 192;
 const int img_size = (btn_size / 4) * 3;
-const float MAX_PATH_POINTS = 8;
 
 
 // ***** onroad widgets *****
