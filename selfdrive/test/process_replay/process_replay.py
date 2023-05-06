@@ -17,6 +17,7 @@ from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -53,13 +54,13 @@ class ReplayContext:
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
-    messaging.toggle_fake_events(False)
-
     del self.recv_called_events
     del self.recv_ready_events
     if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
       del self.poll_called_event
       del self.poll_ready_event
+
+    messaging.toggle_fake_events(False)
 
   def unlock_sockets(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
@@ -88,7 +89,7 @@ class ReplayContext:
   def _wait_for_next_recv_drained(self, msg_type, next_msg_type):
     # if the next message is also drained message, then we need to fake the recv_ready event
     # in order to start the next cycle
-    if msg_type in self.drained_pubs and next_msg_type == msg_type:
+    if msg_type in self.drained_pubs and (next_msg_type == msg_type or next_msg_type is None):
       self.recv_called_events[self.drained_pubs[0]].wait()
       self.recv_called_events[self.drained_pubs[0]].clear()
       self.recv_ready_events[self.drained_pubs[0]].set()
@@ -385,7 +386,7 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
-  with ReplayContext(cfg) as rc:
+  with OpenpilotPrefix(), ReplayContext(cfg) as rc:
     pm = messaging.PubMaster(cfg.pub_sub.keys())
     sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
     sockets = {s: messaging.sub_sock(s, timeout=100) for s in sub_sockets}
@@ -393,8 +394,23 @@ def replay_process(cfg, lr, fingerprint=None):
     all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
     pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-    # We need to fake SubMaster alive since we can't inject a fake clock
-    setup_env(simulation=True, cfg=cfg, lr=lr)
+    controlsState = None
+    initialized = False
+    for msg in lr:
+      if msg.which() == 'controlsState':
+        controlsState = msg.controlsState
+        if initialized:
+          break
+      elif msg.which() == 'carEvents':
+        initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+    assert controlsState is not None and initialized, "controlsState never initialized"
+
+    if fingerprint is not None:
+      setup_env(simulation=True, cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
+    else:
+      CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+      setup_env(simulation=True, CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
     if cfg.proc_name == "laikad":
       ublox = Params().get_bool("UbloxAvailable")
@@ -415,17 +431,6 @@ def replay_process(cfg, lr, fingerprint=None):
       rc.polled_pubs = list(p_keys)
       pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
 
-    controlsState = None
-    initialized = False
-    for msg in lr:
-      if msg.which() == 'controlsState':
-        controlsState = msg.controlsState
-        if initialized:
-          break
-      elif msg.which() == 'carEvents':
-        initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
-
-    assert controlsState is not None and initialized, "controlsState never initialized"
 
     if fingerprint is not None:
       os.environ['SKIP_FW_QUERY'] = "1"
@@ -485,7 +490,7 @@ def replay_process(cfg, lr, fingerprint=None):
     return log_msgs
 
 
-def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
+def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -496,8 +501,12 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
-  os.environ["SKIP_FW_QUERY"] = ""
-  os.environ["FINGERPRINT"] = ""
+  if fingerprint is not None:
+    os.environ['SKIP_FW_QUERY'] = "1"
+    os.environ['FINGERPRINT'] = fingerprint
+  else:
+    os.environ["SKIP_FW_QUERY"] = ""
+    os.environ["FINGERPRINT"] = ""
 
   if lr is not None:
     services = {m.which() for m in lr}
@@ -529,11 +538,14 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
       params.put_bool("DisengageOnAccelerator", False)
 
-    if CP.fingerprintSource == "fw":
-      params.put("CarParamsCache", CP.as_builder().to_bytes())
-    else:
-      os.environ['SKIP_FW_QUERY'] = "1"
-      os.environ['FINGERPRINT'] = CP.carFingerprint
+    if fingerprint is None:
+      if CP.fingerprintSource == "fw":
+        params.put("CarParamsCache", CP.as_builder().to_bytes())
+        os.environ['SKIP_FW_QUERY'] = ""
+        os.environ['FINGERPRINT'] = ""
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = CP.carFingerprint
 
     if CP.openpilotLongitudinalControl:
       params.put_bool("ExperimentalLongitudinalEnabled", True)
