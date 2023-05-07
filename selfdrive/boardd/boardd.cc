@@ -55,6 +55,7 @@
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
+std::atomic<bool> restart_safety_setter(false);
 
 ExitHandler do_exit;
 
@@ -105,6 +106,9 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
+  p.putBool("BoarddSafetySetterThreadReady", true);
+  p.remove("ControlsdStarted");
+//  if (restart_safety_setter) p.remove("ControlsdStarted");
 
   Params p;
 
@@ -121,7 +125,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
+    if (do_exit || !check_all_connected(pandas) || !ignition || restart_safety_setter) {
       return false;
     }
 
@@ -145,7 +149,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
+    if (do_exit || !check_all_connected(pandas) || !ignition || restart_safety_setter) {
       return false;
     }
 
@@ -465,6 +469,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
+  bool restart_safety_setter_last = false;
   std::future<bool> safety_future;
 
   LOGD("start panda state thread");
@@ -482,6 +487,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     ignition = *ignition_opt;
+    restart_safety_setter = p.getBool("ControlsdStarted");
 
     // check if we should have pandad reconnect
     if (!ignition) {
@@ -506,7 +512,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     // clear ignition-based params and set new safety on car start
-    if (ignition && !ignition_last) {
+//    if (ignition && !ignition_last) {
+    if (restart_safety_setter && !restart_safety_setter_last) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
         safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
@@ -518,6 +525,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     ignition_last = ignition;
+    restart_safety_setter_last = restart_safety_setter;
 
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
