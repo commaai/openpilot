@@ -466,7 +466,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
-  bool is_onroad = false;
+  bool is_onroad_last = false;
   std::future<bool> safety_future;
 
   LOGD("start panda state thread");
