@@ -9,11 +9,9 @@ int main(int argc, char **argv) {
   qInstallMessageHandler(swagLogMessageHandler);
   setpriority(PRIO_PROCESS, 0, -20);
 
-  // setup signal handlers to exit gracefully
+  QApplication a(argc, argv);
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
-  
-  QApplication a(argc, argv);
 
   Sound sound;
   return a.exec();
