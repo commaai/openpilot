@@ -17,6 +17,7 @@ QMap<QString, QString> getSupportedLanguages();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
+void sigTermHandler(int s);
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 void initApp(int argc, char *argv[], bool disable_hidpi = true);
