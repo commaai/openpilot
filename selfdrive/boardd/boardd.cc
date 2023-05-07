@@ -55,7 +55,6 @@
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
-std::atomic<bool> restart_safety_setter(false);
 std::atomic<bool> is_offroad(false);
 
 ExitHandler do_exit;
@@ -109,10 +108,6 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
   Params p;
-
-  p.putBool("BoarddSafetySetterThreadReady", true);
-  p.remove("ControlsdStarted");
-//  if (restart_safety_setter) p.remove("ControlsdStarted");
 
   // there should be at least one panda connected
   if (pandas.size() == 0) {
@@ -471,7 +466,6 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
-  bool restart_safety_setter_last = false;
   bool is_offroad = false;
   std::future<bool> safety_future;
 
@@ -491,7 +485,6 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition = *ignition_opt;
     is_offroad = params.getBool("IsOnroad");
-    restart_safety_setter = params.getBool("ControlsdStarted");
 
     // check if we should have pandad reconnect
     if (!ignition) {
@@ -517,7 +510,6 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     // clear ignition-based params and set new safety on car start
 //    if (ignition && !ignition_last) {
-//    if (restart_safety_setter && !restart_safety_setter_last) {
     if (is_offroad && !is_offroad_last) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
@@ -531,7 +523,6 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition_last = ignition;
     is_offroad_last = is_offroad;
-    restart_safety_setter_last = restart_safety_setter;
 
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
