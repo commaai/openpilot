@@ -247,7 +247,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
-  CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_l),
+  CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_m),
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
 }
@@ -578,6 +578,7 @@ FW_VERSIONS = {
       b'\xf1\x8739110-2S278\xf1\x82DNDVD5GMCCXXXL5B',
       b'\xf1\x8739110-2S041\xf1\x81HM6M1_0a0_M00',
       b'\xf1\x8739110-2S042\xf1\x81HM6M1_0a0_M00',
+      b'\xf1\x8739110-2S041\xf1\x81HM6M1_0a0_M10',
       b'\xf1\x81HM6M1_0a0_G20',
     ],
     (Ecu.eps, 0x7d4, None): [
@@ -586,6 +587,7 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
+      b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0210\x00 4DNAC102',
       b'\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP100',
       b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x8756310-L0010\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
@@ -619,6 +621,7 @@ FW_VERSIONS = {
       b'\xf1\x00HT6WA250BLHT6WA910A1SDN8G25NB1\x00\x00\x00\x00\x00\x00\x96\xa1\xf1\x92',
       b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB2\x00\x00\x00\x00\x00\x00\x08\xc9O:',
       b'\xf1\x00HT6WA280BLHT6WAD10A1SDN8G25NB4\x00\x00\x00\x00\x00\x00g!l[',
+      b'\xf1\x00HT6WA280BLHT6WAE10A1SDN8G25NB5\x00\x00\x00\x00\x00\x00\xe0t\xa9\xba',
       b'\xf1\x00T02601BL  T02730A1  VDN8T25XXX730NS5\xf7_\x92\xf5',
       b'\xf1\x00T02601BL  T02832A1  VDN8T25XXX832NS8G\x0e\xfeE',
       b'\xf1\x00T02601BL  T02900A1  VDN8T25XXX900NSCF\xe4!Y',
@@ -1703,10 +1706,12 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.04 99211-AR000 210204',
       b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.01 99211-AR200 220125',
+      b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.01 99211-AR300 220125',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         ',
       b'\xf1\x00JK1_ SCC FHCUP      1.00 1.00 99110-AR200         ',
+      b'\xf1\x00JK1_ SCC FHCUP      1.00 1.00 99110-AR300         ',
     ],
   },
   CAR.GENESIS_GV60_EV_1ST_GEN: {
