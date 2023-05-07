@@ -487,7 +487,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     ignition = *ignition_opt;
-    restart_safety_setter = p.getBool("ControlsdStarted");
+    restart_safety_setter = params.getBool("ControlsdStarted");
 
     // check if we should have pandad reconnect
     if (!ignition) {
