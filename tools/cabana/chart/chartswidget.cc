@@ -149,8 +149,9 @@ void ChartsWidget::updateTabBar() {
 
 void ChartsWidget::eventsMerged() {
   QFutureSynchronizer<void> future_synchronizer;
+  bool clear = !can->liveStreaming();
   for (auto c : charts) {
-    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
+    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, clear));
   }
 }
 
