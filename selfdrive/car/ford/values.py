@@ -12,25 +12,23 @@ Ecu = car.CarParams.Ecu
 
 
 class CarControllerParams:
-  # Messages: Lane_Assist_Data1, LateralMotionControl
-  STEER_STEP = 5
-  # Message: ACCDATA
-  ACC_CONTROL_STEP = 2
-  # Message: IPMA_Data
-  LKAS_UI_STEP = 100
-  # Message: ACCDATA_3
-  ACC_UI_STEP = 5
-  # Message: Steering_Data_FD1, but send twice as fast
-  BUTTONS_STEP = 10 / 2
+  STEER_STEP = 5        # LateralMotionControl, 20Hz
+  LKA_STEP = 3          # Lane_Assist_Data1, 33Hz
+  ACC_CONTROL_STEP = 2  # ACCDATA, 50Hz
+  LKAS_UI_STEP = 100    # IPMA_Data, 1Hz
+  ACC_UI_STEP = 20      # ACCDATA_3, 5Hz
+  BUTTONS_STEP = 5      # Steering_Data_FD1, 10Hz, but send twice as fast
 
   CURVATURE_MAX = 0.02  # Max curvature for steering command, m^-1
   STEER_DRIVER_ALLOWANCE = 1.0  # Driver intervention threshold, Nm
 
   # Curvature rate limits
-  # TODO: unify field names used by curvature and angle control cars
-  # ~2 m/s^3 up, ~-3 m/s^3 down
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.004, 0.00044, 0.00016])
-  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 15, 25], angle_v=[0.006, 0.00066, 0.00024])
+  # The curvature signal is limited to 0.003 to 0.009 m^-1/sec by the EPS depending on speed and direction
+  # Limit to ~2 m/s^3 up, ~3 m/s^3 down at 75 mph
+  # Worst case, the low speed limits will allow 4.3 m/s^3 up, 4.9 m/s^3 down at 75 mph
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.0002, 0.0001])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000225, 0.00015])
+  CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
   ACCEL_MAX = 2.0               # m/s^s max acceleration
   ACCEL_MIN = -3.5              # m/s^s max deceleration
@@ -74,16 +72,19 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),
-    FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-    FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
-    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Driver Assistance Pack"),
+    FordCarInfo("Ford Escape Hybrid 2020-22"),
+    FordCarInfo("Ford Escape Plug-in Hybrid 2021-22"),
+    FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
   ],
   CAR.EXPLORER_MK6: [
     FordCarInfo("Ford Explorer 2020-22"),
+    FordCarInfo("Ford Explorer Hybrid 2020-22"),
     FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
     FordCarInfo("Lincoln Aviator Plug-in Hybrid 2021", "Co-Pilot360 Plus"),
   ],
-  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2019", "Driver Assistance Pack"),
+  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Adaptive Cruise Control with Lane Centering"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
 

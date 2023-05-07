@@ -16,7 +16,6 @@ from selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
-  FORD.ESCAPE_MK4,
   FORD.FOCUS_MK4,
   FORD.MAVERICK_MK1,
   GM.CADILLAC_ATS,
@@ -47,6 +46,7 @@ routes = [
   CarTestRoute("8fb5eabf914632ae|2022-08-04--17-28-53", CHRYSLER.RAM_HD, segment=6),
 
   CarTestRoute("54827bf84c38b14f|2023-01-25--14-14-11", FORD.BRONCO_SPORT_MK1),
+  CarTestRoute("f8eaaccd2a90aef8|2023-05-04--15-10-09", FORD.ESCAPE_MK4),
   CarTestRoute("62241b0c7fea4589|2022-09-01--15-32-49", FORD.EXPLORER_MK6),
   #TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
 
@@ -144,6 +144,7 @@ routes = [
   CarTestRoute("715ac05b594e9c59|2021-06-20--16-21-07", HYUNDAI.ELANTRA_HEV_2021),
   CarTestRoute("7120aa90bbc3add7|2021-08-02--07-12-31", HYUNDAI.SONATA_HYBRID),
   CarTestRoute("715ac05b594e9c59|2021-10-27--23-24-56", HYUNDAI.GENESIS_G70_2020),
+  CarTestRoute("6b0d44d22df18134|2023-05-06--10-36-55", HYUNDAI.GENESIS_GV80),
 
   CarTestRoute("00c829b1b7613dea|2021-06-24--09-10-10", TOYOTA.ALPHARD_TSS2),
   CarTestRoute("912119ebd02c7a42|2022-03-19--07-24-50", TOYOTA.ALPHARDH_TSS2),

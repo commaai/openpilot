@@ -19,7 +19,7 @@ BUTTONS_DICT = {Buttons.RES_ACCEL: ButtonType.accelCruise, Buttons.SET_DECEL: Bu
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "hyundai"
     ret.radarUnavailable = RADAR_START_ADDR not in fingerprint[1] or DBC[ret.carFingerprint]["radar"] is None
 
@@ -229,6 +229,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
+    elif candidate == CAR.GENESIS_GV80:
+      ret.mass = 2258. + STD_CARGO_KG
+      ret.wheelbase = 2.95
+      ret.steerRatio = 14.14
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:

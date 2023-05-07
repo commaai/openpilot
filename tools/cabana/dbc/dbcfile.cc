@@ -55,6 +55,7 @@ void DBCFile::open(const QString &content) {
       sig.is_little_endian = s.is_little_endian;
       sig.updatePrecision();
     }
+    m.updateMask();
   }
   parseExtraInfo(content);
 
@@ -103,6 +104,7 @@ bool DBCFile::writeContents(const QString &fn) {
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
     m->sigs.push_back(sig);
+    m->updateMask();
     return &m->sigs.last();
   }
 
@@ -113,6 +115,7 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     if (auto s = (cabana::Signal *)m->sig(sig_name)) {
       *s = sig;
+      m->updateMask();
       return s;
     }
   }
@@ -135,6 +138,7 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
     if (it != m->sigs.end()) {
       m->sigs.erase(it);
+      m->updateMask();
     }
   }
 }
@@ -147,6 +151,33 @@ void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size)
 
 void DBCFile::removeMsg(const MessageId &id) {
   msgs.erase(id.address);
+}
+
+QString DBCFile::newMsgName(const MessageId &id) {
+  return QString("NEW_MSG_") + QString::number(id.address, 16).toUpper();
+}
+
+QString DBCFile::newSignalName(const MessageId &id) {
+  auto m = msg(id);
+  assert(m != nullptr);
+
+  QString name;
+
+  for (int i = 1; /**/; ++i) {
+    name = QString("NEW_SIGNAL_%1").arg(i);
+    if (m->sig(name) == nullptr) break;
+  }
+
+  return name;
+}
+
+const QList<uint8_t>& DBCFile::mask(const MessageId &id) const {
+  const cabana::Msg *m = msg(id);
+  if (m != nullptr) {
+    return m->mask;
+  } else {
+    return empty_mask;
+  }
 }
 
 std::map<uint32_t, cabana::Msg> DBCFile::getMessages() {
@@ -204,11 +235,11 @@ int DBCFile::msgCount() const {
 }
 
 QString DBCFile::name() const {
-  return name_;
+  return name_.isEmpty() ? "untitled" : name_;
 }
 
 bool DBCFile::isEmpty() const {
-  return (signalCount() == 0) && name().isEmpty();
+  return (signalCount() == 0) && name_.isEmpty();
 }
 
 void DBCFile::parseExtraInfo(const QString &content) {
