@@ -61,6 +61,7 @@ namespace cabana {
   };
 
   struct Msg {
+    uint32_t address;
     QString name;
     uint32_t size;
     QList<cabana::Signal> sigs;

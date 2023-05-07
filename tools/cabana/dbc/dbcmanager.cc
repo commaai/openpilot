@@ -119,6 +119,7 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   cabana::Signal *s = dbc_file->addSignal(id, sig);
 
   if (s != nullptr) {
+    dbc_sources.insert(id.source);
     for (uint8_t source : dbc_sources) {
       emit signalAdded({.source = source, .address = id.address}, s);
     }
