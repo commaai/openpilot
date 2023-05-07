@@ -106,11 +106,12 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
+
+  Params p;
+
   p.putBool("BoarddSafetySetterThreadReady", true);
   p.remove("ControlsdStarted");
 //  if (restart_safety_setter) p.remove("ControlsdStarted");
-
-  Params p;
 
   // there should be at least one panda connected
   if (pandas.size() == 0) {
