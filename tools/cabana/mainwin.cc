@@ -261,7 +261,6 @@ void MainWindow::newFile() {
   remindSaveChanges();
   dbc()->closeAll();
   dbc()->open(SOURCE_ALL, "", "");
-  updateLoadSaveMenus();
 }
 
 void MainWindow::openFile() {
@@ -316,8 +315,6 @@ void MainWindow::loadFile(const QString &fn, SourceSet s, bool close_all) {
       msg_box.setDetailedText(error);
       msg_box.exec();
     }
-
-    updateLoadSaveMenus();
   }
 }
 
@@ -342,8 +339,6 @@ void MainWindow::loadDBCFromOpendbc(const QString &name) {
 
   dbc()->closeAll();
   dbc()->open(SOURCE_ALL, opendbc_file_path);
-
-  updateLoadSaveMenus();
 }
 
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
@@ -486,7 +481,6 @@ void MainWindow::removeBusFromFile(DBCFile *dbc_file, uint8_t source) {
   assert(dbc_file != nullptr);
   SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};
   dbc()->removeSourcesFromFile(dbc_file, ss);
-  updateLoadSaveMenus();
 }
 
 
