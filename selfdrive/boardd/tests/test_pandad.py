@@ -54,6 +54,17 @@ class TestPandad(unittest.TestCase):
 
     assert any(Panda(s).is_internal() for s in Panda.list())
 
+  @phone_only
+  def test_best_case_startup_time(self):
+    # run once so we're setup
+    managed_processes['pandad'].start()
+    self._wait_for_boardd()
+
+    # should be fast this time
+    managed_processes['pandad'].start()
+    self._wait_for_boardd(8)
+
+
   #def test_out_of_date_fw(self):
   #  pass
 
