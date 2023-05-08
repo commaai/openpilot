@@ -39,6 +39,7 @@ void DBCFile::open(const QString &content) {
   msgs.clear();
   for (auto &msg : dbc->msgs) {
     auto &m = msgs[msg.address];
+    m.address = msg.address;
     m.name = msg.name.c_str();
     m.size = msg.size;
     for (auto &s : msg.sigs) {
@@ -145,6 +146,7 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
 
 void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
   auto &m = msgs[id.address];
+  m.address = id.address;
   m.name = name;
   m.size = size;
 }

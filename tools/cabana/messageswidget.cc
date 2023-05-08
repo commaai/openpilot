@@ -15,10 +15,11 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   title_layout->addWidget(num_msg_label);
 
   title_layout->addStretch();
-  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines Bytes"), this));
+  title_layout->addWidget(multiple_lines_bytes = new QCheckBox(tr("Multiple Lines &Bytes"), this));
   multiple_lines_bytes->setToolTip(tr("Display bytes in multiple lines"));
   multiple_lines_bytes->setChecked(settings.multiple_lines_bytes);
-  QPushButton *clear_filters = new QPushButton(tr("Clear Filters"));
+  QPushButton *clear_filters = new QPushButton(tr("&Clear Filters"));
+  clear_filters->setEnabled(false);
   title_layout->addWidget(clear_filters);
   main_layout->addLayout(title_layout);
 
@@ -42,6 +43,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
   view->header()->setSectionsMovable(true);
+  view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -62,6 +64,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   // signals/slots
   QObject::connect(header, &MessageViewHeader::filtersUpdated, model, &MessageListModel::setFilterStrings);
+  QObject::connect(header, &MessageViewHeader::filtersUpdated, [=](const QMap<int, QString> &filters) {
+    clear_filters->setEnabled(!filters.isEmpty());
+  });
   QObject::connect(view->horizontalScrollBar(), &QScrollBar::valueChanged, header, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(clear_filters, &QPushButton::clicked, header, &MessageViewHeader::clearFilters);
   QObject::connect(multiple_lines_bytes, &QCheckBox::stateChanged, [=](int state) {
@@ -108,7 +113,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
 
   updateSuppressedButtons();
-  dbcModified();
 
   setWhatsThis(tr(R"(
     <b>Message View</b><br/>
@@ -122,12 +126,13 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
 void MessagesWidget::dbcModified() {
   num_msg_label->setText(tr("%1 Messages, %2 Signals").arg(dbc()->msgCount()).arg(dbc()->signalCount()));
-  model->fetchData();
+  model->dbcModified();
 }
 
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
-  if (int row = model->msgs.indexOf(msg_id); row != -1) {
-    view->selectionModel()->setCurrentIndex(model->index(row, 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+  auto it = std::find(model->msgs.cbegin(), model->msgs.cend(), msg_id);
+  if (it != model->msgs.cend()) {
+    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
 }
 
@@ -180,11 +185,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return msgName(id);
-      case Column::SOURCE: return id.source;
+      case Column::SOURCE: return id.source != INVALID_SOURCE ? QString::number(id.source) : "N/A" ;
       case Column::ADDRESS: return QString::number(id.address, 16);
-      case Column::FREQ: return getFreq(can_data);
-      case Column::COUNT: return can_data.count;
-      case Column::DATA: return toHex(can_data.dat);
+      case Column::FREQ: return id.source != INVALID_SOURCE ? getFreq(can_data) : "N/A";
+      case Column::COUNT: return id.source != INVALID_SOURCE ? QString::number(can_data.count) : "N/A";
+      case Column::DATA: return id.source != INVALID_SOURCE ? toHex(can_data.dat) : "N/A";
     }
   } else if (role == ColorsRole) {
     QVector<QColor> colors = can_data.colors;
@@ -196,7 +201,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
       }
     }
     return QVariant::fromValue(colors);
-  } else if (role == BytesRole && index.column() == Column::DATA) {
+  } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
     return can_data.dat;
   }
   return {};
@@ -207,7 +212,15 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
   fetchData();
 }
 
-void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, QList<MessageId> &new_msgs) {
+void MessageListModel::dbcModified() {
+  dbc_address.clear();
+  for (const auto &[_, m] : dbc()->getMessages(0)) {
+    dbc_address.insert(m.address);
+  }
+  fetchData();
+}
+
+void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
   if (sort_column == Column::NAME) {
     std::sort(new_msgs.begin(), new_msgs.end(), [=](auto &l, auto &r) {
       auto ll = std::pair{msgName(l), l};
@@ -241,7 +254,7 @@ void MessageListModel::sortMessages(Qt::SortOrder sort_order, int sort_column, Q
   }
 }
 
-static std::pair<unsigned int, unsigned int> parseRange(QString &filter, bool *ok = nullptr, int base = 10) {
+static std::pair<unsigned int, unsigned int> parseRange(const QString &filter, bool *ok = nullptr, int base = 10) {
   // Parse out filter string into a range (e.g. "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf})
   bool ok1 = true, ok2 = true;
   unsigned int parsed1 = std::numeric_limits<unsigned int>::min();
@@ -263,14 +276,14 @@ static std::pair<unsigned int, unsigned int> parseRange(QString &filter, bool *o
   }
 }
 
-bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters) {
+bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters) {
   auto cs = Qt::CaseInsensitive;
   bool match = true;
   bool convert_ok;
 
   for (int column = Column::NAME; column <= Column::DATA; column++) {
     if (!filters.contains(column)) continue;
-    QString txt = filters[column];
+    const QString &txt = filters[column];
 
     QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
 
@@ -341,25 +354,38 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, QM
 
 
 void MessageListModel::fetchData() {
-  QList<MessageId> new_msgs;
-  for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
-    if (matchMessage(it.key(), it.value(), filter_str)) {
+  std::vector<MessageId> new_msgs;
+  new_msgs.reserve(can->last_msgs.size() + dbc_address.size());
+
+  auto address = dbc_address;
+  for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
+    if (filter_str.isEmpty() || matchMessage(it.key(), it.value(), filter_str)) {
       new_msgs.push_back(it.key());
     }
+    address.remove(it.key().address);
   }
-  sortMessages(sort_order, sort_column, new_msgs);
+
+  // merge all DBC messages
+  for (auto &addr : address) {
+    MessageId id{.source = INVALID_SOURCE, .address = addr};
+    if (filter_str.isEmpty() || matchMessage(id, {}, filter_str)) {
+      new_msgs.push_back(id);
+    }
+  }
+
+  sortMessages(new_msgs);
 
   if (msgs != new_msgs) {
     beginResetModel();
-    msgs = new_msgs;
+    msgs = std::move(new_msgs);
     endResetModel();
   }
 }
 
-void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs) {
-  QList<MessageId> prev_msgs = msgs;
-  fetchData();
-
+void MessageListModel::msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids) {
+  if (has_new_ids || filter_str.contains(Column::FREQ) || filter_str.contains(Column::COUNT) || filter_str.contains(Column::DATA)) {
+    fetchData();
+  }
   for (int i = 0; i < msgs.size(); ++i) {
     if (new_msgs->contains(msgs[i])) {
       for (int col = Column::FREQ; col < columnCount(); ++col)

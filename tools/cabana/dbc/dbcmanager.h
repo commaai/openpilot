@@ -15,6 +15,7 @@
 
 typedef QSet<uint8_t> SourceSet;
 const SourceSet SOURCE_ALL = {};
+const int INVALID_SOURCE = 0xff;
 
 class DBCManager : public QObject {
   Q_OBJECT

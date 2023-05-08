@@ -27,7 +27,7 @@ public:
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr);
+  void updateSeries(const cabana::Signal *sig = nullptr, bool clear = true);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
