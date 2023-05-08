@@ -21,12 +21,12 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
 
 public slots:
   void openRoute();
-  void newFile();
-  void openFile();
+  void newFile(SourceSet s = SOURCE_ALL);
+  void openFile(SourceSet s = SOURCE_ALL);
   void openRecentFile();
   void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
@@ -48,8 +48,6 @@ protected:
   void saveFileToClipboard(DBCFile *dbc_file);
   void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
-  void openFileForSource(SourceSet s);
-  void newFileForSource(SourceSet s);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
