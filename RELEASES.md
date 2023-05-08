@@ -15,6 +15,7 @@ Version 0.9.2 (2023-05-XX)
 * Ford Kuga 2020-22 support
 * Ford Kuga Hybrid 2020-22 support
 * Ford Kuga Plug-in Hybrid 2020-22 support
+* Genesis GV80 2023 support thanks to JWingate80!
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support

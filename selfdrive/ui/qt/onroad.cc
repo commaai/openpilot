@@ -511,24 +511,34 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, height(), 0, height() / 4);
-  float start_hue, end_hue;
+  QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
-    float acceleration_future = 0;
-    if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    const QVector<QPointF> right_points = scene.track_vertices.mid(0, scene.track_vertices.length() / 2);
+
+    for (int i = 0; i < right_points.length(); i++) {
+      const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+      if (i >= acceleration.size()) break;
+
+      // Some points are out of frame
+      if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
+
+      // Flip so 0 is bottom of frame
+      float lin_grad_point = (height() - right_points[i].y()) / height();
+
+      // speed up: 120, slow down: 0
+      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
+      // FIXME: painter.drawPolygon can be slow if hue is not rounded
+      path_hue = int(path_hue * 100 + 0.5) / 100;
+
+      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+      float lightness = util::map_val(saturation, 0.0f, 1.0f, 0.95f, 0.62f);  // lighter when grey
+      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 0.0f);  // matches previous alpha fade
+      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+
+      // Skip a point, unless next is last
+      i += (i + 2) < right_points.length() ? 1 : 0;
     }
-    start_hue = 60;
-    // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
 
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    end_hue = int(end_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));

@@ -129,7 +129,9 @@ void DetailWidget::refresh() {
   QStringList warnings;
   auto msg = dbc()->msg(msg_id);
   if (msg) {
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (msg_id.source == INVALID_SOURCE) {
+      warnings.push_back(tr("No messages received."));
+    } else if (msg->size != can->lastMessage(msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {

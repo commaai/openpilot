@@ -34,20 +34,22 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return msgs.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
-  void msgsReceived(const QHash<MessageId, CanData> *new_msgs = nullptr);
+  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void fetchData();
   void suppress();
   void clearSuppress();
   void reset();
   void forceResetModel();
-  QList<MessageId> msgs;
+  void dbcModified();
+  std::vector<MessageId> msgs;
   QSet<std::pair<MessageId, int>> suppressed_bytes;
 
 private:
-  static void sortMessages(Qt::SortOrder sort_order, int sort_column, QList<MessageId> &new_msgs);
-  static bool matchMessage(const MessageId &id, const CanData &data, QMap<int, QString> &filters);
+  void sortMessages(std::vector<MessageId> &new_msgs);
+  bool matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters);
 
   QMap<int, QString> filter_str;
+  QSet<uint32_t> dbc_address;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
 };
