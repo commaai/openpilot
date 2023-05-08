@@ -338,6 +338,17 @@ class TestOnroad(unittest.TestCase):
     expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
     self.assertEqual(startup_alert, expected, "wrong startup alert")
 
+  def test_engagable(self):
+    no_entries = Counter()
+    for m in self.service_msgs['carEvents']:
+      for evt in m.carEvents:
+        if evt.noEntry:
+          no_entries[evt.name] += 1
+
+    eng = [m.controlsState.engageable for m in self.service_msgs['controlsState']]
+    assert all(eng), \
+           f"Not engageable for whole segment:\n- controlsState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+
 
 if __name__ == "__main__":
   unittest.main()
