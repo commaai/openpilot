@@ -324,9 +324,7 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
   } else {
     QMessageBox msg_box(QMessageBox::Warning, tr("Failed to load DBC from clipboard"), tr("Make sure that you paste the text with correct format."));
-    if (!error.isEmpty()) {
-      msg_box.setDetailedText(error);
-    }
+    msg_box.setDetailedText(error);
     msg_box.exec();
   }
 }
@@ -408,7 +406,6 @@ void MainWindow::saveFile(DBCFile *dbc_file) {
   assert(dbc_file != nullptr);
   if (!dbc_file->filename.isEmpty()) {
     dbc_file->save();
-    updateRecentFiles(dbc_file->filename);
     updateLoadSaveMenus();
   } else if (!dbc_file->isEmpty()) {
     saveFileAs(dbc_file);
