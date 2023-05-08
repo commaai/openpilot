@@ -39,13 +39,14 @@ class ReplayContext:
   def __enter__(self):
     messaging.toggle_fake_events(True)
 
+    pubs_with_events = self.non_polled_pubs if len(self.drained_pubs) == 0 else self.drained_pubs
     self.recv_called_events = {
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
-      for s in self.non_polled_pubs
+      for s in pubs_with_events
     }
     self.recv_ready_events = {
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
-      for s in self.non_polled_pubs
+      for s in pubs_with_events
     }
     if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
       self.poll_called_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_CALLED)
@@ -65,6 +66,8 @@ class ReplayContext:
   def unlock_sockets(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
       return
+    if len(self.drained_pubs) > 0:
+      return
     
     if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
       self.poll_called_event.wait()
@@ -78,18 +81,21 @@ class ReplayContext:
 
       self.recv_ready_events[pub].set()
 
-  def wait_for_next_recv(self, msg_type, next_msg_type):
+  def wait_for_next_recv(self, msg_type, should_recv):
     if len(self.drained_pubs) > 0:
-      return self._wait_for_next_recv_drained(msg_type, next_msg_type)
+      return self._wait_for_next_recv_drained(msg_type, should_recv)
     elif len(self.polled_pubs) > 0:
       return self._wait_for_next_recv_using_polls(msg_type)
     else:
       return self._wait_for_next_recv_standard(msg_type)
 
-  def _wait_for_next_recv_drained(self, msg_type, next_msg_type):
+  def _wait_for_next_recv_drained(self, msg_type, should_recv):
     # if the next message is also drained message, then we need to fake the recv_ready event
     # in order to start the next cycle
-    if msg_type in self.drained_pubs and (next_msg_type == msg_type or next_msg_type is None):
+    if not should_recv:
+      return
+
+    if msg_type in self.drained_pubs:
       self.recv_called_events[self.drained_pubs[0]].wait()
       self.recv_called_events[self.drained_pubs[0]].clear()
       self.recv_ready_events[self.drained_pubs[0]].set()
@@ -272,7 +278,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "carState": [], "modelV2": [],
+      "carState": ["radarState", "liveTracks"], "modelV2": ["radarState", "liveTracks"],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
@@ -451,7 +457,7 @@ def replay_process(cfg, lr, fingerprint=None):
     try:
       # Wait for process to startup
       with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-        while not any(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+        while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
           time.sleep(0)
       
       for s in sockets.values():
@@ -473,7 +479,7 @@ def replay_process(cfg, lr, fingerprint=None):
           rc.unlock_sockets(msg.which())
           pm.send(msg.which(), msg.as_builder())
           # wait for the next receive on the process side
-          rc.wait_for_next_recv(msg.which(), pub_msgs[i+1].which() if i+1 < len(pub_msgs) else None)
+          rc.wait_for_next_recv(msg.which(), should_recv)
 
           if should_recv:
             for s in resp_sockets:
