@@ -28,13 +28,11 @@ public slots:
   void newFile(SourceSet s = SOURCE_ALL);
   void openFile(SourceSet s = SOURCE_ALL);
   void openRecentFile();
-  void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
-  void loadDBCFromFingerprint();
+  void streamStarted();
   void save();
   void saveAs();
   void saveToClipboard();
-  void updateSources(const SourceSet &s);
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -89,7 +87,6 @@ protected:
   QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
-  SourceSet sources;
   friend class OnlineHelp;
 };
 
