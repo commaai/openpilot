@@ -42,6 +42,7 @@ signals:
 
 protected:
   void remindSaveChanges();
+  void closeFile(SourceSet s = SOURCE_ALL);
   void closeFile(DBCFile *dbc_file);
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);

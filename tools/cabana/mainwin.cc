@@ -258,12 +258,7 @@ void MainWindow::openRoute() {
 }
 
 void MainWindow::newFile(SourceSet s) {
-  remindSaveChanges();
-  if (s == SOURCE_ALL) {
-    dbc()->closeAll();
-  } else {
-    dbc()->close(s);
-  }
+  closeFile(s);
   dbc()->open(s, "", "");
 }
 
@@ -287,10 +282,8 @@ void MainWindow::loadFile(const QString &fn, SourceSet s) {
       }
     }
 
-    if (s == SOURCE_ALL) {
-      dbc()->closeAll();
-    }
-    dbc()->close(s);
+    closeFile(s);
+
     QString error;
     if (dbc()->open(s, dbc_fn, &error)) {
       updateRecentFiles(fn);
@@ -317,24 +310,16 @@ void MainWindow::openRecentFile() {
 }
 
 void MainWindow::loadDBCFromOpendbc(const QString &name) {
-  remindSaveChanges();
-
+  closeFile();
   QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, name);
-
-  dbc()->closeAll();
   dbc()->open(SOURCE_ALL, opendbc_file_path);
 }
 
 void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
-  remindSaveChanges();
+  closeFile(s);
+
   QString dbc_str = QGuiApplication::clipboard()->text();
   QString error;
-
-  if (close_all) {
-    dbc()->closeAll();
-  }
-
-  dbc()->close(s);
   bool ret = dbc()->open(s, "", dbc_str, &error);
   if (ret && dbc()->msgCount() > 0) {
     QMessageBox::information(this, tr("Load From Clipboard"), tr("DBC Successfully Loaded!"));
@@ -398,6 +383,15 @@ void MainWindow::autoSave() {
 void MainWindow::cleanupAutoSaveFile() {
   for (auto &[_, dbc_file] : dbc()->dbc_files) {
     dbc_file->cleanupAutoSaveFile();
+  }
+}
+
+void MainWindow::closeFile(SourceSet s) {
+  remindSaveChanges();
+  if (s == SOURCE_ALL) {
+    dbc()->closeAll();
+  } else {
+    dbc()->close(s);
   }
 }
 
