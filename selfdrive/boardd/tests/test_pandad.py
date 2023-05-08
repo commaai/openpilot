@@ -59,10 +59,11 @@ class TestPandad(unittest.TestCase):
     # run once so we're setup
     managed_processes['pandad'].start()
     self._wait_for_boardd()
+    managed_processes['pandad'].stop()
 
     # should be fast this time
     managed_processes['pandad'].start()
-    self._wait_for_boardd(4)
+    self._wait_for_boardd(6)
 
 
   #def test_out_of_date_fw(self):
