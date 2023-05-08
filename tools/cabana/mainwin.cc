@@ -304,7 +304,6 @@ void MainWindow::openOpendbcFile() {
 
 void MainWindow::openRecentFile() {
   if (auto action = qobject_cast<QAction *>(sender())) {
-    remindSaveChanges();
     loadFile(action->data().toString());
   }
 }
@@ -398,9 +397,7 @@ void MainWindow::closeFile(SourceSet s) {
 void MainWindow::closeFile(DBCFile *dbc_file) {
   assert(dbc_file != nullptr);
   remindSaveChanges();
-
   dbc()->close(dbc_file);
-
   // Ensure we always have at least one file open
   if (dbc()->dbcCount() == 0) {
     newFile();
