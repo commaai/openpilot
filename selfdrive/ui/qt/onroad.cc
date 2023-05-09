@@ -513,16 +513,17 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   // paint path
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    const auto &right_points = scene.track_vertices;
-    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    // The first half of track_vertices are the points for the right side of the path
+    // and the indices match the positions of accel from uiPlan
     const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
+    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
-      if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
+      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
 
       // Flip so 0 is bottom of frame
-      float lin_grad_point = (height() - right_points[i].y()) / height();
+      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
