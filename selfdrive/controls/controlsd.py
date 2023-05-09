@@ -285,7 +285,7 @@ class Controls:
     if cal_status != log.LiveCalibrationData.Status.calibrated:
       if cal_status == log.LiveCalibrationData.Status.uncalibrated:
         self.events.add(EventName.calibrationIncomplete)
-      if cal_status == log.LiveCalibrationData.Status.recalibrating:
+      elif cal_status == log.LiveCalibrationData.Status.recalibrating:
         self.events.add(EventName.calibrationRecalibrating)
       else:
         self.events.add(EventName.calibrationInvalid)
