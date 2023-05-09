@@ -75,9 +75,20 @@ public:
 
 
   static std::map<std::string, std::string> get_init_logs() {
-    return {
+    std::map<std::string, std::string> ret = {
+      {"boot slot", util::check_output("abctl --boot_slot")},
+      {"boot temp", util::read_file("/dev/disk/by-partlabel/ssd")},
       {"/BUILD", util::read_file("/BUILD")},
     };
+
+    for (std::string part : {"xbl", "abl", "boot"}) {
+      for (std::string slot : {"a", "b"}) {
+        std::string partition = part + "_" + slot;
+        ret[partition] = util::check_output("sha256sum " + partition);
+      }
+    }
+
+    return ret;
   }
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
