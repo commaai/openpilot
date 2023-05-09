@@ -9,7 +9,7 @@ cdef extern from "common/params.h":
   cpdef enum ParamKeyType:
     PERSISTENT
     CLEAR_ON_MANAGER_START
-    CLEAR_ON_IGNITION_ON
+    CLEAR_ON_ONROAD_TRANSITION
     CLEAR_ON_IGNITION_OFF
     ALL
 
