@@ -29,17 +29,15 @@ FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 class ReplayContext:
   def __init__(self, cfg):
-    self.non_polled_pubs = list(set(cfg.pub_sub.keys()) - set(cfg.polled_pubs))
+    self.non_polled_pubs = list(set(cfg.pubs) - set(cfg.polled_pubs))
     self.polled_pubs = cfg.polled_pubs
-    self.drained_pubs = cfg.drained_pubs
-    assert(len(self.non_polled_pubs) != 0 or len(self.polled_pubs) != 0)
-    assert(set(self.drained_pubs) & set(self.polled_pubs) == set())
-    self.subs = [s for sub in cfg.pub_sub.values() for s in sub]
+    self.drained_pub = cfg.drained_pub
+    assert(len(self.non_polled_pubs) != 0 or len(self.polled_pubs) != 0 or self.drained_pub is not None)
   
   def __enter__(self):
     messaging.toggle_fake_events(True)
 
-    pubs_with_events = self.non_polled_pubs if len(self.drained_pubs) == 0 else self.drained_pubs
+    pubs_with_events = self.non_polled_pubs if self.drained_pub is None else [self.drained_pub]
     self.recv_called_events = {
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
       for s in pubs_with_events
@@ -48,7 +46,7 @@ class ReplayContext:
       s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
       for s in pubs_with_events
     }
-    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
+    if len(self.polled_pubs) > 0 and self.drained_pub is None:
       self.poll_called_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_CALLED)
       self.poll_ready_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_READY)
 
@@ -57,19 +55,17 @@ class ReplayContext:
   def __exit__(self, exc_type, exc_obj, exc_tb):
     del self.recv_called_events
     del self.recv_ready_events
-    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
+    if len(self.polled_pubs) > 0 and self.drained_pub is None:
       del self.poll_called_event
       del self.poll_ready_event
 
     messaging.toggle_fake_events(False)
 
   def unlock_sockets(self, msg_type):
-    if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
-      return
-    if len(self.drained_pubs) > 0:
+    if self.drained_pub is not None:
       return
     
-    if len(self.polled_pubs) > 0 and len(self.drained_pubs) == 0:
+    if len(self.polled_pubs) > 0:
       self.poll_called_event.wait()
       self.poll_called_event.clear()
       if msg_type not in self.polled_pubs:
@@ -82,7 +78,7 @@ class ReplayContext:
       self.recv_ready_events[pub].set()
 
   def wait_for_next_recv(self, msg_type, should_recv):
-    if len(self.drained_pubs) > 0:
+    if self.drained_pub is not None:
       return self._wait_for_next_recv_drained(msg_type, should_recv)
     elif len(self.polled_pubs) > 0:
       return self._wait_for_next_recv_using_polls(msg_type)
@@ -95,11 +91,11 @@ class ReplayContext:
     if not should_recv:
       return
 
-    if msg_type in self.drained_pubs:
-      self.recv_called_events[self.drained_pubs[0]].wait()
-      self.recv_called_events[self.drained_pubs[0]].clear()
-      self.recv_ready_events[self.drained_pubs[0]].set()
-    self.recv_called_events[self.drained_pubs[0]].wait()
+    if msg_type == self.drained_pub:
+      self.recv_called_events[self.drained_pub].wait()
+      self.recv_called_events[self.drained_pub].clear()
+      self.recv_ready_events[self.drained_pub].set()
+    self.recv_called_events[self.drained_pub].wait()
 
   def _wait_for_next_recv_standard(self, msg_type):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
@@ -136,8 +132,10 @@ class ReplayContext:
 @dataclass
 class ProcessConfig:
   proc_name: str
-  pub_sub: Dict[str, List[str]]
+  pubs: List[str]
+  subs: List[str]
   ignore: List[str]
+  config_callback: Optional[Callable]
   init_callback: Optional[Callable]
   should_recv_callback: Optional[Callable]
   tolerance: Optional[float]
@@ -146,7 +144,7 @@ class ProcessConfig:
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
   polled_pubs: List[str] = field(default_factory=list)
-  drained_pubs: List[str] = field(default_factory=list)
+  drained_pub: Optional[str] = None
 
 
 class DummySocket:
@@ -171,7 +169,6 @@ def fingerprint(rc, pm, msgs, fingerprint):
   for m in canmsgs[:300]:
     pm.send("can", m.as_builder().to_bytes())
   rc.wait_for_next_recv("can", "can")
-  print("complete fingerprinting")
   get_car_params(rc, pm, msgs, fingerprint)
 
 
@@ -192,8 +189,13 @@ def get_car_params(rc, pm, msgs, fingerprint):
 
 def controlsd_rcv_callback(msg, CP, cfg, frame):
   # no sendcan until controlsd is initialized
-  socks = [s for s in cfg.pub_sub[msg.which()] if
-           (frame) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0]
+  if msg.which() != "can":
+    return [], False
+
+  socks = [
+    s for s in cfg.subs if
+    (frame) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0
+  ]
   if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
   return socks, len(socks) > 0
@@ -245,55 +247,64 @@ def ublox_rcv_callback(msg, CP, cfg, frame):
 
 
 def rate_based_rcv_callback(msg, CP, cfg, frame):
-  resp_sockets = [s for s in cfg.pub_sub[msg.which()] if
-          frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
+  resp_sockets = [
+    s for s in cfg.subs 
+    if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
+  ]
   should_recv = bool(len(resp_sockets))
 
   return resp_sockets, should_recv
 
 
+def laikad_config_pubsub_callback(params, cfg):
+  ublox = params.get_bool("UbloxAvailable")
+  drained_key = "ubloxGnss" if ublox else "qcomGnss"
+  sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
+
+  return set(cfg.pubs) - sub_keys, drained_key
+
+
+def locationd_config_pubsub_callback(params, cfg):
+  ublox = params.get_bool("UbloxAvailable")
+  sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
+  
+  return set(cfg.pubs) - sub_keys, None
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
-    pub_sub={
-      "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [],
-      "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
-      "modelV2": [], "driverCameraState": [], "roadCameraState": [], "wideRoadCameraState": [], "managerState": [],
-      "testJoystick": [], "liveTorqueParameters": [],
-    },
-    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
-    init_callback=fingerprint,
-    should_recv_callback=controlsd_rcv_callback,
-    tolerance=NUMPY_TOLERANCE,
-    polled_pubs=[
-      "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+    pubs=[
+      "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "lateralPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters"
     ],
-    drained_pubs=["can"]
+    subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
+    ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    config_callback=None,
+    init_callback=fingerprint,
+    should_recv_callback=controlsd_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    drained_pub="can"
   ),
   ProcessConfig(
     proc_name="radard",
-    pub_sub={
-      "can": ["radarState", "liveTracks"],
-      "carState": ["radarState", "liveTracks"], "modelV2": ["radarState", "liveTracks"],
-    },
+    pubs=["can", "carState", "modelV2"],
+    subs=["radarState", "liveTracks"],
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
-    polled_pubs=["carState", "modelV2"],
-    drained_pubs=["can"]
+    drained_pub="can"
   ),
   ProcessConfig(
     proc_name="plannerd",
-    pub_sub={
-      "modelV2": ["lateralPlan", "longitudinalPlan", "uiPlan"],
-      "carControl": [], "carState": [], "controlsState": [], "radarState": [],
-    },
+    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
+    subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -301,12 +312,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="calibrationd",
-    pub_sub={
-      "carState": ["liveCalibration"],
-      "cameraOdometry": [],
-      "carParams": [],
-    },
+    pubs=["carState", "cameraOdometry", "carParams"],
+    subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
@@ -314,11 +323,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
-    pub_sub={
-      "driverStateV2": ["driverMonitoringState"],
-      "liveCalibration": [], "carState": [], "modelV2": [], "controlsState": [],
-    },
+    pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "controlsState"],
+    subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -326,13 +334,13 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="locationd",
-    pub_sub={
-      "cameraOdometry": ["liveLocationKalman"],
-      "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], 
-      "carState": [], "carParams": [], "gpsLocation": [],
-    },
+    pubs=[
+      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal", 
+      "liveCalibration", "carState", "carParams", "gpsLocation"
+    ],
+    subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
+    config_callback=locationd_config_pubsub_callback,
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
@@ -343,11 +351,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="paramsd",
-    pub_sub={
-      "liveLocationKalman": ["liveParameters"],
-      "carState": []
-    },
+    pubs=["liveLocationKalman", "carState"],
+    subs=["liveParameters"],
     ignore=["logMonoTime", "valid"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -355,34 +362,32 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="ubloxd",
-    pub_sub={
-      "ubloxRaw": ["ubloxGnss", "gpsLocationExternal"],
-    },
+    pubs=["ubloxRaw"],
+    subs=["ubloxGnss", "gpsLocationExternal"],
     ignore=["logMonoTime"],
+    config_callback=None,
     init_callback=None,
     should_recv_callback=None,
     tolerance=None,
   ),
   ProcessConfig(
     proc_name="laikad",
-    pub_sub={
-      "ubloxGnss": ["gnssMeasurements"],
-      "qcomGnss": ["gnssMeasurements"],
-    },
+    pubs=["ubloxGnss", "qcomGnss"],
+    subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
+    config_callback=laikad_config_pubsub_callback,
     init_callback=get_car_params,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
-    drained_pubs=["ubloxGnss", "qcomGnss"],
+    drained_pub="ubloxGnss", # config_callback will switch this to qcom if needed 
   ),
   ProcessConfig(
     proc_name="torqued",
-    pub_sub={
-      "liveLocationKalman": ["liveTorqueParameters"],
-      "carState": [], "carControl": [],
-    },
+    pubs=["liveLocationKalman", "carState", "carControl"],
+    subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
+    config_callback=None,
     init_callback=get_car_params,
     should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -392,14 +397,7 @@ CONFIGS = [
 
 
 def replay_process(cfg, lr, fingerprint=None):
-  with OpenpilotPrefix(), ReplayContext(cfg) as rc:
-    pm = messaging.PubMaster(cfg.pub_sub.keys())
-    sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
-    sockets = {s: messaging.sub_sock(s, timeout=100) for s in sub_sockets}
-
-    all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-    pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
-
+  with OpenpilotPrefix():
     controlsState = None
     initialized = False
     for msg in lr:
@@ -412,88 +410,71 @@ def replay_process(cfg, lr, fingerprint=None):
 
     assert controlsState is not None and initialized, "controlsState never initialized"
 
+    CP = [m for m in lr if m.which() == 'carParams'][0].carParams
     if fingerprint is not None:
       setup_env(simulation=True, cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
     else:
-      CP = [m for m in lr if m.which() == 'carParams'][0].carParams
       setup_env(simulation=True, CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
-    if cfg.proc_name == "laikad":
-      ublox = Params().get_bool("UbloxAvailable")
-      sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
-      keys = set(rc.non_polled_pubs) - sub_keys
-      d_keys = set(rc.drained_pubs) - sub_keys
-      rc.non_polled_pubs = list(keys)
-      rc.drained_pubs = list(d_keys)
-      pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
+    if cfg.config_callback is not None:
+      params = Params()
+      cfg.pubs, cfg.drained_pub = cfg.config_callback(params, cfg)
+      cfg.polled_pubs = list(set(cfg.polled_pubs) & set(cfg.pubs))
 
-    if cfg.proc_name == "locationd":
-      ublox = Params().get_bool("UbloxAvailable")
-      sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
-      np_keys = set(rc.non_polled_pubs) - sub_keys
-      p_keys = set(rc.polled_pubs) - sub_keys
-      keys = np_keys | p_keys
-      rc.non_polled_pubs = list(np_keys)
-      rc.polled_pubs = list(p_keys)
-      pub_msgs = [msg for msg in pub_msgs if msg.which() in keys]
+    all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+    pub_msgs = [msg for msg in all_msgs if msg.which() in set(cfg.pubs)]
 
+    with ReplayContext(cfg) as rc:
+      pm = messaging.PubMaster(cfg.pubs)
+      sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
 
-    if fingerprint is not None:
-      os.environ['SKIP_FW_QUERY'] = "1"
-      os.environ['FINGERPRINT'] = fingerprint
-      setup_env(cfg=cfg, controlsState=controlsState, lr=lr)
-    else:
-      CP = [m for m in lr if m.which() == 'carParams'][0].carParams
-      setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
+      managed_processes[cfg.proc_name].prepare()
+      managed_processes[cfg.proc_name].start()
 
-    managed_processes[cfg.proc_name].prepare()
-    managed_processes[cfg.proc_name].start()
+      if cfg.init_callback is not None:
+        cfg.init_callback(rc, pm, all_msgs, fingerprint)
+        CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
-    if cfg.init_callback is not None:
-      cfg.init_callback(rc, pm, all_msgs, fingerprint)
-      CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+      log_msgs = []
+      try:
+        # Wait for process to startup
+        with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+          while not all(pm.all_readers_updated(s) for s in cfg.pubs):
+            time.sleep(0)
+        
+        for s in sockets.values():
+          messaging.recv_one_or_none(s)
 
-    log_msgs = []
-    try:
-      # Wait for process to startup
-      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-        while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
-          time.sleep(0)
-      
-      for s in sockets.values():
-        messaging.recv_one_or_none(s)
+        # Do the replay
+        cnt = 0
+        for i, msg in enumerate(tqdm(pub_msgs)):
+          with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
+            resp_sockets, should_recv = cfg.subs, True
+            if cfg.should_recv_callback is not None:
+              resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, cnt)
 
-      # Do the replay
-      cnt = 0
-      for i, msg in enumerate(tqdm(pub_msgs)):
-        with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
-          resp_sockets = cfg.pub_sub[msg.which()]
-          should_recv = True
-          if cfg.should_recv_callback is not None:
-            resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, cnt)
+            if len(log_msgs) == 0 and len(resp_sockets) > 0:
+              for s in sockets.values():
+                messaging.recv_one_or_none(s)
+            
+            rc.unlock_sockets(msg.which())
+            pm.send(msg.which(), msg.as_builder())
+            # wait for the next receive on the process side
+            rc.wait_for_next_recv(msg.which(), should_recv)
 
-          if len(log_msgs) == 0 and len(resp_sockets) > 0:
-            for s in sockets.values():
-              messaging.recv_one_or_none(s)
-          
-          rc.unlock_sockets(msg.which())
-          pm.send(msg.which(), msg.as_builder())
-          # wait for the next receive on the process side
-          rc.wait_for_next_recv(msg.which(), should_recv)
+            if should_recv:
+              for s in resp_sockets:
+                ms = messaging.drain_sock(sockets[s])
+                for m in ms:
+                  m = m.as_builder()
+                  m.logMonoTime = msg.logMonoTime
+                  log_msgs.append(m.as_reader())
+              cnt += 1
+      finally:
+        managed_processes[cfg.proc_name].signal(signal.SIGKILL)
+        managed_processes[cfg.proc_name].stop()
 
-          if should_recv:
-            for s in resp_sockets:
-              ms = messaging.drain_sock(sockets[s])
-              for m in ms:
-                m = m.as_builder()
-                m.logMonoTime = msg.logMonoTime
-                log_msgs.append(m.as_reader())
-            cnt += 1
-    finally:
-      managed_processes[cfg.proc_name].signal(signal.SIGKILL)
-      managed_processes[cfg.proc_name].stop()
-
-    return log_msgs
+      return log_msgs
 
 
 def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
