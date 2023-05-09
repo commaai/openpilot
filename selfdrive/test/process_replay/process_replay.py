@@ -449,13 +449,15 @@ def replay_process(cfg, lr, fingerprint=None):
         with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
           while not all(pm.all_readers_updated(s) for s in cfg.pubs):
             time.sleep(0)
-        
+
         for s in sockets.values():
           messaging.recv_one_or_none(s)
 
+        time.sleep(1)
+
         # Do the replay
         cnt = 0
-        for i, msg in enumerate(tqdm(pub_msgs)):
+        for msg in pub_msgs:
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, should_recv = cfg.subs, True
             if cfg.should_recv_callback is not None:
