@@ -84,7 +84,7 @@ public:
     for (std::string part : {"xbl", "abl", "boot"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;
-        ret[partition] = util::check_output("sha256sum " + partition);
+        ret[partition] = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
       }
     }
 
