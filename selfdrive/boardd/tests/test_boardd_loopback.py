@@ -36,8 +36,8 @@ class TestBoardd(unittest.TestCase):
 
     with Timeout(60, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
-      no_panda = any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates'])
-      while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or no_panda:
+      while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
+          any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
         sm.update(1000)
 
     num_pandas = len(sm['pandaStates'])
