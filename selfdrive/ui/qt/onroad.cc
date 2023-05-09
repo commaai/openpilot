@@ -514,11 +514,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     const QVector<QPointF> right_points = scene.track_vertices.mid(0, scene.track_vertices.length() / 2);
+    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    int max_idx = std::min<int>(right_points.size(), acceleration.size());
 
-    for (int i = 0; i < right_points.length(); i++) {
-      const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
-      if (i >= acceleration.size()) break;
-
+    for (int i = 0; i < max_idx; ++i) {
       // Some points are out of frame
       if (right_points[i].y() < 0 || right_points[i].y() > height()) continue;
 
