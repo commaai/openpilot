@@ -722,6 +722,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Device remount detected: recalibrating"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
+  
+  EventName.calibrationRecalibrating: {
+    ET.PERMANENT: calibration_incomplete_alert,
+    ET.SOFT_DISABLE: soft_disable_alert("Device remount detected: recalibrating"),
+    ET.NO_ENTRY: NoEntryAlert("Remount detected, recalibrating"),
+  },
 
   EventName.doorOpen: {
     ET.SOFT_DISABLE: user_soft_disable_alert("Door Open"),
