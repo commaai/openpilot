@@ -5,7 +5,7 @@ from enum import Enum
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessPart
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -35,6 +35,7 @@ class CAR:
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
   harness: Enum = Harness.nissan_a
+  harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.rj45_cable, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {

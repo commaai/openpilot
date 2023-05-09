@@ -21,7 +21,7 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
-  HARNESS_KIT_CONTENT = "Harness Kit Content"
+  HARNESS_KIT_CONTENT = "Harness Kit"
   VIDEO = "Video"
 
 
@@ -69,18 +69,14 @@ class Harness(Enum):
   ford_q4 = "Ford Q4"
   none = "None"
 
-class HarnessKitContent(Enum):
-  obd_ii_kit = ["1 harness box", "1 harness connector", "1 comma power v2", "1 RJ45 cable (7 ft)"]
-  j533_kit = ["1 harness box", "1 harness connector", "1 long OBD-C cable", "1 USB-C coupler"]
-  nissan_kit = ["1 harness box", "1 harness connector", "1 RJ45 cable (7 ft)", "1 long OBD-C cable", "1 USB-C coupler"]
-  default = ["1 harness box", "1 harness connector", "1 comma power v2", "1 RJ45 cable (7 ft)"]
-
-HarnessExceptions : Dict[Enum, HarnessKitContent] = {
-  Harness.obd_ii : HarnessKitContent.obd_ii_kit,
-  Harness.j533 : HarnessKitContent.j533_kit,
-  Harness.nissan_a : HarnessKitContent.nissan_kit,
-  Harness.nissan_b : HarnessKitContent.nissan_kit
-  }
+class HarnessPart(Enum):
+  harness_box = "1 harness box"
+  harness_connector = "1 harness connector"
+  comma_power_v2 = "1 comma power v2"
+  rj45_cable = "1 RJ45 cable (7 ft)"
+  obdc_cable = "1 OBD-C cable"
+  usbc_coupler = "1 USB-C coupler"
+  obd_ii_harness_connector = "1 OBD II harness connector"
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
@@ -149,6 +145,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   harness: Enum = Harness.none
+  harness_kit_content: List[HarnessPart] = field(default_factory=list)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -183,10 +180,13 @@ class CarInfo:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
 
+    if not self.harness_kit_content:
+      self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+
     # harness kit content column
     harness_kit_content_col = None
     if self.harness is not Harness.none:
-      harness_kit_content_col = '<details><summary>Content</summary><br>' + '<br>'.join(HarnessExceptions.get(self.harness, HarnessKitContent.default).value) + '</details>'
+      harness_kit_content_col = '<details><summary>Content</summary><br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
 
     self.row = {
       Column.MAKE: self.make,

@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, HarnessPart
 Ecu = car.CarParams.Ecu
 
 
@@ -92,6 +92,7 @@ class GMCarInfo(CarInfo):
       self.harness = Harness.gm
     else:
       self.harness = Harness.obd_ii
+      self.harness_kit_content = [HarnessPart.obd_ii_harness_connector, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
       self.footnotes.append(Footnote.OBD_II)
 
 
