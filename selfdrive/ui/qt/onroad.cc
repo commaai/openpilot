@@ -642,8 +642,7 @@ void AnnotatedCameraWidget::paintGL() {
 
   // draw camera frame
   {
-    std::lock_guard lk(frame_lock);
-
+    frame_lock.lock();
     if (frames.empty()) {
       if (skip_frame_count > 0) {
         skip_frame_count--;
@@ -656,6 +655,7 @@ void AnnotatedCameraWidget::paintGL() {
       // transitions from the narrow and wide cameras
       skip_frame_count = 5;
     }
+    frame_lock.unlock();
 
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
