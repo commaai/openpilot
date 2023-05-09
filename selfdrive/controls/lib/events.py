@@ -945,9 +945,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
-  EventName.steeringAngleCalibrating: {
+  EventName.vehicleSensorsInvalid: {
     ET.PERMANENT: soft_disable_alert("LKAS Unavailable: Vehicle Sensors Calibrating"),
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Unavailable: Vehicle Sensors Degraded"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Unavailable: Vehicle Sensors Invalid"),
     ET.NO_ENTRY: NoEntryAlert("LKAS Unavailable: Vehicle Sensors Calibrating"),
   },
 

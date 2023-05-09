@@ -16,7 +16,7 @@ class CarState(CarStateBase):
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
-    self.steering_angle_calibrating = False
+    self.vehicle_sensors_invalid = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -38,7 +38,7 @@ class CarState(CarStateBase):
 
     # steering wheel
     ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
-    self.steering_angle_calibrating = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] != 3
+    self.vehicle_sensors_invalid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] != 3
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
