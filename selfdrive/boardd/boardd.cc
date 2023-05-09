@@ -55,7 +55,6 @@
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
-std::atomic<bool> is_onroad(false);
 
 ExitHandler do_exit;
 
@@ -122,7 +121,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition || !is_onroad) {
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
@@ -146,7 +145,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition || !is_onroad) {
+    if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
@@ -468,6 +467,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
+  bool is_onroad = false;
   bool is_onroad_last = false;
   std::future<bool> safety_future;
 
