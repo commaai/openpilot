@@ -75,6 +75,7 @@ class HarnessPart(Enum):
   obdc_cable = "1 OBD-C cable"
   usbc_coupler = "1 USB-C coupler"
 
+
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
 
@@ -142,7 +143,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
   harness: Enum = Harness.none
-  harness_kit_content: List[HarnessPart] = field(default_factory=list)
+  harness_kit_content: List[HarnessPart] = field(default_factory=lambda: [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable])
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -171,15 +172,12 @@ class CarInfo:
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
 
-    if not self.harness_kit_content:
-      self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
-
     # harness column
     harness_col = self.harness.value
     if self.harness is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=2000/><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([x.value + '</sub>' for x in self.harness_kit_content]) + '</details>'
+      harness_col = f'<details><img width=2000/><summary>Content</summary>{harness_col}<br><sub>' + '<br><sub>'.join([x.value + '</sub>' for x in self.harness_kit_content]) + '</details>'
 
     self.row = {
       Column.MAKE: self.make,
