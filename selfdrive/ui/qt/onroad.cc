@@ -535,7 +535,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
 
       // Skip a point, unless next is last
-      i += (i + 2) < right_points.length() ? 1 : 0;
+      i += (i + 2) < max_len ? 1 : 0;
     }
 
   } else {
