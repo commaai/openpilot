@@ -170,7 +170,7 @@ class VWCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)
-    self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
+    self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {

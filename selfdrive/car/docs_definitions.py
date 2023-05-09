@@ -21,7 +21,6 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
-  HARNESS_KIT_CONTENT = "Harness Kit"
   VIDEO = "Video"
 
 
@@ -71,12 +70,10 @@ class Harness(Enum):
 
 class HarnessPart(Enum):
   harness_box = "1 harness box"
-  harness_connector = "1 harness connector"
   comma_power_v2 = "1 comma power v2"
   rj45_cable = "1 RJ45 cable (7 ft)"
   obdc_cable = "1 OBD-C cable"
   usbc_coupler = "1 USB-C coupler"
-  obd_ii_harness_connector = "1 OBD II harness connector"
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
@@ -174,19 +171,15 @@ class CarInfo:
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
 
+    if not self.harness_kit_content:
+      self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+
     # harness column
     harness_col = self.harness.value
     if self.harness is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-
-    if not self.harness_kit_content:
-      self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
-
-    # harness kit content column
-    harness_kit_content_col = None
-    if self.harness is not Harness.none:
-      harness_kit_content_col = '<details><summary>Content</summary><br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
+      harness_col = f'<details><summary>Content</summary><br>{harness_col}<br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
 
     self.row = {
       Column.MAKE: self.make,
@@ -198,7 +191,6 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: harness_col,
-      Column.HARNESS_KIT_CONTENT : harness_kit_content_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 

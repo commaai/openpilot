@@ -92,7 +92,7 @@ class GMCarInfo(CarInfo):
       self.harness = Harness.gm
     else:
       self.harness = Harness.obd_ii
-      self.harness_kit_content = [HarnessPart.obd_ii_harness_connector, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
+      self.harness_kit_content = [HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
       self.footnotes.append(Footnote.OBD_II)
 
 
