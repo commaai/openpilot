@@ -143,6 +143,7 @@ class ProcessConfig:
   subtest_name: str = ""
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
+  simulation: bool = True
   polled_pubs: List[str] = field(default_factory=list)
   drained_pub: Optional[str] = None
 
@@ -168,7 +169,7 @@ def fingerprint(rc, pm, msgs, fingerprint):
   pm.send("pandaStates", messaging.new_message("pandaStates", 0))
   for m in canmsgs[:300]:
     pm.send("can", m.as_builder().to_bytes())
-  rc.wait_for_next_recv("can", "can")
+  rc.wait_for_next_recv("can", True)
   get_car_params(rc, pm, msgs, fingerprint)
 
 
@@ -286,7 +287,8 @@ CONFIGS = [
     init_callback=fingerprint,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
-    drained_pub="can"
+    simulation=False,
+    drained_pub="can",
   ),
   ProcessConfig(
     proc_name="radard",
@@ -297,7 +299,7 @@ CONFIGS = [
     init_callback=get_car_params,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
-    drained_pub="can"
+    drained_pub="can",
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -412,9 +414,9 @@ def replay_process(cfg, lr, fingerprint=None):
 
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
     if fingerprint is not None:
-      setup_env(simulation=True, cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
+      setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
     else:
-      setup_env(simulation=True, CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
+      setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
     if cfg.config_callback is not None:
       params = Params()
@@ -477,7 +479,7 @@ def replay_process(cfg, lr, fingerprint=None):
       return log_msgs
 
 
-def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
+def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
@@ -509,7 +511,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None, 
     os.environ.update(cfg.environ)
     os.environ['PROC_NAME'] = cfg.proc_name
 
-  if simulation:
+  if cfg.simulation:
     os.environ["SIMULATION"] = "1"
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
