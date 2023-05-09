@@ -945,4 +945,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
+  EventName.steeringAngleCalibrating: {
+    ET.PERMANENT: soft_disable_alert("Vehicle Steering Angle Is Calibrating"),
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Steering Angle Is Calibrating"),
+    ET.NO_ENTRY: NoEntryAlert("Vehicle Steering Angle Is Calibrating"),
+  },
+
 }

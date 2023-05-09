@@ -76,6 +76,9 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
+    if self.CS.steering_angle_calibrating:
+      events.add(car.CarEvent.EventName.steeringAngleCalibrating)
+
     ret.events = events.to_msg()
 
     return ret
