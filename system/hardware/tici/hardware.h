@@ -73,6 +73,13 @@ public:
     std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
   }
 
+
+  static std::map<std::string, std::string> get_init_logs() {
+    return {
+      {"/BUILD", util::read_file("/BUILD")},
+    };
+  }
+
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
   static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); };
 };
