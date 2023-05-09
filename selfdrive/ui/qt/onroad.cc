@@ -515,8 +515,8 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
-    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
     const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
