@@ -35,7 +35,9 @@ class CAR:
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
   harness: Enum = Harness.nissan_a
-  harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.rj45_cable, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
+
+  def init_make(self, CP: car.CarParams):
+    self.harness_kit_content = [HarnessPart.harness_box, HarnessPart.harness_connector, HarnessPart.rj45_cable, HarnessPart.obdc_cable, HarnessPart.usbc_coupler]
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
