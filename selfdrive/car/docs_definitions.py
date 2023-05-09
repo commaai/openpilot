@@ -179,7 +179,7 @@ class CarInfo:
     if self.harness is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=200000/><details><summary>Content</summary><br>{harness_col}<br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
+      harness_col = f'<img width=500000/><details><summary>Content</summary><br>{harness_col}<br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
 
     self.row = {
       Column.MAKE: self.make,
