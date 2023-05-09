@@ -21,7 +21,7 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    # On occasion, the ABS module recalibrates the steering pinion offset on startup, so we need to block engagement
+    # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
