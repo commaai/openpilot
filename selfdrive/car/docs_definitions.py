@@ -15,12 +15,12 @@ class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
-  HARNESS = "Harness Kit"
   LONGITUDINAL = "ACC"
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
+  HARNESS = "Harness Kit"
   VIDEO = "Video"
 
 
@@ -179,7 +179,7 @@ class CarInfo:
     if self.harness is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=500/><details><summary>Content</summary><br>{harness_col}<br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
+      harness_col = f'<img width=800/><details><summary>Content</summary><br>{harness_col}<br>' + '<br>'.join([x.value for x in self.harness_kit_content]) + '</details>'
 
     self.row = {
       Column.MAKE: self.make,
