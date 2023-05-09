@@ -292,7 +292,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
-  p.save();
+  QPen old_pen = p.pen();
+  QBrush old_brush = p.brush();
 
   // Header gradient
   QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
@@ -438,7 +439,8 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   configFont(p, "Inter", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
-  p.restore();
+  p.setPen(old_pen);
+  p.setBrush(old_brush);
 }
 
 
@@ -493,7 +495,7 @@ void AnnotatedCameraWidget::updateFrameMat() {
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
-  painter.save();
+  QBrush old_brush = painter.brush();
 
   const UIScene &scene = s->scene;
   SubMaster &sm = *(s->sm);
@@ -548,13 +550,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);
 
-  painter.restore();
+  painter.setBrush(old_brush);
 }
 
 void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s) {
   const UIScene &scene = s->scene;
 
-  painter.save();
+  QPen old_pen = painter.pen();
+  QBrush old_brush = painter.brush();
 
   // base icon
   int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
@@ -594,11 +597,12 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::fmin(y + delta_y, y), arc_l, fabs(delta_y)), (scene.driver_pose_sins[0]>0 ? 0 : 180) * 16, 180 * 16);
 
-  painter.restore();
+  painter.setPen(old_pen);
+  painter.setBrush(old_brush);
 }
 
 void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd) {
-  painter.save();
+  auto old_brush = painter.brush();
 
   const float speedBuff = 10.;
   const float leadBuff = 40.;
@@ -630,7 +634,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
   painter.setBrush(redColor(fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
 
-  painter.restore();
+  painter.setBrush(old_brush);
 }
 
 void AnnotatedCameraWidget::paintGL() {
