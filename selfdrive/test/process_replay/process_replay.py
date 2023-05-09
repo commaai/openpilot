@@ -523,7 +523,7 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
     os.environ.update(cfg.environ)
     os.environ['PROC_NAME'] = cfg.proc_name
 
-  if cfg.simulation:
+  if cfg is not None and cfg.simulation:
     os.environ["SIMULATION"] = "1"
   elif "SIMULATION" in os.environ:
     del os.environ["SIMULATION"]
