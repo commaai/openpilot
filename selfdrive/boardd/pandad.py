@@ -81,16 +81,18 @@ def main() -> NoReturn:
   params = Params()
 
   while True:
-    count += 1
-    cloudlog.event("pandad.flash_and_connect", count=count)
     try:
+      count += 1
+      cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
 
       # Flash all Pandas in DFU mode
-      for serial in PandaDFU.list():
-        cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
-        PandaDFU(serial).recover()
-      time.sleep(1)
+      dfu_serials = PandaDFU.list()
+      if len(dfu_serials) > 0:
+        for serial in dfu_serials:
+          cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
+          PandaDFU(serial).recover()
+        time.sleep(1)
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
@@ -107,17 +109,6 @@ def main() -> NoReturn:
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
-      # check health for lost heartbeat
-      for panda in pandas:
-        health = panda.health()
-        if health["heartbeat_lost"]:
-          params.put_bool("PandaHeartbeatLost", True)
-          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
-
-        if first_run:
-          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          panda.reset()
-
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
       if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
@@ -133,7 +124,20 @@ def main() -> NoReturn:
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
 
-      # close all pandas
+      for panda in pandas:
+        # check health for lost heartbeat
+        health = panda.health()
+        if health["heartbeat_lost"]:
+          params.put_bool("PandaHeartbeatLost", True)
+          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+
+        if first_run:
+          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
+          if panda.is_internal():
+            HARDWARE.reset_internal_panda()
+          else:
+            panda.reset(reconnect=False)
+
       for p in pandas:
         p.close()
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
