@@ -6,7 +6,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 
 # 256 Supported Cars
 
-|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
+|Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness Kit|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |Acura|ILX 2016-19|AcuraWatch Plus|openpilot|25 mph|25 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Content</summary><br><a href="https://comma.ai/shop/comma-three.html?make=Acura&model=ILX 2016-19">Honda Nidec</a><br>1 harness box<br>1 comma power v2<br>1 RJ45 cable (7 ft)</details>||
 |Acura|RDX 2016-18|AcuraWatch Plus|openpilot|25 mph|12 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Content</summary><br><a href="https://comma.ai/shop/comma-three.html?make=Acura&model=RDX 2016-18">Honda Nidec</a><br>1 harness box<br>1 comma power v2<br>1 RJ45 cable (7 ft)</details>||
