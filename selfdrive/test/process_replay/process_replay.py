@@ -167,8 +167,11 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
   # controlsd expects one arbitrary can and pandaState
-  pm.send("can", messaging.new_message("can", 0))
-  pm.send("pandaStates", messaging.new_message("pandaStates", 0))
+  pm.send("can", messaging.new_message("can", 1))
+  pm.send("pandaStates", messaging.new_message("pandaStates", 1))
+  pm.send("can", messaging.new_message("can", 1))
+  rc.wait_for_next_recv("can", True)
+
   # fingerprinting is done, when CarParams is set
   while params.get("CarParams") is None:
     if len(canmsgs) == 0:
@@ -176,10 +179,10 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
 
     m = canmsgs.pop(0)
     pm.send("can", m.as_builder().to_bytes())
-    rc.wait_for_next_recv("can", True)
+    rc.wait_for_next_recv(None, True)
 
 
-def get_car_params(rc, pm, msgs, fingerprint):
+def get_car_params_callback(rc, pm, msgs, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
@@ -302,7 +305,7 @@ CONFIGS = [
     subs=["radarState", "liveTracks"],
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=radar_rcv_callback,
     tolerance=None,
     drained_pub="can",
@@ -313,7 +316,7 @@ CONFIGS = [
     subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["radarState", "modelV2"],
@@ -324,7 +327,7 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
     tolerance=None,
     polled_pubs=["cameraOdometry"],
@@ -335,7 +338,7 @@ CONFIGS = [
     subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["driverStateV2"],
@@ -349,7 +352,7 @@ CONFIGS = [
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
     config_callback=locationd_config_pubsub_callback,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=[
@@ -363,7 +366,7 @@ CONFIGS = [
     subs=["liveParameters"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=rate_based_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["liveLocationKalman"],
@@ -384,7 +387,7 @@ CONFIGS = [
     subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
@@ -396,7 +399,7 @@ CONFIGS = [
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     config_callback=None,
-    init_callback=get_car_params,
+    init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["liveLocationKalman"],
@@ -453,6 +456,7 @@ def replay_process(cfg, lr, fingerprint=None):
         for s in sockets.values():
           messaging.recv_one_or_none(s)
 
+        # TODO wait for sockets to reconnect, for now lets just wait
         time.sleep(1)
 
         # Do the replay
@@ -474,7 +478,7 @@ def replay_process(cfg, lr, fingerprint=None):
 
             if should_recv:
               for s in resp_sockets:
-                ms = messaging.drain_sock(sockets[s])
+                ms = messaging.drain_sock(sockets[s])  
                 for m in ms:
                   m = m.as_builder()
                   m.logMonoTime = msg.logMonoTime
