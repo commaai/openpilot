@@ -946,7 +946,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
   EventName.vehicleSensorsInvalid: {
-    ET.PERMANENT: soft_disable_alert("Vehicle Sensors Calibrating"),
+    ET.PERMANENT: NormalPermanentAlert("Vehicle Sensors Calibrating"),
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Sensors Invalid"),
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
   },
