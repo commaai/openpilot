@@ -162,15 +162,21 @@ class DummySocket:
     self.data.append(data)
 
 
-def fingerprint(rc, pm, msgs, fingerprint):
+def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
-
-  canmsgs = [msg for msg in msgs if msg.which() == "can"]
+  params = Params()
+  canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
+  # controlsd expects one arbitrary can and pandaState
+  pm.send("can", messaging.new_message("can", 0))
   pm.send("pandaStates", messaging.new_message("pandaStates", 0))
-  for m in canmsgs[:300]:
+  # fingerprinting is done, when CarParams is set
+  while params.get("CarParams") is None:
+    if len(canmsgs) == 0:
+      raise ValueError("Fingerprinting failed. Run out of can msgs")
+
+    m = canmsgs.pop(0)
     pm.send("can", m.as_builder().to_bytes())
-  rc.wait_for_next_recv("can", True)
-  get_car_params(rc, pm, msgs, fingerprint)
+    rc.wait_for_next_recv("can", True)
 
 
 def get_car_params(rc, pm, msgs, fingerprint):
@@ -284,7 +290,7 @@ CONFIGS = [
     subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=None,
-    init_callback=fingerprint,
+    init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     simulation=False,
