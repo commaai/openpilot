@@ -21,6 +21,7 @@ class Column(Enum):
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
   HARNESS = "Harness"
+  HARNESS_KIT_CONTENT = "Harness Kit Content"
   VIDEO = "Video"
 
 
@@ -68,6 +69,18 @@ class Harness(Enum):
   ford_q4 = "Ford Q4"
   none = "None"
 
+class HarnessKitContent(Enum):
+  obd_ii_kit = ["1 harness box", "1 harness connector", "1 comma power v2", "1 RJ45 cable (7 ft)"]
+  j533_kit = ["1 harness box", "1 harness connector", "1 long OBD-C cable", "1 USB-C coupler"]
+  nissan_kit = ["1 harness box", "1 harness connector", "1 RJ45 cable (7 ft)", "1 long OBD-C cable", "1 USB-C coupler"]
+  default = ["1 harness box", "1 harness connector", "1 comma power v2", "1 RJ45 cable (7 ft)"]
+
+HarnessExceptions : Dict[Enum, HarnessKitContent] = {
+  Harness.obd_ii : HarnessKitContent.obd_ii_kit,
+  Harness.j533 : HarnessKitContent.j533_kit,
+  Harness.nissan_a : HarnessKitContent.nissan_kit,
+  Harness.nissan_b : HarnessKitContent.nissan_kit
+  }
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
@@ -170,6 +183,11 @@ class CarInfo:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
 
+    # harness kit content column
+    harness_kit_content_col = None
+    if self.harness is not Harness.none:
+      harness_kit_content_col = '<details><summary>Content</summary><br>' + '<br>'.join(HarnessExceptions.get(self.harness, HarnessKitContent.default).value) + '</details>'
+
     self.row = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -180,6 +198,7 @@ class CarInfo:
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
       Column.HARNESS: harness_col,
+      Column.HARNESS_KIT_CONTENT : harness_kit_content_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
