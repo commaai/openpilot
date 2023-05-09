@@ -6,7 +6,7 @@ import unittest
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
@@ -36,7 +36,8 @@ class TestBoardd(unittest.TestCase):
 
     with Timeout(60, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
-      while sm.rcv_frame['pandaStates'] < 1 and len(sm['pandaStates']) == 0:
+      while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
+          any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
         sm.update(1000)
 
     num_pandas = len(sm['pandaStates'])
