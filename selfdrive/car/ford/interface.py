@@ -11,12 +11,14 @@ GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
-    # These cars are dashcam only until the port is finished
-    ret.dashcamOnly = True
+    # These cars are dashcam only for lack of test coverage.
+    # Once a user confirms each car works and a test route is
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.FOCUS_MK4, CAR.MAVERICK_MK1}
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
@@ -53,7 +55,7 @@ class CarInterface(CarInterfaceBase):
 
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]
-    if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[0]:
+    if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[0] or docs:
       ret.transmissionType = TransmissionType.automatic
     else:
       ret.transmissionType = TransmissionType.manual

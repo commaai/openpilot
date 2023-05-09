@@ -6,7 +6,7 @@
 
 # Supported Cars
 
-A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system.
+A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
 # {{all_car_info | length}} Supported Cars
 
@@ -39,6 +39,7 @@ If your car has the following packages or features, then it's a good candidate f
 | Make | Required Package/Features |
 | ---- | ------------------------- |
 | Acura | Any car with AcuraWatch Plus will work. AcuraWatch Plus comes standard on many newer models. |
+| Ford | Any car with Lane Centering will likely work. |
 | Honda | Any car with Honda Sensing will work. Honda Sensing comes standard on many newer models. |
 | Subaru | Any car with EyeSight will work. EyeSight comes standard on many newer models. |
 | Nissan | Any car with ProPILOT will likely work. |

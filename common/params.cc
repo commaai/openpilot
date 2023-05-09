@@ -98,6 +98,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"CurrentBootlog", PERSISTENT},
     {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"DisablePowerDown", PERSISTENT},
@@ -110,7 +111,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"FirmwareObdQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
     {"GitBranch", PERSISTENT},
     {"GitCommit", PERSISTENT},
@@ -154,7 +155,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"NavSettingTime24h", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavdRender", PERSISTENT},
-    {"ObdMultiplexingDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
+    {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
@@ -303,14 +305,19 @@ std::map<std::string, std::string> Params::readAll() {
 void Params::clearAll(ParamKeyType key_type) {
   FileLock file_lock(params_path + "/.lock");
 
-  if (key_type == ALL) {
-    util::remove_files_in_dir(getParamPath());
-  } else {
-    for (auto &[key, type] : keys) {
-      if (type & key_type) {
-        unlink(getParamPath(key).c_str());
+  // 1) delete params of key_type
+  // 2) delete files that are not defined in the keys.
+  if (DIR *d = opendir(getParamPath().c_str())) {
+    struct dirent *de = NULL;
+    while ((de = readdir(d))) {
+      if (de->d_type != DT_DIR) {
+        auto it = keys.find(de->d_name);
+        if (it == keys.end() || (it->second & key_type)) {
+          unlink(getParamPath(de->d_name).c_str());
+        }
       }
     }
+    closedir(d);
   }
 
   fsync_dir(getParamPath());

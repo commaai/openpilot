@@ -113,31 +113,34 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     return false;
   }
 
-  // set to ELM327 for fingerprinting
+  // initialize to ELM327 without OBD multiplexing for fingerprinting
+  bool obd_multiplexing_enabled = false;
   for (int i = 0; i < pandas.size(); i++) {
-    const uint16_t safety_param = (i > 0) ? 1U : 0U;
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
   }
 
-  // wait for FW query at OBD port to finish
+  // openpilot can switch between multiplexing modes for different FW queries
   while (true) {
     if (do_exit || !check_all_connected(pandas) || !ignition) {
       return false;
     }
 
-    if (p.getBool("FirmwareObdQueryDone")) {
-      LOGW("finished FW query at OBD port");
+    bool obd_multiplexing_requested = p.getBool("ObdMultiplexingEnabled");
+    if (obd_multiplexing_requested != obd_multiplexing_enabled) {
+      for (int i = 0; i < pandas.size(); i++) {
+        const uint16_t safety_param = (i > 0 || !obd_multiplexing_requested) ? 1U : 0U;
+        pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+      }
+      obd_multiplexing_enabled = obd_multiplexing_requested;
+      p.putBool("ObdMultiplexingChanged", true);
+    }
+
+    if (p.getBool("FirmwareQueryDone")) {
+      LOGW("finished FW query");
       break;
     }
     util::sleep_for(20);
   }
-
-  // set to ELM327 to finish fingerprinting and for potential ECU knockouts
-  for (Panda *panda : pandas) {
-    panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
-  }
-
-  p.putBool("ObdMultiplexingDisabled", true);
 
   std::string params;
   LOGW("waiting for params to set safety model");
@@ -360,6 +363,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
 
     auto ps = pss[i];
+    ps.setVoltage(health.voltage_pkt);
+    ps.setCurrent(health.current_pkt);
     ps.setUptime(health.uptime_pkt);
     ps.setSafetyTxBlocked(health.safety_tx_blocked_pkt);
     ps.setSafetyRxInvalid(health.safety_rx_invalid_pkt);
@@ -380,7 +385,11 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
     ps.setInterruptLoad(health.interrupt_load);
     ps.setFanPower(health.fan_power);
+    ps.setFanStallCount(health.fan_stall_count);
     ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
+    ps.setSpiChecksumErrorCount(health.spi_checksum_error_count);
+    ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
+    ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
 
     std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
 
@@ -415,7 +424,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     size_t j = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_EXTI); f++) {
+         f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
       if (fault_bits.test(f)) {
         faults.set(j, cereal::PandaState::FaultType(f));
         j++;
@@ -476,12 +485,26 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition = *ignition_opt;
 
-    // TODO: make this check fast, currently takes 16ms
-    // check if we have new pandas and are offroad
-    if (!ignition && (pandas.size() != Panda::list().size())) {
-      LOGW("Reconnecting to changed amount of pandas!");
-      do_exit = true;
-      break;
+    // check if we should have pandad reconnect
+    if (!ignition) {
+      bool comms_healthy = true;
+      for (const auto &panda : pandas) {
+        comms_healthy &= panda->comms_healthy();
+      }
+
+      if (!comms_healthy) {
+        LOGE("Reconnecting, communication to pandas not healthy");
+        do_exit = true;
+
+      // TODO: list is slow, takes 16ms
+      } else if (pandas.size() != Panda::list().size()) {
+        LOGW("Reconnecting to changed amount of pandas!");
+        do_exit = true;
+      }
+
+      if (do_exit) {
+        break;
+      }
     }
 
     // clear ignition-based params and set new safety on car start
