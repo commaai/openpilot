@@ -15,12 +15,12 @@ class Column(Enum):
   MAKE = "Make"
   MODEL = "Model"
   PACKAGE = "Supported Package"
+  HARNESS = "Harness Kit"
   LONGITUDINAL = "ACC"
   FSR_LONGITUDINAL = "No ACC accel below"
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
-  HARNESS = "Harness Kit"
   VIDEO = "Video"
 
 
