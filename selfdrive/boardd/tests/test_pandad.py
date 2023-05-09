@@ -3,8 +3,9 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-from panda import Panda
+from cereal import log
 from common.gpio import gpio_set, gpio_init
+from panda import Panda
 from selfdrive.test.helpers import phone_only
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
@@ -20,10 +21,10 @@ class TestPandad(unittest.TestCase):
     sm = messaging.SubMaster(['peripheralState'])
     for _ in range(timeout):
       sm.update(1000)
-      if sm.updated['peripheralState']:
+      if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
         break
 
-    if not sm.updated['peripheralState']:
+    if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
 
   @phone_only
