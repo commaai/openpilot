@@ -86,8 +86,8 @@ public:
     temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
     ret["boot temp"] = temp;
 
-    // TODO: log something from system
-    for (std::string part : {"xbl", "abl", "boot", "aop", "devcfg", "xbl_config"}) {
+    // TODO: log something from system and boot
+    for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;
         std::string hash = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
