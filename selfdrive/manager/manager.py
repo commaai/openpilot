@@ -138,10 +138,20 @@ def manager_thread() -> None:
 
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
+  started_prev = False
+
   while True:
     sm.update()
 
     started = sm['deviceState'].started
+
+    if started and not started_prev:
+      params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+    elif not started and started_prev:
+      params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+
+    started_prev = started
+
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
