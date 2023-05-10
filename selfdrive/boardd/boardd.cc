@@ -485,7 +485,6 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     ignition = *ignition_opt;
-    is_onroad = params.getBool("IsOnroad");
 
     // check if we should have pandad reconnect
     if (!ignition) {
@@ -508,6 +507,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
         break;
       }
     }
+
+    is_onroad = params.getBool("IsOnroad");
 
     // set new safety on onroad transition, after params are cleared
     if (is_onroad && !is_onroad_last) {
