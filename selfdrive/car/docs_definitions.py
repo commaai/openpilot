@@ -1,5 +1,6 @@
 import re
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -83,7 +84,7 @@ DEFAULT_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.comma_power_v2, Ha
 @dataclass
 class HarnessKit:
   connector: Enum = Harness.none
-  parts: List[HarnessPart] = field(default_factory=lambda: DEFAULT_HARNESS_PARTS.copy().copy())
+  parts: List[HarnessPart] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_PARTS))
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
