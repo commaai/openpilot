@@ -189,7 +189,7 @@ class CarInfo:
     if self.harness_kit.connector is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">1 {harness_col} connector</a>'
-      harness_col = f'<details><summary>Content</summary><br><sub>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details>'
+      harness_col = f'<details><summary>Content</summary><br><sub>{harness_col}</sub><br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
