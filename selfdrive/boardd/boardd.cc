@@ -462,6 +462,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
   util::set_thread_name("boardd_panda_state");
 
+  Params params;
   SubMaster sm({"controlsState"});
 
   Panda *peripheral_panda = pandas[0];
