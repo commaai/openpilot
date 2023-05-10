@@ -89,9 +89,9 @@ class GMCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
-      self.harness_kit = HarnessKit([Harness.gm])
+      self.harness_kit = HarnessKit(Harness.gm)
     else:
-      self.harness_kit = HarnessKit([Harness.obd_ii], parts=[HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler])
+      self.harness_kit = HarnessKit(Harness.obd_ii, parts=[HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler])
       self.footnotes.append(Footnote.OBD_II)
 
 

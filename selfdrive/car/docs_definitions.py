@@ -78,13 +78,12 @@ class HarnessPart(Enum):
   usbc_coupler = "USB-C coupler"
 
 
-DEFAULT_HARNESS_CONNECTOR: List[Harness] = [Harness.none]
 DEFAULT_HARNESS_PARTS: List[HarnessPart] = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
 
 
 @dataclass
 class HarnessKit:
-  connectors: List[Harness] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_CONNECTOR))
+  connector: Harness = Harness.none
   parts: List[HarnessPart] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_PARTS))
 
 
@@ -186,11 +185,11 @@ class CarInfo:
       self.min_enable_speed = CP.minEnableSpeed
 
     # harness column
-    harness_col = Harness.none.value
-    if Harness.none not in self.harness_kit.connectors:
+    harness_col = self.harness_kit.connector.value
+    if self.harness_kit.connector is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
-      harness_col = '<br><sub>' + '<br><sub>'.join([f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{self.harness_kit.connectors.count(connector)} {connector.value} connector</sub></a>' for connector in sorted(set(self.harness_kit.connectors), key=lambda connector: connector.value)])
-      harness_col = f'<details><summary>Content</summary>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details>'
+      harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">1 {harness_col} connector</a>'
+      harness_col = f'<details><summary>Content</summary><br><sub>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,

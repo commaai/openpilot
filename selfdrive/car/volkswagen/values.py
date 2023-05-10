@@ -166,7 +166,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  harness_kit: HarnessKit = HarnessKit([Harness.j533], parts=[HarnessPart.harness_box, HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler])
+  harness_kit: HarnessKit = HarnessKit(Harness.j533, parts=[HarnessPart.harness_box, HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler])
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)
