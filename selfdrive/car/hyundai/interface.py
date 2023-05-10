@@ -229,6 +229,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
+    elif candidate == CAR.GENESIS_GV80:
+      ret.mass = 2258. + STD_CARGO_KG
+      ret.wheelbase = 2.95
+      ret.steerRatio = 14.14
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:

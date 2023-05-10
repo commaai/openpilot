@@ -259,10 +259,10 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig) {
+void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (!can->liveStreaming()) {
+      if (clear) {
         s.vals.clear();
         s.step_vals.clear();
         s.last_value_mono_time = 0;

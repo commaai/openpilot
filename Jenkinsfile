@@ -19,8 +19,7 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 fi
-
-if [ -d /data/openpilot ]; then
+if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
 
