@@ -214,6 +214,7 @@ class CarState(CarStateBase):
       ("AccTrgDist2_D_Dsply", "ACCDATA_3"),         # ACC target distance
       ("AccStopRes_B_Dsply", "ACCDATA_3"),
       ("TjaWarn_D_Rq", "ACCDATA_3"),                # TJA warning
+      ("Tja_D_Stat", "ACCDATA_3"),                  # TJA status
       ("TjaMsgTxt_D_Dsply", "ACCDATA_3"),           # TJA text
       ("IaccLamp_D_Rq", "ACCDATA_3"),               # iACC status icon
       ("AccMsgTxt_D2_Rq", "ACCDATA_3"),             # ACC text
