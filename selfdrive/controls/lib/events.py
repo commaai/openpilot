@@ -242,8 +242,9 @@ def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.S
 
 
 def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  first_word = 'Recalibrating' if sm['liveCalibration'].calStatus == 'recalibrating' else 'Calibrating'
   return Alert(
-    "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,
+    f"{first_word} in Progress: {sm['liveCalibration'].calPerc:.0f}%",
     f"Drive Above {get_display_speed(MIN_SPEED_FILTER, metric)}",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
@@ -726,7 +727,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device remount detected: recalibrating"),
-    ET.NO_ENTRY: NoEntryAlert("Remount detected, recalibrating"),
+    ET.NO_ENTRY: NoEntryAlert("Remount Detected: Recalibrating"),
   },
 
   EventName.doorOpen: {
