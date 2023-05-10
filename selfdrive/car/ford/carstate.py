@@ -133,7 +133,6 @@ class CarState(CarStateBase):
       ("AccButtnGapIncPress", "Steering_Data_FD1"),
       ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("AslButtnOnOffPress", "Steering_Data_FD1"),
-      ("CcAslButtnCnclPress", "Steering_Data_FD1"),
       ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
       ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
       ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
@@ -147,7 +146,6 @@ class CarState(CarStateBase):
       ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
       ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
       ("CcAslButtnSetPress", "Steering_Data_FD1"),
-      ("CcAsllButtnResPress", "Steering_Data_FD1"),
       ("CcButtnOffPress", "Steering_Data_FD1"),
       ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("CcButtnOnOffPress", "Steering_Data_FD1"),
@@ -241,9 +239,7 @@ class CarState(CarStateBase):
       ("FeatNoIpmaActl", "IPMA_Data"),
       ("PersIndexIpma_D_Actl", "IPMA_Data"),
       ("AhbcRampingV_D_Rq", "IPMA_Data"),           # AHB ramping
-      ("LaActvStats_D_Dsply", "IPMA_Data"),         # LKAS status (lines)
       ("LaDenyStats_B_Dsply", "IPMA_Data"),         # LKAS error
-      ("LaHandsOff_D_Dsply", "IPMA_Data"),          # LKAS hands on chime
       ("CamraDefog_B_Req", "IPMA_Data"),            # Windshield heater?
       ("CamraStats_D_Dsply", "IPMA_Data"),          # Camera status
       ("DasAlrtLvl_D_Dsply", "IPMA_Data"),          # DAS alert level
