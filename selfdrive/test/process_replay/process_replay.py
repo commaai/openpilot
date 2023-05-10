@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 import signal
+from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
 
@@ -137,35 +138,24 @@ class FakeSubMaster(messaging.SubMaster):
 
 class FakePubMaster(messaging.PubMaster):
   def __init__(self, services):  # pylint: disable=super-init-not-called
-    self.data = {}
+    self.data = defaultdict(list)
     self.sock = {}
     self.last_updated = None
     for s in services:
-      try:
-        data = messaging.new_message(s)
-      except capnp.lib.capnp.KjException:
-        data = messaging.new_message(s, 0)
-      self.data[s] = data.as_reader()
       self.sock[s] = DumbSocket()
-    self.send_called = threading.Event()
-    self.get_called = threading.Event()
 
   def send(self, s, dat):
     self.last_updated = s
     if isinstance(dat, bytes):
-      self.data[s] = log.Event.from_bytes(dat)
+      self.data[s].append(log.Event.from_bytes(dat))
     else:
-      self.data[s] = dat.as_reader()
-    self.send_called.set()
-    wait_for_event(self.get_called)
-    self.get_called.clear()
+      self.data[s].append(dat.as_reader())
 
-  def wait_for_msg(self):
-    wait_for_event(self.send_called)
-    self.send_called.clear()
-    dat = self.data[self.last_updated]
-    self.get_called.set()
-    return dat
+  def drain(self, s):
+    msgs = self.data[s]
+    self.data[s] = []
+
+    return msgs
 
 
 def fingerprint(msgs, fsm, can_sock, fingerprint):
@@ -286,7 +276,7 @@ CONFIGS = [
     proc_name="radard",
     pub_sub={
       "can": ["radarState", "liveTracks"],
-      "liveParameters": [], "carState": [], "modelV2": [],
+      "carState": [], "modelV2": [],
     },
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params,
@@ -336,7 +326,8 @@ CONFIGS = [
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
       "accelerometer": [], "gyroscope": [],
-      "gpsLocationExternal": [], "liveCalibration": [], "carState": [], "gpsLocation": [],
+      "gpsLocationExternal": [], "liveCalibration": [], 
+      "carParams": [], "carState": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
@@ -463,6 +454,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
   fsm = FakeSubMaster(pub_sockets, **cfg.submaster_config)
   fpm = FakePubMaster(sub_sockets)
+  can_sock = None
   args = (fsm, fpm)
   if 'can' in list(cfg.pub_sub.keys()):
     can_sock = FakeSocket()
@@ -530,14 +522,18 @@ def python_replay_process(cfg, lr, fingerprint=None):
       fsm.update_msgs(msg.logMonoTime / 1e9, msg_queue)
       msg_queue = []
 
-      recv_cnt = len(recv_socks)
-      while recv_cnt > 0:
-        m = fpm.wait_for_msg().as_builder()
-        m.logMonoTime = msg.logMonoTime
-        m = m.as_reader()
+      if can_sock is not None:
+        can_sock.recv_called.wait()
+      else:
+        fsm.update_called.wait()
 
-        log_msgs.append(m)
-        recv_cnt -= m.which() in recv_socks
+      for s in recv_socks:
+        ms = fpm.drain(s)
+        for m in ms:
+          m = m.as_builder()
+          m.logMonoTime = msg.logMonoTime
+          log_msgs.append(m.as_reader())
+
   return log_msgs
 
 
