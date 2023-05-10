@@ -157,7 +157,6 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
     "AccTrgDist2_D_Dsply",       # ACC target distance
     "AccStopRes_B_Dsply",
     "TjaWarn_D_Rq",              # TJA warning
-    "Tja_D_Stat",                # TJA status
     "TjaMsgTxt_D_Dsply",         # TJA text
     "IaccLamp_D_Rq",             # iACC status icon
     "AccMsgTxt_D2_Rq",           # ACC text
@@ -180,7 +179,7 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   ]}
 
   values.update({
-    "Tja_D_Stat": status,
+    "Tja_D_Stat": status,        # TJA status
   })
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
