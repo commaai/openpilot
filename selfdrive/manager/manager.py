@@ -145,12 +145,12 @@ def manager_thread() -> None:
 
     started = sm['deviceState'].started
 
-    # clear onroad-transition-based params and write onroad params, which drive boardd's safety setter thread
     if started and not started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
     elif not started and started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
 
+    # write onroad params, which drive boardd's safety setter thread
     if started != started_prev or sm.frame == 0:
       params.put_bool("IsOnroad", started)
       params.put_bool("IsOffroad", not started)
