@@ -5,9 +5,9 @@ HUDControl = car.CarControl.HUDControl
 
 
 def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
-  curvature = dat[2] + ((dat[3] & 0xE0) >> 5)
-  curvature_rate = dat[6] + ((dat[7] & 0xE0) >> 5)
-  path_angle = (dat[3] & 0x1F) + ((dat[4] & 0xFC) >> 2)
+  curvature = dat[2] + (dat[3] >> 5)
+  curvature_rate = dat[6] + (dat[7] >> 5)
+  path_angle = (dat[3] & 0x1F) + (dat[4] >> 2)
   path_offset = (dat[4] & 0x3) + dat[5]
 
   checksum = mode + counter
