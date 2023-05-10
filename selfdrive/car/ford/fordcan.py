@@ -262,7 +262,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
 
   values = {s: stock_values[s] for s in [
     "TurnLghtSwtch_D_Stat",    # SCCM Turn signal switch
-    "TjaButtnOnOffPress",      # SCCM ACC button, lane-centering/traffic jam assist toggle
     "HeadLghtHiFlash_D_Stat",  # SCCM Passthrough the remaining buttons
     "WiprFront_D_Stat",
     "LghtAmb_D_Sns",
@@ -270,7 +269,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
     "AccButtnGapIncPress",
     "AslButtnOnOffCnclPress",
     "AslButtnOnOffPress",
-    "CcAslButtnCnclPress",
     "LaSwtchPos_D_Stat",
     "CcAslButtnCnclResPress",
     "CcAslButtnDeny_B_Actl",
@@ -284,7 +282,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
     "CcAslButtnSetDecPress",
     "CcAslButtnSetIncPress",
     "CcAslButtnSetPress",
-    "CcAsllButtnResPress",
     "CcButtnOffPress",
     "CcButtnOnOffCnclPress",
     "CcButtnOnOffPress",
@@ -300,6 +297,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
   values.update({
     "CcAslButtnCnclPress": 1 if cancel else 0,      # CC cancel button
     "CcAsllButtnResPress": 1 if resume else 0,      # CC resume button
-    "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # TJA toggle button
+    "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # LCA/TJA toggle button
   })
   return packer.make_can_msg("Steering_Data_FD1", bus, values)
