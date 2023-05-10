@@ -254,9 +254,6 @@ class CarInfo:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
-    if not isinstance(self.row[column], str) and not isinstance(self.row[column], Star):
-      print("SALUT")
-
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
