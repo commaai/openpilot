@@ -83,7 +83,7 @@ DEFAULT_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.comma_power_v2, Ha
 @dataclass
 class HarnessKit:
   connector: Enum = Harness.none
-  parts: List[HarnessPart] = field(default_factory=lambda: DEFAULT_HARNESS_PARTS.copy()) #pylint: disable=unnecessary-lambda
+  parts: List[HarnessPart] = field(default_factory=lambda: DEFAULT_HARNESS_PARTS.copy().copy())
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
