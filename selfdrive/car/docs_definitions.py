@@ -68,12 +68,22 @@ class Harness(Enum):
   ford_q4 = "Ford Q4"
   none = "None"
 
+
 class HarnessPart(Enum):
   harness_box = "1 harness box"
   comma_power_v2 = "1 comma power v2"
   rj45_cable = "1 RJ45 cable (7 ft)"
   obdc_cable = "1 OBD-C cable"
   usbc_coupler = "1 USB-C coupler"
+
+
+DEFAULT_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+
+
+@dataclass
+class HarnessKit:
+  connector: Enum = Harness.none
+  parts: List[HarnessPart] = field(default_factory=lambda: DEFAULT_HARNESS_PARTS.copy()) #pylint: disable=unnecessary-lambda
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
@@ -142,8 +152,9 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-  harness: Enum = Harness.none
-  harness_kit_content: List[HarnessPart] = field(default_factory=lambda: [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable])
+
+  #harness connector + all the parts needed
+  harness_kit: HarnessKit = HarnessKit(Harness.none)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -173,11 +184,11 @@ class CarInfo:
       self.min_enable_speed = CP.minEnableSpeed
 
     # harness column
-    harness_col = self.harness.value
-    if self.harness is not Harness.none:
+    harness_col = self.harness_kit.connector.value
+    if self.harness_kit.connector is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=2000/><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([x.value + '</sub>' for x in self.harness_kit_content]) + '</details>'
+      harness_col = f'<img width=2000/><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([x.value + '</sub>' for x in self.harness_kit.parts]) + '</details>'
 
 
     self.row = {

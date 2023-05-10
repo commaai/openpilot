@@ -1,11 +1,10 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -65,7 +64,7 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  harness: Enum = Harness.ford_q3
+  harness_kit: HarnessKit = HarnessKit(Harness.ford_q3)
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
