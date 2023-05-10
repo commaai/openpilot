@@ -64,7 +64,7 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  harness_kit: HarnessKit = HarnessKit(Harness.ford_q3)
+  harness_kit: HarnessKit = HarnessKit([Harness.ford_q3])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {

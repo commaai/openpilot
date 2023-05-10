@@ -74,16 +74,17 @@ class HarnessPart(Enum):
   harness_box = "harness box"
   comma_power_v2 = "comma power v2"
   rj45_cable = "RJ45 cable (7 ft)"
-  obdc_cable = "OBD-C cable"
+  long_obdc_cable = "long OBD-C cable"
   usbc_coupler = "USB-C coupler"
 
 
-DEFAULT_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+DEFAULT_HARNESS_CONNECTOR: List[Harness] = [Harness.none]
+DEFAULT_HARNESS_PARTS: List[HarnessPart] = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
 
 
 @dataclass
 class HarnessKit:
-  connector: Enum = Harness.none
+  connectors: List[Harness] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_CONNECTOR))
   parts: List[HarnessPart] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_PARTS))
 
 
@@ -154,8 +155,8 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
 
-  #harness connector + all the parts needed
-  harness_kit: HarnessKit = HarnessKit(Harness.none)
+  # harness connectors + all the parts needed
+  harness_kit: HarnessKit = HarnessKit()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -185,14 +186,13 @@ class CarInfo:
       self.min_enable_speed = CP.minEnableSpeed
 
     # harness column
-    harness_col = self.harness_kit.connector.value
-    if self.harness_kit.connector is not Harness.none:
+    harness_col = Harness.none.value
+    if Harness.none not in self.harness_kit.connectors:
       model_years = self.model + (' ' + self.years if self.years else '')
-      harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=2000><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in set(self.harness_kit.parts)]) + '</details> &nbsp;'
+      harness_col = '<br><sub>' + '<br><sub>'.join([f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{self.harness_kit.connectors.count(connector)} {connector.value} connector</sub></a>' for connector in sorted(set(self.harness_kit.connectors), key=lambda connector: connector.value)])
+      harness_col = f'<img width=2000><details><summary>Content</summary>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details> &nbsp;'
 
-
-    self.row = {
+    self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
@@ -254,6 +254,9 @@ class CarInfo:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
+    if not isinstance(self.row[column], str) and not isinstance(self.row[column], Star):
+      print("SALUT")
+
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
