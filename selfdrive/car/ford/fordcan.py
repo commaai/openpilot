@@ -261,8 +261,8 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
   """
 
   values = {s: stock_values[s] for s in [
-    "TurnLghtSwtch_D_Stat",    # SCCM Turn signal switch
     "HeadLghtHiFlash_D_Stat",  # SCCM Passthrough the remaining buttons
+    "TurnLghtSwtch_D_Stat",    # SCCM Turn signal switch
     "WiprFront_D_Stat",
     "LghtAmb_D_Sns",
     "AccButtnGapDecPress",
