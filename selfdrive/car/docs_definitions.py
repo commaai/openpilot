@@ -70,11 +70,11 @@ class Harness(Enum):
 
 
 class HarnessPart(Enum):
-  harness_box = "1 harness box"
-  comma_power_v2 = "1 comma power v2"
-  rj45_cable = "1 RJ45 cable (7 ft)"
-  obdc_cable = "1 OBD-C cable"
-  usbc_coupler = "1 USB-C coupler"
+  harness_box = "harness box"
+  comma_power_v2 = "comma power v2"
+  rj45_cable = "RJ45 cable (7 ft)"
+  obdc_cable = "OBD-C cable"
+  usbc_coupler = "USB-C coupler"
 
 
 DEFAULT_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
@@ -188,7 +188,7 @@ class CarInfo:
     if self.harness_kit.connector is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
-      harness_col = f'<img width=2000><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([x.value + '</sub>' for x in self.harness_kit.parts]) + '</details> &nbsp;'
+      harness_col = f'<img width=2000><details><summary>Content</summary><br>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in set(self.harness_kit.parts)]) + '</details> &nbsp;'
 
 
     self.row = {
