@@ -232,9 +232,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
     "FeatNoIpmaActl",
     "PersIndexIpma_D_Actl",
     "AhbcRampingV_D_Rq",     # AHB ramping
-    "LaActvStats_D_Dsply",   # LKAS status (lines)
     "LaDenyStats_B_Dsply",   # LKAS error
-    "LaHandsOff_D_Dsply",    # LKAS hands on chime
     "CamraDefog_B_Req",      # Windshield heater?
     "CamraStats_D_Dsply",    # Camera status
     "DasAlrtLvl_D_Dsply",    # DAS alert level
