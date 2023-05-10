@@ -14,7 +14,6 @@ def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
   for sig_val in (curvature, curvature_rate, path_angle, path_offset):
     checksum += sig_val + (sig_val >> 8)
 
-  return checksum
   return 0xFF - (checksum & 0xFF)
 
 
