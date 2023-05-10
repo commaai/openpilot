@@ -76,15 +76,17 @@ public:
 
   static std::map<std::string, std::string> get_init_logs() {
     std::map<std::string, std::string> ret = {
-      {"boot slot", util::check_output("abctl --boot_slot")},
       {"/BUILD", util::read_file("/BUILD")},
     };
 
+    std::string bs = util::check_output("abctl --boot_slot");
+    ret["boot slot"] = bs.substr(0, bs.find_first_of("\n"));
+
     std::string temp = util::read_file("/dev/disk/by-partlabel/ssd");
-    temp.erase(temp.find_last_not_of('\0')+1);
     temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
     ret["boot temp"] = temp;
 
+    // TODO: log something from system
     for (std::string part : {"xbl", "abl", "boot", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;
