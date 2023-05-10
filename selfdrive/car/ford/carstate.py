@@ -16,8 +16,14 @@ class CarState(CarStateBase):
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
+    self.vehicle_sensors_valid = False
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
+
+    # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
+    # The vehicle usually recovers out of this state within a minute of normal driving
+    self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
     ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
@@ -106,6 +112,7 @@ class CarState(CarStateBase):
       ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
       ("AccEnbl_B_RqDrv", "Cluster_Info1_FD1"),              # PCM ACC enable
       ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
+      ("StePinCompAnEst_D_Qf", "SteeringPinion_Data"),       # PSCM estimated steering angle (quality flag)
                                                              # Calculates steering angle (and offset) from pinion
                                                              # angle and driving measurements.
                                                              # StePinRelInit_An_Sns is the pinion angle, initialised

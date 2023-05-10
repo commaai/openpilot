@@ -21,20 +21,18 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
 
 public slots:
   void openRoute();
-  void newFile();
-  void openFile();
+  void newFile(SourceSet s = SOURCE_ALL);
+  void openFile(SourceSet s = SOURCE_ALL);
   void openRecentFile();
-  void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
-  void loadDBCFromFingerprint();
+  void streamStarted();
   void save();
   void saveAs();
   void saveToClipboard();
-  void updateSources(const SourceSet &s);
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -42,14 +40,13 @@ signals:
 
 protected:
   void remindSaveChanges();
+  void closeFile(SourceSet s = SOURCE_ALL);
   void closeFile(DBCFile *dbc_file);
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
   void saveFileToClipboard(DBCFile *dbc_file);
   void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
-  void openFileForSource(SourceSet s);
-  void newFileForSource(SourceSet s);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
@@ -90,7 +87,6 @@ protected:
   QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
-  SourceSet sources;
   friend class OnlineHelp;
 };
 
