@@ -77,14 +77,19 @@ public:
   static std::map<std::string, std::string> get_init_logs() {
     std::map<std::string, std::string> ret = {
       {"boot slot", util::check_output("abctl --boot_slot")},
-      {"boot temp", util::read_file("/dev/disk/by-partlabel/ssd")},
       {"/BUILD", util::read_file("/BUILD")},
     };
 
-    for (std::string part : {"xbl", "abl", "boot"}) {
+    std::string temp = util::read_file("/dev/disk/by-partlabel/ssd");
+    temp.erase(temp.find_last_not_of('\0')+1);
+    temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
+    ret["boot temp"] = temp;
+
+    for (std::string part : {"xbl", "abl", "boot", "aop", "devcfg", "xbl_config"}) {
       for (std::string slot : {"a", "b"}) {
         std::string partition = part + "_" + slot;
-        ret[partition] = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
+        std::string hash = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
+        ret[partition] = hash.substr(0, hash.find_first_of(" "));
       }
     }
 
