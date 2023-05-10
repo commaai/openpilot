@@ -45,7 +45,7 @@ class TestBoardd(unittest.TestCase):
     self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
                                                    connect another panda for multipanda tests.")
 
-    # boardd blocks on CarVin and CarParams
+    # boardd blocks on FirmwareQueryDone, ControlsReady, and CarParams
     cp = car.CarParams.new_message()
 
     safety_config = car.CarParams.SafetyConfig.new_message()
