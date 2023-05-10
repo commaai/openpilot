@@ -44,6 +44,8 @@ class ProcessConfig:
   subtest_name: str = ""
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
+  iter_wait_time: float = 0.0
+  drain_sockets: bool = False
 
 
 def wait_for_event(evt):
@@ -242,14 +244,12 @@ def torqued_rcv_callback(msg, CP, cfg, fsm):
   return recv_socks, fsm.frame == 0 or msg.which() == 'liveLocationKalman'
 
 
-def ublox_rcv_callback(msg, CP, cfg, fsm):
-  msg_class, msg_id = msg.ubloxRaw[2:4]
-  if (msg_class, msg_id) in {(1, 7 * 16)}:
-    return ["gpsLocationExternal"], True
-  elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
-    return ["ubloxGnss"], True
-  else:
-    return [], False
+def locationd_rcv_callback(msg, CP, cfg, fsm):
+  trigger_msg = "accelerometer" if CP is not None and CP.notCar else "cameraOdometry"
+  if msg.which() == trigger_msg:
+    return ["liveLocationKalman"], True
+  
+  return [], False
 
 
 CONFIGS = [
@@ -325,13 +325,13 @@ CONFIGS = [
     proc_name="locationd",
     pub_sub={
       "cameraOdometry": ["liveLocationKalman"],
-      "accelerometer": [], "gyroscope": [],
+      "accelerometer": ["liveLocationKalman"], "gyroscope": [],
       "gpsLocationExternal": [], "liveCalibration": [], 
       "carParams": [], "carState": [], "gpsLocation": [],
     },
     ignore=["logMonoTime", "valid"],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=locationd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
   ),
@@ -354,9 +354,11 @@ CONFIGS = [
     },
     ignore=["logMonoTime"],
     init_callback=None,
-    should_recv_callback=ublox_rcv_callback,
+    should_recv_callback=None,
     tolerance=None,
     fake_pubsubmaster=False,
+    iter_wait_time=0.01,
+    drain_sockets=True
   ),
   ProcessConfig(
     proc_name="laikad",
@@ -375,7 +377,7 @@ CONFIGS = [
     proc_name="torqued",
     pub_sub={
       "liveLocationKalman": ["liveTorqueParameters"],
-      "carState": [], "controlsState": [],
+      "carState": [], "carControl": [],
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
@@ -546,7 +548,8 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
   # We need to fake SubMaster alive since we can't inject a fake clock
-  setup_env(simulation=True, cfg=cfg, lr=lr)
+  CP = [m for m in lr if m.which() == 'carParams'][0].carParams
+  setup_env(simulation=True, CP=CP, cfg=cfg, lr=lr)
 
   if cfg.proc_name == "laikad":
     ublox = Params().get_bool("UbloxAvailable")
@@ -555,6 +558,10 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
+
+  if cfg.init_callback is not None:
+    cfg.init_callback(all_msgs, None, None, fingerprint)
+    CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
   log_msgs = []
   try:
@@ -568,11 +575,15 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
 
     # Do the replay
     cnt = 0
+    curr_CP = None
     for msg in pub_msgs:
       with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
+        if msg.which() == 'carParams':
+          curr_CP = msg.carParams
+        
         resp_sockets = cfg.pub_sub[msg.which()]
         if cfg.should_recv_callback is not None:
-          resp_sockets, _ = cfg.should_recv_callback(msg, None, None, None)
+          resp_sockets, _ = cfg.should_recv_callback(msg, curr_CP, cfg, None)
 
         # Make sure all subscribers are connected
         if len(log_msgs) == 0 and len(resp_sockets) > 0:
@@ -583,11 +594,18 @@ def replay_process_with_sockets(cfg, lr, fingerprint=None):
         while not pm.all_readers_updated(msg.which()):
           time.sleep(0)
 
+        time.sleep(cfg.iter_wait_time)
+
         for s in resp_sockets:
-          m = messaging.recv_one_retry(sockets[s])
-          m = m.as_builder()
-          m.logMonoTime = msg.logMonoTime
-          log_msgs.append(m.as_reader())
+          msgs = []
+          if cfg.drain_sockets:
+            msgs.extend(messaging.drain_sock(sockets[s], wait_for_one=True))
+          else:
+            msgs = [messaging.recv_one_retry(sockets[s])]
+          for m in msgs:
+            m = m.as_builder()
+            m.logMonoTime = msg.logMonoTime
+            log_msgs.append(m.as_reader())
         cnt += 1
   finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
