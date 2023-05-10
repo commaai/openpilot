@@ -60,18 +60,17 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   reset_zoom_action = toolbar->addWidget(reset_zoom_btn = new ToolButton("zoom-out", tr("Reset Zoom")));
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  toolbar->addWidget(remove_all_btn = new ToolButton("x", tr("Remove all charts")));
+  toolbar->addWidget(remove_all_btn = new ToolButton("x-square", tr("Remove all charts")));
   toolbar->addWidget(dock_btn = new ToolButton(""));
   main_layout->addWidget(toolbar);
 
   // tabbar
-  tabbar = new QTabBar(this);
+  tabbar = new TabBar(this);
   tabbar->setAutoHide(true);
   tabbar->setExpanding(false);
   tabbar->setDrawBase(true);
   tabbar->setAcceptDrops(true);
   tabbar->setChangeCurrentOnDrag(true);
-  tabbar->setTabsClosable(true);
   tabbar->setUsesScrollButtons(true);
   main_layout->addWidget(tabbar);
 
@@ -150,8 +149,9 @@ void ChartsWidget::updateTabBar() {
 
 void ChartsWidget::eventsMerged() {
   QFutureSynchronizer<void> future_synchronizer;
+  bool clear = !can->liveStreaming();
   for (auto c : charts) {
-    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
+    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, clear));
   }
 }
 
@@ -264,6 +264,7 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
   if (show && !chart) {
     chart = merge && currentCharts().size() > 0 ? currentCharts().front() : createChart();
     chart->addSignal(id, sig);
+    updateState();
   } else if (!show && chart) {
     chart->removeIf([&](auto &s) { return s.msg_id == id && s.sig == sig; });
   }

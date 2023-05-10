@@ -16,8 +16,16 @@ public:
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   };
-  static std::string get_name() { return "tici"; };
-  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::TICI; };
+
+  static std::string get_name() {
+    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
+    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+  };
+
+  static cereal::InitData::DeviceType get_device_type() {
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+  };
+
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
   static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
 
@@ -63,6 +71,13 @@ public:
     char volume_str[6];
     snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
     std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
+  }
+
+
+  static std::map<std::string, std::string> get_init_logs() {
+    return {
+      {"/BUILD", util::read_file("/BUILD")},
+    };
   }
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };

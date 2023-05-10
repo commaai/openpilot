@@ -6,7 +6,7 @@ import unittest
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
@@ -36,7 +36,8 @@ class TestBoardd(unittest.TestCase):
 
     with Timeout(60, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
-      while sm.rcv_frame['pandaStates'] < 1 and len(sm['pandaStates']) == 0:
+      while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
+          any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
         sm.update(1000)
 
     num_pandas = len(sm['pandaStates'])
@@ -44,7 +45,7 @@ class TestBoardd(unittest.TestCase):
     self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
                                                    connect another panda for multipanda tests.")
 
-    # boardd blocks on CarVin and CarParams
+    # boardd blocks on FirmwareQueryDone, ControlsReady, and CarParams
     cp = car.CarParams.new_message()
 
     safety_config = car.CarParams.SafetyConfig.new_message()

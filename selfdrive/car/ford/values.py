@@ -28,6 +28,7 @@ class CarControllerParams:
   # Worst case, the low speed limits will allow 4.3 m/s^3 up, 4.9 m/s^3 down at 75 mph
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.0002, 0.0001])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000225, 0.00015])
+  CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
   ACCEL_MAX = 2.0               # m/s^s max acceleration
   ACCEL_MIN = -3.5              # m/s^s max deceleration
@@ -71,16 +72,19 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),
-    FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-    FordCarInfo("Ford Kuga 2020-21", "Driver Assistance Pack"),
-    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Driver Assistance Pack"),
+    FordCarInfo("Ford Escape Hybrid 2020-22"),
+    FordCarInfo("Ford Escape Plug-in Hybrid 2021-22"),
+    FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+    FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
   ],
   CAR.EXPLORER_MK6: [
     FordCarInfo("Ford Explorer 2020-22"),
+    FordCarInfo("Ford Explorer Hybrid 2020-22"),
     FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
     FordCarInfo("Lincoln Aviator Plug-in Hybrid 2021", "Co-Pilot360 Plus"),
   ],
-  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Driver Assistance Pack"),
+  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Adaptive Cruise Control with Lane Centering"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
 

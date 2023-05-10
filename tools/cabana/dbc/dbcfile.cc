@@ -39,6 +39,7 @@ void DBCFile::open(const QString &content) {
   msgs.clear();
   for (auto &msg : dbc->msgs) {
     auto &m = msgs[msg.address];
+    m.address = msg.address;
     m.name = msg.name.c_str();
     m.size = msg.size;
     for (auto &s : msg.sigs) {
@@ -55,6 +56,7 @@ void DBCFile::open(const QString &content) {
       sig.is_little_endian = s.is_little_endian;
       sig.updatePrecision();
     }
+    m.updateMask();
   }
   parseExtraInfo(content);
 
@@ -103,6 +105,7 @@ bool DBCFile::writeContents(const QString &fn) {
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
     m->sigs.push_back(sig);
+    m->updateMask();
     return &m->sigs.last();
   }
 
@@ -113,6 +116,7 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     if (auto s = (cabana::Signal *)m->sig(sig_name)) {
       *s = sig;
+      m->updateMask();
       return s;
     }
   }
@@ -135,12 +139,14 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
     if (it != m->sigs.end()) {
       m->sigs.erase(it);
+      m->updateMask();
     }
   }
 }
 
 void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
   auto &m = msgs[id.address];
+  m.address = id.address;
   m.name = name;
   m.size = size;
 }
@@ -165,6 +171,15 @@ QString DBCFile::newSignalName(const MessageId &id) {
   }
 
   return name;
+}
+
+const QList<uint8_t>& DBCFile::mask(const MessageId &id) const {
+  const cabana::Msg *m = msg(id);
+  if (m != nullptr) {
+    return m->mask;
+  } else {
+    return empty_mask;
+  }
 }
 
 std::map<uint32_t, cabana::Msg> DBCFile::getMessages() {
