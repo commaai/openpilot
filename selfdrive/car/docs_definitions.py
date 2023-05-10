@@ -21,7 +21,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
-  HARNESS = "Harness Kit"
+  HARNESS = "<img width=2000>Harness Kit<img width=2000>"
   VIDEO = "Video"
 
 
@@ -190,7 +190,7 @@ class CarInfo:
     if Harness.none not in self.harness_kit.connectors:
       model_years = self.model + (' ' + self.years if self.years else '')
       harness_col = '<br><sub>' + '<br><sub>'.join([f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{self.harness_kit.connectors.count(connector)} {connector.value} connector</sub></a>' for connector in sorted(set(self.harness_kit.connectors), key=lambda connector: connector.value)])
-      harness_col = f'<img width=2000><details><summary>Content</summary>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details> &nbsp;'
+      harness_col = f'<details><summary>Content</summary>{harness_col}<br><sub>' + '<br><sub>'.join([f"{self.harness_kit.parts.count(part)} {part.value}</sub>" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)]) + '</details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
