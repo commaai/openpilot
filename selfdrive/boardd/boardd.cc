@@ -465,7 +465,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   SubMaster sm({"controlsState"});
 
   Panda *peripheral_panda = pandas[0];
-  bool ignition_last = false;
+  bool is_onroad = false;
+  bool is_onroad_last = false;
   std::future<bool> safety_future;
 
   LOGD("start panda state thread");
@@ -483,6 +484,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     }
 
     ignition = *ignition_opt;
+    is_onroad = params.getBool("IsOnroad");
 
     // check if we should have pandad reconnect
     if (!ignition) {
@@ -506,8 +508,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
       }
     }
 
-    // set new safety on car start
-    if (ignition && !ignition_last) {
+    // set new safety on onroad transition, after params are cleared
+    if (is_onroad && !is_onroad_last) {
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
         safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
       } else {
@@ -515,7 +517,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
       }
     }
 
-    ignition_last = ignition;
+    is_onroad_last = is_onroad;
 
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
