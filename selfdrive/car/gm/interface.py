@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 from cereal import car
-from math import fabs
+from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -45,6 +46,29 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
+  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+                                     lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+
+    def sig(val):
+      return 1 / (1 + exp(-val)) - 0.5
+
+    # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
+    # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
+    # This has big effect on the stability about 0 (noise when going straight)
+    # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
+    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
+
+    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    return float(steer_torque) + friction
+
+  def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
+    if self.CP.carFingerprint == CAR.BOLT_EUV:
+      return self.torque_from_lateral_accel_bolt
+    else:
+      return self.torque_from_lateral_accel_linear
+
+  @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
@@ -74,7 +98,6 @@ class CarInterface(CarInterfaceBase):
       # Tuning for experimental long
       ret.longitudinalTuning.kpV = [2.0, 1.5]
       ret.longitudinalTuning.kiV = [0.72]
-      ret.stopAccel = -2.0
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
@@ -209,6 +232,15 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.TRAILBLAZER:
+      ret.mass = 1345. + STD_CARGO_KG
+      ret.wheelbase = 2.64
+      ret.steerRatio = 16.8
+      ret.centerToFront = ret.wheelbase * 0.4
+      tire_stiffness_factor = 1.0
+      ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by

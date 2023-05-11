@@ -7,7 +7,7 @@
 #include <QLineEdit>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 #include "tools/cabana/util.h"
 
@@ -54,7 +54,7 @@ public:
   std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
 
   MessageId msg_id;
-  ChangeTracker hex_colors;
+  CanData hex_colors;
   bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;

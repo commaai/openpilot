@@ -1,20 +1,23 @@
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <deque>
 #include <unordered_map>
 #include <QColor>
 #include <QHash>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/settings.h"
 #include "tools/cabana/util.h"
 #include "tools/replay/replay.h"
 
 struct CanData {
+  void compute(const char *dat, const int size, double current_sec, uint32_t in_freq = 0);
+
   double ts = 0.;
   uint32_t count = 0;
-  uint32_t freq = 0;
+  double freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
   QVector<double> last_change_t;
@@ -22,9 +25,9 @@ struct CanData {
 };
 
 struct CanEvent {
-  uint64_t mono_time;
-  uint8_t size;
-  uint8_t dat[64];
+  uint64_t mono_time = 0;
+  uint8_t size = 0;
+  uint8_t dat[64] = {};
   inline bool operator<(const CanEvent &r) const { return mono_time < r.mono_time; }
   inline bool operator>(const CanEvent &r) const { return mono_time > r.mono_time; }
 };
@@ -50,6 +53,7 @@ public:
   virtual void setSpeed(float speed) {}
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  virtual const std::vector<Event*> *rawEvents() const { return nullptr; }
   const std::unordered_map<MessageId, std::deque<CanEvent>> &events() const { return events_; }
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
   void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
@@ -63,11 +67,11 @@ signals:
   void updated();
   void msgsReceived(const QHash<MessageId, CanData> *);
   void received(QHash<MessageId, CanData> *);
-  void sourcesUpdated(const QSet<uint8_t> &s);
+  void sourcesUpdated(const SourceSet &s);
 
 public:
   QHash<MessageId, CanData> last_msgs;
-  QSet<uint8_t> sources;
+  SourceSet sources;
 
 protected:
   virtual void process(QHash<MessageId, CanData> *);
@@ -77,9 +81,8 @@ protected:
 
   bool is_live_streaming = false;
   std::atomic<bool> processing = false;
-  QHash<MessageId, uint32_t> counters;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
-  QHash<MessageId, ChangeTracker> change_trackers;
+  QHash<MessageId, CanData> all_msgs;
   std::unordered_map<MessageId, std::deque<CanEvent>> events_;
   uint64_t last_event_ts = 0;
 };

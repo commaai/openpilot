@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QLineEdit>
 #include <QDialog>
@@ -14,6 +15,7 @@ public:
 
 private:
   QLineEdit *route_edit;
+  QComboBox *choose_video_cb;
   QDialogButtonBox *btn_box;
   bool failed_to_load = false;
 };
