@@ -1,5 +1,7 @@
 <html>
 <body>
+<audio id="audio-player" controls></audio>>
+
 <h1>CONTROL YOUR BODY</h1>
 <img id="bg" src="{{ url_for('video_feed') }}">
 
@@ -9,6 +11,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.js" integrity="sha512-aMGMvNYu8Ue4G+fHa359jcPb1u+ytAF+P2SCb+PxrjCdO3n3ZTxJ30zuH39rimUggmTwmh2u7wvQsDTHESnmfQ==" crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
 
 <script type="text/javascript">
 var keyEnum = { W_Key:0, A_Key:1, S_Key:2, D_Key:3 };
@@ -70,6 +73,7 @@ function isKeyDown(key)
 {
     return keyArray[key];
 }
+
 setInterval(function(){
   var x = 0;
   var y = 0;
@@ -81,11 +85,83 @@ setInterval(function(){
     y -= 1;
   if (isKeyDown(keyEnum.A_Key))
     y += 1;
-  console.log(x)
   socket.emit('control_command', {'x': x, 'y': y});
 
   document.getElementById("move_str").innerHTML = `Commanded motion: ${x}, ${y}`;
 
 }, 50);
+const audio = document.getElementById('audio-player');
+let audioBuffer = [];
+let audioQueue = [];
+
+function int16ToBytes(value) {
+    const bytes = new Uint8Array(2);
+    bytes[0] = value & 0xff;
+    bytes[1] = (value >> 8) & 0xff;
+    return bytes;
+}
+
+function createWavFile(audioData) {
+    const numChannels = 1;
+    const sampleRate = 44100;
+    const bitsPerSample = 16;
+    const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
+    const dataSize = audioData.length * (bitsPerSample / 8);
+
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
+
+    // RIFF chunk descriptor
+    view.setUint8(0, 'R'.charCodeAt(0));
+    view.setUint8(1, 'I'.charCodeAt(0));
+    view.setUint8(2, 'F'.charCodeAt(0));
+    view.setUint8(3, 'F'.charCodeAt(0));
+    view.setUint32(4, 36 + dataSize, true);
+    view.setUint8(8, 'W'.charCodeAt(0));
+    view.setUint8(9, 'A'.charCodeAt(0));
+    view.setUint8(10, 'V'.charCodeAt(0));
+    view.setUint8(11, 'E'.charCodeAt(0));
+
+    // FMT sub-chunk
+    view.setUint8(12, 'f'.charCodeAt(0));
+    view.setUint8(13, 'm'.charCodeAt(0));
+    view.setUint8(14, 't'.charCodeAt(0));
+    view.setUint8(15, ' '.charCodeAt(0));
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+    view.setUint16(34, bitsPerSample, true);
+
+    // Data sub-chunk
+    view.setUint8(36, 'd'.charCodeAt(0));
+    view.setUint8(37, 'a'.charCodeAt(0));
+    view.setUint8(38, 't'.charCodeAt(0));
+    view.setUint8(39, 'a'.charCodeAt(0));
+    view.setUint32(40, dataSize, true);
+    for (let i = 0; i < audioData.length; i++) {
+        const data = int16ToBytes(audioData[i]);
+        view.setUint8(44 + i * 2, data[0]);
+        view.setUint8(44 + i * 2 + 1, data[1]);
+    }
+
+    return new Blob([view], { type: 'audio/wav' });
+}
+
+function playAudioData() {
+    const wavFile = createWavFile(audioBuffer);
+    audio.src = URL.createObjectURL(wavFile);
+    audio.play();
+    audioBuffer = [];
+}
+
+socket.on('stream', (audioData) => {
+    audioBuffer = audioBuffer.concat(audioData);
+    if (audioBuffer.length >= 44100) {
+        playAudioData();
+    }
+});
 </script>
 </html>

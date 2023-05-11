@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import os
 from flask import Flask, render_template, Response
 
 import cereal.messaging as messaging
@@ -26,12 +27,20 @@ import numpy as np
 class VideoCamera(object):
   def __init__(self):
     self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
+    self.cnt = 0
 
 
   def __del__(self):
     pass
 
   def get_frame(self):
+    if os.environ.get('FAKE_CAMERA') == '1':
+      frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
+      frame[self.cnt:self.cnt+10, :, :] = 255
+      self.cnt = (self.cnt + 10)%IMG_H
+      _, jpeg = cv2.imencode('.jpg', frame)
+      return jpeg.tobytes()
+ 
     if not self.vipc_client.is_connected():
       self.vipc_client.connect(True)
     yuv_img_raw = self.vipc_client.recv()
@@ -93,9 +102,37 @@ def handle_timeout():
       pm.send('testJoystick', dat)
     time.sleep(0.1)
 
+import pyaudio
+
+FORMAT = pyaudio.paInt16
+CHANNELS = 2
+RATE = 44100
+CHUNK = 1024
+RECORD_SECONDS = 5
+
+ 
+audio1 = pyaudio.PyAudio()
+
+p = pyaudio.PyAudio()
+stream = p.open(format=FORMAT,
+                channels=CHANNELS,
+                rate=RATE,
+                input=True,
+                frames_per_buffer=CHUNK,
+                input_device_index=7)
+
+def gen_audio():
+  while True:
+    data = stream.read(CHUNK, exception_on_overflow=False)
+    data = np.frombuffer(data, dtype=np.int16)
+    socketio.emit('stream', data.tolist())
+    time.sleep(0.0001)
+
+
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
+  socketio.start_background_task(target=gen_audio)
   socketio.run(app, host="0.0.0.0")
 
 
