@@ -6,8 +6,6 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
 
-from tqdm import tqdm
-
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import service_list
@@ -441,7 +439,7 @@ def replay_process(cfg, lr, fingerprint=None):
 
         # Do the replay
         cnt = 0
-        for msg in tqdm(pub_msgs):
+        for msg in pub_msgs:
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
