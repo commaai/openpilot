@@ -720,7 +720,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
   EventName.calibrationIncomplete: {
     ET.PERMANENT: calibration_incomplete_alert,
-    ET.SOFT_DISABLE: soft_disable_alert("Device remount detected: recalibrating"),
+    ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
   
