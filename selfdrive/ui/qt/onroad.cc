@@ -460,6 +460,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
+  p.setOpacity(1.0);
 }
 
 
@@ -560,13 +561,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
   int y = rect().bottom() - footer_h / 2;
   float opacity = dmActive ? 0.65 : 0.2;
-  drawIcon(painter, x, y, dm_img, blackColor(0), opacity);
-
-  // circle background
-  painter.setOpacity(1.0);
-  painter.setPen(Qt::NoPen);
-  painter.setBrush(blackColor(70));
-  painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
+  drawIcon(painter, x, y, dm_img, blackColor(70), opacity);
 
   // face
   QPointF face_kpts_draw[std::size(default_face_kpts_3d)];
