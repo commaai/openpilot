@@ -37,27 +37,31 @@ class ReplayContext:
   def __enter__(self):
     messaging.toggle_fake_events(True)
 
-    pubs_with_events = self.non_polled_pubs if self.drained_pub is None else [self.drained_pub]
-    self.recv_called_events = {
-      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
-      for s in pubs_with_events
-    }
-    self.recv_ready_events = {
-      s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
-      for s in pubs_with_events
-    }
     if len(self.polled_pubs) > 0 and self.drained_pub is None:
       self.poll_called_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_CALLED)
       self.poll_ready_event = messaging.fake_event("", messaging.FAKE_EVENT_POLL_READY)
+      self.recv_called_events = {}
+      self.recv_ready_events = {}
+    else:
+      pubs_with_events = self.non_polled_pubs if self.drained_pub is None else [self.drained_pub]
+      self.poll_called_event = None
+      self.poll_ready_event = None
+      self.recv_called_events = {
+        s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_CALLED)
+        for s in pubs_with_events
+      }
+      self.recv_ready_events = {
+        s: messaging.fake_event(s, messaging.FAKE_EVENT_RECV_READY)
+        for s in pubs_with_events
+      }
 
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
     del self.recv_called_events
     del self.recv_ready_events
-    if len(self.polled_pubs) > 0 and self.drained_pub is None:
-      del self.poll_called_event
-      del self.poll_ready_event
+    del self.poll_called_event
+    del self.poll_ready_event
 
     messaging.toggle_fake_events(False)
 
@@ -67,37 +71,29 @@ class ReplayContext:
     
     if len(self.polled_pubs) > 0:
       self.poll_called_event.wait()
-      self.poll_called_event.clear()
-      if msg_type not in self.polled_pubs:
-        self.poll_ready_event.set()
-
-    for pub in self.non_polled_pubs:
-      if pub == msg_type:
-        continue
-
-      self.recv_ready_events[pub].set()
-
-  def wait_for_next_recv(self, msg_type, should_recv):
-    if self.drained_pub is not None:
-      return self._wait_for_next_recv_drained(msg_type, should_recv)
-    elif len(self.polled_pubs) > 0:
-      return self._wait_for_next_recv_using_polls(msg_type)
     else:
-      return self._wait_for_next_recv_standard(msg_type)
+      for pub in self.non_polled_pubs:
+        if pub == msg_type:
+          continue
 
-  def _wait_for_next_recv_drained(self, msg_type, should_recv):
-    # if the next message is also drained message, then we need to fake the recv_ready event
-    # in order to start the next cycle
-    if not should_recv:
-      return
+        self.recv_ready_events[pub].set()
 
-    if msg_type == self.drained_pub:
+  def wait_for_next_recv(self, end_of_cycle):
+    if self.drained_pub is not None:
+      return self._wait_for_next_recv_drained(end_of_cycle)
+    elif len(self.polled_pubs) > 0:
+      return self._wait_for_next_recv_using_polls()
+    else:
+      return self._wait_for_next_recv_standard()
+
+  def _wait_for_next_recv_drained(self, end_of_cycle):
+    if end_of_cycle:
       self.recv_called_events[self.drained_pub].wait()
       self.recv_called_events[self.drained_pub].clear()
       self.recv_ready_events[self.drained_pub].set()
     self.recv_called_events[self.drained_pub].wait()
 
-  def _wait_for_next_recv_standard(self, msg_type):
+  def _wait_for_next_recv_standard(self):
     if len(self.non_polled_pubs) <= 1 and len(self.polled_pubs) == 0:
       return self.recv_called_events[self.non_polled_pubs[0]].wait()
 
@@ -123,9 +119,9 @@ class ReplayContext:
     max_key = max(values.keys(), key=lambda k: values[k])
     self.recv_called_events[max_key].set()
 
-  def _wait_for_next_recv_using_polls(self, msg_type):
-    if msg_type in self.polled_pubs:
-      self.poll_ready_event.set()
+  def _wait_for_next_recv_using_polls(self):
+    self.poll_called_event.clear()
+    self.poll_ready_event.set()
     self.poll_called_event.wait()
 
 
@@ -170,7 +166,7 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
   pm.send("can", messaging.new_message("can", 1))
   pm.send("pandaStates", messaging.new_message("pandaStates", 1))
   pm.send("can", messaging.new_message("can", 1))
-  rc.wait_for_next_recv("can", True)
+  rc.wait_for_next_recv(True)
 
   # fingerprinting is done, when CarParams is set
   while params.get("CarParams") is None:
@@ -179,7 +175,7 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
 
     m = canmsgs.pop(0)
     pm.send("can", m.as_builder().to_bytes())
-    rc.wait_for_next_recv(None, True)
+    rc.wait_for_next_recv(False)
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
@@ -200,7 +196,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
 def controlsd_rcv_callback(msg, CP, cfg, frame):
   # no sendcan until controlsd is initialized
   if msg.which() != "can":
-    return [], False
+    return False 
 
   socks = [
     s for s in cfg.subs if
@@ -208,52 +204,38 @@ def controlsd_rcv_callback(msg, CP, cfg, frame):
   ]
   if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
-  return socks, len(socks) > 0
+  return len(socks) > 0
 
 
 def radar_rcv_callback(msg, CP, cfg, frame):
   if msg.which() != "can":
-    return [], False
+    return False
   elif CP.radarUnavailable:
-    return ["radarState", "liveTracks"], True
+    return True
 
-  radar_msgs = {"honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474],
-                "chrysler": [0x2d4]}.get(CP.carName, None)
+  radar_msgs = {
+    "honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474], "chrysler": [0x2d4]
+  }.get(CP.carName, None)
 
   if radar_msgs is None:
     raise NotImplementedError
 
   for m in msg.can:
     if m.src == 1 and m.address in radar_msgs:
-      return ["radarState", "liveTracks"], True
-  return [], False
+      return True
+  
+  return False
 
 
 def calibration_rcv_callback(msg, CP, cfg, frame):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
-  recv_socks = []
-  if frame == 0 or (msg.which() == 'cameraOdometry' and (frame % 5) == 0):
-    recv_socks = ["liveCalibration"]
-  return recv_socks, (frame - 1) == 0 or msg.which() == 'cameraOdometry'
+  return (frame - 1) == 0 or msg.which() == 'cameraOdometry'
 
 
 def torqued_rcv_callback(msg, CP, cfg, frame):
   # should_recv always true to increment frame
-  recv_socks = []
-  if msg.which() == 'liveLocationKalman' and (frame % 5) == 0:
-    recv_socks = ["liveTorqueParameters"]
-  return recv_socks, (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
-
-
-def ublox_rcv_callback(msg, CP, cfg, frame):
-  msg_class, msg_id = msg.ubloxRaw[2:4]
-  if (msg_class, msg_id) in {(1, 7 * 16)}:
-    return ["gpsLocationExternal"], True
-  elif (msg_class, msg_id) in {(2, 1 * 16 + 5), (10, 9)}:
-    return ["ubloxGnss"], True
-  else:
-    return [], False
+  return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
 
 def rate_based_rcv_callback(msg, CP, cfg, frame):
@@ -261,9 +243,7 @@ def rate_based_rcv_callback(msg, CP, cfg, frame):
     s for s in cfg.subs 
     if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
   ]
-  should_recv = bool(len(resp_sockets))
-
-  return resp_sockets, should_recv
+  return bool(len(resp_sockets))
 
 
 def laikad_config_pubsub_callback(params, cfg):
@@ -446,7 +426,7 @@ def replay_process(cfg, lr, fingerprint=None):
         cfg.init_callback(rc, pm, all_msgs, fingerprint)
         CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
-      log_msgs = []
+      log_msgs, msg_queue = [], []
       try:
         # Wait for process to startup
         with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
@@ -456,27 +436,29 @@ def replay_process(cfg, lr, fingerprint=None):
         for s in sockets.values():
           messaging.recv_one_or_none(s)
 
-        # TODO wait for sockets to reconnect, for now lets just wait
+        # TODO wait for sockets to reconnect, for now lets just sleep
         time.sleep(1)
 
         # Do the replay
         cnt = 0
-        for msg in pub_msgs:
+        for msg in tqdm(pub_msgs):
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
-            resp_sockets, should_recv = cfg.subs, True
+            resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
-              resp_sockets, should_recv = cfg.should_recv_callback(msg, CP, cfg, cnt)
+              end_of_cycle = cfg.should_recv_callback(msg, CP, cfg, cnt)
 
             if len(log_msgs) == 0 and len(resp_sockets) > 0:
               for s in sockets.values():
                 messaging.recv_one_or_none(s)
-            
-            rc.unlock_sockets(msg.which())
-            pm.send(msg.which(), msg.as_builder())
-            # wait for the next receive on the process side
-            rc.wait_for_next_recv(msg.which(), should_recv)
 
-            if should_recv:
+            msg_queue.append(msg)
+            if end_of_cycle:
+              for m in msg_queue:
+                rc.unlock_sockets(m.which())
+                pm.send(m.which(), m.as_builder())
+              msg_queue = []
+              rc.wait_for_next_recv(True)
+
               for s in resp_sockets:
                 ms = messaging.drain_sock(sockets[s])  
                 for m in ms:
