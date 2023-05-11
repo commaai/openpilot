@@ -55,6 +55,8 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
     ret.accFaulted = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (1, 2)
+    if ret.openpilotLongitudinalControl:
+      ret.accFaulted = ret.accFaulted or cp_cam.vl["ACCDATA"]["CmbbDeny_B_Actl"] == 1
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -208,6 +210,8 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC unavailable/lockout
+
       ("HaDsply_No_Cs", "ACCDATA_3"),
       ("HaDsply_No_Cnt", "ACCDATA_3"),
       ("AccStopStat_D_Dsply", "ACCDATA_3"),         # ACC stopped status message
@@ -252,6 +256,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("ACCDATA", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
