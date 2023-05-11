@@ -70,7 +70,9 @@ kj::Array<capnp::word> logger_build_init_data() {
     "df -h",  // usage for all filesystems
   };
 
-  auto commands = init.initCommands().initEntries(log_commands.size());
+  auto hw_logs = Hardware::get_init_logs();
+
+  auto commands = init.initCommands().initEntries(log_commands.size() + hw_logs.size());
   for (int i = 0; i < log_commands.size(); i++) {
     auto lentry = commands[i];
 
@@ -78,6 +80,14 @@ kj::Array<capnp::word> logger_build_init_data() {
 
     const std::string result = util::check_output(log_commands[i]);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+  }
+
+  int i = log_commands.size();
+  for (auto [key, value] : hw_logs) {
+    auto lentry = commands[i];
+    lentry.setKey(key);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
+    i++;
   }
 
   return capnp::messageToFlatArray(msg);
