@@ -299,8 +299,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="calibrationd",
     pub_sub={
-      "carState": ["liveCalibration"],
-      "cameraOdometry": [],
+      "carState": [],
+      "cameraOdometry": ["liveCalibration"],
       "carParams": [],
     },
     ignore=["logMonoTime", "valid"],
@@ -508,12 +508,13 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
   log_msgs, msg_queue = [], []
   for msg in pub_msgs:
+    recv_socks = cfg.pub_sub[msg.which()]
     if cfg.should_recv_callback is not None:
-      recv_socks, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
+      _, should_recv = cfg.should_recv_callback(msg, CP, cfg, fsm)
     else:
-      recv_socks = [s for s in cfg.pub_sub[msg.which()] if
-                    (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
-      should_recv = bool(len(recv_socks))
+      socks = [s for s in cfg.pub_sub[msg.which()] if
+               (fsm.frame + 1) % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0]
+      should_recv = bool(len(socks))
 
     if msg.which() == 'can':
       can_sock.send(msg.as_builder().to_bytes())
