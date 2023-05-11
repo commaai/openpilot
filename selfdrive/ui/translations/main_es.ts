@@ -36,7 +36,7 @@
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>Insertar nueva contraseña de tethering</translation>
+        <translation>Nueva contraseña de tethering</translation>
     </message>
     <message>
         <source>IP Address</source>
@@ -136,7 +136,7 @@
     </message>
     <message>
         <source>PREVIEW</source>
-        <translation>PREVISUALIZACIÓN</translation>
+        <translation>VISUALIZAR</translation>
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
@@ -289,7 +289,7 @@
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>MODO DESCANSO ACTIVADO</translation>
+        <translation>MODO CHILL ACTIVADO</translation>
     </message>
 </context>
 <context>
@@ -375,7 +375,8 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtener instrucciones paso a paso con una suscripción prime de Comma. Inscribirse ahora:  https://connect.comma.ai</translation>
+        <translation>Obtener instrucciones paso a paso con una suscripción
+prime de Comma. Inscribirse ahora:  https://connect.comma.ai</translation>
     </message>
     <message>
         <source>No home
@@ -498,7 +499,7 @@ location set</source>
     </message>
     <message>
         <source>1 year of storage</source>
-        <translation>1 año de almacenamiento</translation>
+        <translation>1 año de almacenaje</translation>
     </message>
     <message>
         <source>Developer perks</source>
@@ -619,7 +620,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Toggles</source>
-        <translation>Botones conmutación</translation>
+        <translation>Ajustes</translation>
     </message>
     <message>
         <source>Software</source>
@@ -728,11 +729,11 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONECTAR</translation>
+        <translation>CONEXION</translation>
     </message>
     <message>
         <source>OFFLINE</source>
-        <translation>FUERA DE LINEA</translation>
+        <translation>SIN LINEA</translation>
     </message>
     <message>
         <source>ONLINE</source>
@@ -878,7 +879,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation>Insertar su nombre de usuario de GitHub</translation>
+        <translation>Insertar usuario de GitHub</translation>
     </message>
     <message>
         <source>LOADING</source>
@@ -939,7 +940,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
-        <translation>Ativar Aviso de Salida de Carril</translation>
+        <translation>Activar Aviso de Salida de Carril</translation>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
@@ -975,7 +976,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>Mostrar Tiempo Estimado de Llegada en Formato 24h</translation>
+        <translation>Mostrar ETA en Formato 24h</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
