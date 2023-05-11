@@ -21,7 +21,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
-  HARNESS = "<img width=2000>Harness Kit<img width=2000>"
+  HARNESS = "Harness Kit"
   VIDEO = "Video"
 
 
