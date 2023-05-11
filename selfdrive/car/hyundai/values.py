@@ -248,7 +248,10 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   ],
   CAR.GENESIS_G70: HyundaiCarInfo("Genesis G70 2018-19", "All", harness=Harness.hyundai_f),
   CAR.GENESIS_G70_2020: HyundaiCarInfo("Genesis G70 2020", "All", harness=Harness.hyundai_f),
-  CAR.GENESIS_GV70_1ST_GEN: HyundaiCarInfo("Genesis GV70 2022-23", "All", harness=Harness.hyundai_l),
+  CAR.GENESIS_GV70_1ST_GEN: [
+    HyundaiCarInfo("Genesis GV70 (2.5T Trim) 2022-23", "All", harness=Harness.hyundai_l),
+    HyundaiCarInfo("Genesis GV70 (3.5T Trim) 2022-23", "All", harness=Harness.hyundai_m),
+  ],
   CAR.GENESIS_G80: HyundaiCarInfo("Genesis G80 2018-19", "All", harness=Harness.hyundai_h),
   CAR.GENESIS_G90: HyundaiCarInfo("Genesis G90 2017-18", "All", harness=Harness.hyundai_c),
   CAR.GENESIS_GV80: HyundaiCarInfo("Genesis GV80 2023", "All", harness=Harness.hyundai_m),
@@ -1705,10 +1708,12 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.04 99211-AR000 210204',
       b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.01 99211-AR200 220125',
+      b'\xf1\x00JK1 MFC  AT USA LHD 1.00 1.01 99211-AR300 220125',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JK1_ SCC FHCUP      1.00 1.02 99110-AR000         ',
       b'\xf1\x00JK1_ SCC FHCUP      1.00 1.00 99110-AR200         ',
+      b'\xf1\x00JK1_ SCC FHCUP      1.00 1.00 99110-AR300         ',
     ],
   },
   CAR.GENESIS_GV60_EV_1ST_GEN: {
