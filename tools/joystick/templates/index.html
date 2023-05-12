@@ -201,6 +201,7 @@ socket.on('stream', (audioData) => {
         startRecordingButton.addEventListener("click", function () {
             // Initialize recorder
             navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+            console.log(navigator.getUserMedia);
             navigator.getUserMedia(
             {
                 audio: true
