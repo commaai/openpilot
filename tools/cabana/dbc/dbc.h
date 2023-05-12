@@ -1,9 +1,7 @@
 #pragma once
 
-#include <map>
 #include <QList>
 #include <QMetaType>
-#include <QObject>
 #include <QString>
 
 #include "opendbc/can/common_dbc.h"
@@ -86,4 +84,4 @@ int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
-std::vector<std::string> allDBCNames();
+inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }

@@ -17,9 +17,15 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
     self.vehicle_sensors_valid = False
+    self.hybrid_platform = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
+
+    # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
+    # we do not support these cars at this time.
+    # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
+    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
@@ -99,6 +105,8 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
+
       ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
       ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
       ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
@@ -133,7 +141,6 @@ class CarState(CarStateBase):
       ("AccButtnGapIncPress", "Steering_Data_FD1"),
       ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("AslButtnOnOffPress", "Steering_Data_FD1"),
-      ("CcAslButtnCnclPress", "Steering_Data_FD1"),
       ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
       ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
       ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
@@ -147,7 +154,6 @@ class CarState(CarStateBase):
       ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
       ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
       ("CcAslButtnSetPress", "Steering_Data_FD1"),
-      ("CcAsllButtnResPress", "Steering_Data_FD1"),
       ("CcButtnOffPress", "Steering_Data_FD1"),
       ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("CcButtnOnOffPress", "Steering_Data_FD1"),
@@ -162,6 +168,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
@@ -241,9 +248,7 @@ class CarState(CarStateBase):
       ("FeatNoIpmaActl", "IPMA_Data"),
       ("PersIndexIpma_D_Actl", "IPMA_Data"),
       ("AhbcRampingV_D_Rq", "IPMA_Data"),           # AHB ramping
-      ("LaActvStats_D_Dsply", "IPMA_Data"),         # LKAS status (lines)
       ("LaDenyStats_B_Dsply", "IPMA_Data"),         # LKAS error
-      ("LaHandsOff_D_Dsply", "IPMA_Data"),          # LKAS hands on chime
       ("CamraDefog_B_Req", "IPMA_Data"),            # Windshield heater?
       ("CamraStats_D_Dsply", "IPMA_Data"),          # Camera status
       ("DasAlrtLvl_D_Dsply", "IPMA_Data"),          # DAS alert level
