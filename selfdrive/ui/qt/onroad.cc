@@ -471,7 +471,6 @@ void AnnotatedCameraWidget::initializeGL() {
   qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   prev_draw_t = millis_since_boot();
-  setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
 void AnnotatedCameraWidget::updateFrameMat() {

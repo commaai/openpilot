@@ -31,7 +31,6 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
-  void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
@@ -62,7 +61,6 @@ protected:
   GLuint textures[2];
   mat4 frame_mat;
   std::unique_ptr<QOpenGLShaderProgram> program;
-  QColor bg = QColor("#000000");
 
 #ifdef QCOM2
   EGLDisplay egl_display;
