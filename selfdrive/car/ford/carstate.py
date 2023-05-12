@@ -163,7 +163,7 @@ class CarState(CarStateBase):
       ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
       ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
 
-      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),  # Used to detect hybrid or ICE platform variant
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
     ]
 
     checks = [
