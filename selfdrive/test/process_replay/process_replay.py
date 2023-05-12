@@ -198,7 +198,7 @@ def controlsd_rcv_callback(msg, CP, cfg, frame):
 
   socks = [
     s for s in cfg.subs if
-    (frame) % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0
+    frame % int(service_list[msg.which()].frequency / service_list[s].frequency) == 0
   ]
   if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
@@ -236,12 +236,19 @@ def torqued_rcv_callback(msg, CP, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
 
-def rate_based_rcv_callback(msg, CP, cfg, frame):
-  resp_sockets = [
-    s for s in cfg.subs 
-    if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
-  ]
-  return bool(len(resp_sockets))
+class FrequencyBasedRcvCallback:
+  def __init__(self, trigger_msg_type):
+    self.trigger_msg_type = trigger_msg_type
+
+  def __call__(self, msg, CP, cfg, frame):
+    if msg.which() != self.trigger_msg_type:
+      return False
+
+    resp_sockets = [
+      s for s in cfg.subs
+      if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
+    ]
+    return bool(len(resp_sockets))
 
 
 def laikad_config_pubsub_callback(params, cfg):
@@ -295,7 +302,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
     config_callback=None,
     init_callback=get_car_params_callback,
-    should_recv_callback=rate_based_rcv_callback,
+    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["radarState", "modelV2"],
   ),
@@ -317,7 +324,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     config_callback=None,
     init_callback=get_car_params_callback,
-    should_recv_callback=rate_based_rcv_callback,
+    should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["driverStateV2"],
   ),
@@ -345,7 +352,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid"],
     config_callback=None,
     init_callback=get_car_params_callback,
-    should_recv_callback=rate_based_rcv_callback,
+    should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
     polled_pubs=["liveLocationKalman"],
   ),
