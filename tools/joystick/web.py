@@ -140,7 +140,7 @@ def handle_audio_blob(data):
   num_samples = int(fs * duration)
   samples = [volume * math.sin(2 * math.pi * k * f / fs) for k in range(0, num_samples)]
   output_bytes = array.array('f', samples).tobytes()
-  out_stream.write(output_bytes)
+  #out_stream.write(output_bytes)
 
   '''
 
@@ -150,7 +150,8 @@ def handle_audio_blob(data):
   print(out_stream.is_active())
   print(out_stream.get_write_available())
   print(out_stream.get_output_latency())
-  out_stream.write(output_bytes)
+  if out_stream.get_write_available() > 0:
+    out_stream.write(output_bytes)
   print(out_stream.is_active())
   print(out_stream.get_write_available())
   print(out_stream.get_output_latency())
@@ -208,7 +209,7 @@ def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
   #socketio.start_background_task(test_speaker)
-  #socketio.start_background_task(target=gen_audio)
+  socketio.start_background_task(target=gen_audio)
   socketio.run(app, host="0.0.0.0")
 
 
