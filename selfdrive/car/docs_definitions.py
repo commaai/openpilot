@@ -191,7 +191,7 @@ class CarInfo:
       harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
       #harness_connector = f'1 <a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col} connector</a>'
       #harness_parts = '<br>'.join([f"- {self.harness_kit.parts.count(part)} {part.value}" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)])
-      #harness_col = f'<details><summary>View</summary><br><sub>{harness_connector}<br>' + harness_parts  + '</sub></details>'
+      #harness_col = f'<details><summary>View</summary><br><sub>{harness_connector}<br>{harness_parts}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
