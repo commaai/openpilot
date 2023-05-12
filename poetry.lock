@@ -887,7 +887,7 @@ pgp = ["gpg"]
 
 [[package]]
 name = "efficientnet-pytorch"
-version = "0.6.3"
+version = "0.7.1"
 description = "EfficientNet implemented in PyTorch."
 category = "dev"
 optional = false
@@ -1127,6 +1127,38 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "fsspec"
+version = "2023.5.0"
+description = "File-system specification"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+
+[package.extras]
+abfs = ["adlfs"]
+adl = ["adlfs"]
+arrow = ["pyarrow (>=1)"]
+dask = ["dask", "distributed"]
+devel = ["pytest", "pytest-cov"]
+dropbox = ["dropbox", "dropboxdrivefs", "requests"]
+full = ["adlfs", "aiohttp (!=4.0.0a0,!=4.0.0a1)", "dask", "distributed", "dropbox", "dropboxdrivefs", "fusepy", "gcsfs", "libarchive-c", "ocifs", "panel", "paramiko", "pyarrow (>=1)", "pygit2", "requests", "s3fs", "smbprotocol", "tqdm"]
+fuse = ["fusepy"]
+gcs = ["gcsfs"]
+git = ["pygit2"]
+github = ["requests"]
+gs = ["gcsfs"]
+gui = ["panel"]
+hdfs = ["pyarrow (>=1)"]
+http = ["aiohttp (!=4.0.0a0,!=4.0.0a1)", "requests"]
+libarchive = ["libarchive-c"]
+oci = ["ocifs"]
+s3 = ["s3fs"]
+sftp = ["paramiko"]
+smb = ["smbprotocol"]
+ssh = ["paramiko"]
+tqdm = ["tqdm"]
+
+[[package]]
 name = "ft4222"
 version = "1.6.0"
 description = "Python wrapper around libFT4222."
@@ -1298,6 +1330,34 @@ all = ["chardet (>=2.2)", "genshi", "lxml"]
 chardet = ["chardet (>=2.2)"]
 genshi = ["genshi"]
 lxml = ["lxml"]
+
+[[package]]
+name = "huggingface-hub"
+version = "0.14.1"
+description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
+category = "dev"
+optional = false
+python-versions = ">=3.7.0"
+
+[package.dependencies]
+filelock = "*"
+fsspec = "*"
+packaging = ">=20.9"
+pyyaml = ">=5.1"
+requests = "*"
+tqdm = ">=4.42.1"
+typing-extensions = ">=3.7.4.3"
+
+[package.extras]
+all = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "black (>=23.1,<24.0)", "gradio", "jedi", "mypy (==0.982)", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
+cli = ["InquirerPy (==0.3.4)"]
+dev = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "black (>=23.1,<24.0)", "gradio", "jedi", "mypy (==0.982)", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "ruff (>=0.0.241)", "soundfile", "types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
+fastai = ["fastai (>=2.4)", "fastcore (>=1.3.27)", "toml"]
+quality = ["black (>=23.1,<24.0)", "mypy (==0.982)", "ruff (>=0.0.241)"]
+tensorflow = ["graphviz", "pydot", "tensorflow"]
+testing = ["InquirerPy (==0.3.4)", "Jinja2", "Pillow", "gradio", "jedi", "pytest", "pytest-cov", "pytest-env", "pytest-xdist", "soundfile"]
+torch = ["torch"]
+typing = ["types-PyYAML", "types-requests", "types-simplejson", "types-toml", "types-tqdm", "types-urllib3"]
 
 [[package]]
 name = "humanfriendly"
@@ -3793,20 +3853,22 @@ jeepney = ">=0.6"
 
 [[package]]
 name = "segmentation-models-pytorch"
-version = "0.2.1"
+version = "0.3.2"
 description = "Image segmentation models with pre-trained backbones. PyTorch."
 category = "dev"
 optional = false
-python-versions = ">=3.0.0"
+python-versions = ">=3.7.0"
 
 [package.dependencies]
-efficientnet-pytorch = "0.6.3"
+efficientnet-pytorch = "0.7.1"
+pillow = "*"
 pretrainedmodels = "0.7.4"
-timm = "0.4.12"
+timm = "0.6.12"
 torchvision = ">=0.5.0"
+tqdm = "*"
 
 [package.extras]
-test = ["pytest"]
+test = ["black (==22.3.0)", "flake8 (==4.0.1)", "flake8-docstrings (==1.6.0)", "mock", "pre-commit", "pytest"]
 
 [[package]]
 name = "send2trash"
@@ -4302,14 +4364,16 @@ numba = ["numba (>=0.55.2,<0.56.0)"]
 
 [[package]]
 name = "timm"
-version = "0.4.12"
+version = "0.6.12"
 description = "(Unofficial) PyTorch Image Models"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-torch = ">=1.4"
+huggingface-hub = "*"
+pyyaml = "*"
+torch = ">=1.7"
 torchvision = "*"
 
 [[package]]
@@ -4740,7 +4804,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "774e90b7d2bef68c6d219c8afc3d5717a104a04b9cd7b1b215655eb48fa62d04"
+content-hash = "0f8861fe679c2ba9a2a6365498a02ee353023e1a3ef882b117516fb7ea28fb58"
 
 [metadata.files]
 adal = [
@@ -5625,7 +5689,7 @@ dulwich = [
     {file = "dulwich-0.20.46.tar.gz", hash = "sha256:4f0e88ffff5db1523d93d92f1525fe5fa161318ffbaad502c1b9b3be7a067172"},
 ]
 efficientnet-pytorch = [
-    {file = "efficientnet_pytorch-0.6.3.tar.gz", hash = "sha256:6667459336893e9bf6367de3788ba449fed97f65da3b6782bf2204b6273a319f"},
+    {file = "efficientnet_pytorch-0.7.1.tar.gz", hash = "sha256:00b9b261effce59d2d47aae2ad238c29a2a65175470f41ada7ecac439b7c1ee1"},
 ]
 einops = [
     {file = "einops-0.5.0-py3-none-any.whl", hash = "sha256:055de7eeb3cb9e9710ef3085a811090c6b52e809b7044e8785824ed185f486d1"},
@@ -5841,6 +5905,10 @@ frozenlist = [
     {file = "frozenlist-1.3.1-cp39-cp39-win32.whl", hash = "sha256:5e77a8bd41e54b05e4fb2708dc6ce28ee70325f8c6f50f3df86a44ecb1d7a19b"},
     {file = "frozenlist-1.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:625d8472c67f2d96f9a4302a947f92a7adbc1e20bedb6aff8dbc8ff039ca6189"},
     {file = "frozenlist-1.3.1.tar.gz", hash = "sha256:3a735e4211a04ccfa3f4833547acdf5d2f863bfeb01cfd3edaffbc251f15cec8"},
+]
+fsspec = [
+    {file = "fsspec-2023.5.0-py3-none-any.whl", hash = "sha256:51a4ad01a5bb66fcc58036e288c0d53d3975a0df2a5dc59a93b59bade0391f2a"},
+    {file = "fsspec-2023.5.0.tar.gz", hash = "sha256:b3b56e00fb93ea321bc9e5d9cf6f8522a0198b20eb24e02774d329e9c6fb84ce"},
 ]
 ft4222 = [
     {file = "ft4222-1.6.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_24_aarch64.whl", hash = "sha256:64c80402e19ada10f142cf9d5f5b343a121689b94dfc31fafc7864db13ac7f79"},
@@ -6124,6 +6192,10 @@ hexdump = [
 html5lib = [
     {file = "html5lib-1.1-py2.py3-none-any.whl", hash = "sha256:0d78f8fde1c230e99fe37986a60526d7049ed4bf8a9fadbad5f00e22e58e041d"},
     {file = "html5lib-1.1.tar.gz", hash = "sha256:b2e5b40261e20f354d198eae92afc10d750afb487ed5e50f9c4eaf07c184146f"},
+]
+huggingface-hub = [
+    {file = "huggingface_hub-0.14.1-py3-none-any.whl", hash = "sha256:9fc619170d800ff3793ad37c9757c255c8783051e1b5b00501205eb43ccc4f27"},
+    {file = "huggingface_hub-0.14.1.tar.gz", hash = "sha256:9ab899af8e10922eac65e290d60ab956882ab0bf643e3d990b1394b6b47b7fbc"},
 ]
 humanfriendly = [
     {file = "humanfriendly-10.0-py2.py3-none-any.whl", hash = "sha256:1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477"},
@@ -8078,8 +8150,8 @@ secretstorage = [
     {file = "SecretStorage-3.3.3.tar.gz", hash = "sha256:2403533ef369eca6d2ba81718576c5e0f564d5cca1b58f73a8b23e7d4eeebd77"},
 ]
 segmentation-models-pytorch = [
-    {file = "segmentation_models_pytorch-0.2.1-py3-none-any.whl", hash = "sha256:98822571470867fb0f416c112c32f7f1d21702dd32195ec8f7736932c2de0486"},
-    {file = "segmentation_models_pytorch-0.2.1.tar.gz", hash = "sha256:86744552b04c6bedf7e10f7928791894d8d9b399b9ed58ed1a3236d2bf69ead6"},
+    {file = "segmentation_models_pytorch-0.3.2-py3-none-any.whl", hash = "sha256:dba48e7ead5d34fcb6e5c6d04d6d7c5a61a53fa84264e5481df788a22a1bd66b"},
+    {file = "segmentation_models_pytorch-0.3.2.tar.gz", hash = "sha256:8372733e57a10cb8f6b9e18a20577fbb3fb83549b6945664dc774a9b6d3ecd13"},
 ]
 send2trash = [
     {file = "Send2Trash-1.8.0-py3-none-any.whl", hash = "sha256:f20eaadfdb517eaca5ce077640cb261c7d2698385a6a0f072a4a5447fd49fa08"},
@@ -8443,8 +8515,8 @@ timezonefinder = [
     {file = "timezonefinder-6.1.3.tar.gz", hash = "sha256:f2ee561b1e7692b933fcd914df38800e93db7caf278e7328de7328829b04f275"},
 ]
 timm = [
-    {file = "timm-0.4.12-py3-none-any.whl", hash = "sha256:dba6b1702b7d24bf9f0f1c2fc394b4ee28f93cde5404f1dc732d63ccd00533b6"},
-    {file = "timm-0.4.12.tar.gz", hash = "sha256:b14be70dbd4528b5ca8657cf5bc2672c7918c3d9ebfbffe80f4785b54e884b1e"},
+    {file = "timm-0.6.12-py3-none-any.whl", hash = "sha256:3dfa19b82afa707acc0c2392a84c0e549dd9ea626c285fb2e8d9e4073b58dbd1"},
+    {file = "timm-0.6.12.tar.gz", hash = "sha256:8f1747121598e06a1ea2d00df16d332cc284cdd4596bdc136b490a2122d3aa91"},
 ]
 tinycss2 = [
     {file = "tinycss2-1.2.1-py3-none-any.whl", hash = "sha256:2b80a96d41e7c3914b8cda8bc7f705a4d9c49275616e886103dd839dfc847847"},
