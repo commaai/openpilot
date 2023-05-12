@@ -12,7 +12,9 @@ import pyaudio
 
 import array
 p = pyaudio.PyAudio()
-
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
 
 IMG_H, IMG_W = 540, 960
 
@@ -144,7 +146,14 @@ def handle_audio_blob(data):
 
   # per @yahweh comment explicitly convert to bytes sequence
   output_bytes = array.array('f', data).tobytes()
+  print('META')
+  print(out_stream.is_active())
+  print(out_stream.get_write_available())
+  print(out_stream.get_output_latency())
   out_stream.write(output_bytes)
+  print(out_stream.is_active())
+  print(out_stream.get_write_available())
+  print(out_stream.get_output_latency())
   
 
 
