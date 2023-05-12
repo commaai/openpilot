@@ -105,6 +105,8 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
+
       ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
       ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
       ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
@@ -162,12 +164,11 @@ class CarState(CarStateBase):
       ("AccButtnGapTogglePress", "Steering_Data_FD1"),
       ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
       ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
-
-      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
     ]
 
     checks = [
       # sig_address, frequency
+      ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
@@ -181,7 +182,6 @@ class CarState(CarStateBase):
       ("Steering_Data_FD1", 10),
       ("BodyInfo_3_FD1", 2),
       ("RCMStatusMessage2_FD1", 10),
-      ("VehicleOperatingModes", 100),
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
