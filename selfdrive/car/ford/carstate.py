@@ -22,7 +22,7 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    # Hybrid variants have a bug where a message from the PCM sends invalid checksums,
+    # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
     # we do not support these cars at this time.
     # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
     self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
