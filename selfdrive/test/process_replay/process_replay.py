@@ -73,7 +73,7 @@ class FakeSocket:
       self.recv_called.set()
       wait_for_event(self.recv_ready)
       self.recv_ready.clear()
-    return self.data.pop()
+    return self.data.pop(0)
 
   def send(self, data):
     if self.wait:
