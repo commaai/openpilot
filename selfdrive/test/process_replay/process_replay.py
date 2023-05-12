@@ -132,7 +132,7 @@ class ProcessConfig:
   config_callback: Optional[Callable]
   init_callback: Optional[Callable]
   should_recv_callback: Optional[Callable]
-  tolerance: Optional[float]
+  tolerance: Optional[float] = None
   environ: Dict[str, str] = field(default_factory=dict)
   subtest_name: str = ""
   field_tolerances: Dict[str, float] = field(default_factory=dict)
@@ -292,7 +292,6 @@ CONFIGS = [
     config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=radar_rcv_callback,
-    tolerance=None,
     drained_pub="can",
   ),
   ProcessConfig(
@@ -314,7 +313,6 @@ CONFIGS = [
     config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
-    tolerance=None,
     polled_pubs=["cameraOdometry"],
   ),
   ProcessConfig(
@@ -364,7 +362,6 @@ CONFIGS = [
     config_callback=None,
     init_callback=None,
     should_recv_callback=None,
-    tolerance=None,
   ),
   ProcessConfig(
     proc_name="laikad",
