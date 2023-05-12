@@ -8,6 +8,13 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import  extract_image
 from flask_socketio import SocketIO
 
+import pyaudio
+
+import array
+import math
+p = pyaudio.PyAudio()
+
+
 IMG_H, IMG_W = 540, 960
 
 app = Flask(__name__)
@@ -16,7 +23,7 @@ socketio = SocketIO(app, async_mode='threading')
 
 @app.route("/")
 def hello_world():
-  return render_template('index.html')
+  return render_template('index2.html')
 
 
 #camera.py
@@ -24,10 +31,22 @@ def hello_world():
 import cv2
 import numpy as np
 
+
+
+fs = 44100  # sampling rate, Hz, must be integer
+# for paFloat32 sample values must be in range [-1.0, 1.0]
+out_stream = p.open(format=pyaudio.paFloat32,
+            channels=1,
+            rate=fs,
+            output=True)
+
+
+
 class VideoCamera(object):
   def __init__(self):
     self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
     self.cnt = 0
+
 
 
   def __del__(self):
@@ -102,17 +121,51 @@ def handle_timeout():
       pm.send('testJoystick', dat)
     time.sleep(0.1)
 
-import pyaudio
-
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 CHUNK = 1024
 
- 
-audio1 = pyaudio.PyAudio()
 
-p = pyaudio.PyAudio()
+file_name = 'file.ogg'
+
+@socketio.on('opus_blob')
+def handle_audio_blob(data):
+  volume = 0.5  # range [0.0, 1.0]
+  duration = 1.0  # in seconds, may be float
+  f = 440.0  # sine frequency, Hz, may be float
+
+  # generate samples, note conversion to float32 array
+  num_samples = int(fs * duration)
+  samples = [volume * math.sin(2 * math.pi * k * f / fs) for k in range(0, num_samples)]
+
+  # per @yahweh comment explicitly convert to bytes sequence
+  output_bytes = array.array('f', samples).tobytes()
+  #decoder.decode(data, len(data), 50)
+
+  out_stream.write(output_bytes)
+  #out_stream.write(data)
+  ##with open(file_name, "wb") as binary_file:
+   #    print(len(data))
+   #    binary_file.write(data)
+  #from copy import data
+  #print(type(data))
+  #print(len(data))
+  #print(len(bytearray(data)))
+  #decoded_pcm = opus_decoder.decode(bytearray(data))
+
+
+  #print(data)
+  #print(data.keys())
+  #x = data['x']
+  #y = data['y']
+
+
+
+ 
+
+ 
+
 stream = p.open(format=FORMAT,
                 channels=CHANNELS,
                 rate=RATE,
@@ -130,7 +183,7 @@ def gen_audio():
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
-  socketio.start_background_task(target=gen_audio)
+  #socketio.start_background_task(target=gen_audio)
   socketio.run(app, host="0.0.0.0")
 
 
