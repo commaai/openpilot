@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
     if self.CS.hybrid_platform:
-      events.add(car.CarEvent.EventName.dashcamMode)
+      events.add(car.CarEvent.EventName.startupNoControl)
 
     ret.events = events.to_msg()
 
