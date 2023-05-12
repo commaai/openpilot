@@ -14,11 +14,11 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pres
   values = {}
   if len(ldw_stock_values):
     values = {s: ldw_stock_values[s] for s in [
-      "LDW_SW_Warnung_links",      # Blind spot in warning mode on left side due to lane departure
-      "LDW_SW_Warnung_rechts",     # Blind spot in warning mode on right side due to lane departure
-      "LDW_Seite_DLCTLC",          # Direction of most likely lane departure (left or right)
-      "LDW_DLC",                   # Lane departure, distance to line crossing
-      "LDW_TLC",                   # Lane departure, time to line crossing
+      "LDW_SW_Warnung_links",   # Blind spot in warning mode on left side due to lane departure
+      "LDW_SW_Warnung_rechts",  # Blind spot in warning mode on right side due to lane departure
+      "LDW_Seite_DLCTLC",       # Direction of most likely lane departure (left or right)
+      "LDW_DLC",                # Lane departure, distance to line crossing
+      "LDW_TLC",                # Lane departure, time to line crossing
     ]}
 
   values.update({
