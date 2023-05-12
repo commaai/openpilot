@@ -96,9 +96,9 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], can_data, car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
-    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, can_data, car_fw, experimental_long, docs)
 
     # Set common params using fields set by the car interface
     # TODO: get actual value, for now starting with reasonable value for
@@ -115,7 +115,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], can_data, car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod

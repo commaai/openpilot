@@ -11,7 +11,7 @@ GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, can_data, car_fw, experimental_long, docs):
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
@@ -19,6 +19,14 @@ class CarInterface(CarInterfaceBase):
     # Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.FOCUS_MK4, CAR.MAVERICK_MK1}
+
+    # Hybrids are also not supported at this time due to a PCM bug
+    vehicle_operating_modes = next(filter(lambda c: c.address == 359 and c.src == 0, can_data), None)
+    if vehicle_operating_modes is not None:
+      # TrnAinTq_D_Qf is always 3 on ICE variants
+      pcm_qf = (vehicle_operating_modes.dat[5] >> 3) & 0x7  # TrnAinTq_D_Qf
+      if pcm_qf != 3:
+        ret.dashcamOnly = True
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
