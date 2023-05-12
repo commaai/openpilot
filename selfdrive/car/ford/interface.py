@@ -72,20 +72,14 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.44
     return ret
 
-  def run_can_hooks(self, can_msgs):
-    for can_msg in can_msgs:
-      self.update(self.CC, can_msg)
-
-    # Hybrids are not supported at this time due to a PCM bug
-    if self.CS.is_hybrid:
-      self.CP.dashcamOnly = True
-
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
+    if self.CS.hybrid_platform:
+      events.add(car.CarEvent.EventName.dashcamMode)
 
     ret.events = events.to_msg()
 

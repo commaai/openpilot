@@ -17,12 +17,12 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
     self.vehicle_sensors_valid = False
+    self.hybrid_platform = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
-    # TODO: not sure which value is best to compare to
-    self.is_hybrid = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving

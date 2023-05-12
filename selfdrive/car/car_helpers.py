@@ -131,8 +131,6 @@ def fingerprint(logcan, sendcan, num_pandas):
   # drain CAN socket so we always get the latest messages
   messaging.drain_sock_raw(logcan)
 
-  can_data = []
-
   while not done:
     a = get_one_can(logcan)
 
@@ -140,7 +138,6 @@ def fingerprint(logcan, sendcan, num_pandas):
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
-        can_data.append(can)
         if can.src not in finger:
           finger[can.src] = {}
         finger[can.src][can.address] = len(can.dat)
@@ -179,24 +176,21 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
-  return car_fingerprint, finger, can_data, vin, car_fw, source, exact_match
+  return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, can_data, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=fingerprints, error=True)
     candidate = "mock"
 
   CarInterface, CarController, CarState = interfaces[candidate]
-  CP = CarInterface.get_params(candidate, fingerprints, can_data, car_fw, experimental_long_allowed, docs=False)
+  CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  CI = CarInterface(CP, CarController, CarState)
-  CI.run_can_hooks()
-
-  return CI, CP
+  return CarInterface(CP, CarController, CarState), CP
