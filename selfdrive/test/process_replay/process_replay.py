@@ -376,8 +376,8 @@ CONFIGS = [
   ProcessConfig(
     proc_name="torqued",
     pub_sub={
+      "carControl": [], "carState": [],
       "liveLocationKalman": ["liveTorqueParameters"],
-      "carState": [], "carControl": [],
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
