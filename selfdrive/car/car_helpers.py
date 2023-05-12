@@ -196,4 +196,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  return CarInterface(CP, CarController, CarState), CP
+  CI = CarInterface(CP, CarController, CarState)
+  CI.run_can_hooks()
+
+  return CI, CP

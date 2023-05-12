@@ -21,6 +21,9 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
+    # TODO: not sure which value is best to compare to
+    self.is_hybrid = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
     self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
@@ -156,6 +159,8 @@ class CarState(CarStateBase):
       ("AccButtnGapTogglePress", "Steering_Data_FD1"),
       ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
       ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
+
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),  # Used to detect hybrid or ICE platform variant
     ]
 
     checks = [
@@ -173,6 +178,7 @@ class CarState(CarStateBase):
       ("Steering_Data_FD1", 10),
       ("BodyInfo_3_FD1", 2),
       ("RCMStatusMessage2_FD1", 10),
+      ("VehicleOperatingModes", 100),
     ]
 
     if CP.transmissionType == TransmissionType.automatic:

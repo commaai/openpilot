@@ -193,6 +193,10 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
+  def run_can_hooks(self, can_msgs: list):
+    pass
+
+  @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
