@@ -126,10 +126,10 @@ RATE = 44100
 CHUNK = 1024
 
 
-file_name = 'file.ogg'
-
+import math
 @socketio.on('audio_blob')
 def handle_audio_blob(data):
+  '''
   volume = 0.5  # range [0.0, 1.0]
   duration = 16384/RATE  # in seconds, may be float
   f = 440.0  # sine frequency, Hz, may be float
@@ -144,10 +144,7 @@ def handle_audio_blob(data):
 
   # per @yahweh comment explicitly convert to bytes sequence
   output_bytes = array.array('f', data).tobytes()
-  print(len(data), len(output_bytes))
-
   out_stream.write(output_bytes)
-  '''
   
 
 
