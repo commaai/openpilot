@@ -11,7 +11,6 @@ from flask_socketio import SocketIO
 import pyaudio
 
 import array
-import math
 p = pyaudio.PyAudio()
 
 
@@ -23,7 +22,7 @@ socketio = SocketIO(app, async_mode='threading')
 
 @app.route("/")
 def hello_world():
-  return render_template('index2.html')
+  return render_template('index.html')
 
 
 #camera.py
@@ -129,37 +128,25 @@ CHUNK = 1024
 
 file_name = 'file.ogg'
 
-@socketio.on('opus_blob')
+@socketio.on('audio_blob')
 def handle_audio_blob(data):
+  '''
   volume = 0.5  # range [0.0, 1.0]
-  duration = 1.0  # in seconds, may be float
+  duration = 16384/RATE  # in seconds, may be float
   f = 440.0  # sine frequency, Hz, may be float
 
   # generate samples, note conversion to float32 array
   num_samples = int(fs * duration)
   samples = [volume * math.sin(2 * math.pi * k * f / fs) for k in range(0, num_samples)]
+  output_bytes = array.array('f', samples).tobytes()
 
   # per @yahweh comment explicitly convert to bytes sequence
-  output_bytes = array.array('f', samples).tobytes()
-  #decoder.decode(data, len(data), 50)
+  '''
+  output_bytes = array.array('f', data).tobytes()
+  print(len(data), len(output_bytes))
 
   out_stream.write(output_bytes)
-  #out_stream.write(data)
-  ##with open(file_name, "wb") as binary_file:
-   #    print(len(data))
-   #    binary_file.write(data)
-  #from copy import data
-  #print(type(data))
-  #print(len(data))
-  #print(len(bytearray(data)))
-  #decoded_pcm = opus_decoder.decode(bytearray(data))
-
-
-  #print(data)
-  #print(data.keys())
-  #x = data['x']
-  #y = data['y']
-
+  
 
 
  

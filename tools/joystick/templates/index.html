@@ -217,8 +217,8 @@ socket.on('stream', (audioData) => {
 
                 // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/createScriptProcessor
                 // bufferSize: the onaudioprocess event is called when the buffer is full
-                var bufferSize = 2048;
-                var numberOfInputChannels = 2;
+                var bufferSize = 16384;
+                var numberOfInputChannels = 1;
                 var numberOfOutputChannels = 2;
                 if (context.createScriptProcessor) {
                     recorder = context.createScriptProcessor(bufferSize, numberOfInputChannels, numberOfOutputChannels);
@@ -227,8 +227,12 @@ socket.on('stream', (audioData) => {
                 }
 
                 recorder.onaudioprocess = function (e) {
+                    var arrr = new Float32Array(e.inputBuffer.getChannelData(0))
+                    console.log(arrr)
+                    socket.emit('audio_blob', arrr);
+
+
                     leftchannel.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-                    rightchannel.push(new Float32Array(e.inputBuffer.getChannelData(1)));
                     recordingLength += bufferSize;
                 }
 
