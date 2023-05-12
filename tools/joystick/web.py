@@ -130,7 +130,6 @@ file_name = 'file.ogg'
 
 @socketio.on('audio_blob')
 def handle_audio_blob(data):
-  '''
   volume = 0.5  # range [0.0, 1.0]
   duration = 16384/RATE  # in seconds, may be float
   f = 440.0  # sine frequency, Hz, may be float
@@ -139,13 +138,16 @@ def handle_audio_blob(data):
   num_samples = int(fs * duration)
   samples = [volume * math.sin(2 * math.pi * k * f / fs) for k in range(0, num_samples)]
   output_bytes = array.array('f', samples).tobytes()
+  out_stream.write(output_bytes)
+
+  '''
 
   # per @yahweh comment explicitly convert to bytes sequence
-  '''
   output_bytes = array.array('f', data).tobytes()
   print(len(data), len(output_bytes))
 
   out_stream.write(output_bytes)
+  '''
   
 
 
@@ -199,9 +201,9 @@ def test_speaker():
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
-  socketio.start_background_task(test_speaker)
+  #socketio.start_background_task(test_speaker)
   #socketio.start_background_task(target=gen_audio)
-  socketio.run(app, host="0.0.0.0", ssl_context='adhoc')
+  socketio.run(app, host="0.0.0.0")
 
 
 if __name__ == '__main__':
