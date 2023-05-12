@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 244 Supported Cars
+# 251 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|Harness|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -29,8 +29,12 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Chrysler|Pacifica 2019-20|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica 2019-20">FCA</a>||
 |Chrysler|Pacifica 2021|All|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica 2021">FCA</a>||
 |Chrysler|Pacifica Hybrid 2017-18|Adaptive Cruise Control (ACC)|Stock|0 mph|9 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2017-18">FCA</a>||
-|Chrysler|Pacifica Hybrid 2019-22|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2019-22">FCA</a>||
+|Chrysler|Pacifica Hybrid 2019-23|Adaptive Cruise Control (ACC)|Stock|0 mph|39 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Chrysler&model=Pacifica Hybrid 2019-23">FCA</a>||
 |comma|body|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|None||
+|Ford|Bronco Sport 2021-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Bronco Sport 2021-22">Ford Q3</a>||
+|Ford|Escape 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Escape 2020-22">Ford Q3</a>||
+|Ford|Explorer 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer 2020-22">Ford Q3</a>||
+|Ford|Kuga 2020-22|Adaptive Cruise Control with Lane Centering|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga 2020-22">Ford Q3</a>||
 |Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2018-19">Hyundai F</a>||
 |Genesis|G70 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2020">Hyundai F</a>||
 |Genesis|G80 2017|All|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G80 2017">Hyundai J</a>||
@@ -38,7 +42,9 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Genesis|G90 2017-18|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G90 2017-18">Hyundai C</a>||
 |Genesis|GV60 (Advanced Trim) 2023[<sup>5</sup>](#footnotes)|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV60 (Advanced Trim) 2023">Hyundai A</a>||
 |Genesis|GV60 (Performance Trim) 2023[<sup>5</sup>](#footnotes)|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV60 (Performance Trim) 2023">Hyundai K</a>||
-|Genesis|GV70 2022-23[<sup>5</sup>](#footnotes)|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV70 2022-23">Hyundai L</a>||
+|Genesis|GV70 (2.5T Trim) 2022-23[<sup>5</sup>](#footnotes)|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV70 (2.5T Trim) 2022-23">Hyundai L</a>||
+|Genesis|GV70 (3.5T Trim) 2022-23[<sup>5</sup>](#footnotes)|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV70 (3.5T Trim) 2022-23">Hyundai M</a>||
+|Genesis|GV80 2023[<sup>5</sup>](#footnotes)|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=GV80 2023">Hyundai M</a>||
 |GMC|Acadia 2018[<sup>3</sup>](#footnotes)|Adaptive Cruise Control (ACC)|openpilot|0 mph|7 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=GMC&model=Acadia 2018">OBD-II</a>|<a href="https://www.youtube.com/watch?v=0ZN6DdsBUZo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |GMC|Sierra 1500 2020-21|Driver Alert Package II|openpilot available[<sup>1</sup>](#footnotes)|3 mph|6 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=GMC&model=Sierra 1500 2020-21">GM</a>|<a href="https://youtu.be/5HbNoBLzRwE" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Honda|Accord 2018-22|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|3 mph|[![star](assets/icon-star-empty.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Honda&model=Accord 2018-22">Honda Bosch A</a>|<a href="https://www.youtube.com/watch?v=mrUwlj3Mi58" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
@@ -145,6 +151,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Lexus|RX Hybrid 2017-19|All|openpilot available[<sup>2</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-empty.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=RX Hybrid 2017-19">Toyota</a>||
 |Lexus|RX Hybrid 2020-21|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=RX Hybrid 2020-21">Toyota</a>||
 |Lexus|UX Hybrid 2019-22|All|openpilot|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lexus&model=UX Hybrid 2019-22">Toyota</a>||
+|Lincoln|Aviator 2021|Co-Pilot360 Plus|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Lincoln&model=Aviator 2021">Ford Q3</a>||
 |MAN|eTGE 2020-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=MAN&model=eTGE 2020-23">J533</a>|<a href="https://youtu.be/4100gLeabmo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |MAN|TGE 2017-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,9</sup>](#footnotes)|0 mph|31 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=MAN&model=TGE 2017-23">J533</a>|<a href="https://youtu.be/4100gLeabmo" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>|
 |Mazda|CX-5 2022-23|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<a href="https://comma.ai/shop/comma-three.html?make=Mazda&model=CX-5 2022-23">Mazda</a>||
@@ -282,6 +289,7 @@ If your car has the following packages or features, then it's a good candidate f
 | Make | Required Package/Features |
 | ---- | ------------------------- |
 | Acura | Any car with AcuraWatch Plus will work. AcuraWatch Plus comes standard on many newer models. |
+| Ford | Any car with Lane Centering will likely work. |
 | Honda | Any car with Honda Sensing will work. Honda Sensing comes standard on many newer models. |
 | Subaru | Any car with EyeSight will work. EyeSight comes standard on many newer models. |
 | Nissan | Any car with ProPILOT will likely work. |

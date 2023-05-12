@@ -119,6 +119,7 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   cabana::Signal *s = dbc_file->addSignal(id, sig);
 
   if (s != nullptr) {
+    dbc_sources.insert(id.source);
     for (uint8_t source : dbc_sources) {
       emit signalAdded({.source = source, .address = id.address}, s);
     }
@@ -186,6 +187,15 @@ QString DBCManager::newSignalName(const MessageId &id) {
   assert(sources_dbc_file); // This should be impossible
   auto [_, dbc_file] = *sources_dbc_file;
   return dbc_file->newSignalName(id);
+}
+
+const QList<uint8_t>& DBCManager::mask(const MessageId &id) const {
+  auto sources_dbc_file = findDBCFile(id);
+  if (!sources_dbc_file) {
+    return empty_mask;
+  }
+  auto [_, dbc_file] = *sources_dbc_file;
+  return dbc_file->mask(id);
 }
 
 std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {

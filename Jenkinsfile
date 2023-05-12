@@ -19,8 +19,7 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 fi
-
-if [ -d /data/openpilot ]; then
+if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
 fi
 
@@ -185,7 +184,7 @@ pipeline {
           }
         }
 
-        stage('camerad-ar') {
+        stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-ar0231", [
@@ -193,12 +192,6 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
-          }
-        }
-
-        stage('camerad-ox') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
             phone_steps("tici-ox03c10", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
