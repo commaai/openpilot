@@ -12,7 +12,7 @@
 // FindSignalModel
 
 QVariant FindSignalModel::headerData(int section, Qt::Orientation orientation, int role) const {
-  static QString titles[] = {"Id", "Start Bit : size", "(time, value)"};
+  static QString titles[] = {"Id", "Start Bit, size", "(time, value)"};
   if (role != Qt::DisplayRole) return {};
   return orientation == Qt::Horizontal ? titles[section] : QString::number(section + 1);
 }
@@ -22,7 +22,7 @@ QVariant FindSignalModel::data(const QModelIndex &index, int role) const {
     const auto &s = filtered_signals[index.row()];
     switch (index.column()) {
       case 0: return s.id.toString();
-      case 1: return QString("%1 : %2").arg(s.sig.start_bit).arg(s.sig.size);
+      case 1: return QString("%1, %2").arg(s.sig.start_bit).arg(s.sig.size);
       case 2: return s.values.join(" ");
     }
   }
