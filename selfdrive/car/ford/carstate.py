@@ -231,7 +231,7 @@ class CarState(CarStateBase):
       ("FcwMemStat_B_Actl", "ACCDATA_3"),           # FCW enabled setting
       ("AccTGap_B_Dsply", "ACCDATA_3"),             # ACC time gap display setting
       ("CadsAlignIncplt_B_Actl", "ACCDATA_3"),
-      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC follow mode display setting
+      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC lead indicator
       ("CadsRadrBlck_B_Actl", "ACCDATA_3"),
       ("CmbbPostEvnt_B_Dsply", "ACCDATA_3"),        # AEB event status
       ("AccStopMde_B_Dsply", "ACCDATA_3"),          # ACC stop mode display setting
