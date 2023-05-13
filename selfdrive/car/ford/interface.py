@@ -76,6 +76,11 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
+    if not self.CS.vehicle_sensors_valid:
+      events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
+    if self.CS.hybrid_platform:
+      events.add(car.CarEvent.EventName.startupNoControl)
+
     ret.events = events.to_msg()
 
     return ret

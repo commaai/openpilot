@@ -12,6 +12,7 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
 
 void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
   auto prev_src_size = sources.size();
+  auto prev_msg_size = last_msgs.size();
   for (auto it = messages->begin(); it != messages->end(); ++it) {
     const auto &id = it.key();
     last_msgs[id] = it.value();
@@ -21,7 +22,7 @@ void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
     emit sourcesUpdated(sources);
   }
   emit updated();
-  emit msgsReceived(messages);
+  emit msgsReceived(messages, prev_msg_size != last_msgs.size());
   delete messages;
   processing = false;
 }
@@ -48,6 +49,12 @@ bool AbstractStream::postEvents() {
     return true;
   }
   return false;
+}
+
+const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id) const {
+  static std::vector<const CanEvent *> empty_events;
+  auto it = events_.find(id);
+  return it != events_.end() ? it->second : empty_events;
 }
 
 const CanData &AbstractStream::lastMessage(const MessageId &id) {
@@ -81,7 +88,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   // use a timer to prevent recursive calls
   QTimer::singleShot(0, [this]() {
     emit updated();
-    emit msgsReceived(&last_msgs);
+    emit msgsReceived(&last_msgs, true);
   });
 }
 
@@ -158,7 +165,8 @@ static inline QColor blend(const QColor &a, const QColor &b) {
 void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq) {
   ts = current_sec;
   ++count;
-  freq = in_freq == 0 ? count / std::max(1.0, current_sec) : in_freq;
+  const double sec_to_first_event = current_sec - (can->allEvents().front()->mono_time / 1e9 - can->routeStartTime());
+  freq = in_freq == 0 ? count / std::max(1.0, sec_to_first_event) : in_freq;
   if (dat.size() != size) {
     dat.resize(size);
     bit_change_counts.resize(size);
