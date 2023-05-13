@@ -120,9 +120,6 @@ void SearchDlg::showDataTableContextMenu(const QPoint &pt){
 
         dbc()->addSignal(filteredSignals[index].messageID, sig);
     });
-
-    if (menu.exec(data_table->mapToGlobal(pt))) {
-    }
   }
 }
 
