@@ -60,6 +60,7 @@ protected:
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
   void findSimilarBits();
+  void findSignal();
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
