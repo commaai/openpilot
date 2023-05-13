@@ -20,7 +20,12 @@ IMG_H, IMG_W = 540, 960
 AUDIO_RATE = 44100
 
 
-app = Flask(__name__)
+app = Flask(
+  __name__,
+  static_url_path='',
+  static_folder='static',
+  template_folder='templates'
+)
 pm = messaging.PubMaster(['testJoystick'])
 socketio = SocketIO(app, async_mode='threading')
 
@@ -162,7 +167,7 @@ def gen_audio():
     data = stream.read(CHUNK, exception_on_overflow=False)
     data = np.frombuffer(data, dtype=np.int16)
     socketio.emit('stream', data.tolist())
-    time.sleep(0.0001)
+    # time.sleep(0.0001)
 
 
 
@@ -171,7 +176,7 @@ def main():
   socketio.start_background_task(gen)
   #socketio.start_background_task(test_speaker)
   socketio.start_background_task(target=gen_audio)
-  socketio.run(app, host="0.0.0.0")
+  socketio.run(app, host="0.0.0.0", ssl_context="adhoc", port=5000)
 
 
 if __name__ == '__main__':
