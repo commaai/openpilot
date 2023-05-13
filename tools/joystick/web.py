@@ -46,7 +46,7 @@ out_stream = p.open(format=pyaudio.paFloat32,
 
 class VideoCamera(object):
   def __init__(self):
-    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
+    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
     self.cnt = 0
 
 
