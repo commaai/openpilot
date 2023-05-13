@@ -117,3 +117,5 @@ std::pair<int, int> getSignalRange(const cabana::BaseSignal *s) {
   int to = from + s->size - 1;
   return {from, to};
 }
+
+std::vector<std::string> allDBCNames() { return get_dbc_names(); }

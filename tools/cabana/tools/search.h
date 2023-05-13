@@ -35,6 +35,12 @@ enum ScanType {
 };
 
 
+class SearchHistory{
+  public:
+    SignalFiltererParams params;
+    std::vector<SearchSignal> removedSignals;
+};
+
 class SearchDlg : public QDialog {
   Q_OBJECT
 
@@ -55,8 +61,6 @@ private:
 
   std::vector<ScanType> enabledScanTypes();
 
-  SignalFilterer* getCurrentFilterer();
-
   uint32_t scan_bits_range_min = 1;
   uint32_t scan_bits_range_max = 32;
 
@@ -76,7 +80,7 @@ private:
   QTableWidget *data_table;
 
   // Search history, at a specific time
-  std::vector<std::shared_ptr<SignalFilterer>> searchHistory;
+  std::vector<SearchHistory> searchHistory;
 
   bool scanningStarted();
 };

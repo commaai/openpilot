@@ -1,15 +1,14 @@
 #include "tools/cabana/tools/search.h"
 
-std::map<ScanType, std::string> scanTypeToDisplayName {
-  {ExactValue, "Exact value"},
-  {BiggerThan, "Bigger than..."},
-  {SmallerThan, "Smaller than..."},
-  {ValueBetween, "Value between..."},
-  {IncreasedValue, "Increased value"},
-  {DecreasedValue, "Decreased value"},
-  {ChangedValue, "Changed value"},
-  {UnchangedValue, "Unchanged value"},
-  {UnknownInitialValue, "Unknown initial value"},
+std::map<ScanType, std::tuple<std::string, filter_function>> scanTypeToScanData {
+  {ExactValue, {"Exact value", exactValueFilter}},
+  {BiggerThan, {"Bigger than...", biggerThanFilter}},
+  {SmallerThan, {"Smaller than...", smallerThanFilter}},
+  {IncreasedValue, {"Increased value", increasedValueFilter}},
+  {DecreasedValue, {"Decreased value", decreasedValueFilter}},
+  {ChangedValue, {"Changed value", changedValueFilter}},
+  {UnchangedValue, {"Unchanged value", unchangedValueFilter}},
+  {UnknownInitialValue, {"Unknown initial value", unknownInitialValueFilter}}
 };
 
 uint64_t getBitValue(uint64_t val, int offset, int size){
@@ -165,7 +164,7 @@ void SearchDlg::update(){
 
     for(auto scanType : enabledScanTypes()){
         if(scanType == selectedValue) selectedIndex = i;
-        scan_type->addItem(QString::fromStdString(scanTypeToDisplayName[scanType]), QVariant(scanType));
+        scan_type->addItem(QString::fromStdString(std::get<0>(scanTypeToScanData[scanType])), QVariant(scanType));
         i++;
     }
 
@@ -236,7 +235,7 @@ void SearchDlg::firstScan(){
     update();
 }
 
-SignalFilterer* SearchDlg::getCurrentFilterer() {
+void SearchDlg::nextScan(){
     SignalFiltererParams params {
         .ts_scan = can->currentSec(),
         .ts_prev = -1,
@@ -245,41 +244,17 @@ SignalFilterer* SearchDlg::getCurrentFilterer() {
     };
 
     if(searchHistory.size() > 0){
-        params.ts_prev = searchHistory[searchHistory.size() - 1]->params.ts_scan;
+        params.ts_prev = searchHistory[searchHistory.size() - 1].params.ts_scan;
     }
 
-    if(selectedScanType == ExactValue){
-        return new ExactValueSignalFilterer(params);
-    }
-    if(selectedScanType == BiggerThan){
-        return new BiggerThanSignalFilterer(params);
-    }
-    if(selectedScanType == SmallerThan){
-        return new SmallerThanSignalFilterer(params);
-    }
-    if(selectedScanType == UnknownInitialValue){
-        return new UnknownInitialValueSignalFilter(params);
-    }
-    if(selectedScanType == UnchangedValue){
-        return new UnchangedValueSignalFilter(params);
-    }
-    if(selectedScanType == ChangedValue){
-        return new ChangedValueSignalFilter(params);
-    }
-    if(selectedScanType == IncreasedValue){
-        return new IncreasedValueSignalFilter(params);
-    }
-    if(selectedScanType == DecreasedValue){
-        return new DecreasedValueSignalFilter(params);
-    }
+    auto searchResult = filter(filteredSignals, params, std::get<1>(scanTypeToScanData[selectedScanType]));
 
-    throw std::runtime_error("Unsupported scan type...");
-}
+    filteredSignals = std::get<0>(searchResult);
 
-void SearchDlg::nextScan(){
-    searchHistory.push_back(std::shared_ptr<SignalFilterer>(getCurrentFilterer()));
-
-    filteredSignals = searchHistory[searchHistory.size() - 1]->filter(filteredSignals);
+    searchHistory.push_back({
+        .params = params,
+        .removedSignals = std::get<1>(searchResult)
+    });
 
     update();
 }
@@ -288,7 +263,7 @@ void SearchDlg::undoScan(){
     auto searchToUndo = searchHistory[searchHistory.size() - 1];
 
     // copy signals that were filtered out by this search back into the list. TODO: resort them?
-    std::copy(searchToUndo->filteredSignals.begin(), searchToUndo->filteredSignals.end(), std::back_inserter(filteredSignals));
+    std::copy(searchToUndo.removedSignals.begin(), searchToUndo.removedSignals.end(), std::back_inserter(filteredSignals));
 
     searchHistory.pop_back();
 

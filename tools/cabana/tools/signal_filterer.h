@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QDialog>
 #include <QPushButton>
 #include <QButtonGroup>
@@ -42,7 +44,7 @@ class SearchSignal : public cabana::BaseSignal {
 
         MessageId messageID;
 
-        int64_t getValue(double ts){
+        int64_t getValue(double ts) const {
             const auto &events = can->events(messageID);
             CanEventLessThan comp;
 
@@ -56,11 +58,11 @@ class SearchSignal : public cabana::BaseSignal {
             return get_raw_value((*event)->dat, (*event)->size, *this);
         }
 
-        int64_t getCurrentValue(){
+        int64_t getCurrentValue() const {
           return get_raw_value((const uint8_t*)can->last_msgs[messageID].dat.constData(), can->last_msgs[messageID].dat.size(), *this);
         }
 
-        QString toString(){
+        QString toString() const {
             auto range = getSignalRange(this);
             return QString("%1:%2").arg(std::get<0>(range)).arg(std::get<1>(range));
         }
@@ -74,91 +76,16 @@ struct SignalFiltererParams{
     uint64_t value2;
 };
 
-class SignalFilterer {
-  public:
-    // signals that were filtered out, for the ability to undo scans
-    std::vector<SearchSignal> filteredSignals;
+using filter_return = std::tuple<std::vector<SearchSignal>, std::vector<SearchSignal>>;
+using filter_function = std::function<bool(const SearchSignal &sig, const SignalFiltererParams &params)>;
 
-    SignalFiltererParams params;
+filter_return filter(std::vector<SearchSignal> &in, const SignalFiltererParams &params, filter_function signalMatches);
 
-    virtual bool signalMatches(SearchSignal &sig) = 0;
-
-    SignalFilterer(SignalFiltererParams params_in) : params(params_in) {}
-
-    virtual ~SignalFilterer() = default;
-
-    std::vector<SearchSignal> filter(std::vector<SearchSignal> &in) {
-      std::vector<SearchSignal> ret;
-
-      filteredSignals.clear();
-
-      std::copy_if(in.begin(), in.end(), std::back_inserter(ret), [=] (SearchSignal sig) { return signalMatches(sig); });
-      std::copy_if(in.begin(), in.end(), std::back_inserter(filteredSignals), [=] (SearchSignal sig) { return !signalMatches(sig); });
-
-      return ret;
-    }
-};
-
-class ExactValueSignalFilterer : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) == params.value1;
-  }
-};
-
-class BiggerThanSignalFilterer : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) > params.value1;
-  }
-};
-
-class SmallerThanSignalFilterer : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) < params.value1;
-  }
-};
-
-class UnknownInitialValueSignalFilter : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return true;
-  }
-};
-
-class IncreasedValueSignalFilter : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) > sig.getValue(params.ts_prev);
-  }
-};
-
-class DecreasedValueSignalFilter : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) < sig.getValue(params.ts_prev);
-  }
-};
-
-class ChangedValueSignalFilter : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) != sig.getValue(params.ts_prev);
-  }
-};
-
-class UnchangedValueSignalFilter : public SignalFilterer {
-  using SignalFilterer::SignalFilterer;
-
-  bool signalMatches(SearchSignal &sig) {
-    return sig.getValue(params.ts_scan) == sig.getValue(params.ts_prev);
-  }
-};
+bool exactValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool biggerThanFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool smallerThanFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool unknownInitialValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool increasedValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool decreasedValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool changedValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);
+bool unchangedValueFilter(const SearchSignal &sig, const SignalFiltererParams& params);

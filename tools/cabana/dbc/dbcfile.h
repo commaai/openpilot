@@ -3,6 +3,7 @@
 #include <map>
 #include <QList>
 #include <QString>
+#include <QObject>
 
 #include "tools/cabana/dbc/dbc.h"
 

@@ -90,4 +90,4 @@ int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::BaseSignal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::BaseSignal *s);
-std::vector<std::string> allDBCNames() { return get_dbc_names(); }
+std::vector<std::string> allDBCNames();
