@@ -107,7 +107,6 @@ void SearchDlg::showDataTableContextMenu(const QPoint &pt){
             .msb = filteredSignals[index].msb,
             .size = filteredSignals[index].size,
             .start_bit = filteredSignals[index].start_bit,
-            .start_bit = filteredSignals[index].start_bit,
             .factor = filteredSignals[index].factor,
             .offset = filteredSignals[index].offset,
             .name = "NEW_SIG_FROM_SEARCH"
