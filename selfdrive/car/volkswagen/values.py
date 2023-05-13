@@ -835,18 +835,23 @@ FW_VERSIONS = {
   CAR.TOURAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906026HM\xf1\x893017',
+      b'\xf1\x8705E906018CQ\xf1\x890808',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300041E \xf1\x891005',
+      b'\xf1\x870CW300051M \xf1\x891926',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655AS\xf1\x890318\xf1\x82\023363500213533353141324C4732479333313100',
+      b'\xf1\x875Q0959655CH\xf1\x890421\xf1\x82\x1336350021353336314740025250529333613100',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820531B0062105',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567A8090400',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x873Q0907572C \xf1\x890195',
+      b'\xf1\x872Q0907572AA\xf1\x890396',
     ],
   },
   CAR.TRANSPORTER_T61: {
