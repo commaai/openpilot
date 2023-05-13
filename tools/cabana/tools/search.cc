@@ -135,12 +135,12 @@ void SearchDlg::updateRowData(){
     data_table->clear();
     data_table->setRowCount(0);
 
+    data_table->setHorizontalHeaderLabels({ QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value") });
+
     if(filteredSignals.size() < 1000){ // TODO: need a better way to display this list of signals, ex: combining similar signals together
-        data_table->setRowCount(filteredSignals.size() + 1);
+        data_table->setRowCount(filteredSignals.size());
 
-        setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
-
-        int row=1;
+        int row=0;
         for(auto &sig : filteredSignals){
             setRowData(row, sig.messageID.toString(), sig.toString(), QString::number(sig.getCurrentValue()), QString::number(-1));
             row++;
