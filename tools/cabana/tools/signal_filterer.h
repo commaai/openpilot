@@ -43,7 +43,7 @@ class SearchSignal : public cabana::BaseSignal {
         MessageId messageID;
 
         int64_t getValue(double ts){
-            auto events = can->events(messageID);
+            const auto &events = can->events(messageID);
             CanEventLessThan comp;
 
             // get closest event to this ts

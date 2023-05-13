@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-
 std::map<ScanType, std::string> scanTypeToDisplayName {
   {ExactValue, "Exact value"},
   {BiggerThan, "Bigger than..."},
@@ -27,7 +26,6 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
     setAttribute(Qt::WA_DeleteOnClose);
     
     QVBoxLayout *main_layout = new QVBoxLayout(this);
-
     QHBoxLayout *scan_button_layout = new QHBoxLayout();
 
     first_scan_button = new QPushButton(QString("..."), this);
@@ -291,11 +289,7 @@ SignalFilterer* SearchDlg::getCurrentFilterer() {
 void SearchDlg::nextScan(){
     searchHistory.push_back(std::shared_ptr<SignalFilterer>(getCurrentFilterer()));
 
-    std::cout << "Scan Started!!!" << std::endl;
-
     filteredSignals = searchHistory[searchHistory.size() - 1]->filter(filteredSignals);
-
-    std::cout << "Scan Finished!!!" << std::endl;
 
     update();
 }
