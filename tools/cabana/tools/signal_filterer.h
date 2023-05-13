@@ -33,8 +33,13 @@ struct CanEventLessThan
     }
 };
 
-class SearchSignal : public cabana::BaseSignal {
+class SearchSignal {
     public:
+        int start_bit, msb, lsb, size;
+        bool is_signed;
+        double factor, offset;
+        bool is_little_endian;
+
         SearchSignal(MessageId _messageID, int start_bit, int size, bool little_endian) : messageID(_messageID){
             this->is_little_endian = little_endian;
             this->factor = 1;
@@ -78,6 +83,31 @@ struct SignalFiltererParams{
 
 using filter_return = std::tuple<std::vector<SearchSignal>, std::vector<SearchSignal>>;
 using filter_function = std::function<bool(const SearchSignal &sig, const SignalFiltererParams &params)>;
+
+void updateSigSizeParamsFromRange(SearchSignal &s, int start_bit, int size);
+std::pair<int, int> getSignalRange(const SearchSignal *s);
+
+int64_t get_raw_value(const uint8_t *data, size_t data_size, const SearchSignal &sig) {
+  int64_t val = 0;
+
+  int i = sig.msb / 8;
+  int bits = sig.size;
+  while (i >= 0 && i < data_size && bits > 0) {
+    int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
+    int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
+    int size = msb - lsb + 1;
+
+    uint64_t d = (data[i] >> (lsb - (i * 8))) & ((1ULL << size) - 1);
+    val |= d << (bits - size);
+
+    bits -= size;
+    i = sig.is_little_endian ? i - 1 : i + 1;
+  }
+  if (sig.is_signed) {
+    val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
+  }
+  return val;
+}
 
 filter_return filter(std::vector<SearchSignal> &in, const SignalFiltererParams &params, filter_function signalMatches);
 

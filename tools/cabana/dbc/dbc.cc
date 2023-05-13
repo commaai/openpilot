@@ -81,11 +81,7 @@ int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::BaseS
   if (sig.is_signed) {
     val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
   }
-  return val;
-}
-
-double get_scaled_value(const uint8_t *data, size_t data_size, const cabana::BaseSignal &sig) {
-  return get_raw_value(data, data_size, sig) * sig.factor + sig.offset;
+  return val * sig.factor + sig.offset;
 }
 
 bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {
@@ -100,7 +96,7 @@ bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {
 int bigEndianStartBitsIndex(int start_bit) { return BIG_ENDIAN_START_BITS[start_bit]; }
 int bigEndianBitIndex(int index) { return BIG_ENDIAN_START_BITS.indexOf(index); }
 
-void updateSigSizeParamsFromRange(cabana::BaseSignal &s, int start_bit, int size) {
+void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size) {
   s.start_bit = s.is_little_endian ? start_bit : bigEndianBitIndex(start_bit);
   s.size = size;
   if (s.is_little_endian) {
