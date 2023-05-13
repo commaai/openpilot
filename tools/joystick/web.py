@@ -17,6 +17,8 @@ log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)
 
 IMG_H, IMG_W = 540, 960
+AUDIO_RATE = 44100
+
 
 app = Flask(__name__)
 pm = messaging.PubMaster(['testJoystick'])
@@ -34,11 +36,10 @@ import numpy as np
 
 
 
-fs = 44100  # sampling rate, Hz, must be integer
 # for paFloat32 sample values must be in range [-1.0, 1.0]
 out_stream = p.open(format=pyaudio.paFloat32,
             channels=1,
-            rate=fs,
+            rate=AUDIO_RATE,
             output=True)
 
 
@@ -124,16 +125,15 @@ def handle_timeout():
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
-RATE = 44100
 CHUNK = 1024
 
 
-import math
 @socketio.on('audio_blob')
 def handle_audio_blob(data):
   '''
+  import math
   volume = 0.5  # range [0.0, 1.0]
-  duration = 16384/RATE  # in seconds, may be float
+  duration = 16384/AUDIO_RATE  # in seconds, may be float
   f = 440.0  # sine frequency, Hz, may be float
 
   # generate samples, note conversion to float32 array
@@ -164,7 +164,7 @@ def handle_audio_blob(data):
 
 stream = p.open(format=FORMAT,
                 channels=CHANNELS,
-                rate=RATE,
+                rate=AUDIO_RATE,
                 input=True,
                 frames_per_buffer=CHUNK)
 
@@ -174,34 +174,6 @@ def gen_audio():
     data = np.frombuffer(data, dtype=np.int16)
     socketio.emit('stream', data.tolist())
     time.sleep(0.0001)
-
-
-def test_speaker():
-  volume = 0.5  # range [0.0, 1.0]
-  fs = 44100  # sampling rate, Hz, must be integer
-  duration = 5.0  # in seconds, may be float
-  f = 440.0  # sine frequency, Hz, may be float
-
-  # generate samples, note conversion to float32 array
-  samples = (np.sin(2 * np.pi * np.arange(fs * duration) * f / fs)).astype(np.float32)
-
-  # per @yahweh comment explicitly convert to bytes sequence
-  output_bytes = (volume * samples).tobytes()
-
-  # for paFloat32 sample values must be in range [-1.0, 1.0]
-  stream = p.open(format=pyaudio.paFloat32,
-                          channels=1,
-                                          rate=fs,
-                                                          output=True)
-
-  # play. May repeat with different volume values (if done interactively)
-  start_time = time.time()
-  stream.write(output_bytes)
-  print("Played sound for {:.2f} seconds".format(time.time() - start_time))
-
-  stream.stop_stream()
-  stream.close()
-
 
 
 
