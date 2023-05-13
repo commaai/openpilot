@@ -53,7 +53,6 @@ class SearchSignal : public cabana::BaseSignal {
               event -= 1;
             }
 
-
             return get_raw_value((*event)->dat, (*event)->size, *this);
         }
 
@@ -77,12 +76,12 @@ struct SignalFiltererParams{
 
 class SignalFilterer {
   public:
-    // signals that were filtered out, for the abilty to undo scans
+    // signals that were filtered out, for the ability to undo scans
     std::vector<SearchSignal> filteredSignals;
 
     SignalFiltererParams params;
 
-    virtual bool signalMatches(SearchSignal sig) = 0;
+    virtual bool signalMatches(SearchSignal &sig) = 0;
 
     SignalFilterer(SignalFiltererParams params_in) : params(params_in) {}
 
@@ -103,7 +102,7 @@ class SignalFilterer {
 class ExactValueSignalFilterer : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) == params.value1;
   }
 };
@@ -111,7 +110,7 @@ class ExactValueSignalFilterer : public SignalFilterer {
 class BiggerThanSignalFilterer : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) > params.value1;
   }
 };
@@ -119,7 +118,7 @@ class BiggerThanSignalFilterer : public SignalFilterer {
 class SmallerThanSignalFilterer : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) < params.value1;
   }
 };
@@ -127,7 +126,7 @@ class SmallerThanSignalFilterer : public SignalFilterer {
 class UnknownInitialValueSignalFilter : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return true;
   }
 };
@@ -135,7 +134,7 @@ class UnknownInitialValueSignalFilter : public SignalFilterer {
 class IncreasedValueSignalFilter : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) > sig.getValue(params.ts_prev);
   }
 };
@@ -143,7 +142,7 @@ class IncreasedValueSignalFilter : public SignalFilterer {
 class DecreasedValueSignalFilter : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) < sig.getValue(params.ts_prev);
   }
 };
@@ -151,7 +150,7 @@ class DecreasedValueSignalFilter : public SignalFilterer {
 class ChangedValueSignalFilter : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) != sig.getValue(params.ts_prev);
   }
 };
@@ -159,7 +158,7 @@ class ChangedValueSignalFilter : public SignalFilterer {
 class UnchangedValueSignalFilter : public SignalFilterer {
   using SignalFilterer::SignalFilterer;
 
-  bool signalMatches(SearchSignal sig) {
+  bool signalMatches(SearchSignal &sig) {
     return sig.getValue(params.ts_scan) == sig.getValue(params.ts_prev);
   }
 };
