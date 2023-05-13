@@ -18,7 +18,7 @@ class CarInterface(CarInterfaceBase):
     # These cars are dashcam only for lack of test coverage.
     # Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.FOCUS_MK4, CAR.MAVERICK_MK1}
+    ret.dashcamOnly = candidate in {CAR.FOCUS_MK4}
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
@@ -78,6 +78,8 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
+    if self.CS.hybrid_platform:
+      events.add(car.CarEvent.EventName.startupNoControl)
 
     ret.events = events.to_msg()
 

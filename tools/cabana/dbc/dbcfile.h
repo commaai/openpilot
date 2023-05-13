@@ -2,16 +2,11 @@
 
 #include <map>
 #include <QList>
-#include <QMetaType>
-#include <QObject>
 #include <QString>
-#include <QSet>
-#include <QDebug>
 
 #include "tools/cabana/dbc/dbc.h"
 
 const QString AUTO_SAVE_EXTENSION = ".tmp";
-
 
 class DBCFile : public QObject {
   Q_OBJECT
@@ -43,16 +38,17 @@ public:
 
   const QList<uint8_t>& mask(const MessageId &id) const;
 
-  std::map<uint32_t, cabana::Msg> getMessages();
-  const cabana::Msg *msg(const MessageId &id) const;
+  inline std::map<uint32_t, cabana::Msg> getMessages() const { return msgs; }
   const cabana::Msg *msg(uint32_t address) const;
   const cabana::Msg* msg(const QString &name);
+  inline const cabana::Msg *msg(const MessageId &id) const { return msg(id.address); };
+
   QStringList signalNames() const;
   int signalCount(const MessageId &id) const;
   int signalCount() const;
-  int msgCount() const;
-  QString name() const;
-  bool isEmpty() const;
+  inline int msgCount() const { return msgs.size(); }
+  inline QString name() const { return name_.isEmpty() ? "untitled" : name_; }
+  inline bool isEmpty() const { return (signalCount() == 0) && name_.isEmpty(); }
 
   QString filename;
 
