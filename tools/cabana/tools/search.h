@@ -28,9 +28,7 @@ enum ScanType {
   SmallerThan,
   ValueBetween,
   IncreasedValue,
-  IncreasedValueBy,
   DecreasedValue,
-  DecreasedValueBy,
   ChangedValue,
   UnchangedValue,
   UnknownInitialValue

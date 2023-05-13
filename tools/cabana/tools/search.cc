@@ -1,17 +1,12 @@
 #include "tools/cabana/tools/search.h"
 
-#include <iostream>
-
 std::map<ScanType, std::string> scanTypeToDisplayName {
   {ExactValue, "Exact value"},
   {BiggerThan, "Bigger than..."},
   {SmallerThan, "Smaller than..."},
-  {BiggerThan, "Bigger than..."},
   {ValueBetween, "Value between..."},
   {IncreasedValue, "Increased value"},
-  {IncreasedValueBy, "Increased value by..."},
   {DecreasedValue, "Decreased value"},
-  {DecreasedValueBy, "Decreased value by..."},
   {ChangedValue, "Changed value"},
   {UnchangedValue, "Unchanged value"},
   {UnknownInitialValue, "Unknown initial value"},
@@ -141,7 +136,7 @@ void SearchDlg::updateRowData(){
     data_table->clear();
     data_table->setRowCount(0);
 
-    if(filteredSignals.size() < 1000){
+    if(filteredSignals.size() < 1000){ // TODO: need a better way to display this list of signals, ex: combining similar signals together
         data_table->setRowCount(filteredSignals.size() + 1);
 
         setRowData(0, QString("Message ID"), QString("Bit Range"), QString("Current Value"), QString("Previous Value"));
@@ -187,7 +182,7 @@ std::vector<SearchSignal> getAllPossibleSignals(int bits_min, int bits_max){
     for(auto msg_id : can->last_msgs.keys()) {
         for(int size = bits_min; size < bits_max + 1; size++) {
             for(int start_bit = 0; start_bit < 64 - size; start_bit++) {
-                ret.push_back(SearchSignal(msg_id, start_bit, size, true));
+                ret.push_back(SearchSignal(msg_id, start_bit, size, true)); // TODO: signed/unsigned? 
                 ret.push_back(SearchSignal(msg_id, start_bit, size, false));
             }
         }
@@ -213,9 +208,7 @@ std::vector<ScanType> SearchDlg::enabledScanTypes(){
             SmallerThan,
             ValueBetween,
             IncreasedValue,
-            IncreasedValueBy,
             DecreasedValue,
-            DecreasedValueBy,
             ChangedValue,
             UnchangedValue
         };
