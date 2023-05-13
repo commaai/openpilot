@@ -1,4 +1,5 @@
 #include "tools/cabana/tools/search.h"
+#include "tools/cabana/commands.h"
 
 std::map<ScanType, std::tuple<std::string, filter_function>> scanTypeToScanData {
   {ExactValue, {"Exact value", exactValueFilter}},
@@ -95,13 +96,16 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
 }
 
 void SearchDlg::showDataTableContextMenu(const QPoint &pt){
-  int index = data_table->rowAt(pt.y());
+    int index = data_table->rowAt(pt.y());
 
-  if (index >= 0) {
     QMenu menu(this);
     menu.addAction(tr("Add To Signals"), [=](){
+        if(!dbc()->msg(filteredSignals[index].messageID)){
+            QString name = dbc()->newMsgName(filteredSignals[index].messageID);
+            UndoStack::push(new EditMsgCommand(filteredSignals[index].messageID, name, can->lastMessage(filteredSignals[index].messageID).dat.size()));
+        }
+
         cabana::Signal sig{
-            .factor = 1,
             .is_little_endian = filteredSignals[index].is_little_endian,
             .lsb = filteredSignals[index].lsb,
             .msb = filteredSignals[index].msb,
@@ -109,12 +113,13 @@ void SearchDlg::showDataTableContextMenu(const QPoint &pt){
             .start_bit = filteredSignals[index].start_bit,
             .factor = filteredSignals[index].factor,
             .offset = filteredSignals[index].offset,
-            .name = "NEW_SIG_FROM_SEARCH"
+            .name = dbc()->newSignalName(filteredSignals[index].messageID)
         };
 
-        dbc()->addSignal(filteredSignals[index].messageID, sig);
+        UndoStack::push(new AddSigCommand(filteredSignals[index].messageID, sig));
     });
-  }
+
+    menu.exec(data_table->mapToGlobal(pt));
 }
 
 void SearchDlg::setRowData(int row, QString msgID, QString bitRange, QString currentValue, QString previousValue){
