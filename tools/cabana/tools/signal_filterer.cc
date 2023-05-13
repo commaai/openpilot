@@ -20,25 +20,26 @@ filter_return filter(
   updateSigSizeParamsFromRange(this, start_bit, size);
 }
 
-int64_t  SearchSignal::getValue(double ts) const {
-    const auto &events = can->events(messageID);
-    CanEventLessThan comp;
+int64_t SearchSignal::getValue(double ts) const {
+    const auto &ev = can->events(messageID);
 
-    // get closest event to this ts
-    auto event = std::lower_bound(events.begin(), events.end(), (can->routeStartTime() + ts) * 1e9, comp);
+    // get most recent event to this ts
+    auto it = std::lower_bound(ev.crbegin(), ev.crend(), (can->routeStartTime() + ts) * 1e9, [](auto e, uint64_t ts) {
+      return e->mono_time > ts;
+    });
 
-    if(event != events.begin()){
-      event -= 1;
+    if(it == ev.crend()){
+      it--;
     }
 
-    return get_raw_value((*event)->dat, (*event)->size, this);
+    return get_raw_value((*it)->dat, (*it)->size, this);
 }
 
-int64_t  SearchSignal::getCurrentValue() const {
+int64_t SearchSignal::getCurrentValue() const {
   return get_raw_value((const uint8_t*)can->last_msgs[messageID].dat.constData(), can->last_msgs[messageID].dat.size(), this);
 }
 
-QString  SearchSignal::toString() const {
+QString SearchSignal::toString() const {
     auto range = getSignalRange(this);
     return QString("%1:%2").arg(std::get<0>(range)).arg(std::get<1>(range));
 }

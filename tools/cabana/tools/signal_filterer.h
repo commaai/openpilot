@@ -17,22 +17,6 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
-struct CanEventLessThan
-{
-    bool operator() (const CanEvent *left, const CanEvent *right)
-    {
-        return left->mono_time < right->mono_time;
-    }
-    bool operator() (const CanEvent *left, uint64_t right)
-    {
-        return left->mono_time < right;
-    }
-    bool operator() (uint64_t left, const CanEvent *right)
-    {
-        return left < right->mono_time;
-    }
-};
-
 class SearchSignal {
     public:
         int start_bit, msb, lsb, size;
