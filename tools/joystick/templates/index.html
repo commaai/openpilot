@@ -79,13 +79,13 @@ setInterval(function(){
   var x = 0;
   var y = 0;
   if (isKeyDown(keyEnum.W_Key))
-    x += 1;
-  if (isKeyDown(keyEnum.S_Key))
     x -= 1;
+  if (isKeyDown(keyEnum.S_Key))
+    x += 1;
   if (isKeyDown(keyEnum.D_Key))
-    y -= 1;
-  if (isKeyDown(keyEnum.A_Key))
     y += 1;
+  if (isKeyDown(keyEnum.A_Key))
+    y -= 1;
   socket.emit('control_command', {'x': x, 'y': y});
 
   document.getElementById("move_str").innerHTML = `Commanded motion: ${x}, ${y}`;
