@@ -13,7 +13,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, uint32_t in_freq = 0);
+  void compute(const char *dat, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
