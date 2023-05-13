@@ -230,12 +230,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig;
-  sig.name = dbc()->newSignalName(msg_id);
-  sig.is_little_endian = little_endian;
-  sig.factor = 1;
-  sig.min = "0";
-  sig.max = QString::number(std::pow(2, size) - 1);
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
 
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));

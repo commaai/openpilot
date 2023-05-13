@@ -62,7 +62,7 @@ static QVector<int> BIG_ENDIAN_START_BITS = []() {
   return ret;
 }();
 
-int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::BaseSignal &sig) {
+int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig) {
   int64_t val = 0;
 
   int i = sig.msb / 8;
@@ -108,7 +108,7 @@ void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size) {
   }
 }
 
-std::pair<int, int> getSignalRange(const cabana::BaseSignal *s) {
+std::pair<int, int> getSignalRange(const cabana::Signal *s) {
   int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
   int to = from + s->size - 1;
   return {from, to};

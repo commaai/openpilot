@@ -45,7 +45,7 @@ TEST_CASE("Parse can messages") {
         const auto msg = dbc.msg({.source = c.getSrc(), .address = c.getAddress()});
         if (c.getSrc() == 0 && msg) {
           for (auto sig : msg->getSignals()) {
-            double val = get_scaled_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
+            double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
             values_1[{c.getAddress(), sig->name}].push_back(val);
           }
         }

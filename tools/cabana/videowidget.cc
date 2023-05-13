@@ -232,7 +232,6 @@ void Slider::paintEvent(QPaintEvent *ev) {
   p.fillRect(r, timeline_colors[(int)TimelineType::None]);
   double min = minimum() / 1000.0;
   double max = maximum() / 1000.0;
-
   for (auto [begin, end, type] : timeline) {
     if (begin > max || end < min)
       continue;

@@ -75,7 +75,7 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
 
     data_table = new QTableWidget();
     data_table->setRowCount(1);
-    data_table->setColumnCount(6);
+    data_table->setColumnCount(4);
 
     data_table->setContextMenuPolicy(Qt::CustomContextMenu);
     QObject::connect(data_table, &QTableWidget::customContextMenuRequested, this, &SearchDlg::showDataTableContextMenu);
@@ -86,7 +86,7 @@ SearchDlg::SearchDlg(QWidget *parent) : QDialog(parent) {
     main_layout->addLayout(search_parameters_layout);
     main_layout->addLayout(search_results_layout);
 
-    setMinimumSize({700, 500});
+    setMinimumSize({500, 500});
 
     update();
 
@@ -100,17 +100,18 @@ void SearchDlg::showDataTableContextMenu(const QPoint &pt){
   if (index >= 0) {
     QMenu menu(this);
     menu.addAction(tr("Add To Signals"), [=](){
-        cabana::Signal sig;
-        sig.factor = 1;
-        sig.is_little_endian = filteredSignals[index].is_little_endian;
-        sig.lsb = filteredSignals[index].lsb;
-        sig.msb = filteredSignals[index].msb;
-        sig.size = filteredSignals[index].size;
-        sig.start_bit = filteredSignals[index].start_bit;
-        sig.start_bit = filteredSignals[index].start_bit;
-        sig.factor = filteredSignals[index].factor;
-        sig.offset = filteredSignals[index].offset;
-        sig.name = "NEW_SIG_FROM_SEARCH";
+        cabana::Signal sig{
+            .factor = 1,
+            .is_little_endian = filteredSignals[index].is_little_endian,
+            .lsb = filteredSignals[index].lsb,
+            .msb = filteredSignals[index].msb,
+            .size = filteredSignals[index].size,
+            .start_bit = filteredSignals[index].start_bit,
+            .start_bit = filteredSignals[index].start_bit,
+            .factor = filteredSignals[index].factor,
+            .offset = filteredSignals[index].offset,
+            .name = "NEW_SIG_FROM_SEARCH"
+        };
 
         dbc()->addSignal(filteredSignals[index].messageID, sig);
     });

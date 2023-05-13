@@ -44,7 +44,7 @@ struct std::hash<MessageId> {
 typedef QList<std::pair<QString, QString>> ValueDescription;
 
 namespace cabana {
-  struct Signal : public BaseSignal {
+  struct Signal {
     int start_bit, msb, lsb, size;
     bool is_signed;
     double factor, offset;
@@ -79,7 +79,6 @@ namespace cabana {
 }
 
 // Helper functions
-double get_scaled_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
 int64_t get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
 int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
