@@ -69,11 +69,19 @@ setInterval(function(){
     y -= 1;
   if (isKeyDown(keyEnum.A_Key))
     y += 1;
-  socket.emit('control_command', {'x': x, 'y': y});
+  var utc_ms = new Date().getTime();
+  socket.emit('control_command', {'x': x, 'y': y, 'utc_ms': utc_ms});
 
   document.getElementById("move_str").innerHTML = `Commanded motion: ${x}, ${y}`;
 
 }, 50);
+
+
+document.getElementById("control_lag").innerHTML = `Control round-trip: NaN ms`;
+socket.on('control_back', (control_back) => {
+    document.getElementById("control_lag").innerHTML = `Control round-trip: : ${control_back['utc_ms_back'] - control_back['utc_ms_send']} ms`;
+});
+
 
 const audio = document.getElementById('audio-player');
 let audioBuffer = [];
@@ -149,12 +157,6 @@ socket.on('stream', (audioData) => {
     }
 });
 
-document.getElementById("robot_state").innerHTML = `Battery: NaN %`;
-socket.on('battery', (batter_fraction) => {
-    var battery_perc = batter_fraction * 100;
-    document.getElementById("robot_state").innerHTML = `Battery: ${battery_perc.toFixed(0)} %`;
-
-});
 
 var startRecordingButton = document.getElementById("startRecordingButton");
 var leftchannel = [];

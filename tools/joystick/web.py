@@ -117,6 +117,9 @@ def hand_control_command(data):
   dat.testJoystick.buttons = [False]
   pm.send('testJoystick', dat)
   last_send_time = time.monotonic()
+  socketio.emit('control_back', {'utc_ms_send': data['utc_ms'],
+                                'utc_ms_back': int(time.time()*1000)})
+
 
 def handle_timeout():
   while 1:
@@ -182,9 +185,7 @@ def read_battery():
         socketio.emit('battery', sm['carState'].fuelGauge)
 
 def main():
-  #threading.Thread(target=handle_timeout, daemon=True).start()
-  socketio.start_background_task(gen)
-  #socketio.start_background_task(test_speaker)
+  socketio.start_background_task(target=handle_timeout)
   socketio.start_background_task(target=gen_audio)
   socketio.start_background_task(target=read_battery)
   socketio.run(app, host="0.0.0.0", ssl_context='adhoc')
