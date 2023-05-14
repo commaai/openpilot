@@ -149,6 +149,12 @@ socket.on('stream', (audioData) => {
     }
 });
 
+socket.on('battery', (batter_fraction) => {
+    var battery_perc = batter_fraction * 100;
+    document.getElementById("robot_state").innerHTML = `Commanded motion: ${battery_perc} %`;
+
+});
+
 var startRecordingButton = document.getElementById("startRecordingButton");
 var leftchannel = [];
 var rightchannel = [];
