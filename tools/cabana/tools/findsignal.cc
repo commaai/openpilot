@@ -39,8 +39,13 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
   QtConcurrent::blockingMap(prev_sigs, [&](auto &s) {
     const auto &events = can->events(s.id);
     auto first = std::upper_bound(events.cbegin(), events.cend(), s.mono_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
-    auto it = std::find_if(first, events.cend(), [&](auto e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
-    if (it != events.cend()) {
+    auto last = events.cend();
+    if (last_time < std::numeric_limits<uint64_t>::max()) {
+      last = std::upper_bound(events.cbegin(), events.cend(), last_time, [](uint64_t ts, auto &e) { return ts < e->mono_time; });
+    }
+
+    auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
+    if (it != last) {
       auto values = s.values;
       values += QString("(%1, %2)").arg((*it)->mono_time / 1e9 - can->routeStartTime(), 0, 'f', 2).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
       std::lock_guard lk(lock);
@@ -76,11 +81,27 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   setAttribute(Qt::WA_DeleteOnClose);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
-  properties_group = new QGroupBox(tr("Signal Properties"));
+  // Messages group
+  message_group = new QGroupBox(tr("Messages"), this);
+  QFormLayout *message_layout = new QFormLayout(message_group);
+  message_layout->addRow(tr("Bus"), bus_edit = new QLineEdit());
+  bus_edit->setPlaceholderText(tr("comma-seperated values. Leave blank for all"));
+  message_layout->addRow(tr("Address"), address_edit = new QLineEdit());
+  address_edit->setPlaceholderText(tr("comma-seperated hex values. Leave blank for all"));
+  QHBoxLayout *hlayout = new QHBoxLayout();
+  hlayout->addWidget(first_time_edit = new QLineEdit("0"));
+  hlayout->addWidget(new QLabel("-"));
+  hlayout->addWidget(last_time_edit = new QLineEdit("MAX"));
+  hlayout->addWidget(new QLabel("seconds"));
+  hlayout->addStretch(0);
+  message_layout->addRow(tr("Time"), hlayout);
+
+  // Signal group
+  properties_group = new QGroupBox(tr("Signal"));
   QFormLayout *property_layout = new QFormLayout(properties_group);
   property_layout->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
-  QHBoxLayout *hlayout = new QHBoxLayout();
+  hlayout = new QHBoxLayout();
   hlayout->addWidget(min_size = new QSpinBox);
   hlayout->addWidget(new QLabel("-"));
   hlayout->addWidget(max_size = new QSpinBox);
@@ -89,11 +110,14 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   hlayout->addStretch(0);
   min_size->setRange(1, 64);
   max_size->setRange(1, 64);
+  min_size->setValue(8);
+  max_size->setValue(8);
   litter_endian->setChecked(true);
   property_layout->addRow(tr("Size"), hlayout);
   property_layout->addRow(tr("Factor"), factor_edit = new QLineEdit("1.0"));
   property_layout->addRow(tr("Offset"), offset_edit = new QLineEdit("0.0"));
 
+  // find group
   QGroupBox *find_group = new QGroupBox(tr("Find signal"), this);
   QVBoxLayout *vlayout = new QVBoxLayout(find_group);
   hlayout = new QHBoxLayout();
@@ -108,6 +132,7 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   vlayout->addLayout(hlayout);
 
   compare_cb->addItems({"=", ">", ">=", "!=", "<", "<=", "between"});
+  value1->setFocus(Qt::OtherFocusReason);
   value2->setVisible(false);
   to_label->setVisible(false);
   undo_btn->setEnabled(false);
@@ -115,22 +140,25 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
 
   auto double_validator = new QDoubleValidator(this);
   double_validator->setLocale(QLocale::C);
-  for (auto edit : {value1, value2, factor_edit, offset_edit}) {
+  for (auto edit : {value1, value2, factor_edit, offset_edit, first_time_edit, last_time_edit}) {
     edit->setValidator(double_validator);
   }
 
   vlayout->addWidget(view = new QTableView(this));
-  vlayout->addWidget(stats_label = new QLabel());
   view->setContextMenuPolicy(Qt::CustomContextMenu);
   view->horizontalHeader()->setStretchLastSection(true);
   view->horizontalHeader()->setSelectionMode(QAbstractItemView::NoSelection);
   view->setSelectionBehavior(QAbstractItemView::SelectRows);
   view->setModel(model = new FindSignalModel(this));
 
-  main_layout->addWidget(properties_group);
+  hlayout = new QHBoxLayout();
+  hlayout->addWidget(message_group);
+  hlayout->addWidget(properties_group);
+  main_layout->addLayout(hlayout);
   main_layout->addWidget(find_group);
+  main_layout->addWidget(stats_label = new QLabel());
 
-  setMinimumSize({700, 550});
+  setMinimumSize({700, 650});
   QObject::connect(search_btn, &QPushButton::clicked, this, &FindSignalDlg::search);
   QObject::connect(undo_btn, &QPushButton::clicked, model, &FindSignalModel::undo);
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &FindSignalDlg::modelReset);
@@ -162,6 +190,7 @@ void FindSignalDlg::search() {
     case 6: cmp = [v1, v2](double v) { return v >= v1 && v <= v2;}; break;
   }
   properties_group->setEnabled(false);
+  message_group->setEnabled(false);
   search_btn->setEnabled(false);
   stats_label->setVisible(false);
   search_btn->setText("Finding ....");
@@ -169,20 +198,46 @@ void FindSignalDlg::search() {
 }
 
 void FindSignalDlg::setInitialSignals() {
+  QSet<ushort> buses;
+  for (auto bus : bus_edit->text().trimmed().split(",")) {
+    bus = bus.trimmed();
+    if (!bus.isEmpty()) buses.insert(bus.toUShort());
+  }
+
+  QSet<uint32_t> addresses;
+  for (auto addr : address_edit->text().trimmed().split(",")) {
+    addr = addr.trimmed();
+    if (!addr.isEmpty()) addresses.insert(addr.toULong(nullptr, 16));
+  }
+
   cabana::Signal sig{};
   sig.is_little_endian = litter_endian->isChecked();
   sig.is_signed = is_signed->isChecked();
   sig.factor = factor_edit->text().toDouble();
   sig.offset = offset_edit->text().toDouble();
 
+  auto [first_sec, last_sec] = std::minmax(first_time_edit->text().toDouble(), last_time_edit->text().toDouble());
+  uint64_t first_time = (can->routeStartTime() + first_sec) * 1e9;
+  model->last_time = std::numeric_limits<uint64_t>::max();
+  if (last_sec > 0) {
+    model->last_time = (can->routeStartTime() + last_sec) * 1e9;
+  }
   model->initial_signals.clear();
+
   for (auto it = can->last_msgs.cbegin(); it != can->last_msgs.cend(); ++it) {
-    const int total_size = it.value().dat.size() * 8;
-    for (int size = min_size->value(); size <= max_size->value(); ++size) {
-      for (int start = 0; start <= total_size - size; ++start) {
-        FindSignalModel::SearchSignal s{.id = it.key(), .mono_time = 0, .sig = sig};
-        updateSigSizeParamsFromRange(s.sig, start, size);
-        model->initial_signals.push_back(s);
+    if (buses.isEmpty() || buses.contains(it.key().source) && (addresses.isEmpty() || addresses.contains(it.key().address))) {
+      const auto &events = can->events(it.key());
+      auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, [](auto e, uint64_t ts) { return e->mono_time < ts; });
+      if (e != events.cend()) {
+        const int total_size = it.value().dat.size() * 8;
+        for (int size = min_size->value(); size <= max_size->value(); ++size) {
+          for (int start = 0; start <= total_size - size; ++start) {
+            FindSignalModel::SearchSignal s{.id = it.key(), .mono_time = first_time, .sig = sig};
+            updateSigSizeParamsFromRange(s.sig, start, size);
+            s.value = get_raw_value((*e)->dat, (*e)->size, s.sig);
+            model->initial_signals.push_back(s);
+          }
+        }
       }
     }
   }
@@ -190,6 +245,7 @@ void FindSignalDlg::setInitialSignals() {
 
 void FindSignalDlg::modelReset() {
   properties_group->setEnabled(model->histories.isEmpty());
+  message_group->setEnabled(model->histories.isEmpty());
   search_btn->setText(model->histories.isEmpty() ? tr("Find") : tr("Find Next"));
   reset_btn->setEnabled(!model->histories.isEmpty());
   undo_btn->setEnabled(model->histories.size() > 1);
