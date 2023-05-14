@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import time
 import os
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+os.environ['MKL_NUM_THREADS'] = '1'
 from flask import Flask, render_template, Response
 
 import cereal.messaging as messaging
@@ -65,6 +67,7 @@ class VideoCamera(object):
       frame[self.cnt:self.cnt+10, :, :] = 255
       self.cnt = (self.cnt + 10)%IMG_H
       _, jpeg = cv2.imencode('.jpg', frame)
+      time.sleep(0.05)
       return jpeg.tobytes()
  
     if not self.vipc_client.is_connected():
