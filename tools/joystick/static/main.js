@@ -82,6 +82,12 @@ socket.on('control_back', (control_back) => {
     document.getElementById("control_lag").innerHTML = `Control round-trip: : ${control_back['utc_ms_back'] - control_back['utc_ms_send']} ms`;
 });
 
+document.getElementById("robot_state").innerHTML = `Battery: NaN %`;
+socket.on('battery', (batter_fraction) => {
+    var battery_perc = batter_fraction * 100;
+    document.getElementById("robot_state").innerHTML = `Battery: ${battery_perc.toFixed(0)} %`;
+
+});
 
 const audio = document.getElementById('audio-player');
 let audioBuffer = [];
