@@ -170,13 +170,24 @@ def gen_audio():
     # time.sleep(0.0001)
 
 
+def read_battery():
+  sm = messaging.SubMaster(['carState'])
+  cnt = 0
+  while True:
+    sm.update()
+    if sm.updated['carState']:
+      cnt += 1
+      if cnt > 100:
+        cnt = 0
+        socketio.emit('battery', sm['carState'].fuelGauge)
 
 def main():
   #threading.Thread(target=handle_timeout, daemon=True).start()
   socketio.start_background_task(gen)
   #socketio.start_background_task(test_speaker)
   socketio.start_background_task(target=gen_audio)
-  socketio.run(app, host="0.0.0.0", ssl_context="adhoc", port=5000)
+  #socketio.start_background_task(target=read_battery)
+  socketio.run(app, host="0.0.0.0", ssl_context='adhoc')
 
 
 if __name__ == '__main__':
