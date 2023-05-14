@@ -18,6 +18,7 @@
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/streamselector.h"
+#include "tools/cabana/tools/findsignal.h"
 
 static MainWindow *main_win = nullptr;
 void qLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
@@ -135,6 +136,7 @@ void MainWindow::createActions() {
 
   QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
+  tools_menu->addAction(tr("&Find Signal"), this, &MainWindow::findSignal);
 
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
@@ -599,6 +601,12 @@ void MainWindow::setOption() {
 void MainWindow::findSimilarBits() {
   FindSimilarBitsDlg *dlg = new FindSimilarBitsDlg(this);
   QObject::connect(dlg, &FindSimilarBitsDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
+  dlg->show();
+}
+
+void MainWindow::findSignal() {
+  FindSignalDlg *dlg = new FindSignalDlg(this);
+  QObject::connect(dlg, &FindSignalDlg::openMessage, messages_widget, &MessagesWidget::selectMessage);
   dlg->show();
 }
 
