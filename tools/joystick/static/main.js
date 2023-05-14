@@ -149,9 +149,10 @@ socket.on('stream', (audioData) => {
     }
 });
 
+document.getElementById("robot_state").innerHTML = `Battery: NaN %`;
 socket.on('battery', (batter_fraction) => {
     var battery_perc = batter_fraction * 100;
-    document.getElementById("robot_state").innerHTML = `Battery: ${battery_perc} %`;
+    document.getElementById("robot_state").innerHTML = `Battery: ${battery_perc.toFixed(0)} %`;
 
 });
 

@@ -186,7 +186,7 @@ def main():
   socketio.start_background_task(gen)
   #socketio.start_background_task(test_speaker)
   socketio.start_background_task(target=gen_audio)
-  #socketio.start_background_task(target=read_battery)
+  socketio.start_background_task(target=read_battery)
   socketio.run(app, host="0.0.0.0", ssl_context='adhoc')
 
 
