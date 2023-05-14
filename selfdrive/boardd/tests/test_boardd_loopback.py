@@ -31,8 +31,8 @@ class TestBoardd(unittest.TestCase):
   @phone_only
   @with_processes(['pandad'])
   def test_loopback(self):
-    # wait for boardd to init
-    time.sleep(2)
+    params = Params()
+    params.put_bool("IsOnroad", False)
 
     with Timeout(60, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
@@ -45,21 +45,21 @@ class TestBoardd(unittest.TestCase):
     self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
                                                    connect another panda for multipanda tests.")
 
-    # boardd blocks on FirmwareQueryDone, ControlsReady, and CarParams
+    # boardd safety setting relies on these params
     cp = car.CarParams.new_message()
 
     safety_config = car.CarParams.SafetyConfig.new_message()
     safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
     cp.safetyConfigs = [safety_config]*num_pandas
 
-    params = Params()
+    params.put_bool("IsOnroad", True)
     params.put_bool("FirmwareQueryDone", True)
     params.put_bool("ControlsReady", True)
     params.put("CarParams", cp.to_bytes())
 
     sendcan = messaging.pub_sock('sendcan')
     can = messaging.sub_sock('can', conflate=False, timeout=100)
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     n = 200
     for i in range(n):
