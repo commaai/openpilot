@@ -1172,6 +1172,7 @@ FW_VERSIONS = {
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
       b'77959-TGS-A010\x00\x00',
+      b'77959-TGS-A110\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-A040\x00\x00',
