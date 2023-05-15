@@ -389,6 +389,13 @@ CONFIGS = [
 ]
 
 
+def get_process_config(name):
+  try:
+    return next(c for c in CONFIGS if c.proc_name == name)
+  except StopIteration:
+    raise Exception(f"Cannot find process config with name: {name}")
+
+
 def replay_process(cfg, lr, fingerprint=None):
   with OpenpilotPrefix():
     controlsState = None
