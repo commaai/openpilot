@@ -1,7 +1,7 @@
 {% set footnote_tag = '[<sup>{}</sup>](#footnotes)' -%}
 {% set star_icon = '[![star](assets/icon-star-{}.svg)](##)' -%}
 {% set video_icon = '<a href="{}" target="_blank"><img height="18px" src="assets/icon-youtube.svg"></img></a>' -%}
-{# Make the Harness Kit col wider so all parts can be shown in the dropdown without wrapping. The only way to add width to a col in github markdown is with an img tag #}
+{# Force harness column wider by using a blank image with max width. #}
 {% set width_tag = '<a href="##"><img width=2000></a>%s<br>&nbsp;' %}
 {% set harness_col_name = 'Harness Kit' %}
 {% set wide_harness_col_name = width_tag|format(harness_col_name) -%}
