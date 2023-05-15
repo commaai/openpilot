@@ -1,12 +1,11 @@
 from enum import IntFlag
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -61,7 +60,7 @@ RAM_CARS = RAM_DT | RAM_HD
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
-  harness: Enum = Harness.fca
+  harness_kit: HarnessKit = HarnessKit(Harness.fca)
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -75,10 +74,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness_kit=HarnessKit(Harness.ram)),
   CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
-    ChryslerCarInfo("Ram 3500 2019-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 2500 2020-22", harness_kit=HarnessKit(Harness.ram)),
+    ChryslerCarInfo("Ram 3500 2019-22", harness_kit=HarnessKit(Harness.ram)),
   ],
 }
 
