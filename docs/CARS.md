@@ -4,7 +4,7 @@
 
 A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# 251 Supported Cars
+# 252 Supported Cars
 
 |Make|Model|Supported Package|ACC|No ACC accel below|No ALC below|Steering Torque|Resume from stop|<img width=2000>Harness Kit<br>&nbsp;|Video|
 |---|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -35,6 +35,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 |Ford|Escape 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Escape 2020-22">Ford Q3 connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
 |Ford|Explorer 2020-22|Co-Pilot360 Assist+|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Explorer 2020-22">Ford Q3 connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
 |Ford|Kuga 2020-22|Adaptive Cruise Control with Lane Centering|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Kuga 2020-22">Ford Q3 connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
+|Ford|Maverick 2022-23|Co-Pilot360 Assist|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Ford&model=Maverick 2022-23">Ford Q3 connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
 |Genesis|G70 2018-19|All|Stock|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2018-19">Hyundai F connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
 |Genesis|G70 2020|All|openpilot available[<sup>1</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G70 2020">Hyundai F connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||
 |Genesis|G80 2017|All|Stock|19 mph|37 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>View</summary><br><sub>1 <a href="https://comma.ai/shop/comma-three.html?make=Genesis&model=G80 2017">Hyundai J connector</a><br>- 1 RJ45 cable (7 ft)<br>- 1 comma power v2<br>- 1 harness box</sub></details>||

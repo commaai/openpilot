@@ -140,9 +140,13 @@ def main() -> NoReturn:
 
       for p in pandas:
         p.close()
+    # TODO: wrap all panda exceptions in a base panda exception
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except Exception:
+      cloudlog.exception("pandad.uncaught_exception")
       continue
 
     first_run = False
