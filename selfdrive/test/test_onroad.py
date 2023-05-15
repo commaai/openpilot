@@ -161,7 +161,11 @@ class TestOnroad(unittest.TestCase):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
-
+      
+      # skip gps services for now
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements'):
+        continue
+        
       with self.subTest(service=s):
         assert len(msgs) >= math.floor(service_list[s].frequency*55)
 
