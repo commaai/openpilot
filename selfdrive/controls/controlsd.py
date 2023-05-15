@@ -26,7 +26,6 @@ from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.locationd.calibrationd import Calibration
 from system.hardware import HARDWARE
 
 SOFT_DISABLE_TIME = 3  # seconds
@@ -283,9 +282,11 @@ class Controls:
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
-    if cal_status != Calibration.CALIBRATED:
-      if cal_status == Calibration.UNCALIBRATED:
+    if cal_status != log.LiveCalibrationData.Status.calibrated:
+      if cal_status == log.LiveCalibrationData.Status.uncalibrated:
         self.events.add(EventName.calibrationIncomplete)
+      elif cal_status == log.LiveCalibrationData.Status.recalibrating:
+        self.events.add(EventName.calibrationRecalibrating)
       else:
         self.events.add(EventName.calibrationInvalid)
 
@@ -697,7 +698,7 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                  and not CC.latActive and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                  and not CC.latActive and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
