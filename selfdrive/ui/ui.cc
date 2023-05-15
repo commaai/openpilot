@@ -179,7 +179,7 @@ static void update_state(UIState *s) {
         scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
-    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
+    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
     scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
