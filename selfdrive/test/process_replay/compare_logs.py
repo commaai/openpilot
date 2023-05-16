@@ -71,7 +71,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   default_tolerance = EPSILON if tolerance is None else tolerance
 
   log1, log2 = (
-    sorted(list(filter(lambda m: m.which() not in ignore_msgs, log)), key=lambda m: (m.logMonoTime, m.which()))
+    sorted((m for m in log if m.which() not in ignore_msgs), key=lambda m: (m.logMonoTime, m.which()))
     for log in (log1, log2)
   )
 
