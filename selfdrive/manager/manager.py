@@ -24,7 +24,7 @@ from system.version import is_dirty, get_commit, get_version, get_origin, get_sh
                            is_tested_branch, is_release_branch
 
 
-def write_is_onroad(started, params):
+def write_is_onroad_params(started, params):
   params.put_bool("IsOnroad", started)
   params.put_bool("IsOffroad", not started)
 
@@ -140,7 +140,7 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
-  write_is_onroad(False, params)
+  write_is_onroad_params(False, params)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   started_prev = False
@@ -157,7 +157,7 @@ def manager_thread() -> None:
 
     # update onroad params, which drives boardd's safety setter thread
     if started != started_prev:
-      write_is_onroad(started, params)
+      write_is_onroad_params(started, params)
 
     started_prev = started
 
