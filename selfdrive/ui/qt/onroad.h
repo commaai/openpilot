@@ -38,8 +38,9 @@ public:
 
 private:
   void paintEvent(QPaintEvent *event) override;
+  void changeMode();
 
-  Params params;
+  bool experimental_mode;
   QPixmap engage_img;
   QPixmap experimental_img;
 };
