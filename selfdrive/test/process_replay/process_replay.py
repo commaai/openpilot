@@ -393,12 +393,6 @@ def replay_process(cfg, lr, fingerprint=None):
         while not all(pm.all_readers_updated(s) for s in cfg.pubs):
           time.sleep(0)
 
-      # TODO wait for sockets to reconnect, for now lets just sleep
-      time.sleep(1)
-
-      for s in sockets.values():
-        messaging.recv_one_or_none(s)
-
       # Do the replay
       cnt = 0
       for msg in pub_msgs:
@@ -410,6 +404,12 @@ def replay_process(cfg, lr, fingerprint=None):
           msg_queue.append(msg)
           if end_of_cycle:
             rc.wait_for_recv_called()
+
+            # call recv to let sub-sockets reconnect, after we know the process is ready
+            if cnt == 0:
+              for s in sockets.values():
+                messaging.recv_one_or_none(s)
+
             for m in msg_queue:
               pm.send(m.which(), m.as_builder())
             msg_queue = []
