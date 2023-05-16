@@ -31,6 +31,7 @@ class Star(Enum):
 
 
 class CarPart(Enum):
+  #harness connectors
   nidec_connector = "Honda Nidec connector"
   bosch_a_connector = "Honda Bosch A connector"
   bosch_b_connector = "Honda Bosch B connector"
@@ -67,31 +68,46 @@ class CarPart(Enum):
   ford_q3_connector = "Ford Q3 connector"
   ford_q4_connector = "Ford Q4 connector"
   none_connector = "None connector"
+
+  #harness accessories
   harness_box = "harness box"
   comma_power_v2 = "comma power v2"
-  rj45_cable_7ft = "RJ45 cable (7 ft)"
-  long_obdc_cable = "long OBD-C cable"
-  usbc_coupler = "USB-C coupler"
-  comma_3 = "comma 3"
+
+  #mounts
   mount = "mount"
   angled_mount = "angled mount"
-  red_panda = "red panda"
+
+  #cables
+  rj45_cable_7ft = "RJ45 cable (7 ft)"
+  long_obdc_cable = "long OBD-C cable"
   usb_a_2_a_cable = "USB A-A cable"
   usbc_otg_cable = "USB C OTG cable"
+  usbc_coupler = "USB-C coupler"
   obd_c_cable_1point5ft = "OBD-C cable (1.5 ft)"
 
+  #devices
+  comma_3 = "comma 3"
+  red_panda = "red panda"
 
-DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft]
+
+DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount]
 
 
 @dataclass
 class CarParts:
-  def __init__(self, parts: List[CarPart] = None):
-    self.parts = parts or []
+  parts: List[CarPart] = field(default_factory=list)
 
   @classmethod
-  def default(cls, parts: List[CarPart], default: List[CarPart] = None):
-    return cls(parts + (default or DEFAULT_CAR_PARTS))
+  def default(cls, parts: List[CarPart], default: List[CarPart] = None, remove: List[CarPart] = None):
+    p = CarParts()
+    p.parts = [part for part in parts + (default or DEFAULT_CAR_PARTS) if part not in (remove or [])]
+    return p
+
+  @classmethod
+  def custom(cls, parts: List[CarPart]):
+    p = CarParts()
+    p.parts = parts.copy()
+    return p
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
@@ -161,7 +177,7 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
 
-  # all the parts needed to use this car
+  # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
@@ -197,7 +213,7 @@ class CarInfo:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
       parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.value)])
-      hardware_col = f'<details><summary>View</summary><sub>{parts}</sub><br><br>{buy_link}</details>'
+      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,

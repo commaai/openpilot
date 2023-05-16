@@ -75,6 +75,7 @@ class TestCarDocs(unittest.TestCase):
           raise unittest.SkipTest
 
         self.assertTrue(car.car_parts.parts, f"Need to specify car parts: {car.name}")
+        self.assertTrue(any(" connector" in p for p in car.car_parts.parts), f"Need to specify an harness connector: {car.name}")
 
 
 if __name__ == "__main__":
