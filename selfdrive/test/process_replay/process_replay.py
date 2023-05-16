@@ -350,7 +350,7 @@ def get_process_config(name):
 
 
 def replay_process(cfg, lr, fingerprint=None):
-  with OpenpilotPrefix(), ReplayContext(cfg) as rc:
+  with OpenpilotPrefix():
     controlsState = None
     initialized = False
     for msg in lr:
@@ -376,59 +376,60 @@ def replay_process(cfg, lr, fingerprint=None):
     all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
     pub_msgs = [msg for msg in all_msgs if msg.which() in set(cfg.pubs)]
 
-    pm = messaging.PubMaster(cfg.pubs)
-    sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
+    with ReplayContext(cfg) as rc:
+      pm = messaging.PubMaster(cfg.pubs)
+      sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
 
-    managed_processes[cfg.proc_name].prepare()
-    managed_processes[cfg.proc_name].start()
+      managed_processes[cfg.proc_name].prepare()
+      managed_processes[cfg.proc_name].start()
 
-    if cfg.init_callback is not None:
-      cfg.init_callback(rc, pm, all_msgs, fingerprint)
-      CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+      if cfg.init_callback is not None:
+        cfg.init_callback(rc, pm, all_msgs, fingerprint)
+        CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
-    log_msgs, msg_queue = [], []
-    try:
-      # Wait for process to startup
-      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-        while not all(pm.all_readers_updated(s) for s in cfg.pubs):
-          time.sleep(0)
+      log_msgs, msg_queue = [], []
+      try:
+        # Wait for process to startup
+        with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+          while not all(pm.all_readers_updated(s) for s in cfg.pubs):
+            time.sleep(0)
 
-      # Do the replay
-      cnt = 0
-      for msg in pub_msgs:
-        with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
-          resp_sockets, end_of_cycle = cfg.subs, True
-          if cfg.should_recv_callback is not None:
-            end_of_cycle = cfg.should_recv_callback(msg, CP, cfg, cnt)
+        # Do the replay
+        cnt = 0
+        for msg in pub_msgs:
+          with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
+            resp_sockets, end_of_cycle = cfg.subs, True
+            if cfg.should_recv_callback is not None:
+              end_of_cycle = cfg.should_recv_callback(msg, CP, cfg, cnt)
 
-          msg_queue.append(msg)
-          if end_of_cycle:
-            rc.wait_for_recv_called()
+            msg_queue.append(msg)
+            if end_of_cycle:
+              rc.wait_for_recv_called()
 
-            # call recv to let sub-sockets reconnect, after we know the process is ready
-            if cnt == 0:
-              for s in sockets.values():
-                messaging.recv_one_or_none(s)
+              # call recv to let sub-sockets reconnect, after we know the process is ready
+              if cnt == 0:
+                for s in sockets.values():
+                  messaging.recv_one_or_none(s)
 
-            for m in msg_queue:
-              pm.send(m.which(), m.as_builder())
-            msg_queue = []
+              for m in msg_queue:
+                pm.send(m.which(), m.as_builder())
+              msg_queue = []
 
-            rc.unlock_sockets()
-            rc.wait_for_next_recv(True)
+              rc.unlock_sockets()
+              rc.wait_for_next_recv(True)
 
-            for s in resp_sockets:
-              ms = messaging.drain_sock(sockets[s])  
-              for m in ms:
-                m = m.as_builder()
-                m.logMonoTime = msg.logMonoTime
-                log_msgs.append(m.as_reader())
-            cnt += 1
-    finally:
-      managed_processes[cfg.proc_name].signal(signal.SIGKILL)
-      managed_processes[cfg.proc_name].stop()
+              for s in resp_sockets:
+                ms = messaging.drain_sock(sockets[s])  
+                for m in ms:
+                  m = m.as_builder()
+                  m.logMonoTime = msg.logMonoTime
+                  log_msgs.append(m.as_reader())
+              cnt += 1
+      finally:
+        managed_processes[cfg.proc_name].signal(signal.SIGKILL)
+        managed_processes[cfg.proc_name].stop()
 
-    return log_msgs
+      return log_msgs
 
 
 def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
