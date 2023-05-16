@@ -34,10 +34,10 @@ Read [here](https://github.com/commaai/openpilot/blob/90af436a121164a51da9fa48d0
 ### input format
 * single image W = 1440  H = 960 represented in planar YUV420 format:
   * full input size is 1440 * 960 = 1382400
-  * normalized, ranging from 0.0 to 1.0
+  * normalized ranging from 0.0 to 1.0 in float32 (onnx runner) or ranging from 0 to 255 in uint8 (snpe runner)
 
 ### output format
-* 84 x float32 outputs = 2 + 41 * 2 ([parsing example](https://github.com/commaai/openpilot/blob/master/selfdrive/modeld/models/dmonitoring.cc#L165))
+* 84 x float32 outputs = 2 + 41 * 2 ([parsing example](https://github.com/commaai/openpilot/blob/22ce4e17ba0d3bfcf37f8255a4dd1dc683fe0c38/selfdrive/modeld/models/dmonitoring.cc#L33))
   * for each person in the front seats (2 * 41)
     * face pose: 12 = 6 + 6
       * face orientation [pitch, yaw, roll] in camera frame: 3
@@ -52,10 +52,10 @@ Read [here](https://github.com/commaai/openpilot/blob/90af436a121164a51da9fa48d0
     * wearing sunglasses probability: 1
     * face occluded probability: 1
     * touching wheel probability: 1
-    * attentive probability: 1
+    * paying attention probability: 1
     * (deprecated) distracted probabilities: 2
     * using phone probability: 1
-    * sleeping probability: 1
+    * distracted probability: 1
   * common outputs 2
     * poor camera vision probability: 1
     * left hand drive probability: 1
