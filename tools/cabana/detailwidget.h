@@ -41,7 +41,7 @@ private:
   QLabel *time_label, *warning_icon, *warning_label;
   ElidedLabel *name_label;
   QWidget *warning_widget;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   QTabWidget *tab_widget;
   QToolButton *remove_btn;
   LogsWidget *history_log;

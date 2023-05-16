@@ -30,7 +30,7 @@ void Settings::save() {
   s.setValue("geometry", geometry);
   s.setValue("video_splitter_state", video_splitter_state);
   s.setValue("recent_files", recent_files);
-  s.setValue("message_header_state_v2", message_header_state);
+  s.setValue("message_header_state_v3", message_header_state);
   s.setValue("chart_series_type", chart_series_type);
   s.setValue("theme", theme);
   s.setValue("sparkline_range", sparkline_range);
@@ -38,6 +38,7 @@ void Settings::save() {
   s.setValue("log_livestream", log_livestream);
   s.setValue("log_path", log_path);
   s.setValue("drag_direction", drag_direction);
+  s.setValue("suppress_defined_signals", suppress_defined_signals);
 }
 
 void Settings::load() {
@@ -53,7 +54,7 @@ void Settings::load() {
   geometry = s.value("geometry").toByteArray();
   video_splitter_state = s.value("video_splitter_state").toByteArray();
   recent_files = s.value("recent_files").toStringList();
-  message_header_state = s.value("message_header_state_v2").toByteArray();
+  message_header_state = s.value("message_header_state_v3").toByteArray();
   chart_series_type = s.value("chart_series_type", 0).toInt();
   theme = s.value("theme", 0).toInt();
   sparkline_range = s.value("sparkline_range", 15).toInt();
@@ -61,6 +62,7 @@ void Settings::load() {
   log_livestream = s.value("log_livestream", true).toBool();
   log_path = s.value("log_path").toString();
   drag_direction = (Settings::DragDirection)s.value("drag_direction", 0).toInt();
+  suppress_defined_signals = s.value("suppress_defined_signals", false).toBool();
   if (log_path.isEmpty()) {
     log_path = QStandardPaths::writableLocation(QStandardPaths::HomeLocation) + "/cabana_live_stream/";
   }

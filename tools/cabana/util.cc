@@ -1,6 +1,7 @@
 #include "tools/cabana/util.h"
 
 #include <QFontDatabase>
+#include <QHelpEvent>
 #include <QPainter>
 #include <QPixmapCache>
 #include <QToolTip>
@@ -53,6 +54,11 @@ void MessageBytesDelegate::setMultipleLines(bool v) {
   }
 }
 
+int MessageBytesDelegate::widthForBytes(int n) const {
+  int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+  return n * byte_size.width() + h_margin * 2;
+}
+
 QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
   int v_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameVMargin) + 1;
   auto data = index.data(BytesRole);
@@ -60,19 +66,18 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
     return {1, byte_size.height() + 2 * v_margin};
   }
   int n = data.toByteArray().size();
-  assert(n > 0 && n <= 64);
+  assert(n >= 0 && n <= 64);
 
-  QSize size = size_cache[n - 1];
+  QSize size = size_cache[n];
   if (size.isEmpty()) {
-    int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
     if (!multiple_lines) {
-      size.setWidth(h_margin * 2 + n * byte_size.width());
+      size.setWidth(widthForBytes(n));
       size.setHeight(byte_size.height() + 2 * v_margin);
     } else {
-      size.setWidth(h_margin * 2 + 8 * byte_size.width());
+      size.setWidth(widthForBytes(8));
       size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
     }
-    size_cache[n - 1] = size;
+    size_cache[n] = size;
   }
   return size;
 }
@@ -124,6 +129,29 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   }
   painter->setFont(old_font);
   painter->setPen(old_pen);
+}
+
+// TabBar
+
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
+}
+
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
+  }
 }
 
 QColor getColor(const cabana::Signal *sig) {
@@ -186,7 +214,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();

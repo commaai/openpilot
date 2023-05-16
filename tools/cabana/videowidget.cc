@@ -48,8 +48,6 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QButtonGroup *group = new QButtonGroup(this);
   group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
-    if (can->liveStreaming() && speed > 1) continue;
-
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
     QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
@@ -115,19 +113,25 @@ QWidget *VideoWidget::createCameraWidget() {
   l->addLayout(slider_layout);
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
+  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::streamStarted, [this]() {
-    end_time_label->setText(utils::formatSeconds(can->totalSeconds()));
-    slider->setRange(0, can->totalSeconds() * 1000);
-  });
+  QObject::connect(can, &AbstractStream::streamStarted, [this]() { setMaximumTime(can->totalSeconds()); });
   return w;
 }
 
+void VideoWidget::setMaximumTime(double sec) {
+  maximum_time = sec;
+  end_time_label->setText(utils::formatSeconds(sec));
+  slider->setRange(0, sec * 1000);
+}
+
 void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+  if (can->liveStreaming()) return;
+
   if (!is_zoomed) {
     min = 0;
-    max = can->totalSeconds();
+    max = maximum_time;
   }
   end_time_label->setText(utils::formatSeconds(max));
   slider->setRange(min * 1000, max * 1000);
@@ -180,10 +184,15 @@ void Slider::streamStarted() {
 
 void Slider::loadThumbnails() {
   const auto &segments = can->route()->segments();
+  double max_time = 0;
   for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
     LogReader log;
     std::string qlog = it->second.qlog.toStdString();
     if (!qlog.empty() && log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
+      if (max_time == 0 && !log.events.empty()) {
+        max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
+        emit updateMaximumTime(max_time);
+      }
       for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
         if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
           auto thumb = (*ev)->event.getThumbnail();
@@ -253,7 +262,8 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 void Slider::mouseMoveEvent(QMouseEvent *e) {
   QPixmap thumb;
   AlertInfo alert;
-  double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
+  int pos = std::clamp(e->pos().x(), 0, width());
+  double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / 1000.0;
   {
     std::lock_guard lk(thumbnail_lock);
     uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
@@ -264,7 +274,7 @@ void Slider::mouseMoveEvent(QMouseEvent *e) {
       alert = alert_it->second;
     }
   }
-  int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
+  int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
   int y = -thumb.height();
   thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);

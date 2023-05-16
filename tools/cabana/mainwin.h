@@ -21,22 +21,18 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
 
 public slots:
   void openRoute();
-  void newFile();
-  void openFile();
-  void openFileForSource();
+  void newFile(SourceSet s = SOURCE_ALL);
+  void openFile(SourceSet s = SOURCE_ALL);
   void openRecentFile();
-  void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
-  void loadDBCFromFingerprint();
-  void loadDBCFromClipboard();
+  void streamStarted();
   void save();
   void saveAs();
-  void saveDBCToClipboard();
-  void updateSources(const SourceSet &s);
+  void saveToClipboard();
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -44,7 +40,13 @@ signals:
 
 protected:
   void remindSaveChanges();
-  void saveFile();
+  void closeFile(SourceSet s = SOURCE_ALL);
+  void closeFile(DBCFile *dbc_file);
+  void saveFile(DBCFile *dbc_file);
+  void saveFileAs(DBCFile *dbc_file);
+  void saveFileToClipboard(DBCFile *dbc_file);
+  void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
+  void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
@@ -58,6 +60,7 @@ protected:
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
   void findSimilarBits();
+  void findSignal();
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
@@ -79,13 +82,12 @@ protected:
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
-  QMenu *open_dbc_for_source = nullptr;
+  QMenu *manage_dbcs_menu = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
-  SourceSet sources;
   friend class OnlineHelp;
 };
 

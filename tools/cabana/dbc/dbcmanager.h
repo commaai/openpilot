@@ -15,6 +15,7 @@
 
 typedef QSet<uint8_t> SourceSet;
 const SourceSet SOURCE_ALL = {};
+const int INVALID_SOURCE = 0xff;
 
 class DBCManager : public QObject {
   Q_OBJECT
@@ -24,7 +25,10 @@ public:
   ~DBCManager() {}
   bool open(SourceSet s, const QString &dbc_file_name, QString *error = nullptr);
   bool open(SourceSet s, const QString &name, const QString &content, QString *error = nullptr);
+  void close(SourceSet s);
+  void close(DBCFile *dbc_file);
   void closeAll();
+  void removeSourcesFromFile(DBCFile *dbc_file, SourceSet s);
 
   void addSignal(const MessageId &id, const cabana::Signal &sig);
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
@@ -35,6 +39,8 @@ public:
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
+
+  const QList<uint8_t>& mask(const MessageId &id) const;
 
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
@@ -54,6 +60,7 @@ public:
 
 private:
   SourceSet sources;
+  QList<uint8_t> empty_mask;
 
 public slots:
   void updateSources(const SourceSet &s);
@@ -72,4 +79,18 @@ DBCManager *dbc();
 inline QString msgName(const MessageId &id) {
   auto msg = dbc()->msg(id);
   return msg ? msg->name : UNTITLED;
+}
+
+inline QString toString(SourceSet ss) {
+  if (ss == SOURCE_ALL) {
+    return "all";
+  } else {
+    QStringList ret;
+    QList source_list = ss.values();
+    std::sort(source_list.begin(), source_list.end());
+    for (auto s : source_list) {
+      ret << QString::number(s);
+    }
+    return ret.join(", ");
+  }
 }
