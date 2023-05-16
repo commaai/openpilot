@@ -37,6 +37,9 @@ public:
   Slider(QWidget *parent);
   ~Slider();
 
+signals:
+  void updateMaximumTime(double);
+
 private:
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
@@ -46,6 +49,7 @@ private:
   void streamStarted();
   void loadThumbnails();
 
+  double max_sec = 0;
   int slider_x = -1;
   std::vector<std::tuple<int, int, TimelineType>> timeline;
   std::mutex thumbnail_lock;
@@ -64,6 +68,7 @@ class VideoWidget : public QFrame {
 public:
   VideoWidget(QWidget *parnet = nullptr);
   void rangeChanged(double min, double max, bool is_zommed);
+  void setMaximumTime(double sec);
 
 protected:
   void updateState();
@@ -71,6 +76,7 @@ protected:
   QWidget *createCameraWidget();
 
   CameraWidget *cam_widget;
+  double maximum_time = 0;
   QLabel *end_time_label;
   QLabel *time_label;
   QHBoxLayout *slider_layout;

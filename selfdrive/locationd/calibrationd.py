@@ -25,7 +25,7 @@ MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is at model frequency, blocks needed for efficiency
-SMOOTH_CYCLES = 400
+SMOOTH_CYCLES = 10
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
@@ -37,12 +37,6 @@ WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
@@ -69,6 +63,7 @@ class Calibrator:
     rpy_init = RPY_INIT
     wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     valid_blocks = 0
+    self.cal_status = log.LiveCalibrationData.Status.uncalibrated
 
     if param_put and calibration_params:
       try:
@@ -134,16 +129,20 @@ class Calibrator:
       self.calib_spread = np.zeros(3)
 
     if self.valid_blocks < INPUTS_NEEDED:
-      self.cal_status = Calibration.UNCALIBRATED
+      if self.cal_status == log.LiveCalibrationData.Status.recalibrating:
+        self.cal_status = log.LiveCalibrationData.Status.recalibrating
+      else:
+        self.cal_status = log.LiveCalibrationData.Status.uncalibrated
     elif is_calibration_valid(self.rpy):
-      self.cal_status = Calibration.CALIBRATED
+      self.cal_status = log.LiveCalibrationData.Status.calibrated
     else:
-      self.cal_status = Calibration.INVALID
+      self.cal_status = log.LiveCalibrationData.Status.invalid
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
-    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
-      self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
+    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == log.LiveCalibrationData.Status.calibrated:
+      self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
+      self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
@@ -162,7 +161,7 @@ class Calibrator:
                             rot: List[float],
                             wide_from_device_euler: List[float],
                             trans_std: List[float]) -> Optional[np.ndarray]:
-    self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
+    self.old_rpy_weight = max(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     angle_std_threshold = MAX_VEL_ANGLE_STD
@@ -210,7 +209,7 @@ class Calibrator:
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
-      liveCalibration.calStatus = Calibration.CALIBRATED
+      liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
       liveCalibration.calPerc = 100.
       liveCalibration.rpyCalib = [0, 0, 0]
       liveCalibration.rpyCalibSpread = self.calib_spread.tolist()

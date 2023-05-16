@@ -221,6 +221,10 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
   brand_matches = get_brand_ecu_matches(ecu_rx_addrs)
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
+    # Skip this brand if there are no matching present ECUs
+    if not len(brand_matches[brand]):
+      continue
+
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only

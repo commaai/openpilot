@@ -3,7 +3,6 @@
 #include <QGridLayout>
 #include <QLabel>
 #include <QScrollArea>
-#include <QTabBar>
 #include <QTimer>
 #include <QUndoCommand>
 #include <QUndoStack>
@@ -59,6 +58,7 @@ private:
   ChartView *createChart();
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
+  QRect chartVisibleRect(ChartView *chart);
   void eventsMerged();
   void updateState();
   void zoomReset();
@@ -66,6 +66,7 @@ private:
   void stopAutoScroll();
   void doAutoScroll();
   void updateToolBar();
+  void updateTabBar();
   void setMaxChartRange(int value);
   void updateLayout(bool force = false);
   void settingChanged();
@@ -93,7 +94,7 @@ private:
   ToolButton *remove_all_btn;
   QList<ChartView *> charts;
   std::unordered_map<int, QList<ChartView *>> tab_charts;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   ChartsContainer *charts_container;
   QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
