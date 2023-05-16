@@ -4,7 +4,7 @@ from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
+from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -60,15 +60,14 @@ class RADAR:
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
-
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  harness_kit: HarnessKit = HarnessKit(Harness.ford_q3)
+  car_parts: CarParts = CarParts.default([CarPart.ford_q3_connector])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
+  CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22", car_parts=CarParts.default([CarPart.ford_q3_connector, CarPart.angled_mount])),
   CAR.ESCAPE_MK4: [
     FordCarInfo("Ford Escape 2020-22"),
     FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),

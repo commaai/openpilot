@@ -1,6 +1,5 @@
 import re
 from collections import namedtuple
-import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -21,7 +20,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
-  HARNESS = "Harness Kit"
+  HARDWARE = "Hardware Needed"
   VIDEO = "Video"
 
 
@@ -31,60 +30,68 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-class Harness(Enum):
-  nidec = "Honda Nidec"
-  bosch_a = "Honda Bosch A"
-  bosch_b = "Honda Bosch B"
-  toyota = "Toyota"
-  subaru_a = "Subaru A"
-  subaru_b = "Subaru B"
-  fca = "FCA"
-  ram = "Ram"
-  vw = "VW"
-  j533 = "J533"
-  hyundai_a = "Hyundai A"
-  hyundai_b = "Hyundai B"
-  hyundai_c = "Hyundai C"
-  hyundai_d = "Hyundai D"
-  hyundai_e = "Hyundai E"
-  hyundai_f = "Hyundai F"
-  hyundai_g = "Hyundai G"
-  hyundai_h = "Hyundai H"
-  hyundai_i = "Hyundai I"
-  hyundai_j = "Hyundai J"
-  hyundai_k = "Hyundai K"
-  hyundai_l = "Hyundai L"
-  hyundai_m = "Hyundai M"
-  hyundai_n = "Hyundai N"
-  hyundai_o = "Hyundai O"
-  hyundai_p = "Hyundai P"
-  hyundai_q = "Hyundai Q"
-  custom = "Developer"
-  obd_ii = "OBD-II"
-  gm = "GM"
-  nissan_a = "Nissan A"
-  nissan_b = "Nissan B"
-  mazda = "Mazda"
-  ford_q3 = "Ford Q3"
-  ford_q4 = "Ford Q4"
-  none = "None"
-
-
-class HarnessPart(Enum):
+class CarPart(Enum):
+  nidec_connector = "Honda Nidec connector"
+  bosch_a_connector = "Honda Bosch A connector"
+  bosch_b_connector = "Honda Bosch B connector"
+  toyota_connector = "Toyota connector"
+  subaru_a_connector = "Subaru A connector"
+  subaru_b_connector = "Subaru B connector"
+  fca_connector = "FCA connector"
+  ram_connector = "Ram connector"
+  vw_connector = "VW connector"
+  j533_connector = "J533 connector"
+  hyundai_a_connector = "Hyundai A connector"
+  hyundai_b_connector = "Hyundai B connector"
+  hyundai_c_connector = "Hyundai C connector"
+  hyundai_d_connector = "Hyundai D connector"
+  hyundai_e_connector = "Hyundai E connector"
+  hyundai_f_connector = "Hyundai F connector"
+  hyundai_g_connector = "Hyundai G connector"
+  hyundai_h_connector = "Hyundai H connector"
+  hyundai_i_connector = "Hyundai I connector"
+  hyundai_j_connector = "Hyundai J connector"
+  hyundai_k_connector = "Hyundai K connector"
+  hyundai_l_connector = "Hyundai L connector"
+  hyundai_m_connector = "Hyundai M connector"
+  hyundai_n_connector = "Hyundai N connector"
+  hyundai_o_connector = "Hyundai O connector"
+  hyundai_p_connector = "Hyundai P connector"
+  hyundai_q_connector = "Hyundai Q connector"
+  custom_connector = "Developer connector"
+  obd_ii_connector = "OBD-II connector"
+  gm_connector = "GM connector"
+  nissan_a_connector = "Nissan A connector"
+  nissan_b_connector = "Nissan B connector"
+  mazda_connector = "Mazda connector"
+  ford_q3_connector = "Ford Q3 connector"
+  ford_q4_connector = "Ford Q4 connector"
+  none_connector = "None connector"
   harness_box = "harness box"
   comma_power_v2 = "comma power v2"
-  rj45_cable = "RJ45 cable (7 ft)"
+  rj45_cable_7ft = "RJ45 cable (7 ft)"
   long_obdc_cable = "long OBD-C cable"
   usbc_coupler = "USB-C coupler"
+  comma_3 = "comma 3"
+  mount = "mount"
+  angled_mount = "angled mount"
+  red_panda = "red panda"
+  usb_a_2_a_cable = "USB A-A cable"
+  usbc_otg_cable = "USB C OTG cable"
+  obd_c_cable_1point5ft = "OBD-C cable (1.5 ft)"
 
 
-DEFAULT_HARNESS_PARTS: List[HarnessPart] = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft]
 
 
 @dataclass
-class HarnessKit:
-  connector: Harness = Harness.none
-  parts: List[HarnessPart] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_PARTS))
+class CarParts:
+  def __init__(self, parts: List[CarPart] = None):
+    self.parts = parts or []
+
+  @classmethod
+  def default(cls, parts: List[CarPart], default: List[CarPart] = None):
+    return cls(parts + (default or DEFAULT_CAR_PARTS))
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
@@ -154,8 +161,8 @@ class CarInfo:
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
 
-  # harness connectors + all the parts needed
-  harness_kit: HarnessKit = HarnessKit()
+  # all the parts needed to use this car
+  car_parts: CarParts = CarParts()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -184,13 +191,13 @@ class CarInfo:
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
 
-    # harness column
-    harness_col = self.harness_kit.connector.value
-    if self.harness_kit.connector is not Harness.none:
+    # hardware column
+    hardware_col = "None"
+    if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
-      harness_connector = f'- 1 <a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col} connector</a>'
-      harness_parts = '<br>'.join([f"- {self.harness_kit.parts.count(part)} {part.value}" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)])
-      harness_col = f'<details><summary>View</summary><sub>{harness_connector}<br>{harness_parts}</sub></details>'
+      buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
+      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.value)])
+      hardware_col = f'<details><summary>View</summary><sub>{parts}</sub><br><br>{buy_link}</details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
@@ -201,7 +208,7 @@ class CarInfo:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
-      Column.HARNESS: harness_col,
+      Column.HARDWARE: hardware_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
 
