@@ -36,3 +36,8 @@ def unblock_stdout() -> None:
     # whose low byte is the signal number and whose high byte is the exit status
     exit_status = os.wait()[1] >> 8
     os._exit(exit_status)
+
+
+def write_onroad_params(started, params):
+  params.put_bool("IsOnroad", started)
+  params.put_bool("IsOffroad", not started)
