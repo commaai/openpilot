@@ -141,7 +141,9 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      self.assertNotEqual(os.getxattr(f_path.replace('.bz2', ''), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "File upload when locked")
+      fn = f_path.replace('.bz2', '')
+      uploaded = UPLOAD_ATTR_NAME in os.listxattr(fn) and os.getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
+      self.assertFalse(uploaded, "File upload when locked")
 
   def test_clear_locks_on_startup(self):
     f_paths = self.gen_files(lock=True, boot=False)
