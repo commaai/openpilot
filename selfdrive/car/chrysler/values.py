@@ -1,12 +1,11 @@
 from enum import IntFlag
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -61,7 +60,7 @@ RAM_CARS = RAM_DT | RAM_HD
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
-  harness: Enum = Harness.fca
+  harness_kit: HarnessKit = HarnessKit(Harness.fca)
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -75,10 +74,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness_kit=HarnessKit(Harness.ram)),
   CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
-    ChryslerCarInfo("Ram 3500 2019-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 2500 2020-22", harness_kit=HarnessKit(Harness.ram)),
+    ChryslerCarInfo("Ram 3500 2019-22", harness_kit=HarnessKit(Harness.ram)),
   ],
 }
 
@@ -227,6 +226,7 @@ FW_VERSIONS = {
       b'68453514AD',
       b'68510283AG',
       b'68527375AD',
+      b'68527346AE',
     ],
     (Ecu.srs, 0x744, None): [
       b'68428609AB',
@@ -249,6 +249,7 @@ FW_VERSIONS = {
       b'68535469AB',
       b'68535470AC',
       b'68586307AB',
+      b'68548900AB',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
@@ -276,6 +277,7 @@ FW_VERSIONS = {
       b'68552788AA',
       b'68552790AA',
       b'68585112AB',
+      b'68552789AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05036065AE ',
@@ -287,6 +289,7 @@ FW_VERSIONS = {
       b'68500630AD',
       b'68500630AE',
       b'68539650AD',
+      b'05149846AA ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68360078AL',
@@ -299,6 +302,7 @@ FW_VERSIONS = {
       b'68484467AC',
       b'68502994AD',
       b'68540431AB',
+      b'68520867AE',
     ],
   },
 

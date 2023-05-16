@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -110,9 +110,9 @@ class HondaCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in HONDA_BOSCH:
-      self.harness = Harness.bosch_b if CP.carFingerprint in HONDA_BOSCH_RADARLESS else Harness.bosch_a
+      self.harness_kit = HarnessKit(Harness.bosch_b) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else HarnessKit(Harness.bosch_a)
     else:
-      self.harness = Harness.nidec
+      self.harness_kit = HarnessKit(Harness.nidec)
 
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
@@ -146,7 +146,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.PILOT: [
     HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Passport 2019-21", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Passport 2019-22", "All", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-23", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
@@ -1114,6 +1114,7 @@ FW_VERSIONS = {
       b'28101-5EZ-A210\x00\x00',
       b'28101-5EZ-A600\x00\x00',
       b'28101-5EZ-A430\x00\x00',
+      b'28101-5EZ-A700\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-RLV-4060\x00\x00',
@@ -1128,6 +1129,7 @@ FW_VERSIONS = {
       b'37805-RLV-B220\x00\x00',
       b'37805-RLV-B210\x00\x00',
       b'37805-RLV-L160\x00\x00',
+      b'37805-RLV-B420\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TG7-A030\x00\x00',
@@ -1141,6 +1143,7 @@ FW_VERSIONS = {
       b'39990-TG7-A060\x00\x00',
       b'39990-TG7-A070\x00\x00',
       b'39990-TGS-A230\x00\x00',
+      b'39990-TGS-A320\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TG7-A310\x00\x00',
@@ -1161,6 +1164,7 @@ FW_VERSIONS = {
       b'36161-TGT-A030\x00\x00',
       b'36161-TGT-A130\x00\x00',
       b'36161-TGS-A030\x00\x00',
+      b'36161-TGS-A220\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A020\x00\x00',
@@ -1168,6 +1172,7 @@ FW_VERSIONS = {
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
       b'77959-TGS-A010\x00\x00',
+      b'77959-TGS-A110\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-A040\x00\x00',
@@ -1201,6 +1206,7 @@ FW_VERSIONS = {
       b'78109-TGS-AT20\x00\x00',
       b'78109-TGS-AX20\x00\x00',
       b'78109-TGS-AJ20\x00\x00',
+      b'78109-TGS-AC10\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A130\x00\x00',
