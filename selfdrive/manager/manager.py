@@ -24,6 +24,7 @@ from system.version import is_dirty, get_commit, get_version, get_origin, get_sh
                            is_tested_branch, is_release_branch
 
 
+
 def manager_init() -> None:
   # update system time from panda
   set_time(cloudlog)
