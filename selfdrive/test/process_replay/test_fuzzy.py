@@ -92,7 +92,6 @@ def get_strategy_for_events(event_types, finite=False):
     'speedAccuracy': floats(width=32),
   })
   r['LiveCalibration'] = st.fixed_dictionaries({
-    'calStatus': st.integers(min_value=0, max_value=1),
     'rpyCalib': st.lists(floats(width=32), min_size=3, max_size=3),
   })
 
