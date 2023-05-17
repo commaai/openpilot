@@ -38,11 +38,11 @@ class ReplayContext:
       self.recv_called_events = OrderedDict()
       self.recv_ready_events = OrderedDict()
       for pub in self.pubs:
-        self.recv_called_events[pub] = messaging.fake_event(pub, messaging.FAKE_EVENT_RECV_CALLED)
-        self.recv_ready_events[pub] = messaging.fake_event(pub, messaging.FAKE_EVENT_RECV_READY)
+        self.recv_called_events[pub] = messaging.fake_event(pub, messaging.EVENT_RECV_CALLED)
+        self.recv_ready_events[pub] = messaging.fake_event(pub, messaging.EVENT_RECV_READY)
     else:
-      self.recv_called_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.FAKE_EVENT_RECV_CALLED)}
-      self.recv_ready_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.FAKE_EVENT_RECV_READY)}
+      self.recv_called_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.EVENT_RECV_CALLED)}
+      self.recv_ready_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.EVENT_RECV_READY)}
 
     return self
 
@@ -353,15 +353,16 @@ def replay_process(cfg, lr, fingerprint=None):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
-    for msg in lr:
-      if msg.which() == 'controlsState':
-        controlsState = msg.controlsState
-        if initialized:
-          break
-      elif msg.which() == 'carEvents':
-        initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+    if cfg.proc_name == "controlsd":
+      for msg in lr:
+        if msg.which() == 'controlsState':
+          controlsState = msg.controlsState
+          if initialized:
+            break
+        elif msg.which() == 'carEvents':
+          initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
-    assert controlsState is not None and initialized, "controlsState never initialized"
+      assert controlsState is not None and initialized, "controlsState never initialized"
 
     CP = [m for m in lr if m.which() == 'carParams'][0].carParams
     if fingerprint is not None:
