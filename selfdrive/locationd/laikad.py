@@ -181,7 +181,7 @@ class Laikad:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO: Understand and use remaining unknown constellations
       try:
-        good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS]
+        good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
       except NotImplementedError:
         good_constellation = False
       # gpsWeek 65535 is received rarely from quectel, this cannot be
@@ -195,17 +195,39 @@ class Laikad:
 
   def read_report(self, gnss_msg):
     if self.use_qcom:
+      # QCOM reports are per constellation
       report = gnss_msg.drMeasurementReport
-      week = report.gpsWeek
-      tow = report.gpsMilliseconds / 1000.0
-      new_meas = read_raw_qcom(report)
+      if report.source == log.QcomGnss.MeasurementSource.gps:
+        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+        new_meas = read_raw_qcom(report)
+      elif report.source == log.QcomGnss.MeasurementSource.sbas:
+        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+        new_meas = []
+      elif report.source == log.QcomGnss.MeasurementSource.glonass:
+        report_time = GPSTime.from_glonass(report.glonassYear,
+                                             report.glonassDay,
+                                             report.glonassMilliseconds / 1000.0)
+        new_meas = []
+      else:
+        raise NotImplementedError(f'Unknownconstellation {report.source}')
+
+      if report_time - self.last_report_time > 0:
+        self.qcom_reports = [report]
+      else:
+        self.qcom_reports.append(report)
+      self.last_report_time = report_time
+
+      new_meas = []
+      if len(self.qcom_reports) == 3:
+        for report in self.qcom_reports:
+          new_meas.extend(read_raw_qcom(report))
+
     else:
       report = gnss_msg.measurementReport
-      week = report.gpsWeek
-      tow = report.rcvTow
+      self.last_report_time = GPSTime(report.gpsWeek, report.rcvTow)
       new_meas = read_raw_ublox(report)
-    self.last_report_time = GPSTime(week, tow)
-    return week, tow, new_meas
+    print(len(new_meas))
+    return self.last_report_time, new_meas
 
   def is_ephemeris(self, gnss_msg):
     if self.use_qcom:
@@ -279,12 +301,11 @@ class Laikad:
     if self.is_ephemeris(gnss_msg):
       self.read_ephemeris(gnss_msg)
     elif self.is_good_report(gnss_msg):
-      week, tow, new_meas = self.read_report(gnss_msg)
-      self.gps_week = week
-      if week > 0:
-        latest_msg_t = GPSTime(week, tow)
+      report_t, new_meas = self.read_report(gnss_msg)
+      self.gps_week = report_t.week
+      if report_t.week > 0:
         if self.auto_fetch_navs:
-          self.fetch_navs(latest_msg_t, block)
+          self.fetch_navs(report_t, block)
 
       corrected_measurements = self.process_report(new_meas, t)
       msg_dict['correctedMeasurements'] = [create_measurement_msg(m) for m in corrected_measurements]
