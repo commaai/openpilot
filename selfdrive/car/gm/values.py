@@ -91,7 +91,7 @@ class GMCarInfo(CarInfo):
     if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
       self.car_parts = CarParts.default([CarPart.gm_connector])
     else:
-      self.car_parts = CarParts.custom([CarPart.obd_ii_connector, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount])
+      self.car_parts = CarParts([CarPart.obd_ii_connector, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount])
       self.footnotes.append(Footnote.OBD_II)
 
 
