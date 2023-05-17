@@ -176,6 +176,20 @@ class Laikad:
 
       return position_estimate, position_std, velocity_estimate, velocity_std
 
+  def gps_time_from_qcom_report(self, gnss_msg):
+    report = gnss_msg.drMeasurementReport
+    if report.source == log.QcomGnss.MeasurementSource.gps:
+      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+    elif report.source == log.QcomGnss.MeasurementSource.sbas:
+      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+    elif report.source == log.QcomGnss.MeasurementSource.glonass:
+      report_time = GPSTime.from_glonass(report.glonassYear,
+                                            report.glonassDay,
+                                            report.glonassMilliseconds / 1000.0)
+    else:
+      raise NotImplementedError(f'Unknownconstellation {report.source}')
+    return report_time
+
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
       constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
@@ -184,9 +198,10 @@ class Laikad:
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
       except NotImplementedError:
         good_constellation = False
-      # gpsWeek 65535 is received rarely from quectel, this cannot be
-      # passed to GnssMeasurements's gpsWeek (Int16)
-      good_week = not getattr(gnss_msg, gnss_msg.which()).gpsWeek > np.iinfo(np.int16).max
+      # Garbage timestamps with week > 32767 are sometimes sent by module.
+      # This is an issue with gpsTime and GLONASS time.
+      report_time = self.gps_time_from_qcom_report(gnss_msg)
+      good_week = report_time.week < np.iinfo(np.int16).max
       return good_constellation and good_week
     elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
       return True
@@ -195,21 +210,9 @@ class Laikad:
 
   def read_report(self, gnss_msg):
     if self.use_qcom:
-      # QCOM reports are per constellation
+      # QCOM reports are per constellation, should always send 3 reports
       report = gnss_msg.drMeasurementReport
-      if report.source == log.QcomGnss.MeasurementSource.gps:
-        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-        new_meas = read_raw_qcom(report)
-      elif report.source == log.QcomGnss.MeasurementSource.sbas:
-        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-        new_meas = []
-      elif report.source == log.QcomGnss.MeasurementSource.glonass:
-        report_time = GPSTime.from_glonass(report.glonassYear,
-                                             report.glonassDay,
-                                             report.glonassMilliseconds / 1000.0)
-        new_meas = []
-      else:
-        raise NotImplementedError(f'Unknownconstellation {report.source}')
+      report_time = self.gps_time_from_qcom_report(gnss_msg)
 
       if report_time - self.last_report_time > 0:
         self.qcom_reports = [report]
@@ -226,7 +229,6 @@ class Laikad:
       report = gnss_msg.measurementReport
       self.last_report_time = GPSTime(report.gpsWeek, report.rcvTow)
       new_meas = read_raw_ublox(report)
-    print(len(new_meas))
     return self.last_report_time, new_meas
 
   def is_ephemeris(self, gnss_msg):
