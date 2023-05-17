@@ -13,7 +13,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, uint32_t in_freq = 0);
+  void compute(const char *dat, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -55,7 +55,7 @@ public:
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
-  const std::vector<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
+  const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
 
 signals:
@@ -65,7 +65,7 @@ signals:
   void streamStarted();
   void eventsMerged();
   void updated();
-  void msgsReceived(const QHash<MessageId, CanData> *);
+  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
 
 public:

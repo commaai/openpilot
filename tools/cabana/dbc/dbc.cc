@@ -13,8 +13,43 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   return ret;
 }
 
+void cabana::Msg::updateMask() {
+  mask = QVector<uint8_t>(size, 0x00).toList();
+  for (auto &sig : sigs) {
+    int i = sig.msb / 8;
+    int bits = sig.size;
+    while (i >= 0 && i < size && bits > 0) {
+      int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
+      int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
+
+      int sz = msb - lsb + 1;
+      int shift = (lsb - (i * 8));
+
+      mask[i] |= ((1ULL << sz) - 1) << shift;
+
+      bits -= size;
+      i = sig.is_little_endian ? i - 1 : i + 1;
+    }
+  }
+}
+
 void cabana::Signal::updatePrecision() {
   precision = std::max(num_decimals(factor), num_decimals(offset));
+}
+
+QString cabana::Signal::formatValue(double value) const {
+  // Show enum string
+  for (auto &[val, desc] : val_desc) {
+    if (std::abs(value - val.toInt()) < 1e-6) {
+      return desc;
+    }
+  }
+
+  QString val_str = QString::number(value, 'f', precision);
+  if (!unit.isEmpty()) {
+    val_str += " " + unit;
+  }
+  return val_str;
 }
 
 // helper functions
@@ -78,5 +113,3 @@ std::pair<int, int> getSignalRange(const cabana::Signal *s) {
   int to = from + s->size - 1;
   return {from, to};
 }
-
-std::vector<std::string> allDBCNames() { return get_dbc_names(); }
