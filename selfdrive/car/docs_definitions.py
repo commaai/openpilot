@@ -33,6 +33,7 @@ class Star(Enum):
 class PartType(Enum):
   harness_connector = "Harness Connector"
   generic_part = "Generic Part"
+  mount = "Mount"
 
 
 Part = namedtuple("Part", ["value","type"], defaults=("",PartType.generic_part))
@@ -82,8 +83,8 @@ class CarPart(Enum):
   comma_power_v2 = Part("comma power v2")
 
   #mounts
-  mount = Part("mount")
-  angled_mount = Part("angled mount")
+  mount = Part("mount", type=PartType.mount)
+  angled_mount = Part("angled mount", type=PartType.mount)
 
   #cables
   rj45_cable_7ft = Part("RJ45 cable (7 ft)")

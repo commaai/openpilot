@@ -75,7 +75,8 @@ class TestCarDocs(unittest.TestCase):
           raise unittest.SkipTest
 
         self.assertTrue(len(car.car_parts.parts) > 0, f"Need to specify car parts: {car.name}")
-        self.assertTrue(any(p.value.type is PartType.harness_connector and p.value is not CarPart.none_connector for p in car.car_parts.parts), f"Need to specify an harness connector: {car.name}")
+        self.assertTrue(len(list(filter(lambda p: p.value.type is PartType.harness_connector and p is not CarPart.none_connector, car.car_parts.parts))) > 0, f"Need to specify an harness connector: {car.name}")
+        self.assertTrue(len(list(filter(lambda p: p.value.type is PartType.mount, car.car_parts.parts))) > 0, f"Need to specify a mount: {car.name}")
 
 
 if __name__ == "__main__":

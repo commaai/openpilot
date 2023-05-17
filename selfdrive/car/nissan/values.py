@@ -30,7 +30,7 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
-NISSAN_PARTS = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler]
+NISSAN_PARTS = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount]
 
 
 @dataclass
