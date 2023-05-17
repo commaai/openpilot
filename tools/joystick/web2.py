@@ -8,6 +8,7 @@ import pyaudio
 import io
 import cv2
 
+import time
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack, MediaStreamError
@@ -64,52 +65,41 @@ class VideoTrack(VideoStreamTrack):
     return frame
 
 
-class Speaker:
+class Speaker(MediaBlackhole):
   def __init__(self):
-    self.__tracks = {}
+    super().__init__()
     self.p = pyaudio.PyAudio()
     self.buffer = io.BytesIO()
     self.channels = 2
-    self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=960, output=True, stream_callback=self.pyaudio_callback)
-    
+    self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=9600, output=True, stream_callback=self.pyaudio_callback)
+
   def pyaudio_callback(self, in_data, frame_count, time_info, status):
-    # print(self.buffer.getbuffer().nbytes, frame_count)
-    if self.buffer.getbuffer().nbytes == 0:
+    if self.buffer.getbuffer().nbytes < frame_count * self.channels * 2:
       buff = np.zeros((frame_count, 2), dtype=np.int16).tobytes()
+    elif self.buffer.getbuffer().nbytes > 115200: # 3x the usual read size
+      self.buffer.seek(0)
+      buff = self.buffer.read(frame_count * self.channels * 4)
+      buff = buff[:frame_count * self.channels * 2]
+      self.buffer.seek(2)
     else:
       self.buffer.seek(0)
       buff = self.buffer.read(frame_count * self.channels * 2)
       self.buffer.seek(2)
     return (buff, pyaudio.paContinue)
 
-
-  def addTrack(self, track):
-    if track not in self.__tracks:
-      self.__tracks[track] = None
-
   async def consume(self, track):
     while True:
       try:
         frame = await track.recv()
-        # logging.info(f"{frame.to_ndarray().shape}, {frame.samples}, {frame.rate}, {frame.sample_rate}, {frame.layout}")
-        # logging.info(f"{frame.layout.channels}, {frame.layout.name}")
       except MediaStreamError:
         return
       bio = bytes(frame.planes[0])
       self.buffer.write(bio)
 
-
   async def start(self):
-    # self.stream.start()
-    for track, task in self.__tracks.items():
+    for track, task in self._MediaBlackhole__tracks.items():
       if task is None:
-        self.__tracks[track] = asyncio.ensure_future(self.consume(track))
-
-  async def stop(self):
-    for task in self.__tracks.values():
-      if task is not None:
-        task.cancel()
-    self.__tracks = {}
+        self._MediaBlackhole__tracks[track] = asyncio.ensure_future(self.consume(track))
 
 
 class MicTrack(AudioStreamTrack):
@@ -149,11 +139,31 @@ async def index(request):
     return web.Response(content_type="text/html", text=content)
 
 
+async def send_ping(app):
+  while True:
+    if 'remote_channel' in app:
+      print("yoyoyo", app['remote_channel'])
+    else:
+      print("not yet")
+    # this_time = time.monotonic()
+    # if (last_send_time + 0.5) < this_time:
+    #   dat = messaging.new_message('testJoystick')
+    #   dat.testJoystick.axes = [0,0]
+    #   dat.testJoystick.buttons = [False]
+    #   pm.send('testJoystick', dat)
+    await asyncio.sleep(1)
+  
+async def start_background_tasks(app):
+  app['ping'] = asyncio.create_task(send_ping(app))
+
+async def stop_background_tasks(app):
+  app['ping'].cancel()
+  await app['ping']
+
 async def offer(request):
   logger.info("\n\n\nnewoffer!\n\n")
   params = await request.json()
   offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-  # speaker = MediaRecorder("default", format="alsa", options={'ar': "48000", 'ac': "2", 'aframes': "960", 'acodec': 'pcm_s16le'})
   speaker = Speaker()
 
   pc = RTCPeerConnection()
@@ -166,11 +176,12 @@ async def offer(request):
   log_info("Created for %s", request.remote)
 
 
-  @pc.on("datachannel")
-  def on_datachannel(channel):
-    @channel.on("message")
-    def on_message(message):
-      print(json.loads(message))
+  # @pc.on("datachannel")
+  # def on_datachannel(channel):
+  #   request.app['remote_channel'] = channel
+  #   @channel.on("message")
+  #   def on_message(message):
+  #     print(json.loads(message))
 
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():
@@ -214,4 +225,6 @@ if __name__ == "__main__":
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
   app.router.add_static('/static', 'static')
+  # app.on_startup.append(start_background_tasks)
+  # app.on_cleanup.append(stop_background_tasks)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
