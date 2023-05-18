@@ -7,7 +7,7 @@ import unittest
 
 import system.loggerd.uploader as uploader
 
-def create_random_file(file_path, size_mb, lock=False):
+def create_random_file(file_path, size_mb, lock=False, xattr=None):
   try:
     os.mkdir(os.path.dirname(file_path))
   except OSError:
@@ -24,6 +24,9 @@ def create_random_file(file_path, size_mb, lock=False):
   with open(file_path, 'wb') as f:
     for _ in range(chunks):
       f.write(data)
+
+  if xattr is not None:
+    uploader.setxattr(file_path, uploader.UPLOAD_ATTR_NAME, xattr)
 
 class MockResponse():
   def __init__(self, text, status_code):
@@ -95,8 +98,8 @@ class UploaderTestCase(unittest.TestCase):
       if e.errno != errno.ENOENT:
         raise
 
-  def make_file_with_data(self, f_dir, fn, size_mb=.1, lock=False):
+  def make_file_with_data(self, f_dir, fn, size_mb=.1, lock=False, xattr=None):
     file_path = os.path.join(self.root, f_dir, fn)
-    create_random_file(file_path, size_mb, lock)
+    create_random_file(file_path, size_mb, lock, xattr)
 
     return file_path

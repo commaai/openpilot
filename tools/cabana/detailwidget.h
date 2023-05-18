@@ -6,9 +6,9 @@
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
 class EditMessageDialog : public QDialog {
 public:
@@ -30,7 +30,6 @@ public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
   void setMessage(const MessageId &message_id);
   void refresh();
-  QSize minimumSizeHint() const override { return binary_view->minimumSizeHint(); }
 
 private:
   void showTabBarContextMenu(const QPoint &pt);
@@ -42,7 +41,7 @@ private:
   QLabel *time_label, *warning_icon, *warning_label;
   ElidedLabel *name_label;
   QWidget *warning_widget;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   QTabWidget *tab_widget;
   QToolButton *remove_btn;
   LogsWidget *history_log;

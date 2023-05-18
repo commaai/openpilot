@@ -13,8 +13,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->setContentsMargins(0, 0, 0, 0);
 
   // tabbar
-  tabbar = new QTabBar(this);
-  tabbar->setTabsClosable(true);
+  tabbar = new TabBar(this);
   tabbar->setUsesScrollButtons(true);
   tabbar->setAutoHide(true);
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -22,7 +21,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // message title
   QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(0, 6, 0, 0);
+  title_layout->setContentsMargins(3, 6, 3, 0);
   time_label = new QLabel(this);
   time_label->setToolTip(tr("Current time"));
   time_label->setStyleSheet("QLabel{font-weight:bold;}");
@@ -32,9 +31,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   name_label->setAlignment(Qt::AlignCenter);
   name_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   title_layout->addWidget(name_label);
-  auto edit_btn = toolButton("pencil", tr("Edit Message"));
+  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
   title_layout->addWidget(edit_btn);
-  remove_btn = toolButton("x-lg", tr("Remove Message"));
+  remove_btn = new ToolButton("x-lg", tr("Remove Message"));
   title_layout->addWidget(remove_btn);
   main_layout->addLayout(title_layout);
 
@@ -48,7 +47,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   // msg widget
   splitter = new QSplitter(Qt::Vertical, this);
-  splitter->setAutoFillBackground(true);
   splitter->addWidget(binary_view = new BinaryView(this));
   splitter->addWidget(signal_view = new SignalView(charts, this));
   binary_view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
@@ -131,7 +129,9 @@ void DetailWidget::refresh() {
   QStringList warnings;
   auto msg = dbc()->msg(msg_id);
   if (msg) {
-    if (msg->size != can->lastMessage(msg_id).dat.size()) {
+    if (msg_id.source == INVALID_SOURCE) {
+      warnings.push_back(tr("No messages received."));
+    } else if (msg->size != can->lastMessage(msg_id).dat.size()) {
       warnings.push_back(tr("Message size (%1) is incorrect.").arg(msg->size));
     }
     for (auto s : binary_view->getOverlappingSignals()) {
