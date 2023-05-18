@@ -39,9 +39,9 @@ class ReplayContext:
     if self.drained_pub is None:
       self.events = OrderedDict()
       for pub in self.pubs:
-        self.events[pub] = messaging.fake_event_manager(pub, enable=True)
+        self.events[pub] = messaging.fake_event_handle(pub, enable=True)
     else:
-      self.events = {self.drained_pub: messaging.fake_event_manager(self.drained_pub, enable=True)}
+      self.events = {self.drained_pub: messaging.fake_event_handle(self.drained_pub, enable=True)}
 
     return self
 
