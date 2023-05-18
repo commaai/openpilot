@@ -14,16 +14,15 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.radarUnavailable = True
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # These cars are dashcam only for lack of test coverage.
     # Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.FOCUS_MK4}
 
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
-
     ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.radarUnavailable = True
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
 
