@@ -28,7 +28,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.experimentalLongitudinalAvailable = True
     if experimental_long:
-      # Panda ALLOW_DEBUG firmware required
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
       ret.openpilotLongitudinalControl = True
 
