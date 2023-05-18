@@ -225,7 +225,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
-    // Dont send if older than 1 second
+    //Dont send if older than 1 second
     if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
       for (const auto& panda : pandas) {
         LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
