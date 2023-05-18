@@ -283,7 +283,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0x12;
+  tx_buf[0] = 0x11;
   transfer.len = 1;
   ret = wait_for_ack(transfer, SPI_HACK);
   if (ret < 0) {
@@ -303,7 +303,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0xab;
+  tx_buf[0] = 0x13;
   transfer.len = 1;
   ret = wait_for_ack(transfer, SPI_DACK);
   if (ret < 0) {
