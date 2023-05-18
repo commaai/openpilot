@@ -85,16 +85,14 @@ class CarController:
       if CC.longActive:
         accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
         gas = accel
-        decel = accel < 0.0
         if accel < -0.5:
           gas = -5.0
       else:
         accel = 0.0  # -0.0008 m/s^2 on CAN
         gas = -5.0
-        decel = False
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, decel, stopping))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
