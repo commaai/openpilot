@@ -75,7 +75,7 @@ class CarState(CarStateBase):
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
-    ret.stockAeb = ret.stockFcw and ret.cruiseState.enabled
+    ret.stockAeb = bool(cp_cam.vl["ACCDATA_2"]["CmbbBrkDecel_B_Rq"])
 
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
@@ -217,6 +217,8 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
+
       ("HaDsply_No_Cs", "ACCDATA_3"),
       ("HaDsply_No_Cnt", "ACCDATA_3"),
       ("AccStopStat_D_Dsply", "ACCDATA_3"),         # ACC stopped status message
@@ -261,6 +263,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("ACCDATA_2", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
