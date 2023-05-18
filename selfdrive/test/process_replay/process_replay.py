@@ -27,47 +27,46 @@ FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 class ReplayContext:
   def __init__(self, cfg):
+    self.proc_name = cfg.proc_name
     self.pubs = cfg.pubs
     self.drained_pub = cfg.drained_pub
     assert(len(self.pubs) != 0 or self.drained_pub is not None)
   
   def __enter__(self):
     messaging.toggle_fake_events(True)
+    messaging.set_fake_prefix(self.proc_name)
 
     if self.drained_pub is None:
-      self.recv_called_events = OrderedDict()
-      self.recv_ready_events = OrderedDict()
+      self.events = OrderedDict()
       for pub in self.pubs:
-        self.recv_called_events[pub] = messaging.fake_event(pub, messaging.EVENT_RECV_CALLED)
-        self.recv_ready_events[pub] = messaging.fake_event(pub, messaging.EVENT_RECV_READY)
+        self.events[pub] = messaging.fake_event_manager(pub, enable=True)
     else:
-      self.recv_called_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.EVENT_RECV_CALLED)}
-      self.recv_ready_events = {self.drained_pub: messaging.fake_event(self.drained_pub, messaging.EVENT_RECV_READY)}
+      self.events = {self.drained_pub: messaging.fake_event_manager(self.drained_pub, enable=True)}
 
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
-    del self.recv_called_events
-    del self.recv_ready_events
+    del self.events
 
     messaging.toggle_fake_events(False)
+    messaging.delete_fake_prefix()
 
   @property
   def all_recv_called_events(self):
-    return list(self.recv_called_events.values())
+    return [man.recv_called_event for man in self.events.values()]
   
   @property
   def all_recv_ready_events(self):
-    return list(self.recv_ready_events.values())
+    return [man.recv_ready_event for man in self.events.values()]
 
   def send_sync(self, pm, endpoint, dat):
-    self.recv_called_events[endpoint].wait()
-    self.recv_called_events[endpoint].clear()
+    self.events[endpoint].recv_called_event.wait()
+    self.events[endpoint].recv_called_event.clear()
     pm.send(endpoint, dat)
-    self.recv_ready_events[endpoint].set()
+    self.events[endpoint].recv_ready_event.set()
 
   def unlock_sockets(self):
-    expected_sets = len(self.recv_called_events)
+    expected_sets = len(self.events)
     while expected_sets > 0:
       index = messaging.wait_for_one_event(self.all_recv_called_events)
       self.all_recv_called_events[index].clear()
@@ -426,6 +425,7 @@ def replay_process(cfg, lr, fingerprint=None):
                   m.logMonoTime = msg.logMonoTime
                   log_msgs.append(m.as_reader())
               cnt += 1
+          assert(managed_processes[cfg.proc_name].proc.is_alive())
       finally:
         managed_processes[cfg.proc_name].signal(signal.SIGKILL)
         managed_processes[cfg.proc_name].stop()
