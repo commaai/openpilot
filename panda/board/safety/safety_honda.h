@@ -8,8 +8,9 @@
 //      brake > 0mph
 const CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}};
 const CanMsg HONDA_BOSCH_TX_MSGS[] = {{0xE4, 0, 5}, {0xE5, 0, 8}, {0x296, 1, 4}, {0x33D, 0, 5}, {0x33DA, 0, 5}, {0x33DB, 0, 8}};  // Bosch
-const CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5}, {0x296, 2, 4}, {0x33D, 0, 8}};  // Bosch radarless
 const CanMsg HONDA_BOSCH_LONG_TX_MSGS[] = {{0xE4, 1, 5}, {0x1DF, 1, 8}, {0x1EF, 1, 8}, {0x1FA, 1, 8}, {0x30C, 1, 8}, {0x33D, 1, 5}, {0x33DA, 1, 5}, {0x33DB, 1, 8}, {0x39F, 1, 8}, {0x18DAB0F1, 1, 8}};  // Bosch w/ gas and brakes
+const CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5}, {0x296, 2, 4}, {0x33D, 0, 8}};  // Bosch radarless
+const CanMsg HONDA_RADARLESS_LONG_TX_MSGS[] = {{0xE4, 0, 5}, {0x33D, 0, 8}, {0x1C8, 0, 8}, {0x30C, 0, 8}};  // Bosch radarless w/ gas and brakes
 
 // panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
 // If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
@@ -22,7 +23,6 @@ const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
   .min_accel = -350,
 
   .max_gas = 2000,
-  .min_gas = -30000,
   .inactive_gas = -30000,
 };
 
@@ -38,7 +38,8 @@ AddrCheckStruct honda_common_addr_checks[] = {
   {.msg = {{0x1A6, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U},                   // SCM_BUTTONS
            {0x296, 0, 4, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U}, { 0 }}},
   {.msg = {{0x158, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // ENGINE_DATA
-  {.msg = {{0x17C, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // POWERTRAIN_DATA
+  {.msg = {{0x17C, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},                   // POWERTRAIN_DATA
+           {0x1BE, 0, 3, .check_checksum = true, .max_counter = 3U, .expected_timestep = 20000U}, { 0 }}},          // BRAKE_MODULE (for bosch radarless)
   {.msg = {{0x326, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 100000U}, { 0 }, { 0 }}},  // SCM_FEEDBACK
 };
 #define HONDA_COMMON_ADDR_CHECKS_LEN (sizeof(honda_common_addr_checks) / sizeof(honda_common_addr_checks[0]))
@@ -119,7 +120,7 @@ static uint8_t honda_get_counter(CANPacket_t *to_push) {
 static int honda_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &honda_rx_checks,
-                                 honda_get_checksum, honda_compute_checksum, honda_get_counter);
+                                 honda_get_checksum, honda_compute_checksum, honda_get_counter, NULL);
 
   if (valid) {
     const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || \
@@ -266,8 +267,10 @@ static int honda_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
-  if ((honda_hw == HONDA_BOSCH) && honda_bosch_radarless) {
+  if ((honda_hw == HONDA_BOSCH) && honda_bosch_radarless && !honda_bosch_long) {
     tx = msg_allowed(to_send, HONDA_RADARLESS_TX_MSGS, sizeof(HONDA_RADARLESS_TX_MSGS)/sizeof(HONDA_RADARLESS_TX_MSGS[0]));
+  } else if ((honda_hw == HONDA_BOSCH) && honda_bosch_radarless && honda_bosch_long) {
+    tx = msg_allowed(to_send, HONDA_RADARLESS_LONG_TX_MSGS, sizeof(HONDA_RADARLESS_LONG_TX_MSGS)/sizeof(HONDA_RADARLESS_LONG_TX_MSGS[0]));
   } else if ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) {
     tx = msg_allowed(to_send, HONDA_BOSCH_TX_MSGS, sizeof(HONDA_BOSCH_TX_MSGS)/sizeof(HONDA_BOSCH_TX_MSGS[0]));
   } else if ((honda_hw == HONDA_BOSCH) && honda_bosch_long) {
@@ -319,6 +322,18 @@ static int honda_tx_hook(CANPacket_t *to_send) {
     }
   }
 
+  // ACCEL: safety check (radarless)
+  if ((addr == 0x1C8) && (bus == bus_pt)) {
+    int accel = (GET_BYTE(to_send, 0) << 4) | (GET_BYTE(to_send, 1) >> 4);
+    accel = to_signed(accel, 12);
+
+    bool violation = false;
+    violation |= longitudinal_accel_checks(accel, HONDA_BOSCH_LONG_LIMITS);
+    if (violation) {
+      tx = 0;
+    }
+  }
+
   // STEER: safety check
   if ((addr == 0xE4) || (addr == 0x194)) {
     if (!controls_allowed) {
@@ -331,7 +346,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
 
   // Bosch supplemental control check
   if (addr == 0xE5) {
-    if ((GET_BYTES_04(to_send) != 0x10800004U) || ((GET_BYTES_48(to_send) & 0x00FFFFFFU) != 0x0U)) {
+    if ((GET_BYTES(to_send, 0, 4) != 0x10800004U) || ((GET_BYTES(to_send, 4, 4) & 0x00FFFFFFU) != 0x0U)) {
       tx = 0;
     }
   }
@@ -354,7 +369,7 @@ static int honda_tx_hook(CANPacket_t *to_send) {
 
   // Only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (addr == 0x18DAB0F1) {
-    if ((GET_BYTES_04(to_send) != 0x00803E02U) || (GET_BYTES_48(to_send) != 0x0U)) {
+    if ((GET_BYTES(to_send, 0, 4) != 0x00803E02U) || (GET_BYTES(to_send, 4, 4) != 0x0U)) {
       tx = 0;
     }
   }
@@ -382,11 +397,11 @@ static const addr_checks* honda_bosch_init(uint16_t param) {
   honda_hw = HONDA_BOSCH;
   honda_bosch_radarless = GET_FLAG(param, HONDA_PARAM_RADARLESS);
   // Checking for alternate brake override from safety parameter
-  honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE) && !honda_bosch_radarless;
+  honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
 
   // radar disabled so allow gas/brakes
 #ifdef ALLOW_DEBUG
-  honda_bosch_long = GET_FLAG(param, HONDA_PARAM_BOSCH_LONG) && !honda_bosch_radarless;
+  honda_bosch_long = GET_FLAG(param, HONDA_PARAM_BOSCH_LONG);
 #endif
 
   if (honda_bosch_radarless) {
@@ -397,7 +412,7 @@ static const addr_checks* honda_bosch_init(uint16_t param) {
   return &honda_rx_checks;
 }
 
-static int honda_nidec_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
+static int honda_nidec_fwd_hook(int bus_num, int addr) {
   // fwd from car to camera. also fwd certain msgs from camera to car
   // 0xE4 is steering on all cars except CRV and RDX, 0x194 for CRV and RDX,
   // 0x1FA is brake control, 0x30C is acc hud, 0x33D is lkas hud
@@ -409,7 +424,6 @@ static int honda_nidec_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
 
   if (bus_num == 2) {
     // block stock lkas messages and stock acc messages (if OP is doing ACC)
-    int addr = GET_ADDR(to_fwd);
     bool is_lkas_msg = (addr == 0xE4) || (addr == 0x194) || (addr == 0x33D);
     bool is_acc_hud_msg = addr == 0x30C;
     bool is_brake_msg = addr == 0x1FA;
@@ -422,16 +436,17 @@ static int honda_nidec_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
   return bus_fwd;
 }
 
-static int honda_bosch_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
+static int honda_bosch_fwd_hook(int bus_num, int addr) {
   int bus_fwd = -1;
 
   if (bus_num == 0) {
     bus_fwd = 2;
   }
   if (bus_num == 2)  {
-    int addr = GET_ADDR(to_fwd);
     int is_lkas_msg = (addr == 0xE4) || (addr == 0xE5) || (addr == 0x33D) || (addr == 0x33DA) || (addr == 0x33DB);
-    if (!is_lkas_msg) {
+    int is_acc_msg = ((addr == 0x1C8) || (addr == 0x30C)) && honda_bosch_radarless && honda_bosch_long;
+    bool block_msg = is_lkas_msg || is_acc_msg;
+    if (!block_msg) {
       bus_fwd = 0;
     }
   }

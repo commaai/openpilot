@@ -167,7 +167,7 @@ static uint32_t hyundai_canfd_compute_checksum(CANPacket_t *to_push) {
 static int hyundai_canfd_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &hyundai_canfd_rx_checks,
-                                 hyundai_canfd_get_checksum, hyundai_canfd_compute_checksum, hyundai_canfd_get_counter);
+                                 hyundai_canfd_get_checksum, hyundai_canfd_compute_checksum, hyundai_canfd_get_counter, NULL);
 
   int bus = GET_BUS(to_push);
   int addr = GET_ADDR(to_push);
@@ -282,7 +282,7 @@ static int hyundai_canfd_tx_hook(CANPacket_t *to_send) {
 
   // UDS: only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
   if ((addr == 0x730) && hyundai_canfd_hda2) {
-    if ((GET_BYTES_04(to_send) != 0x00803E02U) || (GET_BYTES_48(to_send) != 0x0U)) {
+    if ((GET_BYTES(to_send, 0, 4) != 0x00803E02U) || (GET_BYTES(to_send, 4, 4) != 0x0U)) {
       tx = 0;
     }
   }
@@ -312,9 +312,8 @@ static int hyundai_canfd_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int hyundai_canfd_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
+static int hyundai_canfd_fwd_hook(int bus_num, int addr) {
   int bus_fwd = -1;
-  int addr = GET_ADDR(to_fwd);
 
   if (bus_num == 0) {
     bus_fwd = 2;

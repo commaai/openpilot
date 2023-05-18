@@ -1211,18 +1211,19 @@ BO_ 1602 WIV_01: 8 Motor_Diesel_MQB
  SG_ WIV_W_min : 48|7@1+ (1000,0) [0|127000] "Unit_KiloMeter" Gateway_MQB
  SG_ WIV_W_max : 56|7@1+ (1000,0) [0|127000] "Unit_KiloMeter" Gateway_MQB
 
-BO_ 294 HCA_01: 8 XXX
- SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
- SG_ COUNTER : 8|4@1+ (1,0) [0|255] "" XXX
- SG_ SET_ME_0X3 : 12|4@1+ (1,0) [0|15] "" XXX
- SG_ Assist_Torque : 16|14@1+ (1,0) [0|300] "Nm" XXX
- SG_ Assist_Requested : 30|1@1+ (1,0) [0|1] "" XXX
- SG_ Assist_VZ : 31|1@1+ (1,0) [0|1] "" XXX
- SG_ HCA_Available : 32|1@1+ (1,0) [0|1] "" XXX
- SG_ HCA_Standby : 33|1@1+ (1,0) [0|1] "" XXX
- SG_ HCA_Active : 34|1@1+ (1,0) [0|1] "" XXX
- SG_ SET_ME_0XFE : 40|8@1+ (1,0) [0|255] "" XXX
- SG_ SET_ME_0X07 : 48|8@1+ (1,0) [0|255] "" XXX
+BO_ 294 HCA_01: 8 Frontsensorik
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ HCA_01_Vib_Freq : 12|4@1+ (1,15) [15|30] "Unit_Hertz" Vector__XXX
+ SG_ HCA_01_LM_Offset : 16|9@1+ (1,0) [0|511] "Unit_centiNewtoMeter" Vector__XXX
+ SG_ EA_ACC_Sollstatus : 25|2@1+ (1,0) [0|3] ""  Frontradar
+ SG_ EA_Ruckprofil : 27|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ HCA_01_Sendestatus : 30|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ HCA_01_LM_OffSign : 31|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ HCA_01_Status_HCA : 32|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ HCA_01_Vib_Amp : 36|4@1+ (0.2,0) [0|3] "Unit_NewtoMeter" Vector__XXX
+ SG_ EA_Ruckfreigabe : 40|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ EA_ACC_Wunschgeschwindigkeit : 41|10@1+ (0.32,0) [0|327.04] "Unit_KiloMeterPerHour"  Frontradar
 
 BO_ 159 LH_EPS_03: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
@@ -1420,12 +1421,16 @@ CM_ SG_ 159 EPS_VZ_Lenkmoment "Steering input by driver, direction";
 CM_ SG_ 159 EPS_Berechneter_LW "Raw steering angle, degrees";
 CM_ SG_ 159 EPS_VZ_BLW "Raw steering angle, direction";
 CM_ SG_ 173 COUNTERXX "Message not renamed to COUNTER because J533 rate-limiting makes it look like messages are being lost";
-CM_ SG_ 294 SET_ME_0X3 "May be zero when sent by older cameras";
-CM_ SG_ 294 SET_ME_0X07 "May be zero when sent by older cameras";
-CM_ SG_ 294 SET_ME_0XFE "May be zero when sent by older cameras";
-CM_ SG_ 294 Assist_Torque "Heading control input, torque";
-CM_ SG_ 294 Assist_VZ "Heading control input, direction (sign)";
-CM_ SG_ 294 HCA_Available "Must be 1 for steering rack to accept HCA commands";
+CM_ SG_ 294 HCA_01_Vib_Freq "Frequenz der Lenkradvibration";
+CM_ SG_ 294 HCA_01_LM_Offset "Von HCA angefordertes Lenkmoment (Betrag)";
+CM_ SG_ 294 EA_ACC_Sollstatus "Status-Anforderung ACC von Emergency Alert. Statuswechsel bei Flanke. Solange Wert=1, wird EA_ACC_Wunschgeschwindigkeit übernommen. Wert=2 führt zu Zustand ¿ACC_GRA_passiv¿";
+CM_ SG_ 294 EA_Ruckprofil "Emergency Alert Anforderung an ESP, welcher Ruck verwendet werden soll. Eine Umsetzung der Ruckanforderung im ESP erfolgt nur mit gesetztem Bit 'EA_Ruckfreigabe'.";
+CM_ SG_ 294 HCA_01_Sendestatus "Gibt den Sendestatus der HCA_01 an (notwendig für IL-Unterstützung)";
+CM_ SG_ 294 HCA_01_LM_OffSign "Vorzeichen des HCA-Lenkmoments";
+CM_ SG_ 294 HCA_01_Status_HCA "Statusinformation vom HCA und Manoevrierassistent für Handshakemechanismus mit der Lenkung";
+CM_ SG_ 294 HCA_01_Vib_Amp "Momentenamplitude der Lenkradvibration";
+CM_ SG_ 294 EA_Ruckfreigabe "Emergency Alert Freigabit für die Warnruck-Anforderung an das ESP";
+CM_ SG_ 294 EA_ACC_Wunschgeschwindigkeit "Emergency Alert Anforderung neue Wunschgeschwindigkeit";
 CM_ SG_ 302 ACC_Hold_Request "Active request for ABS brake hold in ACC_Hold_Type";
 CM_ SG_ 302 ACC_Boost_Request "Hybrid engine start related";
 CM_ SG_ 302 ACC_Freewheel_Request "Active request for DSG sailing/coasting in ACC_Freewheel_Type";
@@ -1475,6 +1480,13 @@ CM_ SG_ 1720 KBI_Variante_USA "In diesem Signal wird die HW-Variante des Kombis 
 VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active" ;
 VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 13 "T" 14 "T" ;
 VAL_ 288 TSK_Status 0 "init" 1 "disabled" 2 "enabled" 3 "regulating" 4 "accel_pedal_override" 5 "brake_only" 6 "temp_fault" 7 "perm_fault" ;
+VAL_ 294 EA_ACC_Sollstatus 0 "Init" 1 "ACC_aktivieren" 2 "ACC_deaktivieren" ;
+VAL_ 294 EA_Ruckprofil 0 "Init" 1 "Profil_1" 2 "Profil_2" 3 "Profil_3" 4 "Profil_4" 5 "Profil_5" 6 "Profil_6" 7 "Profil_7" ;
+VAL_ 294 HCA_01_Sendestatus 0 "HCA_sendet_mit_1000ms" 1 "HCA_sendet_mit_20ms" ;
+VAL_ 294 HCA_01_LM_OffSign 0 "positives_Vorzeichen" 1 "negatives_Vorzeichen" ;
+VAL_ 294 HCA_01_Status_HCA 0 "deaktiviert" 1 "reserviert" 2 "reserviert" 3 "funktionsbereit" 4 "reserviert" 5 "HCA_Momenteneingriff_1" 6 "MA_Aktiv" 7 "HCA_Momenteneingriff_2" 8 "reserviert" 9 "reserviert" 10 "reserviert" 11 "reserviert" 12 "reserviert" 13 "reserviert" 14 "reserviert" 15 "reserviert" ;
+VAL_ 294 EA_Ruckfreigabe 0 "keine_Freigabe" 1 "Freigabe" ;
+VAL_ 294 EA_ACC_Wunschgeschwindigkeit 1023 "Init" ;
 VAL_ 780 ACC_Wunschgeschw_02 1023 "keine_Anzeige" ;
 VAL_ 780 ACC_Status_Prim_Anz 0 "Symbol nicht beleuchtet" 1 "Farbe 1 (typisch 'gruen')" 2 "Farbe 2 (typisch 'rot')" 3 "Farbe 3 (typisch 'gelb')" ;
 VAL_ 780 ACC_Abstandsindex 0 "Sonderanzeige_graue_Fahrbahn" 1022 "Sonderanzeige_graue_Fahrbahn" 1023 "Sonderanzeige_Fahrbahn_mit_gruenem_roten_Bereich" ;

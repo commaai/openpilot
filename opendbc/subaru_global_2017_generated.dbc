@@ -316,10 +316,22 @@ BO_ 576 CruiseControl: 8 XXX
  SG_ Cruise_Activated : 41|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 42|22@1+ (1,0) [0|4194303] "" XXX
 
+BO_ 803 INFOTAINMENT_STATUS: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ LKAS_Blue_Lines : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ Signal1 : 19|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKAS_State_Infotainment : 22|3@0+ (1,0) [0|7] "" XXX
+ SG_ Signal2 : 24|1@0+ (1,0) [0|1] "" XXX
+
 CM_ SG_ 545 Cruise_Throttle "RPM-like output signal";
 CM_ SG_ 545 Cruise_EPB "1 = Electric Parking Brake set";
 CM_ SG_ 545 Distance_Swap "Switch from Close to Far distance";
 CM_ SG_ 545 Cruise_Soft_Disable "Eyesight Temporary disable, sets CruiseControl Activated = 0";
 CM_ SG_ 546 Cruise_RPM "ES RPM output for ECM and TCM";
 CM_ SG_ 546 Signal3 "0 when cruise_activated = 1";
+CM_ SG_ 803 Signal1 "Seems to be static, set only on some cars";
+CM_ SG_ 803 Signal2 "Seems to be static, set only on some cars";
+VAL_ 803 LKAS_Blue_Lines 0 "no modifier" 2 "changes lines to blue";
+VAL_ 803 LKAS_State_Infotainment 0 "none" 2 "Obstacle Detected" 3 "Keep Hands On Wheel" 4 "Keep Hands On Wheel Off";
 VAL_ 72 Gear 2 "N" 3 "R" 4 "P" 121 "D" 137 "1" 145 "2" 153 "3" 161 "4" 169 "5" 177 "6";

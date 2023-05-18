@@ -141,6 +141,12 @@ class DYNAMIC_DEFINITION_TYPE(IntEnum):
   DEFINE_BY_MEMORY_ADDRESS = 2
   CLEAR_DYNAMICALLY_DEFINED_DATA_IDENTIFIER = 3
 
+class ISOTP_FRAME_TYPE(IntEnum):
+  SINGLE = 0
+  FIRST = 1
+  CONSECUTIVE = 2
+  FLOW = 3
+
 class DynamicSourceDefinition(NamedTuple):
   data_identifier: int
   position: int
@@ -438,38 +444,42 @@ class IsoTpMessage():
       timeout = self.timeout
 
     start_time = time.monotonic()
-    updated = False
+    rx_in_progress = False
     try:
       while True:
         for msg in self._can_client.recv():
-          self._isotp_rx_next(msg)
+          frame_type = self._isotp_rx_next(msg)
           start_time = time.monotonic()
-          updated = True
+          rx_in_progress = frame_type == ISOTP_FRAME_TYPE.CONSECUTIVE
           if self.tx_done and self.rx_done:
-            return self.rx_dat, updated
+            return self.rx_dat, False
         # no timeout indicates non-blocking
         if timeout == 0:
-          return None, updated
+          return None, rx_in_progress
         if time.monotonic() - start_time > timeout:
           raise MessageTimeoutError("timeout waiting for response")
     finally:
       if self.debug and self.rx_dat:
         print(f"ISO-TP: RESPONSE - {hex(self._can_client.rx_addr)} 0x{bytes.hex(self.rx_dat)}")
 
-  def _isotp_rx_next(self, rx_data: bytes) -> None:
-    # single rx_frame
-    if rx_data[0] >> 4 == 0x0:
+  def _isotp_rx_next(self, rx_data: bytes) -> ISOTP_FRAME_TYPE:
+    # TODO: Handle CAN frame data optimization, which is allowed with some frame types
+    # # ISO 15765-2 specifies an eight byte CAN frame for ISO-TP communication
+    # assert len(rx_data) == self.max_len, f"isotp - rx: invalid CAN frame length: {len(rx_data)}"
+
+    if rx_data[0] >> 4 == ISOTP_FRAME_TYPE.SINGLE:
       self.rx_len = rx_data[0] & 0xFF
+      assert self.rx_len < self.max_len, f"isotp - rx: invalid single frame length: {self.rx_len}"
       self.rx_dat = rx_data[1:1 + self.rx_len]
       self.rx_idx = 0
       self.rx_done = True
       if self.debug:
         print(f"ISO-TP: RX - single frame - {hex(self._can_client.rx_addr)} idx={self.rx_idx} done={self.rx_done}")
-      return
+      return ISOTP_FRAME_TYPE.SINGLE
 
-    # first rx_frame
-    if rx_data[0] >> 4 == 0x1:
+    elif rx_data[0] >> 4 == ISOTP_FRAME_TYPE.FIRST:
       self.rx_len = ((rx_data[0] & 0x0F) << 8) + rx_data[1]
+      assert self.max_len <= self.rx_len, f"isotp - rx: invalid first frame length: {self.rx_len}"
       self.rx_dat = rx_data[2:]
       self.rx_idx = 0
       self.rx_done = False
@@ -479,10 +489,9 @@ class IsoTpMessage():
         print(f"ISO-TP: TX - flow control continue - {hex(self._can_client.tx_addr)}")
       # send flow control message
       self._can_client.send([self.flow_control_msg])
-      return
+      return ISOTP_FRAME_TYPE.FIRST
 
-    # consecutive rx frame
-    if rx_data[0] >> 4 == 0x2:
+    elif rx_data[0] >> 4 == ISOTP_FRAME_TYPE.CONSECUTIVE:
       assert not self.rx_done, "isotp - rx: consecutive frame with no active frame"
       self.rx_idx += 1
       assert self.rx_idx & 0xF == rx_data[0] & 0xF, "isotp - rx: invalid consecutive frame index"
@@ -495,10 +504,9 @@ class IsoTpMessage():
         self._can_client.send([self.flow_control_msg])
       if self.debug:
         print(f"ISO-TP: RX - consecutive frame - {hex(self._can_client.rx_addr)} idx={self.rx_idx} done={self.rx_done}")
-      return
+      return ISOTP_FRAME_TYPE.CONSECUTIVE
 
-    # flow control
-    if rx_data[0] >> 4 == 0x3:
+    elif rx_data[0] >> 4 == ISOTP_FRAME_TYPE.FLOW:
       assert not self.tx_done, "isotp - rx: flow control with no active frame"
       assert rx_data[0] != 0x32, "isotp - rx: flow-control overflow/abort"
       assert rx_data[0] == 0x30 or rx_data[0] == 0x31, "isotp - rx: flow-control transfer state indicator invalid"
@@ -512,7 +520,7 @@ class IsoTpMessage():
 
         # first frame = 6 bytes, each consecutive frame = 7 bytes
         num_bytes = self.max_len - 1
-        start = 6 + self.tx_idx * num_bytes
+        start = self.max_len - 2 + self.tx_idx * num_bytes
         count = rx_data[1]
         end = start + count * num_bytes if count > 0 else self.tx_len
         tx_msgs = []
@@ -531,8 +539,15 @@ class IsoTpMessage():
         # wait (do nothing until next flow control message)
         if self.debug:
           print(f"ISO-TP: TX - flow control wait - {hex(self._can_client.tx_addr)}")
+      return ISOTP_FRAME_TYPE.FLOW
+
+    # 4-15 - reserved
+    else:
+      raise Exception(f"isotp - rx: invalid frame type: {rx_data[0] >> 4}")
+
 
 FUNCTIONAL_ADDRS = [0x7DF, 0x18DB33F1]
+
 
 def get_rx_addr_for_tx_addr(tx_addr, rx_offset=0x8):
   if tx_addr in FUNCTIONAL_ADDRS:
@@ -551,15 +566,16 @@ def get_rx_addr_for_tx_addr(tx_addr, rx_offset=0x8):
 
 
 class UdsClient():
-  def __init__(self, panda, tx_addr: int, rx_addr: int = None, bus: int = 0, timeout: float = 1, debug: bool = False,
-               tx_timeout: float = 1, response_pending_timeout: float = 10):
+  def __init__(self, panda, tx_addr: int, rx_addr: int = None, bus: int = 0, sub_addr: int = None, timeout: float = 1,
+               debug: bool = False, tx_timeout: float = 1, response_pending_timeout: float = 10):
     self.bus = bus
     self.tx_addr = tx_addr
     self.rx_addr = rx_addr if rx_addr is not None else get_rx_addr_for_tx_addr(tx_addr)
+    self.sub_addr = sub_addr
     self.timeout = timeout
     self.debug = debug
     can_send_with_timeout = partial(panda.can_send, timeout=int(tx_timeout*1000))
-    self._can_client = CanClient(can_send_with_timeout, panda.can_recv, self.tx_addr, self.rx_addr, self.bus, debug=self.debug)
+    self._can_client = CanClient(can_send_with_timeout, panda.can_recv, self.tx_addr, self.rx_addr, self.bus, self.sub_addr, debug=self.debug)
     self.response_pending_timeout = response_pending_timeout
 
   # generic uds request
@@ -571,7 +587,8 @@ class UdsClient():
       req += data
 
     # send request, wait for response
-    isotp_msg = IsoTpMessage(self._can_client, timeout=self.timeout, debug=self.debug)
+    max_len = 8 if self.sub_addr is None else 7
+    isotp_msg = IsoTpMessage(self._can_client, timeout=self.timeout, debug=self.debug, max_len=max_len)
     isotp_msg.send(req)
     response_pending = False
     while True:

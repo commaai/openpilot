@@ -61,9 +61,6 @@ void update_can_health_pkt(uint8_t can_number, bool error_irq) {
 
   if (error_irq) {
     can_health[can_number].total_error_cnt += 1U;
-    if ((CANx->IR & (FDCAN_IR_RF0L)) != 0) {
-      can_health[can_number].total_rx_lost_cnt += 1U;
-    }
     if ((CANx->IR & (FDCAN_IR_TEFL)) != 0) {
       can_health[can_number].total_tx_lost_cnt += 1U;
     }
@@ -88,6 +85,7 @@ void process_can(uint8_t can_number) {
           can_health[can_number].total_tx_cnt += 1U;
 
           uint32_t TxFIFOSA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET) + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_SIZE);
+          // get the index of the next TX FIFO element (0 to FDCAN_TX_FIFO_EL_CNT - 1)
           uint8_t tx_index = (CANx->TXFQS >> FDCAN_TXFQS_TFQPI_Pos) & 0x1F;
           // only send if we have received a packet
           canfd_fifo *fifo;
@@ -145,8 +143,14 @@ void can_rx(uint8_t can_number) {
       // can is live
       pending_can_live = 1;
 
-      // getting new message index (0 to 63)
+      // get the index of the next RX FIFO element (0 to FDCAN_RX_FIFO_0_EL_CNT - 1)
       uint8_t rx_fifo_idx = (uint8_t)((CANx->RXF0S >> FDCAN_RXF0S_F0GI_Pos) & 0x3F);
+
+      // Recommended to offset get index by at least +1 if RX FIFO is in overwrite mode and full (datasheet)
+      if((CANx->RXF0S & FDCAN_RXF0S_F0F) == FDCAN_RXF0S_F0F) {
+        rx_fifo_idx = ((rx_fifo_idx + 1U) >= FDCAN_RX_FIFO_0_EL_CNT) ? 0U : (rx_fifo_idx + 1U);
+        can_health[can_number].total_rx_lost_cnt += 1U; // At least one message was lost
+      }
 
       uint32_t RxFIFO0SA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET);
       CANPacket_t to_push;
@@ -173,7 +177,7 @@ void can_rx(uint8_t can_number) {
       can_set_checksum(&to_push);
 
       // forwarding (panda only)
-      int bus_fwd_num = safety_fwd_hook(bus_number, &to_push);
+      int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
       if (bus_fwd_num != -1) {
         CANPacket_t to_send;
 

@@ -244,8 +244,8 @@ void TIM3_IRQ_Handler(void) {
 
 void pedal(void) {
   // read/write
-  pdl0 = adc_get(ADCCHAN_ACCEL0);
-  pdl1 = adc_get(ADCCHAN_ACCEL1);
+  pdl0 = adc_get_raw(ADCCHAN_ACCEL0);
+  pdl1 = adc_get_raw(ADCCHAN_ACCEL1);
 
   // write the pedal to the DAC
   if (state == NO_FAULT) {
@@ -302,7 +302,7 @@ int main(void) {
   timer_init(TIM3, 15);
   NVIC_EnableIRQ(TIM3_IRQn);
 
-  watchdog_init();
+  watchdog_init(WATCHDOG_50_MS);
 
   print("**** INTERRUPTS ON ****\n");
   enable_interrupts();

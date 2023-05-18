@@ -57,8 +57,11 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   uint8_t uid[uid_len] = {0};
 
   uint32_t spi_mode = SPI_MODE_0;
-  uint32_t spi_speed = 30000000;
   uint8_t spi_bits_per_word = 8;
+
+  // 50MHz is the max of the 845. note that some older
+  // revs of the comma three may not support this speed
+  uint32_t spi_speed = 50000000;
 
   spi_fd = open(SPI_DEVICE.c_str(), O_RDWR);
   if (spi_fd < 0) {
@@ -280,7 +283,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0x12;
+  tx_buf[0] = 0x11;
   transfer.len = 1;
   ret = wait_for_ack(transfer, SPI_HACK);
   if (ret < 0) {
@@ -300,7 +303,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0xab;
+  tx_buf[0] = 0x13;
   transfer.len = 1;
   ret = wait_for_ack(transfer, SPI_DACK);
   if (ret < 0) {

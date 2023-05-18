@@ -2,7 +2,7 @@
 #define FAULT_STATUS_TEMPORARY 1U
 #define FAULT_STATUS_PERMANENT 2U
 
-// Fault types
+// Fault types, matches cereal.log.PandaState.FaultType
 #define FAULT_RELAY_MALFUNCTION             (1U << 0)
 #define FAULT_UNUSED_INTERRUPT_HANDLED      (1U << 1)
 #define FAULT_INTERRUPT_RATE_CAN_1          (1U << 2)
@@ -28,6 +28,8 @@
 #define FAULT_INTERRUPT_RATE_EXTI           (1U << 22)
 #define FAULT_INTERRUPT_RATE_SPI            (1U << 23)
 #define FAULT_INTERRUPT_RATE_UART_7         (1U << 24)
+#define FAULT_SIREN_MALFUNCTION             (1U << 25)
+#define FAULT_HEARTBEAT_LOOP_WATCHDOG       (1U << 26)
 
 // Permanent faults
 #define PERMANENT_FAULTS 0U

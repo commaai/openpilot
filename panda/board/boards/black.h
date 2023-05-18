@@ -25,7 +25,7 @@ void black_enable_can_transceiver(uint8_t transceiver, bool enabled) {
 void black_enable_can_transceivers(bool enabled) {
   for(uint8_t i=1U; i<=4U; i++){
     // Leave main CAN always on for CAN-based ignition detection
-    if((car_harness_status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
+    if((harness.status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
       black_enable_can_transceiver(i, true);
     } else {
       black_enable_can_transceiver(i, enabled);
@@ -83,7 +83,7 @@ void black_set_can_mode(uint8_t mode){
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
-      if ((bool)(mode == CAN_MODE_NORMAL) != (bool)(car_harness_status == HARNESS_STATUS_FLIPPED)) {
+      if ((bool)(mode == CAN_MODE_NORMAL) != (bool)(harness.status == HARNESS_STATUS_FLIPPED)) {
         // B12,B13: disable OBD mode
         set_gpio_mode(GPIOB, 12, MODE_INPUT);
         set_gpio_mode(GPIOB, 13, MODE_INPUT);
@@ -160,7 +160,7 @@ void black_init(void) {
   black_set_can_mode(CAN_MODE_NORMAL);
 
   // flip CAN0 and CAN2 if we are flipped
-  if (car_harness_status == HARNESS_STATUS_FLIPPED) {
+  if (harness.status == HARNESS_STATUS_FLIPPED) {
     can_flip_buses(0, 2);
   }
 }
@@ -191,6 +191,9 @@ const board board_black = {
   .has_canfd = false,
   .has_rtc_battery = false,
   .fan_max_rpm = 0U,
+  .avdd_mV = 3300U,
+  .fan_stall_recovery = false,
+  .fan_enable_cooldown_time = 0U,
   .init = black_init,
   .enable_can_transceiver = black_enable_can_transceiver,
   .enable_can_transceivers = black_enable_can_transceivers,

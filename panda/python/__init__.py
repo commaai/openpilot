@@ -13,6 +13,7 @@ from functools import wraps
 from typing import Optional
 from itertools import accumulate
 
+from .base import BaseHandle
 from .constants import McuType
 from .dfu import PandaDFU
 from .isotp import isotp_send, isotp_recv
@@ -25,11 +26,11 @@ __version__ = '0.0.10'
 LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL, format='%(message)s')
 
-
 USBPACKET_MAX_SIZE = 0x40
 CANPACKET_HEAD_SIZE = 0x6
 DLC_TO_LEN = [0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 20, 24, 32, 48, 64]
 LEN_TO_DLC = {length: dlc for (dlc, length) in enumerate(DLC_TO_LEN)}
+
 
 def calculate_checksum(data):
   res = 0
@@ -149,7 +150,7 @@ class Panda:
   SAFETY_NOOUTPUT = 19
   SAFETY_HONDA_BOSCH = 20
   SAFETY_VOLKSWAGEN_PQ = 21
-  SAFETY_SUBARU_LEGACY = 22
+  SAFETY_SUBARU_PREGLOBAL = 22
   SAFETY_HYUNDAI_LEGACY = 23
   SAFETY_HYUNDAI_COMMUNITY = 24
   SAFETY_STELLANTIS = 25
@@ -181,21 +182,32 @@ class Panda:
   HW_TYPE_TRES = b'\x09'
 
   CAN_PACKET_VERSION = 4
-  HEALTH_PACKET_VERSION = 11
+  HEALTH_PACKET_VERSION = 14
   CAN_HEALTH_PACKET_VERSION = 4
-  HEALTH_STRUCT = struct.Struct("<IIIIIIIIIBBBBBBHBBBHfBB")
+  HEALTH_STRUCT = struct.Struct("<IIIIIIIIIBBBBBBHBBBHfBBHBHH")
   CAN_HEALTH_STRUCT = struct.Struct("<BIBBBBBBBBIIIIIIIHHBBB")
 
   F2_DEVICES = (HW_TYPE_PEDAL, )
   F4_DEVICES = (HW_TYPE_WHITE_PANDA, HW_TYPE_GREY_PANDA, HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS)
   H7_DEVICES = (HW_TYPE_RED_PANDA, HW_TYPE_RED_PANDA_V2, HW_TYPE_TRES)
 
-  INTERNAL_DEVICES = (HW_TYPE_UNO, HW_TYPE_DOS)
+  INTERNAL_DEVICES = (HW_TYPE_UNO, HW_TYPE_DOS, HW_TYPE_TRES)
   HAS_OBD = (HW_TYPE_BLACK_PANDA, HW_TYPE_UNO, HW_TYPE_DOS, HW_TYPE_RED_PANDA, HW_TYPE_RED_PANDA_V2, HW_TYPE_TRES)
+
+  MAX_FAN_RPMs = {
+    HW_TYPE_UNO: 5100,
+    HW_TYPE_DOS: 6500,
+    HW_TYPE_TRES: 6600,
+  }
+
+  HARNESS_STATUS_NC = 0
+  HARNESS_STATUS_NORMAL = 1
+  HARNESS_STATUS_FLIPPED = 2
 
   # first byte is for EPS scaling factor
   FLAG_TOYOTA_ALT_BRAKE = (1 << 8)
   FLAG_TOYOTA_STOCK_LONGITUDINAL = (2 << 8)
+  FLAG_TOYOTA_LTA = (4 << 8)
 
   FLAG_HONDA_ALT_BRAKE = 1
   FLAG_HONDA_BOSCH_LONG = 2
@@ -223,11 +235,14 @@ class Panda:
   FLAG_GM_HW_CAM = 1
   FLAG_GM_HW_CAM_LONG = 2
 
+  FLAG_FORD_LONG_CONTROL = 1
+
   def __init__(self, serial: Optional[str] = None, claim: bool = True, disable_checks: bool = True):
-    self._serial = serial
+    self._connect_serial = serial
     self._disable_checks = disable_checks
 
-    self._handle = None
+    self._handle: BaseHandle
+    self._handle_open = False
     self.can_rx_overflow_buffer = b''
 
     # connect and set mcu type
@@ -243,18 +258,17 @@ class Panda:
     self.close()
 
   def close(self):
-    self._handle.close()
-    self._handle = None
+    if self._handle_open:
+      self._handle.close()
+      self._handle_open = False
 
   def connect(self, claim=True, wait=False):
-    if self._handle is not None:
-      self.close()
-    self._handle = None
+    self.close()
 
     # try USB first, then SPI
-    self._handle, serial, self.bootstub, bcd = self.usb_connect(self._serial, claim=claim, wait=wait)
+    self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim, wait=wait)
     if self._handle is None:
-      self._handle, serial, self.bootstub, bcd = self.spi_connect(self._serial)
+      self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
 
     if self._handle is None:
       raise Exception("failed to connect to panda")
@@ -277,6 +291,8 @@ class Panda:
     self._assume_f4_mcu = (self._bcd_hw_type is None) and missing_hw_type_endpoint
 
     self._serial = serial
+    self._connect_serial = serial
+    self._handle_open = True
     self._mcu_type = self.get_mcu_type()
     self.health_version, self.can_version, self.can_health_version = self.get_packets_versions()
     logging.debug("connected")
@@ -291,26 +307,29 @@ class Panda:
     # get UID to confirm slave is present and up
     handle = None
     spi_serial = None
+    bootstub = None
     try:
       handle = PandaSpiHandle()
-      dat = handle.controlRead(Panda.REQUEST_IN, 0xc3, 0, 0, 12)
+      dat = handle.controlRead(Panda.REQUEST_IN, 0xc3, 0, 0, 12, timeout=100)
       spi_serial = binascii.hexlify(dat).decode()
+      bootstub = Panda.flasher_present(handle)
     except PandaSpiException:
       pass
 
     # no connection or wrong panda
-    if spi_serial is None or (serial is not None and (spi_serial != serial)):
+    if None in (spi_serial, bootstub) or (serial is not None and (spi_serial != serial)):
       handle = None
       spi_serial = None
+      bootstub = False
 
-    # TODO: detect bootstub
-    return handle, spi_serial, False, None
+    return handle, spi_serial, bootstub, None
 
   @staticmethod
   def usb_connect(serial, claim=True, wait=False):
     handle, usb_serial, bootstub, bcd = None, None, None, None
-    context = usb1.USBContext()
     while 1:
+      context = usb1.USBContext()
+      context.open()
       try:
         for device in context.getDeviceList(skip_on_error=True):
           if device.getVendorID() == 0xbbaa and device.getProductID() in (0xddcc, 0xddee):
@@ -341,7 +360,7 @@ class Panda:
         logging.exception("USB connect error")
       if not wait or handle is not None:
         break
-      context = usb1.USBContext()  # New context needed so new devices show up
+      context.close()
 
     usb_handle = None
     if handle is not None:
@@ -357,21 +376,21 @@ class Panda:
 
   @staticmethod
   def usb_list():
-    context = usb1.USBContext()
     ret = []
     try:
-      for device in context.getDeviceList(skip_on_error=True):
-        if device.getVendorID() == 0xbbaa and device.getProductID() in (0xddcc, 0xddee):
-          try:
-            serial = device.getSerialNumber()
-            if len(serial) == 24:
-              ret.append(serial)
-            else:
-              warnings.warn(f"found device with panda descriptors but invalid serial: {serial}", RuntimeWarning)
-          except Exception:
-            continue
+      with usb1.USBContext() as context:
+        for device in context.getDeviceList(skip_on_error=True):
+          if device.getVendorID() == 0xbbaa and device.getProductID() in (0xddcc, 0xddee):
+            try:
+              serial = device.getSerialNumber()
+              if len(serial) == 24:
+                ret.append(serial)
+              else:
+                warnings.warn(f"found device with panda descriptors but invalid serial: {serial}", RuntimeWarning)
+            except Exception:
+              continue
     except Exception:
-      pass
+      logging.exception("exception while listing pandas")
     return ret
 
   @staticmethod
@@ -395,8 +414,12 @@ class Panda:
     if not enter_bootloader and reconnect:
       self.reconnect()
 
+  @property
+  def connected(self) -> bool:
+    return self._handle_open
+
   def reconnect(self):
-    if self._handle is not None:
+    if self._handle_open:
       self.close()
       time.sleep(1.0)
 
@@ -410,7 +433,7 @@ class Panda:
       except Exception:
         logging.debug("reconnecting is taking %d seconds...", i + 1)
         try:
-          dfu = PandaDFU(PandaDFU.st_serial_to_dfu_serial(self._serial, self._mcu_type))
+          dfu = PandaDFU(self.get_dfu_serial())
           dfu.recover()
         except Exception:
           pass
@@ -419,12 +442,16 @@ class Panda:
       raise Exception("reconnect failed")
 
   @staticmethod
+  def flasher_present(handle: BaseHandle) -> bool:
+    fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
+    return fr[4:8] == b"\xde\xad\xd0\x0d"
+
+  @staticmethod
   def flash_static(handle, code, mcu_type):
     assert mcu_type is not None, "must set valid mcu_type to flash"
 
     # confirm flasher is present
-    fr = handle.controlRead(Panda.REQUEST_IN, 0xb0, 0, 0, 0xc)
-    assert fr[4:8] == b"\xde\xad\xd0\x0d"
+    assert Panda.flasher_present(handle)
 
     # determine sectors to erase
     apps_sectors_cumsum = accumulate(mcu_type.config.sector_sizes[1:])
@@ -477,8 +504,8 @@ class Panda:
     if reconnect:
       self.reconnect()
 
-  def recover(self, timeout: Optional[int] = None, reset: bool = True) -> bool:
-    dfu_serial = PandaDFU.st_serial_to_dfu_serial(self._serial, self._mcu_type)
+  def recover(self, timeout: Optional[int] = 60, reset: bool = True) -> bool:
+    dfu_serial = self.get_dfu_serial()
 
     if reset:
       self.reset(enter_bootstub=True)
@@ -504,6 +531,11 @@ class Panda:
       if timeout is not None and (time.monotonic() - t_start) > timeout:
         return False
     return True
+
+  def up_to_date(self) -> bool:
+    current = self.get_signature()
+    expected = Panda.get_signature_from_firmware(self.get_mcu_type().config.app_path)
+    return (current == expected)
 
   def call_control_api(self, msg):
     self._handle.controlWrite(Panda.REQUEST_OUT, msg, 0, 0, b'')
@@ -538,6 +570,10 @@ class Panda:
       "interrupt_load": a[20],
       "fan_power": a[21],
       "safety_rx_checks_invalid": a[22],
+      "spi_checksum_error_count": a[23],
+      "fan_stall_count": a[24],
+      "sbu1_voltage_mV": a[25],
+      "sbu2_voltage_mV": a[26],
     }
 
   @ensure_can_health_packet_version
@@ -592,11 +628,11 @@ class Panda:
 
   @staticmethod
   def get_signature_from_firmware(fn) -> bytes:
-    f = open(fn, 'rb')
-    f.seek(-128, 2)  # Seek from end of file
-    return f.read(128)
+    with open(fn, 'rb') as f:
+      f.seek(-128, 2)  # Seek from end of file
+      return f.read(128)
 
-  def get_signature(self):
+  def get_signature(self) -> bytes:
     part_1 = self._handle.controlRead(Panda.REQUEST_IN, 0xd3, 0, 0, 0x40)
     part_2 = self._handle.controlRead(Panda.REQUEST_IN, 0xd4, 0, 0, 0x40)
     return bytes(part_1 + part_2)
@@ -655,6 +691,9 @@ class Panda:
       matches the MCU UID
     """
     return self._serial
+
+  def get_dfu_serial(self):
+    return PandaDFU.st_serial_to_dfu_serial(self._serial, self._mcu_type)
 
   def get_uid(self):
     """

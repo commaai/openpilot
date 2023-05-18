@@ -255,7 +255,7 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
@@ -308,7 +308,7 @@ BO_ 404 STEERING_CONTROL: 4 EON
  SG_ STEER_TORQUE : 7|12@0- (1,0) [-768|768] "" EPS
  SG_ SET_ME_X00 : 11|4@0+ (1,0) [0|15] "" EPS
  SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
- SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
+ SG_ SET_ME_X00_2 : 22|7@0+ (1,0) [0|127] "" EPS
  SG_ COUNTER : 29|2@0+ (1,0) [0|15] "" EPS
  SG_ CHECKSUM : 27|4@0+ (1,0) [0|3] "" EPS
 

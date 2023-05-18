@@ -98,10 +98,11 @@ void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name,
   }
 }
 
-DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, ChecksumState *checksum) {
+DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, ChecksumState *checksum, bool allow_duplicate_msg_name) {
   uint32_t address = 0;
   std::set<uint32_t> address_set;
   std::set<std::string> msg_name_set;
+  std::map<uint32_t, std::set<std::string>> signal_name_sets;
   std::map<uint32_t, std::vector<Signal>> signals;
   DBC* dbc = new DBC;
   dbc->name = dbc_name;
@@ -134,8 +135,11 @@ DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, Ch
       // check for duplicates
       DBC_ASSERT(address_set.find(address) == address_set.end(), "Duplicate message address: " << address << " (" << msg.name << ")");
       address_set.insert(address);
-      DBC_ASSERT(msg_name_set.find(msg.name) == msg_name_set.end(), "Duplicate message name: " << msg.name);
-      msg_name_set.insert(msg.name);
+
+      if (!allow_duplicate_msg_name) {
+        DBC_ASSERT(msg_name_set.find(msg.name) == msg_name_set.end(), "Duplicate message name: " << msg.name);
+        msg_name_set.insert(msg.name);
+      }
     } else if (startswith(line, "SG_ ")) {
       // new signal
       int offset = 0;
@@ -162,6 +166,10 @@ DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, Ch
         sig.msb = sig.start_bit;
       }
       DBC_ASSERT(sig.lsb < (64 * 8) && sig.msb < (64 * 8), "Signal out of bounds: " << line);
+
+      // Check for duplicate signal names
+      DBC_ASSERT(signal_name_sets[address].find(sig.name) == signal_name_sets[address].end(), "Duplicate signal name: " << sig.name);
+      signal_name_sets[address].insert(sig.name);
     } else if (startswith(line, "VAL_ ")) {
       // new signal value/definition
       bool ret = std::regex_search(line, match, val_regexp);

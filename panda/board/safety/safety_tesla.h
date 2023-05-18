@@ -1,12 +1,12 @@
 const SteeringLimits TESLA_STEERING_LIMITS = {
   .angle_deg_to_can = 10,
   .angle_rate_up_lookup = {
-    {2., 7., 17.},
-    {5., .8, .25}
+    {0., 5., 15.},
+    {5., .8, .15}
   },
   .angle_rate_down_lookup = {
-    {2., 7., 17.},
-    {5., 3.5, .8}
+    {0., 5., 15.},
+    {5., 3.5, .4}
   },
 };
 
@@ -34,6 +34,7 @@ const CanMsg TESLA_PT_TX_MSGS[] = {
 #define TESLA_PT_TX_LEN (sizeof(TESLA_PT_TX_MSGS) / sizeof(TESLA_PT_TX_MSGS[0]))
 
 AddrCheckStruct tesla_addr_checks[] = {
+  {.msg = {{0x2b9, 2, 8, .expected_timestep = 40000U}, { 0 }, { 0 }}},   // DAS_control (25Hz)
   {.msg = {{0x370, 0, 8, .expected_timestep = 40000U}, { 0 }, { 0 }}},   // EPAS_sysStatus (25Hz)
   {.msg = {{0x108, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque1 (100Hz)
   {.msg = {{0x118, 0, 6, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque2 (100Hz)
@@ -48,6 +49,7 @@ AddrCheckStruct tesla_pt_addr_checks[] = {
   {.msg = {{0x106, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque1 (100Hz)
   {.msg = {{0x116, 0, 6, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque2 (100Hz)
   {.msg = {{0x1f8, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},   // BrakeMessage (50Hz)
+  {.msg = {{0x2bf, 2, 8, .expected_timestep = 40000U}, { 0 }, { 0 }}},   // DAS_control (25Hz)
   {.msg = {{0x256, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},  // DI_state (10Hz)
 };
 #define TESLA_PT_ADDR_CHECK_LEN (sizeof(tesla_pt_addr_checks) / sizeof(tesla_pt_addr_checks[0]))
@@ -60,7 +62,7 @@ bool tesla_stock_aeb = false;
 
 static int tesla_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, tesla_powertrain ? (&tesla_pt_rx_checks) : (&tesla_rx_checks),
-                                 NULL, NULL, NULL);
+                                 NULL, NULL, NULL, NULL);
 
   if(valid) {
     int bus = GET_BUS(to_push);
@@ -78,8 +80,9 @@ static int tesla_rx_hook(CANPacket_t *to_push) {
 
       if(addr == (tesla_powertrain ? 0x116 : 0x118)) {
         // Vehicle speed: ((0.05 * val) - 25) * MPH_TO_MPS
-        vehicle_speed = (((((GET_BYTE(to_push, 3) & 0x0FU) << 8) | (GET_BYTE(to_push, 2))) * 0.05) - 25) * 0.447;
-        vehicle_moving = ABS(vehicle_speed) > 0.1;
+        float speed = (((((GET_BYTE(to_push, 3) & 0x0FU) << 8) | (GET_BYTE(to_push, 2))) * 0.05) - 25) * 0.447;
+        vehicle_moving = ABS(speed) > 0.1;
+        update_sample(&vehicle_speed, ROUND(speed * VEHICLE_SPEED_FACTOR));
       }
 
       if(addr == (tesla_powertrain ? 0x106 : 0x108)) {
@@ -101,6 +104,14 @@ static int tesla_rx_hook(CANPacket_t *to_push) {
                               (cruise_state == 6) ||  // PRE_FAULT
                               (cruise_state == 7);    // PRE_CANCEL
         pcm_cruise_check(cruise_engaged);
+      }
+    }
+
+    if (bus == 2) {
+      int das_control_addr = (tesla_powertrain ? 0x2bf : 0x2b9);
+      if (tesla_longitudinal && (addr == das_control_addr)) {
+        // "AEB_ACTIVE"
+        tesla_stock_aeb = ((GET_BYTE(to_push, 2) & 0x03U) == 1U);
       }
     }
 
@@ -182,9 +193,8 @@ static int tesla_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int tesla_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
+static int tesla_fwd_hook(int bus_num, int addr) {
   int bus_fwd = -1;
-  int addr = GET_ADDR(to_fwd);
 
   if(bus_num == 0) {
     // Chassis/PT to autopilot
@@ -200,13 +210,8 @@ static int tesla_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
       block_msg = true;
     }
 
-    if (tesla_longitudinal && (addr == das_control_addr)) {
-      // "AEB_ACTIVE"
-      tesla_stock_aeb = ((GET_BYTE(to_fwd, 2) & 0x03U) == 1U);
-
-      if (!tesla_stock_aeb) {
-        block_msg = true;
-      }
+    if (tesla_longitudinal && (addr == das_control_addr) && !tesla_stock_aeb) {
+      block_msg = true;
     }
 
     if(!block_msg) {

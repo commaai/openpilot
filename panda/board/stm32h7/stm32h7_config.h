@@ -14,13 +14,21 @@
 
 #define BOOTLOADER_ADDRESS 0x1FF09804U
 
-// Around (1Mbps / 8 bits/byte / 12 bytes per message)
-#define CAN_INTERRUPT_RATE 12000U // FIXME: should raise to 16000 ?
+/*
+An IRQ is received on message RX/TX (or RX errors), with
+separate IRQs for RX and TX.
+
+0-byte CAN FD frame as the worst case:
+- 17 slow bits = SOF + 11 ID + R1 + IDE + EDL + R0 + BRS
+- 23 fast bits = ESI + 4 DLC + 0 DATA + 17 CRC + CRC delimeter
+- 12 slow bits = ACK + DEL + 7 EOF + 3 IFS
+- all currently supported cars are 0.5 Mbps / 2 Mbps
+
+1 / ((29 bits / 0.5Mbps) + (23 bits / 2Mbps)) = 14388Hz
+*/
+#define CAN_INTERRUPT_RATE 16000U
 
 #define MAX_LED_FADE 10240U
-
-// Threshold voltage (mV) for either of the SBUs to be below before deciding harness is connected
-#define HARNESS_CONNECTED_THRESHOLD 40000U
 
 // There are 163 external interrupt sources (see stm32f735xx.h)
 #define NUM_INTERRUPTS 163U
@@ -32,6 +40,8 @@
 
 #define INTERRUPT_TIMER_IRQ TIM6_DAC_IRQn
 #define INTERRUPT_TIMER TIM6
+
+#define IND_WDG IWDG1
 
 #define PROVISION_CHUNK_ADDRESS 0x080FFFE0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x080FFFC0U
@@ -56,7 +66,7 @@
 #include "stm32h7/peripherals.h"
 #include "stm32h7/interrupt_handlers.h"
 #include "drivers/timers.h"
-#include "stm32h7/lladc.h"
+#include "drivers/watchdog.h"
 
 #if !defined(BOOTSTUB) && defined(PANDA)
   #include "drivers/uart.h"

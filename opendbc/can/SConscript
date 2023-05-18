@@ -5,7 +5,14 @@ import os
 envDBC = env.Clone()
 dbc_file_path = '-DDBC_FILE_PATH=\'"%s"\'' % (envDBC.Dir("..").abspath)
 envDBC['CXXFLAGS'] += [dbc_file_path]
-libdbc = envDBC.SharedLibrary('libdbc', ["dbc.cc", "parser.cc", "packer.cc", "common.cc"], LIBS=[common, "capnp", "kj", "zmq"])
+src = ["dbc.cc", "parser.cc", "packer.cc", "common.cc"]
+libs = [common, "capnp", "kj", "zmq"]
+
+# shared library for openpilot
+libdbc = envDBC.SharedLibrary('libdbc', src, LIBS=libs)
+
+# static library for tools like cabana
+envDBC.Library('libdbc_static', src, LIBS=libs)
 
 # Build packer and parser
 lenv = envCython.Clone()

@@ -219,14 +219,15 @@ system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
-selfdrive/locationd/__init__.py
-selfdrive/locationd/.gitignore
-selfdrive/locationd/SConscript
-selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ublox_msg.cc
-selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/generated/*
+system/ubloxd/.gitignore
+system/ubloxd/SConscript
+system/ubloxd/generated/*
+system/ubloxd/*.h
+system/ubloxd/*.cc
 
+selfdrive/locationd/__init__.py
+selfdrive/locationd/SConscript
+selfdrive/locationd/.gitignore
 selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
@@ -253,35 +254,36 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
-selfdrive/loggerd/.gitignore
-selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder/encoder.cc
-selfdrive/loggerd/encoder/encoder.h
-selfdrive/loggerd/encoder/v4l_encoder.cc
-selfdrive/loggerd/encoder/v4l_encoder.h
-selfdrive/loggerd/video_writer.cc
-selfdrive/loggerd/video_writer.h
-selfdrive/loggerd/logger.cc
-selfdrive/loggerd/logger.h
-selfdrive/loggerd/loggerd.cc
-selfdrive/loggerd/loggerd.h
-selfdrive/loggerd/encoderd.cc
-selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.h
+system/loggerd/.gitignore
+system/loggerd/SConscript
+system/loggerd/encoder/encoder.cc
+system/loggerd/encoder/encoder.h
+system/loggerd/encoder/v4l_encoder.cc
+system/loggerd/encoder/v4l_encoder.h
+system/loggerd/video_writer.cc
+system/loggerd/video_writer.h
+system/loggerd/logger.cc
+system/loggerd/logger.h
+system/loggerd/loggerd.cc
+system/loggerd/loggerd.h
+system/loggerd/encoderd.cc
+system/loggerd/bootlog.cc
+system/loggerd/encoder/ffmpeg_encoder.cc
+system/loggerd/encoder/ffmpeg_encoder.h
 
-selfdrive/loggerd/__init__.py
-selfdrive/loggerd/config.py
-selfdrive/loggerd/uploader.py
-selfdrive/loggerd/deleter.py
-selfdrive/loggerd/xattr_cache.py
+system/loggerd/__init__.py
+system/loggerd/config.py
+system/loggerd/uploader.py
+system/loggerd/deleter.py
+system/loggerd/xattr_cache.py
 
-selfdrive/sensord/SConscript
-selfdrive/sensord/sensors_qcom2.cc
-selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.h
-selfdrive/sensord/sensord
-selfdrive/sensord/pigeond.py
+system/sensord/.gitignore
+system/sensord/SConscript
+system/sensord/sensors_qcom2.cc
+system/sensord/sensors/*.cc
+system/sensord/sensors/*.h
+system/sensord/sensord
+system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -394,9 +396,9 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/navd/.gitignore
 selfdrive/navd/__init__.py
-selfdrive/navd/navd.py
-selfdrive/navd/helpers.py
+selfdrive/navd/**
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
@@ -409,6 +411,7 @@ selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
+selfdrive/assets/navigation/*
 
 third_party/.gitignore
 third_party/SConscript
@@ -577,13 +580,14 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
-tinygrad_repo/accel/opencl/*
-tinygrad_repo/tinygrad/llops/ops_opencl.py
 tinygrad_repo/openpilot/compile.py
 tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
-tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/codegen/ast.py
+tinygrad_repo/tinygrad/codegen/gpu.py
 tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/runtime/ops_gpu.py
+tinygrad_repo/tinygrad/shape/*
 tinygrad_repo/tinygrad/*.py

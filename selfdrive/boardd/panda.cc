@@ -10,19 +10,10 @@
 #include "common/util.h"
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // try USB first, then SPI
-  try {
-    handle = std::make_unique<PandaUsbHandle>(serial);
-  } catch (std::exception &e) {
-#ifndef __APPLE__
-    handle = std::make_unique<PandaSpiHandle>(serial);
-#endif
-  }
+  handle = std::make_unique<PandaUsbHandle>(serial);
+  LOGW("conntected to %s over USB", serial.c_str());
 
   hw_type = get_hw_type();
-
-  assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
-         (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
 
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS) ||
@@ -48,7 +39,7 @@ std::string Panda::hw_serial() {
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
-#ifndef __APPLE__
+#if 0
   for (auto s : PandaSpiHandle::list()) {
     if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
       serials.push_back(s);
@@ -203,7 +194,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     assert(can_data.size() <= 64);
     assert(can_data.size() == dlc_to_len[data_len_code]);
 
-    can_header header;
+    can_header header = {};
     header.addr = cmsg.getAddress();
     header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
     header.data_len_code = data_len_code;

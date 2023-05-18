@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, HarnessKit, HarnessPart
 Ecu = car.CarParams.Ecu
 
 
@@ -14,8 +14,8 @@ class CarControllerParams:
   STEER_STEP = 3  # Active control frames per command (~33hz)
   INACTIVE_STEER_STEP = 10  # Inactive control frames per command (10hz)
   STEER_DELTA_UP = 10  # Delta rates require review due to observed EPS weakness
-  STEER_DELTA_DOWN = 25
-  STEER_DRIVER_ALLOWANCE = 50
+  STEER_DELTA_DOWN = 15
+  STEER_DRIVER_ALLOWANCE = 65
   STEER_DRIVER_MULTIPLIER = 4
   STEER_DRIVER_FACTOR = 100
   NEAR_STOP_BRAKE_PHASE = 0.5  # m/s
@@ -66,12 +66,14 @@ class CAR:
   CADILLAC_ATS = "CADILLAC ATS Premium Performance 2018"
   MALIBU = "CHEVROLET MALIBU PREMIER 2017"
   ACADIA = "GMC ACADIA DENALI 2018"
+  BUICK_LACROSSE = "BUICK LACROSSE 2017"
   BUICK_REGAL = "BUICK REGAL ESSENCE 2018"
   ESCALADE = "CADILLAC ESCALADE 2017"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
   BOLT_EUV = "CHEVROLET BOLT EUV 2022"
   SILVERADO = "CHEVROLET SILVERADO 1500 2020"
   EQUINOX = "CHEVROLET EQUINOX 2019"
+  TRAILBLAZER = "CHEVROLET TRAILBLAZER 2021"
 
 
 class Footnote(Enum):
@@ -87,9 +89,9 @@ class GMCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
-      self.harness = Harness.gm
+      self.harness_kit = HarnessKit(Harness.gm)
     else:
-      self.harness = Harness.obd_ii
+      self.harness_kit = HarnessKit(Harness.obd_ii, parts=[HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler])
       self.footnotes.append(Footnote.OBD_II)
 
 
@@ -99,18 +101,20 @@ CAR_INFO: Dict[str, Union[GMCarInfo, List[GMCarInfo]]] = {
   CAR.CADILLAC_ATS: GMCarInfo("Cadillac ATS Premium Performance 2018"),
   CAR.MALIBU: GMCarInfo("Chevrolet Malibu Premier 2017"),
   CAR.ACADIA: GMCarInfo("GMC Acadia 2018", video_link="https://www.youtube.com/watch?v=0ZN6DdsBUZo"),
+  CAR.BUICK_LACROSSE: GMCarInfo("Buick LaCrosse 2017-19", "Driver Confidence Package 2"),
   CAR.BUICK_REGAL: GMCarInfo("Buick Regal Essence 2018"),
   CAR.ESCALADE: GMCarInfo("Cadillac Escalade 2017", "Driver Assist Package"),
   CAR.ESCALADE_ESV: GMCarInfo("Cadillac Escalade ESV 2016", "Adaptive Cruise Control (ACC) & LKAS"),
   CAR.BOLT_EUV: [
-    GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", "https://youtu.be/xvwzGMUA210"),
+    GMCarInfo("Chevrolet Bolt EUV 2022-23", "Premier or Premier Redline Trim without Super Cruise Package", video_link="https://youtu.be/xvwzGMUA210"),
     GMCarInfo("Chevrolet Bolt EV 2022-23", "2LT Trim with Adaptive Cruise Control Package"),
   ],
   CAR.SILVERADO: [
     GMCarInfo("Chevrolet Silverado 1500 2020-21", "Safety Package II"),
-    GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", "https://youtu.be/5HbNoBLzRwE"),
+    GMCarInfo("GMC Sierra 1500 2020-21", "Driver Alert Package II", video_link="https://youtu.be/5HbNoBLzRwE"),
   ],
   CAR.EQUINOX: GMCarInfo("Chevrolet Equinox 2019-22"),
+  CAR.TRAILBLAZER: GMCarInfo("Chevrolet Trailblazer 2021-22"),
 }
 
 
@@ -151,6 +155,15 @@ FINGERPRINTS = {
   # Volt Premier w/ ACC 2018
   {
     170: 8, 171: 8, 189: 7, 190: 6, 193: 8, 197: 8, 199: 4, 201: 8, 209: 7, 211: 2, 241: 6, 288: 5, 298: 8, 304: 1, 308: 4, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 6, 384: 4, 386: 8, 388: 8, 389: 2, 390: 7, 417: 7, 419: 1, 426: 7, 451: 8, 452: 8, 453: 6, 454: 8, 456: 8, 479: 3, 481: 7, 485: 8, 489: 8, 493: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 508: 8, 528: 4, 532: 6, 546: 7, 550: 8, 554: 3, 558: 8, 560: 8, 562: 8, 563: 5, 564: 5, 565: 5, 566: 5, 567: 3, 568: 1, 573: 1, 577: 8, 578: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 3, 707: 8, 711: 6, 715: 8, 717: 5, 761: 7, 810: 8, 840: 5, 842: 5, 844: 8, 866: 4, 869: 4, 880: 6, 961: 8, 967: 4, 969: 8, 977: 8, 979: 7, 988: 6, 989: 8, 995: 7, 1001: 8, 1005: 6, 1009: 8, 1017: 8, 1019: 2, 1020: 8, 1033: 7, 1034: 7, 1105: 6, 1187: 4, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1227: 4, 1233: 8, 1249: 8, 1257: 6, 1265: 8, 1267: 1, 1273: 3, 1275: 3, 1280: 4, 1296: 4, 1300: 8, 1322: 6, 1323: 4, 1328: 4, 1417: 8, 1516: 8, 1601: 8, 1618: 8, 1905: 7, 1906: 7, 1907: 7, 1910: 7, 1912: 7, 1922: 7, 1927: 7, 1930: 7, 2016: 8, 2018: 8, 2020: 8, 2024: 8, 2028: 8
+  },
+  # Volt Premier 2018 w/ flashed firmware, no radar
+  {
+    170: 8, 171: 8, 189: 7, 190: 6, 192: 5, 193: 8, 197: 8, 199: 4, 201: 6, 209: 7, 211: 2, 241: 6, 288: 5, 289: 1, 290: 1, 298: 2, 304: 1, 308: 4, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 368: 8, 381: 2, 384: 8, 386: 5, 388: 8, 389: 2, 390: 7, 417: 7, 419: 1, 426: 7, 451: 8, 452: 8, 453: 6, 454: 8, 456: 8, 458: 8, 479: 3, 481: 7, 485: 8, 489: 5, 493: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 3, 508: 8, 512: 3, 528: 4, 530: 8, 532: 6, 537: 5, 539: 8, 542: 7, 546: 7, 550: 8, 554: 3, 558: 8, 560: 6, 562: 4, 563: 5, 564: 5, 565: 5, 566: 5, 567: 3, 568: 1, 573: 1, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 3, 707: 8, 711: 6, 761: 7, 810: 8, 821: 4, 823: 7, 832: 8, 840: 5, 842: 5, 844: 8, 853: 8, 866: 4, 961: 8, 967: 4, 969: 8, 977: 8, 979: 7, 988: 6, 989: 8, 995: 7, 1001: 5, 1003: 5, 1005: 6, 1009: 8, 1017: 8, 1019: 2, 1020: 8, 1033: 7, 1034: 7, 1105: 6, 1187: 4, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1227: 4, 1233: 8, 1249: 8, 1257: 6, 1265: 8, 1267: 1, 1273: 3, 1275: 3, 1280: 4, 1300: 8, 1322: 6, 1323: 4, 1328: 4, 1417: 8, 1905: 7, 1906: 7, 1907: 7, 1910: 7, 1912: 7, 1922: 7, 1927: 7
+  }],
+  CAR.BUICK_LACROSSE: [
+  # LaCrosse Premium AWD 2017
+  {
+    190: 6, 193: 8, 197: 8, 199: 4, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 322: 7, 328: 1, 352: 5, 353: 3, 381: 6, 386: 8, 388: 8, 393: 7, 398: 8, 407: 7, 413: 8, 417: 7, 419: 1, 422: 4, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 6, 455: 7, 456: 8, 463: 3, 479: 3, 481: 7, 485: 8, 487: 8, 489: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 503: 1, 508: 8, 510: 8, 528: 5, 532: 6, 534: 2, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 565: 5, 567: 5, 573: 1, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 5, 707: 8, 753: 5, 761: 7, 801: 8, 804: 3, 810: 8, 840: 5, 842: 5, 844: 8, 866: 4, 872: 1, 882: 8, 890: 1, 892: 2, 893: 1, 894: 1, 961: 8, 967: 4, 969: 8, 977: 8, 979: 8, 985: 5, 1001: 8, 1005: 6, 1009: 8, 1011: 6, 1013: 3, 1017: 8, 1019: 2, 1020: 8, 1022: 1, 1105: 6, 1217: 8, 1221: 5, 1223: 2, 1225: 7, 1233: 8, 1243: 3, 1249: 8, 1257: 6, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1280: 4, 1300: 8, 1322: 6, 1328: 4, 1417: 8, 1609: 8, 1613: 8, 1649: 8, 1792: 8, 1798: 8, 1824: 8, 1825: 8, 1840: 8, 1842: 8, 1858: 8, 1860: 8, 1863: 8, 1872: 8, 1875: 8, 1882: 8, 1888: 8, 1889: 8, 1892: 8, 1904: 7, 1906: 7, 1907: 7, 1912: 7, 1913: 7, 1914: 7, 1916: 7, 1918: 7, 1919: 7, 1937: 8, 1953: 8, 1968: 8, 2001: 8, 2017: 8, 2018: 8, 2020: 8, 2026: 8
   }],
   CAR.BUICK_REGAL : [
   # Regal TourX Essence w/ ACC 2018
@@ -196,6 +209,12 @@ FINGERPRINTS = {
   {
     190: 6, 193: 8, 197: 8, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 257: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 510: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
   }],
+  # Trailblazer also matches as a Silverado, so comment out to avoid conflicts.
+  # TODO: split with FW versions
+  CAR.TRAILBLAZER: [
+  {
+  #   190: 6, 193: 8, 197: 8, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 707: 8, 715: 8, 717: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1609: 8, 1613: 8, 1649: 8, 1792: 8, 1798: 8, 1824: 8, 1825: 8, 1840: 8, 1842: 8, 1858: 8, 1860: 8, 1863: 8, 1872: 8, 1875: 8, 1882: 8, 1888: 8, 1889: 8, 1892: 8, 1930: 7, 1937: 8, 1953: 8, 1968: 8, 2001: 8, 2017: 8, 2018: 8, 2020: 8
+  }],
 }
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
@@ -203,6 +222,6 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_power
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
-CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX}
+CAMERA_ACC_CAR = {CAR.BOLT_EUV, CAR.SILVERADO, CAR.EQUINOX, CAR.TRAILBLAZER}
 
 STEER_THRESHOLD = 1.0

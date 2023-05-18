@@ -24,6 +24,7 @@ typedef union _USB_Setup {
 USB_Setup_TypeDef;
 
 bool usb_enumerated = false;
+uint16_t usb_last_frame_num = 0U;
 
 void usb_init(void);
 void usb_cb_ep3_out_complete(void);
@@ -471,6 +472,12 @@ char to_hex_char(int a) {
   return ret;
 }
 
+void usb_tick(void) {
+  uint16_t current_frame_num = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF_Msk) >> USB_OTG_DSTS_FNSOF_Pos;
+  usb_enumerated = (current_frame_num != usb_last_frame_num);
+  usb_last_frame_num = current_frame_num;
+}
+
 void usb_setup(void) {
   int resp_len;
   ControlPacket_t control_req;
@@ -673,22 +680,9 @@ void usb_irqhandler(void) {
     print("connector ID status change\n");
   }
 
-  if ((gintsts & USB_OTG_GINTSTS_ESUSP) != 0) {
-    print("ESUSP detected\n");
-  }
-
-  if ((gintsts & USB_OTG_GINTSTS_EOPF) != 0) {
-    usb_enumerated = true;
-  }
-
   if ((gintsts & USB_OTG_GINTSTS_USBRST) != 0) {
     print("USB reset\n");
-    usb_enumerated = false;
     usb_reset();
-  }
-
-  if ((gintsts & USB_OTG_GINTSTS_USBSUSP) != 0) {
-    usb_enumerated = false;
   }
 
   if ((gintsts & USB_OTG_GINTSTS_ENUMDNE) != 0) {

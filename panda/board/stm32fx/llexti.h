@@ -2,7 +2,7 @@ void EXTI_IRQ_Handler(void);
 
 void exti_irq_init(void) {
   SYSCFG->EXTICR[2] &= ~(SYSCFG_EXTICR3_EXTI8_Msk);
-  if (car_harness_status == HARNESS_STATUS_FLIPPED) {
+  if (harness.status == HARNESS_STATUS_FLIPPED) {
     // CAN2_RX
     current_board->enable_can_transceiver(3U, false);
     SYSCFG->EXTICR[2] |=  (SYSCFG_EXTICR3_EXTI8_PA);

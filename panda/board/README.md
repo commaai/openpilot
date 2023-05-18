@@ -4,18 +4,15 @@ Programming
 **Panda**
 
 ```
-./recover.sh           # flash bootstub
-```
-
-```
-./flash.sh           # flash application
+./recover.py      # flash bootstub
+./flash.py        # flash application
 ```
 
 Troubleshooting
 ----
 
-If your panda will not flash and green LED is on, use `recover.sh`.
-If panda is blinking fast with green LED, use `flash.sh`.
+If your panda will not flash and green LED is on, use `recover.py`.
+If panda is blinking fast with green LED, use `flash.py`.
 Otherwise if LED is off and panda can't be seen with `lsusb` command, use [panda paw](https://comma.ai/shop/products/panda-paw) to go into DFU mode.
 
 

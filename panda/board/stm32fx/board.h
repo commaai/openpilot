@@ -5,6 +5,7 @@
 #include "boards/unused_funcs.h"
 
 // ///// Board definition and detection ///// //
+#include "stm32fx/lladc.h"
 #include "drivers/harness.h"
 #ifdef PANDA
   #include "drivers/fan.h"
