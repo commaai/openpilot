@@ -1,4 +1,141 @@
+body{
+    background: #333 !important;
+    color: #fff !important;
+    display: flex;
+    justify-content: center;
+    align-items: start;
+}
+
+#main{
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+    width: 1200px;
+}
+
 video {
-    height: 600;
+    height: 604;
+    /* width: 80%; */
     filter: grayscale(1);
+}
+
+.pre-blob {
+    display: flex;
+    background: #333;
+    border-radius: 50%;
+    margin: 10px;
+    height: 80px;
+    width: 80px;
+    justify-content: center;
+    align-items: center;
+    margin: 10px 20px 10px 20px;
+}
+
+.blob {
+    background: rgba(231, 76, 60,1.0);
+    box-shadow: 0 0 0 0 rgba(231, 76, 60,1.0);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0px rgba(192, 57, 43, 1);
+    }
+    100% {
+      box-shadow: 0 0 0 20px rgba(192, 57, 43, 0);
+    }
+  }
+
+.icon-sub-panel{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #222;
+    border-radius: 10px;
+    width: 24%;
+    padding: 5px;
+}
+
+#icon-panel{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    margin: 10px 0px 10px 0px;
+}
+
+.icon-sub-sub-panel{
+    display: flex;
+    flex-direction: row;
+}
+
+.jumbo{
+    font-size: 100px;
+}
+
+p{
+    margin: 0px !important;
+}
+
+.small{
+    font-size: 20px !important;
+}
+
+.keys, #key-val{
+    background: #333;
+    /* width: 200px; */
+    /* height: 200px; */
+    padding: 50px;
+    margin: 5px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+#key-val{
+    pointer-events: none;
+    background: #fff;
+    color: #333;
+    line-height: 1;
+    font-size: 20px;
+    flex-direction: column;
+}
+
+.wasd-row{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+}
+
+#wasd{
+    margin: 5px 0px 5px 0px;
+    background: #222;
+    border-radius: 10px;
+    width: 100%;
+    padding: 20px;
+}
+
+#sounds-panel{
+    display: flex;
+    justify-content: center;
+    margin: 5px 0px 5px 0px;
+    background: #222;
+    border-radius: 10px;
+    width: 100%;
+    padding: 20px;
+}
+
+.btn{
+    margin: 0px 15px 0px 15px !important;
+}
+
+#ping-time, #battery{
+    font-size: 25px;
 }

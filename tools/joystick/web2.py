@@ -189,6 +189,15 @@ async def control_body(data):
   pm.send('testJoystick', dat)
 
 
+# async def check_battery(channel):
+#   sm = messaging.SubMaster(['carState'])
+#   while True:
+#     sm.update()
+#     if sm.updated['carState']:
+#       channel.send(sm['carState'].fuelGauge)
+#     await asyncio.sleep(1)
+
+
 async def offer(request):
   logger.info("\n\n\nnewoffer!\n\n")
   params = await request.json()
@@ -218,6 +227,10 @@ async def offer(request):
       }
       channel.send(json.dumps(times))
 
+  # channel = pc.createDataChannel("battery")
+  # @channel.on("open")
+  # def on_open():
+  #   asyncio.ensure_future(check_battery(channel))
 
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():

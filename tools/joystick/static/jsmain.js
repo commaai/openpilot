@@ -20,6 +20,11 @@ function createPeerConnection() {
             document.getElementById('audio').srcObject = evt.streams[0];
     });
 
+    pc.addEventListener('datachannel', function(evt) {
+        console.log(evt);
+    });
+
+
     return pc;
 }
 
@@ -63,16 +68,28 @@ function negotiate() {
 }
 
 const keyVals = {w: 0, a: 0, s: 0, d: 0}
-const handleKeyX = (event, setValue) => {
-    const key = event.key.toLowerCase();
+const handleKeyX = (key, setValue) => {
     if (['w', 'a', 's', 'd'].includes(key)){
         keyVals[key] = setValue;
-        // console.log(keyVals);
+        let color = "#333";
+        if (setValue === 1){
+            color = "#e74c3c";
+
+        }
+        $("#key-"+key).css('background', color);
+        const {x, y} = getXY()
+        $("#pos-vals").text(x+","+y)
     }
 };
 
-document.addEventListener('keydown', (e)=>(handleKeyX(e, 1)));
-document.addEventListener('keyup', (e)=>(handleKeyX(e, 0)));
+document.addEventListener('keydown', (e)=>(handleKeyX(e.key.toLowerCase(), 1)));
+document.addEventListener('keyup', (e)=>(handleKeyX(e.key.toLowerCase(), 0)));
+$(".keys").mousedown((e)=>{
+    handleKeyX($(e.target).attr('id').replace('key-', ''), 1);
+})
+$(".keys").mouseup((e)=>{
+    handleKeyX($(e.target).attr('id').replace('key-', ''), 0);
+})
 
 function getXY(){
     x = -keyVals.w + keyVals.s
@@ -82,25 +99,6 @@ function getXY(){
 
 function start() {
     pc = createPeerConnection();
-    var parameters = {"ordered": true};
-
-    dc = pc.createDataChannel('control_command', parameters);
-    dc.onclose = function() {
-        console.log("data channel closed");
-        clearInterval(dcInterval);
-    };
-    dc.onopen = function() {
-        dcInterval = setInterval(function() {
-            const {x, y} = getXY();
-            const dt = new Date().getTime();
-            var message = JSON.stringify({x, y, dt});
-            dc.send(message);
-        }, 50);
-    };
-    dc.onmessage = function(evt) {
-        // const times = JSON.parse(evt);
-        console.log(evt);
-    };
 
     var constraints = {
         audio: {
@@ -129,6 +127,32 @@ function start() {
     } else {
         negotiate();
     }
+
+    var parameters = {"ordered": true};
+    dc = pc.createDataChannel('control_command', parameters);
+    dc.onclose = function() {
+        console.log("data channel closed");
+        clearInterval(dcInterval);
+    };
+    dc.onopen = function() {
+        dcInterval = setInterval(function() {
+            const {x, y} = getXY();
+            const dt = new Date().getTime();
+            var message = JSON.stringify({x, y, dt});
+            dc.send(message);
+        }, 50);
+    };
+    let val_print_idx = 0;
+    dc.onmessage = function(evt) {
+        const times = JSON.parse(evt.data);
+        if(val_print_idx == 0){
+            $("#ping-time").text((times.outgoing_time - times.incoming_time) + "ms");
+        }
+        val_print_idx = (val_print_idx + 1 ) % 20;
+    };
+
+    $(".pre-blob").addClass('blob');
+
 }
 
 function stop() {

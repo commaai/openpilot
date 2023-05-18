@@ -4,16 +4,60 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>comma body</title>
         <link rel="stylesheet" href="/static/main.css">
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA==" crossorigin="anonymous" referrerpolicy="no-referrer" /><script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js" integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </head>
     <body>
-        <h1>CONTROL YOUR BODY</h1>
-        <p id="robot_state"></p>
-        <audio id="audio" autoplay="true"></audio>
-        <video id="video" playsinline autoplay muted loop></video>
-        <h1>Press wasd to move body</h1>
-        <p id="move_str"></p>
-        <p id="control_lag"></p>
+        <div id="main">
+            <p class="jumbo">comma body</p>
+            <audio id="audio" autoplay="true"></audio>
+            <video id="video" playsinline autoplay muted loop poster="/static/poster.png"></video>
+            <div id="icon-panel">
+                <div class="icon-sub-panel">
+                    <div class="icon-sub-sub-panel">
+                        <i class="bi bi-speaker-fill pre-blob"></i>
+                        <i class="bi bi-mic-fill pre-blob"></i>
+                    </div>
+                    <p class="small">body</p>
+                </div>
+                <div class="icon-sub-panel">
+                    <div class="icon-sub-sub-panel">
+                        <i class="bi bi-mic-fill pre-blob"></i>
+                    </div>
+                    <p class="small">you</p>
+                </div>
+                <div class="icon-sub-panel">
+                    <div class="icon-sub-sub-panel">
+                        <p id="ping-time" class="pre-blob">-</p>
+                    </div>
+                    <p class="bi bi-arrow-repeat small"> ping time</p>
+                </div>
+                <div class="icon-sub-panel">
+                    <div class="icon-sub-sub-panel">
+                        <p id="battery" class="pre-blob">-</p>
+                    </div>
+                    <p class="bi bi-battery-half small"> battery</p>
+                </div>
+            </div>
+            <div id="wasd">
+                <div class="wasd-row">
+                    <div class="keys" id="key-w">W</div>
+                    <div id="key-val"><span id="pos-vals">0,0</span><span>x,y</span></div>
+                </div>
+                <div class="wasd-row">
+                    <div class="keys" id="key-a">A</div>
+                    <div class="keys" id="key-s">S</div>
+                    <div class="keys" id="key-d">D</div>
+                </div>
+            </div>
+            <div id="sounds-panel">
+                <p>Play Sounds: </p>
+                <button type="button" class="btn btn-outline-success btn-lg">Engage</button>
+                <button type="button" class="btn btn-outline-warning btn-lg">Disengage</button>
+                <button type="button" class="btn btn-outline-danger btn-lg">Error</button>
+            </div>
+        </div>
         <script src="/static/jsmain.js"></script>
     </body>
 </html>
