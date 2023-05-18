@@ -1,3 +1,4 @@
+import os
 from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
@@ -89,7 +90,8 @@ class CarController:
         gas = -5.0
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
+      if not os.path.exists('/data/stop_acc'):
+        can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
@@ -98,9 +100,10 @@ class CarController:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
     # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_acc_ui_msg(self.packer, self.CP, main_on, CC.latActive,
-                                         CS.out.cruiseState.standstill, hud_control,
-                                         CS.acc_tja_status_stock_values))
+      if not os.path.exists('/data/stop_acc'):
+        can_sends.append(create_acc_ui_msg(self.packer, self.CP, main_on, CC.latActive,
+                                           CS.out.cruiseState.standstill, hud_control,
+                                           CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
