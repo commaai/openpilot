@@ -37,6 +37,7 @@ IMG_H, IMG_W = 604, 964
 yuv = np.zeros((int(IMG_H*1.5), IMG_W), dtype=np.uint8)
 AUDIO_RATE = 16000
 pm = messaging.PubMaster(['testJoystick'])
+sm = messaging.SubMaster(['carState'])
 
 
 def force_codec(pc, sender, forced_codec='video/H264', stream_type="video"):
@@ -169,14 +170,14 @@ async def dummy_controls_msg(app):
         dat.testJoystick.buttons = [False]
         pm.send('testJoystick', dat)
     await asyncio.sleep(0.1)
-  
+
 async def start_background_tasks(app):
-  app['dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
+  app['bgtask_dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
 
 
 async def stop_background_tasks(app):
-  app['dummy_controls_msg'].cancel()
-  await app['dummy_controls_msg']
+  app['bgtask_dummy_controls_msg'].cancel()
+  await app['bgtask_dummy_controls_msg']
 
 
 async def control_body(data):
@@ -187,15 +188,6 @@ async def control_body(data):
   dat.testJoystick.axes = [x,y]
   dat.testJoystick.buttons = [False]
   pm.send('testJoystick', dat)
-
-
-# async def check_battery(channel):
-#   sm = messaging.SubMaster(['carState'])
-#   while True:
-#     sm.update()
-#     if sm.updated['carState']:
-#       channel.send(sm['carState'].fuelGauge)
-#     await asyncio.sleep(1)
 
 
 async def offer(request):
@@ -219,18 +211,22 @@ async def offer(request):
     @channel.on("message")
     async def on_message(message):
       data = json.loads(message)
-      await control_body(data)
-      request.app['mutable_vals']['last_send_time'] = time.monotonic()
-      times = {
-        'incoming_time': data['dt'],
-        'outgoing_time': int(time.time() * 1000),
-      }
-      channel.send(json.dumps(times))
+      if data['type'] == 'control_command':
+        await control_body(data)
+        request.app['mutable_vals']['last_send_time'] = time.monotonic()
+        times = {
+          'type': 'ping_time',
+          'incoming_time': data['dt'],
+          'outgoing_time': int(time.time() * 1000),
+        }
+        channel.send(json.dumps(times))
+      if data['type'] == 'battery_level':
+        # channel.send(json.dumps({'type': 'battery_level', 'value': 50}))
+        # ToDo: sm is blocking :( fix it!
+        sm.update()
+        if sm.updated['carState']:
+          channel.send(json.dumps({'type': 'battery_level', 'value': sm['carState'].fuelGauge}))
 
-  # channel = pc.createDataChannel("battery")
-  # @channel.on("open")
-  # def on_open():
-  #   asyncio.ensure_future(check_battery(channel))
 
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():
@@ -276,6 +272,6 @@ if __name__ == "__main__":
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
   app.router.add_static('/static', 'static')
-  # app.on_startup.append(start_background_tasks)
-  # app.on_cleanup.append(stop_background_tasks)
+  app.on_startup.append(start_background_tasks)
+  app.on_cleanup.append(stop_background_tasks)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)

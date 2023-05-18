@@ -3,6 +3,7 @@ var pc = null;
 
 // data channel
 var dc = null, dcInterval = null;
+var battery = null;
 
 function createPeerConnection() {
     var config = {
@@ -19,12 +20,6 @@ function createPeerConnection() {
         else
             document.getElementById('audio').srcObject = evt.streams[0];
     });
-
-    pc.addEventListener('datachannel', function(evt) {
-        console.log(evt);
-    });
-
-
     return pc;
 }
 
@@ -129,28 +124,37 @@ function start() {
     }
 
     var parameters = {"ordered": true};
-    dc = pc.createDataChannel('control_command', parameters);
+    dc = pc.createDataChannel('data', parameters);
     dc.onclose = function() {
         console.log("data channel closed");
         clearInterval(dcInterval);
+        clearInterval(batteryInterval);
     };
     dc.onopen = function() {
         dcInterval = setInterval(function() {
             const {x, y} = getXY();
             const dt = new Date().getTime();
-            var message = JSON.stringify({x, y, dt});
+            var message = JSON.stringify({type: 'control_command', x, y, dt});
             dc.send(message);
         }, 50);
+        batteryInterval = setInterval(function() {
+            var message = JSON.stringify({type: 'battery_level'});
+            dc.send(message);
+        }, 10000);
     };
     let val_print_idx = 0;
     dc.onmessage = function(evt) {
-        const times = JSON.parse(evt.data);
-        if(val_print_idx == 0){
-            $("#ping-time").text((times.outgoing_time - times.incoming_time) + "ms");
+        const data = JSON.parse(evt.data);
+        console.log(data);
+        if(val_print_idx == 0 && data.type === 'ping_time'){
+            $("#ping-time").text((data.outgoing_time - data.incoming_time) + "ms");
         }
         val_print_idx = (val_print_idx + 1 ) % 20;
+        if(data.type === 'battery_level'){
+            $("#battery").text(data.value + "%");
+        }
+        
     };
-
     $(".pre-blob").addClass('blob');
 
 }
