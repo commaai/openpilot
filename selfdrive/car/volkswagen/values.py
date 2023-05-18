@@ -7,7 +7,7 @@ from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPart, CarParts, Column
+from selfdrive.car.docs_definitions import Cable, CarFootnote, CarInfo, CarParts, Column, HarnessAccessory, HarnessConnector, Mount
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -166,7 +166,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = CarParts([CarPart.j533_connector, CarPart.harness_box, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount])
+  car_parts: CarParts = CarParts([HarnessConnector.j533_connector, HarnessAccessory.harness_box, Cable.long_obdc_cable, Cable.usbc_coupler, Mount.mount])
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)

@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
+from selfdrive.car.docs_definitions import Cable, CarInfo, CarParts, HarnessAccessory, HarnessConnector, Mount
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -30,13 +30,13 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
-NISSAN_PARTS = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount]
+NISSAN_PARTS = [HarnessAccessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler, Mount.mount]
 
 
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = CarParts.default([CarPart.nissan_a_connector], default=NISSAN_PARTS)
+  car_parts: CarParts = CarParts.default([HarnessConnector.nissan_a_connector], default=NISSAN_PARTS)
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -44,7 +44,7 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.default([CarPart.nissan_b_connector], default=NISSAN_PARTS)),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.default([HarnessConnector.nissan_b_connector], default=NISSAN_PARTS)),
 }
 
 FINGERPRINTS = {

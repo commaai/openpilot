@@ -6,7 +6,7 @@ from cereal import car
 from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPart, CarParts, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarParts, Column, HarnessConnector
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -136,23 +136,23 @@ class Footnote(Enum):
     Column.MODEL, shop_footnote=True)
 
 
-HYUNDAI_A_PARTS = CarParts.default([CarPart.hyundai_a_connector])
-HYUNDAI_B_PARTS = CarParts.default([CarPart.hyundai_b_connector])
-HYUNDAI_C_PARTS = CarParts.default([CarPart.hyundai_c_connector])
-HYUNDAI_D_PARTS = CarParts.default([CarPart.hyundai_d_connector])
-HYUNDAI_E_PARTS = CarParts.default([CarPart.hyundai_e_connector])
-HYUNDAI_F_PARTS = CarParts.default([CarPart.hyundai_f_connector])
-HYUNDAI_G_PARTS = CarParts.default([CarPart.hyundai_g_connector])
-HYUNDAI_H_PARTS = CarParts.default([CarPart.hyundai_h_connector])
-HYUNDAI_I_PARTS = CarParts.default([CarPart.hyundai_i_connector])
-HYUNDAI_J_PARTS = CarParts.default([CarPart.hyundai_j_connector])
-HYUNDAI_K_PARTS = CarParts.default([CarPart.hyundai_k_connector])
-HYUNDAI_L_PARTS = CarParts.default([CarPart.hyundai_l_connector])
-HYUNDAI_M_PARTS = CarParts.default([CarPart.hyundai_m_connector])
-HYUNDAI_N_PARTS = CarParts.default([CarPart.hyundai_n_connector])
-HYUNDAI_O_PARTS = CarParts.default([CarPart.hyundai_o_connector])
-HYUNDAI_P_PARTS = CarParts.default([CarPart.hyundai_p_connector])
-HYUNDAI_Q_PARTS = CarParts.default([CarPart.hyundai_q_connector])
+HYUNDAI_A_PARTS = CarParts.default([HarnessConnector.hyundai_a_connector])
+HYUNDAI_B_PARTS = CarParts.default([HarnessConnector.hyundai_b_connector])
+HYUNDAI_C_PARTS = CarParts.default([HarnessConnector.hyundai_c_connector])
+HYUNDAI_D_PARTS = CarParts.default([HarnessConnector.hyundai_d_connector])
+HYUNDAI_E_PARTS = CarParts.default([HarnessConnector.hyundai_e_connector])
+HYUNDAI_F_PARTS = CarParts.default([HarnessConnector.hyundai_f_connector])
+HYUNDAI_G_PARTS = CarParts.default([HarnessConnector.hyundai_g_connector])
+HYUNDAI_H_PARTS = CarParts.default([HarnessConnector.hyundai_h_connector])
+HYUNDAI_I_PARTS = CarParts.default([HarnessConnector.hyundai_i_connector])
+HYUNDAI_J_PARTS = CarParts.default([HarnessConnector.hyundai_j_connector])
+HYUNDAI_K_PARTS = CarParts.default([HarnessConnector.hyundai_k_connector])
+HYUNDAI_L_PARTS = CarParts.default([HarnessConnector.hyundai_l_connector])
+HYUNDAI_M_PARTS = CarParts.default([HarnessConnector.hyundai_m_connector])
+HYUNDAI_N_PARTS = CarParts.default([HarnessConnector.hyundai_n_connector])
+HYUNDAI_O_PARTS = CarParts.default([HarnessConnector.hyundai_o_connector])
+HYUNDAI_P_PARTS = CarParts.default([HarnessConnector.hyundai_p_connector])
+HYUNDAI_Q_PARTS = CarParts.default([HarnessConnector.hyundai_q_connector])
 
 
 @dataclass
