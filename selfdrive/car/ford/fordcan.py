@@ -123,6 +123,7 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, stopping
     "AccStopStat_B_Rq": 1 if stopping else 0,
     "CmbbOvrrd_B_RqDrv": 1,
     "CmbbEngTqMn_B_Rq": 0,
+    # "CmbbDeny_B_Actl": 1,  # this could actually deny aeb
   }
   return packer.make_can_msg("ACCDATA", CANBUS.main, values)
 
