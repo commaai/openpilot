@@ -131,8 +131,6 @@ class UIState : public QObject {
 public:
   UIState(QObject* parent = 0);
   void updateStatus();
-  void setDriverViewEnabled(bool enabled);
-  inline bool driverViewEnabled() const { return driver_view_enabled; }
   inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   }
@@ -154,7 +152,6 @@ public:
   QString language;
 
   QTransform car_space_transform;
-  bool driver_view_enabled = false;
 
 signals:
   void uiUpdate(const UIState &s);
@@ -183,7 +180,6 @@ private:
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
-  bool driver_view_enabled = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
   QFuture<void> brightness_future;
@@ -198,7 +194,7 @@ signals:
   void interactiveTimout();
 
 public slots:
-  void resetInteractiveTimout();
+  void resetInteractiveTimout(int timeout = 0);
   void update(const UIState &s);
 };
 

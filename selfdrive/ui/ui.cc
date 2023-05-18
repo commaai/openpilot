@@ -268,13 +268,6 @@ void UIState::update() {
   emit uiUpdate(*this);
 }
 
-void UIState::setDriverViewEnabled(bool enabled) {
-  driver_view_enabled = enabled;
-  Params().putBool("IsDriverViewEnabled", enabled);
-}
-
-// Device
-
 void UIState::setPrimeType(int type) {
   if (type != prime_type) {
     prime_type = type;
@@ -307,8 +300,10 @@ void Device::setAwake(bool on) {
   }
 }
 
-void Device::resetInteractiveTimout() {
-  int timeout = ignition_on ? 10 : (uiState()->driverViewEnabled() ? 60: 30);
+void Device::resetInteractiveTimout(int timeout) {
+  if (timeout == 0) {
+    timeout = (ignition_on ? 10 : 30);
+  }
   interactive_timeout = timeout * UI_FREQ;
 }
 
@@ -342,11 +337,10 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  bool reset_timeout = (!s.scene.ignition && ignition_on) || (s.driverViewEnabled() && !driver_view_enabled);
+  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
-  driver_view_enabled = s.driverViewEnabled();
 
-  if (reset_timeout) {
+  if (ignition_just_turned_off) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();

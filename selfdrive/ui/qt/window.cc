@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   });
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    device.resetInteractiveTimout(60);
     homeWindow->showDriverView(true);
   });
 

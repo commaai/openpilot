@@ -22,6 +22,7 @@ protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
+  Params params;
   SubMaster sm;
   QPixmap face_img;
   bool is_rhd = false;
