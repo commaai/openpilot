@@ -82,13 +82,9 @@ class CarController:
     ### longitudinal control ###
     # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
-      if CC.longActive:
-        accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-        gas = accel
-        if accel < -0.5:
-          gas = -5.0
-      else:
-        accel = 0.0  # -0.0008 m/s^2 on CAN
+      accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+      gas = clip(actuators.accel, CarControllerParams.MIN_GAS, CarControllerParams.ACCEL_MAX)
+      if not CC.longActive:
         gas = -5.0
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
