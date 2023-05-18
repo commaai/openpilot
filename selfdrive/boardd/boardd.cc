@@ -232,6 +232,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         panda->can_send(event.getSendcan());
         LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
+    } else {
+      LOGE("sendcan too old to send: %llu, %llu", nanos_since_boot(), event.getLogMonoTime());
     }
   }
 }
