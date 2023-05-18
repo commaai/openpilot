@@ -4,6 +4,7 @@ var pc = null;
 // data channel
 var dc = null, dcInterval = null;
 var battery = null;
+var last_ping = null;
 
 function createPeerConnection() {
     var config = {
@@ -130,24 +131,33 @@ function start() {
         clearInterval(dcInterval);
         clearInterval(batteryInterval);
     };
+    function controlCommand() {
+        const {x, y} = getXY();
+        const dt = new Date().getTime();
+        var message = JSON.stringify({type: 'control_command', x, y, dt});
+        dc.send(message);
+    }
+
+    function batteryLevel() {
+        var message = JSON.stringify({type: 'battery_level'});
+        dc.send(message);
+    }
+    
     dc.onopen = function() {
-        dcInterval = setInterval(function() {
-            const {x, y} = getXY();
-            const dt = new Date().getTime();
-            var message = JSON.stringify({type: 'control_command', x, y, dt});
-            dc.send(message);
-        }, 50);
-        batteryInterval = setInterval(function() {
-            var message = JSON.stringify({type: 'battery_level'});
-            dc.send(message);
-        }, 10000);
+        dcInterval = setInterval(controlCommand, 50);
+        batteryInterval = setInterval(batteryLevel, 60000);
+        controlCommand();
+        batteryLevel();
     };
     let val_print_idx = 0;
     dc.onmessage = function(evt) {
         const data = JSON.parse(evt.data);
         console.log(data);
         if(val_print_idx == 0 && data.type === 'ping_time'){
-            $("#ping-time").text((data.outgoing_time - data.incoming_time) + "ms");
+            const dt = new Date().getTime();
+            $("#ping-time").text((dt - data.incoming_time) + "ms");
+            last_ping = dt;
+            $(".pre-blob").addClass('blob');
         }
         val_print_idx = (val_print_idx + 1 ) % 20;
         if(data.type === 'battery_level'){
@@ -155,8 +165,6 @@ function start() {
         }
         
     };
-    $(".pre-blob").addClass('blob');
-
 }
 
 function stop() {
@@ -170,12 +178,21 @@ function stop() {
             }
         });
     }
-    // pc.getSenders().forEach(function(sender) {
-    //     sender.track.stop();
-    // });
+    pc.getSenders().forEach(function(sender) {
+        sender.track.stop();
+    });
     setTimeout(function() {
         pc.close();
     }, 500);
 }
+
+setInterval(()=>{
+    const dt = new Date().getTime();
+    if ((dt - last_ping) > 1000){
+        $(".pre-blob").removeClass('blob');
+        $("#battery").text("-");
+        $("#ping-time").text('-');
+    }
+}, 50);
 
 start();

@@ -74,9 +74,11 @@ class VideoTrack(VideoStreamTrack):
         frame = VideoFrame.from_ndarray(np.zeros((int(self.vipc_client.height * 1.5), self.vipc_client.width), np.uint8), format="yuv420p")
       else:
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
-        yuv[:IMG_H, :IMG_W] = y[::2,::2]
-        yuv[IMG_H:, :int(IMG_W/2)] = u[::2,::2]
-        yuv[IMG_H:, int(IMG_W/2):] = v[::2,::2]
+        u = u.reshape(u.shape[0]//2, -1)
+        v = v.reshape(v.shape[0]//2, -1)
+        yuv[:IMG_H, :] = y[::2,::2]
+        yuv[IMG_H:int(IMG_H * 5 / 4), :] = u[::2,::2]
+        yuv[int(5 * IMG_H / 4):, :] = v[::2,::2]
         frame = VideoFrame.from_ndarray(yuv, format="yuv420p")
 
     pts, time_base = await self.next_timestamp()
@@ -221,9 +223,7 @@ async def offer(request):
         }
         channel.send(json.dumps(times))
       if data['type'] == 'battery_level':
-        # channel.send(json.dumps({'type': 'battery_level', 'value': 50}))
-        # ToDo: sm is blocking :( fix it!
-        sm.update()
+        sm.update(timeout=50)
         if sm.updated['carState']:
           channel.send(json.dumps({'type': 'battery_level', 'value': sm['carState'].fuelGauge}))
 
@@ -239,6 +239,11 @@ async def offer(request):
   def on_track(track):
     print("Track received")
     speaker.addTrack(track)
+
+    @track.on("ended")
+    async def on_ended():
+      log_info("Remote %s track ended", track.kind)
+      await speaker.stop()
 
   video_sender = pc.addTrack(VideoTrack())
   force_codec(pc, video_sender)

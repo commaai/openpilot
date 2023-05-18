@@ -6,6 +6,14 @@ body{
     align-items: start;
 }
 
+p{
+    margin: 0px !important;
+}
+
+i{
+    font-style: normal;
+}
+
 #main{
     display: flex;
     flex-direction: column;
@@ -27,11 +35,12 @@ video {
     background: #333;
     border-radius: 50%;
     margin: 10px;
-    height: 80px;
-    width: 80px;
+    height: 70px;
+    width: 70px;
     justify-content: center;
     align-items: center;
     margin: 10px 20px 10px 20px;
+    font-size: 20px;
 }
 
 .blob {
@@ -56,7 +65,7 @@ video {
     align-items: center;
     background: #222;
     border-radius: 10px;
-    width: 24%;
+    width: 19%;
     padding: 5px;
 }
 
@@ -76,12 +85,8 @@ video {
     font-size: 100px;
 }
 
-p{
-    margin: 0px !important;
-}
-
 .small{
-    font-size: 20px !important;
+    font-size: 15px !important;
 }
 
 .keys, #key-val{
@@ -138,4 +143,8 @@ p{
 
 #ping-time, #battery{
     font-size: 25px;
+}
+
+#stop{
+    display: none;
 }
