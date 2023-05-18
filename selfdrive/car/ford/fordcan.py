@@ -113,14 +113,16 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, stopping
 
   decel = 1 if accel < 0 and long_active else 0
   values = {
-    "AccBrkTot_A_Rq": accel,                          # Brake total accel request: [-20|11.9449] m/s^2
-    "Cmbb_B_Enbl": 1 if long_active else 0,           # Enabled: 0=No, 1=Yes
-    "AccPrpl_A_Rq": gas,                              # Acceleration request: [-5|5.23] m/s^2
-    "AccResumEnbl_B_Rq": 1 if long_active else 0,
+    "AccBrkTot_A_Rq": 2.0,                          # Brake total accel request: [-20|11.9449] m/s^2
+    "Cmbb_B_Enbl": 1,  # if long_active else 0,           # Enabled: 0=No, 1=Yes
+    "AccPrpl_A_Rq": 2.0,                              # Acceleration request: [-5|5.23] m/s^2
+    "AccResumEnbl_B_Rq": 1,  # if long_active else 0,
     # TODO: we may be able to improve braking response by utilizing pre-charging
-    "AccBrkPrchg_B_Rq": decel,                        # Pre-charge brake request: 0=No, 1=Yes
-    "AccBrkDecel_B_Rq": decel,                        # Deceleration request: 0=Inactive, 1=Active
+    "AccBrkPrchg_B_Rq": 0,                        # Pre-charge brake request: 0=No, 1=Yes
+    "AccBrkDecel_B_Rq": 0,                        # Deceleration request: 0=Inactive, 1=Active
     "AccStopStat_B_Rq": 1 if stopping else 0,
+    "CmbbOvrrd_B_RqDrv": 1,
+    "CmbbEngTqMn_B_Rq": 0,
   }
   return packer.make_can_msg("ACCDATA", CANBUS.main, values)
 
