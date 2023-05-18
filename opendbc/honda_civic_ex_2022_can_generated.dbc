@@ -375,7 +375,7 @@ BO_ 13274 LKAS_HUD_A: 5 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
@@ -396,7 +396,7 @@ BO_ 13275 LKAS_HUD_B: 8 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
@@ -445,6 +445,12 @@ BO_ 432 STANDSTILL: 7 VSA
  SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
 
+BO_ 446 BRAKE_MODULE: 3 VSA
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_FAULT : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
+
 BO_ 456 ACC_CONTROL: 8 XXX
  SG_ ACCEL_COMMAND : 7|12@0- (0.01,0) [0|0] "m/s^2" XXX
  SG_ IDLESTOP_ALLOW : 8|1@0+ (1,0) [0|1] "" XXX
@@ -459,6 +465,11 @@ BO_ 456 ACC_CONTROL: 8 XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
 
+BO_ 467 CRUISE_FAULT_STATUS: 8 XXX
+ SG_ CRUISE_FAULT : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
 BO_ 829 LKAS_HUD: 8 ADAS
  SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
  SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
@@ -470,7 +481,7 @@ BO_ 829 LKAS_HUD: 8 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
@@ -496,6 +507,7 @@ BO_ 254913108 LKAS_HUD_2: 8 ADAS
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
 
+CM_ 446 "If exists, describes cruise faults and what the PCM uses for brake press detection.";
 CM_ SG_ 456 IDLESTOP_ALLOW "allows car to turn off engine at a standstill";
 CM_ SG_ 456 STANDSTILL "set to 1 when camera requests -4.0 m/s^2";
 

@@ -92,10 +92,13 @@ class GNSSMeasurement:
     self.processed = True
     return True
 
-  def correct(self, est_pos, dog):
+  def correct(self, est_pos, dog, correct_delay=True):
     for obs in self.observables:
       if obs[0] == 'C':  # or obs[0] == 'L':
-        delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
+        if correct_delay:
+          delay = dog.get_delay(self.prn, self.recv_time, est_pos, signal=obs)
+        else:
+          delay = 0.0
         if delay is not None:
           self.observables_final[obs] = (self.observables[obs] +
                                          self.sat_clock_err*constants.SPEED_OF_LIGHT -
@@ -147,10 +150,10 @@ def process_measurements(measurements: List[GNSSMeasurement], dog) -> List[GNSSM
   return proc_measurements
 
 
-def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog) -> List[GNSSMeasurement]:
+def correct_measurements(measurements: List[GNSSMeasurement], est_pos, dog, correct_delay=True) -> List[GNSSMeasurement]:
   corrected_measurements = []
   for meas in measurements:
-    if meas.correct(est_pos, dog):
+    if meas.correct(est_pos, dog, correct_delay=correct_delay):
       corrected_measurements.append(meas)
   return corrected_measurements
 
@@ -195,12 +198,12 @@ def read_raw_qcom(report):
       time_bias_ms = report.timeBias
   else:
     raise NotImplementedError('Only GPS (0), SBAS (1) and GLONASS (6) are supported from qcom, not:', {report.source})
-  #print(recv_time, report.source, time_bias_ms, dr)
+  # logging.debug(recv_time, report.source, time_bias_ms, dr)
   measurements = []
   for i in report.sv:
     nmea_id = i.svId  # todo change svId to nmea_id in cereal message. Or better: change the publisher to publish correct svId's, since constellation id is also given
     if nmea_id == 255:
-      # todo nmea_id is not valid. Fix publisher
+      # TODO nmea_id is not valid. Fix publisher
       continue
     _, sv_id = get_constellation_and_sv_id(nmea_id)
     if not i.measurementStatus.measurementNotUsable and i.measurementStatus.satelliteTimeIsKnown:
@@ -217,9 +220,9 @@ def read_raw_qcom(report):
         observables_std['D1C'] = i.unfilteredSpeedUncertainty
       observables['S1C'] = (i.carrierNoise/100.) if i.carrierNoise != 0 else np.nan
       observables['L1C'] = np.nan
-      #print("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, nmea_id,
-      #  observables['C1C'], observables_std['C1C'],
-      #  observables_std['D1C'], observables['S1C'], i.latency), i.observationState, i.measurementStatus.fineOrCoarseVelocity)
+      # logging.debug("  %.5f %3d %10.2f %7.2f %7.2f %.2f %d" % (recv_time.tow, nmea_id,
+      # observables['C1C'], observables_std['C1C'],
+      # observables_std['D1C'], observables['S1C'], i.latency), i.observationState, i.measurementStatus.fineOrCoarseVelocity)
       glonass_freq = (i.glonassFrequencyIndex - 7) if constellation_id == ConstellationId.GLONASS else np.nan
       measurements.append(GNSSMeasurement(constellation_id, sv_id,
                                           recv_time.week,

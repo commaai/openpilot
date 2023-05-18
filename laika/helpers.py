@@ -26,7 +26,7 @@ class ConstellationId(IntEnum):
     if c in RINEX_ID_TO_CONSTELLATION:
       return RINEX_ID_TO_CONSTELLATION[c]
     else:
-      return None
+      raise ValueError("Unknown rinex constellation id: ", c)
 
   @classmethod
   def from_qcom_source(cls, report_source: int):
@@ -97,14 +97,12 @@ def get_closest(time, candidates, recv_pos=None):
     default=None,
   )
 
-
 def get_constellation(prn: str):
   identifier = prn[0]
-  constellation = ConstellationId.from_rinex_char(identifier)
-  if constellation is not None:
-    return constellation.name
-  return None
+  return ConstellationId.from_rinex_char(identifier)
 
+def get_sv_id(prn: str):
+  return int(prn[1:])
 
 def get_constellation_and_sv_id(nmea_id):
   for c, ranges in CONSTELLATION_TO_NMEA_RANGES.items():
@@ -123,11 +121,8 @@ def get_prn_from_nmea_id(nmea_id: int):
 
 def get_nmea_id_from_prn(prn: str):
   constellation = get_constellation(prn)
-  if constellation is None:
-    raise ValueError(f"Constellation not found for prn {prn}")
-
   sv_id = int(prn[1:])  # satellite id
-  return get_nmea_id_from_constellation_and_svid(ConstellationId[constellation], sv_id)
+  return get_nmea_id_from_constellation_and_svid(constellation, sv_id)
 
 
 def get_nmea_id_from_constellation_and_svid(constellation: ConstellationId, sv_id: int):

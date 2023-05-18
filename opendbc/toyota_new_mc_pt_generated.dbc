@@ -127,6 +127,7 @@ BO_ 466 PCM_CRUISE: 8 XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 467 PCM_CRUISE_2: 8 XXX
+ SG_ BRAKE_PRESSED : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ PCM_FOLLOW_DISTANCE : 12|2@0+ (1,0) [0|3] "" XXX
  SG_ LOW_SPEED_LOCKOUT : 14|2@0+ (1,0) [0|3] "" XXX
  SG_ MAIN_ON : 15|1@0+ (1,0) [0|1] "" XXX
@@ -546,6 +547,9 @@ BO_ 610 EPS_STATUS: 5 EPS
  SG_ LKA_STATE : 31|7@0+ (1,0) [0|127] "" XXX
  SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 39|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1178 BRAKE_RELATED: 8 XXX
+ SG_ BRAKE_PRESSED : 48|1@0+ (1,0) [0|1] "" XXX
 
 CM_ SG_ 548 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 548 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";

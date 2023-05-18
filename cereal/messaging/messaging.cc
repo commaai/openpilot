@@ -94,20 +94,3 @@ Poller * Poller::create(std::vector<SubSocket*> sockets){
   }
   return p;
 }
-
-extern "C" Context * messaging_context_create() {
-  return Context::create();
-}
-
-extern "C" SubSocket * messaging_subsocket_create(Context* context, const char* endpoint) {
-  return SubSocket::create(context, std::string(endpoint));
-}
-
-extern "C" PubSocket * messaging_pubsocket_create(Context* context, const char* endpoint) {
-  return PubSocket::create(context, std::string(endpoint));
-}
-
-extern "C" Poller * messaging_poller_create(SubSocket** sockets, int size) {
-  std::vector<SubSocket*> socketsVec(sockets, sockets + size);
-  return Poller::create(socketsVec);
-}

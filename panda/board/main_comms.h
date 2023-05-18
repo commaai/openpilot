@@ -9,10 +9,10 @@ int get_health_pkt(void *dat) {
   struct health_t * health = (struct health_t*)dat;
 
   health->uptime_pkt = uptime_cnt;
-  health->voltage_pkt = adc_get_voltage();
+  health->voltage_pkt = adc_get_mV(ADCCHAN_VIN) * VIN_READOUT_DIVIDER;
   health->current_pkt = current_board->read_current();
 
-  //Use the GPIO pin to determine ignition or use a CAN based logic
+  // Use the GPIO pin to determine ignition or use a CAN based logic
   health->ignition_line_pkt = (uint8_t)(current_board->check_ignition());
   health->ignition_can_pkt = (uint8_t)(ignition_can);
 
@@ -23,7 +23,7 @@ int get_health_pkt(void *dat) {
   health->tx_buffer_overflow_pkt = tx_buffer_overflow;
   health->rx_buffer_overflow_pkt = rx_buffer_overflow;
   health->gmlan_send_errs_pkt = gmlan_send_errs;
-  health->car_harness_status_pkt = car_harness_status;
+  health->car_harness_status_pkt = harness.status;
   health->safety_mode_pkt = (uint8_t)(current_safety_mode);
   health->safety_param_pkt = current_safety_param;
   health->alternative_experience_pkt = alternative_experience;
@@ -31,12 +31,18 @@ int get_health_pkt(void *dat) {
   health->heartbeat_lost_pkt = (uint8_t)(heartbeat_lost);
   health->safety_rx_checks_invalid = safety_rx_checks_invalid;
 
+  health->spi_checksum_error_count = spi_checksum_error_count;
+
   health->fault_status_pkt = fault_status;
   health->faults_pkt = faults;
 
   health->interrupt_load = interrupt_load;
 
   health->fan_power = fan_state.power;
+  health->fan_stall_count = fan_state.total_stall_count;
+
+  health->sbu1_voltage_mV = harness.sbu1_voltage_mV;
+  health->sbu2_voltage_mV = harness.sbu2_voltage_mV;
 
   return sizeof(*health);
 }

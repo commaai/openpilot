@@ -199,7 +199,7 @@ void ignition_can_hook(CANPacket_t *to_push) {
     // GM exception
     if ((addr == 0x160) && (len == 5)) {
       // this message isn't all zeros when ignition is on
-      ignition_can = GET_BYTES_04(to_push) != 0U;
+      ignition_can = GET_BYTES(to_push, 0, 4) != 0U;
       ignition_can_cnt = 0U;
     }
 
@@ -257,6 +257,7 @@ void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
     }
   } else {
     safety_tx_blocked += 1U;
+    to_push->returned = 0U;
     to_push->rejected = 1U;
 
     // data changed

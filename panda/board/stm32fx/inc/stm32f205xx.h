@@ -8,7 +8,7 @@
   *          This file contains :
   *           - Data structures and the address mapping for all peripherals
   *           - Peripherals registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheral's registers hardware
   *
   ******************************************************************************
   * @attention
@@ -6728,6 +6728,8 @@ USB_OTG_HostChannelTypeDef;
 #define USB_OTG_DSTS_ENUMSPD_0               0x00000002U            /*!<Bit 0 */
 #define USB_OTG_DSTS_ENUMSPD_1               0x00000004U            /*!<Bit 1 */
 #define USB_OTG_DSTS_EERR                    0x00000008U            /*!< Erratic error */
+#define USB_OTG_DSTS_FNSOF_Pos               (8U)
+#define USB_OTG_DSTS_FNSOF_Msk               (0x3FFFU << USB_OTG_DSTS_FNSOF_Pos)
 #define USB_OTG_DSTS_FNSOF                   0x003FFF00U            /*!< Frame number of the received SOF */
 
 /********************  Bit definition forUSB_OTG_GAHBCFG register  ********************/

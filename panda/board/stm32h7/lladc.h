@@ -1,6 +1,6 @@
 // 5VOUT_S = ADC12_INP5
 // VOLT_S = ADC1_INP2
-#define ADCCHAN_VOLTAGE 2
+#define ADCCHAN_VIN 2
 
 void adc_init(void) {
   ADC1->CR &= ~(ADC_CR_DEEPPWD); //Reset deep-power-down mode
@@ -17,11 +17,11 @@ void adc_init(void) {
   while(!(ADC1->ISR & ADC_ISR_ADRDY));
 }
 
-uint32_t adc_get(unsigned int channel) {
+uint16_t adc_get_raw(uint8_t channel) {
 
   ADC1->SQR1 &= ~(ADC_SQR1_L);
-  ADC1->SQR1 = (channel << 6U);
-  
+  ADC1->SQR1 = ((uint32_t) channel << 6U);
+
   ADC1->SMPR1 = (0x7U << (channel * 3U) );
   ADC1->PCSEL_RES0 = (0x1U << channel);
 
@@ -36,13 +36,6 @@ uint32_t adc_get(unsigned int channel) {
   return res;
 }
 
-uint32_t adc_get_voltage(void) {
-  // REVC has a 10, 1 (1/11) voltage divider
-  // Here is the calculation for the scale (s)
-  // ADCV = VIN_S * (1/11) * (65535/3.3)
-  // RETVAL = ADCV * s = VIN_S*1000
-  // s = 1000/((65535/3.3)*(1/11)) = 0.553902494
-
-  // Avoid needing floating point math, so output in mV
-  return (adc_get(ADCCHAN_VOLTAGE) * 5539U) / 10000U;
+uint16_t adc_get_mV(uint8_t channel) {
+  return (adc_get_raw(channel) * current_board->avdd_mV) / 65535U;
 }

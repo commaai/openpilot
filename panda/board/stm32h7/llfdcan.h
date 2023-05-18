@@ -13,12 +13,14 @@
 // FDCAN core settings
 #define FDCAN_MESSAGE_RAM_SIZE 0x2800UL
 #define FDCAN_START_ADDRESS 0x4000AC00UL
-#define FDCAN_OFFSET 3412UL // bytes for each FDCAN module
-#define FDCAN_OFFSET_W 853UL // words for each FDCAN module
-#define FDCAN_END_ADDRESS 0x4000D3FCUL // Message RAM has a width of 4 Bytes
+#define FDCAN_OFFSET 3384UL // bytes for each FDCAN module, equally
+#define FDCAN_OFFSET_W 846UL // words for each FDCAN module, equally
+#define FDCAN_END_ADDRESS 0x4000D3FCUL // Message RAM has a width of 4 bytes
+
+// FDCAN_RX_FIFO_0_EL_CNT + FDCAN_TX_FIFO_EL_CNT can't exceed 47 elements (47 * 72 bytes = 3,384 bytes) per FDCAN module
 
 // RX FIFO 0
-#define FDCAN_RX_FIFO_0_EL_CNT 24UL
+#define FDCAN_RX_FIFO_0_EL_CNT 30UL
 #define FDCAN_RX_FIFO_0_HEAD_SIZE 8UL // bytes
 #define FDCAN_RX_FIFO_0_DATA_SIZE 64UL // bytes
 #define FDCAN_RX_FIFO_0_EL_SIZE (FDCAN_RX_FIFO_0_HEAD_SIZE + FDCAN_RX_FIFO_0_DATA_SIZE)
@@ -26,7 +28,7 @@
 #define FDCAN_RX_FIFO_0_OFFSET 0UL
 
 // TX FIFO
-#define FDCAN_TX_FIFO_EL_CNT 16UL
+#define FDCAN_TX_FIFO_EL_CNT 17UL
 #define FDCAN_TX_FIFO_HEAD_SIZE 8UL // bytes
 #define FDCAN_TX_FIFO_DATA_SIZE 64UL // bytes
 #define FDCAN_TX_FIFO_EL_SIZE (FDCAN_TX_FIFO_HEAD_SIZE + FDCAN_TX_FIFO_DATA_SIZE)

@@ -115,7 +115,7 @@ static const addr_checks* volkswagen_mqb_init(uint16_t param) {
 static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &volkswagen_mqb_rx_checks,
-                                 volkswagen_mqb_get_checksum, volkswagen_mqb_compute_crc, volkswagen_mqb_get_counter);
+                                 volkswagen_mqb_get_checksum, volkswagen_mqb_compute_crc, volkswagen_mqb_get_counter, NULL);
 
   if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
@@ -183,7 +183,7 @@ static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
 
     // Signal: Motor_20.MO_Fahrpedalrohwert_01
     if (addr == MSG_MOTOR_20) {
-      gas_pressed = ((GET_BYTES_04(to_push) >> 12) & 0xFFU) != 0U;
+      gas_pressed = ((GET_BYTES(to_push, 0, 4) >> 12) & 0xFFU) != 0U;
     }
 
     // Signal: Motor_14.MO_Fahrer_bremst (ECU detected brake pedal switch F63)
@@ -214,12 +214,12 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
   }
 
   // Safety check for HCA_01 Heading Control Assist torque
-  // Signal: HCA_01.Assist_Torque (absolute torque)
-  // Signal: HCA_01.Assist_VZ (direction)
+  // Signal: HCA_01.HCA_01_LM_Offset (absolute torque)
+  // Signal: HCA_01.HCA_01_LM_OffSign (direction)
   if (addr == MSG_HCA_01) {
-    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x3FU) << 8);
-    int sign = (GET_BYTE(to_send, 3) & 0x80U) >> 7;
-    if (sign == 1) {
+    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x1U) << 8);
+    bool sign = GET_BIT(to_send, 31U);
+    if (sign) {
       desired_torque *= -1;
     }
 
@@ -265,8 +265,7 @@ static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int volkswagen_mqb_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
-  int addr = GET_ADDR(to_fwd);
+static int volkswagen_mqb_fwd_hook(int bus_num, int addr) {
   int bus_fwd = -1;
 
   switch (bus_num) {

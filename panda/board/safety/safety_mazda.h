@@ -37,7 +37,7 @@ addr_checks mazda_rx_checks = {mazda_addr_checks, MAZDA_ADDR_CHECKS_LEN};
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static int mazda_rx_hook(CANPacket_t *to_push) {
-  bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL, NULL);
   if (valid && ((int)GET_BUS(to_push) == MAZDA_MAIN)) {
     int addr = GET_ADDR(to_push);
 
@@ -108,9 +108,8 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
   return tx;
 }
 
-static int mazda_fwd_hook(int bus, CANPacket_t *to_fwd) {
+static int mazda_fwd_hook(int bus, int addr) {
   int bus_fwd = -1;
-  int addr = GET_ADDR(to_fwd);
 
   if (bus == MAZDA_MAIN) {
     bus_fwd = MAZDA_CAM;

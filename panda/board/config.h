@@ -8,11 +8,14 @@
 //#define DEBUG_SPI
 //#define DEBUG_FAULTS
 //#define DEBUG_COMMS
+//#define DEBUG_FAN
 
 #define CAN_INIT_TIMEOUT_MS 500U
 #define DEEPSLEEP_WAKEUP_DELAY 3U
 #define USBPACKET_MAX_SIZE 0x40U
 #define MAX_CAN_MSGS_PER_BULK_TRANSFER 51U
+
+#define VIN_READOUT_DIVIDER 11U
 
 // USB definitions
 #define USB_VID 0xBBAAU

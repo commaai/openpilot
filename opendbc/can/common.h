@@ -37,6 +37,7 @@ unsigned int pedal_checksum(uint32_t address, const Signal &sig, const std::vect
 
 class MessageState {
 public:
+  std::string name;
   uint32_t address;
   unsigned int size;
 
@@ -80,11 +81,12 @@ public:
   CANParser(int abus, const std::string& dbc_name, bool ignore_checksum, bool ignore_counter);
   #ifndef DYNAMIC_CAPNP
   void update_string(const std::string &data, bool sendcan);
+  void update_strings(const std::vector<std::string> &data, std::vector<SignalValue> &vals, bool sendcan);
   void UpdateCans(uint64_t sec, const capnp::List<cereal::CanData>::Reader& cans);
   #endif
   void UpdateCans(uint64_t sec, const capnp::DynamicStruct::Reader& cans);
   void UpdateValid(uint64_t sec);
-  std::vector<SignalValue> query_latest();
+  void query_latest(std::vector<SignalValue> &vals, uint64_t last_ts = 0);
 };
 
 class CANPacker {

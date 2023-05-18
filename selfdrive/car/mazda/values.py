@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -38,7 +37,7 @@ class CAR:
 @dataclass
 class MazdaCarInfo(CarInfo):
   package: str = "All"
-  harness: Enum = Harness.mazda
+  harness_kit: HarnessKit = HarnessKit(Harness.mazda)
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
@@ -258,11 +257,14 @@ FW_VERSIONS = {
   CAR.MAZDA6: {
     (Ecu.eps, 0x730, None): [
       b'GBEF-3210X-B-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'GBEF-3210X-C-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'GFBC-3210X-A-00\000\000\000\000\000\000\000\000\000',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'PA34-188K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX4F-188K2-D\000\000\000\000\000\000\000\000\000\000\000\000',
       b'PYH7-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PYH7-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'K131-67XK2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -270,13 +272,16 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x760, None): [
       b'GBVH-437K2-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'GBVH-437K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'GDDM-437K2-A\000\000\000\000\000\000\000\000\000\000\000\000',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'B61L-67XK2-S\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'B61L-67XK2-T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'GSH7-67XK2-P\000\000\000\000\000\000\000\000\000\000\000\000',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'PA28-21PS1-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PYH3-21PS1-D\000\000\000\000\000\000\000\000\000\000\000\000',
       b'PYH7-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -291,6 +296,7 @@ FW_VERSIONS = {
       b'PXM4-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM4-188K2-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM6-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PXGW-188K2-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'K131-67XK2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

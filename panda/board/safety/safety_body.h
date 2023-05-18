@@ -9,7 +9,7 @@ addr_checks body_rx_checks = {body_addr_checks, BODY_ADDR_CHECK_LEN};
 
 static int body_rx_hook(CANPacket_t *to_push) {
 
-  bool valid = addr_safety_check(to_push, &body_rx_checks, NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &body_rx_checks, NULL, NULL, NULL, NULL);
 
   controls_allowed = valid;
 
@@ -31,7 +31,7 @@ static int body_tx_hook(CANPacket_t *to_send) {
   }
 
   // Allow going into CAN flashing mode even if controls are not allowed
-  if (!controls_allowed && ((uint32_t)GET_BYTES_04(to_send) == 0xdeadfaceU) && ((uint32_t)GET_BYTES_48(to_send) == 0x0ab00b1eU)) {
+  if (!controls_allowed && (GET_BYTES(to_send, 0, 4) == 0xdeadfaceU) && (GET_BYTES(to_send, 4, 4) == 0x0ab00b1eU)) {
     tx = 1;
   }
 

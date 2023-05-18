@@ -9,6 +9,7 @@
 .sconsign.dblite
 
 can/*.so
+can/*.a
 can/build/
 can/obj/
 can/packer_pyx.cpp

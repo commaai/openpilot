@@ -357,7 +357,7 @@ BO_ 13274 LKAS_HUD_A: 5 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
@@ -378,7 +378,7 @@ BO_ 13275 LKAS_HUD_B: 8 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
@@ -436,7 +436,7 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
  SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY

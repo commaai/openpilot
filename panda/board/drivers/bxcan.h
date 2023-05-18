@@ -111,7 +111,7 @@ void process_can(uint8_t can_number) {
     // check for empty mailbox
     CANPacket_t to_send;
     if ((CAN->TSR & (CAN_TSR_TERR0 | CAN_TSR_ALST0)) != 0) { // last TX failed due to error arbitration lost
-      can_health[can_number].total_rx_lost_cnt += 1U;
+      can_health[can_number].total_tx_lost_cnt += 1U;
       CAN->TSR |= (CAN_TSR_TERR0 | CAN_TSR_ALST0);
     }
     if ((CAN->TSR & CAN_TSR_TME0) == CAN_TSR_TME0) {
@@ -167,7 +167,7 @@ void can_rx(uint8_t can_number) {
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
   if ((CAN->RF0R & (CAN_RF0R_FOVR0)) != 0) { // RX message lost due to FIFO overrun
-    can_health[can_number].total_tx_lost_cnt += 1U;
+    can_health[can_number].total_rx_lost_cnt += 1U;
     CAN->RF0R &= ~(CAN_RF0R_FOVR0);
   }
 
@@ -191,7 +191,7 @@ void can_rx(uint8_t can_number) {
     can_set_checksum(&to_push);
 
     // forwarding (panda only)
-    int bus_fwd_num = safety_fwd_hook(bus_number, &to_push);
+    int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
     if (bus_fwd_num != -1) {
       CANPacket_t to_send;
 
