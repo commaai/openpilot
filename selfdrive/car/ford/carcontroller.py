@@ -82,15 +82,14 @@ class CarController:
     ### longitudinal control ###
     # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
+      # Both gas and accel are in m/s^2, accel is used solely for braking
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-
       gas = accel
-      decel = accel < 0.0
-      if accel < -0.5:
-        gas = -5.0
+      if not CC.longActive or gas < CarControllerParams.MIN_GAS:
+        gas = CarControllerParams.INACTIVE_GAS
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, decel, stopping))
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
