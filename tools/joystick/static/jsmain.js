@@ -15,7 +15,7 @@ function createPeerConnection() {
 
     // connect audio / video
     pc.addEventListener('track', function(evt) {
-        console.log("here!")
+        console.log("Adding Tracks!")
         if (evt.track.kind == 'video')
             document.getElementById('video').srcObject = evt.streams[0];
         else
@@ -148,11 +148,15 @@ function start() {
         batteryInterval = setInterval(batteryLevel, 60000);
         controlCommand();
         batteryLevel();
+        $(".sound").click((e)=>{
+            const sound = $(e.target).attr('id').replace('sound-', '')
+            dc.send(JSON.stringify({type: 'play_sound', sound}));;
+        })
     };
     let val_print_idx = 0;
     dc.onmessage = function(evt) {
         const data = JSON.parse(evt.data);
-        console.log(data);
+        // console.log(data);
         if(val_print_idx == 0 && data.type === 'ping_time'){
             const dt = new Date().getTime();
             $("#ping-time").text((dt - data.incoming_time) + "ms");
@@ -193,6 +197,6 @@ setInterval(()=>{
         $("#battery").text("-");
         $("#ping-time").text('-');
     }
-}, 50);
+}, 1000);
 
 start();

@@ -7,6 +7,7 @@ import uuid
 import pyaudio
 import io
 import cv2
+import wave
 
 import time
 from aiohttp import web
@@ -38,7 +39,11 @@ yuv = np.zeros((int(IMG_H*1.5), IMG_W), dtype=np.uint8)
 AUDIO_RATE = 16000
 pm = messaging.PubMaster(['testJoystick'])
 sm = messaging.SubMaster(['carState'])
-
+SOUNDS  = {
+  'engage': '../../selfdrive/assets/sounds/engage.wav',
+  'disengage': '../../selfdrive/assets/sounds/disengage.wav',
+  'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
+}
 
 def force_codec(pc, sender, forced_codec='video/H264', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
@@ -87,7 +92,7 @@ class VideoTrack(VideoStreamTrack):
     return frame
 
 
-class Speaker(MediaBlackhole):
+class LiveSpeaker(MediaBlackhole):
   def __init__(self):
     super().__init__()
     self.p = pyaudio.PyAudio()
@@ -96,6 +101,7 @@ class Speaker(MediaBlackhole):
     self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=9600, output=True, stream_callback=self.pyaudio_callback)
 
   def pyaudio_callback(self, in_data, frame_count, time_info, status):
+    # print(self.buffer.getbuffer().nbytes)
     if self.buffer.getbuffer().nbytes < frame_count * self.channels * 2:
       buff = np.zeros((frame_count, 2), dtype=np.int16).tobytes()
     elif self.buffer.getbuffer().nbytes > 115200: # 3x the usual read size
@@ -122,6 +128,16 @@ class Speaker(MediaBlackhole):
     for track, task in self._MediaBlackhole__tracks.items():
       if task is None:
         self._MediaBlackhole__tracks[track] = asyncio.ensure_future(self.consume(track))
+
+  async def stop(self):
+    for task in self._MediaBlackhole__tracks.values():
+      if task is not None:
+        task.cancel()
+    self._MediaBlackhole__tracks = {}
+    self.stream.stop_stream()
+    self.stream.close()
+    self.p.terminate()
+
 
 
 class MicTrack(AudioStreamTrack):
@@ -154,6 +170,30 @@ class MicTrack(AudioStreamTrack):
     self.audio_samples += frame.samples
     self.chunk_number = self.chunk_number + 1
     return frame
+
+
+async def play_sound(sound):
+  chunk = 5120
+  print("playing", sound)
+  with wave.open(SOUNDS[sound], 'rb') as wf:
+    def callback(in_data, frame_count, time_info, status):
+      data = wf.readframes(frame_count)
+      return data, pyaudio.paContinue
+
+    p = pyaudio.PyAudio()
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    frames_per_buffer=chunk,
+                    stream_callback=callback)
+    stream.start_stream()
+    while stream.is_active():
+      await asyncio.sleep(0)
+      pass
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
 
 
 async def index(request):
@@ -196,7 +236,7 @@ async def offer(request):
   logger.info("\n\n\nnewoffer!\n\n")
   params = await request.json()
   offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
-  speaker = Speaker()
+  speaker = LiveSpeaker()
 
   pc = RTCPeerConnection()
   pc_id = "PeerConnection(%s)" % uuid.uuid4()
@@ -226,7 +266,8 @@ async def offer(request):
         sm.update(timeout=50)
         if sm.updated['carState']:
           channel.send(json.dumps({'type': 'battery_level', 'value': sm['carState'].fuelGauge}))
-
+      if data['type'] == 'play_sound':
+        await play_sound(data['sound'])
 
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():
