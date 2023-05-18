@@ -67,7 +67,7 @@ const handleKeyX = (event, setValue) => {
     const key = event.key.toLowerCase();
     if (['w', 'a', 's', 'd'].includes(key)){
         keyVals[key] = setValue;
-        console.log(keyVals);
+        // console.log(keyVals);
     }
 };
 
@@ -92,11 +92,13 @@ function start() {
     dc.onopen = function() {
         dcInterval = setInterval(function() {
             const {x, y} = getXY();
-            var message = JSON.stringify({x, y});
+            const dt = new Date().getTime();
+            var message = JSON.stringify({x, y, dt});
             dc.send(message);
         }, 50);
     };
     dc.onmessage = function(evt) {
+        // const times = JSON.parse(evt);
         console.log(evt);
     };
 
