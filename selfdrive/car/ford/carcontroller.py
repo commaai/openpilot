@@ -86,7 +86,7 @@ class CarController:
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
-        gas = -5.0
+        gas = CarControllerParams.INACTIVE_GAS
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
       can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
