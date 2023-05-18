@@ -5,7 +5,7 @@ import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import CarPart, Column, PartType, Star
+from selfdrive.car.docs_definitions import Column, HarnessConnector, Mount, Star
 from selfdrive.car.honda.values import CAR as HONDA
 
 
@@ -75,8 +75,8 @@ class TestCarDocs(unittest.TestCase):
           raise unittest.SkipTest
 
         self.assertTrue(len(car.car_parts.parts) > 0, f"Need to specify car parts: {car.name}")
-        self.assertTrue(len(list(filter(lambda p: p.value.type is PartType.harness_connector and p is not CarPart.none_connector, car.car_parts.parts))) > 0, f"Need to specify an harness connector: {car.name}")
-        self.assertTrue(len(list(filter(lambda p: p.value.type is PartType.mount, car.car_parts.parts))) > 0, f"Need to specify a mount: {car.name}")
+        self.assertTrue(len(list(filter(lambda p: p.__class__ is HarnessConnector and p is not HarnessConnector.none_connector, car.car_parts.parts))) > 0, f"Need to specify an harness connector: {car.name}")
+        self.assertTrue(len(list(filter(lambda p: p.__class__ is Mount, car.car_parts.parts))) > 0, f"Need to specify a mount: {car.name}")
 
 
 if __name__ == "__main__":
