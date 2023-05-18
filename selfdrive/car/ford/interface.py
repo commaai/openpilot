@@ -21,8 +21,8 @@ class CarInterface(CarInterfaceBase):
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
     ret.dashcamOnly = candidate in {CAR.FOCUS_MK4}
 
-    ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarUnavailable = True
+    ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
 
