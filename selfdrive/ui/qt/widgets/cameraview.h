@@ -78,6 +78,9 @@ protected:
   std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
 
+  float frames_wide = 0;
+  bool ready_to_switch = false;
+
   // Calibration
   float x_offset = 0;
   float y_offset = 0;

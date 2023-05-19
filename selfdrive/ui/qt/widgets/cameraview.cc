@@ -200,19 +200,67 @@ void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
 void CameraWidget::updateFrameMat() {
   int w = glWidth(), h = glHeight();
 
+//  float ecam_zoom_fcam_approx = fcam_intrinsic_matrix.v[0] /  ecam_intrinsic_matrix.v[0];
+
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
+      qDebug() << active_stream_type << requested_stream_type;
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
-      if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-        intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = 2.0;
+
+      if (active_stream_type != requested_stream_type) {
+        if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
+          // Do a transition from zoomed wide to zoomed narrow for transition to narrow cam
+//          frames_wide -= (20 - frames_wide) * 0.1 + 1;
+//          frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+//          intrinsic_matrix = ecam_intrinsic_matrix;
+//          zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
+
+          if (frames_wide == 0) {
+            ready_to_switch = true;
+          }
+          qDebug() << "frames_wide" << frames_wide << "ready_to_switch" << ready_to_switch;
+        } else {
+          qDebug() << "ready to switch to ecam";
+          // Always ready to switch from zoomed narrow to zoomed wide
+          ready_to_switch = true;
+          intrinsic_matrix = fcam_intrinsic_matrix;
+          zoom = 1.1;
+        }
       } else {
+        ready_to_switch = false;
+      }
+
+      if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         intrinsic_matrix = fcam_intrinsic_matrix;
+        zoom = 1.1;
+      }
+
+      if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
+       float t = (float)frames_wide / 20.0f;
+t = t*t; // quadratic ease in
+
+if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
+    frames_wide += 1;//frames_wide * 0.2 + 0.5;
+} else {
+    frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
+}
+
+frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+intrinsic_matrix = ecam_intrinsic_matrix;
+
+// Apply easing to zoom
+zoom = util::map_val(t, 0.0f, 1.0f, 4.7f, 2.0f);
+//        zoom = 4.5;
+      } else {
+        frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
+        frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+        intrinsic_matrix = fcam_intrinsic_matrix;
+        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
         zoom = 1.1;
       }
       const vec3 inf = {{1000., 0., 0.}};
@@ -372,13 +420,13 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || cur_stream != requested_stream_type) {
+    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch)) {
       clearFrames();
       qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;
       vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
+      active_stream_type = cur_stream;
     }
-    active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
       clearFrames();
