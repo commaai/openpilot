@@ -124,8 +124,8 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
-          case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
-          case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::Offset: return doubleToString(item->sig->offset);
+          case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
           case Item::Comment: return item->sig->comment;
           case Item::Min: return item->sig->min;

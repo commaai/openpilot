@@ -4,7 +4,6 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <limits>
 #include <numeric>
 #include <sstream>
 
@@ -257,8 +256,8 @@ QString DBCFile::generateDBC() {
                         .arg(sig->size)
                         .arg(sig->is_little_endian ? '1' : '0')
                         .arg(sig->is_signed ? '-' : '+')
-                        .arg(sig->factor, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig->offset, 0, 'g', std::numeric_limits<double>::digits10)
+                        .arg(doubleToString(sig->factor))
+                        .arg(doubleToString(sig->offset))
                         .arg(sig->min)
                         .arg(sig->max)
                         .arg(sig->unit);
