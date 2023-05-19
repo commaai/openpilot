@@ -43,7 +43,7 @@ SOUNDS = {
 }
 
 
-def force_codec(pc, sender, forced_codec='video/H264', stream_type="video"):
+def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
   codec = [codec for codec in codecs if codec.mimeType == forced_codec]
   transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
@@ -308,7 +308,26 @@ async def on_shutdown(app):
   pcs.clear()
 
 
+async def run(cmd):
+  proc = await asyncio.create_subprocess_shell(
+    cmd,
+    stdout=asyncio.subprocess.PIPE,
+    stderr=asyncio.subprocess.PIPE
+  )
+  stdout, stderr = await proc.communicate()
+  print("Created key and cert!")
+  if stdout:
+    print(f'[stdout]\n{stdout.decode()}')
+  if stderr:
+    print(f'[stderr]\n{stderr.decode()}')
+
+
 if __name__ == "__main__":
+  # App needs to be HTTPS for microphone and audio autoplay to work on the browser
+  if (not os.path.exists("cert.pem")) or (not os.path.exists("key.pem")):
+    asyncio.run(run('openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
+  else:
+    print("Certificate exists!")
   ssl_context = ssl.SSLContext()
   ssl_context.load_cert_chain("cert.pem", "key.pem")
   app = web.Application()
