@@ -47,14 +47,22 @@
                 </div> -->
             </div>
             <div id="wasd">
-                <div class="wasd-row">
-                    <div class="keys" id="key-w">W</div>
-                    <div id="key-val"><span id="pos-vals">0,0</span><span>x,y</span></div>
+                <div>
+                    <div class="wasd-row">
+                        <div class="keys" id="key-w">W</div>
+                        <div id="key-val"><span id="pos-vals">0,0</span><span>x,y</span></div>
+                    </div>
+                    <div class="wasd-row">
+                        <div class="keys" id="key-a">A</div>
+                        <div class="keys" id="key-s">S</div>
+                        <div class="keys" id="key-d">D</div>
+                    </div>
                 </div>
-                <div class="wasd-row">
-                    <div class="keys" id="key-a">A</div>
-                    <div class="keys" id="key-s">S</div>
-                    <div class="keys" id="key-d">D</div>
+                <div class="form-group plan-form">
+                    <label for="plan-text">Plan (w, a, s, d, t)</label>
+                    <label style="font-size: 15px;" for="plan-text">*Extremely Experimental*</label>
+                    <textarea class="form-control" id="plan-text" rows="7" placeholder="1,0,0,0,2"></textarea>
+                    <button type="button" id="plan-button" class="btn btn-light btn-lg">Execute</button>
                 </div>
             </div>
             <div id="sounds-panel">
