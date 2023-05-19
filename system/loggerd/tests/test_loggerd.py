@@ -133,6 +133,7 @@ class TestLoggerd(unittest.TestCase):
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
       managed_processes["loggerd"].start()
       managed_processes["encoderd"].start()
+      time.sleep(1)
 
       fps = 20.0
       for n in range(1, int(num_segs*length*fps)+1):

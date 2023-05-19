@@ -26,9 +26,7 @@ from selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.locationd.calibrationd import Calibration
 from system.hardware import HARDWARE
-from selfdrive.manager.process_config import managed_processes
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -37,9 +35,7 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = {"uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "statsd",
-                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
-                   {k for k, v in managed_processes.items() if not v.enabled}
+IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -286,9 +282,12 @@ class Controls:
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus
-    if cal_status != Calibration.CALIBRATED:
-      if cal_status == Calibration.UNCALIBRATED:
+    if cal_status != log.LiveCalibrationData.Status.calibrated:
+      if cal_status == log.LiveCalibrationData.Status.uncalibrated:
         self.events.add(EventName.calibrationIncomplete)
+      elif cal_status == log.LiveCalibrationData.Status.recalibrating:
+        set_offroad_alert("Offroad_Recalibration", True)
+        self.events.add(EventName.calibrationRecalibrating)
       else:
         self.events.add(EventName.calibrationInvalid)
 
@@ -336,9 +335,9 @@ class Controls:
           self.events.add(EventName.cameraMalfunction)
         elif not self.sm.all_freq_ok(self.camera_packets):
           self.events.add(EventName.cameraFrameRate)
-    if self.rk.lagging:
+    if not REPLAY and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors) or not self.sm.all_checks(['radarState']):
+    if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])):
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
@@ -411,7 +410,7 @@ class Controls:
     # TODO: fix simulator
     if not SIMULATION:
       if not NOSENSOR:
-        if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
+        if not self.sm['liveLocationKalman'].gpsOK and self.sm['liveLocationKalman'].inputsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
 
@@ -700,15 +699,15 @@ class Controls:
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
-                  and not CC.latActive and self.sm['liveCalibration'].calStatus == Calibration.CALIBRATED
+                  and not CC.latActive and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated
 
     model_v2 = self.sm['modelV2']
     desire_prediction = model_v2.meta.desirePrediction
     if len(desire_prediction) and ldw_allowed:
       right_lane_visible = model_v2.laneLineProbs[2] > 0.5
       left_lane_visible = model_v2.laneLineProbs[1] > 0.5
-      l_lane_change_prob = desire_prediction[Desire.laneChangeLeft - 1]
-      r_lane_change_prob = desire_prediction[Desire.laneChangeRight - 1]
+      l_lane_change_prob = desire_prediction[Desire.laneChangeLeft]
+      r_lane_change_prob = desire_prediction[Desire.laneChangeRight]
 
       lane_lines = model_v2.laneLines
       l_lane_close = left_lane_visible and (lane_lines[1].y[0] > -(1.08 + CAMERA_OFFSET))
