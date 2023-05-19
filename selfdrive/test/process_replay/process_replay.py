@@ -279,7 +279,7 @@ CONFIGS = [
     fake_pubsubmaster=True,
     submaster_config={
       'ignore_avg_freq': ['radarState', 'longitudinalPlan', 'driverCameraState', 'driverMonitoringState'],  # dcam is expected at 20 Hz
-      'ignore_alive': [], 
+      'ignore_alive': [],
     }
   ),
   ProcessConfig(
@@ -392,6 +392,18 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
+  ProcessConfig(
+    proc_name="map_renderer",
+    pub_sub={
+      "liveLocationKalman": ["navThumbnail"],
+      "navRoute": ["navThumbnail"]
+    },
+    ignore=["logMonoTime"],
+    init_callback=get_car_params,
+    should_recv_callback=None,
+    tolerance=NUMPY_TOLERANCE,
+    fake_pubsubmaster=False,
+  ),
 ]
 
 
@@ -416,11 +428,12 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   os.environ["REPLAY"] = "1"
   os.environ["SKIP_FW_QUERY"] = ""
   os.environ["FINGERPRINT"] = ""
+  os.environ["MAP_RENDER_TEST_MODE"] = "1"
 
   if lr is not None:
     services = {m.which() for m in lr}
     params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-  
+
   if cfg is not None:
     # Clear all custom processConfig environment variables
     for config in CONFIGS:
