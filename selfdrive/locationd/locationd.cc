@@ -161,6 +161,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
   init_measurement(fix.initAccelerationCalibrated(), acc_calib, acc_calib_std, this->calibrated);
+  init_measurement(fix.initFilterState(), predicted_state, predicted_std, true);
 
   double old_mean = 0.0, new_mean = 0.0;
   int i = 0;
