@@ -162,6 +162,7 @@ class MicTrack(AudioStreamTrack):
     mic_data = self.mic_stream.read(self.CHUNK)
     mic_sound = AudioSegment(mic_data, sample_width=2, channels=1, frame_rate=self.RATE)
     mic_sound = AudioSegment.from_mono_audiosegments(mic_sound, mic_sound)
+    mic_sound += 3  # increase volume by 3db
     packet = Packet(mic_sound.raw_data)
     frame = self.codec.decode(packet)[0]
     frame.pts = self.audio_samples
@@ -264,7 +265,7 @@ async def offer(request):
       if data['type'] == 'battery_level':
         sm.update(timeout=50)
         if sm.updated['carState']:
-          channel.send(json.dumps({'type': 'battery_level', 'value': sm['carState'].fuelGauge}))
+          channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
       if data['type'] == 'play_sound':
         await play_sound(data['sound'])
 

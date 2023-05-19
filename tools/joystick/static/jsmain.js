@@ -196,7 +196,8 @@ setInterval(()=>{
         $(".pre-blob").removeClass('blob');
         $("#battery").text("-");
         $("#ping-time").text('-');
+        $("video")[0].load();
     }
-}, 1000);
+}, 5000);
 
 start();
