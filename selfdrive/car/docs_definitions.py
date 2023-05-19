@@ -88,7 +88,7 @@ class Cable(CarPart):
   usb_a_2_a_cable = "USB A-A cable"
   usbc_otg_cable = "USB C OTG cable"
   usbc_coupler = "USB-C coupler"
-  obd_c_cable_1point5ft = "OBD-C cable (1.5 ft)"
+  obd_c_cable_1_5ft = "OBD-C cable (1.5 ft)"
 
 
 class Device(CarPart):
