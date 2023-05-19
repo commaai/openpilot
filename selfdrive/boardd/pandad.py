@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from panda import Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
