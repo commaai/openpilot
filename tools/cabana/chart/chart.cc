@@ -44,9 +44,9 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   signal_value_font.setPointSize(9);
 
-  QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
-  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
-  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QValueAxis::rangeChanged, this, &ChartView::resetChartCache);
+  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, this, &ChartView::resetChartCache);
+  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, this, &ChartView::resetChartCache);
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
