@@ -70,7 +70,6 @@ class HarnessConnector(CarPart):
   mazda_connector = "Mazda connector"
   ford_q3_connector = "Ford Q3 connector"
   ford_q4_connector = "Ford Q4 connector"
-  none_connector = "None connector"
 
 
 class HarnessAccessory(CarPart):
