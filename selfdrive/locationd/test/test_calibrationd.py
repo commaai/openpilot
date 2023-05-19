@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 
 import cereal.messaging as messaging
+from cereal import log
 from common.params import Params
 from selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, MAX_YAW_RATE_FILTER, SMOOTH_CYCLES
 
@@ -96,6 +97,7 @@ class TestCalibrationd(unittest.TestCase):
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3])
     self.assertEqual(c.valid_blocks, 1)
+    self.assertEqual(c.cal_status, log.LiveCalibrationData.Status.recalibrating)
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, -0.05], atol=1e-2)
 
 if __name__ == "__main__":

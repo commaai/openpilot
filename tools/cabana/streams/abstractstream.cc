@@ -165,7 +165,8 @@ static inline QColor blend(const QColor &a, const QColor &b) {
 void CanData::compute(const char *can_data, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq) {
   ts = current_sec;
   ++count;
-  freq = in_freq == 0 ? count / std::max(1.0, current_sec) : in_freq;
+  const double sec_to_first_event = current_sec - (can->allEvents().front()->mono_time / 1e9 - can->routeStartTime());
+  freq = in_freq == 0 ? count / std::max(1.0, sec_to_first_event) : in_freq;
   if (dat.size() != size) {
     dat.resize(size);
     bit_change_counts.resize(size);

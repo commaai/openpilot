@@ -1,26 +1,27 @@
-Version 0.9.2 (2023-05-XX)
+Version 0.9.2 (2023-05-22)
 ========================
 * New driving model
-  * fixes turn diving
-  * trained on a new dataset
-* Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+  * Reduced turn diving
+  * Trained on a new dataset
+* UI updates
+  * New experimental mode visualization
+  * Draw MPC path instead of model-predicted path
+* AGNOS 7
+  * Faster boot time
+  * Fixes rare no sounds bug
+  * Fixes bootsplash bug at extreme temperatures
 * Buick LaCrosse 2017-19 support thanks to koch-cf!
 * Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
 * Ford Bronco Sport 2021-22 support
 * Ford Escape 2020-22 support
-* Ford Escape Hybrid 2020-22 support
-* Ford Escape Plug-in Hybrid 2021-22 support
 * Ford Explorer 2020-22 support
-* Ford Explorer Hybrid 2020-22 support
 * Ford Kuga 2020-22 support
-* Ford Kuga Hybrid 2020-22 support
-* Ford Kuga Plug-in Hybrid 2020-22 support
+* Ford Maverick 2022-23 support
 * Genesis GV80 2023 support thanks to JWingate80!
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
 * Lincoln Aviator 2021 support
-* Lincoln Aviator Plug-in Hybrid 2021 support
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
 
 

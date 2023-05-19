@@ -115,7 +115,7 @@ class Uploader:
         fn = os.path.join(path, name)
         # skip files already uploaded
         try:
-          is_uploaded = bool(getxattr(fn, UPLOAD_ATTR_NAME))
+          is_uploaded = getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
         except OSError:
           cloudlog.event("uploader_getxattr_failed", exc=self.last_exc, key=key, fn=fn)
           is_uploaded = True  # deleter could have deleted

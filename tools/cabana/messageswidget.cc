@@ -313,8 +313,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
         break;
       case Column::ADDRESS:
         {
-          QString address_str = QString::number(id.address, 16);
-          bool address_re_match = re.match(address_str).capturedLength() == address_str.length();
+          bool address_re_match = re.match(QString::number(id.address, 16)).hasMatch();
 
           auto address = parseRange(txt, &convert_ok, 16);
           bool address_match = convert_ok && (id.address >= address.first && id.address <= address.second);
