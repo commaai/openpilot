@@ -136,23 +136,23 @@ class Footnote(Enum):
     Column.MODEL, shop_footnote=True)
 
 
-HYUNDAI_A_PARTS = CarParts.default([HarnessConnector.hyundai_a_connector])
-HYUNDAI_B_PARTS = CarParts.default([HarnessConnector.hyundai_b_connector])
-HYUNDAI_C_PARTS = CarParts.default([HarnessConnector.hyundai_c_connector])
-HYUNDAI_D_PARTS = CarParts.default([HarnessConnector.hyundai_d_connector])
-HYUNDAI_E_PARTS = CarParts.default([HarnessConnector.hyundai_e_connector])
-HYUNDAI_F_PARTS = CarParts.default([HarnessConnector.hyundai_f_connector])
-HYUNDAI_G_PARTS = CarParts.default([HarnessConnector.hyundai_g_connector])
-HYUNDAI_H_PARTS = CarParts.default([HarnessConnector.hyundai_h_connector])
-HYUNDAI_I_PARTS = CarParts.default([HarnessConnector.hyundai_i_connector])
-HYUNDAI_J_PARTS = CarParts.default([HarnessConnector.hyundai_j_connector])
-HYUNDAI_K_PARTS = CarParts.default([HarnessConnector.hyundai_k_connector])
-HYUNDAI_L_PARTS = CarParts.default([HarnessConnector.hyundai_l_connector])
-HYUNDAI_M_PARTS = CarParts.default([HarnessConnector.hyundai_m_connector])
-HYUNDAI_N_PARTS = CarParts.default([HarnessConnector.hyundai_n_connector])
-HYUNDAI_O_PARTS = CarParts.default([HarnessConnector.hyundai_o_connector])
-HYUNDAI_P_PARTS = CarParts.default([HarnessConnector.hyundai_p_connector])
-HYUNDAI_Q_PARTS = CarParts.default([HarnessConnector.hyundai_q_connector])
+HYUNDAI_A_PARTS = CarParts.default([HarnessConnector.hyundai_a])
+HYUNDAI_B_PARTS = CarParts.default([HarnessConnector.hyundai_b])
+HYUNDAI_C_PARTS = CarParts.default([HarnessConnector.hyundai_c])
+HYUNDAI_D_PARTS = CarParts.default([HarnessConnector.hyundai_d])
+HYUNDAI_E_PARTS = CarParts.default([HarnessConnector.hyundai_e])
+HYUNDAI_F_PARTS = CarParts.default([HarnessConnector.hyundai_f])
+HYUNDAI_G_PARTS = CarParts.default([HarnessConnector.hyundai_g])
+HYUNDAI_H_PARTS = CarParts.default([HarnessConnector.hyundai_h])
+HYUNDAI_I_PARTS = CarParts.default([HarnessConnector.hyundai_i])
+HYUNDAI_J_PARTS = CarParts.default([HarnessConnector.hyundai_j])
+HYUNDAI_K_PARTS = CarParts.default([HarnessConnector.hyundai_k])
+HYUNDAI_L_PARTS = CarParts.default([HarnessConnector.hyundai_l])
+HYUNDAI_M_PARTS = CarParts.default([HarnessConnector.hyundai_m])
+HYUNDAI_N_PARTS = CarParts.default([HarnessConnector.hyundai_n])
+HYUNDAI_O_PARTS = CarParts.default([HarnessConnector.hyundai_o])
+HYUNDAI_P_PARTS = CarParts.default([HarnessConnector.hyundai_p])
+HYUNDAI_Q_PARTS = CarParts.default([HarnessConnector.hyundai_q])
 
 
 @dataclass
@@ -176,6 +176,8 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Hyundai Genesis 2015-16", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=HYUNDAI_J_PARTS),  # TODO: check 2015 packages
     HyundaiCarInfo("Genesis G80 2017", "All", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=HYUNDAI_J_PARTS),
   ],
+CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", harness_kit=HarnessKit(Harness.hyundai_c)),
+  CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", car_parts=CarParts.default([HarnessConnector.hyundai_c])),
   CAR.IONIQ: HyundaiCarInfo("Hyundai Ioniq Hybrid 2017-19", car_parts=HYUNDAI_C_PARTS),
   CAR.IONIQ_HEV_2022: HyundaiCarInfo("Hyundai Ioniq Hybrid 2020-22", car_parts=HYUNDAI_H_PARTS),  # TODO: confirm 2020-21 harness
   CAR.IONIQ_EV_LTD: HyundaiCarInfo("Hyundai Ioniq Electric 2019", car_parts=HYUNDAI_C_PARTS),
@@ -190,7 +192,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.SANTA_FE_2022: HyundaiCarInfo("Hyundai Santa Fe 2021-22", "All", video_link="https://youtu.be/VnHzSTygTS4", car_parts=HYUNDAI_L_PARTS),
   CAR.SANTA_FE_HEV_2022: HyundaiCarInfo("Hyundai Santa Fe Hybrid 2022", "All", car_parts=HYUNDAI_L_PARTS),
   CAR.SANTA_FE_PHEV_2022: HyundaiCarInfo("Hyundai Santa Fe Plug-in Hybrid 2022", "All", car_parts=HYUNDAI_L_PARTS),
-  CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-23", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", car_parts=HYUNDAI_A_PARTS),
+  CAR.SONATA: HyundaiCarInfo("Hyundai Sonata 2020-23", "All", video_link="https://www.youtube.com/watch?v=ix63r9kE3Fw", car_parts=CarParts.default([HarnessConnector.hyundai_a])),
   CAR.SONATA_LF: HyundaiCarInfo("Hyundai Sonata 2018-19", car_parts=HYUNDAI_E_PARTS),
   CAR.TUCSON: [
     HyundaiCarInfo("Hyundai Tucson 2021", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=HYUNDAI_L_PARTS),

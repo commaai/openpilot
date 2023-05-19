@@ -110,9 +110,9 @@ class HondaCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in HONDA_BOSCH:
-      self.car_parts = CarParts.default([HarnessConnector.bosch_b_connector]) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else CarParts.default([HarnessConnector.bosch_a_connector])
+      self.car_parts = CarParts.default([HarnessConnector.bosch_b]) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else CarParts.default([HarnessConnector.bosch_a])
     else:
-      self.car_parts = CarParts.default([HarnessConnector.nidec_connector])
+      self.car_parts = CarParts.default([HarnessConnector.nidec])
 
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {

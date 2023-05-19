@@ -36,7 +36,7 @@ NISSAN_PARTS = [HarnessAccessory.harness_box, Cable.rj45_cable_7ft, Cable.long_o
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = CarParts.default([HarnessConnector.nissan_a_connector], default=NISSAN_PARTS)
+  car_parts: CarParts = CarParts.default([HarnessConnector.nissan_a], default=NISSAN_PARTS)
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -44,7 +44,7 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.default([HarnessConnector.nissan_b_connector], default=NISSAN_PARTS)),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.default([HarnessConnector.nissan_b], default=NISSAN_PARTS)),
 }
 
 FINGERPRINTS = {

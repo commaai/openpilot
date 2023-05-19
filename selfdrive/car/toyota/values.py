@@ -102,7 +102,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.default([HarnessConnector.toyota_connector])
+  car_parts: CarParts = CarParts.default([HarnessConnector.toyota])
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {

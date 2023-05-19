@@ -53,13 +53,13 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  car_parts: CarParts = CarParts.default([HarnessConnector.subaru_a_connector])
+  car_parts: CarParts = CarParts.default([HarnessConnector.subaru_a])
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.default([HarnessConnector.subaru_b_connector])),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.default([HarnessConnector.subaru_b_connector])),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.default([HarnessConnector.subaru_b])),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.default([HarnessConnector.subaru_b])),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
