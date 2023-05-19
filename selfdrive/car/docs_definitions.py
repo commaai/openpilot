@@ -104,8 +104,8 @@ class CarParts:
   parts: List[CarPart] = field(default_factory=list)
 
   @classmethod
-  def default(cls, add: List[CarPart] = None, default: List[CarPart] = None, remove: List[CarPart] = None):
-    p = [part for part in (add or []) + (default or DEFAULT_CAR_PARTS) if part not in (remove or [])]
+  def default(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
+    p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
 
