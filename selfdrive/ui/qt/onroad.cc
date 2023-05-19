@@ -89,7 +89,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && (uiState()->prime_type || !MAPBOX_TOKEN.isEmpty())) {
+    if (map == nullptr && (uiState()->primeType() || !MAPBOX_TOKEN.isEmpty())) {
       MapWindow * m = new MapWindow(get_mapbox_settings());
       map = m;
 
@@ -460,6 +460,7 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
   p.setOpacity(opacity);
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
+  p.setOpacity(1.0);
 }
 
 
@@ -511,24 +512,34 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // paint path
-  QLinearGradient bg(0, height(), 0, height() / 4);
-  float start_hue, end_hue;
+  QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
-    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration();
-    float acceleration_future = 0;
-    if (acceleration.getZ().size() > 16) {
-      acceleration_future = acceleration.getX()[16];  // 2.5 seconds
+    // The first half of track_vertices are the points for the right side of the path
+    // and the indices match the positions of accel from uiPlan
+    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
+
+    for (int i = 0; i < max_len; ++i) {
+      // Some points are out of frame
+      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+
+      // Flip so 0 is bottom of frame
+      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+
+      // speed up: 120, slow down: 0
+      float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
+      // FIXME: painter.drawPolygon can be slow if hue is not rounded
+      path_hue = int(path_hue * 100 + 0.5) / 100;
+
+      float saturation = fmin(fabs(acceleration[i] * 1.5), 1);
+      float lightness = util::map_val(saturation, 0.0f, 1.0f, 0.95f, 0.62f);  // lighter when grey
+      float alpha = util::map_val(lin_grad_point, 0.75f / 2.f, 0.75f, 0.4f, 0.0f);  // matches previous alpha fade
+      bg.setColorAt(lin_grad_point, QColor::fromHslF(path_hue / 360., saturation, lightness, alpha));
+
+      // Skip a point, unless next is last
+      i += (i + 2) < max_len ? 1 : 0;
     }
-    start_hue = 60;
-    // speed up: 120, slow down: 0
-    end_hue = fmax(fmin(start_hue + acceleration_future * 45, 148), 0);
 
-    // FIXME: painter.drawPolygon can be slow if hue is not rounded
-    end_hue = int(end_hue * 100 + 0.5) / 100;
-
-    bg.setColorAt(0.0, QColor::fromHslF(start_hue / 360., 0.97, 0.56, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(end_hue / 360., 1.0, 0.68, 0.0));
   } else {
     bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
     bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
@@ -550,13 +561,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
   int y = rect().bottom() - footer_h / 2;
   float opacity = dmActive ? 0.65 : 0.2;
-  drawIcon(painter, x, y, dm_img, blackColor(0), opacity);
-
-  // circle background
-  painter.setOpacity(1.0);
-  painter.setPen(Qt::NoPen);
-  painter.setBrush(blackColor(70));
-  painter.drawEllipse(x - btn_size / 2, y - btn_size / 2, btn_size, btn_size);
+  drawIcon(painter, x, y, dm_img, blackColor(70), opacity);
 
   // face
   QPointF face_kpts_draw[std::size(default_face_kpts_3d)];

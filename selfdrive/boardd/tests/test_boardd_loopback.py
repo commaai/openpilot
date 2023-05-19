@@ -6,7 +6,7 @@ import unittest
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
@@ -31,12 +31,13 @@ class TestBoardd(unittest.TestCase):
   @phone_only
   @with_processes(['pandad'])
   def test_loopback(self):
-    # wait for boardd to init
-    time.sleep(2)
+    params = Params()
+    params.put_bool("IsOnroad", False)
 
     with Timeout(60, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
-      while sm.rcv_frame['pandaStates'] < 1 and len(sm['pandaStates']) == 0:
+      while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
+          any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
         sm.update(1000)
 
     num_pandas = len(sm['pandaStates'])
@@ -44,21 +45,21 @@ class TestBoardd(unittest.TestCase):
     self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
                                                    connect another panda for multipanda tests.")
 
-    # boardd blocks on CarVin and CarParams
+    # boardd safety setting relies on these params
     cp = car.CarParams.new_message()
 
     safety_config = car.CarParams.SafetyConfig.new_message()
     safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
     cp.safetyConfigs = [safety_config]*num_pandas
 
-    params = Params()
+    params.put_bool("IsOnroad", True)
     params.put_bool("FirmwareQueryDone", True)
     params.put_bool("ControlsReady", True)
     params.put("CarParams", cp.to_bytes())
 
     sendcan = messaging.pub_sock('sendcan')
     can = messaging.sub_sock('can', conflate=False, timeout=100)
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     n = 200
     for i in range(n):
