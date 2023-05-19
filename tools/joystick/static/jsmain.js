@@ -235,4 +235,4 @@ $("#plan-button").click(async function(){
 });
 
 
-// start();
+start();
