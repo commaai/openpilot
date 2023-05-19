@@ -8,7 +8,6 @@ import time
 
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
-from aiortc.rtcrtpsender import RTCRtpSender
 
 import cereal.messaging as messaging
 from bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound

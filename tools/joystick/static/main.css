@@ -35,12 +35,12 @@ video {
     background: #333;
     border-radius: 50%;
     margin: 10px;
-    height: 70px;
-    width: 70px;
+    height: 45px;
+    width: 45px;
     justify-content: center;
     align-items: center;
     margin: 10px 20px 10px 20px;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .blob {
