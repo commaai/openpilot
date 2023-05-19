@@ -160,6 +160,13 @@ void MapRenderer::update() {
   gl_functions->glFlush();
   double end_t = millis_since_boot();
 
+  while (TEST_MODE && !loaded()) {
+    gl_functions->glClear(GL_COLOR_BUFFER_BIT);
+    m_map->render();
+    gl_functions->glFlush();
+    QApplication::processEvents();
+    usleep(10000);
+  }
   if ((vipc_server != nullptr) && loaded()) {
     publish((end_t - start_t) / 1000.0);
   }

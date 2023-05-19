@@ -262,6 +262,12 @@ def ublox_rcv_callback(msg, CP, cfg, fsm):
     return [], False
 
 
+def mapsd_rcv_callback(msg, CP, cfg, fsm):
+  if msg.which() == "liveLocationKalman" and msg.liveLocationKalman.status == "valid" and msg.liveLocationKalman.positionGeodetic.valid:
+    return ["navThumbnail"], True
+  return [], False
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -393,14 +399,14 @@ CONFIGS = [
     fake_pubsubmaster=True,
   ),
   ProcessConfig(
-    proc_name="map_renderer",
+    proc_name="mapsd",
     pub_sub={
       "liveLocationKalman": ["navThumbnail"],
-      "navRoute": ["navThumbnail"]
+      "navRoute": []
     },
-    ignore=["logMonoTime"],
+    ignore=["logMonoTime", "navThumbnail.timestampEof"],
     init_callback=get_car_params,
-    should_recv_callback=None,
+    should_recv_callback=mapsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=False,
   ),
