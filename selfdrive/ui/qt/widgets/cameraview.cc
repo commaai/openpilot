@@ -241,20 +241,15 @@ void CameraWidget::updateFrameMat() {
       }
 
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-       float t = (float)frames_wide / 20.0f;
-t = t*t; // quadratic ease in
-
-if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
-    frames_wide += 1;//frames_wide * 0.2 + 0.5;
-} else {
-    frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
-}
-
-frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
-intrinsic_matrix = ecam_intrinsic_matrix;
-
-// Apply easing to zoom
-zoom = util::map_val(t, 0.0f, 1.0f, 4.7f, 2.0f);
+        if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
+          frames_wide += frames_wide * 0.2 + 0.5;
+        } else {
+          frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
+        }
+//        frames_wide += frames_wide * 0.2 + 0.5;
+        frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+        intrinsic_matrix = ecam_intrinsic_matrix;
+        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
 //        zoom = 4.5;
       } else {
         frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
