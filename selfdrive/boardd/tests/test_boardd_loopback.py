@@ -96,6 +96,8 @@ class TestBoardd(unittest.TestCase):
       # if a set isn't empty, messages got dropped
       pprint(sent_msgs)
       pprint(sent_loopback)
+      print({k: len(x) for k, x in sent_loopback.items()})
+      print(sum([len(x) for x in sent_loopback.values()]))
       for bus in sent_loopback.keys():
         assert not len(sent_loopback[bus]), f"loop {i}: bus {bus} missing {len(sent_loopback[bus])} out of {sent_total[bus]} messages"
 
