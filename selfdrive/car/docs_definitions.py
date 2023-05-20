@@ -1,4 +1,5 @@
 import re
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -39,41 +40,38 @@ class PartType(Enum):
 
 
 @dataclass
-class Part:
+class AbstractDataClass:
   name: str
 
-  @property
+
+class Part(ABC, AbstractDataClass):
+  @abstractmethod
   def type(self) -> PartType:
     raise NotImplementedError
 
 
 @dataclass
 class Connector(Part):
-  @property
   def type(self) -> PartType:
     return PartType.connector
 
 
 class Accessory(Part):
-  @property
   def type(self) -> PartType:
     return PartType.accessory
 
 
 class Mount(Part):
-  @property
   def type(self) -> PartType:
     return PartType.mount
 
 
 class Cable(Part):
-  @property
   def type(self) -> PartType:
     return PartType.cable
 
 
 class Device(Part):
-  @property
   def type(self) -> PartType:
     return PartType.device
 
@@ -141,7 +139,7 @@ class CarParts:
   parts: List[CarPart] = field(default_factory=list)
 
   @classmethod
-  def default(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
+  def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
