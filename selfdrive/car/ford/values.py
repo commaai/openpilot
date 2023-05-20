@@ -68,7 +68,7 @@ class FordCarInfo(CarInfo):
   car_parts: CarParts = CarParts.default([CarPart.ford_q3])
 
   def init_make(self, CP: car.CarParams):
-    if self in (CAR_INFO.get(CAR.BRONCO_SPORT_MK1), CAR_INFO.get(CAR.MAVERICK_MK1)):
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts.default([CarPart.ford_q3, CarPart.angled_mount], remove=[CarPart.mount])
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
