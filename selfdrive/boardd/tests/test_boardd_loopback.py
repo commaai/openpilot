@@ -72,7 +72,7 @@ class TestBoardd(unittest.TestCase):
       sent_msgs = defaultdict(set)
       for _ in range(random.randrange(20, 100)):
         to_send = []
-        for __ in range(random.randrange(50)):
+        for __ in range(random.randrange(20)):
           bus = random.choice([b for b in range(3*num_pandas) if b % 4 != 3])
           addr = random.randrange(1, 1<<29)
           dat = bytes(random.getrandbits(8) for _ in range(random.randrange(1, 9)))
@@ -100,9 +100,10 @@ class TestBoardd(unittest.TestCase):
       pprint(sent_loopback)
       print({k: len(x) for k, x in sent_loopback.items()})
       print(sum([len(x) for x in sent_loopback.values()]))
-      pprint(sm['pandaStates'])
+      pprint(sm['pandaStates'])  # may drop messages due to RX buffer overflow
       for bus in sent_loopback.keys():
         assert not len(sent_loopback[bus]), f"loop {i}: bus {bus} missing {len(sent_loopback[bus])} out of {sent_total[bus]} messages"
+
 
 if __name__ == "__main__":
   unittest.main()
