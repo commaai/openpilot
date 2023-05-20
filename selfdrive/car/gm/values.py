@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import Cable, CarFootnote, CarInfo, CarParts, Column, HarnessConnector, Mount
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPart, CarParts, Column
 Ecu = car.CarParams.Ecu
 
 
@@ -89,9 +89,9 @@ class GMCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
-      self.car_parts = CarParts.default([HarnessConnector.gm])
+      self.car_parts = CarParts.default([CarPart.gm])
     else:
-      self.car_parts = CarParts([HarnessConnector.obd_ii, Cable.long_obdc_cable, Cable.usbc_coupler, Mount.mount])
+      self.car_parts = CarParts([CarPart.obd_ii, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft])
       self.footnotes.append(Footnote.OBD_II)
 
 

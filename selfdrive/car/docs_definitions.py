@@ -30,73 +30,110 @@ class Star(Enum):
   EMPTY = "empty"
 
 
+class PartType(Enum):
+  connector = "Connector"
+  device = "Device"
+  cable = "Cable"
+  accessory = "Accessory"
+  mount = "Mount"
+
+
+@dataclass
+class Part:
+  name: str
+
+  @property
+  def type(self) -> PartType:
+    raise NotImplementedError
+
+
+@dataclass
+class Connector(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.connector
+
+
+class Accessory(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.accessory
+
+
+class Mount(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.mount
+
+
+class Cable(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.cable
+
+
+class Device(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.device
+
+
 class CarPart(Enum):
-  pass
+  nidec = Connector("Honda Nidec connector")
+  bosch_a = Connector("Honda Bosch A connector")
+  bosch_b = Connector("Honda Bosch B connector")
+  toyota = Connector("Toyota connector")
+  subaru_a = Connector("Subaru A connector")
+  subaru_b = Connector("Subaru B connector")
+  fca = Connector("FCA connector")
+  ram = Connector("Ram connector")
+  vw = Connector("VW connector")
+  j533 = Connector("J533 connector")
+  hyundai_a = Connector("Hyundai A connector")
+  hyundai_b = Connector("Hyundai B connector")
+  hyundai_c = Connector("Hyundai C connector")
+  hyundai_d = Connector("Hyundai D connector")
+  hyundai_e = Connector("Hyundai E connector")
+  hyundai_f = Connector("Hyundai F connector")
+  hyundai_g = Connector("Hyundai G connector")
+  hyundai_h = Connector("Hyundai H connector")
+  hyundai_i = Connector("Hyundai I connector")
+  hyundai_j = Connector("Hyundai J connector")
+  hyundai_k = Connector("Hyundai K connector")
+  hyundai_l = Connector("Hyundai L connector")
+  hyundai_m = Connector("Hyundai M connector")
+  hyundai_n = Connector("Hyundai N connector")
+  hyundai_o = Connector("Hyundai O connector")
+  hyundai_p = Connector("Hyundai P connector")
+  hyundai_q = Connector("Hyundai Q connector")
+  custom = Connector("Developer connector")
+  obd_ii = Connector("OBD-II connector")
+  gm = Connector("GM connector")
+  nissan_a = Connector("Nissan A connector")
+  nissan_b = Connector("Nissan B connector")
+  mazda = Connector("Mazda connector")
+  ford_q3 = Connector("Ford Q3 connector")
+  ford_q4 = Connector("Ford Q4 connector")
+
+  comma_3 = Device("comma 3")
+  red_panda = Device("red panda")
+
+  harness_box = Accessory("harness box")
+  comma_power_v2 = Accessory("comma power v2")
+
+  mount = Mount("mount")
+  angled_mount = Mount("angled mount")
+
+  rj45_cable_7ft = Cable("RJ45 cable (7 ft)")
+  long_obdc_cable = Cable("long OBD-C cable")
+  usb_a_2_a_cable = Cable("USB A-A cable")
+  usbc_otg_cable = Cable("USB C OTG cable")
+  usbc_coupler = Cable("USB-C coupler")
+  obd_c_cable_1_5ft = Cable("OBD-C cable (1.5 ft)")
+  right_angle_obd_c_cable_1_5ft = Cable("right angle OBD-C cable (1.5 ft)")
 
 
-class HarnessConnector(CarPart):
-  nidec = "Honda Nidec connector"
-  bosch_a = "Honda Bosch A connector"
-  bosch_b = "Honda Bosch B connector"
-  toyota = "Toyota connector"
-  subaru_a = "Subaru A connector"
-  subaru_b = "Subaru B connector"
-  fca = "FCA connector"
-  ram = "Ram connector"
-  vw = "VW connector"
-  j533 = "J533 connector"
-  hyundai_a = "Hyundai A connector"
-  hyundai_b = "Hyundai B connector"
-  hyundai_c = "Hyundai C connector"
-  hyundai_d = "Hyundai D connector"
-  hyundai_e = "Hyundai E connector"
-  hyundai_f = "Hyundai F connector"
-  hyundai_g = "Hyundai G connector"
-  hyundai_h = "Hyundai H connector"
-  hyundai_i = "Hyundai I connector"
-  hyundai_j = "Hyundai J connector"
-  hyundai_k = "Hyundai K connector"
-  hyundai_l = "Hyundai L connector"
-  hyundai_m = "Hyundai M connector"
-  hyundai_n = "Hyundai N connector"
-  hyundai_o = "Hyundai O connector"
-  hyundai_p = "Hyundai P connector"
-  hyundai_q = "Hyundai Q connector"
-  custom = "Developer connector"
-  obd_ii = "OBD-II connector"
-  gm = "GM connector"
-  nissan_a = "Nissan A connector"
-  nissan_b = "Nissan B connector"
-  mazda = "Mazda connector"
-  ford_q3 = "Ford Q3 connector"
-  ford_q4 = "Ford Q4 connector"
-
-
-class HarnessAccessory(CarPart):
-  harness_box = "harness box"
-  comma_power_v2 = "comma power v2"
-
-
-class Mount(CarPart):
-  mount = "mount"
-  angled_mount = "angled mount"
-
-
-class Cable(CarPart):
-  rj45_cable_7ft = "RJ45 cable (7 ft)"
-  long_obdc_cable = "long OBD-C cable"
-  usb_a_2_a_cable = "USB A-A cable"
-  usbc_otg_cable = "USB C OTG cable"
-  usbc_coupler = "USB-C coupler"
-  obd_c_cable_1_5ft = "OBD-C cable (1.5 ft)"
-
-
-class Device(CarPart):
-  comma_3 = "comma 3"
-  red_panda = "red panda"
-
-
-DEFAULT_CAR_PARTS: List[CarPart] = [HarnessAccessory.harness_box, HarnessAccessory.comma_power_v2, Cable.rj45_cable_7ft, Mount.mount]
+DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
 
 
 @dataclass
@@ -211,7 +248,7 @@ class CarInfo:
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
+      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
