@@ -74,10 +74,11 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
+        car_part_type = [p.value.type for p in car.car_parts.parts]
         self.assertTrue(len(car.car_parts.parts) > 0, f"Need to specify car parts: {car.name}")
-        self.assertTrue(len(list(filter((lambda p: p.value.type is PartType.connector), car.car_parts.parts))) == 1, f"Need to specify exactly ONE harness connector: {car.name}")
-        self.assertTrue(len(list(filter((lambda p: p.value.type is PartType.mount), car.car_parts.parts))) == 1, f"Need to specify exactly ONE mount: {car.name}")
-        self.assertTrue(len(list(filter((lambda p: p is CarPart.right_angle_obd_c_cable_1_5ft), car.car_parts.parts))) > 0, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
+        self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
+        self.assertTrue(CarPart.right_angle_obd_c_cable_1_5ft in car.car_parts.parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
 
 if __name__ == "__main__":

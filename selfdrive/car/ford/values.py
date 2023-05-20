@@ -71,6 +71,7 @@ class FordCarInfo(CarInfo):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
       self.car_parts = CarParts.default([CarPart.ford_q3, CarPart.angled_mount], remove=[CarPart.mount])
 
+
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
   CAR.ESCAPE_MK4: [
