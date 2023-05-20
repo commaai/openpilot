@@ -61,6 +61,7 @@ class TestBoardd(unittest.TestCase):
 
     sendcan = messaging.pub_sock('sendcan')
     can = messaging.sub_sock('can', conflate=False, timeout=100)
+    sm = messaging.SubMaster(['pandaStates'])
     time.sleep(0.5)
 
     n = 200
@@ -83,6 +84,7 @@ class TestBoardd(unittest.TestCase):
       sent_loopback.update({k+128: copy.deepcopy(v) for k, v in sent_msgs.items()})
       sent_total = {k: len(v) for k, v in sent_loopback.items()}
       for _ in range(100 * 5):
+        sm.update(0)
         recvd = messaging.drain_sock(can, wait_for_one=True)
         for msg in recvd:
           for m in msg.can:
@@ -98,6 +100,7 @@ class TestBoardd(unittest.TestCase):
       pprint(sent_loopback)
       print({k: len(x) for k, x in sent_loopback.items()})
       print(sum([len(x) for x in sent_loopback.values()]))
+      pprint(sm['pandaStates'])
       for bus in sent_loopback.keys():
         assert not len(sent_loopback[bus]), f"loop {i}: bus {bus} missing {len(sent_loopback[bus])} out of {sent_total[bus]} messages"
 
