@@ -14,6 +14,25 @@ i{
     font-style: normal;
 }
 
+.small{
+    font-size: 1em !important
+}
+
+.jumbo{
+    font-size: 8rem;
+}
+
+
+@media (max-width: 600px) {
+    .small{
+        font-size: 0.5em !important
+    }
+    .jumbo{
+        display: none;
+    }
+    
+}
+
 #main{
     display: flex;
     flex-direction: column;
@@ -21,12 +40,13 @@ i{
     justify-content: center;
     align-items: center;
     font-size: 30px;
-    width: 1200px;
+    width: 100%;
+    max-width: 1200px;
 }
 
 video {
-    height: 604;
-    /* width: 80%; */
+    /* height: 604; */
+    width: 95%;
     filter: grayscale(1);
 }
 
@@ -39,8 +59,8 @@ video {
     width: 45px;
     justify-content: center;
     align-items: center;
-    margin: 10px 20px 10px 20px;
-    font-size: 18px;
+    /* margin: 10px 20px 10px 20px; */
+    font-size: 1rem;
 }
 
 .blob {
@@ -58,22 +78,31 @@ video {
     }
   }
 
-.icon-sub-panel{
+
+.icon-sup-panel{
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-around;
     align-items: center;
     background: #222;
     border-radius: 10px;
-    width: 24%;
     padding: 5px;
+    margin: 5px 0px 5px 0px;
+}
+
+.icon-sub-panel{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
 }
 
 #icon-panel{
     display: flex;
     width: 100%;
     justify-content: space-between;
-    margin: 10px 0px 10px 0px;
+    margin-top: 5px;
+    /* padding: 0px 10px 0px 10px; */
 }
 
 .icon-sub-sub-panel{
@@ -81,19 +110,9 @@ video {
     flex-direction: row;
 }
 
-.jumbo{
-    font-size: 100px;
-}
-
-.small{
-    font-size: 15px !important;
-}
-
 .keys, #key-val{
     background: #333;
-    /* width: 200px; */
-    /* height: 200px; */
-    padding: 50px;
+    padding: 2rem;
     margin: 5px;
     color: #fff;
     display: flex;
@@ -129,6 +148,14 @@ video {
     flex-direction: row;
     justify-content: space-around;
     align-items: stretch;
+
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: manipulation;
 }
 
 #sounds-panel{
@@ -138,11 +165,7 @@ video {
     background: #222;
     border-radius: 10px;
     width: 100%;
-    padding: 20px;
-}
-
-.btn{
-    margin: 0px 15px 0px 15px !important;
+    padding: 10px;
 }
 
 #ping-time, #battery{
@@ -158,4 +181,9 @@ video {
     flex-direction: column;
     justify-content: space-between;
     align-items: center;
+}
+
+.details{
+    display: flex;
+    padding: 0px 10px 0px 10px;
 }

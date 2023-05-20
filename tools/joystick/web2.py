@@ -10,7 +10,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound
+from bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
 
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -67,6 +67,7 @@ async def offer(request):
   params = await request.json()
   offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
   speaker = WebClientSpeaker()
+  blackhole = MediaBlackhole()
 
   pc = RTCPeerConnection()
   pc_id = "PeerConnection(%s)" % uuid.uuid4()
@@ -109,13 +110,17 @@ async def offer(request):
 
   @pc.on('track')
   def on_track(track):
-    print("Track received")
-    speaker.addTrack(track)
+    print(f"Track received: {track.kind}")
+    if track.kind == "audio":
+      speaker.addTrack(track)
+    elif track.kind == "video":
+      blackhole.addTrack(track)
 
     @track.on("ended")
     async def on_ended():
       log_info("Remote %s track ended", track.kind)
       await speaker.stop()
+      await blackhole.stop()
 
   video_sender = pc.addTrack(BodyVideo())
   force_codec(pc, video_sender)
@@ -123,6 +128,7 @@ async def offer(request):
 
   await pc.setRemoteDescription(offer)
   await speaker.start()
+  await blackhole.start()
   answer = await pc.createAnswer()
   await pc.setLocalDescription(answer)
 
