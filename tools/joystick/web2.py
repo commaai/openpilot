@@ -119,8 +119,10 @@ async def offer(request):
     @track.on("ended")
     async def on_ended():
       log_info("Remote %s track ended", track.kind)
-      await speaker.stop()
-      await blackhole.stop()
+      if track.kind == "audio":
+        await speaker.stop()
+      elif track.kind == "video":
+        await blackhole.stop()
 
   video_sender = pc.addTrack(BodyVideo())
   force_codec(pc, video_sender)
