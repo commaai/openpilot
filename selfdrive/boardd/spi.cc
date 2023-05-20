@@ -29,8 +29,7 @@ struct __attribute__((packed)) spi_header {
   uint16_t max_rx_len;
 };
 
-const int SPI_MAX_RETRIES = 5;
-const int SPI_ACK_TIMEOUT = 50; // milliseconds
+const int SPI_ACK_TIMEOUT = 500; // milliseconds
 const std::string SPI_DEVICE = "/dev/spidev0.0";
 
 class LockEx {
@@ -89,7 +88,7 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   }
 
   // get hw UID/serial
-  ret = control_read(0xc3, 0, 0, uid, uid_len);
+  ret = control_read(0xc3, 0, 0, uid, uid_len, 1000);
   if (ret == uid_len) {
     std::stringstream stream;
     for (int i = 0; i < uid_len; i++) {
@@ -127,37 +126,33 @@ void PandaSpiHandle::cleanup() {
 
 
 int PandaSpiHandle::control_write(uint8_t request, uint16_t param1, uint16_t param2, unsigned int timeout) {
-  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
     .param2 = param2,
     .length = 0
   };
-  return spi_transfer_retry(0, (uint8_t *) &packet, sizeof(packet), NULL, 0);
+  return spi_transfer_retry(0, (uint8_t *) &packet, sizeof(packet), NULL, 0, timeout);
 }
 
 int PandaSpiHandle::control_read(uint8_t request, uint16_t param1, uint16_t param2, unsigned char *data, uint16_t length, unsigned int timeout) {
-  LockEx lock(spi_fd, hw_lock);
   ControlPacket_t packet = {
     .request = request,
     .param1 = param1,
     .param2 = param2,
     .length = length
   };
-  return spi_transfer_retry(0, (uint8_t *) &packet, sizeof(packet), data, length);
+  return spi_transfer_retry(0, (uint8_t *) &packet, sizeof(packet), data, length, timeout);
 }
 
 int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  LockEx lock(spi_fd, hw_lock);
-  return bulk_transfer(endpoint, data, length, NULL, 0);
+  return bulk_transfer(endpoint, data, length, NULL, 0, timeout);
 }
 int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
-  LockEx lock(spi_fd, hw_lock);
-  return bulk_transfer(endpoint, NULL, 0, data, length);
+  return bulk_transfer(endpoint, NULL, 0, data, length, timeout);
 }
 
-int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len) {
+int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len, unsigned int timeout) {
   const int xfer_size = 0x40 * 15;
 
   int ret = 0;
@@ -166,10 +161,10 @@ int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t t
     int d;
     if (tx_data != NULL) {
       int len = std::min(xfer_size, tx_len - (xfer_size * i));
-      d = spi_transfer_retry(endpoint, tx_data + (xfer_size * i), len, NULL, 0);
+      d = spi_transfer_retry(endpoint, tx_data + (xfer_size * i), len, NULL, 0, timeout);
     } else {
       uint16_t to_read = std::min(xfer_size, rx_len - ret);
-      d = spi_transfer_retry(endpoint, NULL, 0, rx_data + (xfer_size * i), to_read);
+      d = spi_transfer_retry(endpoint, NULL, 0, rx_data + (xfer_size * i), to_read, timeout);
     }
 
     if (d < 0) {
@@ -213,15 +208,13 @@ bool check_checksum(uint8_t *data, int data_len) {
 }
 
 
-int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
+int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
   int ret;
-
-  int count = SPI_MAX_RETRIES;
+  double start_time = millis_since_boot();
   do {
     // TODO: handle error
     ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len);
-    count--;
-  } while (ret < 0 && connected && count > 0);
+  } while (ret < 0 && connected && ((timeout == 0) || (millis_since_boot() - start_time) < timeout));
 
   return ret;
 }
@@ -238,7 +231,7 @@ int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
     if (rx_buf[0] == ack) {
       break;
     } else if (rx_buf[0] == SPI_NACK) {
-      LOGW("SPI: got NACK");
+      LOGD("SPI: got NACK");
       return -1;
     }
 
@@ -255,6 +248,7 @@ int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
 int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
   int ret;
   uint16_t rx_data_len;
+  LockEx lock(spi_fd, hw_lock);
 
   // needs to be less, since we need to have space for the checksum
   assert(tx_len < SPI_BUF_SIZE);
