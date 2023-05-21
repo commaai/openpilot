@@ -14,7 +14,7 @@ from pydub import AudioSegment
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import get_yuv
 
-# from run_onnx import ort_session, get_crop, run_inference, annotate_img
+from run_onnx import annotate_img
 
 IMG_H, IMG_W = 604, 964
 yuv = np.zeros((int(IMG_H * 1.5), IMG_W), dtype=np.uint8)
@@ -25,6 +25,7 @@ SOUNDS = {
   'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
 }
 
+yoloh, yolow = 416, 640
 
 def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
@@ -35,10 +36,10 @@ def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
 
 
 class BodyVideo(VideoStreamTrack):
-  def __init__(self):
+  def __init__(self, app):
     super().__init__()
     self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
-    self.cnt = 0
+    self.app = app
 
   async def recv(self):
     if os.environ.get('FAKE_CAMERA') == '1':
@@ -51,16 +52,22 @@ class BodyVideo(VideoStreamTrack):
         frame = VideoFrame.from_ndarray(np.zeros((int(self.vipc_client.height * 1.5), self.vipc_client.width), np.uint8), format="yuv420p")
       else:
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
+        y = y[::2, ::2]
+        yolo_preds = self.app['mutable_vals']['yolo']
+        y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow)/2), int((y.shape[0] - yoloh)/2)])
+        
         u = u.reshape(u.shape[0] // 2, -1)
         v = v.reshape(v.shape[0] // 2, -1)
-        yuv[:IMG_H, :] = y[::2, ::2]
+        yuv[:IMG_H, :] = y
         yuv[IMG_H:int(IMG_H * 5 / 4), :] = u[::2, ::2]
         yuv[int(5 * IMG_H / 4):, :] = v[::2, ::2]
         frame = VideoFrame.from_ndarray(yuv, format="yuv420p")
+
         # rgb = np.dstack((y, y, y))
         # cropped = get_crop(rgb)
         # res = run_inference(ort_session, cropped)
-        # cropped = annotate_img(cropped, res)
+        # print(res)
+        # # cropped = annotate_img(cropped, res)
         # frame = VideoFrame.from_ndarray(cropped, format="rgb24")
 
 

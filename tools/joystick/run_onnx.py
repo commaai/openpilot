@@ -3,7 +3,14 @@ import os
 import sys
 import numpy as np
 import cv2
+import json
+import cereal.messaging as messaging
+from cereal import car, log
+from cereal.visionipc import VisionIpcClient, VisionStreamType
+from common.realtime import config_realtime_process, DT_MDL
+from common.filter_simple import FirstOrderFilter
 from tqdm import trange
+from system.camerad.snapshot.snapshot import get_yuv
 
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
@@ -66,23 +73,24 @@ def nms(prediction, conf_thres=0.3, iou_thres=0.45):
     result_classes.append(np.argmax(prediction[r,5:]))
   return np.c_[result_boxes, result_scores, result_classes]
 
-print("Onnx available providers: ", ort.get_available_providers(), file=sys.stderr)
-options = ort.SessionOptions()
-options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
-options.intra_op_num_threads = 2
-options.inter_op_num_threads = 8
-options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-provider = 'CPUExecutionProvider'
+def create_ort():
+  print("Onnx available providers: ", ort.get_available_providers(), file=sys.stderr)
+  options = ort.SessionOptions()
+  options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+  options.intra_op_num_threads = 2
+  options.inter_op_num_threads = 8
+  options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+  options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+  provider = 'CPUExecutionProvider'
 
-# ort_session = ort.InferenceSession("test.onnx", options, providers=[provider])
-ort_session = ort.InferenceSession("yolov5n.onnx", options, providers=[provider])
-ishapes = [[1]+ii.shape[1:] for ii in ort_session.get_inputs()]
-keys = [x.name for x in ort_session.get_inputs()]
-itypes = [ORT_TYPES_TO_NP_TYPES[x.type] for x in ort_session.get_inputs()]
+  # ort_session = ort.InferenceSession("test.onnx", options, providers=[provider])
+  ort_session = ort.InferenceSession("yolov5n.onnx", options, providers=[provider])
+  ishapes = [[1]+ii.shape[1:] for ii in ort_session.get_inputs()]
+  keys = [x.name for x in ort_session.get_inputs()]
+  itypes = [ORT_TYPES_TO_NP_TYPES[x.type] for x in ort_session.get_inputs()]
+  return ort_session, ishapes, itypes
 
-
-def get_crop(img):
+def get_crop(img, ishapes):
   h, w = ishapes[0][-2:]
   img = img[::2, ::2, :]
   ih, iw = img.shape[:2]
@@ -92,7 +100,7 @@ def get_crop(img):
 
 CLASSES = ["person","bicycle","car","motorcycle","airplane","bus","train","truck","boat","traffic light","fire hydrant","stop sign","parking meter","bench","bird","cat","dog","horse","sheep","cow","elephant","bear","zebra","giraffe","backpack","umbrella","handbag","tie","suitcase","frisbee","skis","snowboard","sports ball","kite","baseball bat","baseball glove","skateboard","surfboard","tennis racket","bottle","wine glass","cup","fork","knife","spoon","bowl","banana","apple","sandwich","orange","broccoli","carrot","hot dog","pizza","donut","cake","chair","couch","potted plant","bed","dining table","toilet","tv","laptop","mouse","remote","keyboard","cell phone","microwave","oven","toaster","sink","refrigerator","book","clock","vase","scissors","teddy bear","hair drier","toothbrush"]
 COLORS = [(231, 76, 60), (52, 152, 219), (241, 196, 15), (46, 204, 113)]
-def run_inference(session, img):
+def run_inference(session, img, itypes):
   img = img.astype(itypes[0])
   img = np.swapaxes(img, 0, 2)
   img = np.swapaxes(img, 1, 2)
@@ -101,12 +109,44 @@ def run_inference(session, img):
 
   res = session.run(None, {'image': img})
   res = nms(res[0])
-  return [{"pred_class": CLASSES[int(opt[-1])] , "prob": opt[-2], "pt_1": opt[:2].astype(int), "pt_2": opt[2:4].astype(int)} for opt in res]
+  return [{"pred_class": CLASSES[int(opt[-1])] , "prob": opt[-2], "pt1": opt[:2].astype(int).tolist(), "pt2": opt[2:4].astype(int).tolist()} for opt in res]
   
-def annotate_img(img, res):
+def annotate_img(img, res, offsets=[0,0]):
   for i, opt in enumerate(res):
-    color = COLORS[i%len(COLORS)]
+    # color = COLORS[i%len(COLORS)]
+    color = (255,255,255)
+    thickness = 3
     color = [color[2], color[1], color[0]]
-    img = cv2.rectangle(np.array(img), opt['pt_1'], opt['pt_2'], color=color, thickness=1)
-    img = cv2.putText(np.array(img), opt['pred_class'], opt['pt_1'], cv2.FONT_HERSHEY_SIMPLEX, 1, color, 1, cv2.LINE_AA)
+    img = cv2.rectangle(np.array(img), (opt['pt1'][0]+offsets[0], opt['pt1'][1]+offsets[1]), (opt['pt2'][0]+offsets[0], opt['pt2'][1]+offsets[1]), color=color, thickness=thickness)
+    img = cv2.putText(np.array(img), opt['pred_class'], (opt['pt1'][0]+offsets[0], opt['pt1'][1]+offsets[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
   return img
+
+
+def main(sm=None, pm=None):
+  # config_realtime_process([0, 1, 2, 3], 5)
+
+  if pm is None:
+    pm = messaging.PubMaster(['logMessage'])
+
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
+  cnt = 0
+  if not vipc_client.is_connected():
+    vipc_client.connect(True)     
+  ort_session, ishapes, itypes = create_ort()
+  while True:
+    yuv_img_raw = vipc_client.recv()
+    if yuv_img_raw is None or not yuv_img_raw.any():
+      continue
+    else:
+      y, u, v = get_yuv(yuv_img_raw, vipc_client.width, vipc_client.height, vipc_client.stride, vipc_client.uv_offset)
+      rgb = np.dstack((y, y, y))
+      cropped = get_crop(rgb, ishapes)
+      res = run_inference(ort_session, cropped, itypes)
+    res = json.dumps(res)
+    msg = messaging.new_message('logMessage', len(res))
+    msg.logMessage = res
+    pm.send('logMessage', msg)
+
+
+if __name__ == "__main__":
+  main()

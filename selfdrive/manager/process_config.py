@@ -34,7 +34,7 @@ procs = [
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
-  PythonProcess("logmessaged", "system.logmessaged", offroad=True),
+  # PythonProcess("logmessaged", "system.logmessaged", offroad=True),
   #PythonProcess("micd", "system.micd"),
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad=True),
 

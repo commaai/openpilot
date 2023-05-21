@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 pcs = set()
 
 pm = messaging.PubMaster(['testJoystick'])
-sm = messaging.SubMaster(['carState'])
+sm = messaging.SubMaster(['carState', 'logMessage'])
 
 
 async def index(request):
@@ -43,17 +43,33 @@ async def dummy_controls_msg(app):
     await asyncio.sleep(0.1)
 
 
+async def yolo(app):
+  while True:
+    app['mutable_vals']['yolo'] = []
+    sm.update(timeout=10)
+    if sm.updated['carState'] and sm['logMessage']:
+      msg = json.loads(sm['logMessage'])
+      vego = sm['carState'].vEgo
+      if abs(vego) < 0.05:
+        app['mutable_vals']['yolo'] = msg
+    print(app['mutable_vals']['yolo']) 
+    await asyncio.sleep(0.1)
+
+
 async def start_background_tasks(app):
   app['bgtask_dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
+  app['bgtask_dummy_yolo'] = asyncio.create_task(yolo(app))
 
 
 async def stop_background_tasks(app):
   app['bgtask_dummy_controls_msg'].cancel()
+  app['bgtask_dummy_yolo'].cancel()
   await app['bgtask_dummy_controls_msg']
+  await app['bgtask_dummy_yolo']
 
 
 async def control_body(data):
-  print(data)
+  # print(data)
   x = max(-1.0, min(1.0, data['x']))
   y = max(-1.0, min(1.0, data['y']))
   dat = messaging.new_message('testJoystick')
@@ -95,7 +111,7 @@ async def offer(request):
         }
         channel.send(json.dumps(times))
       if data['type'] == 'battery_level':
-        sm.update(timeout=50)
+        sm.update(timeout=0)
         if sm.updated['carState']:
           channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
       if data['type'] == 'play_sound':
@@ -124,7 +140,7 @@ async def offer(request):
       elif track.kind == "video":
         await blackhole.stop()
 
-  video_sender = pc.addTrack(BodyVideo())
+  video_sender = pc.addTrack(BodyVideo(request.app))
   force_codec(pc, video_sender)
   _ = pc.addTrack(BodyMic())
 
