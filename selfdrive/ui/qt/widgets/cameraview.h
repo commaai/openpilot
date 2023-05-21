@@ -78,7 +78,6 @@ protected:
   std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
 
-  float frames_wide = 0;
   float zoom_transition = 0;
   bool ready_to_switch_cams = false;
 
