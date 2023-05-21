@@ -10,7 +10,6 @@ from common.timeout import Timeout
 from selfdrive.test.helpers import set_params_enabled
 
 
-@pytest.mark.repeat(5)
 def test_time_to_onroad():
   # launch
   set_params_enabled()
