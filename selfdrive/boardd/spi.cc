@@ -22,6 +22,12 @@
 #define SPI_NACK 0x1FU
 #define SPI_CHECKSUM_START 0xABU
 
+
+enum SpiError {
+  NACK = -2,
+  ACK_TIMEOUT = -3,
+};
+
 struct __attribute__((packed)) spi_header {
   uint8_t sync;
   uint8_t endpoint;
@@ -40,8 +46,8 @@ public:
   };
 
   ~LockEx() {
-    m.unlock();
     flock(fd, LOCK_UN);
+    m.unlock();
   }
 
 private:
@@ -170,7 +176,7 @@ int PandaSpiHandle::bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t t
     if (d < 0) {
       LOGE("SPI: bulk transfer failed with %d", d);
       comms_healthy = false;
-      return -1;
+      return d;
     }
 
     ret += d;
@@ -210,17 +216,40 @@ bool check_checksum(uint8_t *data, int data_len) {
 
 int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
   int ret;
+  int count = 0;
+  bool timed_out = false;
   double start_time = millis_since_boot();
   do {
-    // TODO: handle error
-    ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len);
-  } while (ret < 0 && connected && ((timeout == 0) || (millis_since_boot() - start_time) < timeout));
+    ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len, timeout);
+
+    if (ret < 0) {
+      timed_out = (timeout != 0) && (count > 5);
+      count += ret == SpiError::ACK_TIMEOUT;
+      std::this_thread::yield();
+    }
+  } while (ret < 0 && connected && !timed_out);
+
+  if (ret < 0) {
+    LOGE("transfer failed, after %d tries, %.2fms", count, millis_since_boot() - start_time);
+  }
 
   return ret;
 }
 
-int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
+int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout) {
   double start_millis = millis_since_boot();
+  if (timeout <= 0) {
+    timeout = SPI_ACK_TIMEOUT;
+  }
+
+  spi_ioc_transfer transfer = {
+    .tx_buf = (uint64_t)tx_buf,
+    .rx_buf = (uint64_t)rx_buf,
+    .delay_usecs = 5,
+    .len = 1
+  };
+  tx_buf[0] = tx;
+
   while (true) {
     int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
     if (ret < 0) {
@@ -232,20 +261,20 @@ int PandaSpiHandle::wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack) {
       break;
     } else if (rx_buf[0] == SPI_NACK) {
       LOGD("SPI: got NACK");
-      return -1;
+      return SpiError::NACK;
     }
 
     // handle timeout
-    if (millis_since_boot() - start_millis > SPI_ACK_TIMEOUT) {
+    if (millis_since_boot() - start_millis > timeout) {
       LOGD("SPI: timed out waiting for ACK");
-      return -1;
+      return SpiError::ACK_TIMEOUT;
     }
   }
 
   return 0;
 }
 
-int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len) {
+int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
   int ret;
   uint16_t rx_data_len;
   LockEx lock(spi_fd, hw_lock);
@@ -277,9 +306,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0x11;
-  transfer.len = 1;
-  ret = wait_for_ack(transfer, SPI_HACK);
+  ret = wait_for_ack(SPI_HACK, 0x11, timeout);
   if (ret < 0) {
     goto transfer_fail;
   }
@@ -297,9 +324,7 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   // Wait for (N)ACK
-  tx_buf[0] = 0x13;
-  transfer.len = 1;
-  ret = wait_for_ack(transfer, SPI_DACK);
+  ret = wait_for_ack(SPI_DACK, 0x13, timeout);
   if (ret < 0) {
     goto transfer_fail;
   }
