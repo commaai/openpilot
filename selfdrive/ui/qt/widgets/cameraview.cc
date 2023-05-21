@@ -210,16 +210,20 @@ void CameraWidget::updateFrameMat() {
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-        if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
-          zoom_transition += (1.0 - zoom_transition) * 0.2 + 0.005;
-        } else {
-          zoom_transition -= zoom_transition * 0.2 + 0.005;
-        }
-        zoom_transition = std::clamp(zoom_transition, 0.0f, 20.0f);
-        ready_to_switch_cams = zoom_transition == 0;
+        zoom_time += requested_stream_type == VISION_STREAM_WIDE_ROAD ? 0.05 : -0.05;
+        zoom_time = std::clamp(zoom_time, 0.0f, 1.0f);
+        zoom_transition = zoom_time * zoom_time * (3.0 - 2.0 * zoom_time);
+
+//        if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
+//          zoom_transition += (1.0 - zoom_transition) * 0.2 + 0.005;
+//        } else {
+//          zoom_transition -= zoom_transition * 0.2 + 0.005;
+//        }
+//        zoom_transition = std::clamp(zoom_transition, 0.0f, 1.0f);
+        ready_to_switch_cams = fabs(zoom_transition - 0) < 1e-3;
 
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val(zoom_transition, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
+        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
         zoom_transition = 0;
