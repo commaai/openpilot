@@ -2,7 +2,6 @@
 import os
 import time
 import subprocess
-import pytest
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR

@@ -31,7 +31,7 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pres
   return packer.make_can_msg("LDW_02", bus, values)
 
 
-def create_acc_buttons_control(packer, bus, gra_stock_values, counter, cancel=False, resume=False):
+def create_acc_buttons_control(packer, bus, gra_stock_values, cancel=False, resume=False):
   values = {s: gra_stock_values[s] for s in [
     "GRA_Hauptschalter",           # ACC button, on/off
     "GRA_Abbrechen",               # ACC button, cancel
@@ -44,11 +44,10 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, counter, cancel=Fa
     "GRA_Codierung",               # ACC button configuration/coding
     "GRA_Tip_Stufe_2",             # unknown related to stalk type
     "GRA_ButtonTypeInfo",          # unknown related to stalk type
-    "COUNTER",                     # GRA_ACC_01 CAN message counter
   ]}
 
   values.update({
-    "COUNTER": counter,
+    "COUNTER": (gra_stock_values["COUNTER"] + 1) % 16,
     "GRA_Abbrechen": cancel,
     "GRA_Tip_Wiederaufnahme": resume,
   })
