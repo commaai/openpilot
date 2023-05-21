@@ -14,6 +14,7 @@ from pydub import AudioSegment
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import get_yuv
 
+# from run_onnx import ort_session, get_crop, run_inference, annotate_img
 
 IMG_H, IMG_W = 604, 964
 yuv = np.zeros((int(IMG_H * 1.5), IMG_W), dtype=np.uint8)
@@ -56,6 +57,12 @@ class BodyVideo(VideoStreamTrack):
         yuv[IMG_H:int(IMG_H * 5 / 4), :] = u[::2, ::2]
         yuv[int(5 * IMG_H / 4):, :] = v[::2, ::2]
         frame = VideoFrame.from_ndarray(yuv, format="yuv420p")
+        # rgb = np.dstack((y, y, y))
+        # cropped = get_crop(rgb)
+        # res = run_inference(ort_session, cropped)
+        # cropped = annotate_img(cropped, res)
+        # frame = VideoFrame.from_ndarray(cropped, format="rgb24")
+
 
     pts, time_base = await self.next_timestamp()
     frame.pts = pts
