@@ -212,9 +212,9 @@ void CameraWidget::updateFrameMat() {
 
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
-          zoom_transition += zoom_transition * 0.2 + 0.025;
+          zoom_transition += (1.0 - zoom_transition) * 0.1 + 0.01;
         } else {
-          zoom_transition -= (1.0 - zoom_transition) * 0.2 + 0.025;
+          zoom_transition -= zoom_transition * 0.1 + 0.01;
         }
 
         intrinsic_matrix = ecam_intrinsic_matrix;
