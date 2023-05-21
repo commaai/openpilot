@@ -284,8 +284,12 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
+
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
   double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  double_validator->setLocale(locale);  // Match locale of QString::toDouble() instead of system
+
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
 }
