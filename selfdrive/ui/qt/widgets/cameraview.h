@@ -79,7 +79,8 @@ protected:
   QThread *vipc_thread = nullptr;
 
   float frames_wide = 0;
-  bool ready_to_switch = false;
+  float zoom_transition = 0;
+  bool ready_to_switch_cams = false;
 
   // Calibration
   float x_offset = 0;

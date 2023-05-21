@@ -212,21 +212,21 @@ void CameraWidget::updateFrameMat() {
 
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
-          frames_wide += frames_wide * 0.2 + 0.5;
+          zoom_transition += zoom_transition * 0.2 + 0.025;
         } else {
-          frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
+          zoom_transition -= (1.0 - zoom_transition) * 0.2 + 0.025;
         }
 
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
-        frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
-        ready_to_switch = frames_wide == 0;
+        zoom = util::map_val((float)zoom_transition, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
+        zoom_transition = std::clamp(zoom_transition, 0.0f, 20.0f);
+        ready_to_switch_cams = zoom_transition == 0;
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
-        ready_to_switch = true;
+        ready_to_switch_cams = true;
         intrinsic_matrix = fcam_intrinsic_matrix;
         zoom = 1.1;
-        frames_wide = 0;
+        zoom_transition = 0;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
@@ -385,7 +385,7 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch)) {
+    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch_cams)) {
       clearFrames();
       qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;
