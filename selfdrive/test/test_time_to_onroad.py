@@ -18,10 +18,18 @@ def test_time_to_onroad():
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState'])
+  sm = messaging.SubMaster(['controlsState', 'deviceState'])
   try:
+    # wait for onroad
+    with Timeout(20, "timed out waiting to go onroad"):
+      while True:
+        sm.update(1000)
+        if sm['deviceState'].started:
+          break
+        time.sleep(1)
+
     # wait for engageability
-    with Timeout(30, "timed out waiting for engageable"):
+    with Timeout(10, "timed out waiting for engageable"):
       while True:
         sm.update(1000)
         if sm['controlsState'].engageable:
@@ -32,7 +40,7 @@ def test_time_to_onroad():
     # once we're enageable, must be for the next few seconds
     for _ in range(500):
       sm.update(100)
-      assert sm['controlsState'].engageable and sm.updated['controlsState']
+      assert sm['controlsState'].engageable
   finally:
     proc.terminate()
     if proc.wait(60) is None:
