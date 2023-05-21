@@ -39,39 +39,42 @@ class PartType(Enum):
   mount = "Mount"
 
 
-@dataclass
-class AbstractDataClass:
-  name: str
+class Part(ABC):
+  def __init__(self, name: str):
+    self.name = name
 
-
-class Part(ABC, AbstractDataClass):
+  @property
   @abstractmethod
   def type(self) -> PartType:
     raise NotImplementedError
 
 
-@dataclass
 class Connector(Part):
+  @property
   def type(self) -> PartType:
     return PartType.connector
 
 
 class Accessory(Part):
+  @property
   def type(self) -> PartType:
     return PartType.accessory
 
 
 class Mount(Part):
+  @property
   def type(self) -> PartType:
     return PartType.mount
 
 
 class Cable(Part):
+  @property
   def type(self) -> PartType:
     return PartType.cable
 
 
 class Device(Part):
+  @property
   def type(self) -> PartType:
     return PartType.device
 
