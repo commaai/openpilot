@@ -128,8 +128,8 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
           case Item::Comment: return item->sig->comment;
-          case Item::Min: return item->sig->min;
-          case Item::Max: return item->sig->max;
+          case Item::Min: return doubleToString(item->sig->min);
+          case Item::Max: return doubleToString(item->sig->max);
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
@@ -166,8 +166,8 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Factor: s.factor = value.toDouble(); break;
     case Item::Unit: s.unit = value.toString(); break;
     case Item::Comment: s.comment = value.toString(); break;
-    case Item::Min: s.min = value.toString(); break;
-    case Item::Max: s.max = value.toString(); break;
+    case Item::Min: s.min = value.toDouble(); break;
+    case Item::Max: s.max = value.toDouble(); break;
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
@@ -230,7 +230,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = 0, .max = std::pow(2, size) - 1};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
