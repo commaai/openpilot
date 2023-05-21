@@ -200,8 +200,6 @@ void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
 void CameraWidget::updateFrameMat() {
   int w = glWidth(), h = glHeight();
 
-//  float ecam_zoom_fcam_approx = fcam_intrinsic_matrix.v[0] /  ecam_intrinsic_matrix.v[0];
-
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
@@ -212,51 +210,23 @@ void CameraWidget::updateFrameMat() {
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
 
-      if (active_stream_type != requested_stream_type) {
-        if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-          // Do a transition from zoomed wide to zoomed narrow for transition to narrow cam
-//          frames_wide -= (20 - frames_wide) * 0.1 + 1;
-//          frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
-//          intrinsic_matrix = ecam_intrinsic_matrix;
-//          zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
-
-          if (frames_wide == 0) {
-            ready_to_switch = true;
-          }
-          qDebug() << "frames_wide" << frames_wide << "ready_to_switch" << ready_to_switch;
-        } else {
-          qDebug() << "ready to switch to ecam";
-          // Always ready to switch from zoomed narrow to zoomed wide
-          ready_to_switch = true;
-          intrinsic_matrix = fcam_intrinsic_matrix;
-          zoom = 1.1;
-        }
-      } else {
-        ready_to_switch = false;
-      }
-
-      if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
-        intrinsic_matrix = fcam_intrinsic_matrix;
-        zoom = 1.1;
-      }
-
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
           frames_wide += frames_wide * 0.2 + 0.5;
         } else {
           frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
         }
-//        frames_wide += frames_wide * 0.2 + 0.5;
-        frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
-//        zoom = 4.5;
-      } else {
-        frames_wide -= (20 - frames_wide) * 0.2 + 0.5;
+        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
         frames_wide = std::clamp(frames_wide, 0.0f, 20.0f);
+        ready_to_switch = frames_wide == 0;
+      } else {
+        // Always ready to switch from zoomed narrow to zoomed wide
+        ready_to_switch = true;
         intrinsic_matrix = fcam_intrinsic_matrix;
-        zoom = util::map_val((float)frames_wide, 0.0f, 20.0f, 4.7f, 2.0f);
         zoom = 1.1;
+        frames_wide = 0;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
