@@ -277,7 +277,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(uiState()->prime_type ? (QWidget*)primeUser : (QWidget*)primeAd);
+  mainLayout->setCurrentWidget(uiState()->primeType() ? (QWidget*)primeUser : (QWidget*)primeAd);
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -312,7 +312,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
 
   QJsonObject json = doc.object();
   int prime_type = json["prime_type"].toInt();
-  uiState()->prime_type = prime_type;
+  uiState()->setPrimeType(prime_type);
 
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);

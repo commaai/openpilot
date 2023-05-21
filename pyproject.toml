@@ -164,7 +164,7 @@ redis = "^4.3.4"
 s2sphere = "^0.2.5"
 scikit-image = "^0.19.3"
 scikit-learn = "^1.1.1"
-segmentation-models-pytorch = "==0.2.1"
+segmentation-models-pytorch = "==0.3.2"
 simplejson = "^3.17.6"
 SQLAlchemy = "^1.4.39"
 torch = { url = "https://download.pytorch.org/whl/cu118/torch-2.0.0%2Bcu118-cp38-cp38-linux_x86_64.whl" }

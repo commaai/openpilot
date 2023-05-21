@@ -101,7 +101,7 @@ def create_lat_ctl2_msg(packer, mode: int, path_offset: float, path_angle: float
   return packer.make_can_msg("LateralMotionControl2", CANBUS.main, values)
 
 
-def create_acc_msg(packer, long_active: bool, gas: float, accel: float, decel: bool, stopping: bool):
+def create_acc_msg(packer, long_active: bool, gas: float, accel: float, stopping: bool):
   """
   Creates a CAN message for the Ford ACC Command.
 
@@ -111,11 +111,13 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, decel: b
   Frequency is 50Hz.
   """
 
+  decel = accel < 0 and long_active
   values = {
     "AccBrkTot_A_Rq": accel,                          # Brake total accel request: [-20|11.9449] m/s^2
     "Cmbb_B_Enbl": 1 if long_active else 0,           # Enabled: 0=No, 1=Yes
     "AccPrpl_A_Rq": gas,                              # Acceleration request: [-5|5.23] m/s^2
     "AccResumEnbl_B_Rq": 1 if long_active else 0,
+    # TODO: we may be able to improve braking response by utilizing pre-charging better
     "AccBrkPrchg_B_Rq": 1 if decel else 0,            # Pre-charge brake request: 0=No, 1=Yes
     "AccBrkDecel_B_Rq": 1 if decel else 0,            # Deceleration request: 0=Inactive, 1=Active
     "AccStopStat_B_Rq": 1 if stopping else 0,
@@ -123,9 +125,11 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, decel: b
   return packer.make_can_msg("ACCDATA", CANBUS.main, values)
 
 
-def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_values: dict):
+def create_acc_ui_msg(packer, CP, main_on: bool, enabled: bool, standstill: bool, hud_control,
+                      stock_values: dict):
   """
-  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam assist status.
+  Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
+  assist status.
 
   Stock functionality is maintained by passing through unmodified signals.
 
@@ -157,7 +161,6 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
     "AccTrgDist2_D_Dsply",       # ACC target distance
     "AccStopRes_B_Dsply",
     "TjaWarn_D_Rq",              # TJA warning
-    "Tja_D_Stat",                # TJA status
     "TjaMsgTxt_D_Dsply",         # TJA text
     "IaccLamp_D_Rq",             # iACC status icon
     "AccMsgTxt_D2_Rq",           # ACC text
@@ -180,8 +183,20 @@ def create_acc_ui_msg(packer, main_on: bool, enabled: bool, hud_control, stock_v
   ]}
 
   values.update({
-    "Tja_D_Stat": status,
+    "Tja_D_Stat": status,        # TJA status
   })
+
+  if CP.openpilotLongitudinalControl:
+    values.update({
+      "AccStopStat_D_Dsply": 2 if standstill else 0,              # Stopping status text
+      "AccMsgTxt_D2_Rq": 0,                                       # ACC text
+      "AccTGap_B_Dsply": 0,                                       # Show time gap control UI
+      "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,  # Lead indicator
+      "AccStopMde_B_Dsply": 1 if standstill else 0,
+      "AccWarn_D_Dsply": 0,                                       # ACC warning
+      "AccTGap_D_Dsply": 4,                                       # Fixed time gap in UI
+    })
+
   return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
 
 
@@ -233,9 +248,7 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
     "FeatNoIpmaActl",
     "PersIndexIpma_D_Actl",
     "AhbcRampingV_D_Rq",     # AHB ramping
-    "LaActvStats_D_Dsply",   # LKAS status (lines)
     "LaDenyStats_B_Dsply",   # LKAS error
-    "LaHandsOff_D_Dsply",    # LKAS hands on chime
     "CamraDefog_B_Req",      # Windshield heater?
     "CamraStats_D_Dsply",    # Camera status
     "DasAlrtLvl_D_Dsply",    # DAS alert level
@@ -264,16 +277,14 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
   """
 
   values = {s: stock_values[s] for s in [
-    "TurnLghtSwtch_D_Stat",    # SCCM Turn signal switch
-    "TjaButtnOnOffPress",      # SCCM ACC button, lane-centering/traffic jam assist toggle
     "HeadLghtHiFlash_D_Stat",  # SCCM Passthrough the remaining buttons
+    "TurnLghtSwtch_D_Stat",    # SCCM Turn signal switch
     "WiprFront_D_Stat",
     "LghtAmb_D_Sns",
     "AccButtnGapDecPress",
     "AccButtnGapIncPress",
     "AslButtnOnOffCnclPress",
     "AslButtnOnOffPress",
-    "CcAslButtnCnclPress",
     "LaSwtchPos_D_Stat",
     "CcAslButtnCnclResPress",
     "CcAslButtnDeny_B_Actl",
@@ -287,7 +298,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
     "CcAslButtnSetDecPress",
     "CcAslButtnSetIncPress",
     "CcAslButtnSetPress",
-    "CcAsllButtnResPress",
     "CcButtnOffPress",
     "CcButtnOnOffCnclPress",
     "CcButtnOnOffPress",
@@ -303,6 +313,6 @@ def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tj
   values.update({
     "CcAslButtnCnclPress": 1 if cancel else 0,      # CC cancel button
     "CcAsllButtnResPress": 1 if resume else 0,      # CC resume button
-    "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # TJA toggle button
+    "TjaButtnOnOffPress": 1 if tja_toggle else 0,   # LCA/TJA toggle button
   })
   return packer.make_can_msg("Steering_Data_FD1", bus, values)

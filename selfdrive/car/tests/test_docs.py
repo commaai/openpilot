@@ -74,7 +74,8 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        self.assertNotIn(car.harness, [None, Harness.none], f"Need to specify car harness: {car.name}")
+        self.assertNotIn(car.harness_kit.connector, [None, Harness.none], f"Need to specify car harness: {car.name}")
+        self.assertTrue(car.harness_kit.parts, f"Need to specify harness parts: {car.name} with {car.harness_kit.connector.value} connector")
 
 
 if __name__ == "__main__":
