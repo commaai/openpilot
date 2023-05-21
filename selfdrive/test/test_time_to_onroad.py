@@ -3,12 +3,10 @@ import os
 import time
 import subprocess
 import pytest
-from pathlib import Path
 
 import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from common.timeout import Timeout
-from selfdrive.updated import OVERLAY_INIT
 from selfdrive.test.helpers import set_params_enabled
 
 
