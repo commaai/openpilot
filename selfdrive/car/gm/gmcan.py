@@ -21,14 +21,14 @@ def create_buttons(packer, bus, idx, button):
 
 def create_pscm_status(packer, bus, pscm_status):
   values = {s: pscm_status[s] for s in [
+    "HandsOffSWDetectionMode",
+    "HandsOffSWlDetectionStatus",
+    "LKATorqueDeliveredStatus",
     "LKADriverAppldTrq",
     "LKATorqueDelivered",
-    "LKATorqueDeliveredStatus",
-    "HandsOffSWlDetectionStatus",
-    "HandsOffSWDetectionMode",
     "LKATotalTorqueDelivered",
-    "PSCMStatusChecksum",
     "RollingCounter",
+    "PSCMStatusChecksum",
   ]}
   checksum_mod = int(1 - values["HandsOffSWlDetectionStatus"]) << 5
   values["HandsOffSWlDetectionStatus"] = 1
