@@ -209,24 +209,24 @@ void CameraWidget::updateFrameMat() {
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
-
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
           zoom_transition += (1.0 - zoom_transition) * 0.2 + 0.005;
         } else {
           zoom_transition -= zoom_transition * 0.2 + 0.005;
         }
-
-        intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val((float)zoom_transition, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
         zoom_transition = std::clamp(zoom_transition, 0.0f, 20.0f);
         ready_to_switch_cams = zoom_transition == 0;
+
+        intrinsic_matrix = ecam_intrinsic_matrix;
+        zoom = util::map_val(zoom_transition, 0.0f, 20.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
+        zoom_transition = 0;
         ready_to_switch_cams = true;
+
         intrinsic_matrix = fcam_intrinsic_matrix;
         zoom = 1.1;
-        zoom_transition = 0;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
