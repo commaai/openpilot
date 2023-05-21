@@ -43,11 +43,14 @@ class CarState(CarStateBase):
       self.pt_lka_steering_cmd_counter = pt_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
       self.cam_lka_steering_cmd_counter = cam_cp.vl["ASCMLKASteeringCmd"]["RollingCounter"]
 
+    # TODO: verify if this is left/right and which
+    left_wheel_sign = -1 if pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward"] else 1
+    right_wheel_sign = -1 if pt_cp.vl["EBCMWheelSpdRear"]["MovingBackward2"] else 1
     ret.wheelSpeeds = self.get_wheel_speeds(
-      pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"],
-      pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"],
+      pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"] * left_wheel_sign,
+      pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"] * right_wheel_sign,
+      pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"] * left_wheel_sign,
+      pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"] * right_wheel_sign,
     )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
