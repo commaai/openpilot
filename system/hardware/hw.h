@@ -19,6 +19,9 @@ inline std::string log_root() {
   return Hardware::PC() ? util::getenv("HOME") + "/.comma/media/0/realdata" : "/data/media/0/realdata";
 }
 inline std::string params() {
+  if (const char *root = getenv("PARAMS_ROOT")) {
+    return root;
+  }
   return Hardware::PC() ? util::getenv("HOME") + "/.comma/params" : "/data/params";
 }
 inline std::string rsa_file() {
