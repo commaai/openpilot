@@ -655,7 +655,7 @@ void AnnotatedCameraWidget::paintGL() {
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
 
-    float requested_zoom = std::map_val(v_ego, 10.0f, 15.0f, 2.0f, 1.1f);
+    float requested_zoom = util::map_val(v_ego, 10.0f, 15.0f, 2.0f, 1.1f);
     CameraWidget::updateZoom(requested_zoom);
 
     if (has_wide_cam) {
