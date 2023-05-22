@@ -11,7 +11,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
 from tools.joystick.bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
-
+from tools.joystick.bodyav import yoloh, yolow
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -55,17 +55,48 @@ async def yolo(app):
     print(app['mutable_vals']['yolo'])
     await asyncio.sleep(0.1)
 
+def is_object_centered(object, yolo_objects, width, tol=0.1):
+  for yolo_object in yolo_objects:
+    if yolo_object['pred_class'] == object:
+      if 0.5-tol < ((yolo_object['pt1'][0] + yolo_object['pt2'][0]) / 2 / width) < 0.5+tol:
+        return True
+  return False
+
+async def go_to_object(app):
+  cnt = 0
+  while True:
+    if app['mutable_vals']['object']:
+      yolo_objects = app['mutable_vals']['yolo']
+      if is_object_centered(app['mutable_vals']['object'], yolo_objects, yolow):
+        dat = messaging.new_message('testJoystick')
+        for _ in range(30):
+          dat.testJoystick.axes = [-1, 0]
+          dat.testJoystick.buttons = [False]
+          pm.send('testJoystick', dat)
+        print('person found!')
+      elif len (yolo_objects) > 0:
+        dat = messaging.new_message('testJoystick')
+        for _ in range(30):
+          dat.testJoystick.axes = [0, 1]
+          dat.testJoystick.buttons = [False]
+          pm.send('testJoystick', dat)
+        cnt += 1
+        print('searching')
+      await asyncio.sleep(0.05)
 
 async def start_background_tasks(app):
   app['bgtask_dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
   app['bgtask_dummy_yolo'] = asyncio.create_task(yolo(app))
+  app['bgtask_dummy_go_to_object'] = asyncio.create_task(go_to_object(app))
 
 
 async def stop_background_tasks(app):
   app['bgtask_dummy_controls_msg'].cancel()
   app['bgtask_dummy_yolo'].cancel()
+  app['bgtask_dummy_go_to_object'].cancel()
   await app['bgtask_dummy_controls_msg']
   await app['bgtask_dummy_yolo']
+  await app['bgtask_dummy_go_to_object']
 
 
 async def control_body(data):
@@ -80,6 +111,7 @@ async def control_body(data):
 
 async def offer(request):
   logger.info("\n\n\nnewoffer!\n\n")
+
   params = await request.json()
   offer = RTCSessionDescription(sdp=params["sdp"], type=params["type"])
   speaker = WebClientSpeaker()
@@ -188,6 +220,7 @@ if __name__ == "__main__":
   ssl_context.load_cert_chain("cert.pem", "key.pem")
   app = web.Application()
   app['mutable_vals'] = {}
+  # app['mutable_vals']['object'] = 'person'
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
