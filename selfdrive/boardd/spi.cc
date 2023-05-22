@@ -94,7 +94,7 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   }
 
   // get hw UID/serial
-  ret = control_read(0xc3, 0, 0, uid, uid_len, 1000);
+  ret = control_read(0xc3, 0, 0, uid, uid_len, 100);
   if (ret == uid_len) {
     std::stringstream stream;
     for (int i = 0; i < uid_len; i++) {
