@@ -77,6 +77,7 @@ public:
   static std::map<std::string, std::string> get_init_logs() {
     std::map<std::string, std::string> ret = {
       {"/BUILD", util::read_file("/BUILD")},
+      {"lsblk", util::check_output("lsblk -o NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL")},
     };
 
     std::string bs = util::check_output("abctl --boot_slot");
