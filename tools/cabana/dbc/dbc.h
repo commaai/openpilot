@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <QList>
 #include <QMetaType>
 #include <QString>
@@ -50,7 +51,8 @@ namespace cabana {
     bool is_signed;
     double factor, offset;
     bool is_little_endian;
-    QString min, max, unit;
+    double min, max;
+    QString unit;
     QString comment;
     ValueDescription val_desc;
     int precision = 0;
@@ -85,3 +87,5 @@ int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
 inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
+inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }
+

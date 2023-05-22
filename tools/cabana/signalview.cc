@@ -124,12 +124,12 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
-          case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
-          case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::Offset: return doubleToString(item->sig->offset);
+          case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
           case Item::Comment: return item->sig->comment;
-          case Item::Min: return item->sig->min;
-          case Item::Max: return item->sig->max;
+          case Item::Min: return doubleToString(item->sig->min);
+          case Item::Max: return doubleToString(item->sig->max);
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
@@ -166,8 +166,8 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Factor: s.factor = value.toDouble(); break;
     case Item::Unit: s.unit = value.toString(); break;
     case Item::Comment: s.comment = value.toString(); break;
-    case Item::Min: s.min = value.toString(); break;
-    case Item::Max: s.max = value.toString(); break;
+    case Item::Min: s.min = value.toDouble(); break;
+    case Item::Max: s.max = value.toDouble(); break;
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
@@ -230,7 +230,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
     msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = 0, .max = std::pow(2, size) - 1};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
@@ -284,8 +284,12 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
+
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
   double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  double_validator->setLocale(locale);  // Match locale of QString::toDouble() instead of system
+
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
 }
