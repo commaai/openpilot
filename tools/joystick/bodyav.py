@@ -14,7 +14,7 @@ from pydub import AudioSegment
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from system.camerad.snapshot.snapshot import get_yuv
 
-from run_onnx import annotate_img
+from tools.joystick.run_onnx import annotate_img
 
 IMG_H, IMG_W = 604, 964
 yuv = np.zeros((int(IMG_H * 1.5), IMG_W), dtype=np.uint8)
@@ -26,6 +26,7 @@ SOUNDS = {
 }
 
 yoloh, yolow = 416, 640
+
 
 def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
@@ -54,8 +55,8 @@ class BodyVideo(VideoStreamTrack):
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
         y = y[::2, ::2]
         yolo_preds = self.app['mutable_vals']['yolo']
-        y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow)/2), int((y.shape[0] - yoloh)/2)])
-        
+        y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow) / 2), int((y.shape[0] - yoloh) / 2)])
+
         u = u.reshape(u.shape[0] // 2, -1)
         v = v.reshape(v.shape[0] // 2, -1)
         yuv[:IMG_H, :] = y
@@ -69,7 +70,6 @@ class BodyVideo(VideoStreamTrack):
         # print(res)
         # # cropped = annotate_img(cropped, res)
         # frame = VideoFrame.from_ndarray(cropped, format="rgb24")
-
 
     pts, time_base = await self.next_timestamp()
     frame.pts = pts

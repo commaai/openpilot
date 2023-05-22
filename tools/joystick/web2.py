@@ -10,7 +10,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
+from tools.joystick.bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
 
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
@@ -52,7 +52,7 @@ async def yolo(app):
       vego = sm['carState'].vEgo
       if abs(vego) < 0.05:
         app['mutable_vals']['yolo'] = msg
-    print(app['mutable_vals']['yolo']) 
+    print(app['mutable_vals']['yolo'])
     await asyncio.sleep(0.1)
 
 
