@@ -4,7 +4,7 @@ from math import fabs, exp
 from panda import Panda
 
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, get_safety_config
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
 from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
@@ -130,7 +130,6 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
@@ -140,7 +139,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1607. + STD_CARGO_KG
       ret.wheelbase = 2.69
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      tire_stiffness_factor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
+      ret.tireStiffnessFactor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
       ret.centerToFront = ret.wheelbase * 0.45  # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
@@ -155,6 +154,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.HOLDEN_ASTRA:
       ret.mass = 1363. + STD_CARGO_KG
@@ -162,6 +162,7 @@ class CarInterface(CarInterfaceBase):
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerRatio = 15.7
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
@@ -170,12 +171,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.BUICK_LACROSSE:
       ret.mass = 1712. + STD_CARGO_KG
       ret.wheelbase = 2.91
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BUICK_REGAL:
@@ -183,12 +186,14 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83  # 111.4 inches in meters
       ret.steerRatio = 14.4  # guess for tourx
       ret.centerToFront = ret.wheelbase * 0.4  # guess for tourx
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.ESCALADE:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
@@ -196,6 +201,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.95  # 116 inches in meters
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.ESCALADE_ESV:
@@ -207,14 +213,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
-      tire_stiffness_factor = 1.0
 
     elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
-      tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -223,7 +227,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.75
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
-      tire_stiffness_factor = 1.0
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.EQUINOX:
@@ -231,6 +234,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.TRAILBLAZER:
@@ -238,14 +242,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.64
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
-      tire_stiffness_factor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     return ret
 

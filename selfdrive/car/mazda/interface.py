@@ -2,7 +2,7 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
-    tire_stiffness_factor = 0.70   # not optimized yet
+    ret.tireStiffnessFactor = 0.70   # not optimized yet
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -45,11 +45,6 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     return ret
 
