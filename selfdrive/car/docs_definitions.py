@@ -1,4 +1,3 @@
-import abc
 import re
 from collections import namedtuple
 from dataclasses import dataclass, field
@@ -40,11 +39,10 @@ class PartType(Enum):
 
 
 @dataclass
-class Part(abc.ABC):
+class Part:
   name: str
 
   @property
-  @abc.abstractmethod
   def type(self) -> PartType:
     raise NotImplementedError
 
