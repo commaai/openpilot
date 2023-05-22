@@ -54,8 +54,9 @@ class BodyVideo(VideoStreamTrack):
       else:
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
         y = y[::2, ::2]
-        yolo_preds = self.app['mutable_vals']['yolo']
-        y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow) / 2), int((y.shape[0] - yoloh) / 2)])
+        if 'yolo' in self.app['mutable_vals']:
+          yolo_preds = self.app['mutable_vals']['yolo']
+          y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow) / 2), int((y.shape[0] - yoloh) / 2)])
 
         u = u.reshape(u.shape[0] // 2, -1)
         v = v.reshape(v.shape[0] // 2, -1)

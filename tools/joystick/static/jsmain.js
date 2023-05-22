@@ -153,8 +153,22 @@ function start() {
         batteryLevel();
         $(".sound").click((e)=>{
             const sound = $(e.target).attr('id').replace('sound-', '')
-            dc.send(JSON.stringify({type: 'play_sound', sound}));;
-        })
+            dc.send(JSON.stringify({type: 'play_sound', sound}));
+        });
+        $("#show-yolo").on("change", ()=>{
+            let showYolo = $("#show-yolo").prop('checked');
+            if (showYolo === false){
+                $("#find-person").prop('checked', false);
+                dc.send(JSON.stringify({type: 'find_person', 'value': false}));
+            }
+            dc.send(JSON.stringify({type: 'show_yolo', 'value': showYolo}));
+            $("#find-person").prop('disabled', !showYolo);
+        });
+        $("#find-person").on("change", ()=>{
+            let findPerson = $("#find-person").prop('checked');
+            dc.send(JSON.stringify({type: 'find_person', 'value': findPerson}));
+        });
+        
     };
     let val_print_idx = 0;
     dc.onmessage = function(evt) {
@@ -236,6 +250,5 @@ $("#plan-button").click(async function(){
       }
     execute();
 });
-
 
 start();

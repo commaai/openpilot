@@ -120,10 +120,10 @@ def annotate_img(img, res, offsets=[0, 0]):
   for i, opt in enumerate(res):
     # color = COLORS[i%len(COLORS)]
     color = (255, 255, 255)
-    thickness = 3
+    thickness = 2
     color = [color[2], color[1], color[0]]
     img = cv2.rectangle(np.array(img), (opt['pt1'][0] + offsets[0], opt['pt1'][1] + offsets[1]), (opt['pt2'][0] + offsets[0], opt['pt2'][1] + offsets[1]), color=color, thickness=thickness)
-    img = cv2.putText(np.array(img), opt['pred_class'], (opt['pt1'][0] + offsets[0], opt['pt1'][1] + offsets[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+    img = cv2.putText(np.array(img), opt['pred_class'], (opt['pt1'][0] + offsets[0], opt['pt1'][1] + offsets[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
   return img
 
 

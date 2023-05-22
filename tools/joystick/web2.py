@@ -11,7 +11,7 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
 from tools.joystick.bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
-from tools.joystick.bodyav import yoloh, yolow
+from tools.joystick.bodyav import yolow
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -23,66 +23,90 @@ pcs = set()
 
 pm = messaging.PubMaster(['testJoystick'])
 sm = messaging.SubMaster(['carState', 'logMessage'])
+FIND_OBJ = 'person'
 
 
 async def index(request):
   content = open("./static/index.html", "r").read()
-  request.app['mutable_vals']['last_send_time'] = time.monotonic()
+  now = time.monotonic()
+  request.app['mutable_vals']['last_send_time'] = now
+  request.app['mutable_vals']['last_override_time'] = now
+  request.app['mutable_vals']['prev_command'] = []
+  request.app['mutable_vals']['show_yolo'] = False
+  request.app['mutable_vals']['find_person'] = False
+
   return web.Response(content_type="text/html", text=content)
+
+
+async def control_body(data, app):
+  now = time.monotonic()
+  if (data['type'] == 'dummy_controls') and (now < (app['mutable_vals']['last_send_time'] + 0.2)):
+    return
+  if data['type'].startswith('yolo') and (now < (app['mutable_vals']['last_override_time'] + 0.2)):
+    return
+  if (data['type'] == 'control_command') and (app['mutable_vals']['prev_command'] == [data['x'], data['y']] and data['x'] == 0 and data['y'] == 0):
+    return
+  
+  
+  print(data)
+  x = max(-1.0, min(1.0, data['x']))
+  y = max(-1.0, min(1.0, data['y']))
+  dat = messaging.new_message('testJoystick')
+  dat.testJoystick.axes = [x, y]
+  dat.testJoystick.buttons = [False]
+  pm.send('testJoystick', dat)
+  app['mutable_vals']['last_send_time'] = now
+  if (data['type'] == 'control_command'):
+    app['mutable_vals']['last_override_time'] = now
+    app['mutable_vals']['prev_command'] = [data['x'], data['y']]
+    
 
 
 async def dummy_controls_msg(app):
   while True:
-    if 'remote_channel' in app['mutable_vals']:
+    if 'last_send_time' in app['mutable_vals']:
       this_time = time.monotonic()
-      if (app['mutable_vals']['last_send_time'] + 0.5) < this_time:
-        dat = messaging.new_message('testJoystick')
-        dat.testJoystick.axes = [0, 0]
-        dat.testJoystick.buttons = [False]
-        pm.send('testJoystick', dat)
-    await asyncio.sleep(0.1)
+      if (app['mutable_vals']['last_send_time'] + 0.2) < this_time:
+        await control_body({'type': 'dummy_controls', 'x': 0, 'y': 0}, app)
+    await asyncio.sleep(0.2)
 
 
 async def yolo(app):
   while True:
-    app['mutable_vals']['yolo'] = []
-    sm.update(timeout=10)
-    if sm.updated['carState'] and sm['logMessage']:
-      msg = json.loads(sm['logMessage'])
-      vego = sm['carState'].vEgo
-      if abs(vego) < 0.05:
+    if ('last_send_time' in app['mutable_vals']) and app['mutable_vals']['show_yolo']:
+      # app['mutable_vals']['yolo'] = []
+      sm.update(timeout=0)
+      if sm['logMessage']:
+        msg = json.loads(sm['logMessage'])
         app['mutable_vals']['yolo'] = msg
-    print(app['mutable_vals']['yolo'])
     await asyncio.sleep(0.1)
 
-def is_object_centered(object, yolo_objects, width, tol=0.1):
-  for yolo_object in yolo_objects:
-    if yolo_object['pred_class'] == object:
-      if 0.5-tol < ((yolo_object['pt1'][0] + yolo_object['pt2'][0]) / 2 / width) < 0.5+tol:
-        return True
-  return False
+
+def get_yolo_plan(app, width, tol=0.1):
+  if ('last_send_time' in app['mutable_vals']) and ('yolo' in app['mutable_vals']) and ('find_person' in app['mutable_vals']) and app['mutable_vals']['find_person']:
+    find_obj = FIND_OBJ
+    yolo_objects = app['mutable_vals']['yolo']
+    for yolo_object in yolo_objects:
+      if yolo_object['pred_class'] == find_obj:
+        pos = ((yolo_object['pt1'][0] + yolo_object['pt2'][0]) / 2 / width)
+        if 0.5 - tol < pos < 0.5 + tol:
+          return {'type': 'yolo_person_found', 'x': -1, 'y': 0}
+        elif 0.5 - tol > pos:
+          return {'type': 'yolo_escaping_left', 'x': 0, 'y': 1}
+        else:
+          return {'type': 'yolo_escaping_right', 'x': 0, 'y': -1}
+    return {'type': 'yolo_searching', 'x': 0, 'y': -1}
+  return None
+
 
 async def go_to_object(app):
-  cnt = 0
+  prev_plan = [0, 0]
   while True:
-    if app['mutable_vals']['object']:
-      yolo_objects = app['mutable_vals']['yolo']
-      if is_object_centered(app['mutable_vals']['object'], yolo_objects, yolow):
-        dat = messaging.new_message('testJoystick')
-        for _ in range(30):
-          dat.testJoystick.axes = [-1, 0]
-          dat.testJoystick.buttons = [False]
-          pm.send('testJoystick', dat)
-        print('person found!')
-      elif len (yolo_objects) > 0:
-        dat = messaging.new_message('testJoystick')
-        for _ in range(30):
-          dat.testJoystick.axes = [0, 1]
-          dat.testJoystick.buttons = [False]
-          pm.send('testJoystick', dat)
-        cnt += 1
-        print('searching')
-      await asyncio.sleep(0.05)
+    plan = get_yolo_plan(app, yolow)
+    if plan:
+      await control_body(plan, app)
+    await asyncio.sleep(0.05)
+
 
 async def start_background_tasks(app):
   app['bgtask_dummy_controls_msg'] = asyncio.create_task(dummy_controls_msg(app))
@@ -97,16 +121,6 @@ async def stop_background_tasks(app):
   await app['bgtask_dummy_controls_msg']
   await app['bgtask_dummy_yolo']
   await app['bgtask_dummy_go_to_object']
-
-
-async def control_body(data):
-  # print(data)
-  x = max(-1.0, min(1.0, data['x']))
-  y = max(-1.0, min(1.0, data['y']))
-  dat = messaging.new_message('testJoystick')
-  dat.testJoystick.axes = [x, y]
-  dat.testJoystick.buttons = [False]
-  pm.send('testJoystick', dat)
 
 
 async def offer(request):
@@ -134,8 +148,7 @@ async def offer(request):
     async def on_message(message):
       data = json.loads(message)
       if data['type'] == 'control_command':
-        await control_body(data)
-        request.app['mutable_vals']['last_send_time'] = time.monotonic()
+        await control_body(data, request.app)
         times = {
           'type': 'ping_time',
           'incoming_time': data['dt'],
@@ -148,6 +161,12 @@ async def offer(request):
           channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
       if data['type'] == 'play_sound':
         await play_sound(data['sound'])
+      if data['type'] == 'show_yolo':
+        request.app['mutable_vals']['show_yolo'] = data['value']
+        request.app['mutable_vals']['yolo'] = []
+      if data['type'] == 'find_person':
+        request.app['mutable_vals']['find_person'] = data['value']
+
 
   @pc.on("connectionstatechange")
   async def on_connectionstatechange():
@@ -220,7 +239,6 @@ if __name__ == "__main__":
   ssl_context.load_cert_chain("cert.pem", "key.pem")
   app = web.Application()
   app['mutable_vals'] = {}
-  # app['mutable_vals']['object'] = 'person'
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
