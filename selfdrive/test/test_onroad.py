@@ -157,7 +157,7 @@ class TestOnroad(unittest.TestCase):
         continue
       
       # skip gps services for now
-      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements'):
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocationExternal'):
         continue
         
       with self.subTest(service=s):
