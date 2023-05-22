@@ -16,7 +16,7 @@ from system.swaglog import cloudlog
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(panda.get_mcu_type().config.app_path)
+    return Panda.get_signature_from_firmware(panda.get_mcu_type().config.app_fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
