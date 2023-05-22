@@ -248,10 +248,8 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+        ${{ env.RUN }} -e MAPBOX_TOKEN=${{ secrets.MAPBOX_TOKEN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
-      env:
-        MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
     - name: Print diff
       id: print-diff
       if: always()
