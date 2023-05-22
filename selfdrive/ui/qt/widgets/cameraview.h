@@ -80,7 +80,7 @@ protected:
 
   float zoom_transition = 0;
   bool ready_to_switch_cams = false;
-  float transition_time = 0;
+  float zoom_time = 0;
 
   // Calibration
   float x_offset = 0;
