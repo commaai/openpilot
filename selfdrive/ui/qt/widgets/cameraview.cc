@@ -219,14 +219,16 @@ void CameraWidget::updateFrameMat() {
         ready_to_switch_cams = fabs(zoom_transition - 0) < 1e-3;
 
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
+//        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
+        zoom = requested_zoom;
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
         zoom_transition = 0;
         ready_to_switch_cams = true;
 
         intrinsic_matrix = fcam_intrinsic_matrix;
-        zoom = 1.1;
+//        zoom = 1.1;
+        zoom = requested_zoom;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
@@ -261,6 +263,10 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
+}
+
+void CameraWidget::updateZoom(const float _zoom) {
+  requested_zoom = _zoom;
 }
 
 void CameraWidget::paintGL() {
