@@ -213,7 +213,6 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-
   auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
