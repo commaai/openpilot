@@ -227,33 +227,44 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   // Unpaired, registration prompt layout
 
-  QWidget* finishRegistration = new QWidget;
+  QFrame* finishRegistration = new QFrame;
   finishRegistration->setObjectName("primeWidget");
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setContentsMargins(30, 75, 30, 45);
-  finishRegistationLayout->setSpacing(0);
+  finishRegistationLayout->setSpacing(38);
+  finishRegistationLayout->setContentsMargins(64, 56, 64, 48);
 
-  QLabel* registrationTitle = new QLabel(tr("Finish Setup"));
-  registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold; margin-left: 55px;");
-  finishRegistationLayout->addWidget(registrationTitle);
+  QHBoxLayout *titleLayout = new QHBoxLayout;
+  titleLayout->setSpacing(32);
+  titleLayout->setContentsMargins(0, 0, 0, 0);
+  {
+    QPixmap pixmap = QPixmap("../assets/img_registration.svg").scaledToWidth(75, Qt::SmoothTransformation);
+    QLabel* icon = new QLabel;
+    icon->setPixmap(pixmap);
+    icon->setFixedWidth(75);
+    icon->setAlignment(Qt::AlignCenter);
+    titleLayout->addWidget(icon);
 
-  finishRegistationLayout->addSpacing(30);
+    QLabel* title = new QLabel(tr("Finish Setup"));
+    title->setStyleSheet("font-size: 75px; font-weight: bold;");
+    titleLayout->addWidget(title);
+  }
+  finishRegistationLayout->addLayout(titleLayout);
 
   QLabel* registrationDescription = new QLabel(tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
   registrationDescription->setWordWrap(true);
-  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light; margin-left: 55px;");
+  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light;");
   finishRegistationLayout->addWidget(registrationDescription);
 
   finishRegistationLayout->addStretch();
 
   QPushButton* pair = new QPushButton(tr("Pair device"));
-  pair->setFixedHeight(220);
   pair->setStyleSheet(R"(
     QPushButton {
       font-size: 55px;
-      font-weight: 400;
+      font-weight: 500;
       border-radius: 10px;
       background-color: #465BEA;
+      padding: 60px 166px;
     }
     QPushButton:pressed {
       background-color: #3049F4;
