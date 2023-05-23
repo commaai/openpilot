@@ -136,21 +136,23 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: ExperimentalModeButton, DriveStats
-    QWidget* left_widget = new QWidget(this);
-    QVBoxLayout* left_column = new QVBoxLayout(left_widget);
-    left_column->setContentsMargins(0, 0, 0, 0);
-    left_column->setSpacing(30);
+    // left: DriveStats
+    home_layout->addWidget(new DriveStats, 1);
+
+    // right: ExperimentalModeButton, SetupWidget
+    QWidget* right_widget = new QWidget(this);
+    QVBoxLayout* right_column = new QVBoxLayout(right_widget);
+    right_column->setContentsMargins(0, 0, 0, 0);
+    right_column->setSpacing(30);
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
     QObject::connect(experimental_mode, &ExperimentalModeButton::openSettings, this, &OffroadHome::openSettings);
-    left_column->addWidget(experimental_mode, 1);
-    left_column->addWidget(new DriveStats, 1);
+    right_column->addWidget(experimental_mode, 1);
 
-    home_layout->addWidget(left_widget, 1);
+    right_column->addWidget(new SetupWidget, 1);
 
-    // right: SetupWidget
-    home_layout->addWidget(new SetupWidget);
+    right_widget->setFixedWidth(750);
+    home_layout->addWidget(right_widget, 1);
   }
   center_layout->addWidget(home_widget);
 
@@ -170,7 +172,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   setStyleSheet(R"(
     * {
-     color: white;
+      color: white;
     }
     OffroadHome {
       background-color: black;
