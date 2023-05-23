@@ -1071,6 +1071,29 @@ This may take up to a minute.</source>
     </message>
 </context>
 <context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uploading your training data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your driving data helps improve openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
