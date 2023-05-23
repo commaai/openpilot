@@ -1,5 +1,4 @@
 import re
-from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -39,12 +38,11 @@ class PartType(Enum):
   mount = "Mount"
 
 
-class Part(ABC):
-  def __init__(self, name: str):
-    self.name = name
+@dataclass
+class Part:
+  name: str
 
   @property
-  @abstractmethod
   def type(self) -> PartType:
     raise NotImplementedError
 
