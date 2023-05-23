@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarPart, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -33,6 +33,7 @@ class CarControllerParams:
 
 class ToyotaFlags(IntFlag):
   HYBRID = 1
+  SMART_DSU = 2
 
 
 class CAR:
@@ -76,6 +77,7 @@ class CAR:
 
   # Lexus
   LEXUS_CTH = "LEXUS CT HYBRID 2018"
+  LEXUS_ES = "LEXUS ES 2018"
   LEXUS_ESH = "LEXUS ES HYBRID 2018"
   LEXUS_ES_TSS2 = "LEXUS ES 2019"
   LEXUS_ESH_TSS2 = "LEXUS ES HYBRID 2019"
@@ -100,7 +102,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  harness: Enum = Harness.toyota
+  car_parts: CarParts = CarParts.common([CarPart.toyota])
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -140,7 +142,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.HIGHLANDERH: ToyotaCarInfo("Toyota Highlander Hybrid 2017-19"),
   CAR.HIGHLANDERH_TSS2: ToyotaCarInfo("Toyota Highlander Hybrid 2020-23"),
   CAR.PRIUS: [
-    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", "https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+    ToyotaCarInfo("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ToyotaCarInfo("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
   ],
@@ -154,7 +156,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota RAV4 2017-18")
   ],
   CAR.RAV4H: [
-    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", "https://youtu.be/LhT5VzJVfNI?t=26"),
+    ToyotaCarInfo("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26"),
     ToyotaCarInfo("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
   ],
   CAR.RAV4_TSS2: ToyotaCarInfo("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
@@ -168,7 +170,8 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
 
   # Lexus
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
-  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18", "Lexus Safety System+"),
+  CAR.LEXUS_ES: ToyotaCarInfo("Lexus ES 2017-18"),
+  CAR.LEXUS_ESH: ToyotaCarInfo("Lexus ES Hybrid 2017-18"),
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
@@ -176,7 +179,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
   CAR.LEXUS_NXH_TSS2: ToyotaCarInfo("Lexus NX Hybrid 2020-21"),
-  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2017-20"),
+  CAR.LEXUS_RC: ToyotaCarInfo("Lexus RC 2018-20"),
   CAR.LEXUS_RX: [
     ToyotaCarInfo("Lexus RX 2016", "Lexus Safety System+"),
     ToyotaCarInfo("Lexus RX 2017-19"),
@@ -192,23 +195,24 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
 # (addr, cars, bus, 1/freq*100, vl)
 STATIC_DSU_MSGS = [
   (0x128, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.AVALON), 1,   3, b'\xf4\x01\x90\x83\x00\x37'),
-  (0x128, (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH), 1,   3, b'\x03\x00\x20\x00\x00\x52'),
-  (0x141, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 1,   2, b'\x00\x00\x00\x46'),
-  (0x160, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 1,   7, b'\x00\x00\x08\x12\x01\x31\x9c\x51'),
-  (0x161, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.AVALON, CAR.LEXUS_RX, CAR.PRIUS_V), 1,   7, b'\x00\x1e\x00\x00\x00\x80\x07'),
+  (0x128, (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH), 1,   3, b'\x03\x00\x20\x00\x00\x52'),
+  (0x141, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 1,   2, b'\x00\x00\x00\x46'),
+  (0x160, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 1,   7, b'\x00\x00\x08\x12\x01\x31\x9c\x51'),
+  (0x161, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.AVALON, CAR.LEXUS_RX, CAR.PRIUS_V, CAR.LEXUS_ES), 1,   7, b'\x00\x1e\x00\x00\x00\x80\x07'),
   (0X161, (CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH), 1,  7, b'\x00\x1e\x00\xd4\x00\x00\x5b'),
-  (0x283, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,   3, b'\x00\x00\x00\x00\x00\x00\x8c'),
+  (0x283, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,   3, b'\x00\x00\x00\x00\x00\x00\x8c'),
   (0x2E6, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH), 0,   3, b'\xff\xf8\x00\x08\x7f\xe0\x00\x4e'),
   (0x2E7, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH), 0,   3, b'\xa8\x9c\x31\x9c\x00\x00\x00\x02'),
   (0x33E, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH), 0,  20, b'\x0f\xff\x26\x40\x00\x1f\x00'),
-  (0x344, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,   5, b'\x00\x00\x01\x00\x00\x00\x00\x50'),
+  (0x344, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,   5, b'\x00\x00\x01\x00\x00\x00\x00\x50'),
   (0x365, (CAR.PRIUS, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.HIGHLANDERH), 0,  20, b'\x00\x00\x00\x80\x03\x00\x08'),
-  (0x365, (CAR.RAV4, CAR.RAV4H, CAR.COROLLA, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,  20, b'\x00\x00\x00\x80\xfc\x00\x08'),
+  (0x365, (CAR.RAV4, CAR.RAV4H, CAR.COROLLA, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,  20, b'\x00\x00\x00\x80\xfc\x00\x08'),
   (0x366, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.HIGHLANDERH), 0,  20, b'\x00\x00\x4d\x82\x40\x02\x00'),
   (0x366, (CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0,  20, b'\x00\x72\x07\xff\x09\xfe\x00'),
+  (0x366, (CAR.LEXUS_ES,), 0,  20, b'\x00\x95\x07\xfe\x08\x05\x00'),
   (0x470, (CAR.PRIUS, CAR.LEXUS_RXH), 1, 100, b'\x00\x00\x02\x7a'),
-  (0x470, (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.RAV4H, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.PRIUS_V), 1,  100, b'\x00\x00\x01\x79'),
-  (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
+  (0x470, (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.RAV4H, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.PRIUS_V), 1,  100, b'\x00\x00\x01\x79'),
+  (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
 TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
@@ -327,6 +331,7 @@ FW_VERSIONS = {
   CAR.AVALON_TSS2: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152607240\x00\x00\x00\x00\x00\x00',
+      b'\x01F152607250\x00\x00\x00\x00\x00\x00',
       b'\x01F152607280\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
@@ -334,6 +339,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630742000\x00\x00\x00\x00',
+      b'\x01896630743000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F6201200\x00\x00\x00\x00',
@@ -542,6 +548,8 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966306Q5000\x00\x00\x00\x00',
       b'\x018966306Q9000\x00\x00\x00\x00',
+      b'\x018966306R3000\x00\x00\x00\x00',
+      b'\x018966306R8000\x00\x00\x00\x00',
       b'\x018966306T3100\x00\x00\x00\x00',
       b'\x018966306T3200\x00\x00\x00\x00',
       b'\x018966306T4000\x00\x00\x00\x00',
@@ -554,9 +562,11 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0602100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F0602200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F0602300\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F3305200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3305300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F3305500\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.CAMRYH_TSS2: {
@@ -725,22 +735,28 @@ FW_VERSIONS = {
     ],
   },
   CAR.CHRH_TSS2: {
-     (Ecu.eps, 0x7a1, None): [
-       b'8965B10092\x00\x00\x00\x00\x00\x00',
-     ],
-     (Ecu.abs, 0x7b0, None): [
-       b'F152610041\x00\x00\x00\x00\x00\x00',
-     ],
-     (Ecu.engine, 0x700, None): [
-       b'\x0189663F438000\x00\x00\x00\x00',
-     ],
-     (Ecu.fwdRadar, 0x750, 15): [
-       b'\x018821FF410500\x00\x00\x00\x00',
-     ],
-     (Ecu.fwdCamera, 0x750, 109): [
-       b'\x028646FF413100\x00\x00\x00\x008646GF411100\x00\x00\x00\x00',
-     ],
-   },
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B10092\x00\x00\x00\x00\x00\x00',
+      b'8965B10091\x00\x00\x00\x00\x00\x00',
+      b'8965B10111\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152610041\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x700, None): [
+      b'\x0189663F438000\x00\x00\x00\x00',
+      b'\x02896631025000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x0289663F453000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 15): [
+      b'\x018821FF410500\x00\x00\x00\x00',
+      b'\x018821FF410300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 109): [
+      b'\x028646FF413100\x00\x00\x00\x008646GF411100\x00\x00\x00\x00',
+      b'\x028646FF411100\x00\x00\x00\x008646GF409000\x00\x00\x00\x00',
+    ],
+  },
   CAR.COROLLA: {
     (Ecu.engine, 0x7e0, None): [
       b'\x0230ZC2000\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -908,6 +924,7 @@ FW_VERSIONS = {
       b'\x028966312K6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312L0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q3000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966312Q3100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966312Q4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966312L7000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF1205001\x00\x00\x00\x00',
       b'\x038966312N1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF1203001\x00\x00\x00\x00',
@@ -918,6 +935,7 @@ FW_VERSIONS = {
       b'8965B12451\x00\x00\x00\x00\x00\x00',
       b'8965B16011\x00\x00\x00\x00\x00\x00',
       b'8965B16101\x00\x00\x00\x00\x00\x00',
+      b'8965B16170\x00\x00\x00\x00\x00\x00',
       b'8965B76012\x00\x00\x00\x00\x00\x00',
       b'8965B76050\x00\x00\x00\x00\x00\x00',
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
@@ -945,6 +963,7 @@ FW_VERSIONS = {
       b'F152612D00\x00\x00\x00\x00\x00\x00',
       b'F152616011\x00\x00\x00\x00\x00\x00',
       b'F152616060\x00\x00\x00\x00\x00\x00',
+      b'F152616030\x00\x00\x00\x00\x00\x00',
       b'F152642540\x00\x00\x00\x00\x00\x00',
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
@@ -1057,6 +1076,7 @@ FW_VERSIONS = {
       b'\x01896630E62200\x00\x00\x00\x00',
       b'\x01896630E64100\x00\x00\x00\x00',
       b'\x01896630E64200\x00\x00\x00\x00',
+      b'\x01896630E64400\x00\x00\x00\x00',
       b'\x01896630EB1000\x00\x00\x00\x00',
       b'\x01896630EB1100\x00\x00\x00\x00',
       b'\x01896630EB1200\x00\x00\x00\x00',
@@ -1099,6 +1119,7 @@ FW_VERSIONS = {
       b'\x01F152648J4000\x00\x00\x00\x00',
       b'\x01F152648J5000\x00\x00\x00\x00',
       b'\x01F152648J6000\x00\x00\x00\x00',
+      b'\x01F15264872700\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896630E67000\x00\x00\x00\x00',
@@ -1716,6 +1737,26 @@ FW_VERSIONS = {
       b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
+  CAR.LEXUS_ES: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\x02333R0000\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152606202\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881513309500\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B33502\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4701200\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F3302200\x00\x00\x00\x00',
+    ],
+  },
   CAR.LEXUS_ESH: {
       (Ecu.engine, 0x7e0, None): [
         b'\x02333M4200\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -1977,12 +2018,15 @@ FW_VERSIONS = {
       b'\x01896630ED0000\x00\x00\x00\x00',
       b'\x01896630ED0100\x00\x00\x00\x00',
       b'\x01896630ED6000\x00\x00\x00\x00',
+      b'\x018966348T8000\x00\x00\x00\x00',
       b'\x018966348W5100\x00\x00\x00\x00',
       b'\x018966348W9000\x00\x00\x00\x00',
       b'\x01896634D12000\x00\x00\x00\x00',
       b'\x01896634D12100\x00\x00\x00\x00',
       b'\x01896634D43000\x00\x00\x00\x00',
       b'\x01896634D44000\x00\x00\x00\x00',
+      b'\x018966348X0000\x00\x00\x00\x00',
+      b'\x01896630ED5000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
@@ -2008,11 +2052,12 @@ FW_VERSIONS = {
   },
   CAR.LEXUS_RXH_TSS2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X5000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348X8000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152648831\x00\x00\x00\x00\x00\x00',
@@ -2145,6 +2190,7 @@ DBC = {
   CAR.RAV4_TSS2_2023: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.COROLLA_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.COROLLAH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  CAR.LEXUS_ES: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
   CAR.LEXUS_ES_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_ESH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.LEXUS_ESH: dbc_dict('toyota_new_mc_pt_generated', 'toyota_adas'),
