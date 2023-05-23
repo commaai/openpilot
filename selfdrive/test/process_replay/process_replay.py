@@ -145,7 +145,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     can = DummySocket()
     sendcan = DummySocket()
 
-    canmsgs = [msg for msg in msgs if msg.which() == 'can']
+    canmsgs = [msg for msg in msgs if msg.which() == "can"]
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
@@ -167,23 +167,7 @@ def controlsd_rcv_callback(msg, CP, cfg, frame):
 
 
 def radar_rcv_callback(msg, CP, cfg, frame):
-  if msg.which() != "can":
-    return False
-  elif CP.radarUnavailable:
-    return True
-
-  radar_msgs = {
-    "honda": [0x445], "toyota": [0x19f, 0x22f], "gm": [0x474], "chrysler": [0x2d4]
-  }.get(CP.carName, None)
-
-  if radar_msgs is None:
-    raise NotImplementedError
-
-  for m in msg.can:
-    if m.src == 1 and m.address in radar_msgs:
-      return True
-  
-  return False
+  return msg.which() == "can"
 
 
 def calibration_rcv_callback(msg, CP, cfg, frame):
