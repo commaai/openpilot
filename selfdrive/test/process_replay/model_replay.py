@@ -25,7 +25,7 @@ SEGMENT = 6
 MAX_FRAMES = 100 if PC else 600
 NAV_FRAMES = 50
 
-NO_NAV = "NO_NAV" in os.environ  # TODO: make map renderer work in CI
+NO_NAV = "NO_NAV" in os.environ
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
