@@ -211,6 +211,7 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
+  auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
@@ -242,6 +243,9 @@ class CarInfo:
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
 
+    if self.auto_resume is None:
+      self.auto_resume = CP.autoResumeSng
+
     # hardware column
     hardware_col = "None"
     if self.car_parts.parts:
@@ -258,7 +262,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
-      Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
+      Column.AUTO_RESUME: Star.FULL if self.auto_resume else Star.EMPTY,
       Column.HARDWARE: hardware_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
@@ -290,7 +294,7 @@ class CarInfo:
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.autoResumeSng:
+      elif self.auto_resume:
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
