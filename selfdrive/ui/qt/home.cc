@@ -141,6 +141,16 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QStackedWidget *left_widget = new QStackedWidget(this);
     left_widget->addWidget(new MapPanel);
     left_widget->addWidget(new PrimeAdWidget);
+    left_widget->setStyleSheet(R"(
+      QStackedWidget {
+        background-color: #333333;
+        border-radius: 10px;
+      }
+      QPushButton {
+        background-color: none;
+        border: none;
+      }
+    )");
 
     left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
     connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
