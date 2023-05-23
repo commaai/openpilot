@@ -43,6 +43,15 @@ class Part(ABC):
   def __init__(self, name: str):
     self.name = name
 
+  def __str__(self):
+    return self.name + self.type.value
+
+  def __repr__(self):
+    return self.name + self.type.value
+
+  def __eq__(self, other):
+    return self.name == other.name and self.type.value == other.type.value
+
   @property
   @abstractmethod
   def type(self) -> PartType:
