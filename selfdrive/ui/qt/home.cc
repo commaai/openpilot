@@ -2,6 +2,7 @@
 
 #include <QHBoxLayout>
 #include <QMouseEvent>
+#include <QStackedWidget>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
@@ -136,8 +137,17 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: DriveStats
-    home_layout->addWidget(new DriveStats, 1);
+    // left: DriveStats, PrimeAdWidget
+    QStackedWidget *left_widget = new QStackedWidget(this);
+    left_widget->addWidget(new DriveStats);
+    left_widget->addWidget(new PrimeAdWidget);
+
+    left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
+    connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
+      left_widget->setCurrentIndex(prime_type ? 0 : 1);
+    });
+
+    home_layout->addWidget(left_widget, 1);
 
     // right: ExperimentalModeButton, SetupWidget
     QWidget* right_widget = new QWidget(this);
