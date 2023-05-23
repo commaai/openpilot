@@ -7,7 +7,7 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU
+from panda import Panda, PandaDFU, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
 from system.hardware import HARDWARE
@@ -16,7 +16,8 @@ from system.swaglog import cloudlog
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(panda.get_mcu_type().config.app_path)
+    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
@@ -140,9 +141,13 @@ def main() -> NoReturn:
 
       for p in pandas:
         p.close()
+    # TODO: wrap all panda exceptions in a base panda exception
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except Exception:
+      cloudlog.exception("pandad.uncaught_exception")
       continue
 
     first_run = False

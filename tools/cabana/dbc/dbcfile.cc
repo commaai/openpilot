@@ -4,7 +4,6 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <limits>
 #include <numeric>
 #include <sstream>
 
@@ -218,8 +217,8 @@ void DBCFile::parseExtraInfo(const QString &content) {
       }
       if (match.hasMatch()) {
         if (auto s = get_sig(address, match.captured(1))) {
-          s->min = match.captured(8 + offset);
-          s->max = match.captured(9 + offset);
+          s->min = match.captured(8 + offset).toDouble();
+          s->max = match.captured(9 + offset).toDouble();
           s->unit = match.captured(10 + offset);
         }
       }
@@ -257,10 +256,10 @@ QString DBCFile::generateDBC() {
                         .arg(sig->size)
                         .arg(sig->is_little_endian ? '1' : '0')
                         .arg(sig->is_signed ? '-' : '+')
-                        .arg(sig->factor, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig->offset, 0, 'g', std::numeric_limits<double>::digits10)
-                        .arg(sig->min)
-                        .arg(sig->max)
+                        .arg(doubleToString(sig->factor))
+                        .arg(doubleToString(sig->offset))
+                        .arg(doubleToString(sig->min))
+                        .arg(doubleToString(sig->max))
                         .arg(sig->unit);
       if (!sig->comment.isEmpty()) {
         signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
