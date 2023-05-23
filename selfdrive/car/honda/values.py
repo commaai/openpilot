@@ -6,7 +6,7 @@ from cereal import car
 from common.conversions import Conversions as CV
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness, HarnessKit
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPart, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -110,9 +110,9 @@ class HondaCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in HONDA_BOSCH:
-      self.harness_kit = HarnessKit(Harness.bosch_b) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else HarnessKit(Harness.bosch_a)
+      self.car_parts = CarParts.common([CarPart.bosch_b]) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else CarParts.common([CarPart.bosch_a])
     else:
-      self.harness_kit = HarnessKit(Harness.nidec)
+      self.car_parts = CarParts.common([CarPart.nidec])
 
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {

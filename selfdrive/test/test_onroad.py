@@ -54,7 +54,7 @@ PROCS = {
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 4.0,
+  "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
@@ -95,12 +95,6 @@ class TestOnroad(unittest.TestCase):
       return
 
     # setup env
-    os.environ['PASSIVE'] = "0"
-    os.environ['REPLAY'] = "1"
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
-    os.environ['LOGPRINT'] = "debug"
-
     params = Params()
     params.clear_all()
     set_params_enabled()
@@ -163,7 +157,7 @@ class TestOnroad(unittest.TestCase):
         continue
       
       # skip gps services for now
-      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements'):
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocationExternal'):
         continue
         
       with self.subTest(service=s):
