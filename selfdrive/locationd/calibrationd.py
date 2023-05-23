@@ -198,7 +198,7 @@ class Calibrator:
       new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
 
     if len(road_transform_trans) == 3:
-      new_height = road_transform_trans[2]
+      new_height = np.array([road_transform_trans[2]])
     else:
       new_height = HEIGHT_INIT
 
