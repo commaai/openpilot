@@ -296,7 +296,7 @@ class CarInfo:
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.autoResumeSng:
+      elif self.auto_resume:
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:
