@@ -234,13 +234,14 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->addWidget(mainLayout);
 
-  primeAd = new PrimeAdWidget;
-  mainLayout->addWidget(primeAd);
-
   primeUser = new PrimeUserWidget;
   mainLayout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(uiState()->primeType() ? (QWidget*)primeUser : (QWidget*)primeAd);
+  if (uiState()->primeType()) {
+    mainLayout->setCurrentWidget((QWidget*)primeUser);
+  } else {
+    mainLayout->setVisible(false);
+  }
 
   setFixedWidth(750);
   setStyleSheet(R"(
@@ -279,13 +280,15 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
 
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);
+    mainLayout->setVisible(true);
   } else {
     popup->reject();
 
     if (prime_type) {
       mainLayout->setCurrentWidget(primeUser);
+      mainLayout->setVisible(true);
     } else {
-      mainLayout->setCurrentWidget(primeAd);
+      mainLayout->setVisible(false);
     }
   }
 }
