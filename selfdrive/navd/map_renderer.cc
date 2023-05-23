@@ -69,6 +69,11 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
+  if (TEST_MODE && MAPBOX_TOKEN.length() == 0) {
+    fprintf(stderr, "MAPBOX_TOKEN environment variable is not set!\n");
+    exit(1);
+  }
+
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
     //LOGD("new state %d", change);
