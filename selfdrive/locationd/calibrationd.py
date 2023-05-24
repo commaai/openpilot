@@ -152,6 +152,7 @@ class Calibrator:
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
+    # TODO: add height spread check with smooth transition too
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == log.LiveCalibrationData.Status.calibrated:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
       self.cal_status = log.LiveCalibrationData.Status.recalibrating
