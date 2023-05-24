@@ -132,11 +132,15 @@ def setup_quectel(diag: ModemDiag):
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
   assist_data_file = '/tmp/xtra3grc.bin'
-  urllib.request.urlretrieve("http://xtrapath3.izatcloud.net/xtra3grc.bin", assist_data_file)
   try:
-    subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
-  except subprocess.CalledProcessError:
-    cloudlog.exception("rawgps.mmcli_command_failed")
+    urllib.request.urlretrieve("http://xtrapath3.izatcloud.net/xtra3grc.bin", assist_data_file)
+  except urllib.error.URLError:
+    pass
+  if os.path.isfile(assist_data_file):
+    try:
+      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
+    except subprocess.CalledProcessError:
+      cloudlog.exception("rawgps.mmcli_command_failed")
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
