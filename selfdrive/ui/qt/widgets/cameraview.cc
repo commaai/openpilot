@@ -201,10 +201,14 @@ void CameraWidget::updateFrameMat() {
   int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
-    if (active_stream_type == VISION_STREAM_DRIVER) {
-      frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+    if (active_stream_type != VISION_STREAM_WIDE_ROAD) {
+      // Always ready to switch if wide is not active, start at full zoom
       ready_to_switch_cams = true;
       zoom_transition = 1;
+    }
+
+    if (active_stream_type == VISION_STREAM_DRIVER) {
+      frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
@@ -224,10 +228,6 @@ void CameraWidget::updateFrameMat() {
         intrinsic_matrix = ecam_intrinsic_matrix;
         zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_zoom, ecam_to_fcam_zoom * fcam_zoom);
       } else {
-        // Always ready to switch from zoomed narrow to zoomed wide
-        zoom_transition = 1;
-        ready_to_switch_cams = true;
-
         intrinsic_matrix = fcam_intrinsic_matrix;
         zoom = fcam_zoom;
       }
