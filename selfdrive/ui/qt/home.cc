@@ -102,11 +102,11 @@ void HomeWindow::mouseDoubleClickEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(40, 40, 40, 45);
+  main_layout->setContentsMargins(40, 40, 40, 40);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
-  header_layout->setContentsMargins(15, 15, 15, 0);
+  header_layout->setContentsMargins(0, 0, 0, 0);
   header_layout->setSpacing(16);
 
   update_notif = new QPushButton(tr("UPDATE"));
