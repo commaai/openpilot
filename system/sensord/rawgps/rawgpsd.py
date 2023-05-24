@@ -122,30 +122,25 @@ def setup_quectel(diag: ModemDiag):
 
   if gps_enabled():
     at_cmd("AT+QGPSEND")
-
-  at_cmd("AT+QGPSDEL=0")
+  #at_cmd("AT+QGPSDEL=0")
 
   # disable DPO power savings for more accuracy
   at_cmd("AT+QGPSCFG=\"dpoenable\",0")
   # don't automatically turn on GNSS on powerup
   at_cmd("AT+QGPSCFG=\"autogps\",0")
 
-  #at_cmd("AT+QGPSCFG=\"suplver\",2")
-  #at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7276\"")
-  #at_cmd("AT+QGPSSUPLURL?")
-  #at_cmd("AT+QGPSCFG=\"plane\",0")
- 
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
-  at_cmd("AT+QGPSXTRADATA?")
-  urllib.request.urlretrieve("http://xtrapath3.izatcloud.net/xtra3grc.bin", "/tmp/xtra3grc.bin")
-  subprocess.check_call("mmcli -m any --location-inject-assistance-data=/tmp/xtra3grc.bin", shell=True)
-  at_cmd("AT+QGPSXTRADATA?")
+  assist_data_file = '/tmp/xtra3grc.bin'
+  urllib.request.urlretrieve("http://xtrapath3.izatcloud.net/xtra3grc.bin", assist_data_file)
+  try:
+    subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
+  except subprocess.CalledProcessError:
+    cloudlog.exception("rawgps.mmcli_command_failed")
+  #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
-  at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,3500")
-  #at_cmd("AT+QFUPL=\"RAM:xtra2.bin\",60717,5,1")
-  #at_cmd(bytes("asdkjhasdjaskdjbaskjdbkj"))
-
+  at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
+  
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
 
