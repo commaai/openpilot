@@ -51,7 +51,6 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   virtual void updateFrameMat();
   void updateCalibration(const mat3 &calib);
-  void updateZoom(const float _zoom);
   void vipcThread();
   void clearFrames();
 
@@ -80,7 +79,6 @@ protected:
   QThread *vipc_thread = nullptr;
 
   float zoom_transition = 0;
-  float requested_zoom = 0;
   bool ready_to_switch_cams = false;
 
   // Calibration

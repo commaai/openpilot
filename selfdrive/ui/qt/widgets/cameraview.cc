@@ -219,16 +219,14 @@ void CameraWidget::updateFrameMat() {
         ready_to_switch_cams = fabs(zoom_transition - 0) < 1e-3;
 
         intrinsic_matrix = ecam_intrinsic_matrix;
-//        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
-        zoom = requested_zoom;
+        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
         zoom_transition = 0;
         ready_to_switch_cams = true;
 
         intrinsic_matrix = fcam_intrinsic_matrix;
-//        zoom = 1.1;
-        zoom = requested_zoom;
+        zoom = 1.1;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
@@ -263,10 +261,6 @@ void CameraWidget::updateFrameMat() {
 
 void CameraWidget::updateCalibration(const mat3 &calib) {
   calibration = calib;
-}
-
-void CameraWidget::updateZoom(const float _zoom) {
-  requested_zoom = _zoom;
 }
 
 void CameraWidget::paintGL() {
@@ -391,7 +385,7 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || ((cur_stream != requested_stream_type))) {  // && ready_to_switch_cams)) {
+    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch_cams)) {
       clearFrames();
       qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;

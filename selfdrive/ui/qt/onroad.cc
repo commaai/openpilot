@@ -654,24 +654,16 @@ void AnnotatedCameraWidget::paintGL() {
 
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
-
-
     if (has_wide_cam) {
       float v_ego = sm["carState"].getCarState().getVEgo();
-      float requested_zoom = util::map_val(v_ego, 10.0f, 15.0f, 2.0f, 4.7f);
-      if (v_ego > 15.0f) requested_zoom = 1.1f;
-      CameraWidget::updateZoom(requested_zoom);
-      wide_cam_requested = v_ego < 15;
-//      if ((v_ego < 10) || available_streams.size() == 1) {
-//        wide_cam_requested = true;
-//      } else if (v_ego > 15) {
-//        wide_cam_requested = false;
-//      }
+      if ((v_ego < 10) || available_streams.size() == 1) {
+        wide_cam_requested = true;
+      } else if (v_ego > 15) {
+        wide_cam_requested = false;
+      }
       wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
       // for replay of old routes, never go to widecam
       wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
-    } else {
-      CameraWidget::updateZoom(1.1f);
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
