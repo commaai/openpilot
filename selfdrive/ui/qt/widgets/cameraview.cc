@@ -212,7 +212,7 @@ void CameraWidget::updateFrameMat() {
       // TODO: use proper perspective transform?
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         // If narrow road camera is requested, start zooming in.
-        // Mark ready to switch once we're fully zoomed in or requesting a different camera
+        // Mark ready to switch once we're fully zoomed in
         if (requested_stream_type == VISION_STREAM_ROAD) {
           zoom_transition += zoom_transition * 0.2 + 0.01;
         } else {
