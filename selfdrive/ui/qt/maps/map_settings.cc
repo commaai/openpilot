@@ -17,7 +17,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   QWidget * main_widget = new QWidget;
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
-  const int icon_size = 200;
+  const int icon_size = 180;
 
   // Home
   QHBoxLayout *home_layout = new QHBoxLayout;
@@ -60,7 +60,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
 
     QLabel *title = new QLabel(tr("Current Destination"));
-    title->setStyleSheet("font-size: 55px");
+    title->setStyleSheet("font-size: 50px");
     current_layout->addWidget(title);
 
     current_route = new ButtonControl("", tr("CLEAR"));
@@ -79,7 +79,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   // Recents
   QLabel *recents_title = new QLabel(tr("Recent Destinations"));
-  recents_title->setStyleSheet("font-size: 55px");
+  recents_title->setStyleSheet("font-size: 50px");
   main_layout->addWidget(recents_title);
   main_layout->addSpacing(20);
 
@@ -163,12 +163,12 @@ void MapPanel::showEvent(QShowEvent *event) {
 
 void MapPanel::clear() {
   home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
-  home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
+  home_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
   home_address->setText(tr("No home\nlocation set"));
   home_button->disconnect();
 
   work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
-  work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
+  work_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
   work_address->setText(tr("No work\nlocation set"));
   work_button->disconnect();
 
@@ -221,7 +221,7 @@ void MapPanel::refresh() {
 
       if (type == "favorite" && label == "home") {
         home_address->setText(name);
-        home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
+        home_address->setStyleSheet(R"(font-size: 40px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
         QObject::connect(home_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
@@ -229,7 +229,7 @@ void MapPanel::refresh() {
         });
       } else if (type == "favorite" && label == "work") {
         work_address->setText(name);
-        work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
+        work_address->setStyleSheet(R"(font-size: 40px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
         QObject::connect(work_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
@@ -252,7 +252,7 @@ void MapPanel::refresh() {
 
 
         QLabel *recent_label = new QLabel(shorten(name + " " + details, 45));
-        recent_label->setStyleSheet(R"(font-size: 50px;)");
+        recent_label->setStyleSheet(R"(font-size: 36px;)");
 
         layout->addWidget(recent_label);
         layout->addStretch();
@@ -289,7 +289,7 @@ void MapPanel::refresh() {
 
   if (!has_recents) {
     QLabel *no_recents = new QLabel(tr("no recent destinations"));
-    no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
+    no_recents->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
     recent_layout->addWidget(no_recents);
   }
 
