@@ -211,9 +211,9 @@ void CameraWidget::updateFrameMat() {
       // TODO: use proper perspective transform?
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         if (requested_stream_type == VISION_STREAM_WIDE_ROAD) {
-          zoom_transition += zoom_transition * 0.2 + 0.025;
+          zoom_transition += zoom_transition * 0.2 + 0.01;
         } else {
-          zoom_transition -= (1.0 - zoom_transition) * 0.2 + 0.025;
+          zoom_transition -= (1.0 - zoom_transition) * 0.2 + 0.01;
         }
         zoom_transition = std::clamp(zoom_transition, 0.0f, 1.0f);
         ready_to_switch_cams = fabs(zoom_transition - 0) < 1e-3;
