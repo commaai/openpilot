@@ -74,12 +74,12 @@ protected:
   int stream_height = 0;
   int stream_stride = 0;
   bool ready_to_switch_cams = true;  // stream transition may be delayed by a zoom animation
+  float zoom_transition = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
 
-  float zoom_transition = 0;
 
   // Calibration
   float x_offset = 0;
@@ -89,8 +89,8 @@ protected:
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
 
   // Calibration constants
-  const float ecam_zoom = 2.0f;
-  const float fcam_zoom = 1.1f;
+  const float ecam_zoom = 2.0;
+  const float fcam_zoom = 1.1;
 
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
