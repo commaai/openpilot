@@ -182,9 +182,9 @@ class Calibrator:
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     angle_std_threshold = MAX_VEL_ANGLE_STD
     height_std_threshold = MAX_HEIGHT_STD
-    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
-                        (road_transform_trans_std[2] < height_std_threshold) or
-                        (self.valid_blocks < INPUTS_NEEDED))
+    rpy_certain = np.arctan2(trans_std[1], trans[0]) < angle_std_threshold
+    height_certain = road_transform_trans_std[2] < height_std_threshold
+    certain_if_calib = (rpy_certain and height_certain) or (self.valid_blocks < INPUTS_NEEDED)
     if not (straight_and_fast and certain_if_calib):
       return None
 
