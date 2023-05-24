@@ -232,6 +232,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         panda->can_send(event.getSendcan());
         LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
+    } else {
+      LOGE("sendcan too old to send: %llu, %llu", nanos_since_boot(), event.getLogMonoTime());
     }
   }
 }
@@ -388,6 +390,8 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setFanStallCount(health.fan_stall_count);
     ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid));
     ps.setSpiChecksumErrorCount(health.spi_checksum_error_count);
+    ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
+    ps.setSbu2Voltage(health.sbu2_voltage_mV / 1000.0f);
 
     std::array<cereal::PandaState::PandaCanState::Builder, PANDA_CAN_CNT> cs = {ps.initCanState0(), ps.initCanState1(), ps.initCanState2()};
 
@@ -464,7 +468,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   SubMaster sm({"controlsState"});
 
   Panda *peripheral_panda = pandas[0];
-  bool ignition_last = false;
+  bool is_onroad = false;
+  bool is_onroad_last = false;
   std::future<bool> safety_future;
 
   LOGD("start panda state thread");
@@ -483,27 +488,40 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
     ignition = *ignition_opt;
 
-    // TODO: make this check fast, currently takes 16ms
-    // check if we have new pandas and are offroad
-    if (!ignition && (pandas.size() != Panda::list().size())) {
-      LOGW("Reconnecting to changed amount of pandas!");
-      do_exit = true;
-      break;
+    // check if we should have pandad reconnect
+    if (!ignition) {
+      bool comms_healthy = true;
+      for (const auto &panda : pandas) {
+        comms_healthy &= panda->comms_healthy();
+      }
+
+      if (!comms_healthy) {
+        LOGE("Reconnecting, communication to pandas not healthy");
+        do_exit = true;
+
+      // TODO: list is slow, takes 16ms
+      } else if (pandas.size() != Panda::list().size()) {
+        LOGW("Reconnecting to changed amount of pandas!");
+        do_exit = true;
+      }
+
+      if (do_exit) {
+        break;
+      }
     }
 
-    // clear ignition-based params and set new safety on car start
-    if (ignition && !ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION_ON);
+    is_onroad = params.getBool("IsOnroad");
+
+    // set new safety on onroad transition, after params are cleared
+    if (is_onroad && !is_onroad_last) {
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
         safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
       } else {
         LOGW("Safety setter thread already running");
       }
-    } else if (!ignition && ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION_OFF);
     }
 
-    ignition_last = ignition;
+    is_onroad_last = is_onroad;
 
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();

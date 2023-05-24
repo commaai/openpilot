@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
-from enum import Enum
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -31,10 +30,13 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
+NISSAN_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
+
+
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  harness: Enum = Harness.nissan_a
+  car_parts: CarParts = CarParts([CarPart.nissan_a] + NISSAN_PARTS)
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -42,7 +44,7 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", harness=Harness.nissan_b),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts([CarPart.nissan_b] + NISSAN_PARTS)),
 }
 
 FINGERPRINTS = {

@@ -11,7 +11,15 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
 
 
 def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pressed, hud_alert, hud_control):
-  values = ldw_stock_values.copy()
+  values = {}
+  if len(ldw_stock_values):
+    values = {s: ldw_stock_values[s] for s in [
+      "LDW_SW_Warnung_links",   # Blind spot in warning mode on left side due to lane departure
+      "LDW_SW_Warnung_rechts",  # Blind spot in warning mode on right side due to lane departure
+      "LDW_Seite_DLCTLC",       # Direction of most likely lane departure (left or right)
+      "LDW_DLC",                # Lane departure, distance to line crossing
+      "LDW_TLC",                # Lane departure, time to line crossing
+    ]}
 
   values.update({
     "LDW_Status_LED_gelb": 1 if enabled and steering_pressed else 0,
@@ -23,11 +31,17 @@ def create_lka_hud_control(packer, bus, ldw_stock_values, enabled, steering_pres
   return packer.make_can_msg("LDW_02", bus, values)
 
 
-def create_acc_buttons_control(packer, bus, gra_stock_values, counter, cancel=False, resume=False):
-  values = gra_stock_values.copy()
+def create_acc_buttons_control(packer, bus, gra_stock_values, cancel=False, resume=False):
+  values = {s: gra_stock_values[s] for s in [
+    "GRA_Hauptschalter",           # ACC button, on/off
+    "GRA_Typ_Hauptschalter",       # ACC main button type
+    "GRA_Codierung",               # ACC button configuration/coding
+    "GRA_Tip_Stufe_2",             # unknown related to stalk type
+    "GRA_ButtonTypeInfo",          # unknown related to stalk type
+  ]}
 
   values.update({
-    "COUNTER": counter,
+    "COUNTER": (gra_stock_values["COUNTER"] + 1) % 16,
     "GRA_Abbrechen": cancel,
     "GRA_Tip_Wiederaufnahme": resume,
   })

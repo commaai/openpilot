@@ -19,6 +19,9 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 fi
+if [ -f /data/openpilot/launch_env.sh ]; then
+  source /data/openpilot/launch_env.sh
+fi
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
@@ -151,6 +154,7 @@ pipeline {
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
@@ -181,7 +185,7 @@ pipeline {
           }
         }
 
-        stage('camerad-ar') {
+        stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-ar0231", [
@@ -189,12 +193,6 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
-          }
-        }
-
-        stage('camerad-ox') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
             phone_steps("tici-ox03c10", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],

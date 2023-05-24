@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.values import CAR, Ecu
@@ -15,13 +16,20 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
-    # These cars are dashcam only until the port is finished
-    ret.dashcamOnly = True
+    # These cars are dashcam only for lack of test coverage.
+    # Once a user confirms each car works and a test route is
+    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
+    ret.dashcamOnly = candidate in {CAR.FOCUS_MK4}
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
+
+    ret.experimentalLongitudinalAvailable = True
+    if experimental_long:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
+      ret.openpilotLongitudinalControl = True
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67
@@ -74,6 +82,11 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
+    if not self.CS.vehicle_sensors_valid:
+      events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
+    if self.CS.hybrid_platform:
+      events.add(car.CarEvent.EventName.startupNoControl)
+
     ret.events = events.to_msg()
 
     return ret
