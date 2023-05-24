@@ -69,6 +69,7 @@ export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
 # pycurl curl/openssl backend dependencies
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
+export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # openpilot environment
