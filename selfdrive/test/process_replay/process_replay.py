@@ -418,6 +418,8 @@ def replay_process(cfg, lr, fingerprint=None):
 
 
 def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
+  os.environ["PARAMS_ROOT"] = "/dev/shm/params"
+
   params = Params()
   params.clear_all()
   params.put_bool("OpenpilotEnabledToggle", True)
