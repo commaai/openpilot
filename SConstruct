@@ -67,6 +67,7 @@ AddOption('--no-test',
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
 
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
@@ -113,10 +114,6 @@ else:
 
   # MacOS
   if arch == "Darwin":
-    if real_arch == "x86_64":
-      lenv["TERA_PATH"] = Dir("#").abspath + f"/third_party/acados/Darwin_x86_64/t_renderer"
-
-    brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
@@ -126,10 +123,7 @@ else:
       f"{brew_prefix}/Cellar",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
-    if real_arch == "x86_64":
-      libpath.append(f"#third_party/acados/Darwin_x86_64/lib")
-    else:
-      libpath.append(f"#third_party/acados/{arch}/lib")
+    libpath.append(f"#third_party/acados/{arch}/lib")
 
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
@@ -286,10 +280,7 @@ qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "
 
 qt_libs = []
 if arch == "Darwin":
-  if real_arch == "arm64":
-    qt_env['QTDIR'] = "/opt/homebrew/opt/qt@5"
-  else:
-    qt_env['QTDIR'] = "/usr/local/opt/qt@5"
+  qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
   ]
