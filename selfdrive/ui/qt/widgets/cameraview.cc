@@ -391,7 +391,7 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch_cams)) {
+    if (!vipc_client || ((cur_stream != requested_stream_type))) {  // && ready_to_switch_cams)) {
       clearFrames();
       qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;

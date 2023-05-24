@@ -658,7 +658,8 @@ void AnnotatedCameraWidget::paintGL() {
 
     if (has_wide_cam) {
       float v_ego = sm["carState"].getCarState().getVEgo();
-      float requested_zoom = util::map_val(v_ego, 10.0f, 15.0f, 2.0f, 1.1f);
+      float requested_zoom = util::map_val(v_ego, 10.0f, 15.0f, 2.0f, 4.7f);
+      if (v_ego > 15.0f) requested_zoom = 1.1f;
       CameraWidget::updateZoom(requested_zoom);
       wide_cam_requested = v_ego < 15;
 //      if ((v_ego < 10) || available_streams.size() == 1) {
