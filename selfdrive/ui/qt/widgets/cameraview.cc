@@ -204,7 +204,6 @@ void CameraWidget::updateFrameMat() {
     if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
-//      qDebug() << active_stream_type << requested_stream_type;
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
