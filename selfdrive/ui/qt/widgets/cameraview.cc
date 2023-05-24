@@ -203,6 +203,7 @@ void CameraWidget::updateFrameMat() {
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
+      ready_to_switch_cams = true;
     } else {
       // Project point at "infinity" to compute x and y offsets
       // to ensure this ends up in the middle of the screen
@@ -218,14 +219,14 @@ void CameraWidget::updateFrameMat() {
         ready_to_switch_cams = fabs(zoom_transition - 0) < 1e-3;
 
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * 1.1f, 2.0f);
+        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_to_fcam_zoom * fcam_zoom, ecam_zoom);
       } else {
         // Always ready to switch from zoomed narrow to zoomed wide
         zoom_transition = 0;
         ready_to_switch_cams = true;
 
         intrinsic_matrix = fcam_intrinsic_matrix;
-        zoom = 1.1;
+        zoom = fcam_zoom;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
