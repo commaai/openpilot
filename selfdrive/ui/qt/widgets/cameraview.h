@@ -73,7 +73,7 @@ protected:
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
-  bool ready_to_switch_cams = true;  // stream transition may be delayed by a zoom animation
+  bool ready_to_switch_stream = true;  // stream transition may be delayed by a zoom animation
   float zoom_transition = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
