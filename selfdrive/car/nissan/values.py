@@ -1,10 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
+from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts, CarHarness, DeviceNew
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -37,6 +38,7 @@ NISSAN_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarP
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
   car_parts: CarParts = CarParts([CarPart.nissan_a] + NISSAN_PARTS)
+  car_parts_new: List[Enum] = field(default_factory=lambda: [CarHarness.nissan_a, DeviceNew.three])
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {

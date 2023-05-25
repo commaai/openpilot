@@ -1,12 +1,12 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarPart, CarParts
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarPart, CarParts, CarHarness, BasePart, DeviceNew
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -103,6 +103,7 @@ class Footnote(Enum):
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
   car_parts: CarParts = CarParts.common([CarPart.toyota])
+  car_parts_new: List[Enum] = field(default_factory=lambda: [CarHarness.toyota, DeviceNew.three])
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {

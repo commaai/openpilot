@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -36,6 +36,139 @@ class PartType(Enum):
   cable = "Cable"
   accessory = "Accessory"
   mount = "Mount"
+
+
+@dataclass
+class BasePart:
+  name: str
+  # A list of parts that come with this part
+  parts: List[Enum] = field(default_factory=list)
+  # Parts like extras aren't required, can override required_parts
+  required_parts: Optional[List[Enum]] = None
+
+  def __post_init__(self):
+    if self.required_parts is None:
+      self.required_parts = self.parts
+
+  def new(self, add: List[Enum] = None, remove: List[Enum] = None):
+    p = [part for part in (add or []) + self.parts if part not in (remove or [])]
+    return replace(self, parts=p)
+
+  # @classmethod
+  # def common(cls, add: List[Enum] = None, remove: List[Enum] = None):
+  #   p = [part for part in (add or []) + cls.parts if part not in (remove or [])]
+  #   return cls(cls.name, p)
+
+  @property
+  def type(self) -> PartType:
+    raise NotImplementedError
+
+
+def get_parts(obj):
+  parts = []
+  if isinstance(obj, BasePart):
+    parts.append(obj)
+
+  if isinstance(obj, Enum):
+    parts.extend(obj.value.parts)
+    for value in obj.value.parts:
+      parts.extend(get_parts(value))
+
+  return parts
+
+
+class EnumBase(Enum):
+  @classmethod
+  def type(cls):
+    return PartTypeNew(cls)
+
+
+class MountNew(EnumBase):
+  mount = BasePart("mount")
+  angled_mount = BasePart("angled mount")
+
+
+class CableNew(EnumBase):
+  rj45_cable_7ft = BasePart("RJ45 cable (7 ft)")
+  long_obdc_cable = BasePart("long OBD-C cable")
+  usb_a_2_a_cable = BasePart("USB A-A cable")
+  usbc_otg_cable = BasePart("USB C OTG cable")
+  usbc_coupler = BasePart("USB-C coupler")
+  obd_c_cable_1_5ft = BasePart("OBD-C cable (1.5 ft)")
+  right_angle_obd_c_cable_1_5ft = BasePart("right angle OBD-C cable (1.5 ft)")
+
+
+class AccessoryNew(Enum):
+  harness_box = BasePart("harness box")
+  comma_power_v2 = BasePart("comma power v2")
+
+
+@dataclass
+class BaseCarHarness(BasePart):
+  parts: List[Enum] = field(default_factory=lambda: [AccessoryNew.harness_box, AccessoryNew.comma_power_v2, CableNew.rj45_cable_7ft])
+  has_connector: bool = True  # without are hidden on the harness connector page
+
+
+# the kit
+class CarHarness(Enum):
+  nidec = BaseCarHarness("Honda Nidec connector")
+  bosch_a = BaseCarHarness("Honda Bosch A connector")
+  bosch_b = BaseCarHarness("Honda Bosch B connector")
+  toyota = BaseCarHarness("Toyota connector")
+  subaru_a = BaseCarHarness("Subaru A connector")
+  subaru_b = BaseCarHarness("Subaru B connector")
+  fca = BaseCarHarness("FCA connector")
+  ram = BaseCarHarness("Ram connector")
+  vw = BaseCarHarness("VW connector")
+  j533 = BaseCarHarness("J533 connector", parts=[AccessoryNew.harness_box, CableNew.long_obdc_cable, CableNew.usbc_coupler])
+  hyundai_a = BaseCarHarness("Hyundai A connector")
+  hyundai_b = BaseCarHarness("Hyundai B connector")
+  hyundai_c = BaseCarHarness("Hyundai C connector")
+  hyundai_d = BaseCarHarness("Hyundai D connector")
+  hyundai_e = BaseCarHarness("Hyundai E connector")
+  hyundai_f = BaseCarHarness("Hyundai F connector")
+  hyundai_g = BaseCarHarness("Hyundai G connector")
+  hyundai_h = BaseCarHarness("Hyundai H connector")
+  hyundai_i = BaseCarHarness("Hyundai I connector")
+  hyundai_j = BaseCarHarness("Hyundai J connector")
+  hyundai_k = BaseCarHarness("Hyundai K connector")
+  hyundai_l = BaseCarHarness("Hyundai L connector")
+  hyundai_m = BaseCarHarness("Hyundai M connector")
+  hyundai_n = BaseCarHarness("Hyundai N connector")
+  hyundai_o = BaseCarHarness("Hyundai O connector")
+  hyundai_p = BaseCarHarness("Hyundai P connector")
+  hyundai_q = BaseCarHarness("Hyundai Q connector")
+  custom = BaseCarHarness("Developer connector")
+  obd_ii = BaseCarHarness("OBD-II connector", parts=[CableNew.long_obdc_cable, CableNew.long_obdc_cable], has_connector=False)
+  gm = BaseCarHarness("GM connector")
+  nissan_a = BaseCarHarness("Nissan A connector", parts=[AccessoryNew.harness_box, CableNew.rj45_cable_7ft, CableNew.long_obdc_cable, CableNew.usbc_coupler])
+  nissan_b = BaseCarHarness("Nissan B connector", parts=[AccessoryNew.harness_box, CableNew.rj45_cable_7ft, CableNew.long_obdc_cable, CableNew.usbc_coupler])
+  mazda = BaseCarHarness("Mazda connector")
+  ford_q3 = BaseCarHarness("Ford Q3 connector")
+  ford_q4 = BaseCarHarness("Ford Q4 connector")
+
+
+class DeviceNew(Enum):
+  three = BasePart("comma three", parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft],
+                   required_parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft])
+  red_panda = BasePart("red panda")
+
+
+class Kit(Enum):
+  red_panda_kit = BasePart("CAN FD panda kit", parts=[DeviceNew.red_panda, AccessoryNew.harness_box, CableNew.usb_a_2_a_cable, CableNew.usbc_otg_cable, CableNew.obd_c_cable_1_5ft])
+
+
+class PartTypeNew(Enum):
+  connector = CarHarness
+  device = DeviceNew
+  cable = CableNew
+  accessory = AccessoryNew
+  mount = MountNew
+
+
+
+# END REFACTORED CODE
+
 
 
 @dataclass
@@ -75,6 +208,15 @@ class Device(Part):
   @property
   def type(self) -> PartType:
     return PartType.device
+
+
+# class Device1(Enum):
+#   three = Device("comma three", parts=[Cable("comma three cable")])
+
+
+# class PartTypeNew(Enum):
+#   device = Device1
+#   cable = Cable
 
 
 class CarPart(Enum):
@@ -138,6 +280,9 @@ DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2,
 @dataclass
 class CarParts:
   parts: List[CarPart] = field(default_factory=list)
+  device_parts: List[CarPart] = field(default_factory=list)
+  harness_parts: List[CarPart] = field(default_factory=list)
+  minimum_required_parts: List[CarPart] = field(default_factory=list)
 
   @classmethod
   def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
@@ -215,6 +360,7 @@ class CarInfo:
 
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
+  new_car_parts: List[Enum] = field(default_factory=list)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
