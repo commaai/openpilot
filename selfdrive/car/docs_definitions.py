@@ -71,16 +71,6 @@ class BasePart:
     return parts
 
 
-  # @classmethod
-  # def common(cls, add: List[Enum] = None, remove: List[Enum] = None):
-  #   p = [part for part in (add or []) + cls.parts if part not in (remove or [])]
-  #   return cls(cls.name, p)
-
-  @property
-  def type(self) -> PartType:
-    raise NotImplementedError
-
-
 # def get_parts(obj):
 #   parts = []
 #   if isinstance(obj, BasePart):
