@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarHarness, CarPartsNew
+from selfdrive.car.docs_definitions import CarInfo, CarHarness, CarPartsNew
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -28,9 +28,6 @@ class CAR:
   LEAF_IC = "NISSAN LEAF 2018 Instrument Cluster"
   ROGUE = "NISSAN ROGUE 2019"
   ALTIMA = "NISSAN ALTIMA 2020"
-
-
-NISSAN_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.rj45_cable_7ft, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
 
 
 @dataclass
