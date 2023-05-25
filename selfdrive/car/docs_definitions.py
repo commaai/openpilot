@@ -209,15 +209,6 @@ class Device(Part):
     return PartType.device
 
 
-# class Device1(Enum):
-#   three = Device("comma three", parts=[Cable("comma three cable")])
-
-
-# class PartTypeNew(Enum):
-#   device = Device1
-#   cable = Cable
-
-
 class CarPart(Enum):
   nidec = Connector("Honda Nidec connector")
   bosch_a = Connector("Honda Bosch A connector")
@@ -280,9 +271,6 @@ DEFAULT_CAR_PARTS_NEW: List[EnumBase] = [DeviceNew.three]
 @dataclass
 class CarParts:
   parts: List[CarPart] = field(default_factory=list)
-  device_parts: List[CarPart] = field(default_factory=list)
-  harness_parts: List[CarPart] = field(default_factory=list)
-  minimum_required_parts: List[CarPart] = field(default_factory=list)
 
   @classmethod
   def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
