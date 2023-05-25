@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -354,7 +354,7 @@ class CarInfo:
 
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
-  car_parts_new: CarPartsNew = None  # CarPartsNew()
+  car_parts_new: Optional[CarPartsNew] = None  # CarPartsNew()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
