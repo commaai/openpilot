@@ -181,7 +181,7 @@ void PrimeUserWidget::replyFinished(const QString &response) {
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
-  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(80, 90, 80, 60);
   main_layout->setSpacing(0);
 

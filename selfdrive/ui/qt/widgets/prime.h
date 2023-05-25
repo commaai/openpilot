@@ -53,7 +53,7 @@ public:
   explicit PrimeUserWidget(QWidget* parent = 0);
 
 private:
-  QLabel* points;
+  QLabel *points;
 
 private slots:
   void replyFinished(const QString &response);
