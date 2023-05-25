@@ -51,16 +51,8 @@ class BasePart:
     if self.required_parts is None:
       self.required_parts = self.parts
 
-  def new(self, add: List[Enum] = None, remove: List[Enum] = None):
-    p = [part for part in (add or []) + self.parts if part not in (remove or [])]
-    return replace(self, parts=p)
-
-  # @classmethod
-  # def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
-  #   p = [part for part in (add or []) + DEFAULT_CAR_PARTS_NEW if part not in (remove or [])]
-  #   return cls(p)
-
   def all_parts(self, required=False):
+    # Recursively get all parts
     _parts = 'required_parts' if required else 'parts'
 
     parts = []
@@ -165,9 +157,7 @@ class PartTypeNew(Enum):
   mount = MountNew
 
 
-
 # END REFACTORED CODE
-
 
 
 @dataclass
