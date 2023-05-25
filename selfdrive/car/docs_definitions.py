@@ -38,7 +38,7 @@ class PartType(Enum):
   mount = "Mount"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Part:
   name: str
   required: bool = True
@@ -87,7 +87,7 @@ class Device(Part):
 
 class CarPart(Enum):
   def __call__(self, *args, **kwargs):
-    print('CarPart call')
+    # print('CarPart call')
     required = kwargs.get('required', None)
     part = self.value
     if required is not None:
@@ -270,7 +270,7 @@ class CarInfo:
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
+      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {

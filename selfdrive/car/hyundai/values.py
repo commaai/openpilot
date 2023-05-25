@@ -145,7 +145,7 @@ class HyundaiCarInfo(CarInfo):
       self.footnotes.insert(0, Footnote.CANFD)
 
 
-CAR_INFO: Dict[str(), Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
+CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
   CAR.ELANTRA: [
     HyundaiCarInfo("Hyundai Elantra 2017-19", min_enable_speed=19 * CV.MPH_TO_MS, car_parts=CarParts.common([CarPart.hyundai_b()])),
     HyundaiCarInfo("Hyundai Elantra GT 2017-19", car_parts=CarParts.common([CarPart.hyundai_e()])),
