@@ -41,7 +41,7 @@ class PartType(Enum):
 @dataclass(frozen=True)
 class Part:
   name: str
-  required: bool = True
+  required: bool = field(default=True, compare=False)
 
   @property
   def type(self) -> PartType:
@@ -137,7 +137,7 @@ class CarPart(Enum):
   right_angle_obd_c_cable_1_5ft = Cable("right angle OBD-C cable (1.5 ft)")
 
 
-DEFAULT_CAR_PARTS: List[Part] = [CarPart.harness_box(), CarPart.comma_power_v2(), CarPart.rj45_cable_7ft(), CarPart.mount(), CarPart.right_angle_obd_c_cable_1_5ft()]
+DEFAULT_CAR_PARTS: List[Part] = [CarPart.harness_box(), CarPart.comma_power_v2(), CarPart.rj45_cable_7ft(), CarPart.mount(), CarPart.mount(required=False), CarPart.right_angle_obd_c_cable_1_5ft()]
 
 
 @dataclass
@@ -256,7 +256,9 @@ class CarInfo:
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name.lower())])
+
+      docs_car_parts = sorted(set(filter(lambda p: p.required, self.car_parts.parts)), key=lambda part: part.name.lower())
+      parts = '<br>'.join([f"- {docs_car_parts.count(part)} {part.name}" for part in docs_car_parts])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
