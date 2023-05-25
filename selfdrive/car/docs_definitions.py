@@ -293,9 +293,6 @@ class CarPartsNew:
       parts.extend(part.value.all_parts(required=required))
     return self.parts + parts
 
-  def __iter__(self):
-    return iter(self.parts)
-
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
 
