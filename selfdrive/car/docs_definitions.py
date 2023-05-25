@@ -71,19 +71,6 @@ class BasePart:
     return parts
 
 
-# def get_parts(obj):
-#   parts = []
-#   if isinstance(obj, BasePart):
-#     parts.append(obj)
-#
-#   if isinstance(obj, Enum):
-#     parts.extend(obj.value.parts)
-#     for value in obj.value.parts:
-#       parts.extend(get_parts(value))
-#
-#   return parts
-
-
 class EnumBase(Enum):
   @classmethod
   def type(cls):
