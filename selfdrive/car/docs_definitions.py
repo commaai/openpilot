@@ -43,13 +43,6 @@ class Part:
   name: str
   required: bool = True
 
-  # def __call__(self, *args, **kwargs):
-  #   print('here')
-  #   required = kwargs.get('required', None)
-  #   if required is not None:
-  #     self.required = required
-  #   return self
-
   @property
   def type(self) -> PartType:
     raise NotImplementedError
