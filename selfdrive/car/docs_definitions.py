@@ -398,7 +398,7 @@ class CarInfo:
 
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
-  car_parts_new: CarPartsNew = CarPartsNew()
+  car_parts_new: CarPartsNew = None  # CarPartsNew()
   # new_car_parts: List[Enum] = field(default_factory=list)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
@@ -433,7 +433,15 @@ class CarInfo:
 
     # hardware column
     hardware_col = "None"
-    if self.car_parts.parts:
+    if self.car_parts_new is not None:
+      model_years = self.model + (' ' + self.years if self.years else '')
+      buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
+      car_parts_docs = self.car_parts_new.all_parts(required=True)
+      car_parts_docs = [part for part in car_parts_docs if part.value.name != "comma three"]  # TODO: temporary to reduce cars.md diff
+      parts = '<br>'.join([f"- {car_parts_docs.count(part)} {part.value.name}" for part in sorted(set(car_parts_docs), key=lambda part: part.name)])
+      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
+
+    elif self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
       parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
