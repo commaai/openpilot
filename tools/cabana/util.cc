@@ -82,17 +82,6 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   return size;
 }
 
-bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (e->type() == QEvent::ToolTip && index.column() == 0) {
-    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
-      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
-      return true;
-    }
-  }
-  QToolTip::hideText();
-  return false;
-}
-
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto data = index.data(BytesRole);
   if (!data.isValid()) {

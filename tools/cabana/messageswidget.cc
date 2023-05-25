@@ -192,6 +192,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QVariant::fromValue(colors);
   } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
     return can_data.dat;
+  } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
+    auto msg = dbc()->msg(id);
+    auto tooltip = msg ? msg->name : UNTITLED;
+    if (msg && !msg->comment.isEmpty()) tooltip += "<br /><span style=\"color:gray;\">" + msg->comment + "</span>";
+    return tooltip;
   }
   return {};
 }
