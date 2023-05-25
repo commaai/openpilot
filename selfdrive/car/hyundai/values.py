@@ -143,6 +143,7 @@ class HyundaiCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in CANFD_CAR:
       self.footnotes.insert(0, Footnote.CANFD)
+      self.car_parts.parts.append(CarPart.can_fd_panda_kit)
 
 
 CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {

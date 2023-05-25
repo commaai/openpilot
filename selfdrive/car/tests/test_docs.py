@@ -7,6 +7,7 @@ from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from selfdrive.car.docs_definitions import CarPart, Column, PartType, Star
 from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.hyundai.values import CANFD_CAR
 
 
 class TestCarDocs(unittest.TestCase):
@@ -68,7 +69,7 @@ class TestCarDocs(unittest.TestCase):
       with self.subTest(car=car):
         self.assertIsNone(re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}")
 
-  def test_harnesses(self):
+  def test_parts(self):
     for car in self.all_cars:
       with self.subTest(car=car):
         if car.name == "comma body":
@@ -80,6 +81,8 @@ class TestCarDocs(unittest.TestCase):
         self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
         self.assertTrue(CarPart.right_angle_obd_c_cable_1_5ft in car.car_parts.parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
+        if car.car_fingerprint in CANFD_CAR:
+          self.assertTrue(CarPart.can_fd_panda_kit in car.car_parts.parts, f"Need to have a CAN FD panda kit: {car.name}")
 
 if __name__ == "__main__":
   unittest.main()

@@ -36,6 +36,7 @@ class PartType(Enum):
   cable = "Cable"
   accessory = "Accessory"
   mount = "Mount"
+  kit = "kit"
 
 
 @dataclass
@@ -77,6 +78,12 @@ class Device(Part):
     return PartType.device
 
 
+class Kit(Part):
+  @property
+  def type(self) -> PartType:
+    return PartType.kit
+
+
 class CarPart(Enum):
   nidec = Connector("Honda Nidec connector")
   bosch_a = Connector("Honda Bosch A connector")
@@ -116,6 +123,8 @@ class CarPart(Enum):
 
   comma_3 = Device("comma 3")
   red_panda = Device("red panda")
+
+  can_fd_panda_kit = Kit("CAN FD panda kit")
 
   harness_box = Accessory("harness box")
   comma_power_v2 = Accessory("comma power v2")
