@@ -35,6 +35,7 @@ class TestCalibrationd(unittest.TestCase):
     np.testing.assert_allclose(c.rpy, np.zeros(3))
     c.reset()
 
+
   def test_calibration_ref(self):
     ref_rpy = np.array([2.30151750e-06, -8.63402487e-04, -2.86042531e-03])
     ref_valid_blocks = 13
@@ -53,6 +54,7 @@ class TestCalibrationd(unittest.TestCase):
     np.testing.assert_allclose(c.rpy, ref_rpy)
     np.testing.assert_allclose(c.valid_blocks, ref_valid_blocks)
     c.reset()
+
 
   def test_calibration_low_speed_reject(self):
     c = Calibrator(param_put=False)
