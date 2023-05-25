@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
-from enum import Enum
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts, CarHarness, DeviceNew, CarPartsNew
+from selfdrive.car.docs_definitions import CarInfo, CarPart, CarHarness, CarPartsNew
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu

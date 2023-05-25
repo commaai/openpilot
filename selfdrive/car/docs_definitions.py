@@ -365,7 +365,6 @@ class CarInfo:
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
   car_parts_new: CarPartsNew = None  # CarPartsNew()
-  # new_car_parts: List[Enum] = field(default_factory=list)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
