@@ -35,6 +35,25 @@ class TestCalibrationd(unittest.TestCase):
     np.testing.assert_allclose(c.rpy, np.zeros(3))
     c.reset()
 
+  def test_calibration_ref(self):
+    ref_rpy = np.array([2.30151750e-06, -8.63402487e-04, -2.86042531e-03])
+    ref_valid_blocks = 13
+
+    np.random.seed(0)
+    c = Calibrator(param_put=False)
+    for _ in range(BLOCK_SIZE * INPUTS_WANTED):
+      trans = [np.random.rand() * MIN_SPEED_FILTER * 3, np.random.randn() / 10, np.random.randn() / 10]
+      rot = [np.random.randn() / 10, np.random.randn() / 10, np.random.rand() * MAX_YAW_RATE_FILTER * 2]
+      trans_std = [np.random.randn() / 10, np.random.randn() / 10, np.random.randn() / 10]
+      c.handle_v_ego(trans[0])
+      c.handle_cam_odom(trans,
+                        rot,
+                        [0.0, 0.0, 0.0],
+                        trans_std)
+    np.testing.assert_allclose(c.rpy, ref_rpy)
+    np.testing.assert_allclose(c.valid_blocks, ref_valid_blocks)
+    c.reset()
+
   def test_calibration_low_speed_reject(self):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
@@ -64,7 +83,7 @@ class TestCalibrationd(unittest.TestCase):
     self.assertEqual(c.valid_blocks, 0)
     np.testing.assert_allclose(c.rpy, np.zeros(3))
 
-  
+
   def test_calibration_speed_std_reject(self):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
