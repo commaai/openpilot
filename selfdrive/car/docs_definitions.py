@@ -38,6 +38,7 @@ class PartType(Enum):
   mount = "Mount"
 
 
+# A part + its comprised parts
 @dataclass
 class BasePart:
   name: str
@@ -55,6 +56,22 @@ class BasePart:
     return replace(self, parts=p)
 
   # @classmethod
+  # def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
+  #   p = [part for part in (add or []) + DEFAULT_CAR_PARTS_NEW if part not in (remove or [])]
+  #   return cls(p)
+
+  def all_parts(self, required=False):
+    _parts = 'required_parts' if required else 'parts'
+
+    parts = []
+    parts.extend(getattr(self, _parts))
+    for part in getattr(self, _parts):
+      parts.extend(part.value.all_parts(required))
+
+    return parts
+
+
+  # @classmethod
   # def common(cls, add: List[Enum] = None, remove: List[Enum] = None):
   #   p = [part for part in (add or []) + cls.parts if part not in (remove or [])]
   #   return cls(cls.name, p)
@@ -64,17 +81,17 @@ class BasePart:
     raise NotImplementedError
 
 
-def get_parts(obj):
-  parts = []
-  if isinstance(obj, BasePart):
-    parts.append(obj)
-
-  if isinstance(obj, Enum):
-    parts.extend(obj.value.parts)
-    for value in obj.value.parts:
-      parts.extend(get_parts(value))
-
-  return parts
+# def get_parts(obj):
+#   parts = []
+#   if isinstance(obj, BasePart):
+#     parts.append(obj)
+#
+#   if isinstance(obj, Enum):
+#     parts.extend(obj.value.parts)
+#     for value in obj.value.parts:
+#       parts.extend(get_parts(value))
+#
+#   return parts
 
 
 class EnumBase(Enum):
@@ -304,15 +321,7 @@ class CarPartsNew:
   def all_parts(self, required=False):
     parts = []
     for part in self.parts:
-      if isinstance(part, BasePart):
-        parts.append(part)
-
-      if isinstance(part, Enum):
-        _parts = 'required_parts' if required else 'parts'
-        parts.extend(getattr(part.value, _parts))
-        for value in getattr(part.value, _parts):
-          parts.extend(get_parts(value))
-
+      parts.extend(part.value.all_parts(required=required))
     return parts
 
   def __iter__(self):
