@@ -77,6 +77,8 @@ MainWindow::MainWindow() : QMainWindow() {
 void MainWindow::createActions() {
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("Open Stream..."), this, &MainWindow::openStream);
+  close_stream_act = file_menu->addAction(tr("Close stream"), this, &MainWindow::closeStream);
+  close_stream_act->setEnabled(false);
   file_menu->addSeparator();
 
   file_menu->addAction(tr("New DBC File"), [this]() { newFile(); })->setShortcuts(QKeySequence::New);
@@ -246,6 +248,15 @@ void MainWindow::openStream() {
   }
 }
 
+void MainWindow::closeStream() {
+  AbstractStream *stream = new DummyStream(this);
+  stream->start();
+  if (dbc()->nonEmptyDBCCount() > 0) {
+    emit dbc()->DBCFileChanged();
+  }
+  statusBar()->showMessage(tr("stream closed"));
+}
+
 void MainWindow::newFile(SourceSet s) {
   closeFile(s);
   dbc()->open(s, "", "");
@@ -318,6 +329,7 @@ void MainWindow::changingStream() {
 }
 
 void MainWindow::streamStarted() {
+  close_stream_act->setEnabled(dynamic_cast<DummyStream *>(can) == nullptr);
   createDockWidgets();
 
   video_dock->setWindowTitle(can->routeName());
@@ -462,6 +474,7 @@ void MainWindow::updateLoadSaveMenus() {
   std::sort(sources_sorted.begin(), sources_sorted.end());
 
   manage_dbcs_menu->clear();
+  manage_dbcs_menu->setEnabled(dynamic_cast<DummyStream *>(can) == nullptr);
 
   for (uint8_t source : sources_sorted) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly

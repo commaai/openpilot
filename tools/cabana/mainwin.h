@@ -26,6 +26,7 @@ public:
 
 public slots:
   void openStream();
+  void closeStream();
   void changingStream();
   void streamStarted();
 
@@ -88,6 +89,7 @@ protected:
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
   QMenu *manage_dbcs_menu = nullptr;
+  QAction *close_stream_act = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
