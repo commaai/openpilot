@@ -63,9 +63,7 @@ int main(int argc, char *argv[]) {
 
     if (route.isEmpty()) {
       StreamSelector dlg(&stream);
-      if (!dlg.exec()) {
-        return 0;
-      }
+      dlg.exec();
       dbc_file = dlg.dbcFile();
     } else {
       auto replay_stream = new ReplayStream(&app);
@@ -77,11 +75,13 @@ int main(int argc, char *argv[]) {
   }
 
   MainWindow w;
+  if (!stream) {
+    stream = new DummyStream(&app);
+  }
+  stream->start();
   if (!dbc_file.isEmpty()) {
     w.loadFile(dbc_file);
   }
-  assert(stream != nullptr);
-  stream->start();
   w.show();
   return app.exec();
 }

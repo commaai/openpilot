@@ -100,6 +100,15 @@ protected:
   AbstractStream **stream = nullptr;
 };
 
+class DummyStream : public AbstractStream {
+  Q_OBJECT
+public:
+  DummyStream(QObject *parent) : AbstractStream(parent) {}
+  QString routeName() const override { return tr("No Stream"); }
+  void start() override { emit streamStarted(); }
+  double currentSec() const override { return 0; }
+};
+
 class StreamNotifier : public QObject {
   Q_OBJECT
 public:

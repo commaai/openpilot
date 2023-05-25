@@ -1,12 +1,5 @@
 #include "tools/cabana/dbc/dbcmanager.h"
-
-#include <QFile>
-#include <QRegularExpression>
-#include <QTextStream>
-#include <QVector>
-#include <limits>
-#include <sstream>
-
+#include <algorithm>
 
 bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
   for (int i = 0; i < dbc_files.size(); i++) {
@@ -280,13 +273,7 @@ int DBCManager::dbcCount() const {
 }
 
 int DBCManager::nonEmptyDBCCount() const {
-  int cnt = 0;
-  for (auto &[_, dbc_file] : dbc_files) {
-    if (!dbc_file->isEmpty()) {
-      cnt++;
-    }
-  }
-  return cnt;
+  return std::count_if(dbc_files.cbegin(), dbc_files.cend(), [](auto &f) { return !f.second->isEmpty(); });
 }
 
 void DBCManager::updateSources(const SourceSet &s) {
