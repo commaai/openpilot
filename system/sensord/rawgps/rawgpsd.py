@@ -5,8 +5,8 @@ import signal
 import itertools
 import math
 import time
+import pycurl
 import subprocess
-import urllib.request
 from datetime import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
@@ -132,10 +132,18 @@ def setup_quectel(diag: ModemDiag):
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
   assist_data_file = '/tmp/xtra3grc.bin'
+  assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
   try:
-    urllib.request.urlretrieve("http://xtrapath3.izatcloud.net/xtra3grc.bin", assist_data_file)
-  except urllib.error.URLError:
-    pass
+    with open(assist_data_file, "wb") as fp:
+      curl = pycurl.Curl()
+      curl.setopt(pycurl.URL, assistance_url)
+      curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+
+      curl.setopt(pycurl.WRITEDATA, fp)
+      curl.perform()
+      curl.close()
+  except pycurl.error as e:
+    cloudlog.exception(f'Failed to download assistance file with error: {e}')
   if os.path.isfile(assist_data_file):
     try:
       subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
