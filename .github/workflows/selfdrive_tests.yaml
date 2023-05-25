@@ -98,9 +98,10 @@ jobs:
       with:
         path: |
           ~/.pyenv
-          /.local/share/virtualenvs/
           /usr/local/Cellar
+          /usr/local/opt
           /opt/homebrew/Cellar
+          /opt/homebrew/opt
           ~/github_brew_cache_entries.txt
         key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos-
