@@ -29,7 +29,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
@@ -45,7 +45,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER - 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
@@ -53,7 +53,7 @@ class TestCalibrationd(unittest.TestCase):
                          [1e-3, 1e-3, 1e-3])
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER - 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER - 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
@@ -68,7 +68,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, MAX_YAW_RATE_FILTER ],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
@@ -83,7 +83,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e3, 1e3, 1e3],
@@ -97,7 +97,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
@@ -111,7 +111,7 @@ class TestCalibrationd(unittest.TestCase):
     c = Calibrator(param_put=False)
     for _ in range(BLOCK_SIZE * INPUTS_WANTED):
       c.handle_v_ego(MIN_SPEED_FILTER + 1)
-      c. handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
+      c.handle_cam_odom([MIN_SPEED_FILTER + 1, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [0.0, 0.0, 0.0],
                          [1e-3, 1e-3, 1e-3],
