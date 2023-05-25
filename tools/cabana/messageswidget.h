@@ -38,7 +38,6 @@ public:
   void fetchData();
   void suppress();
   void clearSuppress();
-  void reset();
   void forceResetModel();
   void dbcModified();
   std::vector<MessageId> msgs;
@@ -100,7 +99,6 @@ public:
   QByteArray saveHeaderState() const { return view->header()->saveState(); }
   bool restoreHeaderState(const QByteArray &state) const { return view->header()->restoreState(state); }
   void updateSuppressedButtons();
-  void reset();
 
 public slots:
   void dbcModified();

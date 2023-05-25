@@ -3,12 +3,10 @@
 #include <atomic>
 #include <mutex>
 
-#include <QHBoxLayout>
 #include <QFuture>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
-#include <QTimer>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -46,7 +44,6 @@ private:
   bool event(QEvent *event) override;
   void sliderChange(QAbstractSlider::SliderChange change) override;
   void paintEvent(QPaintEvent *ev) override;
-  void streamStarted();
   void loadThumbnails();
 
   double max_sec = 0;
@@ -58,7 +55,6 @@ private:
   std::map<uint64_t, AlertInfo> alerts;
   QFuture<void> thumnail_future;
   InfoLabel thumbnail_label;
-  QTimer timer;
   friend class VideoWidget;
 };
 
@@ -79,7 +75,6 @@ protected:
   double maximum_time = 0;
   QLabel *end_time_label;
   QLabel *time_label;
-  QHBoxLayout *slider_layout;
   QPushButton *play_btn;
   InfoLabel *alert_label;
   Slider *slider;

@@ -4,10 +4,20 @@
 
 AbstractStream *can = nullptr;
 
-AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
-  can = this;
-  new_msgs = std::make_unique<QHash<MessageId, CanData>>();
+StreamNotifier *StreamNotifier::instance() {
+  static StreamNotifier notifier;
+  return &notifier;
+}
+
+AbstractStream::AbstractStream(QObject *parent) : new_msgs(new QHash<MessageId, CanData>()), QObject(parent) {
+  assert(parent != nullptr);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
+  QObject::connect(this, &AbstractStream::streamStarted, [this]() {
+    emit StreamNotifier::instance()->changingStream();
+    delete can;
+    can = this;
+    emit StreamNotifier::instance()->streamStarted();
+  });
 }
 
 void AbstractStream::updateMessages(QHash<MessageId, CanData> *messages) {
@@ -37,8 +47,7 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
 
 bool AbstractStream::postEvents() {
   // delay posting CAN message if UI thread is busy
-  if (!processing) {
-    processing = true;
+  if (processing.exchange(true) == false) {
     for (auto it = new_msgs->begin(); it != new_msgs->end(); ++it) {
       it.value() = all_msgs[it.key()];
     }

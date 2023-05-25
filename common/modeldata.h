@@ -34,6 +34,9 @@ const mat3 ecam_intrinsic_matrix = (mat3){{567.0, 0.0, 1928.0 / 2,
                                            0.0, 567.0, 1208.0 / 2,
                                            0.0, 0.0, 1.0}};
 
+// zoom multiplier between cameras
+const float ecam_to_fcam_zoom = fcam_intrinsic_matrix.v[0] / ecam_intrinsic_matrix.v[0];
+
 static inline mat3 get_model_yuv_transform() {
   float db_s = 1.0;
   const mat3 transform = (mat3){{

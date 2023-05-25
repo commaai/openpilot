@@ -73,6 +73,8 @@ protected:
   int stream_width = 0;
   int stream_height = 0;
   int stream_stride = 0;
+  bool ready_to_switch_stream = true;  // stream transition may be delayed by a zoom animation
+  float zoom_transition = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
@@ -84,6 +86,10 @@ protected:
   float zoom = 1.0;
   mat3 calibration = DEFAULT_CALIBRATION;
   mat3 intrinsic_matrix = fcam_intrinsic_matrix;
+
+  // Calibration constants
+  const float ecam_zoom = 2.0;
+  const float fcam_zoom = 1.1;
 
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
