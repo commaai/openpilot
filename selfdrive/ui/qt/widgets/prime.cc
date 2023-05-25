@@ -114,8 +114,8 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
 }
 
 
-PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
-  mainLayout = new QVBoxLayout(this);
+PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
+  QVBoxLayout *mainLayout = new QVBoxLayout(this);
   mainLayout->setMargin(0);
   mainLayout->setSpacing(30);
 
@@ -126,19 +126,19 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   primeLayout->setMargin(0);
   primeWidget->setContentsMargins(60, 50, 60, 50);
 
-  QLabel* subscribed = new QLabel(tr("✓ SUBSCRIBED"));
+  QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
   primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
   primeLayout->addSpacing(60);
 
-  QLabel* commaPrime = new QLabel(tr("comma prime"));
+  QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
   primeLayout->addSpacing(20);
 
-  QLabel* connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
+  QLabel *connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
   connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
   primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
 
@@ -151,7 +151,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   pointsLayout->setMargin(0);
   pointsWidget->setContentsMargins(60, 50, 60, 50);
 
-  QLabel* commaPoints = new QLabel(tr("COMMA POINTS"));
+  QLabel *commaPoints = new QLabel(tr("COMMA POINTS"));
   commaPoints->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
   pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
 
