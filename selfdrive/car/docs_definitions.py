@@ -159,6 +159,10 @@ class DeviceNew(EnumBase):
   three = BasePart("comma three",
                    parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft],
                    required_parts=[MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft])
+  # variant of comma three with angled mounts
+  three_angled_mount = BasePart("comma three",
+                                parts=[MountNew.angled_mount, MountNew.angled_mount, CableNew.right_angle_obd_c_cable_1_5ft],
+                                required_parts=[MountNew.angled_mount, CableNew.right_angle_obd_c_cable_1_5ft])
   red_panda = BasePart("red panda")
 
 

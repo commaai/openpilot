@@ -102,7 +102,6 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarPart.toyota])
   car_parts_new: CarPartsNew = CarPartsNew.common([CarHarness.toyota])
 
 
