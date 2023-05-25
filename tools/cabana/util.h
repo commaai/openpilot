@@ -122,4 +122,15 @@ private:
   int theme;
 };
 
+class TabBar : public QTabBar {
+  Q_OBJECT
+
+public:
+  TabBar(QWidget *parent) : QTabBar(parent) {}
+  int addTab(const QString &text);
+
+private:
+  void closeTabClicked();
+};
+
 int num_decimals(double num);

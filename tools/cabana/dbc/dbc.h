@@ -1,9 +1,7 @@
 #pragma once
 
-#include <map>
 #include <QList>
 #include <QMetaType>
-#include <QObject>
 #include <QString>
 
 #include "opendbc/can/common_dbc.h"
@@ -57,12 +55,17 @@ namespace cabana {
     ValueDescription val_desc;
     int precision = 0;
     void updatePrecision();
+    QString formatValue(double value) const;
   };
 
   struct Msg {
+    uint32_t address;
     QString name;
     uint32_t size;
     QList<cabana::Signal> sigs;
+
+    QList<uint8_t> mask;
+    void updateMask();
 
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {
@@ -81,4 +84,4 @@ int bigEndianStartBitsIndex(int start_bit);
 int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
-std::vector<std::string> allDBCNames();
+inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }

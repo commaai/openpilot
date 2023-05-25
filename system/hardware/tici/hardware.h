@@ -16,8 +16,16 @@ public:
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   };
-  static std::string get_name() { return "tici"; };
-  static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::TICI; };
+
+  static std::string get_name() {
+    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
+    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+  };
+
+  static cereal::InitData::DeviceType get_device_type() {
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+  };
+
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); };
   static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); };
 
@@ -63,6 +71,31 @@ public:
     char volume_str[6];
     snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
     std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
+  }
+
+
+  static std::map<std::string, std::string> get_init_logs() {
+    std::map<std::string, std::string> ret = {
+      {"/BUILD", util::read_file("/BUILD")},
+    };
+
+    std::string bs = util::check_output("abctl --boot_slot");
+    ret["boot slot"] = bs.substr(0, bs.find_first_of("\n"));
+
+    std::string temp = util::read_file("/dev/disk/by-partlabel/ssd");
+    temp.erase(temp.find_last_not_of(std::string("\0\r\n", 3))+1);
+    ret["boot temp"] = temp;
+
+    // TODO: log something from system and boot
+    for (std::string part : {"xbl", "abl", "aop", "devcfg", "xbl_config"}) {
+      for (std::string slot : {"a", "b"}) {
+        std::string partition = part + "_" + slot;
+        std::string hash = util::check_output("sha256sum /dev/disk/by-partlabel/" + partition);
+        ret[partition] = hash.substr(0, hash.find_first_of(" "));
+      }
+    }
+
+    return ret;
   }
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };

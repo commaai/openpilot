@@ -1,5 +1,6 @@
 import re
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -20,7 +21,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
-  HARNESS = "Harness"
+  HARNESS = "Harness Kit"
   VIDEO = "Video"
 
 
@@ -67,6 +68,23 @@ class Harness(Enum):
   ford_q3 = "Ford Q3"
   ford_q4 = "Ford Q4"
   none = "None"
+
+
+class HarnessPart(Enum):
+  harness_box = "harness box"
+  comma_power_v2 = "comma power v2"
+  rj45_cable = "RJ45 cable (7 ft)"
+  long_obdc_cable = "long OBD-C cable"
+  usbc_coupler = "USB-C coupler"
+
+
+DEFAULT_HARNESS_PARTS: List[HarnessPart] = [HarnessPart.harness_box, HarnessPart.comma_power_v2, HarnessPart.rj45_cable]
+
+
+@dataclass
+class HarnessKit:
+  connector: Harness = Harness.none
+  parts: List[HarnessPart] = field(default_factory=lambda: copy.copy(DEFAULT_HARNESS_PARTS))
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
@@ -135,7 +153,9 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
-  harness: Enum = Harness.none
+
+  # harness connectors + all the parts needed
+  harness_kit: HarnessKit = HarnessKit()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -165,12 +185,14 @@ class CarInfo:
       self.min_enable_speed = CP.minEnableSpeed
 
     # harness column
-    harness_col = self.harness.value
-    if self.harness is not Harness.none:
+    harness_col = self.harness_kit.connector.value
+    if self.harness_kit.connector is not Harness.none:
       model_years = self.model + (' ' + self.years if self.years else '')
-      harness_col = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col}</a>'
+      harness_connector = f'- 1 <a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">{harness_col} connector</a>'
+      harness_parts = '<br>'.join([f"- {self.harness_kit.parts.count(part)} {part.value}" for part in sorted(set(self.harness_kit.parts), key=lambda part: part.value)])
+      harness_col = f'<details><summary>View</summary><sub>{harness_connector}<br>{harness_parts}</sub></details>'
 
-    self.row = {
+    self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,

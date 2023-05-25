@@ -372,7 +372,6 @@ CONFIGS = [
     pub_sub={
       "ubloxGnss": ["gnssMeasurements"],
       "qcomGnss": ["gnssMeasurements"],
-      "clocks": []
     },
     ignore=["logMonoTime"],
     init_callback=get_car_params,
@@ -421,11 +420,7 @@ def setup_env(simulation=False, CP=None, cfg=None, controlsState=None, lr=None):
   if lr is not None:
     services = {m.which() for m in lr}
     params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-
-  if lr is not None:
-    services = {m.which() for m in lr}
-    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-
+  
   if cfg is not None:
     # Clear all custom processConfig environment variables
     for config in CONFIGS:

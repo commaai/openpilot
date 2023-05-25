@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from enum import Enum, IntFlag
+from enum import IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -68,13 +68,13 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  harness: Enum = Harness.subaru_a
+  harness_kit: HarnessKit = HarnessKit(Harness.subaru_a)
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", harness=Harness.subaru_b),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", harness=Harness.subaru_b),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", harness_kit=HarnessKit(Harness.subaru_b)),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", harness_kit=HarnessKit(Harness.subaru_b)),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -262,7 +262,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\000\000eb\037@ \"',
-      b'\000\000e\x8f\037@ )',
+      b'\x00\x00e\x8f\x1f@ )',
       b'\x00\x00eq\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
       b'\x00\x00e\x8f\x00\x00\x00\x00',
@@ -277,6 +277,7 @@ FW_VERSIONS = {
       b'\xca!fp\x07',
       b'\xf3"f@\x07',
       b'\xe6!fp\x07',
+      b'\xf3"fp\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
