@@ -126,7 +126,7 @@ jobs:
         new_cellar=$(brew list --formula -1)
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
           if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-            rm -rf "$pkg"
+            rm -rf "$(brew --cellar)/$pkg"
           fi
         done
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
