@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -41,6 +41,14 @@ class PartType(Enum):
 @dataclass
 class Part:
   name: str
+  required: bool = True
+
+  # def __call__(self, *args, **kwargs):
+  #   print('here')
+  #   required = kwargs.get('required', None)
+  #   if required is not None:
+  #     self.required = required
+  #   return self
 
   @property
   def type(self) -> PartType:
@@ -78,6 +86,17 @@ class Device(Part):
 
 
 class CarPart(Enum):
+  def __call__(self, *args, **kwargs):
+    print('CarPart call')
+    required = kwargs.get('required', None)
+    part = self.value
+    if required is not None:
+      part = replace(self.value, required=required)
+      # self.value.required = required
+    return part
+    # if kwargs.get('required', None):
+    # return self.value
+
   nidec = Connector("Honda Nidec connector")
   bosch_a = Connector("Honda Bosch A connector")
   bosch_b = Connector("Honda Bosch B connector")
@@ -132,15 +151,15 @@ class CarPart(Enum):
   right_angle_obd_c_cable_1_5ft = Cable("right angle OBD-C cable (1.5 ft)")
 
 
-DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
+DEFAULT_CAR_PARTS: List[Part] = [CarPart.harness_box(), CarPart.comma_power_v2(), CarPart.rj45_cable_7ft(), CarPart.mount(), CarPart.right_angle_obd_c_cable_1_5ft()]
 
 
 @dataclass
 class CarParts:
-  parts: List[CarPart] = field(default_factory=list)
+  parts: List[Part] = field(default_factory=list)
 
   @classmethod
-  def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
+  def common(cls, add: List[Part] = None, remove: List[Part] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
