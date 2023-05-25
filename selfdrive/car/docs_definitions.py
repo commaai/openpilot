@@ -322,7 +322,7 @@ class CarPartsNew:
     parts = []
     for part in self.parts:
       parts.extend(part.value.all_parts(required=required))
-    return parts
+    return self.parts + parts
 
   def __iter__(self):
     return iter(self.parts)
