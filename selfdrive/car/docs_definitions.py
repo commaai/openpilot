@@ -86,16 +86,9 @@ class Device(Part):
 
 
 class CarPart(Enum):
-  def __call__(self, *args, **kwargs):
-    # print('CarPart call')
-    required = kwargs.get('required', None)
-    part = self.value
-    if required is not None:
-      part = replace(self.value, required=required)
-      # self.value.required = required
-    return part
-    # if kwargs.get('required', None):
-    # return self.value
+  def __call__(self, **kwargs) -> Part:
+    part: Part = self.value
+    return replace(part, **kwargs)
 
   nidec = Connector("Honda Nidec connector")
   bosch_a = Connector("Honda Bosch A connector")
