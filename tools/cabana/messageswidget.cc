@@ -491,22 +491,6 @@ MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) :
   QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::updateHeaderPositions);
 }
 
-void MessageViewHeader::showEvent(QShowEvent *e) {
-
-  for (int i = 0; i < count(); i++) {
-    if (!editors[i]) {
-      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-      editors[i] = new QLineEdit(this);
-      editors[i]->setClearButtonEnabled(true);
-      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
-
-      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
-    }
-    editors[i]->show();
-  }
-  QHeaderView::showEvent(e);
-}
-
 void MessageViewHeader::updateFilters() {
   QMap<int, QString> filters;
   for (int i = 0; i < count(); i++) {
@@ -539,11 +523,18 @@ void MessageViewHeader::updateHeaderPositions() {
 }
 
 void MessageViewHeader::updateGeometries() {
-  if (editors[0]) {
-    setViewportMargins(0, 0, 0, editors[0]->sizeHint().height());
-  } else {
-    setViewportMargins(0, 0, 0, 0);
+  for (int i = 0; i < count(); i++) {
+    if (!editors[i]) {
+      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      editors[i] = new QLineEdit(this);
+      editors[i]->setClearButtonEnabled(true);
+      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
+
+      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
+    }
   }
+  setViewportMargins(0, 0, 0, editors[0] ? editors[0]->sizeHint().height() : 0);
+
   QHeaderView::updateGeometries();
   updateHeaderPositions();
 }
