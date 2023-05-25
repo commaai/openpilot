@@ -111,6 +111,10 @@ else:
   cflags = []
   cxxflags = []
   cpppath = []
+  rpath += [
+    Dir("#cereal").abspath,
+    Dir("#common").abspath
+  ]
 
   # MacOS
   if arch == "Darwin":
@@ -118,9 +122,7 @@ else:
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
       f"{brew_prefix}/lib",
-      f"{brew_prefix}/Library",
       f"{brew_prefix}/opt/openssl@3.0/lib",
-      f"{brew_prefix}/Cellar",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     libpath.append(f"#third_party/acados/{arch}/lib")
@@ -143,12 +145,9 @@ else:
       "/usr/lib",
       "/usr/local/lib",
     ]
-
-  rpath += [
-    Dir("#third_party/snpe/x86_64-linux-clang").abspath,
-    Dir("#cereal").abspath,
-    Dir("#common").abspath
-  ]
+    rpath += [
+      Dir("#third_party/snpe/x86_64-linux-clang").abspath,
+    ]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
