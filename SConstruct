@@ -72,13 +72,18 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
+# create symlink to lib dir of current arch 
+acados_lib_path = Dir(f"#third_party/acados/lib").abspath
+if not os.path.exists(acados_lib_path):
+  os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path)
+
 
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
   "PYTHONPATH": Dir("#").abspath,
 
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
@@ -124,8 +129,8 @@ else:
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
+      f"#third_party/acados/{arch}/lib",
     ]
-    libpath.append(f"#third_party/acados/{arch}/lib")
 
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
@@ -133,6 +138,7 @@ else:
       f"{brew_prefix}/include",
       f"{brew_prefix}/opt/openssl@3.0/include",
     ]
+    lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
   # Linux 86_64
   else:
     libpath = [
