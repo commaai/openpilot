@@ -233,20 +233,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   finishRegistationLayout->setSpacing(40);
   finishRegistationLayout->setContentsMargins(64, 64, 64, 64);
 
-  QHBoxLayout *registrationTitleLayout = new QHBoxLayout;
-  registrationTitleLayout->setSpacing(32);
-
-  QLabel *registrationIcon = new QLabel;
-  QPixmap *pixmap = new QPixmap("../assets/offroad/img_registration.svg");
-  registrationIcon->setPixmap(pixmap->scaledToHeight(75, Qt::SmoothTransformation));
-  registrationTitleLayout->addWidget(registrationIcon);
-
   QLabel* registrationTitle = new QLabel(tr("Finish Setup"));
   registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold;");
-  registrationTitleLayout->addWidget(registrationTitle);
-
-  registrationTitleLayout->addStretch();
-  finishRegistationLayout->addLayout(registrationTitleLayout);
+  finishRegistationLayout->addWidget(registrationTitle);
 
   QLabel* registrationDescription = new QLabel(tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
   registrationDescription->setWordWrap(true);
