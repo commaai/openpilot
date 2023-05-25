@@ -227,33 +227,31 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   // Unpaired, registration prompt layout
 
-  QWidget* finishRegistration = new QWidget;
+  QFrame* finishRegistration = new QFrame;
   finishRegistration->setObjectName("primeWidget");
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setContentsMargins(30, 75, 30, 45);
-  finishRegistationLayout->setSpacing(0);
+  finishRegistationLayout->setSpacing(40);
+  finishRegistationLayout->setContentsMargins(64, 64, 64, 64);
 
   QLabel* registrationTitle = new QLabel(tr("Finish Setup"));
-  registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold; margin-left: 55px;");
+  registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold;");
   finishRegistationLayout->addWidget(registrationTitle);
-
-  finishRegistationLayout->addSpacing(30);
 
   QLabel* registrationDescription = new QLabel(tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
   registrationDescription->setWordWrap(true);
-  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light; margin-left: 55px;");
+  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light;");
   finishRegistationLayout->addWidget(registrationDescription);
 
   finishRegistationLayout->addStretch();
 
   QPushButton* pair = new QPushButton(tr("Pair device"));
-  pair->setFixedHeight(220);
   pair->setStyleSheet(R"(
     QPushButton {
       font-size: 55px;
-      font-weight: 400;
+      font-weight: 500;
       border-radius: 10px;
       background-color: #465BEA;
+      padding: 64px;
     }
     QPushButton:pressed {
       background-color: #3049F4;
