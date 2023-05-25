@@ -21,7 +21,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 
 {% endfor %}
 
-<a id="footnotes"></a>
+### Footnotes
 {% for footnote in footnotes %}
 <sup>{{loop.index}}</sup>{{footnote}} <br />
 {% endfor %}
