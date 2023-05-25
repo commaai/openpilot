@@ -5,6 +5,8 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 
+#include "tools/cabana/commands.h"
+
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0 ,0, 0, 0);
@@ -82,11 +84,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &MessagesWidget::dbcModified);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MessagesWidget::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -268,17 +266,14 @@ static std::pair<unsigned int, unsigned int> parseRange(const QString &filter, b
 }
 
 bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters) {
-  auto cs = Qt::CaseInsensitive;
   bool match = true;
   bool convert_ok;
 
-  for (int column = Column::NAME; column <= Column::DATA; column++) {
-    if (!filters.contains(column)) continue;
-    const QString &txt = filters[column];
-
+  for (auto it = filters.cbegin(); it != filters.cend() && match; ++it) {
+    const QString &txt = it.value();
     QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
 
-    switch (column) {
+    switch (it.key()) {
       case Column::NAME:
         {
           bool name_match = re.match(msgName(id)).hasMatch();
@@ -330,7 +325,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::DATA:
         {
           bool data_match = false;
-          data_match |= QString(data.dat.toHex()).contains(txt, cs);
+          data_match |= QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
           data_match |= re.match(QString(data.dat.toHex())).hasMatch();
           data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
 
@@ -459,11 +454,10 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
   QMenu *menu = new QMenu(this);
   int cur_index = header()->logicalIndexAt(pos);
 
-  QString column_name;
   QAction *action;
   for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
     int logical_index = header()->logicalIndex(visual_index);
-    column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
+    QString column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
 
     // Hide show action
     if (header()->isSectionHidden(logical_index)) {
