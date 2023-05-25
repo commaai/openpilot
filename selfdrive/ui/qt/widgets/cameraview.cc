@@ -203,8 +203,8 @@ void CameraWidget::updateFrameMat() {
   if (zoomed_view) {
     if (active_stream_type != VISION_STREAM_WIDE_ROAD) {
       // Always ready to switch if wide is not active, start at full zoom
-      ready_to_switch_stream = true;
       zoom_transition = 1;
+      ready_to_switch_stream = true;
     }
 
     if (active_stream_type == VISION_STREAM_DRIVER) {
