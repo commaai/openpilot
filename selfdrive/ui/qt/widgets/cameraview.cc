@@ -201,6 +201,12 @@ void CameraWidget::updateFrameMat() {
   int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
+    if (active_stream_type != VISION_STREAM_WIDE_ROAD) {
+      // Always ready to switch if wide is not active, start at full zoom
+      zoom_transition = 1;
+      ready_to_switch_stream = true;
+    }
+
     if (active_stream_type == VISION_STREAM_DRIVER) {
       frame_mat = get_driver_view_transform(w, h, stream_width, stream_height);
     } else {
@@ -209,11 +215,21 @@ void CameraWidget::updateFrameMat() {
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
+        // If narrow road camera is requested, start zooming in.
+        // Mark ready to switch once we're fully zoomed in
+        if (requested_stream_type != VISION_STREAM_WIDE_ROAD) {
+          zoom_transition += zoom_transition * 0.2 + 0.01;
+        } else {
+          zoom_transition -= (1.0 - zoom_transition) * 0.2 + 0.01;
+        }
+        zoom_transition = std::clamp(zoom_transition, 0.0f, 1.0f);
+        ready_to_switch_stream = fabs(zoom_transition - 1) < 1e-3;
+
         intrinsic_matrix = ecam_intrinsic_matrix;
-        zoom = 2.0;
+        zoom = util::map_val(zoom_transition, 0.0f, 1.0f, ecam_zoom, ecam_to_fcam_zoom * fcam_zoom);
       } else {
         intrinsic_matrix = fcam_intrinsic_matrix;
-        zoom = 1.1;
+        zoom = fcam_zoom;
       }
       const vec3 inf = {{1000., 0., 0.}};
       const vec3 Ep = matvecmul3(calibration, inf);
@@ -372,13 +388,13 @@ void CameraWidget::vipcThread() {
   VisionIpcBufExtra meta_main = {0};
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client || cur_stream != requested_stream_type) {
+    if (!vipc_client || ((cur_stream != requested_stream_type) && ready_to_switch_stream)) {
       clearFrames();
       qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;
       vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
+      active_stream_type = cur_stream;
     }
-    active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
       clearFrames();
