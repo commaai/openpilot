@@ -81,7 +81,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     settings.suppress_defined_signals = (state == Qt::Checked);
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &MessagesWidget::dbcModified);
   QObject::connect(dbc(), &DBCManager::msgRemoved, this, &MessagesWidget::dbcModified);
@@ -145,14 +144,6 @@ void MessagesWidget::updateSuppressedButtons() {
     suppress_clear->setText(QString("Clear Suppressed (%1)").arg(model->suppressed_bytes.size()));
   }
 }
-
-void MessagesWidget::reset() {
-  current_msg_id = std::nullopt;
-  view->selectionModel()->clear();
-  model->reset();
-  updateSuppressedButtons();
-}
-
 
 // MessageListModel
 
@@ -417,14 +408,6 @@ void MessageListModel::suppress() {
 
 void MessageListModel::clearSuppress() {
   suppressed_bytes.clear();
-}
-
-void MessageListModel::reset() {
-  beginResetModel();
-  filter_str.clear();
-  msgs.clear();
-  clearSuppress();
-  endResetModel();
 }
 
 void MessageListModel::forceResetModel() {

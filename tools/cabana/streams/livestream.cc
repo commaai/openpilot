@@ -1,7 +1,5 @@
 #include "tools/cabana/streams/livestream.h"
 
-#include <QTimer>
-
 LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   if (settings.log_livestream) {
     std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
@@ -21,11 +19,9 @@ void LiveStream::startUpdateTimer() {
   timer_id = update_timer.timerId();
 }
 
-void LiveStream::startStreamThread() {
-  // delay the start of the thread to avoid calling startStreamThread
-  // in the constructor when other classes' slots have not been connected to
-  // the signals of the livestream.
-  QTimer::singleShot(0, [this]() { stream_thread->start(); });
+void LiveStream::start() {
+  emit streamStarted();
+  stream_thread->start();
   startUpdateTimer();
 }
 
@@ -71,7 +67,6 @@ void LiveStream::updateEvents() {
   if (first_update_ts == 0) {
     first_update_ts = nanos_since_boot();
     first_event_ts = current_event_ts = all_events_.back()->mono_time;
-    emit streamStarted();
   }
 
   if (paused_ || prev_speed != speed_) {

@@ -5,6 +5,7 @@
 #include <QMessageBox>
 
 #include "tools/cabana/commands.h"
+#include "tools/cabana/mainwin.h"
 
 // DetailWidget
 
@@ -218,7 +219,7 @@ void EditMessageDialog::validateName(const QString &text) {
 
 // CenterWidget
 
-CenterWidget::CenterWidget(ChartsWidget *charts, QWidget *parent) : charts(charts), QWidget(parent) {
+CenterWidget::CenterWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addWidget(welcome_widget = createWelcomeWidget());
@@ -228,7 +229,7 @@ void CenterWidget::setMessage(const MessageId &msg_id) {
   if (!detail_widget) {
     delete welcome_widget;
     welcome_widget = nullptr;
-    layout()->addWidget(detail_widget = new DetailWidget(charts, this));
+    layout()->addWidget(detail_widget = new DetailWidget(((MainWindow*)parentWidget())->charts_widget, this));
   }
   detail_widget->setMessage(msg_id);
 }
