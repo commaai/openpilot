@@ -98,6 +98,7 @@ jobs:
       with:
         path: |
           ~/.pyenv
+          ~/Library/Caches/pypoetry
           /usr/local/Cellar
           /usr/local/opt
           /opt/homebrew/Cellar
