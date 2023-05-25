@@ -8,7 +8,6 @@
 #include <QObject>
 #include <QString>
 #include <QSet>
-#include <QDebug>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcfile.h"
