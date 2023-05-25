@@ -125,11 +125,12 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.comment = comment;
 }
 
 void DBCFile::removeMsg(const MessageId &id) {
@@ -193,6 +194,7 @@ void DBCFile::parseExtraInfo(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"(.*)\";)");
   static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
   static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (.*);)");
   auto get_sig = [this](uint32_t address, const QString &name) -> cabana::Signal * {
@@ -235,6 +237,12 @@ void DBCFile::parseExtraInfo(const QString &content) {
           }
         }
       }
+    } else if (line.startsWith("CM_ BO_")) {
+      if (auto match = msg_comment_regexp.match(line); match.hasMatch()) {
+        if (auto m = (cabana::Msg *)msg(match.captured(1).toUInt())) {
+          m->comment = match.captured(2).trimmed();
+        }
+      }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (auto match = sg_comment_regexp.match(line); match.hasMatch()) {
         if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
@@ -246,9 +254,12 @@ void DBCFile::parseExtraInfo(const QString &content) {
 }
 
 QString DBCFile::generateDBC() {
-  QString dbc_string, signal_comment, val_desc;
-  for (auto &[address, m] : msgs) {
+  QString dbc_string, signal_comment, message_comment, val_desc;
+  for (const auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
+    if (!m.comment.isEmpty()) {
+      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+    }
     for (auto sig : m.getSignals()) {
       dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
                         .arg(sig->name)
@@ -274,5 +285,5 @@ QString DBCFile::generateDBC() {
     }
     dbc_string += "\n";
   }
-  return dbc_string + signal_comment + val_desc;
+  return dbc_string + message_comment + signal_comment + val_desc;
 }

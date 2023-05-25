@@ -262,7 +262,7 @@ void FindSignalDlg::customMenuRequested(const QPoint &pos) {
       auto &s = model->filtered_signals[index.row()];
       auto msg = dbc()->msg(s.id);
       if (!msg) {
-        UndoStack::push(new EditMsgCommand(s.id, dbc()->newMsgName(s.id), can->lastMessage(s.id).dat.size()));
+        UndoStack::push(new EditMsgCommand(s.id, dbc()->newMsgName(s.id), can->lastMessage(s.id).dat.size(), ""));
         msg = dbc()->msg(s.id);
       }
       s.sig.name = dbc()->newSignalName(s.id);

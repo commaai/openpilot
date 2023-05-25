@@ -226,7 +226,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     QString name = dbc()->newMsgName(msg_id);
-    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size(), ""));
     msg = dbc()->msg(msg_id);
   }
 

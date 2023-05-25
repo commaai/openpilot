@@ -144,12 +144,12 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
   auto sources_dbc_file = findDBCFile(id);
   assert(sources_dbc_file); // This should be impossible
   auto [dbc_sources, dbc_file] = *sources_dbc_file;
 
-  dbc_file->updateMsg(id, name, size);
+  dbc_file->updateMsg(id, name, size, comment);
 
   for (uint8_t source : dbc_sources) {
     emit msgUpdated({.source = source, .address = id.address});
