@@ -3,6 +3,7 @@
 #include <QDockWidget>
 #include <QJsonDocument>
 #include <QMainWindow>
+#include <QMenu>
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
@@ -89,6 +90,7 @@ protected:
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
   QMenu *manage_dbcs_menu = nullptr;
+  QMenu *tools_menu = nullptr;
   QAction *close_stream_act = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;

@@ -6,7 +6,6 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QResizeEvent>
@@ -136,7 +135,7 @@ void MainWindow::createActions() {
   commands_act->setDefaultWidget(new QUndoView(UndoStack::instance()));
   commands_menu->addAction(commands_act);
 
-  QMenu *tools_menu = menuBar()->addMenu(tr("&Tools"));
+  tools_menu = menuBar()->addMenu(tr("&Tools"));
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
   tools_menu->addAction(tr("&Find Signal"), this, &MainWindow::findSignal);
 
@@ -329,7 +328,9 @@ void MainWindow::changingStream() {
 }
 
 void MainWindow::streamStarted() {
-  close_stream_act->setEnabled(dynamic_cast<DummyStream *>(can) == nullptr);
+  bool has_stream = dynamic_cast<DummyStream *>(can) == nullptr;
+  close_stream_act->setEnabled(has_stream);
+  tools_menu->setEnabled(has_stream);
   createDockWidgets();
 
   video_dock->setWindowTitle(can->routeName());
