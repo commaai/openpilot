@@ -64,7 +64,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
             background-color: #465BEA;
           }
           QPushButton:pressed {
-            background-color: #3049F4;
+            background-color: #444444;
           }
         )");
       }
