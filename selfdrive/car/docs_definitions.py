@@ -41,9 +41,9 @@ class PartType(Enum):
 @dataclass
 class BasePart:
   name: str
-  # A list of parts that come with this part
+  # A list of parts that come with this part in the shop
   parts: List[Enum] = field(default_factory=list)
-  # Parts like extras aren't required, can override required_parts
+  # If there are extra parts included, you can override required_parts
   required_parts: Optional[List[Enum]] = None
 
   def __post_init__(self):
@@ -98,7 +98,7 @@ class CableNew(EnumBase):
   right_angle_obd_c_cable_1_5ft = BasePart("right angle OBD-C cable (1.5 ft)")
 
 
-class AccessoryNew(Enum):
+class AccessoryNew(EnumBase):
   harness_box = BasePart("harness box")
   comma_power_v2 = BasePart("comma power v2")
 
@@ -110,7 +110,7 @@ class BaseCarHarness(BasePart):
 
 
 # the kit
-class CarHarness(Enum):
+class CarHarness(EnumBase):
   nidec = BaseCarHarness("Honda Nidec connector")
   bosch_a = BaseCarHarness("Honda Bosch A connector")
   bosch_b = BaseCarHarness("Honda Bosch B connector")
@@ -148,13 +148,14 @@ class CarHarness(Enum):
   ford_q4 = BaseCarHarness("Ford Q4 connector")
 
 
-class DeviceNew(Enum):
-  three = BasePart("comma three", parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft],
-                   required_parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft])
+class DeviceNew(EnumBase):
+  three = BasePart("comma three",
+                   parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft],
+                   required_parts=[MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft])
   red_panda = BasePart("red panda")
 
 
-class Kit(Enum):
+class Kit(EnumBase):
   red_panda_kit = BasePart("CAN FD panda kit", parts=[DeviceNew.red_panda, AccessoryNew.harness_box, CableNew.usb_a_2_a_cable, CableNew.usbc_otg_cable, CableNew.obd_c_cable_1_5ft])
 
 
@@ -275,6 +276,7 @@ class CarPart(Enum):
 
 
 DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
+DEFAULT_CAR_PARTS_NEW: List[EnumBase] = [DeviceNew.three]
 
 
 @dataclass
@@ -288,6 +290,33 @@ class CarParts:
   def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
+
+
+@dataclass
+class CarPartsNew:
+  parts: List[EnumBase] = field(default_factory=list)
+
+  @classmethod
+  def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
+    p = [part for part in (add or []) + DEFAULT_CAR_PARTS_NEW if part not in (remove or [])]
+    return cls(p)
+
+  def all_parts(self, required=False):
+    parts = []
+    for part in self.parts:
+      if isinstance(part, BasePart):
+        parts.append(part)
+
+      if isinstance(part, Enum):
+        _parts = 'required_parts' if required else 'parts'
+        parts.extend(getattr(part.value, _parts))
+        for value in getattr(part.value, _parts):
+          parts.extend(get_parts(value))
+
+    return parts
+
+  def __iter__(self):
+    return iter(self.parts)
 
 
 CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_footnote"], defaults=(False, False))
