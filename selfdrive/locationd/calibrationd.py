@@ -53,6 +53,8 @@ def sanity_clip(rpy: np.ndarray) -> np.ndarray:
                    np.clip(rpy[1], PITCH_LIMITS[0] - .005, PITCH_LIMITS[1] + .005),
                    np.clip(rpy[2], YAW_LIMITS[0] - .005, YAW_LIMITS[1] + .005)])
 
+def moving_avg_with_linear_decay(prev_mean: np.ndarray, new_val: np.ndarray, idx: int, block_size: float) -> np.ndarray:
+  return (idx*prev_mean + (block_size - idx) * new_val) / block_size
 
 class Calibrator:
   def __init__(self, param_put: bool = False):
@@ -199,17 +201,14 @@ class Calibrator:
     else:
       new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
 
-    if len(road_transform_trans) == 3:
+    if (len(road_transform_trans) == 3):
       new_height = np.array([road_transform_trans[2]])
     else:
       new_height = HEIGHT_INIT
 
-    self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] +
-                                 (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
-    self.wide_from_device_eulers[self.block_idx] = (self.idx*self.wide_from_device_eulers[self.block_idx] +
-                                                    (BLOCK_SIZE - self.idx) * new_wide_from_device_euler) / float(BLOCK_SIZE)
-    self.heights[self.block_idx] = (self.idx*self.heights[self.block_idx] +
-                                    (BLOCK_SIZE - self.idx) * new_height) / float(BLOCK_SIZE)
+    self.rpys[self.block_idx] = moving_avg_with_linear_decay(self.rpys[self.block_idx], new_rpy, self.idx, float(BLOCK_SIZE))
+    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx], new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
+    self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0:
