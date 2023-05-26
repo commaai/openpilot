@@ -114,10 +114,11 @@ def download_and_inject_assistance():
   assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
   try:
     c = pycurl.Curl() 
-    c.setopt(c.URL, 'http://www.alfe.de')
+    c.setopt(c.URL, assistance_url)
     c.setopt(c.NOBODY, 1)
     c.perform()
-    print(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
+    assert bytes_n < 1e5
     with open(assist_data_file, "wb") as fp:
       curl = pycurl.Curl()
       curl.setopt(pycurl.URL, assistance_url)
@@ -133,6 +134,8 @@ def download_and_inject_assistance():
       subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
+  if os.path.isfile(assist_data_file):
+    os.remove(assist_data_file)
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
