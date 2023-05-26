@@ -46,6 +46,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   restoreHeaderState(settings.message_header_state);
   view->header()->setSectionsMovable(true);
   view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
+  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -404,8 +405,8 @@ void MessageView::updateBytesSectionSize() {
     }
   }
   int width = delegate->widthForBytes(max_bytes);
-  if (header()->sectionSize(5) != width) {
-    header()->resizeSection(5, width);
+  if (header()->sectionSize(MessageListModel::Column::DATA) != width) {
+    header()->resizeSection(MessageListModel::Column::DATA, width);
   }
 }
 
