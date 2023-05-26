@@ -232,6 +232,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         panda->can_send(event.getSendcan());
         LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
+    } else {
+      LOGE("sendcan too old to send: %llu, %llu", nanos_since_boot(), event.getLogMonoTime());
     }
   }
 }
@@ -470,6 +472,11 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   bool is_onroad_last = false;
   std::future<bool> safety_future;
 
+  std::vector<std::string> connected_serials;
+  for (Panda *p : pandas) {
+    connected_serials.push_back(p->hw_serial());
+  }
+
   LOGD("start panda state thread");
 
   // run at 2hz
@@ -497,10 +504,15 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
         LOGE("Reconnecting, communication to pandas not healthy");
         do_exit = true;
 
-      // TODO: list is slow, takes 16ms
-      } else if (pandas.size() != Panda::list().size()) {
-        LOGW("Reconnecting to changed amount of pandas!");
-        do_exit = true;
+      } else {
+        // check for new pandas
+        for (std::string &s : Panda::list(true)) {
+          if (!std::count(connected_serials.begin(), connected_serials.end(), s)) {
+            LOGW("Reconnecting to new panda: %s", s.c_str());
+            do_exit = true;
+            break;
+          }
+        }
       }
 
       if (do_exit) {

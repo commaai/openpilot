@@ -10,6 +10,7 @@ class LiveStream : public AbstractStream {
 public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
+  void start() override;
   inline double routeStartTime() const override { return begin_event_ts / 1e9; }
   inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
   void setSpeed(float speed) override { speed_ = speed; }
@@ -20,7 +21,6 @@ public:
 
 protected:
   virtual void streamThread() = 0;
-  void startStreamThread();
   void handleEvent(const char *data, const size_t size);
 
 private:

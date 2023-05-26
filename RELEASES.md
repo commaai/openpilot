@@ -1,3 +1,7 @@
+Version 0.9.3 (2023-06-XX)
+========================
+* New driving model
+
 Version 0.9.2 (2023-05-22)
 ========================
 * New driving model

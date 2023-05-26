@@ -2,6 +2,7 @@
 
 #include <map>
 #include <QList>
+#include <QObject>
 #include <QString>
 
 #include "tools/cabana/dbc/dbc.h"
@@ -30,7 +31,7 @@ public:
   cabana::Signal *getSignal(const MessageId &id, const QString &sig_name);
   void removeSignal(const MessageId &id, const QString &sig_name);
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
   void removeMsg(const MessageId &id);
 
   QString newMsgName(const MessageId &id);

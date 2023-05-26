@@ -7,7 +7,7 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU
+from panda import Panda, PandaDFU, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
 from system.hardware import HARDWARE
@@ -16,7 +16,8 @@ from system.swaglog import cloudlog
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(panda.get_mcu_type().config.app_path)
+    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""

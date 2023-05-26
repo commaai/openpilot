@@ -6,16 +6,15 @@
 #include <QMessageBox>
 #include <QPushButton>
 
-#include "common/prefix.h"
-
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
+  unsetenv("ZMQ");
+  // TODO: Remove when OpenpilotPrefix supports ZMQ
+#ifndef __APPLE__
+  op_prefix = std::make_unique<OpenpilotPrefix>();
+#endif
   QObject::connect(&settings, &Settings::changed, [this]() {
     if (replay) replay->setSegmentCacheLimit(settings.max_cached_minutes);
   });
-}
-
-ReplayStream::~ReplayStream() {
-  if (replay) replay->stop();
 }
 
 static bool event_filter(const Event *e, void *opaque) {
@@ -37,13 +36,13 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
-  QObject::connect(replay.get(), &Replay::streamStarted, this, &AbstractStream::streamStarted);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
-  if (replay->load()) {
-    replay->start();
-    return true;
-  }
-  return false;
+  return replay->load();
+}
+
+void ReplayStream::start() {
+  emit streamStarted();
+  replay->start();
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
@@ -77,8 +76,6 @@ AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
 }
 
 // OpenReplayWidget
-
-static std::unique_ptr<OpenpilotPrefix> op_prefix;
 
 OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   // TODO: get route list from api.comma.ai
@@ -118,26 +115,17 @@ bool OpenReplayWidget::open() {
     route = route.mid(idx + 1);
   }
 
-  bool ret = false;
   bool is_valid_format = Route::parseRoute(route).str.size() > 0;
   if (!is_valid_format) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {
-    // TODO: Remove when OpenpilotPrefix supports ZMQ
-#ifndef __APPLE__
-    op_prefix.reset(new OpenpilotPrefix());
-#endif
     uint32_t flags[] = {REPLAY_FLAG_NO_VIPC, REPLAY_FLAG_NONE, REPLAY_FLAG_ECAM, REPLAY_FLAG_DCAM, REPLAY_FLAG_QCAMERA};
-    ReplayStream *replay_stream = *stream ? (ReplayStream *)*stream : new ReplayStream(qApp);
-    ret = replay_stream->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()]);
-    if (!ret) {
-      if (replay_stream != *stream) {
-        delete replay_stream;
-      }
-      QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+    auto replay_stream = std::make_unique<ReplayStream>(qApp);
+    if (replay_stream->loadRoute(route, data_dir, flags[choose_video_cb->currentIndex()])) {
+      *stream = replay_stream.release();
     } else {
-      *stream = replay_stream;
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
     }
   }
-  return ret;
+  return *stream != nullptr;
 }
