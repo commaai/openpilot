@@ -120,7 +120,9 @@ def download_and_inject_assistance():
     c.perform()
     c.close()
     bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
-    assert bytes_n < 1e5
+    if bytes_n > 1e5:
+      cloudlog.exception("Qcom assistance data larger than expected")
+      return
     with open(assist_data_file, "wb") as fp:
       c = pycurl.Curl()
       c.setopt(pycurl.URL, assistance_url)
