@@ -48,7 +48,7 @@ public:
 
 private:
   const MessageId id;
-  cabana::Signal signal = {};
+  QList<cabana::Signal> sigs;
 };
 
 class EditSignalCommand : public QUndoCommand {

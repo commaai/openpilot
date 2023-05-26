@@ -48,6 +48,13 @@ void DBCFile::open(const QString &content) {
       sig.factor = s.factor;
       sig.offset = s.offset;
       sig.is_little_endian = s.is_little_endian;
+
+      // sig.multiplex_switch_value = s.mux_selector;
+      // if (s.is_multiplexed) {
+      //   sig.type == cabana::Signal::Type::MultiplexerSwitch;
+      // } else if (s.mux_size > 0) {
+      //   sig.type == cabana::Signal::Type::Multiplexed;
+      // }
       sig.updatePrecision();
     }
     m.updateMask();
