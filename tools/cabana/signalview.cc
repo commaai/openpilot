@@ -404,10 +404,11 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
-      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
+      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::SwitchValue ||
+      item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
-    e->setValidator(index.row() == 0 ? name_validator : double_validator);
+    e->setValidator(item->type == SignalModel::Item::Name ? name_validator : double_validator);
 
     if (item->type == SignalModel::Item::Name) {
       QCompleter *completer = new QCompleter(dbc()->signalNames());
