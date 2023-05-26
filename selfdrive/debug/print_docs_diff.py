@@ -14,6 +14,8 @@ COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
 
+MAX_GITHUB_COMMENT_SIZE = 65000
+
 
 def load_base_car_info(path):
   with open(path, "rb") as f:
@@ -55,7 +57,7 @@ def format_row(builder):
   return "|" + "|".join(builder) + "|"
 
 
-def print_car_info_diff(path):
+def print_car_info_diff(path, github=False):
   base_car_info = defaultdict(list)
   new_car_info = defaultdict(list)
 
@@ -107,11 +109,21 @@ def print_car_info_diff(path):
           markdown_builder.append(COLUMN_HEADER)
         markdown_builder.extend(changes[category])
 
-    print("\n".join(markdown_builder))
+    if github:
+      count = 0
+      for line in markdown_builder:
+        count += len(line)
+        if count > MAX_GITHUB_COMMENT_SIZE:
+          print('...\nTo see the full diff, run ``` python selfdrive/debug/print_docs_diff.py ```')
+          break
+        print(line)
+    else:
+      print("\n".join(markdown_builder))
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--path", required=True)
+  parser.add_argument("--github", action='store_true')
   args = parser.parse_args()
-  print_car_info_diff(args.path)
+  print_car_info_diff(args.path, args.github)
