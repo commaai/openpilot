@@ -85,6 +85,5 @@ repos:
     -   id: poetry-check
     -   id: poetry-lock
         name: validate poetry lock
-        files: '^(pyproject.toml)|(poetry.lock)$'
         args: 
         - --check

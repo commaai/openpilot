@@ -7,9 +7,6 @@ launch_openpilot.sh
 Jenkinsfile
 SConstruct
 
-pyproject.toml
-poetry.lock
-
 README.md
 RELEASES.md
 docs/CARS.md
