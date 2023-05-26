@@ -83,9 +83,7 @@ repos:
     rev: '1.5.0'
     hooks:
     -   id: poetry-check
-    -   id: poetry-lock-check
+    -   id: poetry-lock
         name: validate poetry lock
-        language: python
-        entry: poetry lock
         args: 
         - --check
