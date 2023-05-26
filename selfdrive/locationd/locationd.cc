@@ -507,7 +507,7 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
     this->calib = live_calib;
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
-    this->calibrated = log.getCalStatus() == 1;
+    this->calibrated = log.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
     this->observation_values_invalid["liveCalibration"] *= DECAY;
   }
 }

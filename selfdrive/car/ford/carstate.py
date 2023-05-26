@@ -16,8 +16,20 @@ class CarState(CarStateBase):
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
+    self.vehicle_sensors_valid = False
+    self.hybrid_platform = False
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
+
+    # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
+    # we do not support these cars at this time.
+    # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
+    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+
+    # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
+    # The vehicle usually recovers out of this state within a minute of normal driving
+    self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
     ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
@@ -48,6 +60,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
+    ret.accFaulted = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (1, 2)
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -62,7 +75,7 @@ class CarState(CarStateBase):
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
-    ret.stockAeb = ret.stockFcw and ret.cruiseState.enabled
+    ret.stockAeb = bool(cp_cam.vl["ACCDATA_2"]["CmbbBrkDecel_B_Rq"])
 
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
@@ -92,6 +105,7 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       # sig_address, frequency
+      ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
@@ -129,6 +143,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     messages = [
       # sig_address, frequency
+      ("ACCDATA_2", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]

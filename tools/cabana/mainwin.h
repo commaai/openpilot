@@ -3,6 +3,7 @@
 #include <QDockWidget>
 #include <QJsonDocument>
 #include <QMainWindow>
+#include <QMenu>
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
@@ -21,20 +22,22 @@ public:
   MainWindow();
   void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
-  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL, bool close_all = true);
+  void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
+  ChartsWidget *charts_widget = nullptr;
 
 public slots:
-  void openRoute();
-  void newFile();
-  void openFile();
+  void openStream();
+  void closeStream();
+  void changingStream();
+  void streamStarted();
+
+  void newFile(SourceSet s = SOURCE_ALL);
+  void openFile(SourceSet s = SOURCE_ALL);
   void openRecentFile();
-  void openOpendbcFile();
   void loadDBCFromOpendbc(const QString &name);
-  void loadDBCFromFingerprint();
   void save();
   void saveAs();
   void saveToClipboard();
-  void updateSources(const SourceSet &s);
 
 signals:
   void showMessage(const QString &msg, int timeout);
@@ -42,14 +45,13 @@ signals:
 
 protected:
   void remindSaveChanges();
+  void closeFile(SourceSet s = SOURCE_ALL);
   void closeFile(DBCFile *dbc_file);
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
   void saveFileToClipboard(DBCFile *dbc_file);
   void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
-  void openFileForSource(SourceSet s);
-  void newFileForSource(SourceSet s);
   void autoSave();
   void cleanupAutoSaveFile();
   void updateRecentFiles(const QString &fn);
@@ -63,34 +65,38 @@ protected:
   void updateDownloadProgress(uint64_t cur, uint64_t total, bool success);
   void setOption();
   void findSimilarBits();
+  void findSignal();
   void undoStackCleanChanged(bool clean);
   void undoStackIndexChanged(int index);
   void onlineHelp();
   void toggleFullScreen();
   void updateStatus();
   void updateLoadSaveMenus();
+  void createDockWidgets();
+  void eventsMerged();
 
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
-  MessagesWidget *messages_widget;
+  QDockWidget *messages_dock;
+  MessagesWidget *messages_widget = nullptr;
   CenterWidget *center_widget;
-  ChartsWidget *charts_widget;
   QWidget *floating_window = nullptr;
   QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
-  QSplitter *video_splitter;;
+  QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
   QMenu *open_recent_menu = nullptr;
   QMenu *manage_dbcs_menu = nullptr;
+  QMenu *tools_menu = nullptr;
+  QAction *close_stream_act = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
-  SourceSet sources;
   friend class OnlineHelp;
 };
 

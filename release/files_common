@@ -293,6 +293,7 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
+selfdrive/test/test_time_to_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -468,6 +469,7 @@ body/crypto/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/custom.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
@@ -477,6 +479,10 @@ cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
+cereal/messaging/event.cc
+cereal/messaging/event.h
+cereal/messaging/impl_fake.cc
+cereal/messaging/impl_fake.h
 cereal/messaging/impl_msgq.cc
 cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc

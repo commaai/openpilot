@@ -13,7 +13,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, uint32_t in_freq = 0);
+  void compute(const char *dat, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -40,14 +40,14 @@ class AbstractStream : public QObject {
 public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {};
+  virtual void start() = 0;
   inline bool liveStreaming() const { return route() == nullptr; }
-  inline double lastEventSecond() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
   virtual double routeStartTime() const { return 0; }
   virtual double currentSec() const = 0;
-  double totalSeconds() const { return total_sec; }
+  virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
   const CanData &lastMessage(const MessageId &id);
   virtual VisionStreamType visionStreamType() const { return VISION_STREAM_ROAD; }
   virtual const Route *route() const { return nullptr; }
@@ -55,8 +55,8 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
-  const std::deque<const CanEvent *> &allEvents() const { return all_events_; }
-  const std::deque<const CanEvent *> &events(const MessageId &id) const { return events_.at(id); }
+  const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
+  const std::vector<const CanEvent *> &events(const MessageId &id) const;
   virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
 
 signals:
@@ -66,7 +66,7 @@ signals:
   void streamStarted();
   void eventsMerged();
   void updated();
-  void msgsReceived(const QHash<MessageId, CanData> *);
+  void msgsReceived(const QHash<MessageId, CanData> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
 
 public:
@@ -74,25 +74,23 @@ public:
   SourceSet sources;
 
 protected:
-  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last, bool append);
+  void mergeEvents(std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   bool postEvents();
-  uint64_t lastEventMonoTime() const { return all_events_.empty() ? 0 : all_events_.back()->mono_time; }
+  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateMessages(QHash<MessageId, CanData> *);
-  void parseEvents(std::unordered_map<MessageId, std::deque<const CanEvent *>> &msgs, std::vector<Event *>::const_iterator first, std::vector<Event *>::const_iterator last);
   void updateLastMsgsTo(double sec);
 
-  double total_sec = 0;
+  uint64_t lastest_event_ts = 0;
   std::atomic<bool> processing = false;
   std::unique_ptr<QHash<MessageId, CanData>> new_msgs;
   QHash<MessageId, CanData> all_msgs;
-  std::unordered_map<MessageId, std::deque<const CanEvent *>> events_;
-  std::deque<const CanEvent *> all_events_;
+  std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
+  std::vector<const CanEvent *> all_events_;
   std::deque<std::unique_ptr<char[]>> memory_blocks;
 };
 
 class AbstractOpenStreamWidget : public QWidget {
-  Q_OBJECT
 public:
   AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
   virtual bool open() = 0;
@@ -100,6 +98,25 @@ public:
 
 protected:
   AbstractStream **stream = nullptr;
+};
+
+class DummyStream : public AbstractStream {
+  Q_OBJECT
+public:
+  DummyStream(QObject *parent) : AbstractStream(parent) {}
+  QString routeName() const override { return tr("No Stream"); }
+  void start() override { emit streamStarted(); }
+  double currentSec() const override { return 0; }
+};
+
+class StreamNotifier : public QObject {
+  Q_OBJECT
+public:
+  StreamNotifier(QObject *parent = nullptr) : QObject(parent) {}
+  static StreamNotifier* instance();
+signals:
+  void streamStarted();
+  void changingStream();
 };
 
 // A global pointer referring to the unique AbstractStream object

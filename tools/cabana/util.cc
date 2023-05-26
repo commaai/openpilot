@@ -82,17 +82,6 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   return size;
 }
 
-bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (e->type() == QEvent::ToolTip && index.column() == 0) {
-    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
-      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
-      return true;
-    }
-  }
-  QToolTip::hideText();
-  return false;
-}
-
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto data = index.data(BytesRole);
   if (!data.isValid()) {
@@ -129,6 +118,29 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   }
   painter->setFont(old_font);
   painter->setPen(old_pen);
+}
+
+// TabBar
+
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
+}
+
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
+  }
 }
 
 QColor getColor(const cabana::Signal *sig) {
@@ -191,7 +203,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();

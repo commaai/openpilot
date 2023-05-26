@@ -14,7 +14,7 @@ from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
 from system.hardware import HARDWARE, PC
-from selfdrive.manager.helpers import unblock_stdout
+from selfdrive.manager.helpers import unblock_stdout, write_onroad_params
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
@@ -34,6 +34,8 @@ def manager_init() -> None:
 
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
 
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
@@ -136,12 +138,27 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll=['deviceState'])
   pm = messaging.PubMaster(['managerState'])
 
+  write_onroad_params(False, params)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
+
+  started_prev = False
 
   while True:
     sm.update()
 
     started = sm['deviceState'].started
+
+    if started and not started_prev:
+      params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+    elif not started and started_prev:
+      params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+
+    # update onroad params, which drives boardd's safety setter thread
+    if started != started_prev:
+      write_onroad_params(started, params)
+
+    started_prev = started
+
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
     running = ' '.join("%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)

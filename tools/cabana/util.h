@@ -67,7 +67,6 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
   void setMultipleLines(bool v);
   int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
@@ -120,6 +119,17 @@ private:
   void updateIcon() { if (std::exchange(theme, settings.theme) != theme) setIcon(icon_str); }
   QString icon_str;
   int theme;
+};
+
+class TabBar : public QTabBar {
+  Q_OBJECT
+
+public:
+  TabBar(QWidget *parent) : QTabBar(parent) {}
+  int addTab(const QString &text);
+
+private:
+  void closeTabClicked();
 };
 
 int num_decimals(double num);
