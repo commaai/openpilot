@@ -109,16 +109,10 @@ def print_car_info_diff(path, github=False):
           markdown_builder.append(COLUMN_HEADER)
         markdown_builder.extend(changes[category])
 
+    diff = "\n".join(markdown_builder)
     if github:
-      count = 0
-      for line in markdown_builder:
-        count += len(line)
-        if count > MAX_GITHUB_COMMENT_SIZE:
-          print('...\nTo see the full diff, run ``` python selfdrive/debug/print_docs_diff.py ```')
-          break
-        print(line)
-    else:
-      print("\n".join(markdown_builder))
+      diff = diff[:MAX_GITHUB_COMMENT_SIZE] + '\n...\nTo see the full diff, run ``` python selfdrive/debug/print_docs_diff.py ```'
+    print(diff)
 
 
 if __name__ == "__main__":
