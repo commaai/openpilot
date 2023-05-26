@@ -23,6 +23,7 @@ def create_steering_control(packer, apply_steer, frame, steer_on, lkas_max_torqu
 
 def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   values = {s: cruise_throttle_msg[s] for s in [
+    "COUNTER",
     "PROPILOT_BUTTON",
     "CANCEL_BUTTON",
     "GAS_PEDAL_INVERTED",
