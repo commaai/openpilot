@@ -53,20 +53,8 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    auto sigs = msg->getSignals();
-    for (auto s : sigs) {
-      if (s->type == cabana::Signal::Type::MultiplexerSwitch) {
-        insertItem(root.get(), 0, s);
-        for (auto sig : sigs) {
-          if (sig->type == cabana::Signal::Type::Multiplexed && (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive))) {
-            insertItem(root.get(), root->children.size(), sig);
-          }
-        }
-        break;
-      }
-    }
-    for (auto s : sigs) {
-      if (s->type == cabana::Signal::Type::Normal && (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive))) {
+    for (auto s : msg->getSignals()) {
+      if (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive)) {
         insertItem(root.get(), root->children.size(), s);
       }
     }
@@ -280,9 +268,10 @@ void SignalModel::handleMsgChanged(MessageId id) {
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
+    auto sigs = dbc()->msg(msg_id)->getSignals();
     int i = 0;
-    for (; i < root->children.size(); ++i) {
-      if (sig->start_bit < root->children[i]->sig->start_bit) break;
+    for (; i < sigs.size(); ++i) {
+      if (sigs[i] == sig) break;
     }
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
@@ -424,6 +413,12 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
         QFontMetrics fm(minmax_font);
         value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
+      } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
+        painter->setFont(label_font);
+        QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
+        painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
+        QFontMetrics fm(label_font);
+        value_adjust = fm.width(freq) + 10;
       }
       // value
       painter->setFont(option.font);

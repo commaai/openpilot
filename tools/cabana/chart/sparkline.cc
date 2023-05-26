@@ -5,7 +5,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
-  // TODO: display freq for multiplexed signal
   const auto &msgs = can->events(msg_id);
   uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
   uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;

@@ -9,13 +9,20 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   std::vector<const Signal*> ret;
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
-  std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
+  std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
+    return (l->type > r->type) || ((l->type == r->type) && (l->start_bit < r->start_bit));
+  });
   return ret;
 }
 
 void cabana::Msg::updateMask() {
   mask = QVector<uint8_t>(size, 0x00).toList();
   for (auto &sig : sigs) {
+    sig.mux_signal = nullptr;
+    if (sig.type == cabana::Signal::Type::MultiplexerSwitch) {
+      multiplexer_switch = &sig;
+    }
+
     int i = sig.msb / 8;
     int bits = sig.size;
     while (i >= 0 && i < size && bits > 0) {
@@ -29,6 +36,11 @@ void cabana::Msg::updateMask() {
 
       bits -= size;
       i = sig.is_little_endian ? i - 1 : i + 1;
+    }
+  }
+  for (auto &sig : sigs) {
+    if (sig.type == cabana::Signal::Type::Multiplexed) {
+      sig.mux_signal = multiplexer_switch;
     }
   }
 }

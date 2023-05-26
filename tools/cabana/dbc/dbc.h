@@ -48,8 +48,8 @@ namespace cabana {
   struct Signal {
     enum class Type {
       Normal = 0,
-      MultiplexerSwitch,
-      Multiplexed
+      Multiplexed,
+      MultiplexerSwitch
     };
 
     Type type;
@@ -65,7 +65,7 @@ namespace cabana {
 
     // Multiplexed
     int multiplex_switch_value;
-    Signal *mux_signal;
+    Signal *mux_signal = nullptr;
 
     int precision = 0;
     void updatePrecision();
@@ -81,6 +81,7 @@ namespace cabana {
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;
+    cabana::Signal *multiplexer_switch = nullptr;
     void updateMask();
 
     std::vector<const cabana::Signal*> getSignals() const;
