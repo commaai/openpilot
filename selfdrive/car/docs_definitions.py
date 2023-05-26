@@ -1,5 +1,4 @@
 import re
-from abc import ABC, abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
@@ -39,12 +38,11 @@ class PartType(Enum):
   mount = "Mount"
 
 
-class Part(ABC):
-  def __init__(self, name: str):
-    self.name = name
+@dataclass
+class Part:
+  name: str
 
   @property
-  @abstractmethod
   def type(self) -> PartType:
     raise NotImplementedError
 
@@ -213,6 +211,7 @@ class CarInfo:
   footnotes: List[Enum] = field(default_factory=list)
   min_steer_speed: Optional[float] = None
   min_enable_speed: Optional[float] = None
+  auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
   car_parts: CarParts = CarParts()
@@ -244,12 +243,16 @@ class CarInfo:
     if self.min_enable_speed is None:
       self.min_enable_speed = CP.minEnableSpeed
 
+    if self.auto_resume is None:
+      self.auto_resume = CP.autoResumeSng
+
     # hardware column
     hardware_col = "None"
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
+      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in
+                           sorted(set(self.car_parts.parts), key=lambda part: str(part.value.name))])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
@@ -260,7 +263,7 @@ class CarInfo:
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
-      Column.AUTO_RESUME: Star.FULL if CP.autoResumeSng else Star.EMPTY,
+      Column.AUTO_RESUME: Star.FULL if self.auto_resume else Star.EMPTY,
       Column.HARDWARE: hardware_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
@@ -292,7 +295,7 @@ class CarInfo:
       acc = ""
       if self.min_enable_speed > 0:
         acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif CP.autoResumeSng:
+      elif self.auto_resume:
         acc = " <strong>that automatically resumes from a stop</strong>"
 
       if self.row[Column.STEERING_TORQUE] != Star.FULL:

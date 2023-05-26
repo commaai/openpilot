@@ -64,6 +64,7 @@ namespace cabana {
     uint32_t address;
     QString name;
     uint32_t size;
+    QString comment;
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;

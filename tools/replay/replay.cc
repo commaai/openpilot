@@ -30,6 +30,9 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     // the following events are needed for replay to work properly.
     allow_list.insert(cereal::Event::Which::INIT_DATA);
     allow_list.insert(cereal::Event::Which::CAR_PARAMS);
+    if (sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
+      allow_list.insert(cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D);
+    }
   }
 
   qDebug() << "services " << s;
