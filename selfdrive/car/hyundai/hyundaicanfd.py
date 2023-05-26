@@ -84,6 +84,7 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
   if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
     values = {s: cruise_info_copy[s] for s in [
       "COUNTER",
+      "CHECKSUM",
       "NEW_SIGNAL_1",
       "MainMode_ACC",
       "ACCMode",
@@ -96,6 +97,8 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
     ]}
   else:
     values = {s: cruise_info_copy[s] for s in [
+      "COUNTER",
+      "CHECKSUM",
       "ACCMode",
       "VSetDis",
       "CRUISE_STANDSTILL",
