@@ -57,6 +57,7 @@ namespace cabana {
     ValueDescription val_desc;
 
     // Multiplexed
+    bool  is_multiplexor;
     uint32_t selector;
     Signal *mux_signal;
 

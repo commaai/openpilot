@@ -261,8 +261,15 @@ QString DBCFile::generateDBC() {
       message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
     for (auto sig : m.getSignals()) {
-      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
+      QString multiplexor;
+      if (sig->is_multiplexor) {
+        multiplexor = "M ";
+      } else if (sig->mux_signal) {
+        multiplexor = QString("m%1 ").arg(sig->selector);
+      }
+      dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" XXX\n")
                         .arg(sig->name)
+                        .arg(multiplexor)
                         .arg(sig->start_bit)
                         .arg(sig->size)
                         .arg(sig->is_little_endian ? '1' : '0')
