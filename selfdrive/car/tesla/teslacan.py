@@ -30,6 +30,7 @@ class TeslaCAN:
     return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
 
   def create_action_request(self, msg_stw_actn_req, cancel, bus, counter):
+    # We copy this whole message when spamming cancel
     values = {s: msg_stw_actn_req[s] for s in [
       "SpdCtrlLvr_Stat",
       "VSL_Enbl_Rq",
