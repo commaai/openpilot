@@ -338,11 +338,11 @@ def replay_process(cfg, lr, fingerprint=None):
     initialized = False
     if cfg.proc_name == "controlsd":
       for msg in lr:
-        if msg.which() == 'controlsState':
+        if msg.which() == "controlsState":
           controlsState = msg.controlsState
           if initialized:
             break
-        elif msg.which() == 'carEvents':
+        elif msg.which() == "carEvents":
           initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
       assert controlsState is not None and initialized, "controlsState never initialized"
@@ -350,7 +350,8 @@ def replay_process(cfg, lr, fingerprint=None):
     if fingerprint is not None:
       setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
     else:
-      CP = next((m.carParams for m in lr if m.which() == 'carParams'), None)
+      CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
+      assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
       setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
     if cfg.config_callback is not None:
