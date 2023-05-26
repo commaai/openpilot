@@ -109,6 +109,31 @@ def gps_enabled() -> bool:
   except subprocess.CalledProcessError as exc:
     raise Exception("failed to execute QGPS mmcli command") from exc
 
+def download_and_inject_assistance():
+  assist_data_file = '/tmp/xtra3grc.bin' 
+  assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
+  try:
+    c = pycurl.Curl() 
+    c.setopt(c.URL, 'http://www.alfe.de')
+    c.setopt(c.NOBODY, 1)
+    c.perform()
+    print(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
+    with open(assist_data_file, "wb") as fp:
+      curl = pycurl.Curl()
+      curl.setopt(pycurl.URL, assistance_url)
+      curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+
+      curl.setopt(pycurl.WRITEDATA, fp)
+      curl.perform()
+      curl.close()
+  except pycurl.error as e:
+    cloudlog.exception(f'Failed to download assistance file with error: {e}')
+  if os.path.isfile(assist_data_file):
+    try:
+      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
+    except subprocess.CalledProcessError:
+      cloudlog.exception("rawgps.mmcli_command_failed")
+
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
   # TODO: it has to reboot for this to take effect
@@ -131,24 +156,7 @@ def setup_quectel(diag: ModemDiag):
 
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
-  assist_data_file = '/tmp/xtra3grc.bin'
-  assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
-  try:
-    with open(assist_data_file, "wb") as fp:
-      curl = pycurl.Curl()
-      curl.setopt(pycurl.URL, assistance_url)
-      curl.setopt(pycurl.CONNECTTIMEOUT, 5)
-
-      curl.setopt(pycurl.WRITEDATA, fp)
-      curl.perform()
-      curl.close()
-  except pycurl.error as e:
-    cloudlog.exception(f'Failed to download assistance file with error: {e}')
-  if os.path.isfile(assist_data_file):
-    try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
-    except subprocess.CalledProcessError:
-      cloudlog.exception("rawgps.mmcli_command_failed")
+  download_and_inject_assistance()
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
