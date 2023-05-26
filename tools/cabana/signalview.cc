@@ -30,7 +30,8 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info",
+                   "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -598,8 +599,10 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
   if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
 
   for (auto item : model->root->children) {
-    double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
-    item->sig_val = item->sig->formatValue(value);
+    double value = 0;
+    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+      item->sig_val = item->sig->formatValue(value);
+    }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 

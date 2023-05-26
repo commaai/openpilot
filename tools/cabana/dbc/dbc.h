@@ -48,16 +48,22 @@ namespace cabana {
   struct Signal {
     QString name;
     int start_bit, msb, lsb, size;
-    bool is_signed;
     double factor, offset;
+    bool is_signed;
     bool is_little_endian;
     double min, max;
     QString unit;
     QString comment;
     ValueDescription val_desc;
+
+    // Multiplexed
+    uint32_t selector;
+    Signal *mux_signal;
+
     int precision = 0;
     void updatePrecision();
     QString formatValue(double value) const;
+    bool getValue(const uint8_t *data, size_t data_size, double *val) const;
   };
 
   struct Msg {

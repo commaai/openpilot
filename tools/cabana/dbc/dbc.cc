@@ -33,6 +33,8 @@ void cabana::Msg::updateMask() {
   }
 }
 
+// cabana::Signal
+
 void cabana::Signal::updatePrecision() {
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
@@ -50,6 +52,14 @@ QString cabana::Signal::formatValue(double value) const {
     val_str += " " + unit;
   }
   return val_str;
+}
+
+bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
+  if (mux_signal && get_raw_value(data, data_size, *mux_signal) != selector) {
+    return false;
+  }
+  *val = get_raw_value(data, data_size, *this);
+  return true;
 }
 
 // helper functions
