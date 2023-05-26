@@ -165,7 +165,7 @@ jobs:
       with:
         submodules: true
     - name: Check poetry lock file
-      run: poetry lock --check
+      run: ${{ env.RUN }} poetry lock --check
 
   static_analysis:
     name: static analysis
