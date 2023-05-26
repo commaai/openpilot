@@ -51,7 +51,8 @@ namespace cabana {
     bool is_signed;
     double factor, offset;
     bool is_little_endian;
-    QString min, max, unit;
+    double min, max;
+    QString unit;
     QString comment;
     ValueDescription val_desc;
     int precision = 0;
@@ -63,6 +64,7 @@ namespace cabana {
     uint32_t address;
     QString name;
     uint32_t size;
+    QString comment;
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;

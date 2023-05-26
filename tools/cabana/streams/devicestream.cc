@@ -9,13 +9,10 @@
 // DeviceStream
 
 DeviceStream::DeviceStream(QObject *parent, QString address) : zmq_address(address), LiveStream(parent) {
-  startStreamThread();
 }
 
 void DeviceStream::streamThread() {
-  if (!zmq_address.isEmpty()) {
-    setenv("ZMQ", "1", 1);
-  }
+  zmq_address.isEmpty() ? unsetenv("ZMQ") : setenv("ZMQ", "1", 1);
 
   std::unique_ptr<Context> context(Context::create());
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();

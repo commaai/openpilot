@@ -99,7 +99,7 @@ def get_strategy_for_events(event_types, finite=False):
 
 
 def get_strategy_for_process(process, finite=False):
-  return get_strategy_for_events(get_process_config(process).pub_sub.keys(), finite)
+  return get_strategy_for_events(get_process_config(process).pubs, finite)
 
 
 def convert_to_lr(msgs):
