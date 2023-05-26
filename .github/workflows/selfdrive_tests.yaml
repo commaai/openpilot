@@ -167,7 +167,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Check poetry lock file
-      run: ${{ env.RUN }} poetry lock --check
+      run: ${{ env.RUN }} "poetry lock --check"
 
   static_analysis:
     name: static analysis
