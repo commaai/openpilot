@@ -228,7 +228,7 @@ void BinaryView::refresh() {
 
 QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
   QSet<const cabana::Signal *> overlapping;
-  for (auto &item : model->items) {
+  for (const auto &item : model->items) {
     if (item.sigs.size() > 1) {
       for (auto s : item.sigs) {
         if (s->type == cabana::Signal::Type::Normal) overlapping += s;

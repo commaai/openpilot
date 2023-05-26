@@ -50,7 +50,7 @@ public:
   void showExtraInfo(const QModelIndex &index);
 
 private:
-  void insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig);
+  SignalModel::Item *insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig);
   void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
   void handleSignalRemoved(const cabana::Signal *sig);

@@ -27,7 +27,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
 }
 
-void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
+SignalModel::Item *SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
   QString titles[]{"Name", "Size", "Little Endian", "Signed", "Type", "Multiplex value", "Offset", "Factor", "Extra Info",
@@ -35,6 +35,7 @@ void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const caba
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(Item::Name + i)});
   }
+  return item;
 }
 
 void SignalModel::setMessage(const MessageId &id) {
@@ -52,8 +53,20 @@ void SignalModel::refresh() {
   beginResetModel();
   root.reset(new SignalModel::Item);
   if (auto msg = dbc()->msg(msg_id)) {
-    for (auto s : msg->getSignals()) {
-      if (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive)) {
+    auto sigs = msg->getSignals();
+    for (auto s : sigs) {
+      if (s->type == cabana::Signal::Type::MultiplexerSwitch) {
+        insertItem(root.get(), 0, s);
+        for (auto sig : sigs) {
+          if (sig->type == cabana::Signal::Type::Multiplexed && (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive))) {
+            insertItem(root.get(), root->children.size(), sig);
+          }
+        }
+        break;
+      }
+    }
+    for (auto s : sigs) {
+      if (s->type == cabana::Signal::Type::Normal && (filter_str.isEmpty() || s->name.contains(filter_str, Qt::CaseInsensitive))) {
         insertItem(root.get(), root->children.size(), s);
       }
     }
@@ -306,15 +319,22 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 }
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
-    auto text = index.data(Qt::DisplayRole).toString();
-    auto it = width_cache.find(text);
-    if (it == width_cache.end()) {
-      int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
-      it = width_cache.insert(text, option.fontMetrics.width(text) + spacing);
+    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
+    QString name = item->sig->name;
+    int spacing = 0;
+    if (item->sig->type != cabana::Signal::Type::Normal) {
+      name += item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m:%1 ").arg(item->sig->multiplex_switch_value);
+      spacing += h_margin * 2;
     }
-    width = std::min<int>(option.widget->size().width() / 3.0, it.value());
+    auto it = width_cache.find(name);
+    if (it == width_cache.end()) {
+      it = width_cache.insert(name, option.fontMetrics.width(name));
+    }
+    spacing += option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
+    width = std::min<int>(option.widget->size().width() / 3.0, it.value() + spacing);
   }
   return {width, QApplication::fontMetrics().height()};
 }
@@ -367,6 +387,21 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       r.setLeft(icon_rect.right() + h_margin * 2);
+      // multiplexer indicator
+      if (item->sig->type != cabana::Signal::Type::Normal) {
+        QString indicator = item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m:%1 ").arg(item->sig->multiplex_switch_value);
+        int w = option.fontMetrics.width(indicator);
+        QRect indicator_rect{r.x(), r.y(), w, r.height()};
+        painter->setFont(label_font);
+        painter->setBrush(Qt::gray);
+        painter->setPen(Qt::NoPen);
+        painter->drawRoundedRect(indicator_rect, 3, 3);
+        painter->setPen(Qt::white);
+        painter->drawText(indicator_rect, Qt::AlignCenter, indicator);
+        r.setLeft(indicator_rect.right() + h_margin * 2);
+      }
+
+      // name
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, r.width());
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
       painter->setFont(option.font);
