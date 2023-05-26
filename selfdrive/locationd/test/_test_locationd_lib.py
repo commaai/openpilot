@@ -10,10 +10,12 @@ from cffi import FFI
 import cereal.messaging as messaging
 from cereal import log
 
+from common.ffi_wrapper import suffix
+
 SENSOR_DECIMATION = 1
 VISION_DECIMATION = 1
 
-LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd.so'))
+LIBLOCATIOND_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '../liblocationd' + suffix()))
 
 
 class TestLocationdLib(unittest.TestCase):
