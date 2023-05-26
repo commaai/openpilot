@@ -46,6 +46,13 @@ typedef QList<std::pair<QString, QString>> ValueDescription;
 
 namespace cabana {
   struct Signal {
+    enum class Type {
+      Normal = 0,
+      MultiplexerSwitch,
+      Multiplexed
+    };
+
+    Type type;
     QString name;
     int start_bit, msb, lsb, size;
     double factor, offset;
@@ -57,8 +64,7 @@ namespace cabana {
     ValueDescription val_desc;
 
     // Multiplexed
-    bool  is_multiplexor;
-    uint32_t selector;
+    int multiplex_switch_value;
     Signal *mux_signal;
 
     int precision = 0;

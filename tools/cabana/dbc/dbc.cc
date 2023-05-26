@@ -55,7 +55,7 @@ QString cabana::Signal::formatValue(double value) const {
 }
 
 bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
-  if (mux_signal && get_raw_value(data, data_size, *mux_signal) != selector) {
+  if (mux_signal && get_raw_value(data, data_size, *mux_signal) != multiplex_switch_value) {
     return false;
   }
   *val = get_raw_value(data, data_size, *this);

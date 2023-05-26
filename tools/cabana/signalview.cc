@@ -30,10 +30,10 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info",
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Type", "Multiplex value", "Offset", "Factor", "Extra Info",
                    "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
-    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
+    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(Item::Name + i)});
   }
 }
 
@@ -115,6 +115,12 @@ QModelIndex SignalModel::parent(const QModelIndex &index) const {
 }
 
 QVariant SignalModel::data(const QModelIndex &index, int role) const {
+  auto typeToString = [](cabana::Signal::Type type) {
+    if (type == cabana::Signal::Type::MultiplexerSwitch) return "Multiplexer switch";
+    else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed signal";
+    else return "Normal signal";
+  };
+
   if (index.isValid()) {
     const Item *item = getItem(index);
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
@@ -125,6 +131,8 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
+          case Item::SignalType: return typeToString(item->sig->type);
+          case Item::SwitchValue: return item->sig->multiplex_switch_value;
           case Item::Offset: return doubleToString(item->sig->offset);
           case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
@@ -161,6 +169,8 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
+    case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt();
+    case Item::SwitchValue: s.multiplex_switch_value = value.toInt();
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
@@ -412,6 +422,10 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     spin->setFrame(false);
     spin->setRange(1, 64);
     return spin;
+  } else if (item->type == SignalModel::Item::SignalType) {
+    QComboBox *c = new QComboBox(parent);
+    c->addItems({tr("Normal signal"), tr("Multiplexer switch"), tr("Multiplexed signal")});
+    return c;
   } else if (item->type == SignalModel::Item::Desc) {
     ValueDescriptionDlg dlg(item->sig->val_desc, parent);
     dlg.setWindowTitle(item->sig->name);
@@ -421,6 +435,15 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return nullptr;
   }
   return QStyledItemDelegate::createEditor(parent, option, index);
+}
+
+void SignalItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (item->type == SignalModel::Item::SignalType) {
+    model->setData(index, ((QComboBox*)editor)->currentIndex());
+    return;
+  }
+  QStyledItemDelegate::setModelData(editor, model, index);
 }
 
 // SignalView
