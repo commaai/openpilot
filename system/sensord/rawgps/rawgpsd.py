@@ -116,17 +116,19 @@ def download_and_inject_assistance():
     c = pycurl.Curl() 
     c.setopt(c.URL, assistance_url)
     c.setopt(c.NOBODY, 1)
+    c.setopt(pycurl.CONNECTTIMEOUT, 2)
     c.perform()
+    c.close()
     bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
     assert bytes_n < 1e5
     with open(assist_data_file, "wb") as fp:
-      curl = pycurl.Curl()
-      curl.setopt(pycurl.URL, assistance_url)
-      curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+      c = pycurl.Curl()
+      c.setopt(pycurl.URL, assistance_url)
+      c.setopt(pycurl.CONNECTTIMEOUT, 5)
 
-      curl.setopt(pycurl.WRITEDATA, fp)
-      curl.perform()
-      curl.close()
+      c.setopt(pycurl.WRITEDATA, fp)
+      c.perform()
+      c.close()
   except pycurl.error as e:
     cloudlog.exception(f'Failed to download assistance file with error: {e}')
   if os.path.isfile(assist_data_file):
