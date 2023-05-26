@@ -73,9 +73,9 @@ if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
 # create symlink to lib dir of current arch 
-acados_lib_path = Dir(f"#third_party/acados/lib").abspath
-if not os.path.exists(acados_lib_path):
-  os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path)
+acados_lib_path = Dir(f"#third_party/acados/lib")
+if not Dir(f"#third_party/acados/lib").exists():
+  os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path.abspath)
 
 
 lenv = {
