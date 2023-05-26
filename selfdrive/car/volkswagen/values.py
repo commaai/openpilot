@@ -162,7 +162,6 @@ class Footnote(Enum):
     "in software, but doesn't yet have a harness available from the comma store.",
     Column.HARDWARE)
 
-
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
@@ -170,6 +169,9 @@ class VWCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)
+
+    if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
+      self.car_parts: CarParts = CarParts([CarPart.j533, CarPart.harness_box, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.angled_mount, CarPart.right_angle_obd_c_cable_1_5ft])
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
