@@ -253,7 +253,7 @@ class CarInfo:
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
       parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in
                            sorted(set(self.car_parts.parts), key=lambda part: str(part.value.name))])
-      hardware_col = f'<details><summary>TEST - View</summary><sub>{parts}<br>{buy_link}</sub></details>'
+      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
