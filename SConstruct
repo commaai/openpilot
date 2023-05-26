@@ -72,11 +72,10 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-# create symlink to lib dir of current arch 
+# create symlink to lib dir of current arch, so the ACADOS_SOURCE_DIR would have valid structure
 acados_lib_path = Dir(f"#third_party/acados/lib")
 if not Dir(f"#third_party/acados/lib").exists():
   os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path.abspath)
-
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -126,10 +125,10 @@ else:
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
+      f"#third_party/acados/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
-      f"#third_party/acados/{arch}/lib",
     ]
 
     cflags += ["-DGL_SILENCE_DEPRECATION"]
