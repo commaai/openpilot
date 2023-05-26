@@ -230,7 +230,9 @@ env = Environment(
 )
 
 if arch == "Darwin":
-  env['RPATHPREFIX'] = "-rpath "
+  # RPATH is not supported on macOS, instead use the linker flags
+  darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
+  env["LINKFLAGS"] += darwin_rpath_link_flags
 
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
@@ -270,7 +272,7 @@ envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-decla
 
 envCython["LIBS"] = []
 if arch == "Darwin":
-  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"]
+  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
 elif arch == "aarch64":
   envCython["LINKFLAGS"] = ["-shared"]
   envCython["LIBS"] = [os.path.basename(py_include)]
