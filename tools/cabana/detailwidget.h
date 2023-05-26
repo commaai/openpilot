@@ -3,6 +3,7 @@
 #include <QDialogButtonBox>
 #include <QSplitter>
 #include <QTabWidget>
+#include <QTextEdit>
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
@@ -20,6 +21,7 @@ public:
   QString original_name;
   QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
+  QTextEdit *comment_edit;
   QLabel *error_label;
   QSpinBox *size_spin;
 };

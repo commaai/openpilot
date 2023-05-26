@@ -70,7 +70,6 @@ class MessageViewHeader : public QHeaderView {
   Q_OBJECT
 public:
   MessageViewHeader(QWidget *parent, MessageListModel *model);
-  void showEvent(QShowEvent *e) override;
   void updateHeaderPositions();
 
   void updateGeometries() override;
