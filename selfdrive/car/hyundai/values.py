@@ -62,6 +62,7 @@ class HyundaiFlags(IntFlag):
   CANFD_ALT_GEARS_2 = 64
   SEND_LFA = 128
   USE_FCA = 256
+  ALT_LKAS_MSG_FORMAT = 512
 
 
 class CAR:

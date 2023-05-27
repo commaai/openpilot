@@ -56,6 +56,10 @@ class CarInterface(CarInterfaceBase):
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA.value
 
+      # These cars have a slightly different LKAS11 message format
+      if 0x412 in fingerprint[0]:
+        ret.flags |= HyundaiFlags.ALT_LKAS_MSG_FORMAT.value
+
     ret.steerActuatorDelay = 0.1  # Default delay
     ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.

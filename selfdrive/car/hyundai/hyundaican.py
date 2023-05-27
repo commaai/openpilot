@@ -1,9 +1,9 @@
 import crcmod
-from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR
+from selfdrive.car.hyundai.values import CAR, CHECKSUM, CAMERA_SCC_CAR, HyundaiFlags
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
+def create_lkas11(packer, CP, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
@@ -45,7 +45,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   # CF_Lkas_LdwsOpt_USM - Optima: (seemingly) always 3, Sonata: 2 SCC disengaged, 7 SCC engaged
   # CF_Lkas_FcwOpt_USM  - Optima: (seemingly) always 0, Sonata: 1 SCC disengaged, 4 SCC engaged
 
-  if lkas11["CF_Lkas_LdwsOpt_USM"] == 2:
+  # if lkas11["CF_Lkas_LdwsOpt_USM"] == 2:
+  if CP.flags & HyundaiFlags.ALT_LKAS_MSG_FORMAT.value:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
