@@ -20,7 +20,6 @@ void cabana::Msg::updateMask() {
   multiplexer_switch = nullptr;
 
   for (auto &sig : sigs) {
-    sig.mux_signal = nullptr;
     if (sig.type == cabana::Signal::Type::MultiplexerSwitch) {
       multiplexer_switch = &sig;
     }
@@ -41,9 +40,7 @@ void cabana::Msg::updateMask() {
     }
   }
   for (auto &sig : sigs) {
-    if (sig.type == cabana::Signal::Type::Multiplexed) {
-      sig.mux_signal = multiplexer_switch;
-    }
+    sig.mux_signal = sig.type == cabana::Signal::Type::Multiplexed ? multiplexer_switch : nullptr;
   }
 }
 

@@ -311,9 +311,9 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 }
 
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  auto item = (SignalModel::Item *)index.internalPointer();
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
+    auto item = (SignalModel::Item *)index.internalPointer();
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
     QString name = item->sig->name;
     int spacing = 0;
