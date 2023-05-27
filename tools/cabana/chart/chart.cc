@@ -154,8 +154,9 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
 }
 
 void ChartView::msgUpdated(MessageId id) {
-  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id == id; }))
+  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id.address == id.address; })) {
     updateTitle();
+  }
 }
 
 void ChartView::manageSignals() {

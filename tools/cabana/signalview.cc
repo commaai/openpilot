@@ -262,7 +262,7 @@ void SignalModel::removeSignal(const cabana::Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id == msg_id) {
+  if (id.address == msg_id.address) {
     refresh();
   }
 }
@@ -316,7 +316,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
     QString name = item->sig->name;
     int spacing = 0;
     if (item->sig->type != cabana::Signal::Type::Normal) {
-      name += item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m:%1 ").arg(item->sig->multiplex_switch_value);
+      name += item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_switch_value);
       spacing += h_margin * 2;
     }
     auto it = width_cache.find(name);
@@ -380,9 +380,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       // multiplexer indicator
       if (item->sig->type != cabana::Signal::Type::Normal) {
         QString indicator = item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_switch_value);
-        int w = option.fontMetrics.width(indicator);
-        QRect indicator_rect{r.x(), r.y(), w, r.height()};
-        painter->setFont(label_font);
+        QRect indicator_rect{r.x(), r.y(), option.fontMetrics.width(indicator), r.height()};
         painter->setBrush(Qt::gray);
         painter->setPen(Qt::NoPen);
         painter->drawRoundedRect(indicator_rect, 3, 3);
