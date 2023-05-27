@@ -119,7 +119,7 @@ QModelIndex SignalModel::parent(const QModelIndex &index) const {
 
 QVariant SignalModel::data(const QModelIndex &index, int role) const {
   auto typeToString = [](cabana::Signal::Type type) {
-    if (type == cabana::Signal::Type::MultiplexerSwitch) return "Multiplexer switch";
+    if (type == cabana::Signal::Type::Multiplexor) return "Multiplexer switch";
     else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed signal";
     else return "Normal signal";
   };
@@ -135,7 +135,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
           case Item::SignalType: return typeToString(item->sig->type);
-          case Item::SwitchValue: return item->sig->multiplex_switch_value;
+          case Item::SwitchValue: return item->sig->multiplex_value;
           case Item::Offset: return doubleToString(item->sig->offset);
           case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
@@ -173,7 +173,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
     case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
-    case Item::SwitchValue: s.multiplex_switch_value = value.toInt(); break;
+    case Item::SwitchValue: s.multiplex_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
@@ -316,7 +316,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
     QString name = item->sig->name;
     int spacing = 0;
     if (item->sig->type != cabana::Signal::Type::Normal) {
-      name += item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_switch_value);
+      name += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
       spacing += h_margin * 2;
     }
     auto it = width_cache.find(name);
@@ -379,7 +379,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       r.setLeft(icon_rect.right() + h_margin * 2);
       // multiplexer indicator
       if (item->sig->type != cabana::Signal::Type::Normal) {
-        QString indicator = item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_switch_value);
+        QString indicator = item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
         QRect indicator_rect{r.x(), r.y(), option.fontMetrics.width(indicator), r.height()};
         painter->setBrush(Qt::gray);
         painter->setPen(Qt::NoPen);
@@ -455,9 +455,9 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
   } else if (item->type == SignalModel::Item::SignalType) {
     QComboBox *c = new QComboBox(parent);
     c->addItem(tr("Normal signal"), (int)cabana::Signal::Type::Normal);
-    if (!dbc()->msg(((SignalModel *)index.model())->msg_id)->multiplexer_switch) {
-      c->addItem(tr("Multiplexer switch"), (int)cabana::Signal::Type::MultiplexerSwitch);
-    } else if (item->sig->type != cabana::Signal::Type::MultiplexerSwitch) {
+    if (!dbc()->msg(((SignalModel *)index.model())->msg_id)->multiplexor) {
+      c->addItem(tr("Multiplexer switch"), (int)cabana::Signal::Type::Multiplexor);
+    } else if (item->sig->type != cabana::Signal::Type::Multiplexor) {
       c->addItem(tr("Multiplexed signal"), (int)cabana::Signal::Type::Multiplexed);
     }
     return c;

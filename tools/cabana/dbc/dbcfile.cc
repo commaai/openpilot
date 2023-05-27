@@ -49,13 +49,12 @@ void DBCFile::open(const QString &content) {
       sig.offset = s.offset;
       sig.is_little_endian = s.is_little_endian;
 
-      // sig.multiplex_switch_value = s.mux_selector;
+      // sig.multiplex_value = s.mux_selector;
       // if (s.is_multiplexed) {
-      //   sig.type == cabana::Signal::Type::MultiplexerSwitch;
+      //   sig.type == cabana::Signal::Type::Multiplexor;
       // } else if (s.mux_size > 0) {
       //   sig.type == cabana::Signal::Type::Multiplexed;
       // }
-      sig.updatePrecision();
     }
     m.updateMask();
   }
@@ -269,10 +268,10 @@ QString DBCFile::generateDBC() {
     }
     for (auto sig : m.getSignals()) {
       QString multiplexer_indicator;
-      if (sig->type == cabana::Signal::Type::MultiplexerSwitch) {
+      if (sig->type == cabana::Signal::Type::Multiplexor) {
         multiplexer_indicator = "M ";
       } else if (sig->type == cabana::Signal::Type::Multiplexed) {
-        multiplexer_indicator = QString("m%1 ").arg(sig->multiplex_switch_value);
+        multiplexer_indicator = QString("m%1 ").arg(sig->multiplex_value);
       }
       dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" XXX\n")
                         .arg(sig->name)

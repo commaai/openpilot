@@ -64,7 +64,7 @@ void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
 RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *sig, QUndoCommand *parent)
     : id(id), QUndoCommand(parent) {
   sigs.push_back(*sig);
-  if (sig->type == cabana::Signal::Type::MultiplexerSwitch) {
+  if (sig->type == cabana::Signal::Type::Multiplexor) {
     for (auto &s : dbc()->msg(id)->sigs) {
       if (s.type == cabana::Signal::Type::Multiplexed) {
         sigs.push_back(s);

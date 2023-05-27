@@ -10,18 +10,18 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    return (l->type > r->type) || ((l->type == r->type) && (l->multiplex_switch_value < r->multiplex_switch_value || l->start_bit < r->start_bit));
+    return (l->type > r->type) || ((l->type == r->type) && (l->multiplex_value < r->multiplex_value || l->start_bit < r->start_bit));
   });
   return ret;
 }
 
 void cabana::Msg::updateMask() {
   mask = QVector<uint8_t>(size, 0x00).toList();
-  multiplexer_switch = nullptr;
+  multiplexor = nullptr;
 
   for (auto &sig : sigs) {
-    if (sig.type == cabana::Signal::Type::MultiplexerSwitch) {
-      multiplexer_switch = &sig;
+    if (sig.type == cabana::Signal::Type::Multiplexor) {
+      multiplexor = &sig;
     }
     sig.updatePrecision();
 
@@ -41,7 +41,7 @@ void cabana::Msg::updateMask() {
     }
   }
   for (auto &sig : sigs) {
-    sig.mux_signal = sig.type == cabana::Signal::Type::Multiplexed ? multiplexer_switch : nullptr;
+    sig.multiplexor = sig.type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
   }
 }
 
@@ -67,7 +67,7 @@ QString cabana::Signal::formatValue(double value) const {
 }
 
 bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
-  if (mux_signal && get_raw_value(data, data_size, *mux_signal) != multiplex_switch_value) {
+  if (multiplexor && get_raw_value(data, data_size, *multiplexor) != multiplex_value) {
     return false;
   }
   *val = get_raw_value(data, data_size, *this);

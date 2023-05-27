@@ -49,7 +49,7 @@ namespace cabana {
     enum class Type {
       Normal = 0,
       Multiplexed,
-      MultiplexerSwitch
+      Multiplexor
     };
 
     Type type;
@@ -64,8 +64,8 @@ namespace cabana {
     ValueDescription val_desc;
 
     // Multiplexed
-    int multiplex_switch_value = 0;
-    Signal *mux_signal = nullptr;
+    int multiplex_value = 0;
+    Signal *multiplexor = nullptr;
 
     int precision = 0;
     void updatePrecision();
@@ -81,7 +81,7 @@ namespace cabana {
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;
-    cabana::Signal *multiplexer_switch = nullptr;
+    cabana::Signal *multiplexor = nullptr;
     void updateMask();
 
     std::vector<const cabana::Signal*> getSignals() const;
