@@ -10,7 +10,7 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    return (l->type > r->type) || ((l->type == r->type) && (l->start_bit < r->start_bit));
+    return (l->type > r->type) || ((l->type == r->type) && (l->multiplex_switch_value < r->multiplex_switch_value || l->start_bit < r->start_bit));
   });
   return ret;
 }
@@ -23,6 +23,7 @@ void cabana::Msg::updateMask() {
     if (sig.type == cabana::Signal::Type::MultiplexerSwitch) {
       multiplexer_switch = &sig;
     }
+    sig.updatePrecision();
 
     int i = sig.msb / 8;
     int bits = sig.size;

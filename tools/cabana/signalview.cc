@@ -27,15 +27,14 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &SignalModel::handleSignalRemoved);
 }
 
-SignalModel::Item *SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
+void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
   QString titles[]{"Name", "Size", "Little Endian", "Signed", "Type", "Multiplex value", "Offset", "Factor", "Extra Info",
                    "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
-    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(Item::Name + i)});
+    item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
-  return item;
 }
 
 void SignalModel::setMessage(const MessageId &id) {
@@ -186,7 +185,6 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
-  s.updatePrecision();
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
@@ -381,7 +379,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       r.setLeft(icon_rect.right() + h_margin * 2);
       // multiplexer indicator
       if (item->sig->type != cabana::Signal::Type::Normal) {
-        QString indicator = item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m:%1 ").arg(item->sig->multiplex_switch_value);
+        QString indicator = item->sig->type == cabana::Signal::Type::MultiplexerSwitch ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_switch_value);
         int w = option.fontMetrics.width(indicator);
         QRect indicator_rect{r.x(), r.y(), w, r.height()};
         painter->setFont(label_font);
