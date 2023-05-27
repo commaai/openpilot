@@ -354,8 +354,8 @@ def get_platform_codes(fw_versions):
 
 
 def match_fw_to_hyundai_fuzzy(fw_versions_dict):
-  platform_codes_radar = get_platform_codes(fw_versions_dict[(0x7d0, None)])
-  platform_codes_camera = get_platform_codes(fw_versions_dict[(0x7c4, None)])
+  platform_codes_radar = get_platform_codes(fw_versions_dict.get((0x7d0, None), {}))
+  platform_codes_camera = get_platform_codes(fw_versions_dict.get((0x7c4, None), {}))
   if len(platform_codes_radar) != 1 or len(platform_codes_camera) != 1:
     return set()
 
