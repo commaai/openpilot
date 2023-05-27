@@ -347,8 +347,8 @@ def get_platform_codes(fw_versions):
   codes = set()
   platform_code_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
   for fw in fw_versions:
-    start_idx = fw.index(platform_code_prefix)
-    code = fw[start_idx + len(platform_code_prefix):][:4]  # Hyundai platform code is max 4 bytes
+    start_idx = fw.index(platform_code_prefix) + len(platform_code_prefix)
+    code = fw[start_idx:start_idx + 4]  # Hyundai platform code is max 4 bytes
     codes.add(code.replace(b" ", b"").replace(b"_", b""))
   return codes
 
@@ -371,7 +371,7 @@ def match_fw_to_hyundai_fuzzy(fw_versions_dict):
     candidate_platform_codes_radar = get_platform_codes(fws[(Ecu.fwdRadar, 0x7d0, None)])
     candidate_platform_codes_camera = get_platform_codes(fws[(Ecu.fwdCamera, 0x7c4, None)])
 
-    if not (platform_code_radar in candidate_platform_codes_radar and platform_codes_camera in candidate_platform_codes_camera):
+    if platform_code_radar not in candidate_platform_codes_radar or platform_codes_camera not in candidate_platform_codes_camera:
       invalid.append(candidate)
 
   return set(candidates.keys()) - set(invalid)
