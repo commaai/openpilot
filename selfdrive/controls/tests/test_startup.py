@@ -72,7 +72,6 @@ class TestStartup(unittest.TestCase):
     params.clear_all()
     params.put_bool("Passive", False)
     params.put_bool("OpenpilotEnabledToggle", True)
-    params.put_bool("ObdMultiplexingDisabled", True)
 
     # Build capnn version of FW array
     if fw_versions is not None:
@@ -109,6 +108,10 @@ class TestStartup(unittest.TestCase):
       finger = _FINGERPRINTS[car_model][0]
 
     for _ in range(1000):
+      # controlsd waits for boardd to echo back that it has changed the multiplexing mode
+      if not params.get_bool("ObdMultiplexingChanged"):
+        params.put_bool("ObdMultiplexingChanged", True)
+
       msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
       pm.send('can', can_list_to_can_capnp(msgs))
 

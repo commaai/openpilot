@@ -18,21 +18,21 @@ from tools.lib.logreader import LogReader
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
-  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6
+  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.KIA_EV6 (+ QCOM GPS)
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
   ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA_2018_HYBRID
-  ("RAM", "2f4452b03ccb98f0|2022-09-07--13-55-08--10"),        # CHRYSLER.RAM_1500
+  ("RAM", "17fc16d840fe9d21|2023-04-26--13-28-44--5"),         # CHRYSLER.RAM_1500
   ("SUBARU", "341dccd5359e3c97|2022-09-12--10-35-33--3"),      # SUBARU.OUTBACK
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.BOLT_EUV
-  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.BRONCO_SPORT_MK1
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.CX9_2021
+  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.BRONCO_SPORT_MK1
 
   # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
@@ -40,27 +40,27 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regenFA002A80700|2022-09-27--15-37-02--0"),
-  ("HYUNDAI", "regenBE53A59065B|2022-09-27--16-52-03--0"),
-  ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),
-  ("TOYOTA", "regen929C5790007|2022-09-27--16-27-47--0"),
-  ("TOYOTA2", "regenEA3950D7F22|2022-09-27--15-43-24--0"),
-  ("TOYOTA3", "regen89026F6BD8D|2022-09-27--15-45-37--0"),
-  ("HONDA", "regenC7D5645EB17|2022-09-27--15-47-29--0"),
-  ("HONDA2", "regenCC2ECCE5742|2022-09-27--16-18-01--0"),
-  ("CHRYSLER", "regenC253C4DAC90|2022-09-27--15-51-03--0"),
-  ("RAM", "regen20490083AE7|2022-09-27--15-53-15--0"),
-  ("SUBARU", "regen1E72BBDCED5|2022-09-27--15-55-31--0"),
-  ("GM", "regen45B05A80EF6|2022-09-27--15-57-22--0"),
-  ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),
-  ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),
-  ("NISSAN", "regenC19D899B46D|2022-09-27--15-59-13--0"),
-  ("VOLKSWAGEN", "regenD8F7AC4BD0D|2022-09-27--16-41-45--0"),
-  ("MAZDA", "regenFC3F9ECBB64|2022-09-27--16-03-09--0"),
-]
+  ("BODY", "aregenECF15D9E559|2023-05-10--14-26-40--0"), 
+  ("HYUNDAI", "aregenAB9F543F70A|2023-05-10--14-28-25--0"), 
+  ("HYUNDAI2", "aregen39F5A028F96|2023-05-10--14-31-00--0"), 
+  ("TOYOTA", "aregen8D6A8B36E8D|2023-05-10--14-32-38--0"), 
+  ("TOYOTA2", "aregenB1933C49809|2023-05-10--14-34-14--0"), 
+  ("TOYOTA3", "aregen5D9915223DC|2023-05-10--14-36-43--0"), 
+  ("HONDA", "aregen484B732B675|2023-05-10--14-38-23--0"), 
+  ("HONDA2", "aregenAF6ACED4713|2023-05-10--14-40-01--0"), 
+  ("CHRYSLER", "aregen99B094E1E2E|2023-05-10--14-41-40--0"), 
+  ("RAM", "aregen5C2487E1EEB|2023-05-10--14-44-09--0"), 
+  ("SUBARU", "aregen98D277B792E|2023-05-10--14-46-46--0"), 
+  ("GM", "aregen377BA28D848|2023-05-10--14-48-28--0"), 
+  ("GM2", "aregen7CA0CC0F0C2|2023-05-10--14-51-00--0"), 
+  ("NISSAN", "aregen7097BF01563|2023-05-10--14-52-43--0"), 
+  ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"), 
+  ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"), 
+  ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"), 
+  ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
+excluded_interfaces = ["mock", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
@@ -71,7 +71,7 @@ def run_test_process(data):
   res = None
   if not args.upload_only:
     lr = LogReader.from_bytes(lr_dat)
-    res, log_msgs = test_process(cfg, lr, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
+    res, log_msgs = test_process(cfg, lr, segment, ref_log_path, cur_log_fn, args.ignore_fields, args.ignore_msgs)
     # save logs so we can upload when updating refs
     save_log(cur_log_fn, log_msgs)
 
@@ -89,7 +89,7 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
-def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
+def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
   if ignore_msgs is None:
@@ -97,7 +97,10 @@ def test_process(cfg, lr, ref_log_path, new_log_path, ignore_fields=None, ignore
 
   ref_log_msgs = list(LogReader(ref_log_path))
 
-  log_msgs = replay_process(cfg, lr)
+  try:
+    log_msgs = replay_process(cfg, lr)
+  except Exception as e:
+    raise Exception("failed on segment: " + segment) from e
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":

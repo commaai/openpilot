@@ -2,7 +2,7 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot/
+ENV OPENPILOT_PATH /home/batman/openpilot
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 
 RUN mkdir -p ${OPENPILOT_PATH}
@@ -23,5 +23,6 @@ COPY ./cereal ${OPENPILOT_PATH}/cereal
 COPY ./panda ${OPENPILOT_PATH}/panda
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system
+COPY ./body ${OPENPILOT_PATH}/body
 
 RUN scons --cache-readonly -j$(nproc)

@@ -14,7 +14,7 @@
 #include "common/timing.h"
 #include "common/util.h"
 
-#include "selfdrive/sensord/sensors/constants.h"
+#include "system/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10
 #include "selfdrive/locationd/models/live_kf.h"
@@ -78,10 +78,13 @@ private:
   double reset_tracker = 0.0;
   bool device_fell = false;
   bool gps_mode = false;
+  double first_valid_log_time = NAN;
+  double ttff = NAN;
   double last_gps_msg = 0;
   bool ublox_available = true;
   bool observation_timings_invalid = false;
   std::map<std::string, double> observation_values_invalid;
   bool standstill = true;
   int32_t orientation_reset_count = 0;
+  float gps_std_factor;
 };

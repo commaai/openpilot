@@ -10,12 +10,12 @@ from cffi import FFI
 from common.ffi_wrapper import suffix
 from common.basedir import BASEDIR
 
-HEIGHT = WIDTH = SIZE = 512
+HEIGHT = WIDTH = SIZE = 256
 METERS_PER_PIXEL = 2
 
 
 def get_ffi():
-  lib = os.path.join(BASEDIR, "selfdrive", "navd", "libmap_renderer" + suffix())
+  lib = os.path.join(BASEDIR, "selfdrive", "navd", "libmaprender" + suffix())
 
   ffi = FFI()
   ffi.cdef("""
