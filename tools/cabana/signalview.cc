@@ -133,7 +133,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc << QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val).arg(desc);
             }
             return val_desc.join(" ");
           }
@@ -284,11 +284,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-
-  QLocale locale(QLocale::C);
-  locale.setNumberOptions(QLocale::RejectGroupSeparator);
-  double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(locale);  // Match locale of QString::toDouble() instead of system
+  double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
@@ -666,7 +662,7 @@ ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, Q
 
   int row = 0;
   for (auto &[val, desc] : descriptions) {
-    table->setItem(row, 0, new QTableWidgetItem(val));
+    table->setItem(row, 0, new QTableWidgetItem(QString::number(val)));
     table->setItem(row, 1, new QTableWidgetItem(desc));
     ++row;
   }
@@ -696,7 +692,7 @@ void ValueDescriptionDlg::save() {
     QString val = table->item(i, 0)->text().trimmed();
     QString desc = table->item(i, 1)->text().trimmed();
     if (!val.isEmpty() && !desc.isEmpty()) {
-      val_desc.push_back({val, desc});
+      val_desc.push_back({val.toDouble(), desc});
     }
   }
   QDialog::accept();
@@ -706,7 +702,7 @@ QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QSty
   QLineEdit *edit = new QLineEdit(parent);
   edit->setFrame(false);
   if (index.column() == 0) {
-    edit->setValidator(new QIntValidator(edit));
+    edit->setValidator(new DoubleValidator(parent));
   }
   return edit;
 }
