@@ -152,7 +152,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
   Params().put("CarParams", CP.to_bytes())
 
 
-def controlsd_rcv_callback(msg, CP, cfg, frame):
+def controlsd_rcv_callback(msg, cfg, frame):
   # no sendcan until controlsd is initialized
   if msg.which() != "can":
     return False 
@@ -166,17 +166,17 @@ def controlsd_rcv_callback(msg, CP, cfg, frame):
   return len(socks) > 0
 
 
-def radar_rcv_callback(msg, CP, cfg, frame):
+def radar_rcv_callback(msg, cfg, frame):
   return msg.which() == "can"
 
 
-def calibration_rcv_callback(msg, CP, cfg, frame):
+def calibration_rcv_callback(msg, cfg, frame):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
   # should_recv always true to increment frame
   return (frame - 1) == 0 or msg.which() == 'cameraOdometry'
 
 
-def torqued_rcv_callback(msg, CP, cfg, frame):
+def torqued_rcv_callback(msg, cfg, frame):
   # should_recv always true to increment frame
   return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
 
@@ -185,7 +185,7 @@ class FrequencyBasedRcvCallback:
   def __init__(self, trigger_msg_type):
     self.trigger_msg_type = trigger_msg_type
 
-  def __call__(self, msg, CP, cfg, frame):
+  def __call__(self, msg, cfg, frame):
     if msg.which() != self.trigger_msg_type:
       return False
 
@@ -338,19 +338,20 @@ def replay_process(cfg, lr, fingerprint=None):
     initialized = False
     if cfg.proc_name == "controlsd":
       for msg in lr:
-        if msg.which() == 'controlsState':
+        if msg.which() == "controlsState":
           controlsState = msg.controlsState
           if initialized:
             break
-        elif msg.which() == 'carEvents':
+        elif msg.which() == "carEvents":
           initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
       assert controlsState is not None and initialized, "controlsState never initialized"
 
-    CP = [m for m in lr if m.which() == 'carParams'][0].carParams
     if fingerprint is not None:
       setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
     else:
+      CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
+      assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
       setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
 
     if cfg.config_callback is not None:
@@ -369,7 +370,6 @@ def replay_process(cfg, lr, fingerprint=None):
 
       if cfg.init_callback is not None:
         cfg.init_callback(rc, pm, all_msgs, fingerprint)
-        CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
       log_msgs, msg_queue = [], []
       try:
@@ -384,7 +384,7 @@ def replay_process(cfg, lr, fingerprint=None):
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
-              end_of_cycle = cfg.should_recv_callback(msg, CP, cfg, cnt)
+              end_of_cycle = cfg.should_recv_callback(msg, cfg, cnt)
 
             msg_queue.append(msg)
             if end_of_cycle:
