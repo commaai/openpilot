@@ -89,6 +89,9 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
   if (index.column() == 1  && item->type != Item::Sig && item->type != Item::ExtraInfo) {
     flags |= (item->type == Item::Endian || item->type == Item::Signed) ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
   }
+  if (item->type == Item::SwitchValue && item->sig->type != cabana::Signal::Type::Multiplexed) {
+    flags &= ~Qt::ItemIsEnabled;
+  }
   return flags;
 }
 
@@ -170,8 +173,8 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
-    case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt();
-    case Item::SwitchValue: s.multiplex_switch_value = value.toInt();
+    case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
+    case Item::SwitchValue: s.multiplex_switch_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
@@ -455,7 +458,12 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return spin;
   } else if (item->type == SignalModel::Item::SignalType) {
     QComboBox *c = new QComboBox(parent);
-    c->addItems({tr("Normal signal"), tr("Multiplexer switch"), tr("Multiplexed signal")});
+    c->addItem(tr("Normal signal"), (int)cabana::Signal::Type::Normal);
+    if (!dbc()->msg(((SignalModel *)index.model())->msg_id)->multiplexer_switch) {
+      c->addItem(tr("Multiplexer switch"), (int)cabana::Signal::Type::MultiplexerSwitch);
+    } else if (item->sig->type != cabana::Signal::Type::MultiplexerSwitch) {
+      c->addItem(tr("Multiplexed signal"), (int)cabana::Signal::Type::Multiplexed);
+    }
     return c;
   } else if (item->type == SignalModel::Item::Desc) {
     ValueDescriptionDlg dlg(item->sig->val_desc, parent);
@@ -471,7 +479,7 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
 void SignalItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (item->type == SignalModel::Item::SignalType) {
-    model->setData(index, ((QComboBox*)editor)->currentIndex());
+    model->setData(index, ((QComboBox*)editor)->currentData().toInt());
     return;
   }
   QStyledItemDelegate::setModelData(editor, model, index);
@@ -515,6 +523,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
+  tree->setEditTriggers(QAbstractItemView::AllEditTriggers);
   tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);

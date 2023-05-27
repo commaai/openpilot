@@ -17,6 +17,8 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
 
 void cabana::Msg::updateMask() {
   mask = QVector<uint8_t>(size, 0x00).toList();
+  multiplexer_switch = nullptr;
+
   for (auto &sig : sigs) {
     sig.mux_signal = nullptr;
     if (sig.type == cabana::Signal::Type::MultiplexerSwitch) {

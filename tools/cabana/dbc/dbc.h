@@ -64,7 +64,7 @@ namespace cabana {
     ValueDescription val_desc;
 
     // Multiplexed
-    int multiplex_switch_value;
+    int multiplex_switch_value = 0;
     Signal *mux_signal = nullptr;
 
     int precision = 0;
