@@ -18,6 +18,12 @@
 
 // SignalModel
 
+static QString signalTypeToString(cabana::Signal::Type type) {
+  if (type == cabana::Signal::Type::Multiplexor) return "Multiplexor Signal";
+  else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed Signal";
+  else return "Normal Signal";
+}
+
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &SignalModel::refresh);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &SignalModel::handleMsgChanged);
@@ -118,12 +124,6 @@ QModelIndex SignalModel::parent(const QModelIndex &index) const {
 }
 
 QVariant SignalModel::data(const QModelIndex &index, int role) const {
-  auto typeToString = [](cabana::Signal::Type type) {
-    if (type == cabana::Signal::Type::Multiplexor) return "Multiplexer switch";
-    else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed signal";
-    else return "Normal signal";
-  };
-
   if (index.isValid()) {
     const Item *item = getItem(index);
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
@@ -134,7 +134,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
-          case Item::SignalType: return typeToString(item->sig->type);
+          case Item::SignalType: return signalTypeToString(item->sig->type);
           case Item::SwitchValue: return item->sig->multiplex_value;
           case Item::Offset: return doubleToString(item->sig->offset);
           case Item::Factor: return doubleToString(item->sig->factor);
@@ -454,11 +454,11 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return spin;
   } else if (item->type == SignalModel::Item::SignalType) {
     QComboBox *c = new QComboBox(parent);
-    c->addItem(tr("Normal signal"), (int)cabana::Signal::Type::Normal);
+    c->addItem(signalTypeToString(cabana::Signal::Type::Normal), (int)cabana::Signal::Type::Normal);
     if (!dbc()->msg(((SignalModel *)index.model())->msg_id)->multiplexor) {
-      c->addItem(tr("Multiplexer switch"), (int)cabana::Signal::Type::Multiplexor);
+      c->addItem(signalTypeToString(cabana::Signal::Type::Multiplexor), (int)cabana::Signal::Type::Multiplexor);
     } else if (item->sig->type != cabana::Signal::Type::Multiplexor) {
-      c->addItem(tr("Multiplexed signal"), (int)cabana::Signal::Type::Multiplexed);
+      c->addItem(signalTypeToString(cabana::Signal::Type::Multiplexed), (int)cabana::Signal::Type::Multiplexed);
     }
     return c;
   } else if (item->type == SignalModel::Item::Desc) {
