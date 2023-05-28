@@ -346,7 +346,6 @@ void MainWindow::streamStarted() {
 
   QObject::connect(messages_widget, &MessagesWidget::msgSelectionChanged, center_widget, &CenterWidget::setMessage);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &MainWindow::eventsMerged);
-  QObject::connect(can, &AbstractStream::sourcesUpdated, dbc(), &DBCManager::updateSources);
   QObject::connect(can, &AbstractStream::sourcesUpdated, this, &MainWindow::updateLoadSaveMenus);
 }
 

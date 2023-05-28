@@ -43,26 +43,22 @@ public:
 
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
-  const cabana::Msg* msg(uint8_t source, const QString &name);
+  const cabana::Msg *msg(uint8_t source, const QString &name) const;
 
   QStringList signalNames() const;
   int signalCount(const MessageId &id) const;
   int signalCount() const;
   int msgCount() const;
-  int dbcCount() const;
+  inline int dbcCount() const { return dbc_files.size(); }
   int nonEmptyDBCCount() const;
 
-  std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
-  std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
+  DBCFile *findDBCFile(const uint8_t source) const;
+  inline DBCFile *findDBCFile(const MessageId &id) const { return findDBCFile(id.source); }
 
   QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 
 private:
-  SourceSet sources;
   QList<uint8_t> empty_mask;
-
-public slots:
-  void updateSources(const SourceSet &s);
 
 signals:
   void signalAdded(MessageId id, const cabana::Signal *sig);
