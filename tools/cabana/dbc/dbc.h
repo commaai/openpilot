@@ -1,6 +1,7 @@
 #pragma once
 
 #include <limits>
+#include <QColor>
 #include <QList>
 #include <QMetaType>
 #include <QString>
@@ -68,6 +69,7 @@ namespace cabana {
     Signal *multiplexor = nullptr;
 
     int precision = 0;
+    QColor color;
     void updatePrecision();
     QString formatValue(double value) const;
     bool getValue(const uint8_t *data, size_t data_size, double *val) const;

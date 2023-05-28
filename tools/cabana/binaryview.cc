@@ -165,7 +165,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->selection_color = getColor(s);
+        delegate->selection_color = s->color;
         break;
       }
     }
@@ -280,7 +280,7 @@ void BinaryViewModel::refresh() {
         }
         if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
         if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].bg_color = getColor(sig);
+        items[idx].bg_color = sig->color;
         items[idx].sigs.push_back(sig);
       }
     }

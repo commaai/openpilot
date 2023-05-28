@@ -1,5 +1,6 @@
 #include "tools/cabana/util.h"
 
+#include <QColor>
 #include <QFontDatabase>
 #include <QHelpEvent>
 #include <QLocale>
@@ -142,17 +143,6 @@ void TabBar::closeTabClicked() {
       break;
     }
   }
-}
-
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
-
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
-
-  return QColor::fromHsvF(h, s, v);
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}

@@ -107,14 +107,14 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
     chart()->legend()->setLabelColor(palette().color(QPalette::Text));
   }
   for (auto &s : sigs) {
-    s.series->setColor(getColor(s.sig));
+    s.series->setColor(s.sig->color);
   }
 }
 
 void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSignal(msg_id, sig)) return;
 
-  QXYSeries *series = createSeries(series_type, getColor(sig));
+  QXYSeries *series = createSeries(series_type, sig->color);
   sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
   updateSeries(sig);
   updateSeriesPoints();
@@ -268,7 +268,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
-      s.series->setColor(getColor(s.sig));
+      s.series->setColor(s.sig->color);
 
       const auto &msgs = can->events(s.msg_id);
       s.vals.reserve(msgs.capacity());
@@ -792,7 +792,7 @@ void ChartView::setSeriesType(SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      auto series = createSeries(series_type, getColor(s.sig));
+      auto series = createSeries(series_type, s.sig->color);
       series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
       s.series = series;
     }

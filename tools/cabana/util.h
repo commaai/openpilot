@@ -7,7 +7,6 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QDoubleValidator>
-#include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
 #include <QStringBuilder>
@@ -81,7 +80,6 @@ private:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT

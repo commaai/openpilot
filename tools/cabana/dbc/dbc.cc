@@ -48,6 +48,13 @@ void cabana::Msg::updateMask() {
 // cabana::Signal
 
 void cabana::Signal::updatePrecision() {
+  float h = 19 * (float)lsb / 64.0;
+  h = fmod(h, 1.0);
+  size_t hash = qHash(name);
+  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
+  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+
+  color = QColor::fromHsvF(h, s, v);
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
