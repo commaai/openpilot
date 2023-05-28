@@ -65,7 +65,7 @@ RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *si
     : id(id), QUndoCommand(parent) {
   sigs.push_back(*sig);
   if (sig->type == cabana::Signal::Type::Multiplexor) {
-    for (auto &s : dbc()->msg(id)->sigs) {
+    for (const auto &s : dbc()->msg(id)->sigs) {
       if (s.type == cabana::Signal::Type::Multiplexed) {
         sigs.push_back(s);
       }
@@ -74,8 +74,8 @@ RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *si
   setText(QObject::tr("remove signal %1 from %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
 }
 
-void RemoveSigCommand::undo() { for (auto &s : sigs) dbc()->addSignal(id, s); }
-void RemoveSigCommand::redo() { for (auto &s : sigs) dbc()->removeSignal(id, s.name); }
+void RemoveSigCommand::undo() { for (const auto &s : sigs) dbc()->addSignal(id, s); }
+void RemoveSigCommand::redo() { for (const auto &s : sigs) dbc()->removeSignal(id, s.name); }
 
 // EditSignalCommand
 

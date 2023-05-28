@@ -86,8 +86,8 @@ namespace cabana {
 
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {
-        auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
-        return it != sigs.end() ? &(*it) : nullptr;
+      auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
+      return it != sigs.end() ? &(*it) : nullptr;
     }
   };
 
