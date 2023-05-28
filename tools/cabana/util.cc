@@ -227,10 +227,6 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
 }
