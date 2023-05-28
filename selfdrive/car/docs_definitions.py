@@ -313,7 +313,6 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-
   def get_ordered_footnotes(self, footnote_tag: str, column: Column) -> str:
     # Get applicable footnotes given current column
     col_fn = [fn for fn in self.footnotes if fn.value.column == column]
@@ -324,7 +323,6 @@ class CarInfo:
     else:
       return ""
 
-
   def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
     item: Union[str, Star] = self.row[column]
     if isinstance(item, Star):
@@ -334,6 +332,7 @@ class CarInfo:
     elif column == Column.VIDEO and len(item) > 0:
       item = video_icon.format(item)
 
+    # hardware footnotes need special formatting
     if column != Column.HARDWARE:
       item += self.get_ordered_footnotes(footnote_tag, column)
 
