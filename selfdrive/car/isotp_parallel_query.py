@@ -90,7 +90,8 @@ class IsoTpParallelQuery:
       for addr in self.functional_addrs:
         self._create_isotp_msg(addr, None, -1).send(self.request[0])
 
-    # If querying functional addrs, set up physical IsoTpMessages to send consecutive frames
+    # Send first frame (single or first) to all addresses and receive asynchronously in the loop below.
+    # If querying functional addrs, only set up physical IsoTpMessages to send consecutive frames
     for msg in msgs.values():
       msg.send(self.request[0], setup_only=len(self.functional_addrs) > 0)
 
@@ -117,7 +118,7 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
         expected_response = self.response[counter]
-        response_valid = dat[:len(expected_response)] == expected_response
+        response_valid = dat.startswith(expected_response)
 
         if response_valid:
           if counter + 1 < len(self.request):
