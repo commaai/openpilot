@@ -145,7 +145,6 @@ class IsoTpParallelQuery:
       for tx_addr in response_timeouts:
         if cur_time - response_timeouts[tx_addr] > 0:
           if not request_done[tx_addr]:
-            # Log appropriate error message based on whether we received a partial response
             if request_counter[tx_addr] > 0:
               cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
             elif tx_addr in addrs_ever_responded:
