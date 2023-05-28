@@ -97,7 +97,7 @@ class IsoTpParallelQuery:
     results = {}
     start_time = time.monotonic()
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
-    addrs_ever_responded = set()
+    addrs_responded = set()
     while True:
       self.rx()
 
@@ -112,7 +112,7 @@ class IsoTpParallelQuery:
         # Extend timeout for each consecutive ISO-TP frame to avoid timing out on long responses
         if rx_in_progress:
           response_timeouts[tx_addr] = time.monotonic() + timeout
-          addrs_ever_responded.add(tx_addr)
+          addrs_responded.add(tx_addr)
 
         if not dat:
           continue
@@ -145,7 +145,7 @@ class IsoTpParallelQuery:
           if not request_done[tx_addr]:
             if request_counter[tx_addr] > 0:
               cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
-            elif tx_addr in addrs_ever_responded:
+            elif tx_addr in addrs_responded:
               cloudlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
             else:
               cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
