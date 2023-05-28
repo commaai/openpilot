@@ -307,19 +307,17 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
+    int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
+    auto text = index.data(Qt::DisplayRole).toString();;
     auto item = (SignalModel::Item *)index.internalPointer();
-    int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
-    QString name = item->sig->name;
-    int spacing = 0;
-    if (item->sig->type != cabana::Signal::Type::Normal) {
-      name += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
-      spacing += h_margin * 2;
+    if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
+      text += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
+      spacing += (option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1) * 2;
     }
-    auto it = width_cache.find(name);
+    auto it = width_cache.find(text);
     if (it == width_cache.end()) {
-      it = width_cache.insert(name, option.fontMetrics.width(name));
+      it = width_cache.insert(text, option.fontMetrics.width(text));
     }
-    spacing += option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
     width = std::min<int>(option.widget->size().width() / 3.0, it.value() + spacing);
   }
   return {width, QApplication::fontMetrics().height()};
