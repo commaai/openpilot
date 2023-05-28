@@ -80,6 +80,7 @@ class IsoTpParallelQuery:
     msgs = {}
     request_counter = {}
     request_done = {}
+    addrs_responded = set()  # track addresses that have ever sent a valid iso-tp frame for timeout logging
     for tx_addr, rx_addr in self.msg_addrs.items():
       msgs[tx_addr] = self._create_isotp_msg(*tx_addr, rx_addr)
       request_counter[tx_addr] = 0
@@ -97,7 +98,6 @@ class IsoTpParallelQuery:
     results = {}
     start_time = time.monotonic()
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
-    addrs_responded = set()
     while True:
       self.rx()
 
