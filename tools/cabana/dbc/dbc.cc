@@ -1,5 +1,4 @@
 #include "tools/cabana/dbc/dbc.h"
-
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
@@ -16,7 +15,7 @@ std::vector<const cabana::Signal *> cabana::Msg::getSignals() const {
   return ret;
 }
 
-void cabana::Msg::updateMask() {
+void cabana::Msg::update() {
   mask = QVector<uint8_t>(size, 0x00).toList();
   multiplexor = nullptr;
 
@@ -24,7 +23,7 @@ void cabana::Msg::updateMask() {
     if (sig.type == cabana::Signal::Type::Multiplexor) {
       multiplexor = &sig;
     }
-    sig.updatePrecision();
+    sig.update();
 
     int i = sig.msb / 8;
     int bits = sig.size;
@@ -48,7 +47,7 @@ void cabana::Msg::updateMask() {
 
 // cabana::Signal
 
-void cabana::Signal::updatePrecision() {
+void cabana::Signal::update() {
   float h = 19 * (float)lsb / 64.0;
   h = fmod(h, 1.0);
   size_t hash = qHash(name);
@@ -82,6 +81,16 @@ bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val
   return true;
 }
 
+bool cabana::Signal::operator==(const cabana::Signal &other) const {
+  return name == other.name && size == other.size &&
+         start_bit == other.start_bit &&
+         msb == other.msb && lsb == other.lsb &&
+         is_signed == other.is_signed && is_little_endian == other.is_little_endian &&
+         factor == other.factor && offset == other.offset &&
+         min == other.min && max == other.max && comment == other.comment && unit == other.unit && val_desc == other.val_desc &&
+         multiplex_value == other.multiplex_value && type == other.type;
+}
+
 // helper functions
 
 static QVector<int> BIG_ENDIAN_START_BITS = []() {
@@ -112,15 +121,6 @@ double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal
     val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
   }
   return val * sig.factor + sig.offset;
-}
-
-bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {
-  return l.name == r.name && l.size == r.size &&
-         l.start_bit == r.start_bit &&
-         l.msb == r.msb && l.lsb == r.lsb &&
-         l.is_signed == r.is_signed && l.is_little_endian == r.is_little_endian &&
-         l.factor == r.factor && l.offset == r.offset &&
-         l.min == r.min && l.max == r.max && l.comment == r.comment && l.unit == r.unit && l.val_desc == r.val_desc;
 }
 
 int bigEndianStartBitsIndex(int start_bit) { return BIG_ENDIAN_START_BITS[start_bit]; }

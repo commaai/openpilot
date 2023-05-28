@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>

@@ -70,9 +70,12 @@ namespace cabana {
 
     int precision = 0;
     QColor color;
-    void updatePrecision();
+
+    void update();
     QString formatValue(double value) const;
     bool getValue(const uint8_t *data, size_t data_size, double *val) const;
+    bool operator==(const cabana::Signal &other) const;
+    inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
   };
 
   struct Msg {
@@ -85,16 +88,13 @@ namespace cabana {
     QList<uint8_t> mask;
     cabana::Signal *multiplexor = nullptr;
 
-    void updateMask();
+    void update();
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {
       auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
       return it != sigs.end() ? &(*it) : nullptr;
     }
   };
-
-  bool operator==(const cabana::Signal &l, const cabana::Signal &r);
-  inline bool operator!=(const cabana::Signal &l, const cabana::Signal &r) { return !(l == r); }
 }
 
 // Helper functions

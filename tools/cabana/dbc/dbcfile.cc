@@ -63,7 +63,7 @@ bool DBCFile::writeContents(const QString &fn) {
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
     m->sigs.push_back(sig);
-    m->updateMask();
+    m->update();
     return &m->sigs.last();
   }
   return nullptr;
@@ -73,7 +73,7 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     if (auto s = (cabana::Signal *)m->sig(sig_name)) {
       *s = sig;
-      m->updateMask();
+      m->update();
       return s;
     }
   }
@@ -90,7 +90,7 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
     auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
     if (it != m->sigs.end()) {
       m->sigs.erase(it);
-      m->updateMask();
+      m->update();
     }
   }
 }
@@ -261,7 +261,7 @@ void DBCFile::parse(const QString &content) {
   }
 
   for (auto &[_, m] : msgs) {
-    m.updateMask();
+    m.update();
   }
 }
 
