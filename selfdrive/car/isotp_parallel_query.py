@@ -117,7 +117,7 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
         expected_response = self.response[counter]
-        response_valid = dat[:len(expected_response)] == expected_response
+        response_valid = dat.startswith(expected_response)
 
         if response_valid:
           if counter + 1 < len(self.request):
