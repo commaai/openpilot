@@ -30,14 +30,6 @@ class Star(Enum):
   EMPTY = "empty"
 
 
-class PartType(Enum):
-  connector = "Connector"
-  device = "Device"
-  cable = "Cable"
-  accessory = "Accessory"
-  mount = "Mount"
-
-
 # A part + its comprised parts
 @dataclass
 class BasePart:
@@ -66,15 +58,15 @@ class BasePart:
 class EnumBase(Enum):
   @classmethod
   def type(cls):
-    return PartTypeNew(cls)
+    return PartType(cls)
 
 
-class MountNew(EnumBase):
+class Mount(EnumBase):
   mount = BasePart("mount")
   angled_mount = BasePart("angled mount")
 
 
-class CableNew(EnumBase):
+class Cable(EnumBase):
   rj45_cable_7ft = BasePart("RJ45 cable (7 ft)")
   long_obdc_cable = BasePart("long OBD-C cable")
   usb_a_2_a_cable = BasePart("USB A-A cable")
@@ -84,197 +76,89 @@ class CableNew(EnumBase):
   right_angle_obd_c_cable_1_5ft = BasePart("right angle OBD-C cable (1.5 ft)")
 
 
-class AccessoryNew(EnumBase):
+class Accessory(EnumBase):
   harness_box = BasePart("harness box")
   comma_power_v2 = BasePart("comma power v2")
 
 
 @dataclass
 class BaseCarHarness(BasePart):
-  parts: List[Enum] = field(default_factory=lambda: [AccessoryNew.harness_box, AccessoryNew.comma_power_v2, CableNew.rj45_cable_7ft])
+  parts: List[Enum] = field(default_factory=lambda: [Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft])
   has_connector: bool = True  # without are hidden on the harness connector page
 
 
 # the kit
 class CarHarness(EnumBase):
-  nidec = BaseCarHarness("Honda Nidec connector")
-  bosch_a = BaseCarHarness("Honda Bosch A connector")
-  bosch_b = BaseCarHarness("Honda Bosch B connector")
-  toyota = BaseCarHarness("Toyota connector")
-  subaru_a = BaseCarHarness("Subaru A connector")
-  subaru_b = BaseCarHarness("Subaru B connector")
-  fca = BaseCarHarness("FCA connector")
-  ram = BaseCarHarness("Ram connector")
-  vw = BaseCarHarness("VW connector")
-  j533 = BaseCarHarness("J533 connector", parts=[AccessoryNew.harness_box, CableNew.long_obdc_cable, CableNew.usbc_coupler])
-  hyundai_a = BaseCarHarness("Hyundai A connector")
-  hyundai_b = BaseCarHarness("Hyundai B connector")
-  hyundai_c = BaseCarHarness("Hyundai C connector")
-  hyundai_d = BaseCarHarness("Hyundai D connector")
-  hyundai_e = BaseCarHarness("Hyundai E connector")
-  hyundai_f = BaseCarHarness("Hyundai F connector")
-  hyundai_g = BaseCarHarness("Hyundai G connector")
-  hyundai_h = BaseCarHarness("Hyundai H connector")
-  hyundai_i = BaseCarHarness("Hyundai I connector")
-  hyundai_j = BaseCarHarness("Hyundai J connector")
-  hyundai_k = BaseCarHarness("Hyundai K connector")
-  hyundai_l = BaseCarHarness("Hyundai L connector")
-  hyundai_m = BaseCarHarness("Hyundai M connector")
-  hyundai_n = BaseCarHarness("Hyundai N connector")
-  hyundai_o = BaseCarHarness("Hyundai O connector")
-  hyundai_p = BaseCarHarness("Hyundai P connector")
-  hyundai_q = BaseCarHarness("Hyundai Q connector")
-  custom = BaseCarHarness("Developer connector")
-  obd_ii = BaseCarHarness("OBD-II connector", parts=[CableNew.long_obdc_cable, CableNew.long_obdc_cable], has_connector=False)
-  gm = BaseCarHarness("GM connector")
-  nissan_a = BaseCarHarness("Nissan A connector", parts=[AccessoryNew.harness_box, CableNew.rj45_cable_7ft, CableNew.long_obdc_cable, CableNew.usbc_coupler])
-  nissan_b = BaseCarHarness("Nissan B connector", parts=[AccessoryNew.harness_box, CableNew.rj45_cable_7ft, CableNew.long_obdc_cable, CableNew.usbc_coupler])
-  mazda = BaseCarHarness("Mazda connector")
-  ford_q3 = BaseCarHarness("Ford Q3 connector")
-  ford_q4 = BaseCarHarness("Ford Q4 connector")
+  nidec = BaseCarHarness("Honda Nidec")
+  bosch_a = BaseCarHarness("Honda Bosch A")
+  bosch_b = BaseCarHarness("Honda Bosch B")
+  toyota = BaseCarHarness("Toyota")
+  subaru_a = BaseCarHarness("Subaru A")
+  subaru_b = BaseCarHarness("Subaru B")
+  fca = BaseCarHarness("FCA")
+  ram = BaseCarHarness("Ram")
+  vw = BaseCarHarness("VW")
+  j533 = BaseCarHarness("J533", parts=[Accessory.harness_box, Cable.long_obdc_cable, Cable.usbc_coupler])
+  hyundai_a = BaseCarHarness("Hyundai A")
+  hyundai_b = BaseCarHarness("Hyundai B")
+  hyundai_c = BaseCarHarness("Hyundai C")
+  hyundai_d = BaseCarHarness("Hyundai D")
+  hyundai_e = BaseCarHarness("Hyundai E")
+  hyundai_f = BaseCarHarness("Hyundai F")
+  hyundai_g = BaseCarHarness("Hyundai G")
+  hyundai_h = BaseCarHarness("Hyundai H")
+  hyundai_i = BaseCarHarness("Hyundai I")
+  hyundai_j = BaseCarHarness("Hyundai J")
+  hyundai_k = BaseCarHarness("Hyundai K")
+  hyundai_l = BaseCarHarness("Hyundai L")
+  hyundai_m = BaseCarHarness("Hyundai M")
+  hyundai_n = BaseCarHarness("Hyundai N")
+  hyundai_o = BaseCarHarness("Hyundai O")
+  hyundai_p = BaseCarHarness("Hyundai P")
+  hyundai_q = BaseCarHarness("Hyundai Q")
+  custom = BaseCarHarness("Developer")
+  obd_ii = BaseCarHarness("OBD-II", parts=[Cable.long_obdc_cable, Cable.long_obdc_cable], has_connector=False)
+  gm = BaseCarHarness("GM")
+  nissan_a = BaseCarHarness("Nissan A", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
+  nissan_b = BaseCarHarness("Nissan B", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
+  mazda = BaseCarHarness("Mazda")
+  ford_q3 = BaseCarHarness("Ford Q3")
+  ford_q4 = BaseCarHarness("Ford Q4")
 
 
-class DeviceNew(EnumBase):
+class Device(EnumBase):
   three = BasePart("comma three",
-                   parts=[MountNew.mount, MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft],
-                   required_parts=[MountNew.mount, CableNew.right_angle_obd_c_cable_1_5ft])
+                   parts=[Mount.mount, Mount.mount, Cable.right_angle_obd_c_cable_1_5ft],
+                   required_parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma three with angled mounts
   three_angled_mount = BasePart("comma three",
-                                parts=[MountNew.angled_mount, MountNew.angled_mount, CableNew.right_angle_obd_c_cable_1_5ft],
-                                required_parts=[MountNew.angled_mount, CableNew.right_angle_obd_c_cable_1_5ft])
+                                parts=[Mount.angled_mount, Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft],
+                                required_parts=[Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft])
   red_panda = BasePart("red panda")
 
 
 class Kit(EnumBase):
-  red_panda_kit = BasePart("CAN FD panda kit", parts=[DeviceNew.red_panda, AccessoryNew.harness_box, CableNew.usb_a_2_a_cable, CableNew.usbc_otg_cable, CableNew.obd_c_cable_1_5ft])
+  red_panda_kit = BasePart("CAN FD panda kit", parts=[Device.red_panda, Accessory.harness_box, Cable.usb_a_2_a_cable, Cable.usbc_otg_cable, Cable.obd_c_cable_1_5ft])
 
 
-class PartTypeNew(Enum):
+class PartType(Enum):
   connector = CarHarness
-  device = DeviceNew
-  cable = CableNew
-  accessory = AccessoryNew
-  mount = MountNew
+  device = Device
+  cable = Cable
+  accessory = Accessory
+  mount = Mount
 
 
-# END REFACTORED CODE
-
-
-@dataclass
-class Part:
-  name: str
-
-  @property
-  def type(self) -> PartType:
-    raise NotImplementedError
-
-
-class Connector(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.connector
-
-
-class Accessory(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.accessory
-
-
-class Mount(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.mount
-
-
-class Cable(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.cable
-
-
-class Device(Part):
-  @property
-  def type(self) -> PartType:
-    return PartType.device
-
-
-class CarPart(Enum):
-  nidec = Connector("Honda Nidec connector")
-  bosch_a = Connector("Honda Bosch A connector")
-  bosch_b = Connector("Honda Bosch B connector")
-  toyota = Connector("Toyota connector")
-  subaru_a = Connector("Subaru A connector")
-  subaru_b = Connector("Subaru B connector")
-  fca = Connector("FCA connector")
-  ram = Connector("Ram connector")
-  vw = Connector("VW connector")
-  j533 = Connector("J533 connector")
-  hyundai_a = Connector("Hyundai A connector")
-  hyundai_b = Connector("Hyundai B connector")
-  hyundai_c = Connector("Hyundai C connector")
-  hyundai_d = Connector("Hyundai D connector")
-  hyundai_e = Connector("Hyundai E connector")
-  hyundai_f = Connector("Hyundai F connector")
-  hyundai_g = Connector("Hyundai G connector")
-  hyundai_h = Connector("Hyundai H connector")
-  hyundai_i = Connector("Hyundai I connector")
-  hyundai_j = Connector("Hyundai J connector")
-  hyundai_k = Connector("Hyundai K connector")
-  hyundai_l = Connector("Hyundai L connector")
-  hyundai_m = Connector("Hyundai M connector")
-  hyundai_n = Connector("Hyundai N connector")
-  hyundai_o = Connector("Hyundai O connector")
-  hyundai_p = Connector("Hyundai P connector")
-  hyundai_q = Connector("Hyundai Q connector")
-  custom = Connector("Developer connector")
-  obd_ii = Connector("OBD-II connector")
-  gm = Connector("GM connector")
-  nissan_a = Connector("Nissan A connector")
-  nissan_b = Connector("Nissan B connector")
-  mazda = Connector("Mazda connector")
-  ford_q3 = Connector("Ford Q3 connector")
-  ford_q4 = Connector("Ford Q4 connector")
-
-  comma_3 = Device("comma 3")
-  red_panda = Device("red panda")
-
-  harness_box = Accessory("harness box")
-  comma_power_v2 = Accessory("comma power v2")
-
-  mount = Mount("mount")
-  angled_mount = Mount("angled mount")
-
-  rj45_cable_7ft = Cable("RJ45 cable (7 ft)")
-  long_obdc_cable = Cable("long OBD-C cable")
-  usb_a_2_a_cable = Cable("USB A-A cable")
-  usbc_otg_cable = Cable("USB C OTG cable")
-  usbc_coupler = Cable("USB-C coupler")
-  obd_c_cable_1_5ft = Cable("OBD-C cable (1.5 ft)")
-  right_angle_obd_c_cable_1_5ft = Cable("right angle OBD-C cable (1.5 ft)")
-
-
-DEFAULT_CAR_PARTS: List[CarPart] = [CarPart.harness_box, CarPart.comma_power_v2, CarPart.rj45_cable_7ft, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft]
-DEFAULT_CAR_PARTS_NEW: List[EnumBase] = [DeviceNew.three]
+DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
 
 
 @dataclass
 class CarParts:
-  parts: List[CarPart] = field(default_factory=list)
-
-  @classmethod
-  def common(cls, add: List[CarPart] = None, remove: List[CarPart] = None):
-    p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
-    return cls(p)
-
-
-@dataclass
-class CarPartsNew:
   parts: List[EnumBase] = field(default_factory=list)
 
   @classmethod
   def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
-    p = [part for part in (add or []) + DEFAULT_CAR_PARTS_NEW if part not in (remove or [])]
+    p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
   def all_parts(self, required=False):
@@ -353,8 +237,7 @@ class CarInfo:
   auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
-  car_parts: CarParts = CarParts()
-  car_parts_new: Optional[CarPartsNew] = None  # CarPartsNew()
+  car_parts: Optional[CarParts] = None
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -388,18 +271,11 @@ class CarInfo:
 
     # hardware column
     hardware_col = "None"
-    if self.car_parts_new is not None:
+    if self.car_parts is not None:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      car_parts_docs = self.car_parts_new.all_parts(required=True)
-      car_parts_docs = [part for part in car_parts_docs if part.value.name != "comma three"]  # TODO: temporary to reduce cars.md diff
-      parts = '<br>'.join([f"- {car_parts_docs.count(part)} {part.value.name}" for part in sorted(set(car_parts_docs), key=lambda part: part.name)])
-      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
-
-    elif self.car_parts.parts:
-      model_years = self.model + (' ' + self.years if self.years else '')
-      buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in sorted(set(self.car_parts.parts), key=lambda part: part.name)])
+      car_parts_docs = self.car_parts.all_parts(required=True)
+      parts = '<br>'.join([f"- {car_parts_docs.count(part)} {part.value.name}" for part in sorted(set(car_parts_docs), key=lambda part: str(part.name))])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
