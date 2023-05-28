@@ -36,7 +36,7 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Type", "Multiplex value", "Offset", "Factor", "Extra Info",
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Type", "Multiplex Value", "Offset", "Factor", "Extra Info",
                    "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
@@ -94,7 +94,7 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
   if (index.column() == 1  && item->type != Item::Sig && item->type != Item::ExtraInfo) {
     flags |= (item->type == Item::Endian || item->type == Item::Signed) ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
   }
-  if (item->type == Item::SwitchValue && item->sig->type != cabana::Signal::Type::Multiplexed) {
+  if (item->type == Item::MultiplexValue && item->sig->type != cabana::Signal::Type::Multiplexed) {
     flags &= ~Qt::ItemIsEnabled;
   }
   return flags;
@@ -135,7 +135,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
           case Item::SignalType: return signalTypeToString(item->sig->type);
-          case Item::SwitchValue: return item->sig->multiplex_value;
+          case Item::MultiplexValue: return item->sig->multiplex_value;
           case Item::Offset: return doubleToString(item->sig->offset);
           case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
@@ -173,7 +173,7 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
     case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
-    case Item::SwitchValue: s.multiplex_value = value.toInt(); break;
+    case Item::MultiplexValue: s.multiplex_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
@@ -429,7 +429,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
-      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::SwitchValue ||
+      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
       item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);

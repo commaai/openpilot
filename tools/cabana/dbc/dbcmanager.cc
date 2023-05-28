@@ -140,8 +140,7 @@ std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
   std::map<MessageId, cabana::Msg> ret;
   if (auto dbc_file = findDBCFile(source)) {
     for (auto &[address, msg] : dbc_file->getMessages()) {
-      MessageId id = {.source = source, .address = address};
-      ret[id] = msg;
+      ret[{.source = source, .address = address}] = msg;
     }
   }
   return ret;

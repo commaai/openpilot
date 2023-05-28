@@ -1,16 +1,17 @@
 #include "tools/cabana/dbc/dbc.h"
+
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
 
-std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
-  std::vector<const Signal*> ret;
+std::vector<const cabana::Signal *> cabana::Msg::getSignals() const {
+  std::vector<const Signal *> ret;
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    return (l->type > r->type) || ((l->type == r->type) && (l->multiplex_value < r->multiplex_value || l->start_bit < r->start_bit));
+    return std::tuple(r->type, l->multiplex_value, l->start_bit) < std::tuple(l->type, r->multiplex_value, r->start_bit);
   });
   return ret;
 }

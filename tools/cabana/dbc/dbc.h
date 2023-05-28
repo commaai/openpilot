@@ -53,7 +53,7 @@ namespace cabana {
       Multiplexor
     };
 
-    Type type;
+    Type type = Type::Normal;
     QString name;
     int start_bit, msb, lsb, size;
     double factor, offset;
@@ -84,8 +84,8 @@ namespace cabana {
 
     QList<uint8_t> mask;
     cabana::Signal *multiplexor = nullptr;
-    void updateMask();
 
+    void updateMask();
     std::vector<const cabana::Signal*> getSignals() const;
     const cabana::Signal *sig(const QString &sig_name) const {
       auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
@@ -105,4 +105,3 @@ void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
 inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
 inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }
-
