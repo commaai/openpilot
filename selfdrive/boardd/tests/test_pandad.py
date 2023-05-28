@@ -82,7 +82,6 @@ class TestPandad(unittest.TestCase):
       pd.program_bootstub(f.read())
     pd.reset()
 
-    HARDWARE.reset_internal_panda()
     time.sleep(3)
     with Panda() as p:
       assert p.bootstub
