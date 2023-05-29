@@ -181,6 +181,7 @@ void DBCFile::parse(const QString &content) {
   msgs.clear();
   QTextStream stream((QString *)&content);
   cabana::Msg *current_msg = nullptr;
+  int multiplexor_cnt = 0;
   while (!stream.atEnd()) {
     ++line_num;
     line = stream.readLine().trimmed();
@@ -208,8 +209,11 @@ void DBCFile::parse(const QString &content) {
       if (offset == 1) {
         auto indicator = match.captured(2);
         if (indicator == "M") {
+          // Only one signal within a single message can be the multiplexer switch.
+          dbc_assert(++multiplexor_cnt < 2, "Multiple multiplexor");
           s.type = cabana::Signal::Type::Multiplexor;
         } else {
+          dbc_assert(multiplexor_cnt == 1, "No multiplexor");
           s.type = cabana::Signal::Type::Multiplexed;
           s.multiplex_value = indicator.mid(1).toInt();
         }

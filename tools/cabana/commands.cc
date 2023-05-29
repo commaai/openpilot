@@ -86,7 +86,7 @@ EditSignalCommand::EditSignalCommand(const MessageId &id, const cabana::Signal *
     // convert all multiplexed signals to normal signals
     auto msg = dbc()->msg(id);
     assert(msg);
-    for (auto &s : msg->sigs) {
+    for (const auto &s : msg->sigs) {
       if (s.type == cabana::Signal::Type::Multiplexed) {
         auto new_s = s;
         new_s.type = cabana::Signal::Type::Normal;
