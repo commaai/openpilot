@@ -5,8 +5,8 @@ uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
 
-std::vector<const cabana::Signal *> cabana::Msg::getSignals() const {
-  std::vector<const Signal *> ret;
+QVector<const cabana::Signal *> cabana::Msg::getSignals() const {
+  QVector<const Signal *> ret;
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
@@ -42,6 +42,9 @@ void cabana::Msg::update() {
   }
   for (auto &sig : sigs) {
     sig.multiplexor = sig.type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
+    if (!sig.multiplexor) {
+      sig.multiplex_value = 0;
+    }
   }
 }
 

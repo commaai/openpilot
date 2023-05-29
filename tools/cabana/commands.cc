@@ -80,12 +80,25 @@ void RemoveSigCommand::redo() { for (const auto &s : sigs) dbc()->removeSignal(i
 // EditSignalCommand
 
 EditSignalCommand::EditSignalCommand(const MessageId &id, const cabana::Signal *sig, const cabana::Signal &new_sig, QUndoCommand *parent)
-    : id(id), old_signal(*sig), new_signal(new_sig), QUndoCommand(parent) {
-  setText(QObject::tr("edit signal %1 in %2:%3").arg(old_signal.name).arg(msgName(id)).arg(id.address));
+    : id(id), QUndoCommand(parent) {
+  sigs.push_back({*sig, new_sig});
+  if (sig->type == cabana::Signal::Type::Multiplexor && new_sig.type == cabana::Signal::Type::Normal) {
+    // convert all multiplexed signals to normal signals
+    auto msg = dbc()->msg(id);
+    assert(msg);
+    for (auto &s : msg->sigs) {
+      if (s.type == cabana::Signal::Type::Multiplexed) {
+        auto new_s = s;
+        new_s.type = cabana::Signal::Type::Normal;
+        sigs.push_back({s, new_s});
+      }
+    }
+  }
+  setText(QObject::tr("edit signal %1 in %2:%3").arg(sig->name).arg(msgName(id)).arg(id.address));
 }
 
-void EditSignalCommand::undo() { dbc()->updateSignal(id, new_signal.name, old_signal); }
-void EditSignalCommand::redo() { dbc()->updateSignal(id, old_signal.name, new_signal); }
+void EditSignalCommand::undo() { for (const auto &s : sigs) dbc()->updateSignal(id, s.second.name, s.first); }
+void EditSignalCommand::redo() { for (const auto &s : sigs) dbc()->updateSignal(id, s.first.name, s.second); }
 
 namespace UndoStack {
 
