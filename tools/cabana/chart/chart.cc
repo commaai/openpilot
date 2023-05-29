@@ -38,7 +38,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   setChart(chart);
 
   createToolButtons();
-  // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(QChartView::HorizontalRubberBand);
   setMouseTracking(true);
   setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);

@@ -287,6 +287,7 @@ void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
     item->sparkline.last_ts = 0;
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
 
+    // move row if needed
     auto sigs = dbc()->msg(msg_id)->getSignals();
     int to = sigs.indexOf(sig);
     if (to != row) {
