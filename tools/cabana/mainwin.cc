@@ -352,7 +352,9 @@ void MainWindow::streamStarted() {
 void MainWindow::eventsMerged() {
   if (!can->liveStreaming()) {
     auto fingerprint = can->carFingerprint();
-    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPRINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPRINT: %2")
+                                   .arg(can->routeName())
+                                   .arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
     // Don't overwrite already loaded DBC
     if (!dbc()->msgCount() && !fingerprint.isEmpty()) {
       auto dbc_name = fingerprint_to_dbc[fingerprint];

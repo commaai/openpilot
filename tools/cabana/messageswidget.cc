@@ -130,7 +130,8 @@ void MessagesWidget::dbcModified() {
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
   auto it = std::find(model->msgs.cbegin(), model->msgs.cend(), msg_id);
   if (it != model->msgs.cend()) {
-    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0),
+                                            QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
   }
 }
 

@@ -269,11 +269,7 @@ void SignalModel::handleMsgChanged(MessageId id) {
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    auto sigs = dbc()->msg(msg_id)->getSignals();
-    int i = 0;
-    for (; i < sigs.size(); ++i) {
-      if (sigs[i] == sig) break;
-    }
+    int i = dbc()->msg(msg_id)->getSignals().indexOf(sig);
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
@@ -285,8 +281,7 @@ void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
 
     // move row when the order changes.
-    auto sigs = dbc()->msg(msg_id)->getSignals();
-    int to = sigs.indexOf(sig);
+    int to = dbc()->msg(msg_id)->getSignals().indexOf(sig);
     if (to != row) {
       beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
       root->children.move(row, to);

@@ -61,7 +61,7 @@ void Sparkline::render(const QColor &color, QSize size) {
     const double yscale = (size.height() - 3) / (max_val - min_val);
     points.clear();
     points.reserve(values.size());
-    for (auto &v : values) {
+    for (const auto &v : values) {
       points.emplace_back(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
     }
 
