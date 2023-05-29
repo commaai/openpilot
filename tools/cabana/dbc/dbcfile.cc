@@ -186,6 +186,7 @@ void DBCFile::parse(const QString &content) {
     ++line_num;
     line = stream.readLine().trimmed();
     if (line.startsWith("BO_ ")) {
+      multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
       dbc_assert(match.hasMatch());
       auto address = match.captured(1).toUInt();

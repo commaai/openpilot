@@ -10,7 +10,7 @@
 const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
-  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "toyota_new_mc_pt_generated");
+  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 

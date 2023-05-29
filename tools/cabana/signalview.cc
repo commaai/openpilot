@@ -282,12 +282,9 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 
 void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
-    // invalidate the sparkline
-    auto item = getItem(index(row, 1));
-    item->sparkline.last_ts = 0;
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
 
-    // move row if needed
+    // move row when the order changes.
     auto sigs = dbc()->msg(msg_id)->getSignals();
     int to = sigs.indexOf(sig);
     if (to != row) {

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <map>
-
 #include <QList>
 #include <QMetaType>
 #include <QObject>
-#include <QString>
 #include <QSet>
+#include <QString>
+#include <map>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcfile.h"
@@ -38,7 +37,7 @@ public:
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
 
-  const QList<uint8_t>& mask(const MessageId &id) const;
+  const QList<uint8_t> &mask(const MessageId &id) const;
 
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
@@ -54,7 +53,7 @@ public:
   DBCFile *findDBCFile(const uint8_t source) const;
   inline DBCFile *findDBCFile(const MessageId &id) const { return findDBCFile(id.source); }
 
-  QList<std::pair<SourceSet, DBCFile*>> dbc_files;
+  QList<std::pair<SourceSet, DBCFile *>> dbc_files;
 
 private:
   QList<uint8_t> empty_mask;
