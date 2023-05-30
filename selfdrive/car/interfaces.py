@@ -264,6 +264,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.parkBrake)
     if cs_out.accFaulted:
       events.add(EventName.accFaulted)
+    if cs_out.adasFaulted:
+      events.add(EventName.adasFaulted)
     if cs_out.steeringPressed:
       events.add(EventName.steerOverride)
 
