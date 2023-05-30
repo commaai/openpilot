@@ -114,7 +114,6 @@ signals:
 
 private:
   void rowsChanged();
-  void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
   void setSparklineRange(int value);
@@ -131,6 +130,10 @@ private:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {
       // Bypass the slow call to QTreeView::dataChanged.
       QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+    }
+    void leaveEvent(QEvent *event) override {
+      emit ((SignalView *)parentWidget())->highlight(nullptr);
+      QTreeView::leaveEvent(event);
     }
   };
   int max_value_width = 0;

@@ -699,11 +699,6 @@ void SignalView::resizeEvent(QResizeEvent* event) {
   QFrame::resizeEvent(event);
 }
 
-void SignalView::leaveEvent(QEvent *event) {
-  emit highlight(nullptr);
-  QWidget::leaveEvent(event);
-}
-
 // ValueDescriptionDlg
 
 ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, QWidget *parent) : QDialog(parent) {

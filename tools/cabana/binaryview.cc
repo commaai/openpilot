@@ -176,10 +176,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::highlightPosition(const QPoint &pos) {
   if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    const cabana::Signal *sig = nullptr;
-    if (!item->sigs.isEmpty()) {
-      sig = *(std::min_element(item->sigs.begin(), item->sigs.end(), [](auto &l, auto &r) {return l->size < r->size; }));
-    }
+    const cabana::Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
     highlight(sig);
   }
 }
@@ -283,7 +280,12 @@ void BinaryViewModel::refresh() {
         }
         if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
         if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].sigs.push_back(sig);
+
+        auto &sigs = items[idx].sigs;
+        sigs.push_back(sig);
+        if (sigs.size() > 1) {
+          std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) { return l->size > r->size; });
+        }
       }
     }
   } else {
@@ -378,20 +380,20 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
-  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) { // not resizing
-    if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
-      painter->fillRect(option.rect, bin_view->hovered_sig->color.darker(125));  // 4/5x brightness
-      painter->setPen(option.palette.color(QPalette::BrightText));
-    } else {
-      if (item->sigs.size() > 0) {
-        for (auto &s : item->sigs) {
+  } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {  // not resizing
+    if (item->sigs.size() > 0) {
+      for (auto &s : item->sigs) {
+        if (s == bin_view->hovered_sig) {
+          painter->fillRect(option.rect, bin_view->hovered_sig->color.darker(125));  // 4/5x brightness
+        } else {
           drawSignalCell(painter, option, index, s);
         }
-      } else if (item->valid) {
-        painter->fillRect(option.rect, item->bg_color);
       }
-      painter->setPen(option.palette.color(QPalette::Text));
+    } else if (item->valid) {
+      painter->fillRect(option.rect, item->bg_color);
     }
+    auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
+    painter->setPen(option.palette.color(color_role));
   }
 
   if (item->sigs.size() > 1) {
@@ -432,11 +434,12 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
       subtract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
     }
   }
-
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
+
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
   QColor color = sig->color;
-  color.setAlpha(std::min(item->bg_color.alpha(), 150));
+  color.setAlpha(item->bg_color.alpha());
+  painter->fillRect(rc, Qt::white);
   painter->fillRect(rc, color);
 
   color = sig->color.darker(125);
