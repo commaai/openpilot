@@ -125,11 +125,12 @@ void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.comment = comment;
 }
 
 void DBCFile::removeMsg(const MessageId &id) {
@@ -193,8 +194,15 @@ void DBCFile::parseExtraInfo(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"(.*)\";)");
   static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
-  static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (.*);)");
+  static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
+
+  int line_num = 0;
+  QString line;
+  auto dbc_assert = [&line_num, &line, this](bool condition) {
+    if (!condition) throw std::runtime_error(QString("[%1:%2]: %3").arg(filename).arg(line_num).arg(line).toStdString());
+  };
   auto get_sig = [this](uint32_t address, const QString &name) -> cabana::Signal * {
     auto m = (cabana::Msg *)msg(address);
     return m ? (cabana::Signal *)m->sig(name) : nullptr;
@@ -203,11 +211,12 @@ void DBCFile::parseExtraInfo(const QString &content) {
   QTextStream stream((QString *)&content);
   uint32_t address = 0;
   while (!stream.atEnd()) {
-    QString line = stream.readLine().trimmed();
+    ++line_num;
+    line = stream.readLine().trimmed();
     if (line.startsWith("BO_ ")) {
-      if (auto match = bo_regexp.match(line); match.hasMatch()) {
-        address = match.captured(1).toUInt();
-      }
+      auto match = bo_regexp.match(line);
+      dbc_assert(match.hasMatch());
+      address = match.captured(1).toUInt();
     } else if (line.startsWith("SG_ ")) {
       int offset = 0;
       auto match = sg_regexp.match(line);
@@ -215,40 +224,48 @@ void DBCFile::parseExtraInfo(const QString &content) {
         match = sgm_regexp.match(line);
         offset = 1;
       }
-      if (match.hasMatch()) {
-        if (auto s = get_sig(address, match.captured(1))) {
-          s->min = match.captured(8 + offset).toDouble();
-          s->max = match.captured(9 + offset).toDouble();
-          s->unit = match.captured(10 + offset);
-        }
+      dbc_assert(match.hasMatch());
+      if (auto s = get_sig(address, match.captured(1))) {
+        s->min = match.captured(8 + offset).toDouble();
+        s->max = match.captured(9 + offset).toDouble();
+        s->unit = match.captured(10 + offset);
       }
     } else if (line.startsWith("VAL_ ")) {
-      if (auto match = val_regexp.match(line); match.hasMatch()) {
-        if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
-          QStringList desc_list = match.captured(3).trimmed().split('"');
-          for (int i = 0; i < desc_list.size(); i += 2) {
-            auto val = desc_list[i].trimmed();
-            if (!val.isEmpty() && (i + 1) < desc_list.size()) {
-              auto desc = desc_list[i+1].trimmed();
-              s->val_desc.push_back({val, desc});
-            }
+      auto match = val_regexp.match(line);
+      dbc_assert(match.hasMatch());
+      if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
+        QStringList desc_list = match.captured(3).trimmed().split('"');
+        for (int i = 0; i < desc_list.size(); i += 2) {
+          auto val = desc_list[i].trimmed();
+          if (!val.isEmpty() && (i + 1) < desc_list.size()) {
+            auto desc = desc_list[i + 1].trimmed();
+            s->val_desc.push_back({val.toDouble(), desc});
           }
         }
       }
+    } else if (line.startsWith("CM_ BO_")) {
+      auto match = msg_comment_regexp.match(line);
+      dbc_assert(match.hasMatch());
+      if (auto m = (cabana::Msg *)msg(match.captured(1).toUInt())) {
+        m->comment = match.captured(2).trimmed();
+      }
     } else if (line.startsWith("CM_ SG_ ")) {
-      if (auto match = sg_comment_regexp.match(line); match.hasMatch()) {
-        if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
-          s->comment = match.captured(3).trimmed();
-        }
+      auto match = sg_comment_regexp.match(line);
+      dbc_assert(match.hasMatch());
+      if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
+        s->comment = match.captured(3).trimmed();
       }
     }
   }
 }
 
 QString DBCFile::generateDBC() {
-  QString dbc_string, signal_comment, val_desc;
-  for (auto &[address, m] : msgs) {
+  QString dbc_string, signal_comment, message_comment, val_desc;
+  for (const auto &[address, m] : msgs) {
     dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
+    if (!m.comment.isEmpty()) {
+      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+    }
     for (auto sig : m.getSignals()) {
       dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
                         .arg(sig->name)
@@ -267,12 +284,12 @@ QString DBCFile::generateDBC() {
       if (!sig->val_desc.isEmpty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
-          text << QString("%1 \"%2\"").arg(val, desc);
+          text << QString("%1 \"%2\"").arg(val).arg(desc);
         }
         val_desc += QString("VAL_ %1 %2 %3;\n").arg(address).arg(sig->name).arg(text.join(" "));
       }
     }
     dbc_string += "\n";
   }
-  return dbc_string + signal_comment + val_desc;
+  return dbc_string + message_comment + signal_comment + val_desc;
 }
