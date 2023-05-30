@@ -90,12 +90,14 @@ class IsoTpParallelQuery:
       for addr in self.functional_addrs:
         self._create_isotp_msg(addr, None, -1).send(self.request[0])
 
-    # If querying functional addrs, set up physical IsoTpMessages to send consecutive frames
+    # Send first frame (single or first) to all addresses and receive asynchronously in the loop below.
+    # If querying functional addrs, only set up physical IsoTpMessages to send consecutive frames
     for msg in msgs.values():
       msg.send(self.request[0], setup_only=len(self.functional_addrs) > 0)
 
     results = {}
     start_time = time.monotonic()
+    addrs_responded = set()  # track addresses that have ever sent a valid iso-tp frame for timeout logging
     response_timeouts = {tx_addr: start_time + timeout for tx_addr in self.msg_addrs}
     while True:
       self.rx()
@@ -110,6 +112,7 @@ class IsoTpParallelQuery:
 
         # Extend timeout for each consecutive ISO-TP frame to avoid timing out on long responses
         if rx_in_progress:
+          addrs_responded.add(tx_addr)
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
         if not dat:
@@ -117,7 +120,7 @@ class IsoTpParallelQuery:
 
         counter = request_counter[tx_addr]
         expected_response = self.response[counter]
-        response_valid = dat[:len(expected_response)] == expected_response
+        response_valid = dat.startswith(expected_response)
 
         if response_valid:
           if counter + 1 < len(self.request):
@@ -140,8 +143,13 @@ class IsoTpParallelQuery:
       cur_time = time.monotonic()
       for tx_addr in response_timeouts:
         if cur_time - response_timeouts[tx_addr] > 0:
-          if request_counter[tx_addr] > 0 and not request_done[tx_addr]:
-            cloudlog.error(f"iso-tp query timeout after receiving response: {tx_addr}")
+          if not request_done[tx_addr]:
+            if request_counter[tx_addr] > 0:
+              cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
+            elif tx_addr in addrs_responded:
+              cloudlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
+            else:
+              cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
           request_done[tx_addr] = True
 
       # Break if all requests are done (finished or timed out)
