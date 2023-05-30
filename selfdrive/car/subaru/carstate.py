@@ -308,6 +308,8 @@ class CarState(CarStateBase):
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         signals += [
+          ("COUNTER", "INFOTAINMENT_STATUS"),
+          ("CHECKSUM", "INFOTAINMENT_STATUS"),
           ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
           ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
           ("Signal1", "INFOTAINMENT_STATUS"),
