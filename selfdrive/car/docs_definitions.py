@@ -56,9 +56,9 @@ class BasePart:
 
 
 class EnumBase(Enum):
-  @classmethod
-  def type(cls):
-    return PartType(cls)
+  @property
+  def type(self):
+    return PartType(self.__class__)
 
 
 class Mount(EnumBase):
