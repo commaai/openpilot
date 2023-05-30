@@ -15,7 +15,7 @@ class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
   struct Item {
-    enum Type {Root, Sig, Name, Size, Endian, Signed, SignalType, MultiplexValue, Offset, Factor, ExtraInfo, Unit, Comment, Min, Max, Desc };
+    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { qDeleteAll(children); }
     inline int row() { return parent->children.indexOf(this); }
 
