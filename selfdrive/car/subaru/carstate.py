@@ -252,6 +252,7 @@ class CarState(CarStateBase):
     else:
       signals = [
         ("COUNTER", "ES_DashStatus"),
+        ("CHECKSUM", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
