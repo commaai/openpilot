@@ -176,7 +176,10 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
 void BinaryView::highlightPosition(const QPoint &pos) {
   if (auto index = indexAt(viewport()->mapFromGlobal(pos)); index.isValid()) {
     auto item = (BinaryViewModel::Item *)index.internalPointer();
-    const cabana::Signal *sig = item->sigs.isEmpty() ? nullptr : item->sigs.back();
+    const cabana::Signal *sig = nullptr;
+    if (!item->sigs.isEmpty()) {
+      sig = *(std::min_element(item->sigs.begin(), item->sigs.end(), [](auto &l, auto &r) {return l->size < r->size; }));
+    }
     highlight(sig);
   }
 }
@@ -280,7 +283,6 @@ void BinaryViewModel::refresh() {
         }
         if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
         if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
-        items[idx].bg_color = sig->color;
         items[idx].sigs.push_back(sig);
       }
     }
@@ -356,15 +358,11 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   hex_font.setBold(true);
 }
 
-bool BinaryItemDelegate::isSameColor(const QModelIndex &index, int dx, int dy) const {
-  QModelIndex index2 = index.sibling(index.row() + dy, index.column() + dx);
-  if (!index2.isValid()) {
-    return false;
-  }
-  auto color1 = ((const BinaryViewModel::Item *)index.internalPointer())->bg_color;
-  auto color2 = ((const BinaryViewModel::Item *)index2.internalPointer())->bg_color;
-  // Ignore alpha
-  return (color1.red() == color2.red()) && (color2.green() == color2.green()) && (color1.blue() == color2.blue());
+bool BinaryItemDelegate::isSameSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const {
+  if (!index.isValid()) return false;
+  auto model = (const BinaryViewModel*)(index.model());
+  int idx = (index.row() + dy) * model->columnCount() + index.column() + dx;
+  return (idx >=0 && idx < model->items.size()) ? model->items[idx].sigs.contains(sig) : false;
 }
 
 void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -373,28 +371,32 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   painter->save();
 
   if (index.column() == 8) {
-    painter->setFont(hex_font);
-    painter->fillRect(option.rect, item->bg_color);
+    if (item->valid) {
+      painter->setFont(hex_font);
+      painter->fillRect(option.rect, item->bg_color);
+    }
   } else if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, selection_color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) { // not resizing
-    QColor bg = item->bg_color;
     if (bin_view->hovered_sig && item->sigs.contains(bin_view->hovered_sig)) {
-      bg.setAlpha(255);
-      painter->fillRect(option.rect, bg.darker(125));  // 4/5x brightness
+      painter->fillRect(option.rect, bin_view->hovered_sig->color.darker(125));  // 4/5x brightness
       painter->setPen(option.palette.color(QPalette::BrightText));
     } else {
       if (item->sigs.size() > 0) {
-        drawBorder(painter, option, index);
-        bg.setAlpha(std::max(50, bg.alpha()));
+        for (auto &s : item->sigs) {
+          drawSignalCell(painter, option, index, s);
+        }
+      } else if (item->valid) {
+        painter->fillRect(option.rect, item->bg_color);
       }
-      painter->fillRect(option.rect, bg);
       painter->setPen(option.palette.color(QPalette::Text));
     }
   }
 
-  if (!item->valid) {
+  if (item->sigs.size() > 1) {
+    painter->fillRect(option.rect, QBrush(Qt::darkGray, Qt::Dense7Pattern));
+  } else if (!item->valid) {
     painter->fillRect(option.rect, QBrush(Qt::darkGray, Qt::BDiagPattern));
   }
   painter->drawText(option.rect, Qt::AlignCenter, item->val);
@@ -406,44 +408,47 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 }
 
 // Draw border on edge of signal
-void BinaryItemDelegate::drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  QColor border_color = item->bg_color;
-  border_color.setAlphaF(1.0);
-
-  bool draw_left = !isSameColor(index, -1, 0);
-  bool draw_top = !isSameColor(index, 0, -1);
-  bool draw_right = !isSameColor(index, 1, 0);
-  bool draw_bottom = !isSameColor(index, 0, 1);
+void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionViewItem &option,
+                                        const QModelIndex &index, const cabana::Signal *sig) const {
+  bool draw_left = !isSameSignal(index, -1, 0, sig);
+  bool draw_top = !isSameSignal(index, 0, -1, sig);
+  bool draw_right = !isSameSignal(index, 1, 0, sig);
+  bool draw_bottom = !isSameSignal(index, 0, 1, sig);
 
   const int spacing = 2;
   QRect rc = option.rect.adjusted(draw_left * 3, draw_top * spacing, draw_right * -3, draw_bottom * -spacing);
   QRegion subtract;
   if (!draw_top) {
-    if (!draw_left && !isSameColor(index, -1, -1)) {
+    if (!draw_left && !isSameSignal(index, -1, -1, sig)) {
       subtract += QRect{rc.left(), rc.top(), 3, spacing};
-    } else if (!draw_right && !isSameColor(index, 1, -1)) {
+    } else if (!draw_right && !isSameSignal(index, 1, -1, sig)) {
       subtract += QRect{rc.right() - 2, rc.top(), 3, spacing};
     }
   }
   if (!draw_bottom) {
-    if (!draw_left && !isSameColor(index, -1, 1)) {
+    if (!draw_left && !isSameSignal(index, -1, 1, sig)) {
       subtract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
-    } else if (!draw_right && !isSameColor(index, 1, 1)) {
+    } else if (!draw_right && !isSameSignal(index, 1, 1, sig)) {
       subtract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
     }
   }
 
-  painter->setPen(QPen(border_color, 1));
+  painter->setClipRegion(QRegion(rc).subtracted(subtract));
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  QColor color = sig->color;
+  color.setAlpha(std::min(item->bg_color.alpha(), 150));
+  painter->fillRect(rc, color);
+
+  color = sig->color.darker(125);
+  painter->setPen(QPen(color, 1));
   if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
   if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
   if (draw_bottom) painter->drawLine(rc.bottomLeft(), rc.bottomRight());
   if (draw_top) painter->drawLine(rc.topLeft(), rc.topRight());
 
-  painter->setClipRegion(QRegion(rc).subtracted(subtract));
   if (!subtract.isEmpty()) {
     // fill gaps inside corners.
-    painter->setPen(QPen(border_color, 2, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+    painter->setPen(QPen(color, 2, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
     for (auto &r : subtract) {
       painter->drawRect(r);
     }
