@@ -130,13 +130,9 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
   primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
-  primeLayout->addSpacing(60);
-
   QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
-
-  primeLayout->addSpacing(20);
 
   QLabel *connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
   connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
