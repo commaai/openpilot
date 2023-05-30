@@ -110,6 +110,7 @@ class CarState(CarStateBase):
   def get_global_es_distance_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
+      ("CHECKSUM", "ES_Distance"),
       ("Signal1", "ES_Distance"),
       ("Cruise_Fault", "ES_Distance"),
       ("Cruise_Throttle", "ES_Distance"),
