@@ -279,6 +279,7 @@ class CarState(CarStateBase):
         ("Cruise_State", "ES_DashStatus"),
 
         ("COUNTER", "ES_LKAS_State"),
+        ("CHECKSUM", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
