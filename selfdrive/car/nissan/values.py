@@ -171,9 +171,9 @@ FW_VERSIONS = {
 }
 
 DBC = {
-  CAR.XTRAIL: dbc_dict('nissan_x_trail_2017', None),
-  CAR.LEAF: dbc_dict('nissan_leaf_2018', None),
-  CAR.LEAF_IC: dbc_dict('nissan_leaf_2018', None),
-  CAR.ROGUE: dbc_dict('nissan_x_trail_2017', None),
-  CAR.ALTIMA: dbc_dict('nissan_x_trail_2017', None),
+  CAR.XTRAIL: dbc_dict('nissan_x_trail_2017_generated', None),
+  CAR.LEAF: dbc_dict('nissan_leaf_2018_generated', None),
+  CAR.LEAF_IC: dbc_dict('nissan_leaf_2018_generated', None),
+  CAR.ROGUE: dbc_dict('nissan_x_trail_2017_generated', None),
+  CAR.ALTIMA: dbc_dict('nissan_x_trail_2017_generated', None),
 }
