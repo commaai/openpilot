@@ -4,20 +4,13 @@
 #include <numeric>
 
 bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
-  for (int i = 0; i < dbc_files.size(); i++) {
-    auto [ss, dbc_file] = dbc_files[i];
-
-    // Check if file is already open, and merge sources
-    if (dbc_file->filename == dbc_file_name) {
-      dbc_files[i] = {ss | s, dbc_file};
-
-      emit DBCFileChanged();
-      return true;
-    }
-  }
-
   try {
-    dbc_files.push_back({s, new DBCFile(dbc_file_name, this)});
+    auto it = std::find_if(dbc_files.begin(), dbc_files.end(), [&](auto &f) { return f.second->filename == dbc_file_name; });
+    if (it != dbc_files.end()) {
+      it->first += s;
+    } else {
+      dbc_files.push_back({s, new DBCFile(dbc_file_name, this)});
+    }
   } catch (std::exception &e) {
     if (error) *error = e.what();
     return false;
