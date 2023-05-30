@@ -4,10 +4,9 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QPushButton>
-#include <QStackedLayout>
 
 WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
-  QStackedLayout *stack = new QStackedLayout(this);
+  stack = new QStackedLayout(this);
 
   // Setup Wi-Fi
   QFrame *setup = new QFrame;
@@ -86,4 +85,17 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
       border-radius: 10px;
     }
   )");
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &WiFiPromptWidget::updateState);
+}
+
+void WiFiPromptWidget::updateState(const UIState &s) {
+  if (!isVisible()) return;
+
+  auto &sm = *(s.sm);
+
+  auto network_type = sm["deviceState"].getDeviceState().getNetworkType();
+  auto uploading = network_type == cereal::DeviceState::NetworkType::WIFI ||
+      network_type == cereal::DeviceState::NetworkType::ETHERNET;
+  stack->setCurrentIndex(uploading ? 1 : 0);
 }
