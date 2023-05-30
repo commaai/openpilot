@@ -42,7 +42,7 @@ struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
 };
 
-typedef QList<std::pair<QString, QString>> ValueDescription;
+typedef QList<std::pair<double, QString>> ValueDescription;
 
 namespace cabana {
   struct Signal {
@@ -64,6 +64,7 @@ namespace cabana {
     uint32_t address;
     QString name;
     uint32_t size;
+    QString comment;
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;

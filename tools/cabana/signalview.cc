@@ -133,7 +133,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc << QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val).arg(desc);
             }
             return val_desc.join(" ");
           }
@@ -226,7 +226,7 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     QString name = dbc()->newMsgName(msg_id);
-    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size(), ""));
     msg = dbc()->msg(msg_id);
   }
 
@@ -284,11 +284,7 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-
-  QLocale locale(QLocale::C);
-  locale.setNumberOptions(QLocale::RejectGroupSeparator);
-  double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(locale);  // Match locale of QString::toDouble() instead of system
+  double_validator = new DoubleValidator(this);
 
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
@@ -481,10 +477,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -666,7 +662,7 @@ ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, Q
 
   int row = 0;
   for (auto &[val, desc] : descriptions) {
-    table->setItem(row, 0, new QTableWidgetItem(val));
+    table->setItem(row, 0, new QTableWidgetItem(QString::number(val)));
     table->setItem(row, 1, new QTableWidgetItem(desc));
     ++row;
   }
@@ -696,7 +692,7 @@ void ValueDescriptionDlg::save() {
     QString val = table->item(i, 0)->text().trimmed();
     QString desc = table->item(i, 1)->text().trimmed();
     if (!val.isEmpty() && !desc.isEmpty()) {
-      val_desc.push_back({val, desc});
+      val_desc.push_back({val.toDouble(), desc});
     }
   }
   QDialog::accept();
@@ -706,7 +702,7 @@ QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QSty
   QLineEdit *edit = new QLineEdit(parent);
   edit->setFrame(false);
   if (index.column() == 0) {
-    edit->setValidator(new QIntValidator(edit));
+    edit->setValidator(new DoubleValidator(parent));
   }
   return edit;
 }
