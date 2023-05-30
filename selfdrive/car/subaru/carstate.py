@@ -240,6 +240,7 @@ class CarState(CarStateBase):
         ("Cruise_Fault", "ES_Distance"),
         ("Signal5", "ES_Distance"),
         ("COUNTER", "ES_Distance"),
+        ("CHECKSUM", "ES_Distance"),
         ("Signal6", "ES_Distance"),
         ("Cruise_Button", "ES_Distance"),
         ("Signal7", "ES_Distance"),
