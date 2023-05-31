@@ -142,10 +142,11 @@ class Kit(EnumBase):
 
 
 class PartType(Enum):
+  accessory = Accessory
+  cable = Cable
   connector = CarHarness
   device = Device
-  cable = Cable
-  accessory = Accessory
+  kit = Kit
   mount = Mount
 
 
