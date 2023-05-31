@@ -99,11 +99,9 @@ class VCruiseHelper:
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
     # increment v_cruise_kph to closest next interval
     if button_type == ButtonType.accelCruise:
-      self.v_cruise_kph = math.floor((self.v_cruise_kph + V_CRUISE_INCREMENT_ERROR) /
-                                     v_cruise_delta) * v_cruise_delta + v_cruise_delta
+      self.v_cruise_kph = math.ceil((self.v_cruise_kph + V_CRUISE_INCREMENT_ERROR) / v_cruise_delta) * v_cruise_delta
     elif button_type == ButtonType.decelCruise:
-      self.v_cruise_kph = math.ceil((self.v_cruise_kph - V_CRUISE_INCREMENT_ERROR) /
-                                    v_cruise_delta) * v_cruise_delta - v_cruise_delta
+      self.v_cruise_kph = math.floor((self.v_cruise_kph - V_CRUISE_INCREMENT_ERROR) / v_cruise_delta) * v_cruise_delta
 
     # If set is pressed while overriding, clip cruise speed to minimum of vEgo
     if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):

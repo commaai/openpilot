@@ -3,7 +3,7 @@ import numpy as np
 from parameterized import parameterized_class
 import unittest
 
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
+from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL#, IMPERIAL_INCREMENT
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -119,7 +119,8 @@ class TestVCruiseHelper(unittest.TestCase):
       self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
 
       # first decrement speed, then perform gas pressed logic
-      expected_v_cruise_kph = self.v_cruise_helper.v_cruise_kph - IMPERIAL_INCREMENT
+      expected_v_cruise_kph = self.v_cruise_helper.v_cruise_kph - CV.MPH_TO_KPH
+      print(expected_v_cruise_kph)
       expected_v_cruise_kph = max(expected_v_cruise_kph, v_ego * CV.MS_TO_KPH)  # clip to min of vEgo
       expected_v_cruise_kph = float(np.clip(round(expected_v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX))
 
