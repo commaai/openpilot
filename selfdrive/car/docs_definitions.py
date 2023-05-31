@@ -272,7 +272,6 @@ class CarInfo:
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
     self.make, self.model, self.years = split_name(self.name)
-    self.all_footnotes = all_footnotes
 
     # longitudinal column
     op_long = "Stock"
@@ -326,6 +325,7 @@ class CarInfo:
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
       self.row[Column.STEERING_TORQUE] = ColumnItem.star_icon(Star.FULL)
 
+    self.all_footnotes = all_footnotes
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
 
