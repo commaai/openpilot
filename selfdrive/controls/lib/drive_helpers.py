@@ -28,14 +28,6 @@ MAX_VEL_ERR = 5.0
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 CRUISE_LONG_PRESS = 50
-CRUISE_NEAREST_FUNC = {
-  ButtonType.accelCruise: math.floor,
-  ButtonType.decelCruise: math.ceil,
-}
-CRUISE_INTERVAL_SIGN = {
-  ButtonType.accelCruise: +1,
-  ButtonType.decelCruise: -1,
-}
 
 
 class VCruiseHelper:
@@ -104,12 +96,11 @@ class VCruiseHelper:
       return
 
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    factor = self.v_cruise_kph / v_cruise_delta
-    # if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
-    if long_press and abs(factor - round(factor)) < 1e-2:  # partial interval
-      self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
-    else:
-      self.v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
+    # increment v_cruise_kph to closest next interval
+    if button_type == ButtonType.accelCruise:
+      self.v_cruise_kph = math.floor((self.v_cruise_kph + 1e-2) / v_cruise_delta) * v_cruise_delta + v_cruise_delta
+    elif button_type == ButtonType.decelCruise:
+      self.v_cruise_kph = math.ceil((self.v_cruise_kph - 1e-2) / v_cruise_delta) * v_cruise_delta - v_cruise_delta
 
     # If set is pressed while overriding, clip cruise speed to minimum of vEgo
     if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
