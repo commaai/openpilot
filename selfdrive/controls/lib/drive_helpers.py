@@ -14,7 +14,7 @@ V_CRUISE_MAX = 145
 V_CRUISE_UNSET = 255
 V_CRUISE_INITIAL = 40
 V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
-IMPERIAL_INCREMENT = 1.6  # should be CV.MPH_TO_KPH, but this causes rounding errors
+IMPERIAL_INCREMENT = CV.MPH_TO_KPH  # should be CV.MPH_TO_KPH, but this causes rounding errors
 
 MIN_SPEED = 1.0
 CONTROL_N = 17
@@ -29,8 +29,8 @@ ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 CRUISE_LONG_PRESS = 50
 CRUISE_NEAREST_FUNC = {
-  ButtonType.accelCruise: math.ceil,
-  ButtonType.decelCruise: math.floor,
+  ButtonType.accelCruise: math.floor,
+  ButtonType.decelCruise: math.ceil,
 }
 CRUISE_INTERVAL_SIGN = {
   ButtonType.accelCruise: +1,
@@ -104,7 +104,9 @@ class VCruiseHelper:
       return
 
     v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
+    factor = self.v_cruise_kph / v_cruise_delta
+    # if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
+    if long_press and abs(factor - round(factor)) < 1e-2:  # partial interval
       self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
       self.v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
