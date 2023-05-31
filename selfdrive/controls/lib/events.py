@@ -724,7 +724,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
@@ -883,12 +883,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
     ET.PERMANENT: NormalPermanentAlert("LKAS Fault: Restart the car to engage"),
     ET.NO_ENTRY: NoEntryAlert("LKAS Fault: Restart the Car"),
-  },
-
-  EventName.brakeUnavailable: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
-    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
   },
 
   EventName.reverseGear: {
