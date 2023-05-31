@@ -42,6 +42,7 @@ function install_ubuntu_common_requirements() {
     git \
     git-lfs \
     ffmpeg \
+    imagemagick \
     libavformat-dev \
     libavcodec-dev \
     libavdevice-dev \
