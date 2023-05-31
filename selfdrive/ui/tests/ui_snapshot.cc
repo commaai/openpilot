@@ -1,4 +1,4 @@
-#include "selfdrive/ui/tests/test_ui_snapshot.h"
+#include "selfdrive/ui/tests/ui_snapshot.h"
 
 #include <QApplication>
 #include <QCommandLineParser>
@@ -21,7 +21,6 @@ void saveWidgetAsImage(QWidget *widget, const QString &fileName) {
 }
 
 int main(int argc, char *argv[]) {
-  /** SETUP **/
   initApp(argc, argv);
 
   QApplication app(argc, argv);
@@ -52,7 +51,7 @@ int main(int argc, char *argv[]) {
   // wait for the UI to update
   QTimer::singleShot(UI_FREQ, [&] {
     saveWidgetAsImage(&w, output);
-    app.quit();
+    QTimer::singleShot(0, &app, &QApplication::quit);
   });
 
   return app.exec();
