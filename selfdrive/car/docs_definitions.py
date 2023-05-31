@@ -34,23 +34,15 @@ class Star(Enum):
 @dataclass
 class BasePart:
   name: str
-  # A list of parts that come with this part in the shop
   parts: List[Enum] = field(default_factory=list)
-  # If there are extra parts included, you can override required_parts
-  required_parts: Optional[List[Enum]] = None
 
-  def __post_init__(self):
-    if self.required_parts is None:
-      self.required_parts = self.parts
-
-  def all_parts(self, required=False):
+  def all_parts(self):
     # Recursively get all parts
-    _parts = 'required_parts' if required else 'parts'
-
+    _parts = 'parts'
     parts = []
     parts.extend(getattr(self, _parts))
     for part in getattr(self, _parts):
-      parts.extend(part.value.all_parts(required))
+      parts.extend(part.value.all_parts())
 
     return parts
 
@@ -127,13 +119,9 @@ class CarHarness(EnumBase):
 
 
 class Device(EnumBase):
-  three = BasePart("comma three",
-                   parts=[Mount.mount, Mount.mount, Cable.right_angle_obd_c_cable_1_5ft],
-                   required_parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
+  three = BasePart("comma three", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma three with angled mounts
-  three_angled_mount = BasePart("comma three",
-                                parts=[Mount.angled_mount, Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft],
-                                required_parts=[Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft])
+  three_angled_mount = BasePart("comma three", parts=[Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft])
   red_panda = BasePart("red panda")
 
 
@@ -162,10 +150,10 @@ class CarParts:
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
-  def all_parts(self, required=False):
+  def all_parts(self):
     parts = []
     for part in self.parts:
-      parts.extend(part.value.all_parts(required=required))
+      parts.extend(part.value.all_parts())
     return self.parts + parts
 
 
@@ -238,7 +226,7 @@ class CarInfo:
   auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
-  car_parts: Optional[CarParts] = None
+  car_parts: CarParts = CarParts()
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
@@ -272,10 +260,10 @@ class CarInfo:
 
     # hardware column
     hardware_col = "None"
-    if self.car_parts is not None:
+    if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      car_parts_docs = self.car_parts.all_parts(required=True)
+      car_parts_docs = self.car_parts.all_parts()
       parts = '<br>'.join([f"- {car_parts_docs.count(part)} {part.value.name}" for part in sorted(set(car_parts_docs), key=lambda part: str(part.value.name))])
       hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
 
