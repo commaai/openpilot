@@ -1,4 +1,5 @@
 from collections import namedtuple
+import math
 
 from cereal import car
 from common.numpy_fast import clip, interp
@@ -128,7 +129,7 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
-    hud_v_cruise = hud_control.setSpeed / conversion if hud_control.speedVisible else 255
+    hud_v_cruise = round(hud_control.setSpeed / conversion, 1) if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
@@ -248,7 +249,7 @@ class CarController:
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
-      hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_control.leadVisible,
+      hud = HUDData(int(pcm_accel), math.floor(hud_v_cruise), hud_control.leadVisible,
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, CS.acc_hud, CS.lkas_hud))
 
