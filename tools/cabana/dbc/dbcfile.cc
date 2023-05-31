@@ -194,8 +194,8 @@ void DBCFile::parseExtraInfo(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
-  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"(.*)\";)");
-  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"(.*)\";)");
+  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"([^"]*)\";)");
+  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"([^"]*)\";)");
   static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
 
   int line_num = 0;
@@ -212,7 +212,7 @@ void DBCFile::parseExtraInfo(const QString &content) {
   uint32_t address = 0;
   while (!stream.atEnd()) {
     ++line_num;
-    line = stream.readLine().trimmed();
+    line = stream.readLine();
     if (line.startsWith("BO_ ")) {
       auto match = bo_regexp.match(line);
       dbc_assert(match.hasMatch());
@@ -244,12 +244,20 @@ void DBCFile::parseExtraInfo(const QString &content) {
         }
       }
     } else if (line.startsWith("CM_ BO_")) {
+      if (!line.endsWith("\";")) {
+        int pos = stream.pos() - line.length() - 1;
+        line = content.mid(pos, content.indexOf("\";", pos));
+      }
       auto match = msg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto m = (cabana::Msg *)msg(match.captured(1).toUInt())) {
         m->comment = match.captured(2).trimmed();
       }
     } else if (line.startsWith("CM_ SG_ ")) {
+      if (!line.endsWith("\";")) {
+        int pos = stream.pos() - line.length() - 1;
+        line = content.mid(pos, content.indexOf("\";", pos));
+      }
       auto match = sg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
