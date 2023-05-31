@@ -53,7 +53,7 @@ private:
   std::atomic<bool> abort_load_thumbnail = false;
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  QFuture<void> thumnail_future;
+  std::unique_ptr<QFuture<void>> thumnail_future;
   InfoLabel thumbnail_label;
   friend class VideoWidget;
 };

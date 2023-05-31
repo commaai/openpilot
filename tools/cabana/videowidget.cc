@@ -157,23 +157,28 @@ Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizonta
     update();
   });
   timer->start(2000);
-  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
+    if (!thumnail_future) {
+      thumnail_future = std::make_unique<QFuture<void>>(QtConcurrent::run(this, &Slider::loadThumbnails));
+    }
+  });
 }
 
 Slider::~Slider() {
   abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
+  if (thumnail_future) {
+    thumnail_future->waitForFinished();
+  }
 }
 
 void Slider::loadThumbnails() {
   const auto &segments = can->route()->segments();
-  double max_time = 0;
   for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
     LogReader log;
     std::string qlog = it->second.qlog.toStdString();
     if (!qlog.empty() && log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
-      if (max_time == 0 && !log.events.empty()) {
-        max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
+      if (it == segments.rbegin() && !log.events.empty()) {
+        double max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
         emit updateMaximumTime(max_time);
       }
       for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
