@@ -22,3 +22,5 @@ echo "Updating $TEST_CASE..."
 bash $SNAPSHOT_DIR/base.sh
 bash $TEST_SETUP
 $SNAPSHOT_TOOL $TEST_SNAPSHOT
+
+echo "Updated: $TEST_SNAPSHOT"

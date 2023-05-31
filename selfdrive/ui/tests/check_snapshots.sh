@@ -8,10 +8,6 @@ SNAPSHOT_DIR=$UI_DIR/tests/snapshots
 cd $UI_DIR
 
 for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
-  if [[ $TEST_SETUP == *"base.sh" ]]; then
-    continue
-  fi
-
   TEST_CASE=$(basename ${TEST_SETUP%.sh})
   TEST_SNAPSHOT=$SNAPSHOT_DIR/$TEST_CASE.png
   TMP_SNAPSHOT=$(mktemp /tmp/snapshot.XXXXXXXXXX).png
@@ -23,7 +19,6 @@ for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
     exit 1
   fi
 
-  bash $SNAPSHOT_DIR/base.sh
   bash $TEST_SETUP
   $SNAPSHOT_TOOL $TMP_SNAPSHOT
 
