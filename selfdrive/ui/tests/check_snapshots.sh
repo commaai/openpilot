@@ -15,7 +15,7 @@ for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
   echo "Checking $TEST_CASE..."
 
   if [ ! -f $TEST_SNAPSHOT ]; then
-    >&2 echo "Missing snapshot! Create using rebase_snapshot.sh $TEST_CASE"
+    >&2 echo "Missing snapshot! Create with: rebase_snapshot.sh $TEST_CASE"
     exit 1
   fi
 
