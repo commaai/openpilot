@@ -195,8 +195,16 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
       ret.accFaulted = bool(cp.vl["CRUISE_FAULT_STATUS"]["CRUISE_FAULT"])
-    elif self.CP.openpilotLongitudinalControl:
-      ret.accFaulted = bool(cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"])
+    else:
+      # On some cars, these two signals are always 1, this flag is masking a bug in release
+      # FIXME: find and set the ACC faulted signals on more platforms
+      if self.CP.openpilotLongitudinalControl:
+        ret.accFaulted = bool(cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"])
+
+      # Log non-critical stock ACC/LKAS faults if Nidec (camera)
+      if self.CP.carFingerprint not in HONDA_BOSCH:
+        ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp_cam.vl["LKAS_HUD"]["LKAS_PROBLEM"])
+
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -331,12 +339,15 @@ class CarState(CarStateBase):
                   ("AEB_REQ_1", "BRAKE_COMMAND"),
                   ("FCW", "BRAKE_COMMAND"),
                   ("CHIME", "BRAKE_COMMAND"),
+                  ("LKAS_PROBLEM", "LKAS_HUD"),
                   ("FCM_OFF", "ACC_HUD"),
                   ("FCM_OFF_2", "ACC_HUD"),
                   ("FCM_PROBLEM", "ACC_HUD"),
+                  ("ACC_PROBLEM", "ACC_HUD"),
                   ("ICONS", "ACC_HUD")]
       checks += [
         ("ACC_HUD", 10),
+        ("LKAS_HUD", 10),
         ("BRAKE_COMMAND", 50),
       ]
 
