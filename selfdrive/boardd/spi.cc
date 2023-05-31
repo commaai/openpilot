@@ -68,6 +68,10 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   // revs of the comma three may not support this speed
   uint32_t spi_speed = 50000000;
 
+  if (!util::file_exists(SPI_DEVICE)) {
+    goto fail;
+  }
+
   spi_fd = open(SPI_DEVICE.c_str(), O_RDWR);
   if (spi_fd < 0) {
     LOGE("failed opening SPI device %d", spi_fd);
