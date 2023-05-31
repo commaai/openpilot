@@ -283,10 +283,9 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   # TODO add configs for modeld, dmonitoringmodeld
   fakeable_daemons = {}
   for config in CONFIGS:
-    replayable_messages = set([msg for sub in config.pub_sub.values() for msg in sub])
     processes = [
       multiprocessing.Process(target=replay_service, args=(msg, lr)) 
-      for msg in replayable_messages
+      for msg in config.subs
     ]
     fakeable_daemons[config.proc_name] = processes
 

@@ -5,6 +5,8 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 
+#include "tools/cabana/commands.h"
+
 MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0 ,0, 0, 0);
@@ -44,6 +46,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   restoreHeaderState(settings.message_header_state);
   view->header()->setSectionsMovable(true);
   view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
+  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -81,13 +84,8 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
     settings.suppress_defined_signals = (state == Qt::Checked);
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
-  QObject::connect(can, &AbstractStream::streamStarted, this, &MessagesWidget::reset);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::msgUpdated, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::msgRemoved, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalAdded, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalRemoved, this, &MessagesWidget::dbcModified);
-  QObject::connect(dbc(), &DBCManager::signalUpdated, this, &MessagesWidget::dbcModified);
+  QObject::connect(UndoStack::instance(), &QUndoStack::indexChanged, this, &MessagesWidget::dbcModified);
   QObject::connect(model, &MessageListModel::modelReset, [this]() {
     if (current_msg_id) {
       selectMessage(*current_msg_id);
@@ -146,14 +144,6 @@ void MessagesWidget::updateSuppressedButtons() {
   }
 }
 
-void MessagesWidget::reset() {
-  current_msg_id = std::nullopt;
-  view->selectionModel()->clear();
-  model->reset();
-  updateSuppressedButtons();
-}
-
-
 // MessageListModel
 
 QVariant MessageListModel::headerData(int section, Qt::Orientation orientation, int role) const {
@@ -203,6 +193,11 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QVariant::fromValue(colors);
   } else if (role == BytesRole && index.column() == Column::DATA && id.source != INVALID_SOURCE) {
     return can_data.dat;
+  } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
+    auto msg = dbc()->msg(id);
+    auto tooltip = msg ? msg->name : UNTITLED;
+    if (msg && !msg->comment.isEmpty()) tooltip += "<br /><span style=\"color:gray;\">" + msg->comment + "</span>";
+    return tooltip;
   }
   return {};
 }
@@ -254,103 +249,58 @@ void MessageListModel::sortMessages(std::vector<MessageId> &new_msgs) {
   }
 }
 
-static std::pair<unsigned int, unsigned int> parseRange(const QString &filter, bool *ok = nullptr, int base = 10) {
+static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
   // Parse out filter string into a range (e.g. "1" -> {1, 1}, "1-3" -> {1, 3}, "1-" -> {1, inf})
-  bool ok1 = true, ok2 = true;
-  unsigned int parsed1 = std::numeric_limits<unsigned int>::min();
-  unsigned int parsed2 = std::numeric_limits<unsigned int>::max();
-
+  unsigned int min = std::numeric_limits<unsigned int>::min();
+  unsigned int max = std::numeric_limits<unsigned int>::max();
   auto s = filter.split('-');
-  if (s.size() == 1) {
-    parsed1 = s[0].toUInt(ok, base);
-    return {parsed1, parsed1};
-  } else if (s.size() == 2) {
-    if (!s[0].isEmpty()) parsed1 = s[0].toUInt(&ok1, base);
-    if (!s[1].isEmpty()) parsed2 = s[1].toUInt(&ok2, base);
-
-    *ok = ok1 & ok2;
-    return {parsed1, parsed2};
-  } else {
-    *ok = false;
-    return {0, 0};
+  bool ok = s.size() >= 1 && s.size() <= 2;
+  if (ok && !s[0].isEmpty()) min = s[0].toUInt(&ok, base);
+  if (ok && s.size() == 1) {
+    max = min;
+  } else if (ok && s.size() == 2 && !s[1].isEmpty()) {
+    max = s[1].toUInt(&ok, base);
   }
+  return ok && value >= min && value <= max;
 }
 
 bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, const QMap<int, QString> &filters) {
-  auto cs = Qt::CaseInsensitive;
   bool match = true;
-  bool convert_ok;
-
-  for (int column = Column::NAME; column <= Column::DATA; column++) {
-    if (!filters.contains(column)) continue;
-    const QString &txt = filters[column];
-
+  for (auto it = filters.cbegin(); it != filters.cend() && match; ++it) {
+    const QString &txt = it.value();
     QRegularExpression re(txt, QRegularExpression::CaseInsensitiveOption | QRegularExpression::DotMatchesEverythingOption);
-
-    switch (column) {
-      case Column::NAME:
-        {
-          bool name_match = re.match(msgName(id)).hasMatch();
-
-          // Message signals
-          if (const auto msg = dbc()->msg(id)) {
-            for (auto s : msg->getSignals()) {
-              if (re.match(s->name).hasMatch()) {
-                name_match = true;
-                break;
-              }
-            }
-          }
-          if (!name_match) match = false;
-        }
+    switch (it.key()) {
+      case Column::NAME: {
+        const auto msg = dbc()->msg(id);
+        match = re.match(msg ? msg->name : UNTITLED).hasMatch();
+        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s.name).hasMatch(); });
         break;
+      }
       case Column::SOURCE:
-        {
-          auto source = parseRange(txt, &convert_ok);
-          bool source_match = convert_ok && (id.source >= source.first && id.source <= source.second);
-          if (!source_match) match = false;
-        }
+        match = parseRange(txt, id.source);
         break;
-      case Column::ADDRESS:
-        {
-          bool address_re_match = re.match(QString::number(id.address, 16)).hasMatch();
-
-          auto address = parseRange(txt, &convert_ok, 16);
-          bool address_match = convert_ok && (id.address >= address.first && id.address <= address.second);
-
-          if (!address_re_match && !address_match) match = false;
-        }
+      case Column::ADDRESS: {
+        match = re.match(QString::number(id.address, 16)).hasMatch();
+        match |= parseRange(txt, id.address, 16);
         break;
+      }
       case Column::FREQ:
-        {
-          // TODO: Hide stale messages?
-          auto freq = parseRange(txt, &convert_ok);
-          bool freq_match = convert_ok && (data.freq >= freq.first && data.freq <= freq.second);
-          if (!freq_match) match = false;
-        }
+        // TODO: Hide stale messages?
+        match = parseRange(txt, data.freq);
         break;
       case Column::COUNT:
-        {
-          auto count = parseRange(txt, &convert_ok);
-          bool count_match = convert_ok && (data.count >= count.first && data.count <= count.second);
-          if (!count_match) match = false;
-        }
+        match = parseRange(txt, data.count);
         break;
-      case Column::DATA:
-        {
-          bool data_match = false;
-          data_match |= QString(data.dat.toHex()).contains(txt, cs);
-          data_match |= re.match(QString(data.dat.toHex())).hasMatch();
-          data_match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
-
-          if (!data_match) match = false;
-        }
+      case Column::DATA: {
+        match = QString(data.dat.toHex()).contains(txt, Qt::CaseInsensitive);
+        match |= re.match(QString(data.dat.toHex())).hasMatch();
+        match |= re.match(QString(data.dat.toHex(' '))).hasMatch();
         break;
+      }
     }
   }
   return match;
 }
-
 
 void MessageListModel::fetchData() {
   std::vector<MessageId> new_msgs;
@@ -419,14 +369,6 @@ void MessageListModel::clearSuppress() {
   suppressed_bytes.clear();
 }
 
-void MessageListModel::reset() {
-  beginResetModel();
-  filter_str.clear();
-  msgs.clear();
-  clearSuppress();
-  endResetModel();
-}
-
 void MessageListModel::forceResetModel() {
   beginResetModel();
   endResetModel();
@@ -467,8 +409,8 @@ void MessageView::updateBytesSectionSize() {
     }
   }
   int width = delegate->widthForBytes(max_bytes);
-  if (header()->sectionSize(5) != width) {
-    header()->resizeSection(5, width);
+  if (header()->sectionSize(MessageListModel::Column::DATA) != width) {
+    header()->resizeSection(MessageListModel::Column::DATA, width);
   }
 }
 
@@ -476,11 +418,10 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
   QMenu *menu = new QMenu(this);
   int cur_index = header()->logicalIndexAt(pos);
 
-  QString column_name;
   QAction *action;
   for (int visual_index = 0; visual_index < header()->count(); visual_index++) {
     int logical_index = header()->logicalIndex(visual_index);
-    column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
+    QString column_name = model()->headerData(logical_index, Qt::Horizontal).toString();
 
     // Hide show action
     if (header()->isSectionHidden(logical_index)) {
@@ -506,22 +447,6 @@ void MessageView::headerContextMenuEvent(const QPoint &pos) {
 MessageViewHeader::MessageViewHeader(QWidget *parent, MessageListModel *model) : model(model), QHeaderView(Qt::Horizontal, parent) {
   QObject::connect(this, &QHeaderView::sectionResized, this, &MessageViewHeader::updateHeaderPositions);
   QObject::connect(this, &QHeaderView::sectionMoved, this, &MessageViewHeader::updateHeaderPositions);
-}
-
-void MessageViewHeader::showEvent(QShowEvent *e) {
-
-  for (int i = 0; i < count(); i++) {
-    if (!editors[i]) {
-      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
-      editors[i] = new QLineEdit(this);
-      editors[i]->setClearButtonEnabled(true);
-      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
-
-      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
-    }
-    editors[i]->show();
-  }
-  QHeaderView::showEvent(e);
 }
 
 void MessageViewHeader::updateFilters() {
@@ -556,11 +481,18 @@ void MessageViewHeader::updateHeaderPositions() {
 }
 
 void MessageViewHeader::updateGeometries() {
-  if (editors[0]) {
-    setViewportMargins(0, 0, 0, editors[0]->sizeHint().height());
-  } else {
-    setViewportMargins(0, 0, 0, 0);
+  for (int i = 0; i < count(); i++) {
+    if (!editors[i]) {
+      QString column_name = model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString();
+      editors[i] = new QLineEdit(this);
+      editors[i]->setClearButtonEnabled(true);
+      editors[i]->setPlaceholderText(tr("Filter %1").arg(column_name));
+
+      QObject::connect(editors[i], &QLineEdit::textChanged, this, &MessageViewHeader::updateFilters);
+    }
   }
+  setViewportMargins(0, 0, 0, editors[0] ? editors[0]->sizeHint().height() : 0);
+
   QHeaderView::updateGeometries();
   updateHeaderPositions();
 }

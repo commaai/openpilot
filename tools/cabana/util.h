@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
+#include <QDoubleValidator>
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
@@ -67,7 +68,6 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
   void setMultipleLines(bool v);
   int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
@@ -85,10 +85,15 @@ QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
-
 public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
+};
+
+class DoubleValidator : public QDoubleValidator {
+  Q_OBJECT
+public:
+  DoubleValidator(QObject *parent = nullptr);
 };
 
 namespace utils {

@@ -5,7 +5,7 @@ import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import Column, Harness, Star
+from selfdrive.car.docs_definitions import CarPart, Column, PartType, Star
 from selfdrive.car.honda.values import CAR as HONDA
 
 
@@ -74,8 +74,11 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        self.assertNotIn(car.harness_kit.connector, [None, Harness.none], f"Need to specify car harness: {car.name}")
-        self.assertTrue(car.harness_kit.parts, f"Need to specify harness parts: {car.name} with {car.harness_kit.connector.value} connector")
+        car_part_type = [p.value.type for p in car.car_parts.parts]
+        self.assertTrue(len(car.car_parts.parts) > 0, f"Need to specify car parts: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
+        self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
+        self.assertTrue(CarPart.right_angle_obd_c_cable_1_5ft in car.car_parts.parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
 
 if __name__ == "__main__":
