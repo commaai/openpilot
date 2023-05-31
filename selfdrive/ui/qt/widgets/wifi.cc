@@ -81,9 +81,6 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   }
   stack->addWidget(uploading);
 
-  stack->setCurrentWidget(uploading);
-
-  setFixedWidth(750);
   setStyleSheet(R"(
     WiFiPromptWidget {
       background-color: #333333;
