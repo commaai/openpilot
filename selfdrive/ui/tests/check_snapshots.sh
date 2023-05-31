@@ -19,6 +19,7 @@ for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
     exit 1
   fi
 
+  bash $SNAPSHOT_DIR/base.sh
   bash $TEST_SETUP
   $SNAPSHOT_TOOL $TMP_SNAPSHOT
 
