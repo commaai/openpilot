@@ -46,6 +46,5 @@ int main(int argc, char *argv[]) {
     saveWidgetAsImage(&w, ("test_snapshot_" + testCase.name + ".png").c_str());
   }
 
-//   return a.exec();
   return 0;
 }
