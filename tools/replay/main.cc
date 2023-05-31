@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
       {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER, "disable HW video decoding"},
       {"no-vipc", REPLAY_FLAG_NO_VIPC, "do not output video"},
+      {"ui-debug", REPLAY_FLAG_UI_DEBUG, "do output uiDebug and userFlag messages. may causes issues when using alongside with UI"}
   };
 
   QCommandLineParser parser;
