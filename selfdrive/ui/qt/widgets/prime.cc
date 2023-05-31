@@ -143,42 +143,9 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(primeWidget);
 
-  // comma points layout
-  QWidget *pointsWidget = new QWidget;
-  pointsWidget->setObjectName("primeWidget");
-  QVBoxLayout *pointsLayout = new QVBoxLayout(pointsWidget);
-  pointsLayout->setContentsMargins(60, 50, 60, 50);
-
-  QLabel *commaPoints = new QLabel(tr("COMMA POINTS"));
-  commaPoints->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
-  pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
-
-  points = new QLabel("0");
-  points->setStyleSheet("font-size: 91px; font-weight: bold;");
-  pointsLayout->addWidget(points, 0, Qt::AlignTop);
-
-  mainLayout->addWidget(pointsWidget);
-
   mainLayout->addStretch();
-
-  // set up API requests
-  if (auto dongleId = getDongleId()) {
-    QString url = CommaApi::BASE_URL + "/v1/devices/" + *dongleId + "/owner";
-    RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_Owner", 6);
-    QObject::connect(repeater, &RequestRepeater::requestDone, this, &PrimeUserWidget::replyFinished);
-  }
 }
 
-void PrimeUserWidget::replyFinished(const QString &response) {
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
-  if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on getting points";
-    return;
-  }
-
-  QJsonObject json = doc.object();
-  points->setText(QString::number(json["points"].toInt()));
-}
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
