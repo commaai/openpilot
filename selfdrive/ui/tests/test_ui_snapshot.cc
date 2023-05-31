@@ -1,11 +1,13 @@
 #include "selfdrive/ui/tests/test_ui_snapshot.h"
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QDebug>
 #include <QImage>
 #include <QPainter>
 #include <QTranslator>
 
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
@@ -22,29 +24,36 @@ int main(int argc, char *argv[]) {
   /** SETUP **/
   initApp(argc, argv);
 
+  QApplication app(argc, argv);
+
+  QCommandLineParser parser;
+  parser.setApplicationDescription("UI snapshot tool");
+  parser.addHelpOption();
+  parser.addPositionalArgument("file", "output file");
+  parser.process(app);
+
+  const QString output = parser.positionalArguments().value(0);
+  if (output.isEmpty()) {
+    qCritical() << "No output file specified";
+    return 1;
+  }
+
   QTranslator translator;
   QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
   if (!translator.load(translation_file, "translations") && translation_file.length()) {
     qCritical() << "Failed to load translation file:" << translation_file;
   }
-
-  QApplication a(argc, argv);
-  a.installTranslator(&translator);
+  app.installTranslator(&translator);
 
   MainWindow w;
   setMainWindow(&w);
-  a.installEventFilter(&w);
+  app.installEventFilter(&w);
 
-  /** TEST CASES **/
-  std::vector<TestCase> testCases = {
-    { [&]() { uiState()->setPrimeType(0); }, "no_prime" },
-    { [&]() { uiState()->setPrimeType(1); }, "with_prime" },
-  };
+  // wait for the UI to update
+  QTimer::singleShot(UI_FREQ, [&] {
+    saveWidgetAsImage(&w, output);
+    app.quit();
+  });
 
-  for (const auto& testCase : testCases) {
-    testCase.setupFunc();
-    saveWidgetAsImage(&w, ("test_snapshot_" + testCase.name + ".png").c_str());
-  }
-
-  return 0;
+  return app.exec();
 }
