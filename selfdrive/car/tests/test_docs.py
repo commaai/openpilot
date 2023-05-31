@@ -59,9 +59,9 @@ class TestCarDocs(unittest.TestCase):
       with self.subTest(car=car):
         # honda sanity check, it's the definition of a no torque star
         if car.car_fingerprint in (HONDA.ACCORD, HONDA.CIVIC, HONDA.CRV, HONDA.ODYSSEY, HONDA.PILOT):
-          self.assertEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has full torque star")
+          self.assertEqual(car.row[Column.STEERING_TORQUE].star, Star.EMPTY, f"{car.name} has full torque star")
         elif car.car_name in ("toyota", "hyundai"):
-          self.assertNotEqual(car.row[Column.STEERING_TORQUE], Star.EMPTY, f"{car.name} has no torque star")
+          self.assertNotEqual(car.row[Column.STEERING_TORQUE].star, Star.EMPTY, f"{car.name} has no torque star")
 
   def test_year_format(self):
     for car in self.all_cars:
