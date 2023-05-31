@@ -11,7 +11,7 @@ void setMainWindow(QWidget *w) {
     const bool wide = (sz.width() >= WIDE_WIDTH) ^ (getenv("INVERT_WIDTH") != NULL);
     w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
   }
-  w->show();
+  // w->show();
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
