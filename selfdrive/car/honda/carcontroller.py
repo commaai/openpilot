@@ -1,16 +1,26 @@
+import math
 from collections import namedtuple
 
 from cereal import car
+from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
-from selfdrive.controls.lib.drive_helpers import rate_limit
+from selfdrive.controls.lib.drive_helpers import IMPERIAL_INCREMENT, rate_limit
 
+V_CRUISE_FACTOR = IMPERIAL_INCREMENT / CV.KPH_TO_MPH
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
+
+
+def round_hud_set_speed(v_cruise_kph, is_metric):
+  if is_metric:
+    return round(v_cruise_kph)
+  cruise_mph = round(v_cruise_kph * CV.KPH_TO_MPH)
+  return math.floor(cruise_mph * CV.MPH_TO_KPH * V_CRUISE_FACTOR)
 
 
 def compute_gb_honda_bosch(accel, speed):
@@ -103,12 +113,6 @@ def rate_limit_steer(new_steer, last_steer):
   MAX_DELTA = 3 * DT_CTRL
   return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
 
-
-def calculate_hud_max_speed(hud_v_cruise_kph, is_metric):
-  if (is_metric):
-    return int(round(hud_v_cruise_kph))
-  cruise_mph = round(hud_v_cruise_kph * CV.KPH_TO_MPH)
-  return int(round(cruise_mph * CV.MPH_TO_KPH))
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -254,8 +258,7 @@ class CarController:
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
-      hud_set_speed = calculate_hud_max_speed(hud_v_cruise, CS.is_metric)
-      hud = HUDData(int(pcm_accel), hud_set_speed, hud_control.leadVisible,
+      hud = HUDData(int(pcm_accel), round_hud_set_speed(hud_v_cruise, CS.is_metric), hud_control.leadVisible,
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, CS.acc_hud, CS.lkas_hud))
 
