@@ -2,7 +2,7 @@ import re
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple
 
 from cereal import car
 from common.conversions import Conversions as CV
@@ -28,6 +28,58 @@ class Star(Enum):
   FULL = "full"
   HALF = "half"
   EMPTY = "empty"
+
+
+@dataclass
+class ColumnItem:
+  text: str = ""
+  format_column_f: Optional[Callable] = None
+  star: Optional[Star] = None
+
+  def __post_init__(self):
+    if self.format_column_f:
+      self.format_column = self.format_column_f
+    else:
+      self.format_column = self.__format_column
+
+  def __format_column(self, star_icon: str, video_icon: str, footnote_tag: str, footnotes: List[int]) -> str:
+    return self.common_footnotes(self.text, footnote_tag, footnotes)
+
+  @classmethod
+  def common_footnotes(cls, text: str, footnote_tag: str, footnotes: List[int]) -> str:
+    if len(footnotes):
+      text += footnote_tag.format(f'{",".join(map(str, footnotes))}')
+    return text
+
+  @classmethod
+  def hardware(cls, text: str):
+    def f(star_icon: str, video_icon: str, footnote_tag: str, footnotes: List[int]) -> str:
+      if text != "None":
+        if len(footnotes):
+          footnote_tag = f'<details><summary>View{footnote_tag}</summary><sub>'
+          return footnote_tag.format(f'{",".join(map(str, footnotes))}') + text + '</sub></details>'
+        else:
+          return f'<details><summary>View</summary><sub>{text}</sub></details>'
+      return text
+    return cls(text, f)
+
+  @classmethod
+  def star_icon(cls, star: Star):
+    def f(star_icon: str, video_icon: str, footnote_tag: str, footnotes: List[int]) -> str:
+      return cls.common_footnotes(star_icon.format(star.value), footnote_tag, footnotes)
+    return cls(format_column_f=f, star=star)
+
+  @classmethod
+  def video_icon(cls, text: str):
+    def f(star_icon: str, video_icon: str, footnote_tag: str, footnotes: List[int]) -> str:
+      return cls.common_footnotes(video_icon.format(text) if text else "", footnote_tag, footnotes)
+    return cls(text, f)
+
+  @classmethod
+  def model(cls, text: str, years: str):
+    def f(star_icon: str, video_icon: str, footnote_tag: str, footnotes: List[int]) -> str:
+      return cls.common_footnotes(text + f' {years}' if years else text, footnote_tag, footnotes)
+    return cls(text, f)
 
 
 class PartType(Enum):
@@ -158,6 +210,10 @@ class CommonFootnote(Enum):
     Column.LONGITUDINAL)
 
 
+def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
+  # Returns applicable footnotes given current column
+  return [fn for fn in footnotes if fn.value.column == column]
+
 
 # TODO: store years as a list
 def get_year_list(years):
@@ -250,26 +306,25 @@ class CarInfo:
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
       parts = '<br>'.join([f"- {self.car_parts.parts.count(part)} {part.value.name}" for part in
                            sorted(set(self.car_parts.parts), key=lambda part: str(part.value.name))])
-      footnotes = self.get_ordered_footnotes('[<sup>{}</sup>](#footnotes)', Column.HARDWARE)
-      hardware_col = f'<details><summary>View{footnotes}</summary><sub>{parts}<br>{buy_link}</sub></details>'
+      hardware_col = f'{parts}<br>{buy_link}'
 
-    self.row: Dict[Enum, Union[str, Star]] = {
-      Column.MAKE: self.make,
-      Column.MODEL: self.model,
-      Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: op_long,
-      Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
-      Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
-      Column.STEERING_TORQUE: Star.EMPTY,
-      Column.AUTO_RESUME: Star.FULL if self.auto_resume else Star.EMPTY,
-      Column.HARDWARE: hardware_col,
-      Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
+    self.row: Dict[Enum, ColumnItem] = {
+      Column.MAKE: ColumnItem(self.make),
+      Column.MODEL: ColumnItem.model(self.model, self.years),
+      Column.PACKAGE: ColumnItem(self.package),
+      Column.LONGITUDINAL: ColumnItem(op_long),
+      Column.FSR_LONGITUDINAL: ColumnItem(f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph"),
+      Column.FSR_STEERING: ColumnItem(f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph"),
+      Column.STEERING_TORQUE: ColumnItem.star_icon(star=Star.EMPTY),
+      Column.AUTO_RESUME: ColumnItem.star_icon(Star.FULL) if self.auto_resume else ColumnItem.star_icon(Star.EMPTY),
+      Column.HARDWARE: ColumnItem.hardware(hardware_col),
+      Column.VIDEO: ColumnItem.video_icon(self.video_link) if self.video_link is not None else ColumnItem(""),  # replaced with an image and link from template in get_column
     }
 
     # Set steering torque star from max lateral acceleration
     assert CP.maxLateralAccel > 0.1
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
-      self.row[Column.STEERING_TORQUE] = Star.FULL
+      self.row[Column.STEERING_TORQUE] = ColumnItem.star_icon(Star.FULL)
 
     self.year_list = get_year_list(self.years)
     self.detail_sentence = self.get_detail_sentence(CP)
@@ -295,7 +350,7 @@ class CarInfo:
       elif self.auto_resume:
         acc = " <strong>that automatically resumes from a stop</strong>"
 
-      if self.row[Column.STEERING_TORQUE] != Star.FULL:
+      if self.row[Column.STEERING_TORQUE].star != Star.FULL:
         sentence_builder += " This car may not be able to take tight turns on its own."
 
       # experimental mode
@@ -313,27 +368,7 @@ class CarInfo:
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
-  def get_ordered_footnotes(self, footnote_tag: str, column: Column) -> str:
-    # Get applicable footnotes given current column
-    col_fn = [fn for fn in self.footnotes if fn.value.column == column]
-
-    if len(col_fn):
-      sups = sorted([self.all_footnotes[fn] for fn in col_fn])
-      return footnote_tag.format(f'{",".join(map(str, sups))}')
-    else:
-      return ""
-
-  def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
-    item: Union[str, Star] = self.row[column]
-    if isinstance(item, Star):
-      item = star_icon.format(item.value)
-    elif column == Column.MODEL and len(self.years):
-      item += f" {self.years}"
-    elif column == Column.VIDEO and len(item) > 0:
-      item = video_icon.format(item)
-
-    # hardware footnotes need special formatting
-    if column != Column.HARDWARE:
-      item += self.get_ordered_footnotes(footnote_tag, column)
-
-    return item
+  def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str):
+    item: ColumnItem = self.row[column]
+    footnotes = sorted([self.all_footnotes[fn] for fn in get_footnotes(self.footnotes, column)])
+    return item.format_column(star_icon, video_icon, footnote_tag, footnotes)
