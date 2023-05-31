@@ -249,7 +249,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   primeUser->setVisible(uiState()->primeType());
   mainLayout->setCurrentIndex(1);
 
-  setFixedWidth(750);
   setStyleSheet(R"(
     #primeWidget {
       border-radius: 10px;
