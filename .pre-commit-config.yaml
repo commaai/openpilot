@@ -15,6 +15,7 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
     -   id: check-added-large-files
+        exclude: '^(selfdrive/ui/tests/snapshots)/'
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
     rev: v2.2.4
