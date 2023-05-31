@@ -1,6 +1,6 @@
 import math
 
-from cereal import car
+from cereal import car, log
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL
@@ -17,13 +17,13 @@ V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
 IMPERIAL_INCREMENT = 1.6  # should be CV.MPH_TO_KPH, but this causes rounding errors
 
 MIN_SPEED = 1.0
-LAT_MPC_N = 16
-LON_MPC_N = 32
 CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0
+
+MAX_VEL_ERR = 5.0
 
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
@@ -192,3 +192,21 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
                                 current_curvature_desired + max_curvature_rate * DT_MDL)
 
   return safe_desired_curvature, safe_desired_curvature_rate
+
+
+def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float, torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+  friction_interp = interp(
+    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+    [-friction_threshold, friction_threshold],
+    [-torque_params.friction, torque_params.friction]
+  )
+  friction = float(friction_interp) if friction_compensation else 0.0
+  return friction
+
+
+def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
+  # ToDo: Try relative error, and absolute speed
+  if len(modelV2.temporalPose.trans):
+    vel_err = clip(modelV2.temporalPose.trans[0] - v_ego, -MAX_VEL_ERR, MAX_VEL_ERR)
+    return float(vel_err)
+  return 0.0

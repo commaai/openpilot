@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import time
 import threading
@@ -11,6 +12,7 @@ from common.basedir import BASEDIR
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.plotjuggler.juggle import load_segment
+from tools.lib.logreader import logreader_from_route_or_segment
 from panda import Panda
 
 try:
@@ -87,18 +89,27 @@ def connect():
 
 
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
+  args = parser.parse_args()
+
   if not panda_jungle_imported:
     print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
     print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
   print("Loading log...")
-  ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
-  REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
-  CAN_MSGS = []
-  logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
-  with multiprocessing.Pool(24) as pool:
-    for lr in tqdm(pool.map(load_segment, logs)):
-      CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  if args.route_or_segment_name is None:
+    ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
+    REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
+    CAN_MSGS = []
+    logs = [f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2" for i in REPLAY_SEGS]
+    with multiprocessing.Pool(24) as pool:
+      for lr in tqdm(pool.map(load_segment, logs)):
+        CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  else:
+    lr = logreader_from_route_or_segment(args.route_or_segment_name)
+    CAN_MSGS = [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
   # set both to cycle ignition
   IGN_ON = int(os.getenv("ON", "0"))

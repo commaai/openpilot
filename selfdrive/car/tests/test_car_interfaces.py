@@ -6,9 +6,9 @@ from parameterized import parameterized
 
 from cereal import car
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
+
 
 class TestCarInterfaces(unittest.TestCase):
 
@@ -25,14 +25,15 @@ class TestCarInterfaces(unittest.TestCase):
 
     car_fw = []
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
 
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.wheelbase, 0)
-    self.assertGreater(car_params.centerToFront, 0)
+    # centerToFront is center of gravity to front wheels, assert a reasonable range
+    self.assertTrue(car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     # Longitudinal sanity checks
@@ -50,7 +51,7 @@ class TestCarInterfaces(unittest.TestCase):
 
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
-        self.assertTrue(not math.isnan(tune.torque.friction))
+        self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
 
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))

@@ -18,7 +18,7 @@ from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import HARDWARE, TICI, AGNOS
-from selfdrive.loggerd.config import get_available_percent
+from system.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
 from system.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
@@ -313,9 +313,6 @@ def thermald_thread(end_event, hw_queue):
       should_start = should_start and all(startup_conditions.values())
 
     if should_start != should_start_prev or (count == 0):
-      params.put_bool("IsOnroad", should_start)
-      params.put_bool("IsOffroad", not should_start)
-
       params.put_bool("IsEngaged", False)
       engaged_prev = False
       HARDWARE.set_power_save(not should_start)

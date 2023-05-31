@@ -1,41 +1,56 @@
 #pragma once
 
-#include <QTimer>
+#include <QBasicTimer>
+
 #include "tools/cabana/streams/abstractstream.h"
 
 class LiveStream : public AbstractStream {
   Q_OBJECT
 
 public:
-  LiveStream(QObject *parent, QString address = {});
+  LiveStream(QObject *parent);
   virtual ~LiveStream();
-  inline QString routeName() const override {
-    return QString("Live Streaming From %1").arg(zmq_address.isEmpty() ? "127.0.0.1" : zmq_address);
-  }
-  inline double routeStartTime() const override { return start_ts / (double)1e9; }
-  inline double currentSec() const override { return (current_ts - start_ts) / (double)1e9; }
-  void setSpeed(float speed) override { speed_ = std::min<float>(1.0, speed); }
-  bool isPaused() const override { return pause_; }
+  void start() override;
+  inline double routeStartTime() const override { return begin_event_ts / 1e9; }
+  inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
+  void setSpeed(float speed) override { speed_ = speed; }
+  double getSpeed() override { return speed_; }
+  bool isPaused() const override { return paused_; }
   void pause(bool pause) override;
-  const std::vector<Event *> *events() const override;
+  void seekTo(double sec) override;
 
 protected:
-  virtual void handleEvent(Event *evt);
-  virtual void streamThread();
-  virtual void removeExpiredEvents();
+  virtual void streamThread() = 0;
+  void handleEvent(const char *data, const size_t size);
 
-  mutable std::mutex lock;
-  mutable std::vector<Event *> events_vector;
-  std::deque<Event *> can_events;
-  std::deque<AlignedBuffer *> messages;
-  std::atomic<uint64_t> start_ts = 0;
-  std::atomic<uint64_t> current_ts = 0;
-  std::atomic<float> speed_ = 1;
-  std::atomic<bool> pause_ = false;
-  uint64_t last_update_event_ts = 0;
-  uint64_t last_update_ts = 0;
+private:
+  void startUpdateTimer();
+  void timerEvent(QTimerEvent *event) override;
+  void updateEvents();
 
-  const QString zmq_address;
+  struct Msg {
+    Msg(const char *data, const size_t size) {
+      event = ::new Event(aligned_buf.align(data, size));
+    }
+    ~Msg() { ::delete event; }
+    Event *event;
+    AlignedBuffer aligned_buf;
+  };
+
+  std::mutex lock;
   QThread *stream_thread;
-  QTimer *timer;
+  std::vector<Event *> receivedEvents;
+  std::deque<Msg> receivedMessages;
+
+  std::unique_ptr<std::ofstream> fs;
+  int timer_id;
+  QBasicTimer update_timer;
+
+  uint64_t begin_event_ts = 0;
+  uint64_t current_event_ts = 0;
+  uint64_t first_event_ts = 0;
+  uint64_t first_update_ts = 0;
+  bool post_last_event = true;
+  double speed_ = 1;
+  bool paused_ = false;
 };

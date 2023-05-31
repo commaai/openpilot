@@ -35,7 +35,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   return false;
 }
 
-int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
+int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
   for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
@@ -44,7 +44,7 @@ int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const
   return max_idx;
 }
 
-void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::ModelDataV2::XYZTData::Reader &line) {
+void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line) {
   for (int i = 0; i < 2; ++i) {
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
@@ -54,7 +54,7 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
   }
 }
 
-void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
+void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   QPolygonF left_points, right_points;
@@ -79,10 +79,15 @@ void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Rea
   *pvd = left_points + right_points;
 }
 
-void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
+void update_model(UIState *s, 
+                  const cereal::ModelDataV2::Reader &model,
+                  const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
-  auto model_position = model.getPosition();
-  float max_distance = std::clamp(model_position.getX()[TRAJECTORY_SIZE - 1],
+  auto plan_position = plan.getPosition();
+  if (plan_position.getX().size() < TRAJECTORY_SIZE){
+    plan_position = model.getPosition();
+  }
+  float max_distance = std::clamp(plan_position.getX()[TRAJECTORY_SIZE - 1],
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
   // update lane lines
@@ -108,8 +113,8 @@ void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
     const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
-  max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+  max_idx = get_path_length_idx(plan_position, max_distance);
+  update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
@@ -174,7 +179,7 @@ static void update_state(UIState *s) {
         scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
-    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == 1;
+    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
     scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
@@ -229,17 +234,9 @@ void UIState::updateStatus() {
     if (scene.started) {
       status = STATUS_DISENGAGED;
       scene.started_frame = sm->frame;
-      wide_cam_only = Params().getBool("WideCameraOnly");
     }
     started_prev = scene.started;
     emit offroadTransition(!scene.started);
-  }
-
-  // Handle prime type change
-  if (prime_type != prime_type_prev) {
-    prime_type_prev = prime_type;
-    emit primeTypeChanged(prime_type);
-    Params().put("PrimeType", std::to_string(prime_type));
   }
 }
 
@@ -247,11 +244,10 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "gnssMeasurements",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
   });
 
   Params params;
-  wide_cam_only = params.getBool("WideCameraOnly");
   prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 
@@ -270,6 +266,14 @@ void UIState::update() {
     watchdog_kick(nanos_since_boot());
   }
   emit uiUpdate(*this);
+}
+
+void UIState::setPrimeType(int type) {
+  if (type != prime_type) {
+    prime_type = type;
+    Params().put("PrimeType", std::to_string(prime_type));
+    emit primeTypeChanged(prime_type);
+  }
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
