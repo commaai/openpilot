@@ -39,6 +39,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     setup_layout->addSpacing(16);
 
     QPushButton *settings_btn = new QPushButton(tr("Open Settings"));
+    connect(settings_btn, &QPushButton::clicked, [=]() { emit openSettings(1); });
     settings_btn->setStyleSheet(R"(
       QPushButton {
         font-size: 48px;

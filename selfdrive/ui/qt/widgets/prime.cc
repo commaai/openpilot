@@ -238,7 +238,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   primeUser = new PrimeUserWidget;
   content_layout->addWidget(primeUser);
-  content_layout->addWidget(new WiFiPromptWidget);
+
+  WiFiPromptWidget *wifi_prompt = new WiFiPromptWidget;
+  QObject::connect(wifi_prompt, &WiFiPromptWidget::openSettings, this, &SetupWidget::openSettings);
+  content_layout->addWidget(wifi_prompt);
   content_layout->addStretch();
 
   mainLayout->addWidget(content);
