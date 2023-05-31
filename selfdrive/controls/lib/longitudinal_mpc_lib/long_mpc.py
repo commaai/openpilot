@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
-
+from cereal import log
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from system.swaglog import cloudlog
@@ -58,18 +58,12 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
 
-class Personality:
-  CHILL = 0
-  NORMAL = 1
-  AGGRESSIVE = 2
-
-
-def get_T_FOLLOW(personality=Personality.NORMAL):
-  if personality==Personality.CHILL:
+def get_T_FOLLOW(personality=log.AccPersonality.NORMAL):
+  if personality==log.AccPersonality.relaxed:
     return 1.8
-  elif personality==Personality.NORMAL:
+  elif personality==log.AccPersonality.standard:
     return 1.45
-  elif personality==Personality.AGGRESSIVE:
+  elif personality==log.AccPersonality.aggressive:
     return 1.2
   else:
     raise NotImplementedError("Longitudinal personality not supported")
@@ -324,7 +318,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, personality=Personality.NORMAL):
+  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.AccPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
