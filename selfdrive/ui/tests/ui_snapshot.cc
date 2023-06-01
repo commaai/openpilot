@@ -2,11 +2,9 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
-#include <QDebug>
 #include <QDir>
 #include <QImage>
 #include <QPainter>
-#include <QTranslator>
 
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/util.h"
