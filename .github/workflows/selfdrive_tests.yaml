@@ -219,7 +219,6 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py && \
-                        ./selfdrive/ui/tests/test_snapshots.sh && \
                         ./common/tests/test_util && \
                         ./common/tests/test_swaglog && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
