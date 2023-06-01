@@ -95,6 +95,7 @@ protected:
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
+  QString car_fingerprint;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
   friend class OnlineHelp;
