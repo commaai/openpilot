@@ -47,7 +47,7 @@ i{
 video {
     /* height: 604; */
     width: 95%;
-    filter: grayscale(1);
+    /* filter: grayscale(1); */
 }
 
 .pre-blob {

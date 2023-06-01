@@ -1,3 +1,4 @@
+import time
 import asyncio
 import io
 import os
@@ -13,8 +14,12 @@ from pydub import AudioSegment
 
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 
-IMG_H, IMG_W = 604, 964
-yuv = np.zeros((int(IMG_H * 1.5), IMG_W), dtype=np.uint8)
+
+IMG_H_ORIG, IMG_W_ORIG = 604*2, 964*2
+DOWNSCALE = 4
+IMG_H = IMG_H_ORIG // DOWNSCALE
+IMG_W = IMG_W_ORIG // DOWNSCALE
+yuv = np.zeros((int(IMG_H * 1.5 *IMG_W)), dtype=np.uint8)
 AUDIO_RATE = 16000
 SOUNDS = {
   'engage': '../../selfdrive/assets/sounds/engage.wav',
@@ -44,7 +49,8 @@ class BodyVideo(VideoStreamTrack):
 
   async def recv(self):
     if os.environ.get('FAKE_CAMERA') == '1':
-      frame = VideoFrame.from_ndarray(np.zeros((int(604 * 2 * 1.5), 964 * 2), np.uint8), format="yuv420p")
+      frame = VideoFrame.from_ndarray(np.zeros((int(IMG_H * 1.5), IMG_W), np.uint8), format="yuv420p")
+      time.sleep(0.05)
     else:
       if not self.vipc_client.is_connected():
         self.vipc_client.connect(True)
@@ -53,13 +59,10 @@ class BodyVideo(VideoStreamTrack):
         frame = VideoFrame.from_ndarray(np.zeros((int(self.vipc_client.height * 1.5), self.vipc_client.width), np.uint8), format="yuv420p")
       else:
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
-        y = y[::2, ::2]
-        u = u.reshape(u.shape[0] // 2, -1)
-        v = v.reshape(v.shape[0] // 2, -1)
-        yuv[:IMG_H, :] = y
-        yuv[IMG_H:int(IMG_H * 5 / 4), :] = u[::2, ::2]
-        yuv[int(5 * IMG_H / 4):, :] = v[::2, ::2]
-        frame = VideoFrame.from_ndarray(yuv, format="yuv420p")
+        yuv[:IMG_W * IMG_H] = y[::DOWNSCALE, ::DOWNSCALE].flatten()
+        yuv[IMG_W * IMG_H : (5 * IMG_W * IMG_H) // 4] = u[::DOWNSCALE, ::DOWNSCALE].flatten()
+        yuv[(5 * IMG_W * IMG_H) // 4:] = v[::DOWNSCALE, ::DOWNSCALE].flatten()
+        frame = VideoFrame.from_ndarray(yuv.reshape(((int(IMG_H * 1.5), IMG_W))), format="yuv420p")
 
         # rgb = np.dstack((y, y, y))
         # cropped = get_crop(rgb)
