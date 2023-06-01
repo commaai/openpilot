@@ -14,8 +14,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    self.lkas_hud_msg = None
-    self.lkas_hud_info_msg = None
+    self.lkas_hud_msg = {}
+    self.lkas_hud_info_msg = {}
 
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
@@ -44,7 +44,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.01
+    ret.standstill = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"] == 0.0 and cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"] == 0.0
 
     if self.CP.carFingerprint == CAR.ALTIMA:
       ret.cruiseState.enabled = bool(cp.vl["CRUISE_STATE"]["CRUISE_ENABLED"])
@@ -171,6 +171,7 @@ class CarState(CarStateBase):
         ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
         ("NEW_SIGNAL_2", "CRUISE_THROTTLE"),
         ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE"),
+        ("COUNTER", "CRUISE_THROTTLE"),
         ("unsure1", "CRUISE_THROTTLE"),
         ("unsure2", "CRUISE_THROTTLE"),
         ("unsure3", "CRUISE_THROTTLE"),

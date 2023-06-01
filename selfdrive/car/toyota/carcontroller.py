@@ -1,11 +1,12 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
+from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
+                                        UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -33,7 +34,7 @@ class CarController:
     self.gas = 0
     self.accel = 0
 
-  def update(self, CC, CS):
+  def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
@@ -59,7 +60,7 @@ class CarController:
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
+    apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
@@ -74,6 +75,11 @@ class CarController:
     elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
       apply_steer_req = 0
       self.steer_rate_counter = 0
+
+    # Never actuate with LKA on cars that only support LTA
+    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      apply_steer = 0
+      apply_steer_req = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -112,7 +118,7 @@ class CarController:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
 
       # Lexus IS uses a different cancellation message
-      if pcm_cancel_cmd and self.CP.carFingerprint in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+      if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
         can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
@@ -142,10 +148,10 @@ class CarController:
         # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
         send_ui = True
 
-      if self.frame % 100 == 0 or send_ui:
+      if self.frame % 20 == 0 or send_ui:
         can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, hud_control.leftLaneVisible,
                                            hud_control.rightLaneVisible, hud_control.leftLaneDepart,
-                                           hud_control.rightLaneDepart, CC.enabled))
+                                           hud_control.rightLaneDepart, CC.enabled, CS.lkas_hud))
 
       if (self.frame % 100 == 0 or send_ui) and self.CP.enableDsu:
         can_sends.append(create_fcw_command(self.packer, fcw_alert))
@@ -157,6 +163,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 

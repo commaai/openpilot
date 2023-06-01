@@ -60,18 +60,18 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 const float DC_GAIN_AR0231 = 2.5;
 const float DC_GAIN_OX03C10 = 7.32;
 
-const float DC_GAIN_ON_GREY_AR0231= 0.2;
+const float DC_GAIN_ON_GREY_AR0231 = 0.2;
 const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-const float DC_GAIN_ON_GREY_OX03C10= 0.25;
-const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
+const float DC_GAIN_ON_GREY_OX03C10 = 0.9;
+const float DC_GAIN_OFF_GREY_OX03C10 = 1.0;
 
 const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
-const int DC_GAIN_MIN_WEIGHT_OX03C10 = 16;
-const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
+const int DC_GAIN_MIN_WEIGHT_OX03C10 = 1; // always on is fine
+const int DC_GAIN_MAX_WEIGHT_OX03C10 = 1;
 
 const float TARGET_GREY_FACTOR_AR0231 = 1.0;
-const float TARGET_GREY_FACTOR_OX03C10 = 0.02;
+const float TARGET_GREY_FACTOR_OX03C10 = 0.01;
 
 const float sensor_analog_gains_AR0231[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
@@ -80,30 +80,32 @@ const float sensor_analog_gains_AR0231[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const float sensor_analog_gains_OX03C10[] = {
-  1.0, 1.125, 1.25, 1.3125, 1.5625,
-  1.6875, 2.0, 2.25, 2.625, 3.125,
-  3.625, 4.0, 4.5, 5.0, 5.5,
-  6.0, 6.5, 7.0, 7.5, 8.0,
-  8.5, 9.0, 9.5, 10.0, 10.5,
-  11.0, 11.5, 12.0, 12.5, 13.0,
-  13.5, 14.0, 14.5, 15.0, 15.5};
+  1.0, 1.0625, 1.125, 1.1875, 1.25, 1.3125, 1.375, 1.4375, 1.5, 1.5625, 1.6875,
+  1.8125, 1.9375, 2.0, 2.125, 2.25, 2.375, 2.5, 2.625, 2.75, 2.875, 3.0,
+  3.125, 3.375, 3.625, 3.875, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25, 5.5,
+  5.75, 6.0, 6.25, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0,
+  10.5, 11.0, 11.5, 12.0, 12.5, 13.0, 13.5, 14.0, 14.5, 15.0, 15.5};
 
 const uint32_t ox03c10_analog_gains_reg[] = {
-  0x100, 0x120, 0x140, 0x150, 0x190,
-  0x1B0, 0x200, 0x240, 0x2A0, 0x320,
-  0x3A0, 0x400, 0x480, 0x500, 0x580,
-  0x600, 0x680, 0x700, 0x780, 0x800,
-  0x880, 0x900, 0x980, 0xA00, 0xA80,
-  0xB00, 0xB80, 0xC00, 0xC80, 0xD00,
-  0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
+  0x100, 0x110, 0x120, 0x130, 0x140, 0x150, 0x160, 0x170, 0x180, 0x190, 0x1B0,
+  0x1D0, 0x1F0, 0x200, 0x220, 0x240, 0x260, 0x280, 0x2A0, 0x2C0, 0x2E0, 0x300,
+  0x320, 0x360, 0x3A0, 0x3E0, 0x400, 0x440, 0x480, 0x4C0, 0x500, 0x540, 0x580,
+  0x5C0, 0x600, 0x640, 0x680, 0x700, 0x780, 0x800, 0x880, 0x900, 0x980, 0xA00,
+  0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
 const int ANALOG_GAIN_MIN_IDX_AR0231 = 0x1; // 0.25x
 const int ANALOG_GAIN_REC_IDX_AR0231 = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX_AR0231 = 0xD; // 4.0x
+const int ANALOG_GAIN_COST_DELTA_AR0231 = 0;
+const float ANALOG_GAIN_COST_LOW_AR0231 = 0.1;
+const float ANALOG_GAIN_COST_HIGH_AR0231 = 5.0;
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x6; // 2x
-const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x22;
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x0; // 1x
+const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
+const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
+const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.4;
+const float ANALOG_GAIN_COST_HIGH_OX03C10 = 6.4;
 
 const int EXPOSURE_TIME_MIN_AR0231 = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX_AR0231 = 0x0855; // with HDR, slowest ss, 40ms
@@ -536,6 +538,9 @@ void CameraState::camera_set_parameters() {
     analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_AR0231;
     analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_AR0231;
     analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_AR0231;
+    analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_AR0231;
+    analog_gain_cost_low = ANALOG_GAIN_COST_LOW_AR0231;
+    analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_AR0231;
     for (int i=0; i<=analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_AR0231[i];
     }
@@ -552,6 +557,9 @@ void CameraState::camera_set_parameters() {
     analog_gain_min_idx = ANALOG_GAIN_MIN_IDX_OX03C10;
     analog_gain_rec_idx = ANALOG_GAIN_REC_IDX_OX03C10;
     analog_gain_max_idx = ANALOG_GAIN_MAX_IDX_OX03C10;
+    analog_gain_cost_delta = ANALOG_GAIN_COST_DELTA_OX03C10;
+    analog_gain_cost_low = ANALOG_GAIN_COST_LOW_OX03C10;
+    analog_gain_cost_high = ANALOG_GAIN_COST_HIGH_OX03C10;
     for (int i=0; i<=analog_gain_max_idx; i++) {
       sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
     }
@@ -1033,6 +1041,30 @@ void CameraState::handle_camera_event(void *evdat) {
   }
 }
 
+void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
+  float score = 1e6;
+  if (camera_id == CAMERA_ID_AR0231) {
+    // Cost of ev diff
+    score = std::abs(desired_ev - (exp_t * exp_gain)) * 10;
+    // Cost of absolute gain
+    float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+    score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
+    // Cost of changing gain
+    score += std::abs(exp_g_idx - gain_idx) * (score + 1.0) / 10.0;
+  } else if (camera_id == CAMERA_ID_OX03C10) {
+    score = std::abs(desired_ev - (exp_t * exp_gain));
+    float m = exp_g_idx > analog_gain_rec_idx ? analog_gain_cost_high : analog_gain_cost_low;
+    score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
+    score += ((1 - analog_gain_cost_delta) + analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) * std::abs(exp_g_idx - gain_idx) * 5.0;
+  }
+
+  if (score < best_ev_score) {
+    new_exp_t = exp_t;
+    new_exp_g = exp_g_idx;
+    best_ev_score = score;
+  }
+}
+
 void CameraState::set_camera_exposure(float grey_frac) {
   if (!enabled) return;
   const float dt = 0.05;
@@ -1058,9 +1090,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
-  float best_ev_score = 1e6;
-  int new_g = 0;
-  int new_t = 0;
+  best_ev_score = 1e6;
+  new_exp_g = 0;
+  new_exp_t = 0;
 
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
@@ -1087,8 +1119,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
     gain_idx = std::stoi(gain_bytes);
     exposure_time = std::stoi(time_bytes);
 
-    new_g = gain_idx;
-    new_t = exposure_time;
+    new_exp_g = gain_idx;
+    new_exp_t = exposure_time;
     enable_dc_gain = false;
   } else {
     // Simple brute force optimizer to choose sensor parameters
@@ -1104,23 +1136,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
         continue;
       }
 
-      // Compute error to desired ev
-      float score = std::abs(desired_ev - (t * gain)) * 10;
-
-      // Going below recommended gain needs lower penalty to not overexpose
-      float m = g > analog_gain_rec_idx ? 5.0 : 0.1;
-      score += std::abs(g - (int)analog_gain_rec_idx) * m;
-
-      // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", camera_num, g, t, desired_ev / gain, score, score + std::abs(g - gain_idx) * (score + 1.0) / 10.0, desired_ev, min_ev);
-
-      // Small penalty on changing gain
-      score += std::abs(g - gain_idx) * (score + 1.0) / 10.0;
-
-      if (score < best_ev_score) {
-        new_t = t;
-        new_g = g;
-        best_ev_score = score;
-      }
+      update_exposure_score(desired_ev, t, g, gain);
     }
   }
 
@@ -1129,9 +1145,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
   measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
-  analog_gain_frac = sensor_analog_gains[new_g];
-  gain_idx = new_g;
-  exposure_time = new_t;
+  analog_gain_frac = sensor_analog_gains[new_exp_g];
+  gain_idx = new_exp_g;
+  exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
 
   float gain = analog_gain_frac * (1 + dc_gain_weight * (dc_gain_factor-1) / dc_gain_max_weight);
@@ -1148,7 +1164,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
   if (camera_id == CAMERA_ID_AR0231) {
-    uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
+    uint16_t analog_gain_reg = 0xFF00 | (new_exp_g << 4) | new_exp_g;
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3366, analog_gain_reg},
       {0x3362, (uint16_t)(dc_gain_enabled ? 0x1 : 0x0)},
@@ -1156,25 +1172,21 @@ void CameraState::set_camera_exposure(float grey_frac) {
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
-    // t_HCG + t_LCG + t_VS on LPD, t_SPD on SPD
-    uint32_t hcg_time = std::max((dc_gain_weight * exposure_time / dc_gain_max_weight), 0);
-    uint32_t lcg_time = std::max(((dc_gain_max_weight - dc_gain_weight) * exposure_time / dc_gain_max_weight), 0);
-    // uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
-    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
-    uint32_t spd_time = vs_time;
+    // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
+    uint32_t hcg_time = exposure_time;
+    uint32_t lcg_time = hcg_time;
+    uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
+    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
-    uint32_t real_gain = ox03c10_analog_gains_reg[new_g];
-    uint32_t min_gain = ox03c10_analog_gains_reg[0];
+    uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
+
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
       {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
-      {0x35c1, vs_time>>8}, {0x35c2, vs_time&0xFF},
+      {0x35c2, vs_time&0xFF},
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-      {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
-      {0x3548, min_gain>>8}, {0x3549, min_gain&0xFF},
-      {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }

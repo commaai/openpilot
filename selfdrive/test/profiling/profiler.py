@@ -25,7 +25,7 @@ CARS = {
 def get_inputs(msgs, process, fingerprint):
   for config in CONFIGS:
     if config.proc_name == process:
-      sub_socks = list(config.pub_sub.keys())
+      sub_socks = list(config.pubs)
       trigger = sub_socks[0]
       break
 

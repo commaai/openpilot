@@ -177,7 +177,7 @@ def finalize_update() -> None:
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
 
   run(["git", "reset", "--hard"], FINALIZED)
-  run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
+  run(["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"], FINALIZED)
 
   cloudlog.info("Starting git cleanup in finalized update")
   t = time.monotonic()
@@ -283,17 +283,25 @@ class Updater:
 
     # Write out current and new version info
     def get_description(basedir: str) -> str:
+      if not os.path.exists(basedir):
+        return ""
+
       version = ""
       branch = ""
       commit = ""
+      commit_date = ""
       try:
         branch = self.get_branch(basedir)
-        commit = self.get_commit_hash(basedir)
+        commit = self.get_commit_hash(basedir)[:7]
         with open(os.path.join(basedir, "common", "version.h")) as f:
           version = f.read().split('"')[1]
+
+        commit_unix_ts = run(["git", "show", "-s", "--format=%ct", "HEAD"], basedir).rstrip()
+        dt = datetime.datetime.fromtimestamp(int(commit_unix_ts))
+        commit_date = dt.strftime("%b %d")
       except Exception:
-        pass
-      return f"{version} / {branch} / {commit[:7]}"
+        cloudlog.exception("updater.get_description")
+      return f"{version} / {branch} / {commit} / {commit_date}"
     self.params.put("UpdaterCurrentDescription", get_description(BASEDIR))
     self.params.put("UpdaterCurrentReleaseNotes", parse_release_notes(BASEDIR))
     self.params.put("UpdaterNewDescription", get_description(FINALIZED))
@@ -369,8 +377,8 @@ class Updater:
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "sync"],
-      ["git", "submodule", "init"],
-      ["git", "submodule", "update"],
+      ["git", "submodule", "update", "--init", "--recursive"],
+      ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
     ]
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
@@ -417,6 +425,9 @@ def main() -> None:
   # no fetch on the first time
   wait_helper = WaitTimeHelper()
   wait_helper.only_check_for_update = True
+
+  # invalidate old finalized update
+  set_consistent_flag(False)
 
   # Run the update loop
   while True:

@@ -25,23 +25,18 @@ MAX_VEL_ANGLE_STD = np.radians(0.25)
 MAX_YAW_RATE_FILTER = np.radians(2)  # per second
 
 # This is at model frequency, blocks needed for efficiency
-SMOOTH_CYCLES = 400
+SMOOTH_CYCLES = 10
 BLOCK_SIZE = 100
 INPUTS_NEEDED = 5   # Minimum blocks needed for valid calibration
 INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
+WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 
-# These values are needed to accommodate biggest modelframe
-PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
+# These values are needed to accommodate the model frame in the narrow cam of the C3
+PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
-
-
-class Calibration:
-  UNCALIBRATED = 0
-  CALIBRATED = 1
-  INVALID = 2
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
@@ -65,26 +60,36 @@ class Calibrator:
     # Read saved calibration
     params = Params()
     calibration_params = params.get("CalibrationParams")
-    self.wide_camera = params.get_bool('WideCameraOnly')
     rpy_init = RPY_INIT
+    wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
     valid_blocks = 0
+    self.cal_status = log.LiveCalibrationData.Status.uncalibrated
 
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
         rpy_init = np.array(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
+        wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
-    self.reset(rpy_init, valid_blocks)
+    self.reset(rpy_init, valid_blocks, wide_from_device_euler)
     self.update_status()
 
-  def reset(self, rpy_init: np.ndarray = RPY_INIT, valid_blocks: int = 0, smooth_from: Optional[np.ndarray] = None) -> None:
+  def reset(self, rpy_init: np.ndarray = RPY_INIT,
+                  valid_blocks: int = 0,
+                  wide_from_device_euler_init: np.ndarray = WIDE_FROM_DEVICE_EULER_INIT,
+                  smooth_from: Optional[np.ndarray] = None) -> None:
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:
       self.rpy = rpy_init.copy()
+
+    if not np.isfinite(wide_from_device_euler_init).all() or len(wide_from_device_euler_init) != 3:
+      self.wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT.copy()
+    else:
+      self.wide_from_device_euler = wide_from_device_euler_init.copy()
 
     if not np.isfinite(valid_blocks) or valid_blocks < 0:
       self.valid_blocks = 0
@@ -92,6 +97,7 @@ class Calibrator:
       self.valid_blocks = valid_blocks
 
     self.rpys = np.tile(self.rpy, (INPUTS_WANTED, 1))
+    self.wide_from_device_eulers = np.tile(self.wide_from_device_euler, (INPUTS_WANTED, 1))
 
     self.idx = 0
     self.block_idx = 0
@@ -113,6 +119,7 @@ class Calibrator:
   def update_status(self) -> None:
     valid_idxs = self.get_valid_idxs()
     if valid_idxs:
+      self.wide_from_device_euler = np.mean(self.wide_from_device_eulers[valid_idxs], axis=0)
       rpys = self.rpys[valid_idxs]
       self.rpy = np.mean(rpys, axis=0)
       max_rpy_calib = np.array(np.max(rpys, axis=0))
@@ -122,16 +129,20 @@ class Calibrator:
       self.calib_spread = np.zeros(3)
 
     if self.valid_blocks < INPUTS_NEEDED:
-      self.cal_status = Calibration.UNCALIBRATED
+      if self.cal_status == log.LiveCalibrationData.Status.recalibrating:
+        self.cal_status = log.LiveCalibrationData.Status.recalibrating
+      else:
+        self.cal_status = log.LiveCalibrationData.Status.uncalibrated
     elif is_calibration_valid(self.rpy):
-      self.cal_status = Calibration.CALIBRATED
+      self.cal_status = log.LiveCalibrationData.Status.calibrated
     else:
-      self.cal_status = Calibration.INVALID
+      self.cal_status = log.LiveCalibrationData.Status.invalid
 
     # If spread is too high, assume mounting was changed and reset to last block.
     # Make the transition smooth. Abrupt transitions are not good for feedback loop through supercombo model.
-    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
-      self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
+    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == log.LiveCalibrationData.Status.calibrated:
+      self.reset(self.rpys[self.block_idx - 1], valid_blocks=1, smooth_from=self.rpy)
+      self.cal_status = log.LiveCalibrationData.Status.recalibrating
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
@@ -146,14 +157,14 @@ class Calibrator:
     else:
       return self.rpy
 
-  def handle_cam_odom(self, trans: List[float], rot: List[float], trans_std: List[float]) -> Optional[np.ndarray]:
-    self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
+  def handle_cam_odom(self, trans: List[float],
+                            rot: List[float],
+                            wide_from_device_euler: List[float],
+                            trans_std: List[float]) -> Optional[np.ndarray]:
+    self.old_rpy_weight = max(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
-    if self.wide_camera:
-      angle_std_threshold = 4*MAX_VEL_ANGLE_STD
-    else:
-      angle_std_threshold = MAX_VEL_ANGLE_STD
+    angle_std_threshold = MAX_VEL_ANGLE_STD
     certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                         (self.valid_blocks < INPUTS_NEEDED))
     if not (straight_and_fast and certain_if_calib):
@@ -165,7 +176,14 @@ class Calibrator:
     new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
-    self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
+    if len(wide_from_device_euler) == 3:
+      new_wide_from_device_euler = np.array(wide_from_device_euler)
+    else:
+      new_wide_from_device_euler = WIDE_FROM_DEVICE_EULER_INIT
+    self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] +
+                                 (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
+    self.wide_from_device_eulers[self.block_idx] = (self.idx*self.wide_from_device_eulers[self.block_idx] +
+                                                    (BLOCK_SIZE - self.idx) * new_wide_from_device_euler) / float(BLOCK_SIZE)
     self.idx = (self.idx + 1) % BLOCK_SIZE
     if self.idx == 0:
       self.block_idx += 1
@@ -187,10 +205,11 @@ class Calibrator:
     liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     liveCalibration.rpyCalib = smooth_rpy.tolist()
     liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
+    liveCalibration.wideFromDeviceEuler = self.wide_from_device_euler.tolist()
 
     if self.not_car:
       liveCalibration.validBlocks = INPUTS_NEEDED
-      liveCalibration.calStatus = Calibration.CALIBRATED
+      liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
       liveCalibration.calPerc = 100.
       liveCalibration.rpyCalib = [0, 0, 0]
       liveCalibration.rpyCalibSpread = self.calib_spread.tolist()
@@ -223,6 +242,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
       calibrator.handle_v_ego(sm['carState'].vEgo)
       new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
                                            sm['cameraOdometry'].rot,
+                                           sm['cameraOdometry'].wideFromDeviceEuler,
                                            sm['cameraOdometry'].transStd)
 
       if DEBUG and new_rpy is not None:

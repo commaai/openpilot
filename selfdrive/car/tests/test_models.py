@@ -9,7 +9,6 @@ from parameterized import parameterized_class
 
 from cereal import log, car
 from common.realtime import DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list, can_list_to_can_capnp
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.gm.values import CAR as GM
@@ -20,8 +19,7 @@ from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 
-from panda.tests.safety import libpandasafety_py
-from panda.tests.safety.common import package_can_msg
+from panda.tests.libpanda import libpanda_py
 
 PandaType = log.PandaState.PandaType
 
@@ -105,16 +103,20 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long)
+    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
+
+  @classmethod
+  def tearDownClass(cls):
+    del cls.can_msgs
 
   def setUp(self):
     self.CI = self.CarInterface(self.CP, self.CarController, self.CarState)
     assert self.CI
 
     # TODO: check safetyModel is in release panda build
-    self.safety = libpandasafety_py.libpandasafety
+    self.safety = libpanda_py.libpanda
 
     cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
@@ -147,7 +149,7 @@ class TestCarModelBase(unittest.TestCase):
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
-      self.CI.apply(CC)
+      self.CI.apply(CC, msg.logMonoTime)
 
       if CS.canValid:
         can_valid = True
@@ -188,7 +190,7 @@ class TestCarModelBase(unittest.TestCase):
         if msg.src >= 64:
           continue
 
-        to_send = package_can_msg([msg.address, 0, msg.dat, msg.src % 4])
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
@@ -210,41 +212,43 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
-      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        to_send = package_can_msg(msg)
+      self.CI.update(CC, (can.as_builder().to_bytes(), ))
+      for msg in filter(lambda m: m.src in range(64), can.can):
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
         self.safety.safety_rx_hook(to_send)
-        self.CI.update(CC, (can_list_to_can_capnp([msg, ]), ))
-
-    if not self.CP.pcmCruise:
-      self.safety.set_controls_allowed(0)
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
-    for can in self.can_msgs:
+    for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
-      for msg in can_capnp_to_can_list(can.can, src_filter=range(64)):
-        msg = list(msg)
-        msg[3] %= 4
-        to_send = package_can_msg(msg)
+      for msg in filter(lambda m: m.src in range(64), can.can):
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
+
+      # Skip first frame so CS_prev is properly initialized
+      if idx == 0:
+        CS_prev = CS
+        # Button may be left pressed in warm up period
+        if not self.CP.pcmCruise:
+          self.safety.set_controls_allowed(0)
+        continue
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      checks['cruiseState'] += CS.cruiseState.enabled and not CS.cruiseState.available
-      if self.CP.carName not in ("hyundai", "volkswagen", "gm", "body"):
+      if self.CP.carName not in ("hyundai", "body"):
         # TODO: fix standstill mismatches for other makes
         checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.PASSPORT, HONDA.RIDGELINE) and CS.brake > 0.05:
+        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
-      safety_brake_pressed = self.safety.get_brake_pressed_prev() or self.safety.get_regen_braking_prev()
-      checks['brakePressed'] += brake_pressed != safety_brake_pressed
+      checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
+      checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.

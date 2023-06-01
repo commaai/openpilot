@@ -60,11 +60,34 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费的手机移动网络</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
+        <translation>当使用按流量计费的连接时，避免上传大流量数据</translation>
+    </message>
+</context>
+<context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最高定速</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>SPEED</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -117,7 +140,7 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>打开并预览驾驶员摄像头，以确保驾驶员监控具有良好视野。仅熄火时可用。</translation>
+        <translation>打开并预览驾驶员摄像头，以确保驾驶员监控具有良好视野。（仅熄火时可用）</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
@@ -181,7 +204,7 @@
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>您的设备校准为%1° %2、%3° %4。</translation>
+        <translation> 您的设备校准为%1° %2、%3° %4。</translation>
     </message>
     <message>
         <source>down</source>
@@ -214,6 +237,14 @@
     <message>
         <source>Disengage to Power Off</source>
         <translation>取消openpilot以关机</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>重置</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>预览</translation>
     </message>
 </context>
 <context>
@@ -251,6 +282,17 @@
     </message>
 </context>
 <context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation>试验模式运行</translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation>轻松模式运行</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -268,18 +310,6 @@
     <message>
         <source>Installing...</source>
         <translation>正在安装……</translation>
-    </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>正在接收： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>正在处理： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>正在更新文件： </translation>
     </message>
 </context>
 <context>
@@ -345,7 +375,7 @@
     <message>
         <source>Get turn-by-turn directions displayed and more with a comma
 prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。 
+        <translation>订阅comma prime以获取导航。
 立即注册：https://connect.comma.ai</translation>
     </message>
     <message>
@@ -405,29 +435,6 @@ location set</source>
     </message>
 </context>
 <context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高定速</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
-    </message>
-</context>
-<context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
@@ -459,6 +466,17 @@ location set</source>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>将 connect.comma.ai 收藏到您的主屏幕，以便像应用程序一样使用它</translation>
+    </message>
+</context>
+<context>
+    <name>ParamControl</name>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>启用</translation>
     </message>
 </context>
 <context>
@@ -501,10 +519,6 @@ location set</source>
     <message>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA POINTS点数</translation>
     </message>
 </context>
 <context>
@@ -555,16 +569,8 @@ location set</source>
         <translation>您确定要重置您的设备吗？</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>正在重置设备……</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>恢复出厂设置</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>已触发系统重置：确认以删除所有内容和设置。取消以正常启动设备。</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -579,15 +585,17 @@ location set</source>
         <translation>确认</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>无法挂载数据分区。 确认以重置您的设备。</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
     <message>
-        <source>Ok</source>
-        <translation>好的</translation>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -660,18 +668,6 @@ location set</source>
         <translation>等待网络连接</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>选择要安装的软件</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam（行车记录仪）</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>自定义软件</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>输入网址</translation>
     </message>
@@ -698,6 +694,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>重来</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -802,35 +806,35 @@ location set</source>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>车辆熄火时才能下载升级文件。</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>当前版本</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>下载</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>安装更新</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>安装</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>目标分支</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>选择</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>选择分支</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
@@ -847,6 +851,10 @@ location set</source>
     <message>
         <source>CHECK</source>
         <translation>查看</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>卸载</translation>
     </message>
 </context>
 <context>
@@ -949,31 +957,7 @@ location set</source>
         <translation>上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 端对端纵向控制（实验性功能） 🌮</translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>让驾驶模型直接控制油门和刹车，openpilot将会模仿人类司机的驾驶方式。该功能仍非常实验性。</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>踩油门时取消控制</translation>
     </message>
     <message>
@@ -995,6 +979,58 @@ location set</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>在分屏模式中，将地图置于屏幕左侧。</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation>测试模式</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot 默认 &lt;b&gt;轻松模式&lt;/b&gt;驾驶车辆。试验模式启用一些轻松模式之外的 &lt;b&gt;试验性功能&lt;/b&gt;。试验性功能包括：</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮 端到端（End-to-End） 纵向控制 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>允许驾驶模型控制加速和制动，openpilot将模仿人类驾驶车辆，包括在红灯和停车让行标识前停车。鉴于驾驶模型确定行驶车速，所设定的车速仅作为上限。此功能尚处于早期测试状态，有可能会出现操作错误。</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>新驾驶视角</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>当低速行驶时，驾驶视角将切换到前向广角摄像头，便于更完整地显示转向路径。右上角将显示试验模式图标。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1044,11 +1080,15 @@ location set</source>
     </message>
     <message>
         <source>FORGET</source>
-        <translation>忘记</translation>
+        <translation>忽略</translation>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>忘记WiFi网络 &quot;%1&quot;?</translation>
+        <translation>忽略WiFi网络 &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>忽略</translation>
     </message>
 </context>
 </TS>

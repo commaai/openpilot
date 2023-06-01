@@ -18,6 +18,9 @@ float3 color_correct(float3 rgb) {
   x += rgb.z * (float3)(-0.25277411, -0.05627105, 1.45875782);
   #endif
 
+  #if IS_OX
+  return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
+  #else
   // tone mapping params
   const float gamma_k = 0.75;
   const float gamma_b = 0.125;
@@ -28,6 +31,7 @@ float3 color_correct(float3 rgb) {
   return (x > mp) ?
     ((rk * (x-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(x-mp))) + gamma_k*mp + gamma_b) :
     ((rk * (x-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(x-mp))) + gamma_k*mp + gamma_b);
+  #endif
 }
 
 float get_vignetting_s(float r) {
@@ -72,7 +76,7 @@ float4 val4_from_12(uchar8 pvs, float gain) {
   float4 pv = {ox03c10_lut[parsed.s0], ox03c10_lut[parsed.s1], ox03c10_lut[parsed.s2], ox03c10_lut[parsed.s3]};
 
   // it's a 24 bit signal, center in the middle 8 bits
-  return pv*256.0;
+  return clamp(pv*gain*256.0, 0.0, 1.0);
   #else // AR
   // normalize and scale
   float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);

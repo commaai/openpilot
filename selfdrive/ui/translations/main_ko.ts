@@ -68,6 +68,29 @@
     </message>
 </context>
 <context>
+    <name>AnnotatedCameraWidget</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+    <message>
+        <source>SPEED</source>
+        <translation>SPEED</translation>
+    </message>
+    <message>
+        <source>LIMIT</source>
+        <translation>LIMIT</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -215,6 +238,14 @@
         <source>Disengage to Power Off</source>
         <translation>전원을 종료하려면 해제하세요</translation>
     </message>
+    <message>
+        <source>Reset</source>
+        <translation>리셋</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation>다시보기</translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -251,6 +282,17 @@
     </message>
 </context>
 <context>
+    <name>ExperimentalModeButton</name>
+    <message>
+        <source>EXPERIMENTAL MODE ON</source>
+        <translation>실험적 모드 사용</translation>
+    </message>
+    <message>
+        <source>CHILL MODE ON</source>
+        <translation>안정적 모드 사용</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -268,18 +310,6 @@
     <message>
         <source>Installing...</source>
         <translation>설치중...</translation>
-    </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>수신중： </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>델타병합： </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>파일갱신： </translation>
     </message>
 </context>
 <context>
@@ -373,7 +403,7 @@ location set</source>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>GPS를 기다리는 중</translation>
+        <translation>GPS 수신중 입니다</translation>
     </message>
 </context>
 <context>
@@ -404,29 +434,6 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>비밀번호가 틀렸습니다</translation>
-    </message>
-</context>
-<context>
-    <name>NvgWindow</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -464,6 +471,17 @@ location set</source>
     </message>
 </context>
 <context>
+    <name>ParamControl</name>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <source>Enable</source>
+        <translation>사용</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -471,7 +489,7 @@ location set</source>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 comma prime에 가입합니다</translation>
+        <translation>connect.comma.ai 접속 comma prime 가입</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -503,10 +521,6 @@ location set</source>
     <message>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA POINTS</translation>
     </message>
 </context>
 <context>
@@ -557,16 +571,8 @@ location set</source>
         <translation>장치를 초기화 하시겠습니까?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>장치 초기화중...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>장치 초기화</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>장치를 초기화 합니다. 확인버튼을 누르면 모든 내용과 설정이 초기화됩니다. 부팅을 재개하려면 취소를 누르세요.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -581,15 +587,18 @@ location set</source>
         <translation>확인</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>데이터 파티션을 마운트할 수 없습니다. 확인 버튼을 눌러 장치를 리셋합니다.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation>데이터 파티션을 마운트할 수 없습니다. 파티션이 손상되었을 수 있습니다. 장치를 초기화하려면 확인을 누르세요.</translation>
     </message>
-</context>
-<context>
-    <name>RichTextDialog</name>
     <message>
-        <source>Ok</source>
-        <translation>확인</translation>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>모든 콘텐츠와 설정을 지우려면 확인을 누르세요. 부팅을 재개하려면 취소를 누르세요.</translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation>장치 초기화 중...
+최대 1분이 소요될 수 있습니다.</translation>
     </message>
 </context>
 <context>
@@ -662,18 +671,6 @@ location set</source>
         <translation>네트워크 접속을 기다립니다</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>설치할 소프트웨어를 선택하세요</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Custom Software</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>URL 입력</translation>
     </message>
@@ -700,6 +697,14 @@ location set</source>
     <message>
         <source>Start over</source>
         <translation>다시 시작</translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation>문제가 발생했습니다. 장치를 재부팅하세요.</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation>이 URL에서 커스텀 소프트웨어를 찾을 수 없습니다.</translation>
     </message>
 </context>
 <context>
@@ -850,6 +855,10 @@ location set</source>
         <source>CHECK</source>
         <translation>확인</translation>
     </message>
+    <message>
+        <source>Uninstall</source>
+        <translation>제거</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -951,31 +960,7 @@ location set</source>
         <translation>운전자 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선합니다.</translation>
     </message>
     <message>
-        <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
-        <translation>🌮 e2e 롱컨트롤 사용 (매우 실험적) 🌮 </translation>
-    </message>
-    <message>
-        <source>Experimental openpilot longitudinal control</source>
-        <translation>openpilot 롱컨트롤 (실험적)</translation>
-    </message>
-    <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
-        <translation>&lt;b&gt;경고: openpilot 롱컨트롤은 실험적인 기능으로 차량의 AEB를 비활성화합니다.&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
-        <translation>주행모델이 가속과 감속을 제어하도록 하면 openpilot은 운전자가 생각하는것처럼 운전합니다. (매우 실험적)</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
-        <translation>현재 이 차량에는 openpilot 롱컨트롤을 사용할 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to enable this.</source>
-        <translation>openpilot 롱컨트롤을 활성화합니다. (실험적)</translation>
-    </message>
-    <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>가속페달 조작시 해제</translation>
     </message>
     <message>
@@ -997,6 +982,58 @@ location set</source>
     <message>
         <source>Show map on left side when in split screen view.</source>
         <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation>실험적 모드</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다. 실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다. 실험적 모드의 특징은 아래에 나열되어 있습니다</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation>🌮 E2E 롱컨트롤 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>주행모델이 가속과 감속을 제어하도록 합니다. openpilot은 신호등과 정지표지판을 보고 멈추는 것을 포함하여 운전자가 생각하는것처럼 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 상한선으로만 작용합니다. 이것은 알파 기능이므로 사용에 주의해야 합니다.</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation>새로운 주행 시각화</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>주행 시각화는 저속에서 도로를 향하는 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드의 로고도 우측상단에 표시됩니다.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>차량에 장착된 ACC가 롱컨트롤에 사용되기 때문에 현재 이 차량은 실험적 모드를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>오픈파일럿 롱컨트롤의 실험 버전은 실험적 모드와 함께 릴리즈 되지 않은 브랜치에서 테스트할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>openpilot 롱컨트롤 (알파)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>경고: openpilot 롱컨트롤은 알파 기능으로 차량의 자동긴급제동(AEB)를 비활성화합니다.</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
     </message>
 </context>
 <context>
@@ -1051,6 +1088,10 @@ location set</source>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
         <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
+    </message>
+    <message>
+        <source>Forget</source>
+        <translation>저장안함</translation>
     </message>
 </context>
 </TS>

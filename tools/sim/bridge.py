@@ -82,11 +82,10 @@ class Camerad:
     self.queue = cl.CommandQueue(self.ctx)
     cl_arg = f" -DHEIGHT={H} -DWIDTH={W} -DRGB_STRIDE={W * 3} -DUV_WIDTH={W // 2} -DUV_HEIGHT={H // 2} -DRGB_SIZE={W * H} -DCL_DEBUG "
 
-    # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
-    kernel_fn = os.path.join(BASEDIR, "system", "camerad", "transforms", "rgb_to_yuv.cl")
+    kernel_fn = os.path.join(BASEDIR, "tools/sim/rgb_to_nv12.cl")
     with open(kernel_fn) as f:
       prg = cl.Program(self.ctx, f.read()).build(cl_arg)
-      self.krnl = prg.rgb_to_yuv
+      self.krnl = prg.rgb_to_nv12
     self.Wdiv4 = W // 4 if (W % 4 == 0) else (W + (4 - W % 4)) // 4
     self.Hdiv4 = H // 4 if (H % 4 == 0) else (H + (4 - H % 4)) // 4
 
@@ -129,7 +128,7 @@ def imu_callback(imu, vehicle_state):
     vehicle_state.bearing_deg = math.degrees(imu.compass)
     dat = messaging.new_message('accelerometer')
     dat.accelerometer.sensor = 4
-    dat.accelerometer.type = 0x1
+    dat.accelerometer.type = 0x10
     dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
     dat.accelerometer.init('acceleration')
     dat.accelerometer.acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
@@ -212,7 +211,10 @@ def fake_driver_monitoring(exit_event: threading.Event):
   while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
     dat.driverStateV2.leftDriverData.faceProb = 1.0
+    dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
+    dat.driverStateV2.rightDriverData.faceProb = 1.0
     pm.send('driverStateV2', dat)
 
     # dmonitoringd output
