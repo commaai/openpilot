@@ -42,10 +42,11 @@ def create_lkas11(packer, CP, frame, car_fingerprint, apply_steer, steer_req,
   # CF_Lkas_FcwOpt      - Optima: 0, Sonata: 2
   # CF_Lkas_SysWarning  - Optima: 0, but may be used when stock camera sends an alert, Sonata: 0 disengaged, 15 engaged
   # CF_Lkas_LdwsSysState- Optima: 0 SCC disengaged, 15 SCC engaged, Sonata: 1 SCC disengaged, 15 SCC engaged
-  # CF_Lkas_LdwsOpt_USM - Optima: (seemingly) always 3 (or 3?),
+  # CF_Lkas_LdwsOpt_USM - Optima: (seemingly) always 3 (or 2?),
   #                       Sonata: 2 SCC disengaged, 7 SCC engaged, also needs to be above 0 mph to be non-2
   #                       Stinger 2018: (seemingly always 3)
-  # CF_Lkas_FcwOpt_USM  - Optima: (seemingly) always 0, Sonata: 1 SCC disengaged, 4 SCC engaged
+  # CF_Lkas_FcwOpt_USM  - Optima: (seemingly) always 0,
+  #                       Sonata: 1 SCC disengaged, 4 SCC engaged, also needs to be above 0 mph to be non-1
 
   # if lkas11["CF_Lkas_LdwsOpt_USM"] == 2:
   if CP.flags & HyundaiFlags.ALT_LKAS_MSG_FORMAT.value:
