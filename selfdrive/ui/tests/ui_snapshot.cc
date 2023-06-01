@@ -53,9 +53,11 @@ int main(int argc, char *argv[]) {
   w.show();
   app.installEventFilter(&w);
 
+  // restore working directory
+  QDir::setCurrent(current.absolutePath());
+
   // wait for the UI to update
-  QTimer::singleShot(UI_FREQ, [&] {
-    QDir::setCurrent(current.absolutePath());
+  QObject::connect(uiState(), &UIState::uiUpdate, [&](const UIState &s) {
     saveWidgetAsImage(&w, output);
     app.quit();
   });
