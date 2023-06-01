@@ -58,7 +58,7 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
 
-def get_T_FOLLOW(personality=log.AccPersonality.NORMAL):
+def get_T_FOLLOW(personality=log.AccPersonality.standard):
   if personality==log.AccPersonality.relaxed:
     return 1.8
   elif personality==log.AccPersonality.standard:
