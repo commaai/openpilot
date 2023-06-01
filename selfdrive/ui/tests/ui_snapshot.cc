@@ -29,7 +29,8 @@ int main(int argc, char *argv[]) {
   parser.addOption(QCommandLineOption(QStringList() << "o"
                                                     << "output",
                                       "Output image file path. The file's suffix is used to "
-                                      "determine the format. Supports PNG and JPEG formats.",
+                                      "determine the format. Supports PNG and JPEG formats. "
+                                      "Defaults to \"snapshot.png\".",
                                       "file", "snapshot.png"));
   parser.process(app);
 
