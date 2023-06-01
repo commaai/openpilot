@@ -12,9 +12,6 @@ from av import VideoFrame, CodecContext, Packet
 from pydub import AudioSegment
 
 from cereal.visionipc import VisionIpcClient, VisionStreamType
-from system.camerad.snapshot.snapshot import get_yuv
-
-from tools.joystick.run_onnx import annotate_img
 
 IMG_H, IMG_W = 604, 964
 yuv = np.zeros((int(IMG_H * 1.5), IMG_W), dtype=np.uint8)
@@ -25,8 +22,11 @@ SOUNDS = {
   'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
 }
 
-yoloh, yolow = 416, 640
-
+def get_yuv(buf, w, h, stride, uv_offset):
+  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
+  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
+  return y, u, v
 
 def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
@@ -44,7 +44,7 @@ class BodyVideo(VideoStreamTrack):
 
   async def recv(self):
     if os.environ.get('FAKE_CAMERA') == '1':
-      frame = np.zeros((IMG_H, IMG_W, 3), np.uint8)
+      frame = VideoFrame.from_ndarray(np.zeros((int(604 * 2 * 1.5), 964 * 2), np.uint8), format="yuv420p")
     else:
       if not self.vipc_client.is_connected():
         self.vipc_client.connect(True)
@@ -54,10 +54,6 @@ class BodyVideo(VideoStreamTrack):
       else:
         y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
         y = y[::2, ::2]
-        if 'yolo' in self.app['mutable_vals']:
-          yolo_preds = self.app['mutable_vals']['yolo']
-          y = annotate_img(y, yolo_preds, [int((y.shape[1] - yolow) / 2), int((y.shape[0] - yoloh) / 2)])
-
         u = u.reshape(u.shape[0] // 2, -1)
         v = v.reshape(v.shape[0] // 2, -1)
         yuv[:IMG_H, :] = y
