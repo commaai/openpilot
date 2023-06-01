@@ -18,7 +18,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   for (const auto &it : services) {
     uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
     if ((which == cereal::Event::Which::UI_DEBUG || which == cereal::Event::Which::USER_FLAG) &&
-        !(flags & REPLAY_FLAG_UI_DEBUG) && 
+        !(flags & REPLAY_FLAG_ALL_SERVICES) && 
         !allow.contains(it.name)) {
       continue;
     }
