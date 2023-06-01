@@ -12,7 +12,7 @@ export QT_QPA_PLATFORM=offscreen
 TEST_CASE=$1
 
 if [ -z "$TEST_CASE" ]; then
-  >&2 echo "Usage: rebase_snapshot.sh <test_case>"
+  >&2 echo "Usage: update_snapshot.sh <test_case>"
   exit 1
 fi
 

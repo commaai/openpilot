@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
   }
 
   QTranslator translator;
-  QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
-  if (!translator.load(translation_file, "translations") && translation_file.length()) {
-    qCritical() << "Failed to load translation file:" << translation_file;
+  if (!translator.load("main_en", "translations")) {
+    qCritical() << "Failed to load translation file";
+    return 1;
   }
   app.installTranslator(&translator);
 
