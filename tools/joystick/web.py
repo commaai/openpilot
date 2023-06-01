@@ -6,6 +6,7 @@ import ssl
 import uuid
 import time
 
+from common.basedir import BASEDIR
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
@@ -27,7 +28,7 @@ FIND_OBJ = 'person'
 
 
 async def index(request):
-  content = open("./static/index.html", "r").read()
+  content = open(BASEDIR+"tools/joystick/static/index.html", "r").read()
   now = time.monotonic()
   request.app['mutable_vals']['last_send_time'] = now
   request.app['mutable_vals']['last_override_time'] = now
@@ -242,7 +243,7 @@ def main():
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
-  app.router.add_static('/static', 'static')
+  app.router.add_static('/static', BASEDIR+'/tools/joystick/static')
   app.on_startup.append(start_background_tasks)
   app.on_cleanup.append(stop_background_tasks)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
