@@ -14,12 +14,12 @@ from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
 from common.realtime import Ratekeeper, DT_MDL, DT_DMON, sec_since_boot
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 from panda.python import Panda
 from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import FAKEDATA, setup_env, check_enabled
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -123,8 +123,9 @@ def replay_cameras(lr, frs, disable_tqdm=False):
     ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_MDL, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, False),
+    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD, False),
+    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
   ]
 
   def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
@@ -232,7 +233,11 @@ def migrate_sensorEvents(lr, old_logtime=False):
 
   return all_msgs
 
-def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
+
+def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=False):
+  if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):
+    raise ValueError("whitelist_proc must be a string or iterable")
+
   lr = migrate_carparams(list(lr))
   lr = migrate_sensorEvents(list(lr))
   if frs is None:
@@ -261,33 +266,67 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
       multiprocessing.Process(target=replay_service, args=('ubloxRaw', lr)),
       multiprocessing.Process(target=replay_panda_states, args=('pandaStates', lr)),
     ],
-    'managerState': [
+    'manager': [
       multiprocessing.Process(target=replay_manager_state, args=('managerState', lr)),
     ],
     'thermald': [
       multiprocessing.Process(target=replay_device_state, args=('deviceState', lr)),
     ],
+    'rawgpsd': [
+      multiprocessing.Process(target=replay_service, args=('qcomGnss', lr)),
+      multiprocessing.Process(target=replay_service, args=('gpsLocation', lr)),
+    ],
     'camerad': [
       *cam_procs,
     ],
   }
+  # TODO add configs for modeld, dmonitoringmodeld
+  fakeable_daemons = {}
+  for config in CONFIGS:
+    processes = [
+      multiprocessing.Process(target=replay_service, args=(msg, lr)) 
+      for msg in config.subs
+    ]
+    fakeable_daemons[config.proc_name] = processes
+
+  additional_fake_daemons = {}
+  if daemons != "all":
+    additional_fake_daemons = fakeable_daemons
+    if isinstance(daemons, str):
+      raise ValueError(f"Invalid value for daemons: {daemons}")
+
+    for d in daemons:
+      if d in fake_daemons:
+        raise ValueError(f"Running daemon {d} is not supported!")
+      
+      if d in fakeable_daemons:
+        del additional_fake_daemons[d]
+
+  all_fake_daemons = {**fake_daemons, **additional_fake_daemons}
 
   try:
     # TODO: make first run of onnxruntime CUDA provider fast
-    managed_processes["modeld"].start()
-    managed_processes["dmonitoringmodeld"].start()
+    if "modeld" not in all_fake_daemons:
+      managed_processes["modeld"].start()
+    if "dmonitoringmodeld" not in all_fake_daemons:
+      managed_processes["dmonitoringmodeld"].start()
     time.sleep(5)
 
     # start procs up
-    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'soundd']
+    ignore = list(all_fake_daemons.keys()) \
+           + ['ui', 'manage_athenad', 'uploader', 'soundd', 'micd', 'navd']
+    
+    print("Faked daemons:", ", ".join(all_fake_daemons.keys()))
+    print("Running daemons:", ", ".join([key for key in managed_processes.keys() if key not in ignore]))
+
     ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
-    for procs in fake_daemons.values():
+    for procs in all_fake_daemons.values():
       for p in procs:
         p.start()
 
     for _ in tqdm(range(60), disable=disable_tqdm):
       # ensure all procs are running
-      for d, procs in fake_daemons.items():
+      for d, procs in all_fake_daemons.items():
         for p in procs:
           if not p.is_alive():
             raise Exception(f"{d}'s {p.name} died")
@@ -296,7 +335,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
     # kill everything
     for p in managed_processes.values():
       p.stop()
-    for procs in fake_daemons.values():
+    for procs in all_fake_daemons.values():
       for p in procs:
         p.terminate()
 
@@ -311,15 +350,28 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA, disable_tqdm=False):
   return seg_path
 
 
-def regen_and_save(route, sidx, upload=False, use_route_meta=True, outdir=FAKEDATA, disable_tqdm=False):
+def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
     fr = FrameReader(r.camera_paths()[sidx])
+    if r.ecamera_paths()[sidx] is not None:
+      wfr = FrameReader(r.ecamera_paths()[sidx])
+    else:
+      wfr = None
   else:
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-  rpath = regen_segment(lr, {'roadCameraState': fr}, outdir=outdir, disable_tqdm=disable_tqdm)
+    device_type = next(iter(lr)).initData.deviceType
+    if device_type == 'tici':
+      wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+    else:
+      wfr = None
+  
+  frs = {'roadCameraState': fr}
+  if wfr is not None:
+    frs['wideRoadCameraState'] = wfr
+  rpath = regen_segment(lr, frs, daemons, outdir=outdir, disable_tqdm=disable_tqdm)
 
   # compress raw rlog before uploading
   with open(os.path.join(rpath, "rlog"), "rb") as f:
@@ -342,9 +394,18 @@ def regen_and_save(route, sidx, upload=False, use_route_meta=True, outdir=FAKEDA
 
 
 if __name__ == "__main__":
+  def comma_separated_list(string):
+    if string == "all":
+      return string
+    return string.split(",")
+
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
+  parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
+  parser.add_argument("--whitelist-procs", type=comma_separated_list, default="all",
+                      help="Comma-separated whitelist of processes to regen (e.g. controlsd). Pass 'all' to whitelist all processes.")
   parser.add_argument("route", type=str, help="The source route")
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
-  regen_and_save(args.route, args.seg, args.upload)
+
+  regen_and_save(args.route, args.seg, args.whitelist_procs, args.upload, outdir=args.outdir)

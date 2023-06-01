@@ -219,17 +219,15 @@ system/hardware/pc/__init__.py
 system/hardware/pc/hardware.h
 system/hardware/pc/hardware.py
 
-selfdrive/locationd/__init__.py
-selfdrive/locationd/.gitignore
-selfdrive/locationd/SConscript
-selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ublox_msg.cc
-selfdrive/locationd/ublox_msg.h
-selfdrive/locationd/generated/ubx.cpp
-selfdrive/locationd/generated/ubx.h
-selfdrive/locationd/generated/gps.cpp
-selfdrive/locationd/generated/gps.h
+system/ubloxd/.gitignore
+system/ubloxd/SConscript
+system/ubloxd/generated/*
+system/ubloxd/*.h
+system/ubloxd/*.cc
 
+selfdrive/locationd/__init__.py
+selfdrive/locationd/SConscript
+selfdrive/locationd/.gitignore
 selfdrive/locationd/laikad.py
 selfdrive/locationd/locationd.h
 selfdrive/locationd/locationd.cc
@@ -256,35 +254,36 @@ system/proclogd/main.cc
 system/proclogd/proclog.cc
 system/proclogd/proclog.h
 
-selfdrive/loggerd/.gitignore
-selfdrive/loggerd/SConscript
-selfdrive/loggerd/encoder/encoder.cc
-selfdrive/loggerd/encoder/encoder.h
-selfdrive/loggerd/encoder/v4l_encoder.cc
-selfdrive/loggerd/encoder/v4l_encoder.h
-selfdrive/loggerd/video_writer.cc
-selfdrive/loggerd/video_writer.h
-selfdrive/loggerd/logger.cc
-selfdrive/loggerd/logger.h
-selfdrive/loggerd/loggerd.cc
-selfdrive/loggerd/loggerd.h
-selfdrive/loggerd/encoderd.cc
-selfdrive/loggerd/bootlog.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.cc
-selfdrive/loggerd/encoder/ffmpeg_encoder.h
+system/loggerd/.gitignore
+system/loggerd/SConscript
+system/loggerd/encoder/encoder.cc
+system/loggerd/encoder/encoder.h
+system/loggerd/encoder/v4l_encoder.cc
+system/loggerd/encoder/v4l_encoder.h
+system/loggerd/video_writer.cc
+system/loggerd/video_writer.h
+system/loggerd/logger.cc
+system/loggerd/logger.h
+system/loggerd/loggerd.cc
+system/loggerd/loggerd.h
+system/loggerd/encoderd.cc
+system/loggerd/bootlog.cc
+system/loggerd/encoder/ffmpeg_encoder.cc
+system/loggerd/encoder/ffmpeg_encoder.h
 
-selfdrive/loggerd/__init__.py
-selfdrive/loggerd/config.py
-selfdrive/loggerd/uploader.py
-selfdrive/loggerd/deleter.py
-selfdrive/loggerd/xattr_cache.py
+system/loggerd/__init__.py
+system/loggerd/config.py
+system/loggerd/uploader.py
+system/loggerd/deleter.py
+system/loggerd/xattr_cache.py
 
-selfdrive/sensord/SConscript
-selfdrive/sensord/sensors_qcom2.cc
-selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.h
-selfdrive/sensord/sensord
-selfdrive/sensord/pigeond.py
+system/sensord/.gitignore
+system/sensord/SConscript
+system/sensord/sensors_qcom2.cc
+system/sensord/sensors/*.cc
+system/sensord/sensors/*.h
+system/sensord/sensord
+system/sensord/pigeond.py
 
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
@@ -294,6 +293,7 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
+selfdrive/test/test_time_to_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -397,9 +397,9 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/navd/.gitignore
 selfdrive/navd/__init__.py
-selfdrive/navd/navd.py
-selfdrive/navd/helpers.py
+selfdrive/navd/**
 
 selfdrive/assets/.gitignore
 selfdrive/assets/assets.qrc
@@ -412,6 +412,7 @@ selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
+selfdrive/assets/navigation/*
 
 third_party/.gitignore
 third_party/SConscript
@@ -468,6 +469,7 @@ body/crypto/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/custom.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
@@ -477,6 +479,10 @@ cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
+cereal/messaging/event.cc
+cereal/messaging/event.h
+cereal/messaging/impl_fake.cc
+cereal/messaging/impl_fake.h
 cereal/messaging/impl_msgq.cc
 cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc
@@ -559,8 +565,8 @@ opendbc/hyundai_kia_mando_front_radar_generated.dbc
 
 opendbc/mazda_2017.dbc
 
-opendbc/nissan_x_trail_2017.dbc
-opendbc/nissan_leaf_2018.dbc
+opendbc/nissan_x_trail_2017_generated.dbc
+opendbc/nissan_leaf_2018_generated.dbc
 
 opendbc/subaru_global_2017_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc
@@ -581,16 +587,13 @@ opendbc/tesla_radar.dbc
 opendbc/tesla_powertrain.dbc
 
 tinygrad_repo/openpilot/compile.py
-tinygrad_repo/accel/opencl/*
 tinygrad_repo/extra/onnx.py
+tinygrad_repo/extra/onnx_ops.py
 tinygrad_repo/extra/thneed.py
 tinygrad_repo/extra/utils.py
-tinygrad_repo/tinygrad/llops/ops_gpu.py
-tinygrad_repo/tinygrad/llops/ops_opencl.py
-tinygrad_repo/tinygrad/helpers.py
-tinygrad_repo/tinygrad/mlops.py
-tinygrad_repo/tinygrad/ops.py
-tinygrad_repo/tinygrad/shapetracker.py
-tinygrad_repo/tinygrad/tensor.py
-tinygrad_repo/tinygrad/nn/__init__.py
-tinygrad_repo/tinygrad/nn/optim.py
+tinygrad_repo/tinygrad/codegen/ast.py
+tinygrad_repo/tinygrad/codegen/gpu.py
+tinygrad_repo/tinygrad/nn/*
+tinygrad_repo/tinygrad/runtime/ops_gpu.py
+tinygrad_repo/tinygrad/shape/*
+tinygrad_repo/tinygrad/*.py

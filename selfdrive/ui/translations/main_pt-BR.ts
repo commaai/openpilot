@@ -312,18 +312,6 @@
         <source>Installing...</source>
         <translation>Instalando...</translation>
     </message>
-    <message>
-        <source>Receiving objects: </source>
-        <translation>Recebendo objetos: </translation>
-    </message>
-    <message>
-        <source>Resolving deltas: </source>
-        <translation>Resolvendo deltas: </translation>
-    </message>
-    <message>
-        <source>Updating files: </source>
-        <translation>Atualizando arquivos: </translation>
-    </message>
 </context>
 <context>
     <name>MapETA</name>
@@ -535,10 +523,6 @@ trabalho definido</translation>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>PONTOS COMMA</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -591,16 +575,8 @@ trabalho definido</translation>
         <translation>Tem certeza que quer resetar seu dispositivo?</translation>
     </message>
     <message>
-        <source>Resetting device...</source>
-        <translation>Resetando dispositivo...</translation>
-    </message>
-    <message>
         <source>System Reset</source>
         <translation>Resetar Sistema</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Solicitado reset do sistema. Confirme para apagar todo conteúdo e configurações. Aperte cancelar para continuar boot.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -615,8 +591,18 @@ trabalho definido</translation>
         <translation>Confirmar</translation>
     </message>
     <message>
-        <source>Unable to mount data partition. Press confirm to reset your device.</source>
-        <translation>Não foi possível montar a partição de dados. Pressione confirmar para resetar seu dispositivo.</translation>
+        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
+        <translation>Não é possível montar a partição de dados. Partição corrompida. Confirme para apagar e redefinir o dispositivo.</translation>
+    </message>
+    <message>
+        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancelar para voltar.</translation>
+    </message>
+    <message>
+        <source>Resetting device...
+This may take up to a minute.</source>
+        <translation>Redefinindo o dispositivo
+Isso pode levar até um minuto.</translation>
     </message>
 </context>
 <context>
@@ -689,18 +675,6 @@ trabalho definido</translation>
         <translation>Esperando pela internet</translation>
     </message>
     <message>
-        <source>Choose Software to Install</source>
-        <translation>Escolher Software para Instalar</translation>
-    </message>
-    <message>
-        <source>Dashcam</source>
-        <translation>Dashcam</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Sofware Customizado</translation>
-    </message>
-    <message>
         <source>Enter URL</source>
         <translation>Preencher URL</translation>
     </message>
@@ -727,6 +701,14 @@ trabalho definido</translation>
     <message>
         <source>Start over</source>
         <translation>Inicializar</translation>
+    </message>
+    <message>
+        <source>No custom software found at this URL.</source>
+        <translation>Não há software personalizado nesta URL.</translation>
+    </message>
+    <message>
+        <source>Something went wrong. Reboot the device.</source>
+        <translation>Algo deu errado. Reinicie o dispositivo.</translation>
     </message>
 </context>
 <context>
@@ -982,10 +964,6 @@ trabalho definido</translation>
         <translation>Upload dados da câmera voltada para o motorista e ajude a melhorar o algoritmo de monitoramentor.</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>Controle longitudinal experimental openpilot</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>Desacionar com Pedal do Acelerador</translation>
     </message>
@@ -1012,14 +990,6 @@ trabalho definido</translation>
     <message>
         <source>Experimental Mode</source>
         <translation>Modo Experimental</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>ATENÇÃO: o controle longitudinal do openpilot é experimental para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation>Neste carro o penpilot por padrão utiliza o ACC nativo do veículo ao invés de controlar longitudinalmente. Ative isto para mudar para o controle longitudinal do openpilot. Ativar o Modo Experimental é recomendado quando em uso do controle longitudinal experimental do openpilot.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1056,6 +1026,18 @@ trabalho definido</translation>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>Controle Longitudinal openpilot (Alpha)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>AVISO: o controle longitudinal openpilot está em alfa para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>Neste carro, o openpilot tem como padrão o ACC embutido do carro em vez do controle longitudinal do openpilot. Habilite isso para alternar para o controle longitudinal openpilot. Recomenda-se ativar o modo Experimental ao ativar o alfa de controle longitudinal openpilot.</translation>
     </message>
 </context>
 <context>

@@ -13,9 +13,14 @@ export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 
+export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+
 source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
+fi
+if [ -f /data/openpilot/launch_env.sh ]; then
+  source /data/openpilot/launch_env.sh
 fi
 
 ln -snf ${env.TEST_DIR} /data/pythonpath
@@ -56,14 +61,26 @@ pipeline {
   }
 
   stages {
-    stage('build release3') {
+    stage('build release3-staging') {
       agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
       when {
         branch 'devel-staging'
       }
       steps {
         phone_steps("tici-needs-can", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+          ["build release3-staging & dashcam3-staging", "RELEASE_BRANCH=release3-staging DASHCAM_BRANCH=dashcam3-staging $SOURCE_DIR/release/build_release.sh"],
+        ])
+      }
+    }
+
+    stage('build nightly') {
+      agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+      when {
+        branch 'master-ci'
+      }
+      steps {
+        phone_steps("tici-needs-can", [
+          ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -81,6 +98,7 @@ pipeline {
 
       parallel {
 
+        /*
         stage('simulator') {
           agent {
             dockerfile {
@@ -108,6 +126,22 @@ pipeline {
             }
           }
         }
+        */
+
+        stage('tizi-tests') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tizi", [
+              ["build openpilot", "cd selfdrive/manager && ./build.py"],
+              ["test boardd loopback", "SINGLE_PANDA=1 python selfdrive/boardd/tests/test_boardd_loopback.py"],
+              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
+              ["test camerad", "python system/camerad/test/test_camerad.py"],
+              ["test exposure", "python system/camerad/test/test_exposure.py"],
+              ["test amp", "python system/hardware/tici/tests/test_amplifier.py"],
+            ])
+          }
+        }
 
         stage('build') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
@@ -120,6 +154,7 @@ pipeline {
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
@@ -140,16 +175,17 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test power draw", "python system/hardware/tici/test_power_draw.py"],
-              ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
-              ["test pigeond", "python selfdrive/sensord/tests/test_pigeond.py"],
+              ["test power draw", "python system/hardware/tici/tests/test_power_draw.py"],
+              ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
+              ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python system/loggerd/tests/test_encoder.py"],
+              ["test pigeond", "python system/sensord/tests/test_pigeond.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
+              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
             ])
           }
         }
 
-        stage('camerad-ar') {
+        stage('camerad') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici-ar0231", [
@@ -157,12 +193,6 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
             ])
-          }
-        }
-
-        stage('camerad-ox') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
             phone_steps("tici-ox03c10", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
@@ -176,11 +206,11 @@ pipeline {
           steps {
             phone_steps("tici-lsmc", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
             ])
             phone_steps("tici-bmx-lsm", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd selfdrive/sensord/tests && python -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
             ])
           }
         }
@@ -190,7 +220,7 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["model replay", "cd selfdrive/test/process_replay && NO_NAV=1 ./model_replay.py"],
+              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
           }
         }

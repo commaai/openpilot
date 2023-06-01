@@ -48,16 +48,16 @@ private:
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);
 
-  std::string hw_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
   const uint32_t bus_offset;
 
   bool connected();
   bool comms_healthy();
+  std::string hw_serial();
 
   // Static functions
-  static std::vector<std::string> list();
+  static std::vector<std::string> list(bool usb_only=false);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();

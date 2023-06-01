@@ -1,11 +1,14 @@
 #pragma once
 
-#include <mutex>
 #include <atomic>
 #include <cstdint>
+#include <mutex>
+#include <string>
 #include <vector>
 
+#ifndef __APPLE__
 #include <linux/spi/spidev.h>
+#endif
 
 #include <libusb-1.0/libusb.h>
 
@@ -21,6 +24,7 @@ public:
   virtual ~PandaCommsHandle() {};
   virtual void cleanup() = 0;
 
+  std::string hw_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
   static std::vector<std::string> list();
@@ -51,6 +55,7 @@ private:
   void handle_usb_issue(int err, const char func[]);
 };
 
+#ifndef __APPLE__
 class PandaSpiHandle : public PandaCommsHandle {
 public:
   PandaSpiHandle(std::string serial);
@@ -69,8 +74,9 @@ private:
   uint8_t rx_buf[SPI_BUF_SIZE];
   inline static std::recursive_mutex hw_lock;
 
-  int wait_for_ack(spi_ioc_transfer &transfer, uint8_t ack);
-  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len);
-  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
-  int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len);
+  int wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout);
+  int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len, unsigned int timeout);
+  int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
+  int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
 };
+#endif

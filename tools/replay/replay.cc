@@ -25,6 +25,16 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
       s.push_back(it.name);
     }
   }
+
+  if (!allow_list.empty()) {
+    // the following events are needed for replay to work properly.
+    allow_list.insert(cereal::Event::Which::INIT_DATA);
+    allow_list.insert(cereal::Event::Which::CAR_PARAMS);
+    if (sockets_[cereal::Event::Which::PANDA_STATES] != nullptr) {
+      allow_list.insert(cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D);
+    }
+  }
+
   qDebug() << "services " << s;
   qDebug() << "loading route " << route;
 
@@ -107,9 +117,9 @@ void Replay::seekTo(double seconds, bool relative) {
     rInfo("seeking to %d s, segment %d", (int)seconds, seg);
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    emit seekedTo(seconds);
     return isSegmentMerged(seg);
   });
-  emit seekedTo(seconds);
   queueSegment();
 }
 
@@ -186,7 +196,7 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    rWarning("%s at %d s", pause ? "paused..." : "resuming", currentSeconds());
+    rWarning("%s at %.2f s", pause ? "paused..." : "resuming", currentSeconds());
     paused_ = pause;
     return true;
   });

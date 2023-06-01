@@ -7,22 +7,12 @@
 #include "selfdrive/navd/map_renderer.h"
 #include "system/hardware/hw.h"
 
-
-
-void sigHandler(int s) {
-  qInfo() << "Shutting down";
-  std::signal(s, SIG_DFL);
-
-  qApp->quit();
-}
-
-
 int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
 
   QApplication app(argc, argv);
-  std::signal(SIGINT, sigHandler);
-  std::signal(SIGTERM, sigHandler);
+  std::signal(SIGINT, sigTermHandler);
+  std::signal(SIGTERM, sigTermHandler);
 
   MapRenderer * m = new MapRenderer(get_mapbox_settings());
   assert(m);

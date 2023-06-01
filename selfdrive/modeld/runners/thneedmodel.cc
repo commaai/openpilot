@@ -41,13 +41,13 @@ void ThneedModel::addExtra(float *extra_input_buf, int buf_size) {
 }
 
 void* ThneedModel::getInputBuf() {
-  if (use_extra && thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
-  else if (!use_extra && thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  if (use_extra && thneed->input_clmem.size() > 5) return &(thneed->input_clmem[5]);
+  else if (!use_extra && thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
   else return nullptr;
 }
 
 void* ThneedModel::getExtraBuf() {
-  if (thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  if (thneed->input_clmem.size() > 4) return &(thneed->input_clmem[4]);
   else return nullptr;
 }
 
@@ -55,10 +55,10 @@ void ThneedModel::execute() {
   if (!recorded) {
     thneed->record = true;
     if (use_extra) {
-      float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+      float *inputs[6] = {recurrent, navFeatures, trafficConvention, desire, extra, input};
       thneed->copy_inputs(inputs);
     } else {
-      float *inputs[4] = {recurrent, trafficConvention, desire, input};
+      float *inputs[5] = {recurrent, navFeatures, trafficConvention, desire, input};
       thneed->copy_inputs(inputs);
     }
     thneed->clexec();
@@ -68,12 +68,11 @@ void ThneedModel::execute() {
     recorded = true;
   } else {
     if (use_extra) {
-      float *inputs[5] = {recurrent, trafficConvention, desire, extra, input};
+      float *inputs[6] = {recurrent, navFeatures, trafficConvention, desire, extra, input};
       thneed->execute(inputs, output);
     } else {
-      float *inputs[4] = {recurrent, trafficConvention, desire, input};
+      float *inputs[5] = {recurrent, navFeatures, trafficConvention, desire, input};
       thneed->execute(inputs, output);
     }
   }
 }
-

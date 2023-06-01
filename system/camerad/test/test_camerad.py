@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import unittest
+import numpy as np
 from collections import defaultdict
 
 import cereal.messaging as messaging
@@ -12,6 +13,8 @@ from system.hardware import TICI
 TEST_TIMESPAN = 30
 LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 0.5, # ARs use synced pulses for frame starts
                        log.FrameData.ImageSensor.ox03c10: 1.0} # OXs react to out-of-sync at next frame
+FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
+                       log.FrameData.ImageSensor.ox03c10: 1.0}
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
@@ -36,9 +39,15 @@ class TestCamerad(unittest.TestCase):
     managed_processes['camerad'].stop()
 
     cls.log_by_frame_id = defaultdict(list)
+    cls.sensor_type = None
     for cam, msgs in cls.logs.items():
+      if cls.sensor_type is None:
+        cls.sensor_type = getattr(msgs[0], msgs[0].which()).sensor.raw
       expected_frames = service_list[cam].frequency * TEST_TIMESPAN
       assert expected_frames*0.95 < len(msgs) < expected_frames*1.05, f"unexpected frame count {cam}: {expected_frames=}, got {len(msgs)}"
+
+      dts = np.abs(np.diff([getattr(m, m.which()).timestampSof/1e6 for m in msgs]) - 1000/service_list[cam].frequency)
+      assert (dts < FRAME_DELTA_TOLERANCE[cls.sensor_type]).all(), f"{cam} dts(ms) out of spec: max diff {dts.max()}, 99 percentile {np.percentile(dts, 99)}"
 
       for m in msgs:
         cls.log_by_frame_id[getattr(m, m.which()).frameId].append(m)
@@ -64,17 +73,16 @@ class TestCamerad(unittest.TestCase):
     assert len(skips) == 0, f"Found frame skips, missing cameras for the following frames: {skips}"
 
   def test_frame_sync(self):
-    sensor_type = [getattr(msgs[0], msgs[0].which()).sensor for frame_id, msgs in self.log_by_frame_id.items()][0].raw
     frame_times = {frame_id: [getattr(m, m.which()).timestampSof for m in msgs] for frame_id, msgs in self.log_by_frame_id.items()}
     diffs = {frame_id: (max(ts) - min(ts))/1e6 for frame_id, ts in frame_times.items()}
 
     def get_desc(fid, diff):
       cam_times = [(m.which(), getattr(m, m.which()).timestampSof/1e6) for m in self.log_by_frame_id[fid]]
       return (diff, cam_times)
-    laggy_frames = {k: get_desc(k, v) for k, v in diffs.items() if v > LAG_FRAME_TOLERANCE[sensor_type]}
+    laggy_frames = {k: get_desc(k, v) for k, v in diffs.items() if v > LAG_FRAME_TOLERANCE[self.sensor_type]}
 
     def in_tol(diff):
-      return 50 - LAG_FRAME_TOLERANCE[sensor_type] < diff and diff < 50 + LAG_FRAME_TOLERANCE[sensor_type]
+      return 50 - LAG_FRAME_TOLERANCE[self.sensor_type] < diff and diff < 50 + LAG_FRAME_TOLERANCE[self.sensor_type]
     if len(laggy_frames) != 0 and all( in_tol(laggy_frames[lf][0]) for lf in laggy_frames):
       print("TODO: handle camera out of sync")
     else:

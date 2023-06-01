@@ -377,6 +377,10 @@ class TestAthenadMethods(unittest.TestCase):
     keys = dispatcher["getSshAuthorizedKeys"]()
     self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
 
+  def test_getGithubUsername(self):
+    keys = dispatcher["getGithubUsername"]()
+    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
+
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()
     keys = ["version", "remote", "branch", "commit"]
