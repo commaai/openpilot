@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   QCommandLineParser parser;
   parser.setApplicationDescription("UI snapshot tool");
   parser.addHelpOption();
-  parser.addPositionalArgument("file", "output file");
+  parser.addPositionalArgument("file", "output file", "[file]", "snapshot.png");
   parser.process(app);
 
   const QString output = parser.positionalArguments().value(0);
