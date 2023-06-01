@@ -351,12 +351,13 @@ void MainWindow::streamStarted() {
 }
 
 void MainWindow::eventsMerged() {
-  if (!can->liveStreaming()) {
-    auto fingerprint = can->carFingerprint();
-    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPRINT: %2").arg(can->routeName()).arg(fingerprint.isEmpty() ? tr("Unknown Car") : fingerprint));
+  if (!can->liveStreaming() && std::exchange(car_fingerprint, can->carFingerprint()) != car_fingerprint) {
+    video_dock->setWindowTitle(tr("ROUTE: %1  FINGERPRINT: %2")
+                                    .arg(can->routeName())
+                                    .arg(car_fingerprint.isEmpty() ? tr("Unknown Car") : car_fingerprint));
     // Don't overwrite already loaded DBC
-    if (!dbc()->msgCount() && !fingerprint.isEmpty()) {
-      auto dbc_name = fingerprint_to_dbc[fingerprint];
+    if (!dbc()->msgCount() && !car_fingerprint.isEmpty()) {
+      auto dbc_name = fingerprint_to_dbc[car_fingerprint];
       if (dbc_name != QJsonValue::Undefined) {
         loadDBCFromOpendbc(dbc_name.toString());
       }
