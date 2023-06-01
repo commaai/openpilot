@@ -69,10 +69,17 @@ issue = set()
 
 for i in range(200):
   for car, versions in FW_VERSIONS.items():
+    print('testing', car)
     versions = {(ecu[1], ecu[2]): [random.choice(fws)] for ecu, fws in versions.items()}
-    # print(versions)
+    # versions = {k: v for k, v in random.sample(list(versions.items()), len(versions) - 1)}
+    rand_ecu = random.choice(list(versions.keys()))
+    versions[rand_ecu] = [versions[rand_ecu][0] + b'random stuff not good']
+    print(versions)
 
     ret = match_fw_to_toyota_fuzzy(versions)
+    print('ret', ret)
+    raise Exception
+
     # is_exact, ret = match_fw_to_car(versions, allow_exact=False)
     # ret = match_fw_to_car_fuzzy(versions, config=None)
     if len(ret) != 1:

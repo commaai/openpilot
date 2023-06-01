@@ -252,12 +252,12 @@ def match_fw_to_toyota_fuzzy_old(fw_versions_dict):
 
 
 PREFIXES_BY_ECU = {
-  (Ecu.abs, 0x7b0, None): "F1526",
-  (Ecu.engine, 0x700, None): "89663",
-  (Ecu.dsu, 0x791, None): "80",
-  (Ecu.fwdRadar, 0x750, 0xf): "8821F",
-  (Ecu.fwdCamera, 0x750, 0x6d): "8646F",
-  (Ecu.eps, 0x7a1, None): "8965B",
+  (Ecu.abs, 0x7b0, None): b"F1526",
+  (Ecu.engine, 0x700, None): b"89663",
+  (Ecu.dsu, 0x791, None): b"80",
+  (Ecu.fwdRadar, 0x750, 0xf): b"8821F",
+  (Ecu.fwdCamera, 0x750, 0x6d): b"8646F",
+  (Ecu.eps, 0x7a1, None): b"8965B",
 }
 
 
@@ -265,6 +265,7 @@ def match_fw_to_toyota_fuzzy(fw_versions_dict):
   invalid = []
   for candidate, fw_versions in FW_VERSIONS.items():
     for ecu_type, fws in fw_versions.items():
+      print('ecu_type', ecu_type)
       # only invalidate with these ecus
       if ecu_type not in PREFIXES_BY_ECU:
         continue
@@ -272,9 +273,13 @@ def match_fw_to_toyota_fuzzy(fw_versions_dict):
       addr = (ecu_type[1], ecu_type[2])
       found_versions = fw_versions_dict.get(addr, set())
       # strip out length codes
+      print('candidate', candidate)
+      print('fws', fws)
       fws = [fw[1:] if fw[0] <= 3 else fw for fw in fws]
-      found_versions = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in found_versions]
+      print('fws', fws)
       found_versions = [fw[1:] if fw[0] <= 3 else fw for fw in found_versions]
+      print('found_versions', found_versions)
+      print()
 
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
@@ -288,6 +293,7 @@ def match_fw_to_toyota_fuzzy(fw_versions_dict):
       pfx = PREFIXES_BY_ECU[ecu_type]
       candidate_ecu_codes = set([fw[len(pfx):len(pfx) + 4] for fw in fws])
       found_ecu_codes = set([fw[len(pfx):len(pfx) + 4] for fw in found_versions])
+      # print(candidate_ecu_codes, found_ecu_codes)
 
       all_match = any([found_ecu_code in candidate_ecu_codes for found_ecu_code in found_ecu_codes])
 
@@ -1898,7 +1904,6 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966378B2100\x00\x00\x00\x00',
       b'\x018966378B3000\x00\x00\x00\x00',
-      b'\x018966378B4100\x00\x00\x00\x00',
       b'\x018966378G2000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
       b'\x018966378B2000\x00\x00\x00\x00',
