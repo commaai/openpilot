@@ -229,7 +229,7 @@ async def run(cmd):
     print(f'[stderr]\n{stderr.decode()}')
 
 
-if __name__ == "__main__":
+def main():
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   if (not os.path.exists("cert.pem")) or (not os.path.exists("key.pem")):
     asyncio.run(run('openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
@@ -246,3 +246,6 @@ if __name__ == "__main__":
   app.on_startup.append(start_background_tasks)
   app.on_cleanup.append(stop_background_tasks)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
+
+if __name__ == "__main__":
+  main()
