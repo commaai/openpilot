@@ -185,7 +185,11 @@ class Calibrator:
     angle_std_threshold = MAX_VEL_ANGLE_STD
     height_std_threshold = MAX_HEIGHT_STD
     rpy_certain = np.arctan2(trans_std[1], trans[0]) < angle_std_threshold
-    height_certain = road_transform_trans_std[2] < height_std_threshold
+    if len(road_transform_trans_std) == 3:
+      height_certain = road_transform_trans_std[2] < height_std_threshold
+    else:
+      height_certain = True
+
     certain_if_calib = (rpy_certain and height_certain) or (self.valid_blocks < INPUTS_NEEDED)
     if not (straight_and_fast and certain_if_calib):
       return None
