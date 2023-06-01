@@ -41,6 +41,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  auto current = QDir::current();
+
   // change working directory to find assets
   if (!QDir::setCurrent(QCoreApplication::applicationDirPath() + QDir::separator() + "..")) {
     qCritical() << "Failed to set current directory";
@@ -54,6 +56,7 @@ int main(int argc, char *argv[]) {
 
   // wait for the UI to update
   QTimer::singleShot(UI_FREQ, [&] {
+    QDir::setCurrent(current.absolutePath());
     saveWidgetAsImage(&w, output);
     QTimer::singleShot(0, &app, &QApplication::quit);
   });
