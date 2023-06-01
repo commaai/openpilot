@@ -14,7 +14,7 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
-  bool isSameSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  bool hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const;
   void drawSignalCell(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index, const cabana::Signal *sig) const;
 
   QFont small_font, hex_font;

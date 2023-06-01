@@ -360,7 +360,7 @@ BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(pa
   hex_font.setBold(true);
 }
 
-bool BinaryItemDelegate::isSameSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const {
+bool BinaryItemDelegate::hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const {
   if (!index.isValid()) return false;
   auto model = (const BinaryViewModel*)(index.model());
   int idx = (index.row() + dy) * model->columnCount() + index.column() + dx;
@@ -412,25 +412,25 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 // Draw border on edge of signal
 void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionViewItem &option,
                                         const QModelIndex &index, const cabana::Signal *sig) const {
-  bool draw_left = !isSameSignal(index, -1, 0, sig);
-  bool draw_top = !isSameSignal(index, 0, -1, sig);
-  bool draw_right = !isSameSignal(index, 1, 0, sig);
-  bool draw_bottom = !isSameSignal(index, 0, 1, sig);
+  bool draw_left = !hasSignal(index, -1, 0, sig);
+  bool draw_top = !hasSignal(index, 0, -1, sig);
+  bool draw_right = !hasSignal(index, 1, 0, sig);
+  bool draw_bottom = !hasSignal(index, 0, 1, sig);
 
   const int spacing = 2;
   QRect rc = option.rect.adjusted(draw_left * 3, draw_top * spacing, draw_right * -3, draw_bottom * -spacing);
   QRegion subtract;
   if (!draw_top) {
-    if (!draw_left && !isSameSignal(index, -1, -1, sig)) {
+    if (!draw_left && !hasSignal(index, -1, -1, sig)) {
       subtract += QRect{rc.left(), rc.top(), 3, spacing};
-    } else if (!draw_right && !isSameSignal(index, 1, -1, sig)) {
+    } else if (!draw_right && !hasSignal(index, 1, -1, sig)) {
       subtract += QRect{rc.right() - 2, rc.top(), 3, spacing};
     }
   }
   if (!draw_bottom) {
-    if (!draw_left && !isSameSignal(index, -1, 1, sig)) {
+    if (!draw_left && !hasSignal(index, -1, 1, sig)) {
       subtract += QRect{rc.left(), rc.bottom() - (spacing - 1), 3, spacing};
-    } else if (!draw_right && !isSameSignal(index, 1, 1, sig)) {
+    } else if (!draw_right && !hasSignal(index, 1, 1, sig)) {
       subtract += QRect{rc.right() - 2, rc.bottom() - (spacing - 1), 3, spacing};
     }
   }
