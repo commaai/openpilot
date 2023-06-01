@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
+#include <QDir>
 #include <QImage>
 #include <QPainter>
 #include <QTranslator>
@@ -37,6 +38,12 @@ int main(int argc, char *argv[]) {
   const QString output = parser.value("output");
   if (output.isEmpty()) {
     qCritical() << "No output file specified";
+    return 1;
+  }
+
+  // change working directory to find assets
+  if (!QDir::setCurrent(QCoreApplication::applicationDirPath() + QDir::separator() + "..")) {
+    qCritical() << "Failed to set current directory";
     return 1;
   }
 
