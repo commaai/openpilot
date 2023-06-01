@@ -153,6 +153,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QWidget* right_widget = new QWidget(this);
     QVBoxLayout* right_column = new QVBoxLayout(right_widget);
     right_column->setContentsMargins(0, 0, 0, 0);
+    right_widget->setFixedWidth(750);
     right_column->setSpacing(30);
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);
@@ -163,7 +164,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QObject::connect(setup_widget, &SetupWidget::openSettings, this, &OffroadHome::openSettings);
     right_column->addWidget(setup_widget, 1);
 
-    right_widget->setFixedWidth(750);
     home_layout->addWidget(right_widget, 1);
   }
   center_layout->addWidget(home_widget);
