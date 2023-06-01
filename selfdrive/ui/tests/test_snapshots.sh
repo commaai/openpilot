@@ -15,7 +15,7 @@ for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
   echo "Checking $TEST_CASE..."
 
   if [ ! -f $TEST_SNAPSHOT ]; then
-    >&2 echo "Missing snapshot! Create with: rebase_snapshot.sh $TEST_CASE"
+    >&2 echo "Missing snapshot! Create with: update_snapshot.sh $TEST_CASE"
     exit 1
   fi
 
@@ -25,7 +25,7 @@ for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
 
   compare -metric AE $TEST_SNAPSHOT $TMP_SNAPSHOT null: 2> /dev/null
   if [ $? -ne 0 ]; then
-    >&2 echo "Snapshot changed! Update with: rebase_snapshot.sh $TEST_CASE"
+    >&2 echo "Snapshot changed! Update with: update_snapshot.sh $TEST_CASE"
     >&2 echo "Original: $TEST_SNAPSHOT"
     >&2 echo "Output: $TMP_SNAPSHOT"
     exit 1
