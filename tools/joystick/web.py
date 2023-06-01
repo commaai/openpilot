@@ -28,7 +28,7 @@ FIND_OBJ = 'person'
 
 
 async def index(request):
-  content = open(BASEDIR+"tools/joystick/static/index.html", "r").read()
+  content = open(BASEDIR+"/tools/joystick/static/index.html", "r").read()
   now = time.monotonic()
   request.app['mutable_vals']['last_send_time'] = now
   request.app['mutable_vals']['last_override_time'] = now
