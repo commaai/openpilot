@@ -34,6 +34,7 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
+TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 
@@ -373,7 +374,7 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['liveParameters'].valid:
+    if not self.sm['liveParameters'].valid and not TESTING_CLOSET:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
