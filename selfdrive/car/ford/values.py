@@ -4,7 +4,7 @@ from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts
+from selfdrive.car.docs_definitions import CarInfo, CarParts, CarHarness, Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -66,11 +66,11 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  car_parts: CarParts = CarParts.common([CarPart.ford_q3])
+  car_parts: CarParts = CarParts.common([CarHarness.ford_q3])
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts.common([CarPart.ford_q3, CarPart.angled_mount], remove=[CarPart.mount])
+      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {

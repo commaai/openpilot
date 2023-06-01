@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
+#include <QDoubleValidator>
 #include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
@@ -84,10 +85,15 @@ QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
-
 public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
+};
+
+class DoubleValidator : public QDoubleValidator {
+  Q_OBJECT
+public:
+  DoubleValidator(QObject *parent = nullptr);
 };
 
 namespace utils {
