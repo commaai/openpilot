@@ -182,12 +182,14 @@ async def run(cmd):
 
 def main():
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
-  if (not os.path.exists("cert.pem")) or (not os.path.exists("key.pem")):
-    asyncio.run(run('openssl req -x509 -newkey rsa:4096 -nodes -out cert.pem -keyout key.pem -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
+  cert_path = BASEDIR + '/tools/joystick/cert.pem'
+  key_path = BASEDIR + '/tools/joystick/key.pem'
+  if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
+    asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
   else:
     print("Certificate exists!")
   ssl_context = ssl.SSLContext()
-  ssl_context.load_cert_chain("cert.pem", "key.pem")
+  ssl_context.load_cert_chain(cert_path, key_path)
   app = web.Application()
   app['mutable_vals'] = {}
   app.on_shutdown.append(on_shutdown)
