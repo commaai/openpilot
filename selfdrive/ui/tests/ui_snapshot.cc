@@ -7,10 +7,10 @@
 #include <QPainter>
 #include <QTranslator>
 
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
+#include "selfdrive/ui/ui.h"
 
 void saveWidgetAsImage(QWidget *widget, const QString &fileName) {
   QImage image(widget->size(), QImage::Format_ARGB32);
