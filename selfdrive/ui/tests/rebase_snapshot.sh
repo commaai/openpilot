@@ -7,6 +7,8 @@ SNAPSHOT_DIR=$UI_DIR/tests/snapshots
 
 cd $UI_DIR
 
+export QT_QPA_PLATFORM=offscreen
+
 TEST_CASE=$1
 
 if [ -z "$TEST_CASE" ]; then

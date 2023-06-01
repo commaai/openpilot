@@ -9,7 +9,6 @@
 
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/home.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
 
@@ -45,7 +44,8 @@ int main(int argc, char *argv[]) {
   app.installTranslator(&translator);
 
   MainWindow w;
-  setMainWindow(&w);
+  w.setFixedSize(2160, 1080);
+  w.show();
   app.installEventFilter(&w);
 
   // wait for the UI to update
