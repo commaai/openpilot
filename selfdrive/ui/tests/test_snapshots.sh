@@ -5,10 +5,12 @@ SNAPSHOT_DIR=$UI_DIR/tests/snapshots
 
 cd $UI_DIR
 
+export QT_QPA_PLATFORM=offscreen
+
 for TEST_SETUP in $SNAPSHOT_DIR/*.sh; do
   TEST_CASE=$(basename ${TEST_SETUP%.sh})
   TEST_SNAPSHOT=$SNAPSHOT_DIR/$TEST_CASE.png
-  TMP_SNAPSHOT=$(mktemp /tmp/snapshot.XXXXXXXXXX).png
+  TMP_SNAPSHOT=$(mktemp /tmp/snapshot.XXXXXXXXXX.png)
 
   echo "Checking $TEST_CASE..."
 
