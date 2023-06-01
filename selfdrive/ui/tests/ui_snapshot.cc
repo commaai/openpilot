@@ -36,13 +36,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  QTranslator translator;
-  if (!translator.load("main_en", "translations")) {
-    qCritical() << "Failed to load translation file";
-    return 1;
-  }
-  app.installTranslator(&translator);
-
   MainWindow w;
   w.setFixedSize(2160, 1080);
   w.show();
