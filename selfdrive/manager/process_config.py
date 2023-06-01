@@ -13,6 +13,9 @@ def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
 def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return CP.notCar  # type: ignore
 
+def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return CP.notCar  # type: ignore
+
 def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
@@ -34,8 +37,8 @@ procs = [
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
-  # PythonProcess("logmessaged", "system.logmessaged", offroad=True),
-  #PythonProcess("micd", "system.micd"),
+  PythonProcess("logmessaged", "system.logmessaged", offroad=True, callback=iscar),
+  PythonProcess("micd", "system.micd", callback=iscar),
   PythonProcess("timezoned", "system.timezoned", enabled=not PC, offroad=True),
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
