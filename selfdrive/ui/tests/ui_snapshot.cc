@@ -27,10 +27,10 @@ int main(int argc, char *argv[]) {
   QCommandLineParser parser;
   parser.setApplicationDescription("UI snapshot tool");
   parser.addHelpOption();
-  parser.addPositionalArgument("file", "output file", "[file]", "snapshot.png");
+  parser.addOption(QCommandLineOption(QStringList() << "o" << "output", "Output file", "file", "snapshot.png"));
   parser.process(app);
 
-  const QString output = parser.positionalArguments().value(0);
+  const QString output = parser.value("output");
   if (output.isEmpty()) {
     qCritical() << "No output file specified";
     return 1;
