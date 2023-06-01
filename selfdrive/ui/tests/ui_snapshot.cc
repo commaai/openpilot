@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   QTimer::singleShot(UI_FREQ, [&] {
     QDir::setCurrent(current.absolutePath());
     saveWidgetAsImage(&w, output);
-    QTimer::singleShot(0, &app, &QApplication::quit);
+    app.quit();
   });
 
   return app.exec();
