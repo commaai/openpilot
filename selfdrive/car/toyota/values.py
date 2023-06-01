@@ -271,9 +271,10 @@ def match_fw_to_toyota_fuzzy(fw_versions_dict):
 
       addr = (ecu_type[1], ecu_type[2])
       found_versions = fw_versions_dict.get(addr, set())
-      # TODO: cleaner way
-      fws = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in fws]
+      # strip out length codes
+      fws = [fw[1:] if fw[0] <= 3 else fw for fw in fws]
       found_versions = [fw.replace(b'\x01', b'').replace(b'\x02', b'').replace(b'\x03', b'') for fw in found_versions]
+      found_versions = [fw[1:] if fw[0] <= 3 else fw for fw in found_versions]
 
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
