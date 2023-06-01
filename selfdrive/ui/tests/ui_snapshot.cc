@@ -25,9 +25,13 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   QCommandLineParser parser;
-  parser.setApplicationDescription("UI snapshot tool");
+  parser.setApplicationDescription("Take a snapshot of the UI.");
   parser.addHelpOption();
-  parser.addOption(QCommandLineOption(QStringList() << "o" << "output", "Output file", "file", "snapshot.png"));
+  parser.addOption(QCommandLineOption(QStringList() << "o"
+                                                    << "output",
+                                      "Output image file path. The file's suffix is used to "
+                                      "determine the format. Supports PNG and JPEG formats.",
+                                      "file", "snapshot.png"));
   parser.process(app);
 
   const QString output = parser.value("output");
