@@ -49,10 +49,6 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
 
 
 def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
-  # If make specifies a fuzzy matching function, use that instead
-  # if config is not None and config.match_fw_to_car_fuzzy is not None:
-  #   return config.match_fw_to_car_fuzzy(fw_versions_dict)
-
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""

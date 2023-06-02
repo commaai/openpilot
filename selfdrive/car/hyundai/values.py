@@ -354,30 +354,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   return codes
 
 
-def match_fw_to_hyundai_fuzzy(fw_versions_dict):
-  platform_codes_radar = get_platform_codes(fw_versions_dict.get((0x7d0, None), {}))
-  platform_codes_camera = get_platform_codes(fw_versions_dict.get((0x7c4, None), {}))
-  if len(platform_codes_radar) != 1 or len(platform_codes_camera) != 1:
-    return set()
-
-  platform_code_radar = list(platform_codes_radar)[0]
-  platform_codes_camera = list(platform_codes_camera)[0]
-
-  invalid = []
-  candidates = FW_VERSIONS
-  for candidate, fws in candidates.items():
-    if 'HYUNDAI GENESIS' in candidate:
-      invalid.append(candidate)
-      continue
-    candidate_platform_codes_radar = get_platform_codes(fws[(Ecu.fwdRadar, 0x7d0, None)])
-    candidate_platform_codes_camera = get_platform_codes(fws[(Ecu.fwdCamera, 0x7c4, None)])
-
-    if platform_code_radar not in candidate_platform_codes_radar or platform_codes_camera not in candidate_platform_codes_camera:
-      invalid.append(candidate)
-
-  return set(candidates.keys()) - set(invalid)
-
-
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
 
@@ -452,9 +428,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   fuzzy_get_platform_codes=get_platform_codes,
   # Hyundai works best with camera and radar (which have standardized platform codes)
   fuzzy_ecus=[Ecu.fwdRadar, Ecu.fwdCamera],
-
-  # TODO: old, remove
-  match_fw_to_car_fuzzy=match_fw_to_hyundai_fuzzy,
 )
 
 FW_VERSIONS = {
