@@ -448,6 +448,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
+  # Just one platform code match from radar or camera is enough
+  fuzzy_min_match_count=1,
+  fuzzy_get_platform_codes=get_platform_codes,
+
+  # TODO: old, remove
   match_fw_to_car_fuzzy=match_fw_to_hyundai_fuzzy,
 )
 

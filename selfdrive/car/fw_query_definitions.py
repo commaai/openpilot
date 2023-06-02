@@ -77,7 +77,7 @@ class FwQueryConfig:
 
   # Brand-specific fuzzy fingerprinting options:
   # The minimum number of version matches to fuzzy fingerprint
-  fuzzy_min_match_count: Optional[int] = None
+  fuzzy_min_match_count: int = 2
   # A function to get uniquely identifiable codes for a version
   # TODO: take list of versions and return set of platform codes
   fuzzy_get_platform_codes: Optional[Callable] = None
