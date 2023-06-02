@@ -82,7 +82,6 @@ class FwQueryConfig:
   fuzzy_get_platform_codes: Optional[Callable[[List[bytes]], Set[bytes]]] = None
   # List of ECUs to consider for fuzzy fingerprinting, and an option to require them to exist
   fuzzy_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=set)
-  fuzzy_ecus_must_exist: bool = False
 
   def __post_init__(self):
     for i in range(len(self.requests)):

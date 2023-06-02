@@ -62,7 +62,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(set)
   all_platform_codes = defaultdict(set)
-  seen_ecus = defaultdict(bool)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if MODEL_TO_BRAND[candidate] != 'hyundai':
       continue
@@ -88,7 +87,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   print(all_platform_codes)
   match_count = 0
   candidate = None
-  seen_addrs = set()
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
