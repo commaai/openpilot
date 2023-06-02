@@ -91,8 +91,10 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   )");
 
   QObject::connect(stack, &QStackedLayout::currentChanged, [=]() {
-    // shrink to current widget size + 32px to prevent text clipping
-    resize(750, stack->currentWidget()->sizeHint().height() + 32);
+    if (stack->currentWidget() == uploading) {
+      // shrink to height + 32px to prevent text clipping
+      resize(750, uploading->sizeHint().height() + 32);
+    }
   });
   QObject::connect(uiState(), &UIState::uiUpdate, this, &WiFiPromptWidget::updateState);
 }
