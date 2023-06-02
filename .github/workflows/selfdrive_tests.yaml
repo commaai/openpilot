@@ -28,6 +28,10 @@ env:
 
   UNIT_TEST: coverage run --append -m unittest discover
 
+  INITIAL_REF: ${{ github.ref }}
+  INITIAL_HEAD_REF: ${{ github.head_ref }}
+  INITIAL_BRANCH: ${{ github.head_ref }}
+
 jobs:
   build_release:
     name: build release
@@ -39,3 +43,4 @@ jobs:
       run: |
         sleep 60
         echo "group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}"
+        echo "initial branch: $INITIAL_BRANCH, initial ref: $INITIAL_REF, initial head ref: $INITIAL_HEAD_REF"
