@@ -22,6 +22,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
   REPLAY_FLAG_FULL_SPEED = 0x0200,
   REPLAY_FLAG_NO_VIPC = 0x0400,
+  REPLAY_FLAG_ALL_SERVICES = 0x0800,
 };
 
 enum class FindFlag {
@@ -40,7 +41,7 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
+  Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm = nullptr,
           uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
