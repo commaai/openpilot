@@ -11,6 +11,7 @@ from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
+from selfdrive.car.hyundai.values import get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -48,8 +49,8 @@ def get_brand_addrs():
 
 def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   # If make specifies a fuzzy matching function, use that instead
-  if config is not None and config.match_fw_to_car_fuzzy is not None:
-    return config.match_fw_to_car_fuzzy(fw_versions_dict)
+  # if config is not None and config.match_fw_to_car_fuzzy is not None:
+  #   return config.match_fw_to_car_fuzzy(fw_versions_dict)
 
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
@@ -59,35 +60,62 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
   # impossible to get 3 matching versions, even if two models with shared parts are released at the same
   # time and only one is in our database.
-  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
+  # exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(list)
+  all_fw_versions = defaultdict(set)
+  all_fw_versions_prefixes = defaultdict(set)
   for candidate, fw_by_addr in FW_VERSIONS.items():
+    if MODEL_TO_BRAND[candidate] != 'hyundai':
+      continue
     if candidate == exclude:
       continue
 
     for addr, fws in fw_by_addr.items():
-      if addr[0] in exclude_types:
+      # if addr[0] in exclude_types:
+      #   continue
+      # hyundai works best with camera and radar (which have mostly standardized platform codes)
+      if addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar]:
         continue
       for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+        all_fw_versions[(addr[1], addr[2], f)].add(candidate)
 
+        platform_codes = get_platform_codes([f])
+        assert len(platform_codes) < 2
+        if len(platform_codes):
+          print(platform_codes, f)
+          platform_code = list(platform_codes)[0]
+          all_fw_versions_prefixes[(addr[1], addr[2], platform_code)].add(candidate)
+
+  print(all_fw_versions_prefixes)
   match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
+      print(addr)
+      print('first candidates', candidates)
+
+      if len(candidates) != 1:
+        platform_codes = get_platform_codes([version])
+        assert len(platform_codes) < 2
+        if len(platform_codes):
+          print(platform_codes, version)
+          platform_code = list(platform_codes)[0]
+        candidates = all_fw_versions_prefixes[(addr[0], addr[1], platform_code)]
+        print('second candidates', candidates)
+      print()
 
       if len(candidates) == 1:
         match_count += 1
         if candidate is None:
-          candidate = candidates[0]
+          candidate = list(candidates)[0]
         # We uniquely matched two different cars. No fuzzy match possible
-        elif candidate != candidates[0]:
+        elif candidate != list(candidates)[0]:
           return set()
 
+  print('match_count', match_count)
   if match_count >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
@@ -142,6 +170,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
     for brand in VERSIONS.keys():
+      if brand != 'hyundai':
+        continue
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       config = FW_QUERY_CONFIGS[brand]
       matches |= match_func(fw_versions_dict, config)
