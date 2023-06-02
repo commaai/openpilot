@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 from cereal import car
 from panda.python import uds
@@ -343,7 +343,7 @@ FINGERPRINTS = {
 }
 
 
-def get_platform_codes(fw_versions: List[bytes]):
+def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   codes = set()
   platform_code_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
   for fw in fw_versions:
@@ -351,7 +351,7 @@ def get_platform_codes(fw_versions: List[bytes]):
       continue
     start_idx = fw.index(platform_code_prefix) + len(platform_code_prefix)
     code = fw[start_idx:start_idx + 4]  # Hyundai platform code is max 4 bytes
-    codes.add(code.replace(b" ", b"").replace(b"_", b""))
+    codes.add(code.replace(b' ', b'').replace(b'_', b''))
   return codes
 
 
@@ -503,14 +503,13 @@ FW_VERSIONS = {
       b'\xf1\x00AEhe SCC FHCUP      1.00 1.00 99110-G2600         ',
     ],
     (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2510 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G2560 4APHC101',
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310G2510\x00 4APHC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.01 95740-G2600 190819',
       b'\xf1\x00AEP MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
-      b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
+      # b'\xf1\x00AEP MFC  AT USA LHD 1.00 1.00 95740-G2700 201027',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -522,7 +521,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J8051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J8051\x00\x00PAETG16UL0\x00\x00\x00\x00',
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\x00\x00\x00\x00',
       b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL0\x00\x00\x00\x00',
-      b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\xad\xeb\xabt',
+      # b'\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\xad\xeb\xabt',
     ],
   },
   CAR.IONIQ_EV_2020: {
@@ -1563,29 +1562,29 @@ FW_VERSIONS = {
       b'\xf1\000CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.07 99210-AA000 220426',
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.08 99210-AA000 220728',
-      b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.09 99210-AA000 221108',
+      # b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.09 99210-AA000 221108',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
-      b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
+      # b'\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
+      b'\xf1\x8799110fdsBY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CN7 MDPS C 1.00 1.03 56310BY0500 4CNHC103',
       b'\xf1\x8756310/BY050\xf1\x00CN7 MDPS C 1.00 1.03 56310/BY050 4CNHC103',
       b'\xf1\x8756310/BY050\xf1\000CN7 MDPS C 1.00 1.02 56310/BY050 4CNHC102',
-      b'\xf1\x00CN7 MDPS C 1.00 1.04 56310BY050\x00 4CNHC104',
+      # b'\xf1\x00CN7 MDPS C 1.00 1.04 56310BY050\x00 4CNHC104',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\xb9?A\xaa',
       b'\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\000\000\000\000',
       b'\xf1\x816U3K3051\000\000\xf1\0006U3L0_C2\000\0006U3K3051\000\000HCN0G16NS0\xb9?A\xaa',
       b'\xf1\x816U3K3051\x00\x00\xf1\x006U3L0_C2\x00\x006U3K3051\x00\x00HCN0G16NS0\x00\x00\x00\x00',
-      b'\xf1\x006U3L0_C2\x00\x006U3K9051\x00\x00HCN0G16NS1\x00\x00\x00\x00',
+      # b'\xf1\x006U3L0_C2\x00\x006U3K9051\x00\x00HCN0G16NS1\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x816H6G5051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x816H6G6051\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x816H6G8051\x00\x00\x00\x00\x00\x00\x00\x00',
+      # b'\xf1\x816H6G8051\x00\x00\x00\x00\x00\x00\x00\x00',
     ]
   },
   CAR.KONA_HEV: {
@@ -1680,13 +1679,13 @@ FW_VERSIONS = {
   },
   CAR.IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+      b'\xf1\x00NE1_ RDR -----  fsfdsfsfs    1.00 1.00 99110-GI000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI000 210813',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.05 99211-GI010 220614',
-      b'\xf1\x00NE1 MFC  AT KOR LHD 1.00 1.05 99211-GI010 220614',
+      # b'\xf1\x00NE1 MFC  AT KOR LHD 1.00 1.05 99211-GI010 220614',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.02 99211-GI010 211206',
