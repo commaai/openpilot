@@ -30,7 +30,6 @@ env:
 
   INITIAL_REF: ${{ github.ref }}
   INITIAL_HEAD_REF: ${{ github.head_ref }}
-  INITIAL_BRANCH: ${{ github.head_ref }}
 
 jobs:
   build_release:
@@ -41,6 +40,6 @@ jobs:
     steps:
     - name: Build openpilot and run checks
       run: |
-        sleep 60
+        sleep 30
         echo "group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}"
-        echo "initial branch: $INITIAL_BRANCH, initial ref: $INITIAL_REF, initial head ref: $INITIAL_HEAD_REF"
+        echo "initial ref: ${{ env.INITIAL_REF }}, initial head ref: ${{ env.INITIAL_HEAD_REF }}"
