@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Set, Union
@@ -342,16 +343,16 @@ FINGERPRINTS = {
   }],
 }
 
+# TODO: use HYUNDAI_VERSION_REQUEST_LONG[1:]?
+PLATFORM_CODE_REGEX = b'(?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2}'
+
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   codes = set()
-  platform_code_prefix = HYUNDAI_VERSION_REQUEST_LONG[1:]
   for fw in fw_versions:
-    if platform_code_prefix not in fw:
-      continue
-    start_idx = fw.index(platform_code_prefix) + len(platform_code_prefix)
-    code = fw[start_idx:start_idx + 4]  # Hyundai platform code is max 4 bytes
-    codes.add(code.replace(b' ', b'').replace(b'_', b''))
+    matches = re.findall(PLATFORM_CODE_REGEX, fw)
+    if len(matches):
+      codes.add(matches[0])
   return codes
 
 
