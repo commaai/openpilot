@@ -1,10 +1,5 @@
 #pragma once
 
-// gate this here
-#define TEMPORAL
-#define DESIRE
-#define TRAFFIC_CONVENTION
-
 #include <array>
 #include <memory>
 
@@ -16,6 +11,12 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/models/nav.h"
 #include "selfdrive/modeld/runners/run.h"
+
+// gate this here
+#define TEMPORAL
+#define DESIRE
+#define TRAFFIC_CONVENTION
+#define NAV
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;

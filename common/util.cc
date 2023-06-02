@@ -189,7 +189,7 @@ bool create_directories(const std::string& dir, mode_t mode) {
   return createDirectory(dir, mode);
 }
 
-std::string getenv(const char* key, const char* default_val) {
+std::string getenv(const char* key, std::string default_val) {
   const char* val = ::getenv(key);
   return val ? val : default_val;
 }

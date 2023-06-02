@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <QList>
 #include <QMetaType>
 #include <QString>
@@ -41,7 +42,7 @@ struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
 };
 
-typedef QList<std::pair<QString, QString>> ValueDescription;
+typedef QList<std::pair<double, QString>> ValueDescription;
 
 namespace cabana {
   struct Signal {
@@ -50,7 +51,8 @@ namespace cabana {
     bool is_signed;
     double factor, offset;
     bool is_little_endian;
-    QString min, max, unit;
+    double min, max;
+    QString unit;
     QString comment;
     ValueDescription val_desc;
     int precision = 0;
@@ -62,6 +64,7 @@ namespace cabana {
     uint32_t address;
     QString name;
     uint32_t size;
+    QString comment;
     QList<cabana::Signal> sigs;
 
     QList<uint8_t> mask;
@@ -85,3 +88,5 @@ int bigEndianBitIndex(int index);
 void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
 inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
+inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }
+

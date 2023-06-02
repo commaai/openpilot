@@ -4,11 +4,12 @@
 
 // EditMsgCommand
 
-EditMsgCommand::EditMsgCommand(const MessageId &id, const QString &name, int size, QUndoCommand *parent)
-    : id(id), new_name(name), new_size(size), QUndoCommand(parent) {
+EditMsgCommand::EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &comment, QUndoCommand *parent)
+    : id(id), new_name(name), new_size(size), new_comment(comment), QUndoCommand(parent) {
   if (auto msg = dbc()->msg(id)) {
     old_name = msg->name;
     old_size = msg->size;
+    old_comment = msg->comment;
     setText(QObject::tr("edit message %1:%2").arg(name).arg(id.address));
   } else {
     setText(QObject::tr("new message %1:%2").arg(name).arg(id.address));
@@ -19,11 +20,11 @@ void EditMsgCommand::undo() {
   if (old_name.isEmpty())
     dbc()->removeMsg(id);
   else
-    dbc()->updateMsg(id, old_name, old_size);
+    dbc()->updateMsg(id, old_name, old_size, old_comment);
 }
 
 void EditMsgCommand::redo() {
-  dbc()->updateMsg(id, new_name, new_size);
+  dbc()->updateMsg(id, new_name, new_size, new_comment);
 }
 
 // RemoveMsgCommand
@@ -37,7 +38,7 @@ RemoveMsgCommand::RemoveMsgCommand(const MessageId &id, QUndoCommand *parent) : 
 
 void RemoveMsgCommand::undo() {
   if (!message.name.isEmpty()) {
-    dbc()->updateMsg(id, message.name, message.size);
+    dbc()->updateMsg(id, message.name, message.size, message.comment);
     for (auto s : message.getSignals())
       dbc()->addSignal(id, *s);
   }

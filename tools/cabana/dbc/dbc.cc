@@ -40,7 +40,7 @@ void cabana::Signal::updatePrecision() {
 QString cabana::Signal::formatValue(double value) const {
   // Show enum string
   for (auto &[val, desc] : val_desc) {
-    if (std::abs(value - val.toInt()) < 1e-6) {
+    if (std::abs(value - val) < 1e-6) {
       return desc;
     }
   }

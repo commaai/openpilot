@@ -70,7 +70,7 @@ std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-std::string getenv(const char* key, const char* default_val = "");
+std::string getenv(const char* key, std::string default_val = "");
 int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
