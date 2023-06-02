@@ -2,7 +2,6 @@
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
-
 import capnp
 
 import panda.python.uds as uds
@@ -29,7 +28,7 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def build_fw_dict(fw_versions: List["capnp.lib.capnp._DynamicStructBuilder"],
+def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
