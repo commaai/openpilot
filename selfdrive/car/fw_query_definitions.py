@@ -80,12 +80,8 @@ class FwQueryConfig:
   fuzzy_min_match_count: int = 2
   # A function to get uniquely identifiable codes for a version
   # TODO: take list of versions and return set of platform codes
-  fuzzy_get_platform_codes: Optional[Callable] = None
+  fuzzy_get_platform_codes: Optional[Callable[[List[bytes]], Set[bytes]]] = None
   fuzzy_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=set)
-
-  # TODO: below func is to be replaced by above two
-  # A function that each make can provide to fuzzy fingerprint reliably on that make
-  match_fw_to_car_fuzzy: Optional[Callable[[Dict[Tuple[int, Optional[int]], List[bytes]]], Set[str]]] = None
 
   def __post_init__(self):
     for i in range(len(self.requests)):
