@@ -148,8 +148,9 @@ class IsoTpParallelQuery:
               cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
             elif tx_addr in addrs_responded:
               cloudlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
-            else:
-              cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
+            # TODO: handle functional addresses
+            # else:
+            #   cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
           request_done[tx_addr] = True
 
       # Break if all requests are done (finished or timed out)
