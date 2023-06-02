@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Dict, List, Set, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
