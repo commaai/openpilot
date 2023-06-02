@@ -103,8 +103,10 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         if len(platform_codes):
           print(platform_codes, version)
           platform_code = list(platform_codes)[0]
-        candidates = all_fw_versions_prefixes[(addr[0], addr[1], platform_code)]
-        print('second candidates', candidates)
+          key = (addr[0], addr[1], platform_code)
+          print('key', key)
+          candidates = all_fw_versions_prefixes[key]
+          print('second candidates', candidates)
       print()
 
       if len(candidates) == 1:
@@ -116,7 +118,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
           return set()
 
   print('match_count', match_count)
-  if match_count >= 2:
+  if match_count >= 1:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
     return {candidate}

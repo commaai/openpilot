@@ -356,7 +356,6 @@ def get_platform_codes(fw_versions: List[bytes]):
 
 
 def match_fw_to_hyundai_fuzzy(fw_versions_dict):
-  print('HERERERERER')
   platform_codes_radar = get_platform_codes(fw_versions_dict.get((0x7d0, None), {}))
   platform_codes_camera = get_platform_codes(fw_versions_dict.get((0x7c4, None), {}))
   if len(platform_codes_radar) != 1 or len(platform_codes_camera) != 1:
@@ -1381,7 +1380,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
-      b'\xf1\x00SG2EMFC  AT USA LHD 1.01 1.09 99211-AT000 220801',
     ],
   },
   CAR.KIA_NIRO_PHEV: {
@@ -1677,7 +1675,6 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT EUR RHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV100 220630',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.04 99210-CV000 210823',
-      b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
