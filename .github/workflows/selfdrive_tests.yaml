@@ -7,7 +7,7 @@ on:
   pull_request:
 
 concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  group: ${{ github.event_name == 'push' && env.INITIAL_REF == 'refs/heads/master' && github.run_id || INITIAL_HEAD_REF || env.INITIAL_REF }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
