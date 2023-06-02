@@ -12,7 +12,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   QFrame *setup = new QFrame;
   QVBoxLayout *setup_layout = new QVBoxLayout(setup);
   setup_layout->setContentsMargins(56, 40, 56, 40);
-  setup_layout->setSpacing(22);
+  setup_layout->setSpacing(20);
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     title_layout->setSpacing(32);
