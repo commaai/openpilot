@@ -7,7 +7,8 @@ from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarParts, CarHarness, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
+                                           Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -170,6 +171,9 @@ class VWCarInfo(CarInfo):
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)
+
+    if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
+      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.j533])
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
