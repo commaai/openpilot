@@ -11,8 +11,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   // Setup Wi-Fi
   QFrame *setup = new QFrame;
   QVBoxLayout *setup_layout = new QVBoxLayout(setup);
-  setup_layout->setContentsMargins(56, 48, 56, 48);
-  setup_layout->setSpacing(16);
+  setup_layout->setContentsMargins(56, 40, 56, 40);
+  setup_layout->setSpacing(22);
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     title_layout->setSpacing(32);
@@ -53,25 +53,33 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   stack->addWidget(setup);
 
   // Uploading data
-  QFrame *uploading = new QFrame;
+  QWidget *uploading = new QWidget;
   QVBoxLayout *uploading_layout = new QVBoxLayout(uploading);
-  uploading_layout->setContentsMargins(40, 40, 40, 40);
+  uploading_layout->setContentsMargins(56, 56, 56, 56);
+  uploading_layout->setSpacing(30);
   {
-    QLabel *icon = new QLabel;
-    QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
-    icon->setPixmap(pixmap->scaledToWidth(100, Qt::SmoothTransformation));
-    uploading_layout->addWidget(icon, 0, Qt::AlignHCenter);
+    QHBoxLayout *title_layout = new QHBoxLayout;
+    {
+      QLabel *title = new QLabel(tr("Uploading training data"));
+      title->setStyleSheet("font-size: 64px; font-weight: 600;");
+      title->setWordWrap(true);
+      title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+      title_layout->addWidget(title);
+      title_layout->addStretch();
 
-    QLabel *title = new QLabel(tr("Uploading your training data"));
-    title->setAlignment(Qt::AlignHCenter);
-    title->setStyleSheet("font-size: 64px; font-weight: 600;");
-    title->setWordWrap(true);
-    uploading_layout->addWidget(title, 0, Qt::AlignHCenter);
+      QLabel *icon = new QLabel;
+      QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
+      icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
+      title_layout->addWidget(icon);
 
-    QLabel *desc = new QLabel(tr("Your driving data helps improve openpilot"));
-    desc->setStyleSheet("font-size: 34px; font-weight: 400;");
-    desc->setWordWrap(false);
-    uploading_layout->addWidget(desc, 0, Qt::AlignHCenter);
+      title_layout->addStretch();
+    }
+    uploading_layout->addLayout(title_layout);
+
+    QLabel *desc = new QLabel(tr("Your data is used to train driving models and improve openpilot"));
+    desc->setStyleSheet("font-size: 40px; font-weight: 400;");
+    desc->setWordWrap(true);
+    uploading_layout->addWidget(desc);
   }
   stack->addWidget(uploading);
 
@@ -83,7 +91,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   )");
 
   QObject::connect(stack, &QStackedLayout::currentChanged, [=]() {
-    resize(750, stack->currentWidget()->sizeHint().height());
+    // shrink to current widget size + 32px to prevent text clipping
+    resize(750, stack->currentWidget()->sizeHint().height() + 32);
   });
   QObject::connect(uiState(), &UIState::uiUpdate, this, &WiFiPromptWidget::updateState);
 }

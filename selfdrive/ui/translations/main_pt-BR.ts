@@ -1086,11 +1086,11 @@ Isso pode levar até um minuto.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Uploading your training data</source>
+        <source>Uploading training data</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your driving data helps improve openpilot</source>
+        <source>Your data is used to train driving models and improve openpilot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
