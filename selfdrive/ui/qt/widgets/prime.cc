@@ -124,22 +124,18 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
   QWidget *primeWidget = new QWidget;
   primeWidget->setObjectName("primeWidget");
   QVBoxLayout *primeLayout = new QVBoxLayout(primeWidget);
-  primeLayout->setContentsMargins(60, 50, 60, 50);
+  primeLayout->setContentsMargins(56, 40, 56, 40);
+  primeLayout->setSpacing(20);
 
   QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
-  primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
+  primeLayout->addWidget(subscribed);
 
   QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
-  primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
-
-  QLabel *connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
-  connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
-  primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
+  primeLayout->addWidget(commaPrime);
 
   mainLayout->addWidget(primeWidget);
-
   mainLayout->addStretch();
 }
 

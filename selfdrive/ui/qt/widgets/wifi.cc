@@ -11,8 +11,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   // Setup Wi-Fi
   QFrame *setup = new QFrame;
   QVBoxLayout *setup_layout = new QVBoxLayout(setup);
-  setup_layout->setContentsMargins(64, 48, 64, 48);
-  setup_layout->setSpacing(0);
+  setup_layout->setContentsMargins(56, 48, 56, 48);
+  setup_layout->setSpacing(16);
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     title_layout->setSpacing(32);
@@ -29,14 +29,10 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     }
     setup_layout->addLayout(title_layout);
 
-    setup_layout->addSpacing(8);
-
     QLabel *desc = new QLabel(tr("Connect to Wi-Fi to upload driving data and help improve openpilot"));
-    desc->setStyleSheet("font-size: 36px; font-weight: 400;");
+    desc->setStyleSheet("font-size: 40px; font-weight: 400;");
     desc->setWordWrap(true);
     setup_layout->addWidget(desc);
-
-    setup_layout->addSpacing(16);
 
     QPushButton *settings_btn = new QPushButton(tr("Open Settings"));
     connect(settings_btn, &QPushButton::clicked, [=]() { emit openSettings(1); });
@@ -52,9 +48,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
         background-color: #3049F4;
       }
     )");
-    setup_layout->addWidget(settings_btn, 0);
-
-    setup_layout->addStretch();
+    setup_layout->addWidget(settings_btn);
   }
   stack->addWidget(setup);
 
