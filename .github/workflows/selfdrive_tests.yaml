@@ -40,6 +40,7 @@ jobs:
     steps:
     - name: Build openpilot and run checks
       run: |
+        ${{ env.INITIAL_REF }}
         sleep 30
         echo "group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}"
         echo "initial ref: ${{ env.INITIAL_REF }}, initial head ref: ${{ env.INITIAL_HEAD_REF }}"
