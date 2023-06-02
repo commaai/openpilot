@@ -3,6 +3,8 @@ from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 
+import capnp
+
 import panda.python.uds as uds
 from cereal import car
 from common.params import Params
@@ -47,9 +49,7 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict: Dict[Tuple[int, Optional[int]], Set[bytes]],
-                          log: bool = True,
-                          exclude: Optional[str] = None) -> Set[str]:
+def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
