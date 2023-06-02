@@ -11,7 +11,6 @@ from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
-from selfdrive.car.hyundai.values import get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
@@ -82,7 +81,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
 
         # Add platform codes to lookup dict if config specifies a function
         if config.fuzzy_get_platform_codes is not None:
-          platform_codes = get_platform_codes([f])
+          platform_codes = config.fuzzy_get_platform_codes([f])
           assert len(platform_codes) < 2  # TODO: remove and test?
           if len(platform_codes) == 1:
             print(platform_codes, f)
@@ -100,7 +99,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       print('first candidates', candidates)
 
       if len(candidates) != 1:
-        platform_codes = get_platform_codes([version])
+        platform_codes = config.fuzzy_get_platform_codes([version])
         assert len(platform_codes) < 2
         if len(platform_codes):
           print(platform_codes, version)
