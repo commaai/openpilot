@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Set, Optional, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
@@ -27,7 +27,8 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def build_fw_dict(fw_versions, filter_brand=None):
+def build_fw_dict(fw_versions: List["capnp.lib.capnp._DynamicStructBuilder"],
+                  filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
     if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
@@ -46,7 +47,9 @@ def get_brand_addrs():
   return brand_addrs
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
+def match_fw_to_car_fuzzy(fw_versions_dict: Dict[Tuple[int, Optional[int]], Set[bytes]],
+                          log: bool = True,
+                          exclude: Optional[str] = None) -> Set[str]:
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -92,7 +95,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
+def match_fw_to_car_exact(fw_versions_dict: Dict[Tuple[int, Optional[int]], Set[bytes]]) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
