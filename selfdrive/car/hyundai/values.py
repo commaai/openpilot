@@ -542,8 +542,6 @@ FW_VERSIONS = {
   },
   CAR.SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     ',
-      b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.02 99110-L1000         ',
