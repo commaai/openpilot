@@ -6,10 +6,6 @@ on:
       - 'testing-closet*'
   pull_request:
 
-concurrency:
-  group: ${{ github.event_name == 'push' && env.INITIAL_REF == 'refs/heads/master' && github.run_id || INITIAL_HEAD_REF || env.INITIAL_REF }}-${{ github.workflow }}-${{ github.event_name }}
-  cancel-in-progress: true
-
 env:
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
@@ -33,6 +29,9 @@ env:
 
 jobs:
   build_release:
+    concurrency:
+      group: ${{ github.event_name == 'push' && env.INITIAL_REF == 'refs/heads/master' && github.run_id || INITIAL_HEAD_REF || env.INITIAL_REF }}-${{ github.workflow }}-${{ github.event_name }}
+      cancel-in-progress: true
     name: build release
     runs-on: ubuntu-20.04
     env:
