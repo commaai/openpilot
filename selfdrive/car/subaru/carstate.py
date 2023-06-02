@@ -257,7 +257,6 @@ class CarState(CarStateBase):
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
-        ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Cruise_State_Msg", "ES_DashStatus"),
         ("LKAS_State_Msg", "ES_DashStatus"),
         ("Signal2", "ES_DashStatus"),
@@ -271,6 +270,7 @@ class CarState(CarStateBase):
         ("Cruise_Disengaged", "ES_DashStatus"),
         ("Cruise_Activated", "ES_DashStatus"),
         ("Signal6", "ES_DashStatus"),
+        ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Cruise_Fault", "ES_DashStatus"),
         ("Cruise_On", "ES_DashStatus"),
         ("Display_Own_Car", "ES_DashStatus"),
@@ -279,6 +279,7 @@ class CarState(CarStateBase):
         ("Signal7", "ES_DashStatus"),
         ("Far_Distance", "ES_DashStatus"),
         ("Cruise_State", "ES_DashStatus"),
+        
         ("COUNTER", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
