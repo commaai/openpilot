@@ -82,6 +82,9 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     }
   )");
 
+  QObject::connect(stack, &QStackedLayout::currentChanged, [=]() {
+    resize(750, stack->currentWidget()->sizeHint().height());
+  });
   QObject::connect(uiState(), &UIState::uiUpdate, this, &WiFiPromptWidget::updateState);
 }
 
