@@ -7,7 +7,8 @@ from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, CarPart, CarParts, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
+                                           Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -166,13 +167,13 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = CarParts([CarPart.j533, CarPart.harness_box, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.mount, CarPart.right_angle_obd_c_cable_1_5ft])
+  car_parts: CarParts = CarParts.common([CarHarness.j533])
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.insert(0, Footnote.VW_EXP_LONG)
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
-      self.car_parts: CarParts = CarParts([CarPart.j533, CarPart.harness_box, CarPart.long_obdc_cable, CarPart.usbc_coupler, CarPart.angled_mount, CarPart.right_angle_obd_c_cable_1_5ft])
+      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.j533])
 
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
@@ -636,6 +637,7 @@ FW_VERSIONS = {
       b'\xf1\x870DD300045T \xf1\x891601',
       b'\xf1\x870DL300011H \xf1\x895201',
       b'\xf1\x870CW300042H \xf1\x891601',
+      b'\xf1\x870CW300042H \xf1\x891607',
       b'\xf1\x870GC300042H \xf1\x891404',
       b'\xf1\x870D9300018C \xf1\x895297',
       b'\xf1\x870GC300043  \xf1\x892301',
@@ -643,6 +645,7 @@ FW_VERSIONS = {
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AE\xf1\x890195\xf1\x82\r56140056130012416612124111',
       b'\xf1\x873Q0959655AF\xf1\x890195\xf1\x82\r56140056130012026612120211',
+      b'\xf1\x873Q0959655AN\xf1\x890305\xf1\x82\r58160058140013036914110311',
       b'\xf1\x873Q0959655AN\xf1\x890306\xf1\x82\r58160058140013036914110311',
       b'\xf1\x873Q0959655BA\xf1\x890195\xf1\x82\r56140056130012516612125111',
       b'\xf1\x873Q0959655BB\xf1\x890195\xf1\x82\r56140056130012026612120211',
@@ -659,6 +662,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909143K \xf1\x892033\xf1\x820514B0060703',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0060803',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522B0080803',
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526B0060905',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521B00606A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\00516B00501A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521B00703A1',
@@ -671,6 +675,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x873Q0907572C \xf1\x890196',
+      b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },

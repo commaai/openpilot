@@ -64,6 +64,7 @@ qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('test'):
   qt_src.remove("main.cc")  # replaced by test_runner
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
+  qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
 
 
 # build translation files

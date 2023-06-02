@@ -148,7 +148,6 @@ class CarState(CarStateBase):
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
-    self.brake_error = False
     self.brake_switch_prev = False
     self.brake_switch_active = False
     self.cruise_setting = 0
@@ -195,9 +194,17 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = steer_status not in ("NORMAL", "LOW_SPEED_LOCKOUT", "NO_TORQUE_ALERT_2")
 
     if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      self.brake_error = cp.vl["CRUISE_FAULT_STATUS"]["CRUISE_FAULT"]
-    elif self.CP.openpilotLongitudinalControl:
-      self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
+      ret.accFaulted = bool(cp.vl["CRUISE_FAULT_STATUS"]["CRUISE_FAULT"])
+    else:
+      # On some cars, these two signals are always 1, this flag is masking a bug in release
+      # FIXME: find and set the ACC faulted signals on more platforms
+      if self.CP.openpilotLongitudinalControl:
+        ret.accFaulted = bool(cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"])
+
+      # Log non-critical stock ACC/LKAS faults if Nidec (camera)
+      if self.CP.carFingerprint not in HONDA_BOSCH:
+        ret.carFaultedNonCritical = bool(cp_cam.vl["ACC_HUD"]["ACC_PROBLEM"] or cp_cam.vl["LKAS_HUD"]["LKAS_PROBLEM"])
+
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -332,12 +339,15 @@ class CarState(CarStateBase):
                   ("AEB_REQ_1", "BRAKE_COMMAND"),
                   ("FCW", "BRAKE_COMMAND"),
                   ("CHIME", "BRAKE_COMMAND"),
+                  ("LKAS_PROBLEM", "LKAS_HUD"),
                   ("FCM_OFF", "ACC_HUD"),
                   ("FCM_OFF_2", "ACC_HUD"),
                   ("FCM_PROBLEM", "ACC_HUD"),
+                  ("ACC_PROBLEM", "ACC_HUD"),
                   ("ICONS", "ACC_HUD")]
       checks += [
         ("ACC_HUD", 10),
+        ("LKAS_HUD", 10),
         ("BRAKE_COMMAND", 50),
       ]
 

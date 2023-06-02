@@ -46,6 +46,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   restoreHeaderState(settings.message_header_state);
   view->header()->setSectionsMovable(true);
   view->header()->setSectionResizeMode(MessageListModel::Column::DATA, QHeaderView::Fixed);
+  view->header()->setStretchLastSection(true);
 
   // Header context menu
   view->header()->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -253,9 +254,13 @@ static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
   unsigned int min = std::numeric_limits<unsigned int>::min();
   unsigned int max = std::numeric_limits<unsigned int>::max();
   auto s = filter.split('-');
-  bool ok = s.size() <= 2;
+  bool ok = s.size() >= 1 && s.size() <= 2;
   if (ok && !s[0].isEmpty()) min = s[0].toUInt(&ok, base);
-  if (ok && s.size() == 2 && !s[1].isEmpty()) max = s[1].toUInt(&ok, base);
+  if (ok && s.size() == 1) {
+    max = min;
+  } else if (ok && s.size() == 2 && !s[1].isEmpty()) {
+    max = s[1].toUInt(&ok, base);
+  }
   return ok && value >= min && value <= max;
 }
 
@@ -404,8 +409,8 @@ void MessageView::updateBytesSectionSize() {
     }
   }
   int width = delegate->widthForBytes(max_bytes);
-  if (header()->sectionSize(5) != width) {
-    header()->resizeSection(5, width);
+  if (header()->sectionSize(MessageListModel::Column::DATA) != width) {
+    header()->resizeSection(MessageListModel::Column::DATA, width);
   }
 }
 
