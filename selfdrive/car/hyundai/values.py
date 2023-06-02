@@ -428,6 +428,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   fuzzy_get_platform_codes=get_platform_codes,
   # Hyundai works best with camera and radar (which have standardized platform codes)
   fuzzy_ecus=[Ecu.fwdRadar, Ecu.fwdCamera],
+  fuzzy_ecus_must_exist=True,
 )
 
 FW_VERSIONS = {
