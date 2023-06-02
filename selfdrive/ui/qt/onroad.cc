@@ -68,8 +68,6 @@ void OnroadWindow::updateState(const UIState &s) {
     split->setDirection(QBoxLayout::RightToLeft);
   }
 
-  nvg->updateState(s);
-
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
@@ -220,6 +218,30 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
 }
 
+// UIPlanSocket
+
+UIPlanSocket::UIPlanSocket() : msg_ctx(Context::create()), QObject(nullptr) {
+  socket.reset(SubSocket::create(msg_ctx.get(), "uiPlan"));
+  socket->setTimeout(100);
+}
+
+void UIPlanSocket::receive() {
+  while (!QThread::currentThread()->isInterruptionRequested()) {
+    if (Message *m = socket->receive()) {
+      emit received(m);
+      break;
+    }
+  }
+}
+
+cereal::UiPlan::Reader UIPlanSocket::uiPlan(Message *m) {
+  msg.reset(m);
+  reader.reset(new capnp::FlatArrayMessageReader(kj::ArrayPtr<capnp::word>((capnp::word *)m->getData(), m->getSize() / sizeof(capnp::word))));
+  return reader->getRoot<cereal::Event>().getUiPlan();
+}
+
+// Window that shows camera view and variety of
+// info drawn on top
 
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
@@ -232,11 +254,30 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+
+  ui_plan_socket = new UIPlanSocket;
+  ui_plan_socket->moveToThread(&socket_thread);
+  connect(&socket_thread, &QThread::finished, ui_plan_socket, &QObject::deleteLater);
+  QObject::connect(ui_plan_socket, &UIPlanSocket::received, this, &AnnotatedCameraWidget::uiPlanUpdated);
+  QObject::connect(this, &QOpenGLWidget::frameSwapped, ui_plan_socket, &UIPlanSocket::receive);
+  socket_thread.start();
 }
 
-void AnnotatedCameraWidget::updateState(const UIState &s) {
+AnnotatedCameraWidget::~AnnotatedCameraWidget() {
+  socket_thread.requestInterruption();
+  socket_thread.quit();
+  socket_thread.wait();
+}
+
+void AnnotatedCameraWidget::vipcFrameReceived() {
+  /* do nothing */
+}
+
+void AnnotatedCameraWidget::uiPlanUpdated(Message *m) {
+  const UIState &s = *uiState();
   const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
+  ui_plan = ui_plan_socket->uiPlan(m);
 
   const bool cs_alive = sm.alive("controlsState");
   const bool nav_alive = sm.alive("navInstruction") && sm["navInstruction"].getValid();
@@ -287,6 +328,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("rightHandDM", dm_state.getIsRHD());
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
+
+  // schedules a paint event
+  update();
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -439,10 +483,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.restore();
 }
 
-
-// Window that shows camera view and variety of
-// info drawn on top
-
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
@@ -514,7 +554,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     // The first half of track_vertices are the points for the right side of the path
     // and the indices match the positions of accel from uiPlan
-    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    const auto &acceleration = ui_plan.getAccel();
     const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
     for (int i = 0; i < max_len; ++i) {
@@ -672,7 +712,7 @@ void AnnotatedCameraWidget::paintGL() {
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    CameraWidget::setFrameId(model.getFrameId());
+    CameraWidget::setFrameId(ui_plan.getFrameId());
     CameraWidget::paintGL();
   }
 
@@ -682,9 +722,9 @@ void AnnotatedCameraWidget::paintGL() {
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_model(s, sm["modelV2"].getModelV2(), sm["uiPlan"].getUiPlan());
+      update_model(s, model, ui_plan);
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
-        update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
+        update_leads(s, radar_state, model.getPosition());
       }
     }
 

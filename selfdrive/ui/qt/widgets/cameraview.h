@@ -30,7 +30,7 @@ class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
-  ~CameraWidget();
+  virtual ~CameraWidget();
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
@@ -92,7 +92,7 @@ protected:
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived();
+  virtual void vipcFrameReceived();
   void availableStreamsUpdated(std::set<VisionStreamType> streams);
 };
 

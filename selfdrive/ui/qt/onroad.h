@@ -44,7 +44,28 @@ private:
   QPixmap experimental_img;
 };
 
+class UIPlanSocket : public QObject {
+  Q_OBJECT
+
+public:
+  explicit UIPlanSocket();
+  cereal::UiPlan::Reader uiPlan(Message *m);
+
+public slots:
+  void receive();
+
+signals:
+  void received(Message *m);
+
+private:
+  std::unique_ptr<Context> msg_ctx;
+  std::unique_ptr<SubSocket> socket;
+  std::unique_ptr<capnp::FlatArrayMessageReader> reader;
+  std::unique_ptr<Message> msg;
+};
+
 // container window for the NVG UI
+
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
   Q_PROPERTY(float speed MEMBER speed);
@@ -63,18 +84,21 @@ class AnnotatedCameraWidget : public CameraWidget {
 
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
-  void updateState(const UIState &s);
+  ~AnnotatedCameraWidget();
+  void uiPlanUpdated(Message *m);
+
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+  void vipcFrameReceived() override;
 
   ExperimentalButton *experimental_btn;
   QPixmap dm_img;
-  float speed;
+  float speed = 0;
   QString speedUnit;
-  float setSpeed;
-  float speedLimit;
+  float setSpeed = 0;
+  float speedLimit = 0;
   bool is_cruise_set = false;
   bool is_metric = false;
   bool dmActive = false;
@@ -105,6 +129,10 @@ protected:
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
+
+  UIPlanSocket *ui_plan_socket;
+  cereal::UiPlan::Reader ui_plan;
+  QThread socket_thread;
 };
 
 // container for all onroad widgets
