@@ -79,7 +79,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         if config.fuzzy_get_platform_codes is not None:
           if addr[0] in config.fuzzy_ecus:
             platform_codes = config.fuzzy_get_platform_codes([f])
-            assert len(platform_codes) < 2  # TODO: remove and test?
             if len(platform_codes) == 1:
               print(platform_codes, f)
               platform_code = list(platform_codes)[0]
@@ -98,7 +97,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
       if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
         platform_codes = config.fuzzy_get_platform_codes([version])
-        assert len(platform_codes) < 2
         if len(platform_codes) == 1:
           print(platform_codes, version)
           platform_code = list(platform_codes)[0]
