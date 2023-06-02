@@ -74,6 +74,15 @@ class FwQueryConfig:
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
+
+  # Brand-specific fuzzy fingerprinting options:
+  # The minimum number of version matches to fuzzy fingerprint
+  fuzzy_min_match_count: Optional[int] = None
+  # A function to get uniquely identifiable codes for a version
+  # TODO: take list of versions and return set of platform codes
+  fuzzy_get_platform_codes: Optional[Callable] = None
+
+  # TODO: below func is to be replaced by above two
   # A function that each make can provide to fuzzy fingerprint reliably on that make
   match_fw_to_car_fuzzy: Optional[Callable[[Dict[Tuple[int, Optional[int]], List[bytes]]], Set[str]]] = None
 

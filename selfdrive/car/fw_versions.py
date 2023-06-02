@@ -94,7 +94,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
-      print(addr)
+      print(addr, version)
       print('first candidates', candidates)
 
       if len(candidates) != 1:
