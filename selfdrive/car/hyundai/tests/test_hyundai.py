@@ -32,6 +32,24 @@ class TestHyundaiFingerprint(unittest.TestCase):
       for essential_ecu in essential_ecus:
         self.assertIn(essential_ecu, ecus)
 
+  def test_fuzzy_platform_codes(self):
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    self.assertEqual(codes, {b"DH"})
+
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    self.assertEqual(codes, {b"AEhe"})
+
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    self.assertEqual(codes, {b"CV1"})
+
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
+      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
+    ])
+    self.assertEqual(codes, {b"DH", b"AEhe", b"CV1"})
+
+
 
 if __name__ == "__main__":
   unittest.main()
