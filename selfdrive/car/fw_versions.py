@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 
 import panda.python.uds as uds
@@ -37,14 +37,14 @@ def build_fw_dict(fw_versions: List["capnp.lib.capnp._DynamicStructBuilder"],
   return dict(fw_versions_dict)
 
 
-def get_brand_addrs():
-  brand_addrs = defaultdict(set)
+def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
+  brand_addrs: DefaultDict[str, Set[Tuple[int, Optional[int]]]] = defaultdict(set)
   for brand, cars in VERSIONS.items():
     # Add ecus in database + extra ecus to match against
     brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
     for fw in cars.values():
       brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in fw.keys()}
-  return brand_addrs
+  return dict(brand_addrs)
 
 
 def match_fw_to_car_fuzzy(fw_versions_dict: Dict[Tuple[int, Optional[int]], Set[bytes]],
