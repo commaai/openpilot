@@ -228,6 +228,7 @@ class CarState(CarStateBase):
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus"),
         ("Not_Ready_Startup", "ES_DashStatus"),
+
         ("Cruise_Throttle", "ES_Distance"),
         ("Signal1", "ES_Distance"),
         ("Car_Follow", "ES_Distance"),
