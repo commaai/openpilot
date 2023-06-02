@@ -71,9 +71,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       continue
 
     for addr, fws in fw_by_addr.items():
-      # if addr[0] in exclude_types:
-      #   continue
-      # hyundai works best with camera and radar (which have mostly standardized platform codes)
       if addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar]:
         continue
       for f in fws:
@@ -100,10 +97,11 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       print(addr, version)
       print('first candidates', candidates)
 
-      if len(candidates) != 1:
+      # If no exact FW matches, try brand-specific fuzzy fingerprinting
+      if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
         platform_codes = config.fuzzy_get_platform_codes([version])
         assert len(platform_codes) < 2
-        if len(platform_codes):
+        if len(platform_codes) == 1:
           print(platform_codes, version)
           platform_code = list(platform_codes)[0]
           key = (addr[0], addr[1], platform_code)
