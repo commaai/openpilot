@@ -75,7 +75,7 @@ class CarState(CarStateBase):
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      ret.cruiseState.standstill = cp_body.vl["Engine_Stop_Start"]["Cruise_Hold"] == 3
+      ret.cruiseState.standstill = cp_body.vl["Engine_Stop_Start"]["Cruise_Hold"] == 1
       ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
