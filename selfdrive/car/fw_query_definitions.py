@@ -81,6 +81,7 @@ class FwQueryConfig:
   # A function to get uniquely identifiable codes for a version
   # TODO: take list of versions and return set of platform codes
   fuzzy_get_platform_codes: Optional[Callable] = None
+  fuzzy_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=set)
 
   # TODO: below func is to be replaced by above two
   # A function that each make can provide to fuzzy fingerprint reliably on that make
