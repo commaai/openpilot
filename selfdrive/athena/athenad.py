@@ -171,7 +171,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
     try:
       data = recv_queue.get(timeout=1)
       if "method" in data:
-        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data}")
+        cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "id" in data and ("result" in data or "error" in data):
@@ -515,6 +515,11 @@ def getPublicKey() -> Optional[str]:
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
   return Params().get("GithubSshKeys", encoding='utf8') or ''
+
+
+@dispatcher.add_method
+def getGithubUsername() -> str:
+  return Params().get("GithubUsername", encoding='utf8') or ''
 
 
 @dispatcher.add_method

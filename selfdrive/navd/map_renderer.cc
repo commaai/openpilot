@@ -11,11 +11,13 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 const float DEFAULT_ZOOM = 13.5; // Don't go below 13 or features will start to disappear
-const int HEIGHT = 512, WIDTH = 512;
+const int HEIGHT = 256, WIDTH = 256;
 const int NUM_VIPC_BUFFERS = 4;
 
 const int EARTH_CIRCUMFERENCE_METERS = 40075000;
+const int EARTH_RADIUS_METERS = 6378137;
 const int PIXELS_PER_TILE = 256;
+const int MAP_OFFSET = 128;
 
 const bool TEST_MODE = getenv("MAP_RENDER_TEST_MODE");
 const int LLK_DECIMATION = TEST_MODE ? 1 : 10;
@@ -24,6 +26,14 @@ float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
   float meters_per_tile = meters_per_pixel * PIXELS_PER_TILE;
   float num_tiles = cos(DEG2RAD(lat)) * EARTH_CIRCUMFERENCE_METERS / meters_per_tile;
   return log2(num_tiles) - 1;
+}
+
+QMapbox::Coordinate get_point_along_line(float lat, float lon, float bearing, float dist) {
+  float ang_dist = dist / EARTH_RADIUS_METERS;
+  float lat1 = DEG2RAD(lat), lon1 = DEG2RAD(lon), bearing1 = DEG2RAD(bearing);
+  float lat2 = asin(sin(lat1)*cos(ang_dist) + cos(lat1)*sin(ang_dist)*cos(bearing1));
+  float lon2 = lon1 + atan2(sin(bearing1)*sin(ang_dist)*cos(lat1), cos(ang_dist)-sin(lat1)*sin(lat2));
+  return QMapbox::Coordinate(RAD2DEG(lat2), RAD2DEG(lon2));
 }
 
 
@@ -70,7 +80,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
-    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH/2, HEIGHT/2);
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
@@ -93,7 +103,8 @@ void MapRenderer::msgUpdate() {
 
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
     if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
-      updatePosition(QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]), RAD2DEG(orientation.getValue()[2]));
+      float bearing = RAD2DEG(orientation.getValue()[2]);
+      updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
       // TODO: use the static rendering mode
       if (!loaded() && frame_id > 0) {
@@ -177,12 +188,10 @@ void MapRenderer::publish(const double render_time) {
   uint8_t* dst = (uint8_t*)buf->addr;
   uint8_t* src = cap.bits();
 
-  // RGB to greyscale and crop
+  // RGB to greyscale
   memset(dst, 128, buf->len);
-  for (int r = 0; r < HEIGHT/2; r++) {
-    for (int c = 0; c < WIDTH/2; c++) {
-      dst[r*WIDTH/2 + c] = src[((HEIGHT/4 + r)*WIDTH + (c+WIDTH/4)) * 3];
-    }
+  for (int i = 0; i < WIDTH * HEIGHT; i++) {
+    dst[i] = src[i * 3];
   }
 
   vipc_server->send(buf, &extra);
