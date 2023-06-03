@@ -137,7 +137,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: DriveStats, PrimeAdWidget
+    // left: DriveStats/PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
     left_widget->addWidget(new DriveStats);
     left_widget->addWidget(new PrimeAdWidget);
