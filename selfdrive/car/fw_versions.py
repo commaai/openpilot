@@ -67,17 +67,14 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       continue
 
     for addr, fws in fw_by_addr.items():
-      for f in fws:
-        if addr[0] not in exclude_types:
+      if addr[0] not in exclude_types:
+        for f in fws:
           all_fw_versions[(addr[1], addr[2], f)].add(candidate)
 
-        # Add platform codes to lookup dict if config specifies a function
-        # if config.fuzzy_get_platform_codes is not None:
-        if addr[0] in config.fuzzy_ecus and config.fuzzy_get_platform_codes is not None:
-          platform_codes = config.fuzzy_get_platform_codes([f])
-          if len(platform_codes) == 1:
-            platform_code = list(platform_codes)[0]
-            all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+      # Add platform codes to lookup dict if config specifies a function
+      if addr[0] in config.fuzzy_ecus and config.fuzzy_get_platform_codes is not None:
+        for platform_code in config.fuzzy_get_platform_codes(fws):
+          all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
 
   match_count = 0
   candidate = None
