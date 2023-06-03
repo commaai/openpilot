@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import unittest
 
 from cereal import car
@@ -50,6 +51,81 @@ class TestHyundaiFingerprint(unittest.TestCase):
     ])
     self.assertEqual(codes, {b"DH", b"AEhe", b"CV1"})
 
+  def test_excluded_platforms(self):
+    # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
+    # This list can be shrunk as we combine platforms and detect features
+    excluded_platforms = [
+      CAR.HYUNDAI_GENESIS,
+      CAR.IONIQ,
+      CAR.IONIQ_PHEV_2019,
+      CAR.IONIQ_PHEV,
+      CAR.IONIQ_EV_2020,
+      CAR.IONIQ_EV_LTD,
+      CAR.IONIQ_HEV_2022,
+      CAR.SANTA_FE,
+      CAR.SANTA_FE_2022,
+      CAR.KIA_STINGER,
+      CAR.KIA_STINGER_2022,
+      CAR.GENESIS_G70,
+      CAR.GENESIS_G70_2020,
+      CAR.TUCSON_4TH_GEN,
+      CAR.TUCSON_HYBRID_4TH_GEN,
+      CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+      CAR.SANTA_CRUZ_1ST_GEN,
+      CAR.KIA_SPORTAGE_5TH_GEN,
+    ]
+
+    # platform_codes = defaultdict(lambda: defaultdict(set))
+    platform_codes = defaultdict(dict)
+    all_platform_codes = defaultdict(set)
+    for candidate, fw_by_addr in FW_VERSIONS.items():
+      for addr, fws in fw_by_addr.items():
+        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
+          continue
+
+        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
+          all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+        # for f in fws:
+        #   # Add platform codes to lookup dict if config specifies a function
+        #   platform_codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([f])
+        #   # if len(platform_codes) == 1:
+        #   all_platform_codes[(addr[1], addr[2], list(platform_codes)[0])].add(candidate)
+
+    # print(all_platform_codes)
+    # raise Exception
+    platforms_with_shared_codes = []
+    for platform, ecus in FW_VERSIONS.items():
+      shared_codes = []
+      for addr, fws in ecus.items():
+        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
+          continue
+
+        for f in fws:
+          # if len(platform_codes) == 1:
+          platform_code = list(FW_QUERY_CONFIG.fuzzy_get_platform_codes([f]))[0]
+          shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
+      print(platform, shared_codes, not all(shared_codes))
+      if all(shared_codes):
+        platforms_with_shared_codes.append(platform)
+    print(platforms_with_shared_codes)
+    # make sure list is unique
+    self.assertEqual(len(platforms_with_shared_codes), len(set(platforms_with_shared_codes)))
+    self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
+    #   if platform != CAR.HYUNDAI_GENESIS:
+    #     platform_codes[Ecu.fwdRadar][platform] = FW_QUERY_CONFIG.fuzzy_get_platform_codes(ecus[(Ecu.fwdRadar, 0x7d0, None)])
+    #   platform_codes[Ecu.fwdCamera][platform] = FW_QUERY_CONFIG.fuzzy_get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)])
+    #
+    # for ecu in [Ecu.fwdRadar, Ecu.fwdCamera]:  # TODO: use fuzzy_ecus
+    #   for platform in platform_codes.keys():
+    #     pass
+    #     # print(platform_codes.values())
+    #   print(platform_codes[ecu].values())
+    #   print(set.union(*platform_codes[ecu].values()))
+    #   print()
+    # # for platform in platform_codes.keys():
+    # #   print(platform_codes.keys())
+    #
+    # # print(platform_codes.values())
 
 
 if __name__ == "__main__":
