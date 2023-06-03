@@ -1091,7 +1091,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and helps improve openpilot</source>
+        <source>Your data is used to train driving models and help improve openpilot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

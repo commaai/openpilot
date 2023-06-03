@@ -74,7 +74,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     }
     uploading_layout->addLayout(title_layout);
 
-    QLabel *desc = new QLabel(tr("Your data is used to train driving models and helps improve openpilot"));
+    QLabel *desc = new QLabel(tr("Your data is used to train driving models and help improve openpilot"));
     desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);
