@@ -3,6 +3,7 @@ import math
 import numpy as np
 from common.numpy_fast import clip, interp
 from common.params import Params
+from cereal import log
 
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
@@ -61,9 +62,12 @@ class LongitudinalPlanner:
     self.params = Params()
     self.param_read_counter = 0
     self.read_param()
+    self.personality = log.LongitudinalPersonality.standard
 
   def read_param(self):
-    self.personality = int(self.params.get('LongitudinalPersonality'))
+    param_value = self.params.get('LongitudinalPersonality')
+    if param_value is not None:
+      self.personality = int(param_value)
 
   @staticmethod
   def parse_model(model_msg, model_error):
