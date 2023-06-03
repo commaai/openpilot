@@ -212,7 +212,7 @@ void DBCFile::parseExtraInfo(const QString &content) {
   uint32_t address = 0;
   while (!stream.atEnd()) {
     ++line_num;
-    line = stream.readLine();
+    line = stream.readLine().trimmed();
     if (line.startsWith("BO_ ")) {
       auto match = bo_regexp.match(line);
       dbc_assert(match.hasMatch());
