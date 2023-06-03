@@ -27,8 +27,8 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 
-LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Longitudinal Profile",
-                                                             "Determines the aggressiveness of the longitudinal profile. Standard is recommended.",
+LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Driving Personality",
+                                                             "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.",
                                                              "../assets/offroad/icon_speed_limit.png") {
 
   label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
