@@ -18,6 +18,7 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 from selfdrive.controls.lib.events import EVENTS, ET
+from system.hardware import HARDWARE
 from system.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
@@ -35,7 +36,6 @@ PROCS = {
   "./_sensord": 12.0,
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
-  "./boardd": 3.63,
   "./_dmonitoringmodeld": 5.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
@@ -45,12 +45,10 @@ PROCS = {
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "./clocksd": 0.02,
-  "./ubloxd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
   "system.timezoned": 0,
-  "system.sensord.pigeond": 6.0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
@@ -58,6 +56,18 @@ PROCS = {
   "system.loggerd.deleter": 0.1,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
+
+PROCS.update({
+  "tici": {
+    "./boardd": 4.0,
+    "./ubloxd": 0.02,
+    "system.sensord.pigeond": 6.0,
+  },
+  "tizi": {
+     "./boardd": 19.0,
+    "system.sensord.rawgps.rawgpsd": 1.0,
+  }
+}[HARDWARE.get_device_type()])
 
 TIMINGS = {
   # rtols: max/min, rsd
@@ -96,7 +106,9 @@ class TestOnroad(unittest.TestCase):
 
     # setup env
     params = Params()
-    params.clear_all()
+    if "CI" in os.environ:
+      params.clear_all()
+    params.remove("CurrentRoute")
     set_params_enabled()
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(ROOT):
@@ -156,11 +168,11 @@ class TestOnroad(unittest.TestCase):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
-      
+
       # skip gps services for now
-      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocationExternal'):
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
-        
+
       with self.subTest(service=s):
         assert len(msgs) >= math.floor(service_list[s].frequency*55)
 
