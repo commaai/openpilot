@@ -345,10 +345,9 @@ FINGERPRINTS = {
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  platform_code_regex = b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}'
   codes = set()
   for fw in fw_versions:
-    matches = re.findall(platform_code_regex, fw)
+    matches = re.findall(PLATFORM_CODE_PATTERN, fw)
     if len(matches):
       codes.add(matches[0])
   return codes
@@ -366,6 +365,8 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(0xf100)
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+PLATFORM_CODE_PATTERN = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
