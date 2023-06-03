@@ -2,11 +2,7 @@
 from collections import defaultdict
 import unittest
 
-from cereal import car
-from selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_VERSIONS
-
-Ecu = car.CarParams.Ecu
-ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+from selfdrive.car.ford.values import FW_QUERY_CONFIG, FW_VERSIONS
 
 
 class TestFordFingerprint(unittest.TestCase):
