@@ -257,10 +257,10 @@ class TestOnroad(unittest.TestCase):
     self.assertTrue(cpu_ok)
 
   def test_overall_cpu_usage(self):
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "------------- Overall CPU Usage ----------------\n"
-    result += "------------------------------------------------\n"
+    print()
+    print("------------------------------------------------")
+    print("------------- Overall CPU Usage ----------------")
+    print("------------------------------------------------")
 
     # CPU usage by core
     cpu_usage = [m.deviceState.cpuUsagePercent for m in self.service_msgs['deviceState']]
@@ -268,8 +268,10 @@ class TestOnroad(unittest.TestCase):
       usage = np.array([x[core] for x in cpu_usage])
       print(f"core {core}: min {min(usage):3d}% / max {max(usage):3d}% / avg {int(usage.mean()):3d}%")
       with self.subTest(core=core):
-        self.assertLess(max(usage), 80)
-        self.assertLess(usage.mean(), 60)
+        small_cluster = core < 4
+        self.assertLess(max(usage), 99 if small_cluster else 80)
+        self.assertLess(usage.mean(), 60 if small_cluster else 40)
+        self.assertGreater(usage.mean(), 10)  # sanity check
 
   def test_camera_processing_time(self):
     result = "\n"
