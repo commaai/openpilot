@@ -6,6 +6,7 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from selfdrive.car.fw_versions import match_fw_to_car_fuzzy
+from selfdrive.car.fw_query_definitions import FwQueryConfig
 from selfdrive.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
 from selfdrive.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
 from selfdrive.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
@@ -17,6 +18,8 @@ FWS.update(TOYOTA_FW_VERSIONS)
 FWS.update(HONDA_FW_VERSIONS)
 FWS.update(HYUNDAI_FW_VERSIONS)
 FWS.update(VW_FW_VERSIONS)
+
+TEST_CONFIG = FwQueryConfig([])
 
 if __name__ == "__main__":
   total = 0
@@ -30,8 +33,7 @@ if __name__ == "__main__":
       for (tp, addr, subaddr), fw_list in fws.items():
         fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
-      # TODO: fix this
-      matches = match_fw_to_car_fuzzy(fw_dict, None, log=False, exclude=candidate)
+      matches = match_fw_to_car_fuzzy(fw_dict, TEST_CONFIG, log=False, exclude=candidate)
 
       total += 1
       if len(matches) == 1:
