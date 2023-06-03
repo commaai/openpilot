@@ -108,7 +108,7 @@ class TestFwFingerprint(unittest.TestCase):
         else:
           self.assertGreater(len(config.fuzzy_ecus), 0, "Need to specify fuzzy ECUs")
           # Assert every supported ECU FW version returns one platform code
-          for platform, fw_by_addr in VERSIONS[brand].items():
+          for fw_by_addr in VERSIONS[brand].values():
             for addr, fws in fw_by_addr.items():
               if addr[0] in config.fuzzy_ecus:
                 for f in fws:

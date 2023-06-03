@@ -27,10 +27,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_fuzzy_ecus_available(self):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
-    for car, ecus in FW_VERSIONS.items():
-      with self.subTest(car=car):
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
         for fuzzy_ecu in FW_QUERY_CONFIG.fuzzy_ecus:
-          if car == CAR.HYUNDAI_GENESIS:
+          if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
