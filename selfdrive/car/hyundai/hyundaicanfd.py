@@ -10,7 +10,7 @@ class CanBus:
       assert None not in (hda2, fingerprint)
       num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
     else:
-      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
+      hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value or CP.flags & HyundaiFlags.CAN_CANFD_HDA2.value
       num = len(CP.safetyConfigs)
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
