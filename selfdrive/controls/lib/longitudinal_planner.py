@@ -4,7 +4,6 @@ import numpy as np
 from common.numpy_fast import clip, interp
 from common.params import Params
 
-from cereal import log
 import cereal.messaging as messaging
 from common.conversions import Conversions as CV
 from common.filter_simple import FirstOrderFilter
@@ -43,15 +42,6 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
-
-def read_long_personality(self):
-  value = self.params.get('LongitudinalPersonality')
-  if value == '0':
-    self.personality = log.LongitudinalPersonality.aggressive
-  elif value == '1':
-    self.personality = log.LongitudinalPersonality.standard
-  elif value == '2':
-    self.personality = log.LongitudinalPersonality.rela
 
 
 class LongitudinalPlanner:
@@ -92,8 +82,10 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
+    if self.param_read_counter % 50 == 0:
+      self.read_param()
+    self.param_read_counter += 1
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
-    self.personality = log.LongitudinalPersonality.standard
 
     v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
