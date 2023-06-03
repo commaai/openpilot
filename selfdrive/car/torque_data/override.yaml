@@ -47,7 +47,7 @@ KIA SORENTO 4TH GEN: [2.5, 2.5, 0.1]
 KIA NIRO HYBRID 2ND GEN: [2.42, 2.5, 0.12]
 KIA NIRO EV 2ND GEN: [2.05, 2.5, 0.14]
 GENESIS GV80 2023: [2.5, 2.5, 0.1]
-HYUNDAI PALISADE 2023: [3.0, 2.5, 0.05]
+HYUNDAI PALISADE 2023: [3.3, 2.5, 0.01]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
