@@ -107,6 +107,11 @@ class TestFwFingerprint(unittest.TestCase):
           self.assertEqual(len(config.fuzzy_ecus), 0, "Cannot specify fuzzy ECUs without full config")
         else:
           self.assertGreater(len(config.fuzzy_ecus), 0, "Need to specify fuzzy ECUs")
+          for platform, fw_by_addr in VERSIONS[brand].items():
+            for addr, fws in fw_by_addr.items():
+              if addr[0] in config.fuzzy_ecus:
+                for f in fws:
+                  self.assertEqual(1, len(config.fuzzy_get_platform_codes([f])))
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
