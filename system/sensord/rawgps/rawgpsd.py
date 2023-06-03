@@ -7,7 +7,6 @@ import math
 import time
 import pycurl
 import subprocess
-import tempfile
 from datetime import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
@@ -136,7 +135,7 @@ def download_and_inject_assistance():
         c.setopt(pycurl.WRITEDATA, fp)
         c.perform()
         c.close()
-    except pycurl.error as e:
+    except pycurl.error:
       cloudlog.exception("Failed to download assistance file")
       return
 
