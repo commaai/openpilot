@@ -72,35 +72,30 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
           all_fw_versions[(addr[1], addr[2], f)].add(candidate)
 
         # Add platform codes to lookup dict if config specifies a function
-        if config.fuzzy_get_platform_codes is not None:
-          if addr[0] in config.fuzzy_ecus:
-            platform_codes = config.fuzzy_get_platform_codes([f])
-            if len(platform_codes) == 1:
-              print(platform_codes, f)
-              platform_code = list(platform_codes)[0]
-              all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+        # if config.fuzzy_get_platform_codes is not None:
+        if addr[0] in config.fuzzy_ecus and config.fuzzy_get_platform_codes is not None:
+          platform_codes = config.fuzzy_get_platform_codes([f])
+          if len(platform_codes) == 1:
+            platform_code = list(platform_codes)[0]
+            all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
 
-  print(all_platform_codes)
+  # print(all_platform_codes)
   match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
-      print(addr, version)
-      print('first candidates', candidates)
+      # print(addr, version)
+      # print('first candidates', candidates)
 
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
       if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
         platform_codes = config.fuzzy_get_platform_codes([version])
         if len(platform_codes) == 1:
-          print(platform_codes, version)
           platform_code = list(platform_codes)[0]
-          key = (addr[0], addr[1], platform_code)
-          print('key', key)
-          candidates = all_platform_codes[key]
+          candidates = all_platform_codes[(addr[0], addr[1], platform_code)]
           print('second candidates', candidates)
-      print()
 
       if len(candidates) == 1:
         match_count += 1
@@ -110,7 +105,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         elif candidate != list(candidates)[0]:
           return set()
 
-  print('match_count', match_count)
   if match_count >= config.fuzzy_min_match_count:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
