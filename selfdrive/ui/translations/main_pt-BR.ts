@@ -1090,7 +1090,7 @@ Isso pode levar até um minuto.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and improve openpilot</source>
+        <source>Your data is used to train driving models and helps improve openpilot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

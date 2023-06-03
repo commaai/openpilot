@@ -55,8 +55,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   // Uploading data
   QWidget *uploading = new QWidget;
   QVBoxLayout *uploading_layout = new QVBoxLayout(uploading);
-  uploading_layout->setContentsMargins(56, 56, 56, 56);
-  uploading_layout->setSpacing(30);
+  uploading_layout->setContentsMargins(64, 56, 64, 56);
+  uploading_layout->setSpacing(36);
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     {
@@ -71,13 +71,11 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
       QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
       icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
-
-      title_layout->addStretch();
     }
     uploading_layout->addLayout(title_layout);
 
-    QLabel *desc = new QLabel(tr("Your data is used to train driving models and improve openpilot"));
-    desc->setStyleSheet("font-size: 40px; font-weight: 400;");
+    QLabel *desc = new QLabel(tr("Your data is used to train driving models and helps improve openpilot"));
+    desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);
   }
@@ -90,12 +88,6 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     }
   )");
 
-  QObject::connect(stack, &QStackedLayout::currentChanged, [=]() {
-    if (stack->currentWidget() == uploading) {
-      // shrink to height + 32px to prevent text clipping
-      resize(750, uploading->sizeHint().height() + 32);
-    }
-  });
   QObject::connect(uiState(), &UIState::uiUpdate, this, &WiFiPromptWidget::updateState);
 }
 
