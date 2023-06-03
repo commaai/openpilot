@@ -114,7 +114,8 @@ def download_and_inject_assistance():
   assist_data_file = '/tmp/xtra3grc.bin'
   assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
 
-  with tempfile.NamedTemporaryFile(mode='wb', dir='/tmp/') as f:
+  try:
+    # download assistance
     try:
       c = pycurl.Curl()
       c.setopt(c.URL, assistance_url)
@@ -127,23 +128,28 @@ def download_and_inject_assistance():
         cloudlog.error("Qcom assistance data larger than expected")
         return
 
-      c = pycurl.Curl()
-      c.setopt(pycurl.URL, assistance_url)
-      c.setopt(pycurl.CONNECTTIMEOUT, 5)
+      with open(assist_data_file, 'wb') as fp:
+        c = pycurl.Curl()
+        c.setopt(pycurl.URL, assistance_url)
+        c.setopt(pycurl.CONNECTTIMEOUT, 5)
 
-      c.setopt(pycurl.WRITEDATA, f)
-      c.perform()
-      c.close()
+        c.setopt(pycurl.WRITEDATA, fp)
+        c.perform()
+        c.close()
     except pycurl.error as e:
       cloudlog.exception("Failed to download assistance file")
       return
 
-    # inject
+    # inject into module
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={f.name}", shell=True)
+      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
       cloudlog.info("successfully loaded assistance data")
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
+  finally:
+    if os.path.exists(assist_data_file):
+      os.remove(assist_data_file)
+
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
