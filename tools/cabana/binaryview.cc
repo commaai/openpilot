@@ -384,7 +384,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
-          painter->fillRect(option.rect, bin_view->hovered_sig->color.darker(125));  // 4/5x brightness
+          painter->fillRect(option.rect, s->color.darker(125));  // 4/5x brightness
         } else {
           drawSignalCell(painter, option, index, s);
         }
