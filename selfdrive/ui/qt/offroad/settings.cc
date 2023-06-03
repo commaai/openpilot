@@ -26,6 +26,66 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
+
+LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Longitudinal Profile",
+                                                             "Determines the aggressiveness of the longitudinal profile. Standard is recommended.",
+                                                             "../assets/offroad/icon_blank.png") {
+
+  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
+  label.setStyleSheet("color: #e0e879");
+  hlayout->addWidget(&label);
+
+  std::vector<QPushButton*> buttons;
+  buttons.push_back(&btnminus);
+  buttons.push_back(&btnplus);
+
+  for (QPushButton* button : buttons) {
+    button->setStyleSheet(R"(
+      padding: 0;
+      border-radius: 50px;
+      font-size: 50px;
+      font-weight: 500;
+      color: #E4E4E4;
+      background-color: #393939;
+    )");  
+    button->setFixedSize(150, 100);
+    hlayout->addWidget(button);
+  }
+  
+  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
+    set_param(get_param()- 1);
+  });
+
+  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
+    set_param(get_param() + 1);
+  });
+  refresh();
+}
+
+ int LongitudinalPersonality::get_param() {
+    return stoi(params.get("LongitudinalPersonality"));
+  };
+
+ void LongitudinalPersonality::set_param(int new_value) {
+    new_value = std::clamp(new_value, (int) cereal::LongitudinalPersonality::AGGRESSIVE, (int) cereal::LongitudinalPersonality::RELAXED);
+    QString values = QString::number(new_value);
+    params.put("LongitudinalPersonality", values.toStdString());
+    refresh();
+ };
+
+void LongitudinalPersonality::refresh() {
+  int value = get_param();
+  if (value == (int) cereal::LongitudinalPersonality::AGGRESSIVE) {
+    label.setText(QString::fromStdString("aggressive"));
+  } else if (value == (int) cereal::LongitudinalPersonality::STANDARD) {
+    label.setText(QString::fromStdString("standard"));
+  } else if (value == (int) cereal::LongitudinalPersonality::RELAXED) {
+    label.setText(QString::fromStdString("relaxed"));
+  }
+  btnminus.setText("-");
+  btnplus.setText("+");
+}
+
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon, confirm
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
@@ -98,6 +158,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
   }
+  addItem(new LongitudinalPersonality());
 
   // Toggles with confirmation dialogs
   toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
@@ -320,6 +381,7 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
+  //printf("setCurrentPanel %s\n", param);
   if (!param.isEmpty()) {
     emit expandToggleDescription(param);
   }

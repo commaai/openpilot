@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from common.numpy_fast import clip, interp
+from common.params import Params
 
 from cereal import log
 import cereal.messaging as messaging
@@ -43,6 +44,15 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
+def read_long_personality(self):
+  value = self.params.get('LongitudinalPersonality')
+  if value == '0':
+    self.personality = log.LongitudinalPersonality.aggressive
+  elif value == '1':
+    self.personality = log.LongitudinalPersonality.standard
+  elif value == '2':
+    self.personality = log.LongitudinalPersonality.rela
+
 
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0):
@@ -58,6 +68,12 @@ class LongitudinalPlanner:
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
+    self.params = Params()
+    self.param_read_counter = 0
+    self.read_param()
+
+  def read_param(self):
+    self.personality = int(self.params.get('LongitudinalPersonality'))
 
   @staticmethod
   def parse_model(model_msg, model_error):
@@ -77,7 +93,7 @@ class LongitudinalPlanner:
 
   def update(self, sm):
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
-    self.personality = log.AccPersonality.standard
+    self.personality = log.LongitudinalPersonality.standard
 
     v_ego = sm['carState'].vEgo
     v_cruise_kph = sm['controlsState'].vCruise
@@ -156,5 +172,6 @@ class LongitudinalPlanner:
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+    longitudinalPlan.personality = self.personality
 
     pm.send('longitudinalPlan', plan_send)

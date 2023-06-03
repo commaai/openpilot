@@ -68,6 +68,23 @@ private:
   void updateToggles();
 };
 
+class LongitudinalPersonality : public AbstractControl {
+  Q_OBJECT
+
+public:
+  LongitudinalPersonality();
+
+private:
+  QPushButton btnplus;
+  QPushButton btnminus;
+  QLabel label;
+  Params params;
+
+  int get_param();
+  void set_param(int new_value);
+  void refresh();
+};
+
 class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:

@@ -58,12 +58,12 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 
 
-def get_T_FOLLOW(personality=log.AccPersonality.standard):
-  if personality==log.AccPersonality.relaxed:
+def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
+  if personality==log.LongitudinalPersonality.relaxed:
     return 1.8
-  elif personality==log.AccPersonality.standard:
+  elif personality==log.LongitudinalPersonality.standard:
     return 1.45
-  elif personality==log.AccPersonality.aggressive:
+  elif personality==log.LongitudinalPersonality.aggressive:
     return 1.2
   else:
     raise NotImplementedError("Longitudinal personality not supported")
@@ -318,7 +318,7 @@ class LongitudinalMpc:
     self.cruise_min_a = min_a
     self.max_a = max_a
 
-  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.AccPersonality.standard):
+  def update(self, radarstate, v_cruise, x, v, a, j, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
