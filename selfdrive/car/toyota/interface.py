@@ -204,7 +204,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
 
     # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
-    if 0x2FF in fingerprint[0]:
+    if 0x2FF in fingerprint[0] or 0x2AA in fingerprint[0]:
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
     # In TSS2 cars, the camera does long control
