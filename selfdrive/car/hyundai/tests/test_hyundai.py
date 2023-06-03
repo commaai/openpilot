@@ -95,6 +95,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
           platform_code = list(FW_QUERY_CONFIG.fuzzy_get_platform_codes([f]))[0]
           shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
 
+      # If all the platform codes for this platform are shared with another platform,
+      # we cannot fuzzy fingerprint this platform
       if all(shared_codes):
         platforms_with_shared_codes.append(platform)
 
