@@ -123,7 +123,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   fuzzy_get_platform_codes=get_platform_codes,
-  fuzzy_ecus=[Ecu.eps, Ecu.fwdCamera],
+  fuzzy_ecus=[Ecu.eps],
 )
 
 FW_VERSIONS = {
