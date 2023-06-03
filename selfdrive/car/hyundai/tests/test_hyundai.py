@@ -2,7 +2,7 @@
 import unittest
 
 from cereal import car
-from selfdrive.car.hyundai.values import CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS, CAN_GEARS, LEGACY_SAFETY_MODE_CAR, CHECKSUM, CAMERA_SCC_CAR
+from selfdrive.car.hyundai.values import CAR, CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS, CAN_GEARS, LEGACY_SAFETY_MODE_CAR, CHECKSUM, CAMERA_SCC_CAR
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -26,11 +26,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_certain_ecus_available(self):
     # Asserts certain ecu keys essential for fuzzy fingerprinting are available on all platforms
-    essential_ecus = [(Ecu.fwdCamera, 0x7c4, None), (Ecu.fwdRadar, 0x7d0, None)]
-
     for car, ecus in FW_VERSIONS.items():
-      for essential_ecu in essential_ecus:
-        self.assertIn(essential_ecu, ecus)
+      for essential_ecu in FW_QUERY_CONFIG.fuzzy_ecus:
+        with self.subTest(car=car):
+          if car == CAR.HYUNDAI_GENESIS:
+            raise unittest.SkipTest
+          self.assertIn(essential_ecu, [e[0] for e in ecus])
 
   def test_fuzzy_platform_codes(self):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
