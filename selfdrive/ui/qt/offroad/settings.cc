@@ -29,7 +29,7 @@
 
 LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Longitudinal Profile",
                                                              "Determines the aggressiveness of the longitudinal profile. Standard is recommended.",
-                                                             "../assets/offroad/icon_blank.png") {
+                                                             "../assets/offroad/icon_speed_limit.png") {
 
   label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
   label.setStyleSheet("color: #e0e879");
