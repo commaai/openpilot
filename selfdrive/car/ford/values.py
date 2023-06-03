@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Set, Union
@@ -87,6 +88,26 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
 
+
+def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
+  codes: Dict[bytes, Set[bytes]] = defaultdict(set)
+  for fw in fw_versions:
+    match = PLATFORM_CODE_PATTERN.search(fw)
+    if match is not None:
+      codes[match.group(1)].add(match.group(2))
+
+  platform_codes = set()
+  for code, dates in codes.items():
+    for date in range(int.from_bytes(min(dates), 'big'),
+                      int.from_bytes(max(dates), 'big') + 1):
+      platform_codes.add(code + b'-' + date.to_bytes(2, 'big'))
+
+  return platform_codes
+
+
+PLATFORM_CODE_PATTERN = re.compile(b'((?<=^[A-Z])[A-Z0-9]{2}[A-Z])-[A-Z0-9]+-([A-Z]{2})')
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
@@ -101,6 +122,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
     ),
   ],
+  fuzzy_get_platform_codes=get_platform_codes,
+  fuzzy_ecus=[Ecu.eps, Ecu.fwdCamera],
 )
 
 FW_VERSIONS = {
