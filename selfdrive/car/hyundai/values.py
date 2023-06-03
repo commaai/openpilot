@@ -347,7 +347,7 @@ FINGERPRINTS = {
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   codes = set()
   for fw in fw_versions:
-    match = re.search(PLATFORM_CODE_PATTERN, fw)
+    match = PLATFORM_CODE_PATTERN.search(fw)
     if match is not None:
       codes.add(match.group())
   return codes
