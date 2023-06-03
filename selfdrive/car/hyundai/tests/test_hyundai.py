@@ -76,13 +76,13 @@ class TestHyundaiFingerprint(unittest.TestCase):
     ]
 
     all_platform_codes = defaultdict(set)
-    for candidate, fw_by_addr in FW_VERSIONS.items():
+    for platform, fw_by_addr in FW_VERSIONS.items():
       for addr, fws in fw_by_addr.items():
         if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
           continue
 
         for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-          all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+          all_platform_codes[(addr[1], addr[2], platform_code)].add(platform)
 
     platforms_with_shared_codes = []
     for platform, fw_by_addr in FW_VERSIONS.items():
@@ -91,8 +91,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
         if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
           continue
 
-        for f in fws:
-          platform_code = list(FW_QUERY_CONFIG.fuzzy_get_platform_codes([f]))[0]
+        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
           shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
 
       # If all the platform codes for this platform are shared with another platform,
