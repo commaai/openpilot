@@ -68,7 +68,7 @@ public:
   inline QDateTime currentDateTime() const { return route_->datetime().addSecs(currentSeconds()); }
   inline uint64_t routeStartTime() const { return route_start_ts_; }
   inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
-  inline int totalSeconds() const { return segments_.size() * 60; }
+  inline int totalSeconds() const { return (!segments_.empty()) ? (segments_.rbegin()->first + 1) * 60 : 0; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::vector<Event *> *events() const { return events_.get(); }
