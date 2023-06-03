@@ -270,6 +270,23 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     print(result)
 
+  @unittest.skip("TODO: enable once timings are fixed")
+  def test_camera_frame_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-----------------  SoF Timing ------------------\n"
+    result += "------------------------------------------------\n"
+    for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
+      ts = [getattr(getattr(m, m.which()), "timestampSof") for m in self.lr if name in m.which()]
+      d_ms = np.diff(ts) / 1e6
+      d50 = np.abs(d_ms-50)
+      self.assertLess(max(d50), 1.0, f"high sof delta vs 50ms: {max(d50)}")
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      result += "------------------------------------------------\n"
+    print(result)
+
   def test_mpc_execution_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
