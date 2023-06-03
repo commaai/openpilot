@@ -76,6 +76,10 @@ BO_ 160 message_1: 8 XXX
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
   SG_ signal_2 : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
 
+BO_ 162 message_1: 8 XXX
+  SG_ signal_1 M : 0|12@1+ (1,0) [0|4095] "unit"  XXX
+  SG_ signal_2 M4 : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+
 VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
 CM_ BO_ 160 "message comment";
@@ -109,4 +113,12 @@ CM_ SG_ 160 signal_2 "multiple line comment
 
   auto &sig_2 = msg->sigs[1];
   REQUIRE(sig_2.comment == "multiple line comment\n1\n2");
+
+  // multiplexed signals
+  msg = file.msg(162);
+  REQUIRE(msg != nullptr);
+  REQUIRE(msg->sigs.size() == 2);
+  REQUIRE(msg->sigs[0].type == cabana::Signal::Type::Multiplexor);
+  REQUIRE(msg->sigs[1].type == cabana::Signal::Type::Multiplexed);
+  REQUIRE(msg->sigs[1].multiplex_value == 4);
 }
