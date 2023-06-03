@@ -81,7 +81,7 @@ class FwQueryConfig:
   # A function to get uniquely identifiable codes for a version
   fuzzy_get_platform_codes: Optional[Callable[[List[bytes]], Set[bytes]]] = None
   # List of ECUs to consider for fuzzy fingerprinting
-  fuzzy_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=set)
+  fuzzy_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=list)
 
   def __post_init__(self):
     for i in range(len(self.requests)):
