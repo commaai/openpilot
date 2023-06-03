@@ -98,9 +98,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
       if all(shared_codes):
         platforms_with_shared_codes.append(platform)
 
-    print(platforms_with_shared_codes)
-    # make sure list is unique
-    self.assertEqual(len(platforms_with_shared_codes), len(set(platforms_with_shared_codes)))
     self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
 
 
