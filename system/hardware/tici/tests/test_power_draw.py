@@ -5,6 +5,7 @@ import math
 from dataclasses import dataclass
 from tabulate import tabulate
 
+import cereal.messaging as messaging
 from system.hardware import HARDWARE, TICI
 from system.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
@@ -24,6 +25,8 @@ PROCS = [
   Proc('modeld', 0.93, atol=0.2),
   Proc('dmonitoringmodeld', 0.4),
   Proc('encoderd', 0.23),
+  Proc('mapsd', 0.1),
+  Proc('navmodeld', 0.02),
 ]
 
 
@@ -46,12 +49,21 @@ class TestPowerDraw(unittest.TestCase):
 
   def test_camera_procs(self):
     baseline = get_power()
+    pm = messaging.PubMaster(['liveLocationKalman'])
+    msg = messaging.new_message('liveLocationKalman')
+    msg.liveLocationKalman.positionGeodetic = {'value': [32.7174, -117.16277, 0], 'std': [0., 0., 0.], 'valid': True}
+    msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
+    msg.liveLocationKalman.status = 'valid'
 
     prev = baseline
     used = {}
     for proc in PROCS:
       managed_processes[proc.name].start()
-      time.sleep(proc.warmup)
+
+      # Send liveLocationKalman at 20hz
+      for _ in range(int(20*proc.warmup)):
+        pm.send('liveLocationKalman', msg)
+        time.sleep(1/20)
 
       now = get_power(8)
       used[proc.name] = now - prev
