@@ -7,6 +7,7 @@ import math
 import time
 import pycurl
 import subprocess
+import tempfile
 from datetime import datetime
 from typing import NoReturn
 from struct import unpack_from, calcsize, pack
@@ -110,36 +111,39 @@ def gps_enabled() -> bool:
     raise Exception("failed to execute QGPS mmcli command") from exc
 
 def download_and_inject_assistance():
-  assist_data_file = '/tmp/xtra3grc.bin' 
+  assist_data_file = '/tmp/xtra3grc.bin'
   assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
-  try:
-    c = pycurl.Curl() 
-    c.setopt(c.URL, assistance_url)
-    c.setopt(c.NOBODY, 1)
-    c.setopt(pycurl.CONNECTTIMEOUT, 2)
-    c.perform()
-    c.close()
-    bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
-    if bytes_n > 1e5:
-      cloudlog.exception("Qcom assistance data larger than expected")
-      return
-    with open(assist_data_file, "wb") as fp:
+
+  with tempfile.NamedTemporaryFile(mode='wb', dir='/tmp/') as f:
+    try:
+      c = pycurl.Curl()
+      c.setopt(c.URL, assistance_url)
+      c.setopt(c.NOBODY, 1)
+      c.setopt(pycurl.CONNECTTIMEOUT, 2)
+      c.perform()
+      bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
+      c.close()
+      if bytes_n > 1e5:
+        cloudlog.error("Qcom assistance data larger than expected")
+        return
+
       c = pycurl.Curl()
       c.setopt(pycurl.URL, assistance_url)
       c.setopt(pycurl.CONNECTTIMEOUT, 5)
 
-      c.setopt(pycurl.WRITEDATA, fp)
+      c.setopt(pycurl.WRITEDATA, f)
       c.perform()
       c.close()
-  except pycurl.error as e:
-    cloudlog.exception(f'Failed to download assistance file with error: {e}')
-  if os.path.isfile(assist_data_file):
+    except pycurl.error as e:
+      cloudlog.exception("Failed to download assistance file")
+      return
+
+    # inject
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
+      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={f.name}", shell=True)
+      cloudlog.info("successfully loaded assistance data")
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
-  if os.path.isfile(assist_data_file):
-    os.remove(assist_data_file)
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
