@@ -141,10 +141,17 @@ def download_and_inject_assistance():
 
     # inject into module
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}", shell=True)
+      cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}"
+      subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
       cloudlog.info("successfully loaded assistance data")
-    except subprocess.CalledProcessError:
-      cloudlog.exception("rawgps.mmcli_command_failed")
+    except subprocess.CalledProcessError as e:
+      cloudlog.event(
+        "rawgps.assistance_loading_failed",
+        error=True,
+        cmd=e.cmd,
+        output=e.output,
+        returncode=e.returncode
+      )
   finally:
     if os.path.exists(assist_data_file):
       os.remove(assist_data_file)
