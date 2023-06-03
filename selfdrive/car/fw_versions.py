@@ -79,7 +79,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
             platform_code = list(platform_codes)[0]
             all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
 
-  # print(all_platform_codes)
   match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
@@ -110,7 +109,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict, config) -> Set[str]:
+def match_fw_to_car_exact(fw_versions_dict, _=None) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -120,6 +119,7 @@ def match_fw_to_car_exact(fw_versions_dict, config) -> Set[str]:
 
   for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
+      config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
       ecu_type = ecu[0]
       addr = ecu[1:]
 
@@ -246,7 +246,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
     # Try to match using FW returned from this brand only
-    matches = match_fw_to_car_exact(build_fw_dict(car_fw), None)
+    matches = match_fw_to_car_exact(build_fw_dict(car_fw))
     if len(matches) == 1:
       break
 
