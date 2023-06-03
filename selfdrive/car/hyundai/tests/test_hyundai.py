@@ -25,14 +25,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
       ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
       self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
 
-  def test_certain_ecus_available(self):
-    # Asserts certain ecu keys essential for fuzzy fingerprinting are available on all platforms
+  def test_fuzzy_ecus_available(self):
+    # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car, ecus in FW_VERSIONS.items():
-      for essential_ecu in FW_QUERY_CONFIG.fuzzy_ecus:
-        with self.subTest(car=car):
+      with self.subTest(car=car):
+        for fuzzy_ecu in FW_QUERY_CONFIG.fuzzy_ecus:
           if car == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest
-          self.assertIn(essential_ecu, [e[0] for e in ecus])
+          self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
   def test_fuzzy_platform_codes(self):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
