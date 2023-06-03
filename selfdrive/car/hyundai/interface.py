@@ -49,7 +49,7 @@ class CarInterface(CarInterfaceBase):
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
     else:
       # detect HDA2 with CAN and CAN-FD definitions with ADAS Driving ECU
-      if Ecu.adas in [fw.ecu for fw in car_fw]:
+      if hda2:
         ret.flags |= HyundaiFlags.CAN_CANFD_HDA2.value
 
       # Send LFA message on cars with HDA
@@ -282,8 +282,10 @@ class CarInterface(CarInterfaceBase):
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
       elif ret.flags & HyundaiFlags.CAN_CANFD_HDA2:
-        ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput),
-                             get_safety_config(car.CarParams.SafetyModel.hyundai)]
+        cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundai), ]
+        if CAN.ECAN >= 4:
+          cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
+        ret.safetyConfigs = cfgs
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAN_CANFD_HDA2
       else:
         ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundai, 0)]

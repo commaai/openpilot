@@ -11,14 +11,13 @@ class CanBus:
       num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
     else:
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
-      can_canfd_hda2 = CP.flags & HyundaiFlags.CAN_CANFD_HDA2
       num = len(CP.safetyConfigs)
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
     # a different bus, since the steering is done by different ECUs.
     self._a, self._e = 1, 0
-    if hda2 or can_canfd_hda2:
+    if hda2:
       self._a, self._e = 0, 1
 
     offset = 4*(num - 1)
