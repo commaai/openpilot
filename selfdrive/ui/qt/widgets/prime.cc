@@ -14,6 +14,7 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/wifi.h"
 
 using qrcodegen::QrCode;
 
@@ -123,26 +124,18 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QFrame(parent) {
   QWidget *primeWidget = new QWidget;
   primeWidget->setObjectName("primeWidget");
   QVBoxLayout *primeLayout = new QVBoxLayout(primeWidget);
-  primeLayout->setContentsMargins(60, 50, 60, 50);
+  primeLayout->setContentsMargins(56, 40, 56, 40);
+  primeLayout->setSpacing(20);
 
   QLabel *subscribed = new QLabel(tr("✓ SUBSCRIBED"));
   subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
-  primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
-
-  primeLayout->addSpacing(60);
+  primeLayout->addWidget(subscribed);
 
   QLabel *commaPrime = new QLabel(tr("comma prime"));
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
-  primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
-
-  primeLayout->addSpacing(20);
-
-  QLabel *connectUrl = new QLabel(tr("CONNECT.COMMA.AI"));
-  connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
-  primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
+  primeLayout->addWidget(commaPrime);
 
   mainLayout->addWidget(primeWidget);
-
   mainLayout->addStretch();
 }
 
@@ -195,8 +188,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   QFrame* finishRegistration = new QFrame;
   finishRegistration->setObjectName("primeWidget");
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setSpacing(40);
-  finishRegistationLayout->setContentsMargins(64, 64, 64, 64);
+  finishRegistationLayout->setSpacing(38);
+  finishRegistationLayout->setContentsMargins(64, 48, 64, 48);
 
   QLabel* registrationTitle = new QLabel(tr("Finish Setup"));
   registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold;");
@@ -204,7 +197,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QLabel* registrationDescription = new QLabel(tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
   registrationDescription->setWordWrap(true);
-  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light;");
+  registrationDescription->setStyleSheet("font-size: 50px; font-weight: light;");
   finishRegistationLayout->addWidget(registrationDescription);
 
   finishRegistationLayout->addStretch();
@@ -234,15 +227,24 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->addWidget(mainLayout);
 
-  primeAd = new PrimeAdWidget;
-  mainLayout->addWidget(primeAd);
+  QWidget *content = new QWidget;
+  QVBoxLayout *content_layout = new QVBoxLayout(content);
+  content_layout->setContentsMargins(0, 0, 0, 0);
+  content_layout->setSpacing(30);
 
   primeUser = new PrimeUserWidget;
-  mainLayout->addWidget(primeUser);
+  content_layout->addWidget(primeUser);
 
-  mainLayout->setCurrentWidget(uiState()->primeType() ? (QWidget*)primeUser : (QWidget*)primeAd);
+  WiFiPromptWidget *wifi_prompt = new WiFiPromptWidget;
+  QObject::connect(wifi_prompt, &WiFiPromptWidget::openSettings, this, &SetupWidget::openSettings);
+  content_layout->addWidget(wifi_prompt);
+  content_layout->addStretch();
 
-  setFixedWidth(750);
+  mainLayout->addWidget(content);
+
+  primeUser->setVisible(uiState()->primeType());
+  mainLayout->setCurrentIndex(1);
+
   setStyleSheet(R"(
     #primeWidget {
       border-radius: 10px;
@@ -282,10 +284,7 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   } else {
     popup->reject();
 
-    if (prime_type) {
-      mainLayout->setCurrentWidget(primeUser);
-    } else {
-      mainLayout->setCurrentWidget(primeAd);
-    }
+    primeUser->setVisible(prime_type);
+    mainLayout->setCurrentIndex(1);
   }
 }
