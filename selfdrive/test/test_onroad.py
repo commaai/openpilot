@@ -64,7 +64,7 @@ PROCS.update({
     "system.sensord.pigeond": 6.0,
   },
   "tizi": {
-     "./boardd": 14.0,
+     "./boardd": 19.0,
     "system.sensord.rawgps.rawgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type()))
