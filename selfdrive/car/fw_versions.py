@@ -86,8 +86,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
-      # print(addr, version)
-      # print('first candidates', candidates)
 
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
       if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
@@ -95,7 +93,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         if len(platform_codes) == 1:
           platform_code = list(platform_codes)[0]
           candidates = all_platform_codes[(addr[0], addr[1], platform_code)]
-          print('second candidates', candidates)
 
       if len(candidates) == 1:
         match_count += 1
