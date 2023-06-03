@@ -75,9 +75,11 @@ public:
   LongitudinalPersonality();
 
 private:
-  QPushButton btnplus;
-  QPushButton btnminus;
-  QLabel label;
+  QPushButton btnaggressive;
+  QPushButton btnstandard;
+  QPushButton btnrelaxed;
+  QString unselect_style;
+  QString select_style;
   Params params;
 
   int get_param();

@@ -31,33 +31,49 @@ LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Driving Pe
                                                              "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.",
                                                              "../assets/offroad/icon_speed_limit.png") {
 
-  label.setAlignment(Qt::AlignVCenter|Qt::AlignRight);
-  label.setStyleSheet("color: #e0e879");
-  hlayout->addWidget(&label);
-
   std::vector<QPushButton*> buttons;
-  buttons.push_back(&btnminus);
-  buttons.push_back(&btnplus);
+  hlayout->addWidget(&btnaggressive);
+  hlayout->addWidget(&btnstandard);
+  hlayout->addWidget(&btnrelaxed);
 
-  for (QPushButton* button : buttons) {
-    button->setStyleSheet(R"(
+  btnaggressive.setText("aggressive");
+  btnstandard.setText("standard");
+  btnrelaxed.setText("relaxed");
+
+  select_style = (R"(
       padding: 0;
       border-radius: 50px;
-      font-size: 50px;
+      font-size: 45px;
       font-weight: 500;
       color: #E4E4E4;
+      background-color: #33Ab4C;
+    )");
+  unselect_style = (R"(
+      padding: 0;
+      border-radius: 50px;
+      font-size: 45px;
+      font-weight: 350;
+      color: #E4E4E4;
       background-color: #393939;
-    )");  
-    button->setFixedSize(150, 100);
-    hlayout->addWidget(button);
-  }
-  
-  QObject::connect(&btnminus, &QPushButton::clicked, [=]() {
-    set_param(get_param()- 1);
+    )");
+
+  btnaggressive.setFixedSize(300, 100);
+  btnstandard.setFixedSize(250, 100);
+  btnrelaxed.setFixedSize(225, 100);
+
+  QObject::connect(&btnaggressive, &QPushButton::clicked, [=]() {
+    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::AGGRESSIVE)).toStdString());
+    refresh();
   });
 
-  QObject::connect(&btnplus, &QPushButton::clicked, [=]() {
-    set_param(get_param() + 1);
+  QObject::connect(&btnstandard, &QPushButton::clicked, [=]() {
+    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::STANDARD)).toStdString());
+    refresh();
+  });
+
+  QObject::connect(&btnrelaxed, &QPushButton::clicked, [=]() {
+    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::RELAXED)).toStdString());
+    refresh();
   });
   refresh();
 }
@@ -75,15 +91,16 @@ LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Driving Pe
 
 void LongitudinalPersonality::refresh() {
   int value = get_param();
+  btnaggressive.setStyleSheet(unselect_style);
+  btnstandard.setStyleSheet(unselect_style);
+  btnrelaxed.setStyleSheet(unselect_style);
   if (value == (int) cereal::LongitudinalPersonality::AGGRESSIVE) {
-    label.setText(QString::fromStdString("aggressive"));
+    btnaggressive.setStyleSheet(select_style);
   } else if (value == (int) cereal::LongitudinalPersonality::STANDARD) {
-    label.setText(QString::fromStdString("standard"));
+    btnstandard.setStyleSheet(select_style);
   } else if (value == (int) cereal::LongitudinalPersonality::RELAXED) {
-    label.setText(QString::fromStdString("relaxed"));
+    btnrelaxed.setStyleSheet(select_style);
   }
-  btnminus.setText("-");
-  btnplus.setText("+");
 }
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
