@@ -63,8 +63,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   all_fw_versions = defaultdict(set)
   all_platform_codes = defaultdict(set)
   for candidate, fw_by_addr in FW_VERSIONS.items():
-    if MODEL_TO_BRAND[candidate] != 'hyundai':
-      continue
     if candidate == exclude:
       continue
 
@@ -167,11 +165,8 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     # For each brand, attempt to fingerprint using all FW returned from its queries
     matches = set()
     for brand in VERSIONS.keys():
-      if brand != 'hyundai':
-        continue
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      config = FW_QUERY_CONFIGS[brand]
-      matches |= match_func(fw_versions_dict, config)
+      matches |= match_func(fw_versions_dict, FW_QUERY_CONFIGS[brand])
 
     if len(matches):
       return exact_match, matches
