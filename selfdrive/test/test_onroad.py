@@ -106,7 +106,9 @@ class TestOnroad(unittest.TestCase):
 
     # setup env
     params = Params()
-    params.clear_all()
+    if "CI" in os.environ:
+      params.clear_all()
+    params.remove("CurrentRoute")
     set_params_enabled()
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(ROOT):
