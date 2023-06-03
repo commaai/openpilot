@@ -69,8 +69,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       continue
 
     for addr, fws in fw_by_addr.items():
-      if addr[0] not in [Ecu.fwdCamera, Ecu.fwdRadar]:
-        continue
       for f in fws:
         if addr[0] not in exclude_types:
           all_fw_versions[(addr[1], addr[2], f)].add(candidate)
