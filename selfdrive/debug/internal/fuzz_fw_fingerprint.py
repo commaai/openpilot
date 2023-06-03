@@ -30,7 +30,8 @@ if __name__ == "__main__":
       for (tp, addr, subaddr), fw_list in fws.items():
         fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
-      matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)
+      # TODO: fix this
+      matches = match_fw_to_car_fuzzy(fw_dict, None, log=False, exclude=candidate)
 
       total += 1
       if len(matches) == 1:
