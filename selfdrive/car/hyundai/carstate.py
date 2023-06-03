@@ -445,6 +445,7 @@ class CarState(CarStateBase):
 
     if CP.flags & HyundaiFlags.CAN_CANFD_HDA2:
       signals += [(f"BYTE{i}", "CAM_0x2a4") for i in range(3, 24)]
+      signals.append(("COUNTER", "CAM_0x2a4"))
       checks += [("CAM_0x2a4", 20)]
 
     bus = 6 if CP.flags & HyundaiFlags.CAN_CANFD_HDA2 else 2
