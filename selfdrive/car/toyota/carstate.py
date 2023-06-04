@@ -147,11 +147,6 @@ class CarState(CarStateBase):
       if self.CP.carFingerprint in (CAR.CHR, CAR.CHRH):
         ret.leftBlindspot, ret.rightBlindspot = ret.rightBlindspot, ret.leftBlindspot
 
-    # TSS-P C-HR has flipped BSM signal
-    if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CHR, CAR.CHRH):
-      ret.leftBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
-      ret.rightBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
-
     if self.CP.carFingerprint != CAR.PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
 
