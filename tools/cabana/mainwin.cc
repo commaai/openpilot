@@ -32,6 +32,9 @@ MainWindow::MainWindow() : QMainWindow() {
   createStatusBar();
   createShortcuts();
 
+  // save default window state to allow resetting it
+  default_state = saveState();
+
   // restore states
   restoreGeometry(settings.geometry);
   if (isMaximized()) {
@@ -134,6 +137,10 @@ void MainWindow::createActions() {
   QWidgetAction *commands_act = new QWidgetAction(this);
   commands_act->setDefaultWidget(new QUndoView(UndoStack::instance()));
   commands_menu->addAction(commands_act);
+
+  edit_menu->addSeparator();
+  edit_menu->addAction(tr("Reset Window Layout"),
+                       [this]() { restoreState(default_state); });
 
   tools_menu = menuBar()->addMenu(tr("&Tools"));
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
