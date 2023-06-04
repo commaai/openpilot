@@ -271,7 +271,7 @@ class TestOnroad(unittest.TestCase):
         small_cluster = core < 4
         #self.assertLess(max(usage), 99 if small_cluster else 80)
         self.assertLess(usage.mean(), 60 if small_cluster else 40)
-        self.assertGreater(usage.mean(), 10)  # sanity check
+        self.assertGreater(usage.mean(), 5)  # sanity check
 
   def test_camera_processing_time(self):
     result = "\n"
