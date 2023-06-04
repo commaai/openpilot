@@ -229,7 +229,7 @@ class CarState(CarStateBase):
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR"))
       checks.append(("GAS_SENSOR", 50))
 
-    if CP.enableBsm or (CP.enableBsm and CP.carFingerprint in (CAR.CHR, CAR.CHRH)):
+    if CP.enableBsm:
       signals += [
         ("L_ADJACENT", "BSM"),
         ("L_APPROACHING", "BSM"),
