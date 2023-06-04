@@ -3,18 +3,18 @@
 #include <QUndoCommand>
 #include <QUndoStack>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 class EditMsgCommand : public QUndoCommand {
 public:
-  EditMsgCommand(const MessageId &id, const QString &name, int size, QUndoCommand *parent = nullptr);
+  EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &comment, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  QString old_name, new_name;
+  QString old_name, new_name, old_comment, new_comment;
   int old_size = 0, new_size = 0;
 };
 

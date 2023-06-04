@@ -10,7 +10,30 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
   bus = 4 if can_canfd else 0
 
-  values = lkas11
+  lkas11_sigs = [
+    "CF_Lkas_LdwsActivemode",
+    "CF_Lkas_LdwsLHWarning",
+    "CF_Lkas_LdwsRHWarning",
+    "CF_Lkas_FcwOpt_USM",
+  ]
+
+  if not can_canfd:
+    lkas11_sigs += [
+      "CF_Lkas_LdwsSysState",
+      "CF_Lkas_SysWarning",
+      "CF_Lkas_HbaLamp",
+      "CF_Lkas_FcwBasReq",
+      "CF_Lkas_HbaSysState",
+      "CF_Lkas_FcwOpt",
+      "CF_Lkas_HbaOpt",
+      "CF_Lkas_FcwSysState",
+      "CF_Lkas_FcwCollisionWarning",
+      "CF_Lkas_FusionState",
+      "CF_Lkas_LdwsOpt_USM",
+    ]
+
+  values = {s: lkas11[s] for s in lkas11_sigs}
+
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
@@ -31,7 +54,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                          CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
                          CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
                          CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022,
-                         CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020):
+                         CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020, CAR.KIA_CEED):
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -89,7 +112,20 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
 
 def create_clu11(packer, frame, clu11, button, CP):
-  values = clu11
+  values = {s: clu11[s] for s in [
+    "CF_Clu_CruiseSwState",
+    "CF_Clu_CruiseSwMain",
+    "CF_Clu_SldMainSW",
+    "CF_Clu_ParityBit1",
+    "CF_Clu_VanzDecimal",
+    "CF_Clu_Vanz",
+    "CF_Clu_SPEED_UNIT",
+    "CF_Clu_DetentOut",
+    "CF_Clu_RheostatLevel",
+    "CF_Clu_CluInfo",
+    "CF_Clu_AmpInfo",
+    "CF_Clu_AliveCnt1",
+  ]}
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars

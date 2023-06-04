@@ -71,10 +71,15 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   QPushButton* cancel_btn = new QPushButton(tr("Cancel"));
   cancel_btn->setFixedSize(386, 125);
   cancel_btn->setStyleSheet(R"(
-    font-size: 48px;
-    border-radius: 10px;
-    color: #E4E4E4;
-    background-color: #444444;
+    QPushButton {
+      font-size: 48px;
+      border-radius: 10px;
+      color: #E4E4E4;
+      background-color: #333333;
+    }
+    QPushButton:pressed {
+      background-color: #444444;
+    }
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
   QObject::connect(cancel_btn, &QPushButton::clicked, this, &InputDialog::reject);
