@@ -143,6 +143,9 @@ class CarState(CarStateBase):
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
+      # TSS-P C-HR has flipped BSM signal
+      if self.CP.carFingerprint in (CAR.CHR, CAR.CHRH):
+        ret.leftBlindspot, ret.rightBlindspot = ret.rightBlindspot, ret.leftBlindspot
 
     # TSS-P C-HR has flipped BSM signal
     if self.CP.enableBsm and self.CP.carFingerprint in (CAR.CHR, CAR.CHRH):
