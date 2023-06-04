@@ -113,13 +113,13 @@ def download_and_inject_assistance():
   assist_data_file = '/tmp/xtra3grc.bin' 
   assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
   try:
-    c = pycurl.Curl() 
-    c.setopt(c.URL, assistance_url)
-    c.setopt(c.NOBODY, 1)
+    c = pycurl.Curl()
+    c.setopt(pycurl.URL, assistance_url)
+    c.setopt(pycurl.NOBODY, 1)
     c.setopt(pycurl.CONNECTTIMEOUT, 2)
     c.perform()
     c.close()
-    bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
+    bytes_n = c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
     if bytes_n > 1e5:
       cloudlog.exception("Qcom assistance data larger than expected")
       return
