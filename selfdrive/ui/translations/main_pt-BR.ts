@@ -285,11 +285,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation>MODO EXPERIMENTAL ATIVADO</translation>
+        <translation>MODO EXPERIMENTAL ON</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>MODO CHILL ATIVADO</translation>
+        <translation>MODO CHILL ON</translation>
     </message>
 </context>
 <context>
@@ -1075,23 +1075,24 @@ Isso pode levar até um minuto.</translation>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurar
+Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Conecte se ao Wi-Fi para upload de dados de condução e ajudar a melhorar o openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Configurações</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation type="unfinished"></translation>
+        <translation>Subindo dados para treinamento</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Seus dados são utilizados para treinar modelos de direção e ajudar a melhorar o openpilot</translation>
     </message>
 </context>
 <context>
