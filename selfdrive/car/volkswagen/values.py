@@ -1146,9 +1146,9 @@ FW_VERSIONS = {
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100700',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AB\xf1\x890397',
       b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x872Q0907572T \xf1\x890383',
-      b'\xf1\x872Q0907572AB\xf1\x890397',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {
