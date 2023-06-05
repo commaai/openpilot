@@ -27,8 +27,8 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 
-LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Driving Personality",
-                                                             "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.",
+LongitudinalPersonality::LongitudinalPersonality() : AbstractControl(tr("Driving Personality"),
+                                                             tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake."),
                                                              "../assets/offroad/icon_speed_limit.png") {
 
   std::vector<QPushButton*> buttons;
@@ -36,9 +36,9 @@ LongitudinalPersonality::LongitudinalPersonality() : AbstractControl("Driving Pe
   hlayout->addWidget(&btnstandard);
   hlayout->addWidget(&btnrelaxed);
 
-  btnaggressive.setText("aggressive");
-  btnstandard.setText("standard");
-  btnrelaxed.setText("relaxed");
+  btnaggressive.setText(tr("aggressive"));
+  btnstandard.setText(tr("standard"));
+  btnrelaxed.setText(tr("relaxed"));
 
   select_style = (R"(
       padding: 0;

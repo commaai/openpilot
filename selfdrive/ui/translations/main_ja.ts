@@ -313,6 +313,29 @@
     </message>
 </context>
 <context>
+    <name>LongitudinalPersonality</name>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MapETA</name>
     <message>
         <source>eta</source>
