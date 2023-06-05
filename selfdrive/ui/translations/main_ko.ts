@@ -871,6 +871,10 @@ This may take up to a minute.</source>
         <source>update available</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
