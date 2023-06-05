@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 from cereal import car
+from opendbc.can.tests.test_packer_parser import can_list_to_can_capnp
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, get_safety_config
+from panda.python.uds import CONTROL_TYPE, MESSAGE_TYPE
+from selfdrive.car import STD_CARGO_KG, get_safety_config, create_button_event
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from selfdrive.car.subaru.values import CAR, GEN2_ES_BUTTONS_DID, GEN2_ES_BUTTONS_MEMORY_ADDRESS, GEN2_ES_SECRET_KEY, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
+from selfdrive.car.disable_ecu import EXT_DIAG_REQUEST, EXT_DIAG_RESPONSE, disable_ecu
+from Crypto.Cipher import AES
+from system.swaglog import cloudlog
+
+ButtonType = car.CarState.ButtonEvent.Type
+
+BUTTONS_DICT = {Buttons.RES_INC: ButtonType.accelCruise, Buttons.SET_DEC: ButtonType.decelCruise,
+                Buttons.GAP_DIST_INC: ButtonType.gapAdjustCruise, Buttons.GAP_DIST_DEC: ButtonType.gapAdjustCruise,
+                Buttons.LKAS_TOGGLE: ButtonType.cancel, Buttons.ACC_TOGGLE: ButtonType.cancel}
 
 
 class CarInterface(CarInterfaceBase):
@@ -18,6 +30,9 @@ class CarInterface(CarInterfaceBase):
     # Detect infotainment message sent from the camera
     if candidate not in PREGLOBAL_CARS and 0x323 in fingerprint[2]:
       ret.flags |= SubaruFlags.SEND_INFOTAINMENT.value
+    
+    if candidate in GLOBAL_GEN2 and experimental_long:
+      ret.flags |= SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value
 
     if candidate in PREGLOBAL_CARS:
       ret.enableBsm = 0x25c in fingerprint[0]
@@ -106,7 +121,8 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unknown car: {candidate}")
 
     # longitudinal
-    ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 + PREGLOBAL_CARS)
+    ret.experimentalLongitudinalAvailable = candidate not in PREGLOBAL_CARS
+
     if experimental_long and ret.experimentalLongitudinalAvailable:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
@@ -117,6 +133,8 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = experimental_long
       if ret.openpilotLongitudinalControl:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LONG
+    
+    ret.pcmCruise = True
 
     return ret
 
@@ -125,9 +143,82 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
-    ret.events = self.create_common_events(ret).to_msg()
+    ret.buttonEvents = []
+
+    if self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      ret.buttonEvents = buttonEvents
+
+    self.CS.buttonEvents = ret.buttonEvents
+
+    ret.events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise).to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
     return self.CC.update(c, self.CS, now_nanos)
+
+  @staticmethod
+  def gen2_security_access(seed):
+    cipher = AES.new(GEN2_ES_SECRET_KEY, AES.MODE_ECB)
+    key = cipher.encrypt(seed)
+    return key
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    if CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value:
+      # Disable FWD Camera
+      bus = 2
+      addr = 0x787
+
+      EXT_DIAG_REQUEST = b'\x10\x03'
+      EXT_DIAG_RESPONSE = b'\x50\x03'
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=False)
+      resp = query.get_data(2)
+
+      if not len(resp):
+        cloudlog.warning("failed to enter diagnostic session...")
+        return
+
+      sub_function = CONTROL_TYPE.DISABLE_RX_DISABLE_TX
+      communication_type = MESSAGE_TYPE.NORMAL
+      COMM_CONT_REQUEST = b'\x28' + int.to_bytes(sub_function, 1, byteorder="big") + int.to_bytes(communication_type, 1, byteorder="big")
+      COM_CONT_RESPONSE = b'\x68'
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [COMM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=False)
+      resp = query.get_data(2)
+
+      if not len(resp):
+        cloudlog.warning("failed to disable ecu...")
+        return
+
+      # Unlock ECU
+      ES_SEED_REQUEST = b'\x27\x03'
+      ES_SEED_RESPONSE = b'\x67\x03'
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [ES_SEED_REQUEST], [ES_SEED_RESPONSE], debug=False)
+      resp = query.get_data(2)
+
+      if not len(resp):
+        cloudlog.warning("failed to request seed...")
+        return
+
+      seed = resp[(addr, None)]
+      key = CarInterface.gen2_security_access(seed)
+      ES_KEY_REQUEST = b'\x27\x04' + key
+      ES_KEY_RESPONSE = b'\x67\x04'
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [ES_KEY_REQUEST], [ES_KEY_RESPONSE], debug=False)
+      resp = query.get_data(2)
+
+      if not len(resp):
+        cloudlog.warning("failed to unlock ecu with key...")
+        return
+
+      # Setup Button DID
+      BUTTON_DID_REQUEST = b'\x2c\x01' + GEN2_ES_BUTTONS_DID + GEN2_ES_BUTTONS_MEMORY_ADDRESS
+      BUTTON_DID_RESPONSE = b'\x6c\x01' + GEN2_ES_BUTTONS_DID
+
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [BUTTON_DID_REQUEST], [BUTTON_DID_RESPONSE], debug=False)
+      resp = query.get_data(2)
+
+      if not len(resp):
+        cloudlog.warning("failed to setup button DID...")
+        return

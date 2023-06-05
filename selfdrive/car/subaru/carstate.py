@@ -1,17 +1,47 @@
 import copy
+from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import DBC, CAR, GEN2_ES_BUTTONS_DID, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
 
+
+PREV_BUTTON_SAMPLES = 8
+
+def cruise_buttons_conversion(cruise_buttons):
+  if "Main" in cruise_buttons:
+    if cruise_buttons["Main"]:
+      return Buttons.ACC_TOGGLE
+    if cruise_buttons["Resume"]:
+      return Buttons.RES_INC
+    if cruise_buttons["Set"]:
+      return Buttons.SET_DEC
+
+  return Buttons.NONE
+
+def cruise_buttons_conversion_gen2_uds(eyesight_uds):
+  if "PCI" in eyesight_uds and eyesight_uds["SID"] == 0x62 and eyesight_uds["DID"] == 0x00f3:
+    data = eyesight_uds["DATA"]
+
+    if data == 4:
+      return Buttons.RES_INC
+    elif data == 2:
+      return Buttons.SET_DEC
+    elif data == 1:
+      return Buttons.ACC_TOGGLE
+    
+    return Buttons.NONE
+
+  return None
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
+    self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -54,14 +84,15 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
     cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
+
     ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
     ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
-    ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+    ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
-       (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
+      (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
-
+    
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
     ret.doorOpen = any([cp.vl["BodyInfo"]["DOOR_OPEN_RR"],
                         cp.vl["BodyInfo"]["DOOR_OPEN_RL"],
@@ -74,25 +105,58 @@ class CarState(CarStateBase):
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
-      ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-      ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
-                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
-      ret.stockAeb = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 5) or \
-                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert_Msg"] == 6)
+      if not (self.CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+        ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
+        ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
+      else:
+        ret.cruiseState.nonAdaptive = False
+        ret.cruiseState.standstill = False
+      
+      if not (self.CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+        ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
+                      (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
+        ret.stockAeb = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 5) or \
+                      (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert_Msg"] == 6)
 
-      self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
-      cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-      self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
-      cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-      self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
+        self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+
+        cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+        self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])
+        cp_es_status = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+        self.es_status_msg = copy.copy(cp_es_status.vl["ES_Status"])
+
+      else:
+        ret.stockFcw = False
+        ret.stockAeb = False
+        self.es_lkas_state_msg = None
+        self.es_brake_msg = None
+        self.es_status_msg = None
+      
       self.cruise_control_msg = copy.copy(cp_cruise.vl["CruiseControl"])
       self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
+    
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-    self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
-    self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
-    if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-      self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+    cp_buttons = cp_cam if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+
+    self.prev_cruise_buttons = self.cruise_buttons[-1]
+
+    if not (self.CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
+      self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
+
+      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
+        self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+      
+      self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
+
+    else:
+      self.es_distance_msg = None
+      self.es_dashstatus_msg = None
+      self.es_infotainmentstatus_msg = None
+
+      button_data = cruise_buttons_conversion_gen2_uds(cp_buttons.vl["EYESIGHT_UDS_RESPONSE"])
+      if button_data is not None:
+        self.cruise_buttons.append(button_data)
 
     return ret
 
@@ -104,6 +168,9 @@ class CarState(CarStateBase):
       ("Cruise_On", "CruiseControl"),
       ("Cruise_Activated", "CruiseControl"),
       ("Signal2", "CruiseControl"),
+      ("Main", "Cruise_Buttons"),
+      ("Set", "Cruise_Buttons"),
+      ("Resume", "Cruise_Buttons"),
       ("FL", "Wheel_Speeds"),
       ("FR", "Wheel_Speeds"),
       ("RL", "Wheel_Speeds"),
@@ -114,8 +181,11 @@ class CarState(CarStateBase):
       ("Signal2", "Brake_Status"),
       ("Brake", "Brake_Status"),
       ("Signal3", "Brake_Status"),
+      ("Cruise_Set_Speed", "Cruise_Status"),
     ]
     checks = [
+      ("Cruise_Buttons", 50),
+      ("Cruise_Status", 20),
       ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
@@ -261,7 +331,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
-  def get_cam_can_parser(CP):
+  def get_global_cam_es_signals(CP):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus"),
@@ -334,35 +404,58 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Visible", "ES_LKAS_State"),
         ("LKAS_Alert", "ES_LKAS_State"),
         ("Signal3", "ES_LKAS_State"),
-
       ]
-
+    
       checks = [
         ("ES_DashStatus", 10),
         ("ES_LKAS_State", 10),
       ]
 
-      if CP.carFingerprint not in GLOBAL_GEN2:
-        signals += CarState.get_global_es_signals()[0]
-        checks += CarState.get_global_es_signals()[1]
+    return signals, checks
 
-      if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-        signals += [
-          ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
-          ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
-          ("Signal1", "INFOTAINMENT_STATUS"),
-          ("Signal2", "INFOTAINMENT_STATUS"),
-        ]
-        checks.append(("INFOTAINMENT_STATUS", 10))
+  @staticmethod
+  def get_cam_can_parser(CP):
+    if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      signals, checks = CarState.get_global_cam_es_signals(CP)
+    else:
+      signals, checks = [], []
+    
+    if CP.carFingerprint not in GLOBAL_GEN2:
+      signals += CarState.get_global_es_signals()[0]
+      checks += CarState.get_global_es_signals()[1]
 
+    if CP.flags & SubaruFlags.SEND_INFOTAINMENT and not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      signals += [
+        ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
+        ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
+        ("Signal1", "INFOTAINMENT_STATUS"),
+        ("Signal2", "INFOTAINMENT_STATUS"),
+      ]
+      checks.append(("INFOTAINMENT_STATUS", 10))
+  
+    if (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      signals += [
+        ("PCI", "EYESIGHT_UDS_RESPONSE"),
+        ("SID", "EYESIGHT_UDS_RESPONSE"),
+        ("DID", "EYESIGHT_UDS_RESPONSE"),
+        ("DATA", "EYESIGHT_UDS_RESPONSE")
+      ]
+
+      checks += [
+        ("EYESIGHT_UDS_RESPONSE", 5) # just because eyesight is sending UDS messages doesn't mean its the correct messages, need dbc multiplexing
+      ]
+    
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
   @staticmethod
   def get_body_can_parser(CP):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
-      signals += CarState.get_global_es_signals()[0]
-      checks += CarState.get_global_es_signals()[1]
+
+      if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+        signals += CarState.get_global_es_signals()[0]
+        checks += CarState.get_global_es_signals()[1]
+      
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     return None

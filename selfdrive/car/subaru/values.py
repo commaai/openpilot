@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
+from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts, CommonFootnote
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -47,14 +47,17 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+  GEN2_DISABLE_FWD_CAMERA = 2
 
 
 class CAR:
-  # Global platform
+  # Global gen1
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
   IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
+
+  # Global gen2
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
   LEGACY = "SUBARU LEGACY 7TH GEN"
 
@@ -68,13 +71,28 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  harness_kit: HarnessKit = HarnessKit(Harness.subaru_a)
+  car_parts: CarParts = CarParts.common([CarPart.subaru_a])
+
+GEN2_ES_BUTTONS_MEMORY_ADDRESS = b'\x11\x30\x01\x01' # from ssm4
+GEN2_ES_BUTTONS_DID = b'\xf3\x00' # from ssm4, appears to be arbitrary
+GEN2_ES_BUTTONS_RES = b'\x04' # resume button
+
+GEN2_ES_SECRET_KEY = b'\x33\xe6\x3c\xa0\x43\x11\x53\x46\x0c\x18\xf1\x06\x4c\x70\xfe\x41' # TODO: is this for all gen2 cars?
+
+class Buttons:
+  NONE = 0
+  RES_INC = 1 # resume / increase speed
+  SET_DEC = 2 # set / decrease speed
+  GAP_DIST_INC = 3 # increase gap distance
+  GAP_DIST_DEC = 4 # decrease gap distance
+  LKAS_TOGGLE = 5 # steering wheel icon, which toggles LKAS on stock
+  ACC_TOGGLE = 6 # button that toggles ACC on
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", harness_kit=HarnessKit(Harness.subaru_b)),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", harness_kit=HarnessKit(Harness.subaru_b)),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarPart.subaru_b]), footnotes=[CommonFootnote.EXP_LONG_AVAIL]),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarPart.subaru_b]), footnotes=[CommonFootnote.EXP_LONG_AVAIL]),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -525,6 +543,7 @@ FW_VERSIONS = {
       b'\xf1\x82\xe2,\xa0@\x07',
       b'\xbc"`q\x07',
       b'\xe3,\xa0@\x07',
+      b'\xbc,\xa0u\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xfe\xf7@\x00',
@@ -534,6 +553,7 @@ FW_VERSIONS = {
       b'\xf1\x82\xa7\xf6D@\x00',
       b'\xa7\xf6D@\x00',
       b'\xa7\xfe\xf4@\x00',
+      b'\xa5\xfe\xf8@\x00',
     ],
   },
 }
