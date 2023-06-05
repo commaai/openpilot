@@ -402,7 +402,6 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
-  //printf("setCurrentPanel %s\n", param);
   if (!param.isEmpty()) {
     emit expandToggleDescription(param);
   }
