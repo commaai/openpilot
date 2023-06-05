@@ -5,7 +5,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN1, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
 
 
 PREV_BUTTON_SAMPLES = 8
@@ -423,7 +423,7 @@ class CarState(CarStateBase):
     else:
       signals, checks = [], []
     
-    if CP.carFingerprint not in GLOBAL_GEN2:
+    if CP.carFingerprint in GLOBAL_GEN1:
       signals += CarState.get_global_es_signals()[0]
       checks += CarState.get_global_es_signals()[1]
 
