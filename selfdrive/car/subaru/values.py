@@ -80,7 +80,7 @@ class SubaruCarInfo(CarInfo):
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in GLOBAL_GEN2:
       self.footnotes.insert(0, Footnote.GEN2)
-      self.harness_kit = CarParts(CarHarness.subaru_b)
+      self.harness_kit = CarParts.common([CarHarness.subaru_b])
 
 GEN2_ES_BUTTONS_MEMORY_ADDRESS = b'\x11\x30\x01\x01' # from ssm4
 GEN2_ES_BUTTONS_DID = b'\xf3\x00' # from ssm4, appears to be arbitrary

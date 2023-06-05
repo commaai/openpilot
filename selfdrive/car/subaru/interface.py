@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 from cereal import car
-from opendbc.can.tests.test_packer_parser import can_list_to_can_capnp
 from panda import Panda
 from panda.python.uds import CONTROL_TYPE, MESSAGE_TYPE
 from selfdrive.car import STD_CARGO_KG, get_safety_config, create_button_event
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.subaru.values import CAR, GEN2_ES_BUTTONS_DID, GEN2_ES_BUTTONS_MEMORY_ADDRESS, GEN2_ES_SECRET_KEY, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
-from selfdrive.car.disable_ecu import EXT_DIAG_REQUEST, EXT_DIAG_RESPONSE, disable_ecu
 from Crypto.Cipher import AES
 from system.swaglog import cloudlog
 

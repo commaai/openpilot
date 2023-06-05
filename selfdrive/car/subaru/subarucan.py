@@ -377,7 +377,7 @@ def subaru_preglobal_checksum(packer, values, addr):
   return (sum(dat[:7])) % 256
 
 
-def create_preglobal_steering_control(packer, apply_steer, bus):
+def create_preglobal_steering_control(packer, frame, apply_steer, bus):
   values = {
     "LKAS_Command": apply_steer,
     "LKAS_Active": 1 if apply_steer != 0 else 0
@@ -387,7 +387,7 @@ def create_preglobal_steering_control(packer, apply_steer, bus):
   return packer.make_can_msg("ES_LKAS", bus, values)
 
 
-def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
+def create_preglobal_es_distance(packer, frame, cruise_button, es_distance_msg, bus):
   values = copy.copy(es_distance_msg)
   values["Cruise_Button"] = cruise_button
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
