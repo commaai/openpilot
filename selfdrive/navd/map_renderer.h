@@ -43,6 +43,7 @@ private:
   void initLayers();
 
   uint32_t frame_id = 0;
+  uint32_t last_llk_frame = 0;
 
   QTimer* timer;
 

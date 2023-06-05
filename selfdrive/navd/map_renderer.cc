@@ -84,7 +84,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
-    sm.reset(new SubMaster({"liveLocationKalman", "navRoute"}, {"liveLocationKalman"}));
+    sm.reset(new SubMaster({"liveLocationKalman", "navRoute", "roadCameraState", "modelV2"}, {"liveLocationKalman"}));
 
     timer = new QTimer(this);
     timer->setSingleShot(true);
@@ -96,13 +96,17 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 void MapRenderer::msgUpdate() {
   sm->update(1000);
 
-  if (sm->updated("liveLocationKalman")) {
+  if (sm->updated("modelV2")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
 
+    double tsm = (float)(nanos_since_boot() - (*sm)["modelV2"].getLogMonoTime()) / 1e6;
+    bool frame_id_matches = (*sm)["roadCameraState"].getRoadCameraState().getFrameId() == (*sm)["modelV2"].getModelV2().getFrameId();
+    bool timing_valid = ((tsm < 10) && frame_id_matches) || (tsm > 10 * 1000.) || !sm->alive("modelV2");
     bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
+    if (localizer_valid && timing_valid && (sm->rcv_frame("liveLocationKalman") - last_llk_frame >= LLK_DECIMATION)) {
+      last_llk_frame = sm->rcv_frame("liveLocationKalman");
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
