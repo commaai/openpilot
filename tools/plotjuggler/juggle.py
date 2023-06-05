@@ -11,7 +11,7 @@ import requests
 import argparse
 
 from common.basedir import BASEDIR
-from selfdrive.test.process_replay.compare_logs import save_log
+from selfdrive.test.compare_logs import save_log
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
