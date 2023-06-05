@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Harness, HarnessKit, Enum, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -75,12 +75,12 @@ class Footnote(Enum):
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  harness_kit: HarnessKit = HarnessKit(Harness.subaru_a)
+  car_parts: CarParts = CarParts.common([CarHarness.subaru_a])
 
   def init_make(self, CP: car.CarParams):
     if CP.carFingerprint in GLOBAL_GEN2:
       self.footnotes.insert(0, Footnote.GEN2)
-      self.harness_kit = HarnessKit(Harness.subaru_b)
+      self.harness_kit = CarParts(CarHarness.subaru_b)
 
 GEN2_ES_BUTTONS_MEMORY_ADDRESS = b'\x11\x30\x01\x01' # from ssm4
 GEN2_ES_BUTTONS_DID = b'\xf3\x00' # from ssm4, appears to be arbitrary

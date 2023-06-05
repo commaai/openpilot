@@ -4,7 +4,7 @@ from typing import Dict, List, Set, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit
+from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts, Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -29,8 +29,8 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.000225, 0.00015])
   CURVATURE_ERROR = 0.002  # ~6 degrees at 10 m/s, ~10 degrees at 35 m/s
 
-  ACCEL_MAX = 2.0               # m/s^s max acceleration
-  ACCEL_MIN = -3.5              # m/s^s max deceleration
+  ACCEL_MAX = 2.0               # m/s^2 max acceleration
+  ACCEL_MIN = -3.5              # m/s^2 max deceleration
   MIN_GAS = -0.5
   INACTIVE_GAS = -5.0
 
@@ -66,7 +66,11 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
-  harness_kit: HarnessKit = HarnessKit(Harness.ford_q3)
+  car_parts: CarParts = CarParts.common([CarHarness.ford_q3])
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
+      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {

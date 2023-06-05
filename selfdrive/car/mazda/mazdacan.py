@@ -1,5 +1,3 @@
-import copy
-
 from selfdrive.car.mazda.values import GEN1, Buttons
 
 
@@ -46,6 +44,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
   csum = csum % 256
 
+  values = {}
   if car_fingerprint in GEN1:
     values = {
       "LKAS_REQUEST": apply_steer,
@@ -64,7 +63,17 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
 
 def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool):
-  values = copy.copy(cam_msg)
+  values = {s: cam_msg[s] for s in [
+    "LINE_VISIBLE",
+    "LINE_NOT_VISIBLE",
+    "LANE_LINES",
+    "BIT1",
+    "BIT2",
+    "BIT3",
+    "NO_ERR_BIT",
+    "S1",
+    "S1_HBEAM",
+  ]}
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
     "HANDS_WARN_3_BITS": 0b111 if steer_required else 0,

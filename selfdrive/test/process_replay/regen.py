@@ -243,15 +243,14 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   if frs is None:
     frs = dict()
 
-  params = Params()
-  os.environ["LOG_ROOT"] = outdir
-
   # Get and setup initial state
   CP = [m for m in lr if m.which() == 'carParams'][0].carParams
   controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
   liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
 
-  setup_env(CP=CP, controlsState=controlsState)
+  setup_env(CP=CP, controlsState=controlsState, log_dir=outdir)
+
+  params = Params()
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
@@ -283,10 +282,9 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   # TODO add configs for modeld, dmonitoringmodeld
   fakeable_daemons = {}
   for config in CONFIGS:
-    replayable_messages = set([msg for sub in config.pub_sub.values() for msg in sub])
     processes = [
       multiprocessing.Process(target=replay_service, args=(msg, lr)) 
-      for msg in replayable_messages
+      for msg in config.subs
     ]
     fakeable_daemons[config.proc_name] = processes
 
