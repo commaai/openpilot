@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, CarPart, CarParts, CommonFootnote
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Harness, HarnessKit, Enum, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -67,11 +67,20 @@ class CAR:
   OUTBACK_PREGLOBAL = "SUBARU OUTBACK 2015 - 2017"
   OUTBACK_PREGLOBAL_2018 = "SUBARU OUTBACK 2018 - 2019"
 
+class Footnote(Enum):
+  GEN2 = CarFootnote(
+    "Long control requires disabling eyesight, which will currently deactivate stock AEB.",
+    Column.LONGITUDINAL, shop_footnote=True)
 
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  car_parts: CarParts = CarParts.common([CarPart.subaru_a])
+  harness_kit: HarnessKit = HarnessKit(Harness.subaru_a)
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint in GLOBAL_GEN2:
+      self.footnotes.insert(0, Footnote.GEN2)
+      self.harness_kit = HarnessKit(Harness.subaru_b)
 
 GEN2_ES_BUTTONS_MEMORY_ADDRESS = b'\x11\x30\x01\x01' # from ssm4
 GEN2_ES_BUTTONS_DID = b'\xf3\x00' # from ssm4, appears to be arbitrary
@@ -91,8 +100,8 @@ class Buttons:
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarPart.subaru_b]), footnotes=[CommonFootnote.EXP_LONG_AVAIL]),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarPart.subaru_b]), footnotes=[CommonFootnote.EXP_LONG_AVAIL]),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All"),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All"),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
