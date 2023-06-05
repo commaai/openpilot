@@ -1,10 +1,11 @@
 [submodule "panda"]
   path = panda
-  url = ../../martinl/panda.git
-  branch = feature-subaru-long
+  url = ../../jnewb1/panda.git
+  branch = feature-subaru-long-gen2-uds
 [submodule "opendbc"]
   path = opendbc
-  url = ../../commaai/opendbc.git
+  url = ../../jnewb1/opendbc.git
+  branch = feature-subaru-long-gen2-uds
 [submodule "laika_repo"]
   path = laika_repo
   url = ../../commaai/laika.git
