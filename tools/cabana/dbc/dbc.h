@@ -45,6 +45,7 @@ struct std::hash<MessageId> {
 
 typedef QList<std::pair<double, QString>> ValueDescription;
 class DBCFile;
+
 namespace cabana {
 class Signal {
 public:
