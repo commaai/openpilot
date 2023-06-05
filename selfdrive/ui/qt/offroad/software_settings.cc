@@ -132,7 +132,7 @@ void SoftwarePanel::updateLabels() {
       downloadBtn->setText(tr("DOWNLOAD"));
       downloadBtn->setValue(tr("update available"));
     } else {
-      QString lastUpdate = "never";
+      QString lastUpdate = tr("never");
       auto tm = params.get("LastUpdateTime");
       if (!tm.empty()) {
         lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
