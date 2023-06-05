@@ -32,10 +32,10 @@ public:
   inline QString newMsgName(const MessageId &id) const { return findDBCFile(id)->newMsgName(id); }
   inline QString newSignalName(const MessageId &id) const { return findDBCFile(id)->newSignalName(id); }
 
-  inline const QList<uint8_t> &mask(const MessageId &id) const { return findDBCFile(id)->mask(id); };
+  inline const QList<uint8_t> &mask(const MessageId &id) const { return findDBCFile(id)->mask(id); }
   const SourceSet sources(const DBCFile *dbc_file) const;
 
-  std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
+  inline const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source) const { return findDBCFile(source)->getMessages(); }
   inline const cabana::Msg *msg(const MessageId &id) const { return findDBCFile(id)->msg(id); }
   inline const cabana::Msg *msg(uint8_t source, const QString &name) const { return findDBCFile(source)->msg(name); }
 

@@ -47,16 +47,21 @@ typedef QList<std::pair<double, QString>> ValueDescription;
 class DBCFile;
 
 namespace cabana {
+
 class Signal {
 public:
+  Signal() = default;
+  Signal(const Signal &other) = default;
+  QString formatValue(double value) const;
+  bool getValue(const uint8_t *data, size_t data_size, double *val) const;
+  bool operator==(const cabana::Signal &other) const;
+  inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
+
   enum class Type {
     Normal = 0,
     Multiplexed,
     Multiplexor
   };
-
-  Signal() = default;
-  Signal(const Signal &other) = default;
 
   Type type = Type::Normal;
   QString name;
@@ -76,32 +81,30 @@ public:
   int precision = 0;
   QColor color;
 
+private:
   void update();
-  QString formatValue(double value) const;
-  bool getValue(const uint8_t *data, size_t data_size, double *val) const;
-  bool operator==(const cabana::Signal &other) const;
-  inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
+
+  friend class Msg;
 };
 
 class Msg {
 public:
   Msg() = default;
-  ~Msg() {}
+  Msg(const Msg &other) { *this = other; }
+  ~Msg();
+  Msg &operator=(const Msg &other);
+  int indexOf(const cabana::Signal *sig) const;
+  const cabana::Signal *sig(const QString &sig_name) const;
+  inline const std::vector<cabana::Signal *> &getSignals() const { return sigs; }
 
   uint32_t address;
   QString name;
   uint32_t size;
   QString comment;
-  QList<cabana::Signal> sigs;
+  std::vector<cabana::Signal *> sigs;
 
   QList<uint8_t> mask;
   cabana::Signal *multiplexor = nullptr;
-
-  QVector<const cabana::Signal *> getSignals() const;
-  const cabana::Signal *sig(const QString &sig_name) const {
-    auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
-    return it != sigs.end() ? &(*it) : nullptr;
-  }
 
 private:
   void update();

@@ -66,8 +66,8 @@ RemoveSigCommand::RemoveSigCommand(const MessageId &id, const cabana::Signal *si
   sigs.push_back(*sig);
   if (sig->type == cabana::Signal::Type::Multiplexor) {
     for (const auto &s : dbc()->msg(id)->sigs) {
-      if (s.type == cabana::Signal::Type::Multiplexed) {
-        sigs.push_back(s);
+      if (s->type == cabana::Signal::Type::Multiplexed) {
+        sigs.push_back(*s);
       }
     }
   }
@@ -87,10 +87,10 @@ EditSignalCommand::EditSignalCommand(const MessageId &id, const cabana::Signal *
     auto msg = dbc()->msg(id);
     assert(msg);
     for (const auto &s : msg->sigs) {
-      if (s.type == cabana::Signal::Type::Multiplexed) {
-        auto new_s = s;
+      if (s->type == cabana::Signal::Type::Multiplexed) {
+        auto new_s = *s;
         new_s.type = cabana::Signal::Type::Normal;
-        sigs.push_back({s, new_s});
+        sigs.push_back({*s, new_s});
       }
     }
   }

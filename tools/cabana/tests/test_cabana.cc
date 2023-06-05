@@ -15,8 +15,8 @@ TEST_CASE("DBCFile::generateDBC") {
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 
   REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
-  auto msgs = dbc_origin.getMessages();
-  auto new_msgs = dbc_from_generated.getMessages();
+  auto &msgs = dbc_origin.getMessages();
+  auto &new_msgs = dbc_from_generated.getMessages();
   for (auto &[id, m] : msgs) {
     auto &new_m = new_msgs.at(id);
     REQUIRE(m.name == new_m.name);
@@ -99,26 +99,26 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(file.msg("message_1") != nullptr);
 
   auto &sig_1 = msg->sigs[0];
-  REQUIRE(sig_1.name == "signal_1");
-  REQUIRE(sig_1.start_bit == 0);
-  REQUIRE(sig_1.size == 12);
-  REQUIRE(sig_1.min == 0);
-  REQUIRE(sig_1.max == 4095);
-  REQUIRE(sig_1.unit == "unit");
-  REQUIRE(sig_1.comment == "signal comment");
-  REQUIRE(sig_1.val_desc.size() == 3);
-  REQUIRE(sig_1.val_desc[0] == std::pair<double, QString>{0, "disabled"});
-  REQUIRE(sig_1.val_desc[1] == std::pair<double, QString>{1.2, "initializing"});
-  REQUIRE(sig_1.val_desc[2] == std::pair<double, QString>{2, "fault"});
+  REQUIRE(sig_1->name == "signal_1");
+  REQUIRE(sig_1->start_bit == 0);
+  REQUIRE(sig_1->size == 12);
+  REQUIRE(sig_1->min == 0);
+  REQUIRE(sig_1->max == 4095);
+  REQUIRE(sig_1->unit == "unit");
+  REQUIRE(sig_1->comment == "signal comment");
+  REQUIRE(sig_1->val_desc.size() == 3);
+  REQUIRE(sig_1->val_desc[0] == std::pair<double, QString>{0, "disabled"});
+  REQUIRE(sig_1->val_desc[1] == std::pair<double, QString>{1.2, "initializing"});
+  REQUIRE(sig_1->val_desc[2] == std::pair<double, QString>{2, "fault"});
 
   auto &sig_2 = msg->sigs[1];
-  REQUIRE(sig_2.comment == "multiple line comment\n1\n2");
+  REQUIRE(sig_2->comment == "multiple line comment\n1\n2");
 
   // multiplexed signals
   msg = file.msg(162);
   REQUIRE(msg != nullptr);
   REQUIRE(msg->sigs.size() == 2);
-  REQUIRE(msg->sigs[0].type == cabana::Signal::Type::Multiplexor);
-  REQUIRE(msg->sigs[1].type == cabana::Signal::Type::Multiplexed);
-  REQUIRE(msg->sigs[1].multiplex_value == 4);
+  REQUIRE(msg->sigs[0]->type == cabana::Signal::Type::Multiplexor);
+  REQUIRE(msg->sigs[1]->type == cabana::Signal::Type::Multiplexed);
+  REQUIRE(msg->sigs[1]->multiplex_value == 4);
 }

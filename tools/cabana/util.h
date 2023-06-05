@@ -20,7 +20,7 @@ class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);

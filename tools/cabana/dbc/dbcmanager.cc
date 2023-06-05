@@ -65,7 +65,7 @@ void DBCManager::updateSignal(const MessageId &id, const QString &sig_name, cons
 
 void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   auto dbc_file = findDBCFile(id);
-  if (cabana::Signal *s = dbc_file->getSignal(id, sig_name)) {
+  if (auto s = dbc_file->getSignal(id, sig_name)) {
     emit signalRemoved(s);
     dbc_file->removeSignal(id, sig_name);
   }
@@ -79,14 +79,6 @@ void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t si
 void DBCManager::removeMsg(const MessageId &id) {
   findDBCFile(id)->removeMsg(id);
   emit msgRemoved(id);
-}
-
-std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
-  std::map<MessageId, cabana::Msg> ret;
-  for (auto &[address, msg] : findDBCFile(source)->getMessages()) {
-    ret[{.source = source, .address = address}] = msg;
-  }
-  return ret;
 }
 
 QStringList DBCManager::signalNames() const {

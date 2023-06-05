@@ -1,36 +1,67 @@
 #include "tools/cabana/dbc/dbc.h"
+
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
 
-QVector<const cabana::Signal *> cabana::Msg::getSignals() const {
-  QVector<const Signal *> ret;
-  ret.reserve(sigs.size());
-  for (auto &sig : sigs) ret.push_back(&sig);
-  std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    return std::tuple(r->type, l->multiplex_value, l->start_bit, l->name) <
-           std::tuple(l->type, r->multiplex_value, r->start_bit, r->name);
-  });
-  return ret;
+cabana::Msg::~Msg() {
+  for (auto s : sigs) {
+    delete s;
+  }
+}
+
+cabana::Msg &cabana::Msg::operator=(const cabana::Msg &other) {
+  address = other.address;
+  name = other.name;
+  size = other.size;
+  comment = other.comment;
+
+  for (auto s : sigs) delete s;
+  sigs.clear();
+  for (auto s : other.sigs) {
+    sigs.push_back(new cabana::Signal(*s));
+  }
+
+  update();
+  return *this;
+}
+
+const cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
+  auto it = std::find_if(sigs.cbegin(), sigs.cend(), [&](auto &s) { return s->name == sig_name; });
+  return it != sigs.end() ? *it : nullptr;
+}
+
+int cabana::Msg::indexOf(const cabana::Signal *sig) const {
+  for (int i = 0; i < sigs.size(); ++i) {
+    if (sigs[i] == sig) return i;
+  }
+  return -1;
 }
 
 void cabana::Msg::update() {
   mask = QVector<uint8_t>(size, 0x00).toList();
   multiplexor = nullptr;
 
-  for (auto &sig : sigs) {
-    if (sig.type == cabana::Signal::Type::Multiplexor) {
-      multiplexor = &sig;
-    }
-    sig.update();
+  // sort signals
+  std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) {
+    return std::tie(r->type, l->multiplex_value, l->start_bit, l->name) <
+           std::tie(l->type, r->multiplex_value, r->start_bit, r->name);
+  });
 
-    int i = sig.msb / 8;
-    int bits = sig.size;
+  for (auto sig : sigs) {
+    if (sig->type == cabana::Signal::Type::Multiplexor) {
+      multiplexor = sig;
+    }
+    sig->update();
+
+    // update mask
+    int i = sig->msb / 8;
+    int bits = sig->size;
     while (i >= 0 && i < size && bits > 0) {
-      int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
-      int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
+      int lsb = (int)(sig->lsb / 8) == i ? sig->lsb : i * 8;
+      int msb = (int)(sig->msb / 8) == i ? sig->msb : (i + 1) * 8 - 1;
 
       int sz = msb - lsb + 1;
       int shift = (lsb - (i * 8));
@@ -38,13 +69,14 @@ void cabana::Msg::update() {
       mask[i] |= ((1ULL << sz) - 1) << shift;
 
       bits -= size;
-      i = sig.is_little_endian ? i - 1 : i + 1;
+      i = sig->is_little_endian ? i - 1 : i + 1;
     }
   }
-  for (auto &sig : sigs) {
-    sig.multiplexor = sig.type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
-    if (!sig.multiplexor) {
-      sig.multiplex_value = 0;
+
+  for (auto sig : sigs) {
+    sig->multiplexor = sig->type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
+    if (!sig->multiplexor) {
+      sig->multiplex_value = 0;
     }
   }
 }

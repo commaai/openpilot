@@ -130,8 +130,7 @@ void MessagesWidget::dbcModified() {
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
   auto it = std::find(model->msgs.cbegin(), model->msgs.cend(), msg_id);
   if (it != model->msgs.cend()) {
-    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0),
-                                            QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    view->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0));
   }
 }
 
@@ -210,7 +209,7 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
 
 void MessageListModel::dbcModified() {
   dbc_address.clear();
-  for (const auto &[_, m] : dbc()->getMessages(0)) {
+  for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_address.insert(m.address);
   }
   fetchData();
@@ -274,7 +273,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s.name).hasMatch(); });
+        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
         break;
       }
       case Column::SOURCE:

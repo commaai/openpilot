@@ -28,7 +28,7 @@ DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) :
 }
 
 bool DBCFile::save() {
-  assert (!filename.isEmpty());
+  assert(!filename.isEmpty());
   if (writeContents(filename)) {
     cleanupAutoSaveFile();
     return true;
@@ -62,14 +62,14 @@ bool DBCFile::writeContents(const QString &fn) {
 
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
-    m->sigs.push_back(sig);
+    auto s = m->sigs.emplace_back(new cabana::Signal(sig));
     m->update();
-    return &m->sigs.last();
+    return s;
   }
   return nullptr;
 }
 
- cabana::Signal *DBCFile::updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig) {
+cabana::Signal *DBCFile::updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     if (auto s = (cabana::Signal *)m->sig(sig_name)) {
       *s = sig;
@@ -80,15 +80,16 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   return nullptr;
 }
 
-cabana::Signal *DBCFile::getSignal(const MessageId &id, const QString &sig_name) {
+const cabana::Signal *DBCFile::getSignal(const MessageId &id, const QString &sig_name) const {
   auto m = msg(id);
   return m ? (cabana::Signal *)m->sig(sig_name) : nullptr;
 }
 
 void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s->name == sig_name; });
     if (it != m->sigs.end()) {
+      delete *it;
       m->sigs.erase(it);
       m->update();
     }
@@ -123,7 +124,7 @@ QString DBCFile::newSignalName(const MessageId &id) {
   return name;
 }
 
-const QList<uint8_t>& DBCFile::mask(const MessageId &id) const {
+const QList<uint8_t> &DBCFile::mask(const MessageId &id) const {
   auto m = msg(id);
   return m ? m->mask : empty_mask;
 }
@@ -133,7 +134,7 @@ const cabana::Msg *DBCFile::msg(uint32_t address) const {
   return it != msgs.end() ? &it->second : nullptr;
 }
 
-const cabana::Msg* DBCFile::msg(const QString &name) {
+const cabana::Msg *DBCFile::msg(const QString &name) {
   auto it = std::find_if(msgs.cbegin(), msgs.cend(), [&name](auto &m) { return m.second.name == name; });
   return it != msgs.cend() ? &(it->second) : nullptr;
 }
@@ -141,8 +142,8 @@ const cabana::Msg* DBCFile::msg(const QString &name) {
 QStringList DBCFile::signalNames() const {
   // Used for autocompletion
   QStringList ret;
-  for (auto const& [_, msg] : msgs) {
-    for (auto sig: msg.getSignals()) {
+  for (auto const &[_, msg] : msgs) {
+    for (auto sig : msg.getSignals()) {
       ret << sig->name;
     }
   }
@@ -236,7 +237,7 @@ void DBCFile::parse(const QString &content) {
       s.min = match.captured(8 + offset).toDouble();
       s.max = match.captured(9 + offset).toDouble();
       s.unit = match.captured(10 + offset);
-      current_msg->sigs.push_back(s);
+      current_msg->sigs.push_back(new cabana::Signal(s));
     } else if (line.startsWith("VAL_ ")) {
       auto match = val_regexp.match(line);
       dbc_assert(match.hasMatch());
