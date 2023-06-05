@@ -1,7 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
@@ -44,11 +44,12 @@ class CAR:
   BRONCO_SPORT_MK1 = "FORD BRONCO SPORT 1ST GEN"
   ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
   EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
+  F_150_MK14 = "FORD F-150 14TH GEN"
   FOCUS_MK4 = "FORD FOCUS 4TH GEN"
   MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
 
 
-CANFD_CARS: Set[str] = set()
+CANFD_CARS = {CAR.F_150_MK14}
 
 
 class RADAR:
@@ -73,8 +74,14 @@ class FordCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.ford_q3]))
 
   def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
+    harness = CarHarness.ford_q3
+    if CP.carFingerprint in CANFD_CARS:
+      harness = CarHarness.ford_q4
+
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.F_150_MK14, CAR.MAVERICK_MK1):
+      self.car_parts = CarParts([Device.three_angled_mount, harness])
+    else:
+      self.car_parts = CarParts.common([harness])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
@@ -87,6 +94,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
     FordCarInfo("Ford Explorer 2020-22"),
     FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
   ],
+  CAR.F_150_MK14: FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
 }
@@ -195,6 +203,23 @@ FW_VERSIONS = {
       b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-AZD\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.F_150_MK14: {
+    (Ecu.eps, 0x730, None): [
+      b'ML3V-14D003-BC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'PL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7E0, None): [
+      b'PL3A-14C204-BRB\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.FOCUS_MK4: {
