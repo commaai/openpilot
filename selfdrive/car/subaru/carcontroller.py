@@ -132,37 +132,37 @@ class CarController:
           cruise_button = 0
         self.cruise_button_prev = cruise_button
 
-        can_sends.append(subarucan.create_preglobal_es_distance(self.packer, self.frame, cruise_button, CS.es_distance_msg, 0))
+        can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg, 0))
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, self.frame, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control, CS.out.cruiseState.available))
-        can_sends.append(subarucan.create_es_lkas_state(self.packer, self.frame, CS.es_lkas_state_msg, CC.enabled, hud_control, CS.out.cruiseState.available))
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control, CS.out.cruiseState.available))
+        can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control, CS.out.cruiseState.available))
 
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-          can_sends.append(subarucan.create_infotainmentstatus(self.packer, self.frame, CS.es_infotainmentstatus_msg, hud_control))
+          can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control))
       
       if self.frame % 10 == 0 or len(CS.buttonEvents):
         low_speed = CS.out.vEgoRaw < 9
-        can_sends.append(subarucan.create_es_distance(self.packer, self.frame, CS.es_distance_msg, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle, CS.cruise_buttons[-1], low_speed, body_bus))
+        can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle, CS.cruise_buttons[-1], low_speed, body_bus))
 
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
-          can_sends.append(subarucan.create_es_status(self.packer, self.frame, CS.es_status_msg, CC.longActive, cruise_rpm, body_bus))
-          can_sends.append(subarucan.create_es_brake(self.packer, self.frame, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value, body_bus))
+          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, cruise_rpm, body_bus))
+          can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value, body_bus))
       
         if self.frame % 2 == 0:
-          can_sends.append(subarucan.create_brake_status(self.packer, self.frame, CS.brake_status_msg, CS.out.stockAeb, 2))
+          can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, CS.out.stockAeb, 2))
 
     # TODO: what are these
     if self.frame % 5 == 0:
-      can_sends.append(subarucan.create_unknown_1(self.packer, self.frame, 0))
+      can_sends.append(subarucan.create_unknown_1(self.packer, 0))
 
     if self.frame % 10 == 0:
-      can_sends.append(subarucan.create_unknown_2(self.packer, self.frame, 0))
+      can_sends.append(subarucan.create_unknown_2(self.packer, 0))
     
     if self.frame % 2 == 0:
-      can_sends.append(subarucan.create_unknown_3(self.packer, self.frame, 0))
+      can_sends.append(subarucan.create_unknown_3(self.packer, 0))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX

@@ -17,7 +17,7 @@ def create_steering_control(packer, apply_steer, bus):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
-def create_es_distance(packer, frame, es_distance_msg, pcm_cancel_cmd, long_active, brake_cmd, brake_value, cruise_throttle, cruise_button, low_speed, bus):
+def create_es_distance(packer, es_distance_msg, pcm_cancel_cmd, long_active, brake_cmd, brake_value, cruise_throttle, cruise_button, low_speed, bus):
   if es_distance_msg is None:
     values = {
       "Signal1": 1,
@@ -93,7 +93,7 @@ def create_es_distance(packer, frame, es_distance_msg, pcm_cancel_cmd, long_acti
   return packer.make_can_msg("ES_Distance", bus, values)
 
 
-def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, hud_control, cruise_on):
+def create_es_lkas_state(packer, es_lkas_state_msg, enabled, hud_control, cruise_on):
   if es_lkas_state_msg is None:
     values = {
       "LKAS_Alert_Msg": 0,
@@ -171,7 +171,7 @@ def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, hud_control,
 
   return packer.make_can_msg("ES_LKAS_State", 0, values)
 
-def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_active, hud_control, cruise_on): 
+def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, hud_control, cruise_on): 
   if dashstatus_msg is None:
     values = {
       "PCB_Off": 0,
@@ -243,7 +243,7 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_active, hu
   
   return packer.make_can_msg("ES_DashStatus", 0, values)
 
-def create_es_brake(packer, frame, es_brake_msg, enabled, brake_cmd, brake_value, bus):
+def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value, bus):
   if es_brake_msg is None:
     values = {}
   else:
@@ -262,7 +262,7 @@ def create_es_brake(packer, frame, es_brake_msg, enabled, brake_cmd, brake_value
 
   return packer.make_can_msg("ES_Brake", bus, values)
 
-def create_es_status(packer, frame, es_status_msg, long_active, cruise_rpm, bus):
+def create_es_status(packer, es_status_msg, long_active, cruise_rpm, bus):
   if es_status_msg is None:
     values = {}
   else:
@@ -297,7 +297,7 @@ def create_es_status(packer, frame, es_status_msg, long_active, cruise_rpm, bus)
 #   return packer.make_can_msg("CruiseControl", 2, values)
 
 # disable es_brake feedback to eyesight, exempt AEB
-def create_brake_status(packer, frame, es_brake_msg, aeb, bus):
+def create_brake_status(packer, es_brake_msg, aeb, bus):
   if es_brake_msg is None:
     values = {
       "Signal1": 0,
@@ -320,7 +320,7 @@ def create_brake_status(packer, frame, es_brake_msg, aeb, bus):
   return packer.make_can_msg("Brake_Status", bus, values)
 
 
-def create_infotainmentstatus(packer, frame, infotainmentstatus_msg, visual_alert):
+def create_infotainmentstatus(packer, infotainmentstatus_msg, visual_alert):
   if infotainmentstatus_msg is not None:
     values = {s: infotainmentstatus_msg[s] for s in [
       "CHECKSUM",
@@ -350,21 +350,21 @@ def create_infotainmentstatus(packer, frame, infotainmentstatus_msg, visual_aler
   return packer.make_can_msg("INFOTAINMENT_STATUS", 0, values)
 
 
-def create_unknown_1(packer, frame, bus):
+def create_unknown_1(packer, bus):
   values = {
     "Signal1": 0x000080FF7F00
   }
   return packer.make_can_msg("ES_UNKNOWN_1", bus, values)
 
 
-def create_unknown_2(packer, frame, bus):
+def create_unknown_2(packer, bus):
   values = {
     "Signal1": 0xC00000000000
   }
   return packer.make_can_msg("ES_UNKNOWN_2", bus, values)
 
 
-def create_unknown_3(packer, frame, bus):
+def create_unknown_3(packer, bus):
   values = {
     "Signal1": 0x010000000000
   }
@@ -377,7 +377,7 @@ def subaru_preglobal_checksum(packer, values, addr):
   return (sum(dat[:7])) % 256
 
 
-def create_preglobal_steering_control(packer, frame, apply_steer, bus):
+def create_preglobal_steering_control(packer, apply_steer, bus):
   values = {
     "LKAS_Command": apply_steer,
     "LKAS_Active": 1 if apply_steer != 0 else 0
@@ -387,7 +387,7 @@ def create_preglobal_steering_control(packer, frame, apply_steer, bus):
   return packer.make_can_msg("ES_LKAS", bus, values)
 
 
-def create_preglobal_es_distance(packer, frame, cruise_button, es_distance_msg, bus):
+def create_preglobal_es_distance(packer, cruise_button, es_distance_msg, bus):
   values = copy.copy(es_distance_msg)
   values["Cruise_Button"] = cruise_button
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")

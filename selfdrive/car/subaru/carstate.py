@@ -455,7 +455,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
 
-      if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      if CP.carFingerprint in GLOBAL_GEN2 and not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
         signals += CarState.get_global_es_signals()[0]
         checks += CarState.get_global_es_signals()[1]
       
