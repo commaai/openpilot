@@ -55,7 +55,7 @@ class EnumBase(Enum):
 
 class Mount(EnumBase):
   mount = BasePart("mount")
-  angled_mount = BasePart("angled mount")
+  angled_mount_8_degrees = BasePart("angled mount (8 degrees)")
 
 
 class Cable(EnumBase):
@@ -120,7 +120,7 @@ class CarHarness(EnumBase):
 class Device(EnumBase):
   three = BasePart("comma three", parts=[Mount.mount, Cable.right_angle_obd_c_cable_1_5ft])
   # variant of comma three with angled mounts
-  three_angled_mount = BasePart("comma three", parts=[Mount.angled_mount, Cable.right_angle_obd_c_cable_1_5ft])
+  three_angled_mount = BasePart("comma three", parts=[Mount.angled_mount_8_degrees, Cable.right_angle_obd_c_cable_1_5ft])
   red_panda = BasePart("red panda")
 
 

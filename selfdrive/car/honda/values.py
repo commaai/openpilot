@@ -146,7 +146,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   CAR.PILOT: [
     HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
-    HondaCarInfo("Honda Passport 2019-22", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-23", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
@@ -1130,6 +1130,7 @@ FW_VERSIONS = {
       b'37805-RLV-B210\x00\x00',
       b'37805-RLV-L160\x00\x00',
       b'37805-RLV-B420\x00\x00',
+      b'37805-RLV-F120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TG7-A030\x00\x00',

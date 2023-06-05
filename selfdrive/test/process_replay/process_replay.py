@@ -2,6 +2,7 @@
 import os
 import time
 import signal
+import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
@@ -438,8 +439,11 @@ def _replay_single_process(cfg, lr, fingerprint):
       return log_msgs
 
 
-def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
-  os.environ["PARAMS_ROOT"] = "/dev/shm/params"
+def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, log_dir=None):
+  if platform.system() != "Darwin":
+    os.environ["PARAMS_ROOT"] = "/dev/shm/params"
+  if log_dir is not None:
+    os.environ["LOG_ROOT"] = log_dir
 
   params = Params()
   params.clear_all()
