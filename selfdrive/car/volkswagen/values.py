@@ -154,7 +154,11 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  VW_EXP_LONG = CarFootnote (
+  SKODA_HEATED_WINDSHIELD = CarFootnote(
+    "Some Škoda vehicles are equipped with heated windshields, which are known " +
+    "to block GPS signal needed for some comma three functionality.",
+    Column.MODEL)
+  VW_EXP_LONG = CarFootnote(
     "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
     "are limited to using stock ACC.",
     Column.LONGITUDINAL)
@@ -170,7 +174,9 @@ class VWCarInfo(CarInfo):
   car_parts: CarParts = CarParts.common([CarHarness.j533])
 
   def init_make(self, CP: car.CarParams):
-    self.footnotes.insert(0, Footnote.VW_EXP_LONG)
+    self.footnotes.append(Footnote.VW_EXP_LONG)
+    if "SKODA" in CP.carFingerprint:
+      self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
       self.car_parts = CarParts([Device.three_angled_mount, CarHarness.j533])
