@@ -139,8 +139,7 @@ class Uploader:
         return name, key, fn
 
     for name, key, fn in upload_files:
-      if name in self.immediate_priority:
-        return name, key, fn
+      return (name, key, fn)
 
     return None
 
@@ -156,9 +155,12 @@ class Uploader:
       headers = url_resp_json['headers']
       cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
-      if fake_upload:
+      if fake_upload or (not fn.endswith('rlog')):
         cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
         self.last_resp = FakeResponse()
+
+        # delete file to keep as many rlogs as possible
+        os.remove(fn)
       else:
         with open(fn, "rb") as f:
           data: BinaryIO
@@ -168,7 +170,7 @@ class Uploader:
           else:
             data = f
 
-          self.last_resp = requests.put(url, data=data, headers=headers, timeout=10)
+          self.last_resp = requests.put(url, data=data, headers=headers, timeout=100)
     except Exception as e:
       self.last_exc = (e, traceback.format_exc())
       raise
@@ -196,7 +198,7 @@ class Uploader:
     if sz == 0:
       # tag files of 0 size as uploaded
       success = True
-    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
+    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE and False:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
       success = True
     else:
@@ -279,8 +281,8 @@ def uploader_fn(exit_event: threading.Event) -> None:
     name, key, fn = d
 
     # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
-      key += ".bz2"
+    #if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
+    #  key += ".bz2"
 
     success = uploader.upload(name, key, fn, sm['deviceState'].networkType.raw, sm['deviceState'].networkMetered)
     if success:

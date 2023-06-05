@@ -270,7 +270,7 @@ def calibrationd_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[m
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
 
-    calibrator.not_car = sm['carParams'].notCar
+    calibrator.not_car = True
 
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)
