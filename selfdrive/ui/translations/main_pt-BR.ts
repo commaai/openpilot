@@ -867,6 +867,14 @@ Isso pode levar até um minuto.</translation>
         <source>up to date, last checked %1</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
