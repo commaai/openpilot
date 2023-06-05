@@ -44,58 +44,71 @@ struct std::hash<MessageId> {
 };
 
 typedef QList<std::pair<double, QString>> ValueDescription;
-
+class DBCFile;
 namespace cabana {
-  struct Signal {
-    enum class Type {
-      Normal = 0,
-      Multiplexed,
-      Multiplexor
-    };
-
-    Type type = Type::Normal;
-    QString name;
-    int start_bit, msb, lsb, size;
-    double factor, offset;
-    bool is_signed;
-    bool is_little_endian;
-    double min, max;
-    QString unit;
-    QString comment;
-    ValueDescription val_desc;
-
-    // Multiplexed
-    int multiplex_value = 0;
-    Signal *multiplexor = nullptr;
-
-    int precision = 0;
-    QColor color;
-
-    void update();
-    QString formatValue(double value) const;
-    bool getValue(const uint8_t *data, size_t data_size, double *val) const;
-    bool operator==(const cabana::Signal &other) const;
-    inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
+class Signal {
+public:
+  enum class Type {
+    Normal = 0,
+    Multiplexed,
+    Multiplexor
   };
 
-  struct Msg {
-    uint32_t address;
-    QString name;
-    uint32_t size;
-    QString comment;
-    QList<cabana::Signal> sigs;
+  Signal() = default;
+  Signal(const Signal &other) = default;
 
-    QList<uint8_t> mask;
-    cabana::Signal *multiplexor = nullptr;
+  Type type = Type::Normal;
+  QString name;
+  int start_bit, msb, lsb, size;
+  double factor, offset;
+  bool is_signed;
+  bool is_little_endian;
+  double min, max;
+  QString unit;
+  QString comment;
+  ValueDescription val_desc;
 
-    void update();
-    QVector<const cabana::Signal*> getSignals() const;
-    const cabana::Signal *sig(const QString &sig_name) const {
-      auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
-      return it != sigs.end() ? &(*it) : nullptr;
-    }
-  };
-}
+  // Multiplexed
+  int multiplex_value = 0;
+  Signal *multiplexor = nullptr;
+
+  int precision = 0;
+  QColor color;
+
+  void update();
+  QString formatValue(double value) const;
+  bool getValue(const uint8_t *data, size_t data_size, double *val) const;
+  bool operator==(const cabana::Signal &other) const;
+  inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
+};
+
+class Msg {
+public:
+  Msg() = default;
+  ~Msg() {}
+
+  uint32_t address;
+  QString name;
+  uint32_t size;
+  QString comment;
+  QList<cabana::Signal> sigs;
+
+  QList<uint8_t> mask;
+  cabana::Signal *multiplexor = nullptr;
+
+  QVector<const cabana::Signal *> getSignals() const;
+  const cabana::Signal *sig(const QString &sig_name) const {
+    auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s.name == sig_name; });
+    return it != sigs.end() ? &(*it) : nullptr;
+  }
+
+private:
+  void update();
+
+  friend class ::DBCFile;
+};
+
+}  // namespace cabana
 
 // Helper functions
 double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
