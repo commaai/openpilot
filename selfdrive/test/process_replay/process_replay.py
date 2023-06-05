@@ -332,19 +332,28 @@ def get_process_config(name):
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def rerun_process(lr, name):
-  cfg = get_process_config(name)  
-  output = replay_process(cfg, lr)
-
-  pub_keys = set(cfg.subs)
-  modified_msgs = [msg for msg in lr if msg.which() not in pub_keys]
-  modified_msgs.extend(output)
-  modified_msgs = sorted(modified_msgs, key=lambda m: m.logMonoTime)
-
-  return modified_msgs
+def replay_process_with_name(name, lr, *args, **kwargs):
+  cfg = get_process_config(name)
+  return replay_process(cfg, lr, *args, **kwargs)
 
 
-def replay_process(cfg, lr, fingerprint=None):
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
+  all_msgs = list(lr)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint)
+
+  if return_all_logs:
+    keys = set(cfg.subs)
+    modified_logs = [m for m in all_msgs if m.which() not in keys]
+    modified_logs.extend(process_logs)
+    modified_logs.sort(key=lambda m: m.logMonoTime)
+    log_msgs = modified_logs
+  else:
+    log_msgs = process_logs
+
+  return log_msgs
+
+
+def _replay_single_process(cfg, lr, fingerprint):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -492,7 +501,7 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
 
-def check_enabled(msgs):
+def check_openpilot_enabled(msgs):
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:
