@@ -10,7 +10,8 @@ QVector<const cabana::Signal *> cabana::Msg::getSignals() const {
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
   std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    return std::tuple(r->type, l->multiplex_value, l->start_bit) < std::tuple(l->type, r->multiplex_value, r->start_bit);
+    return std::tuple(r->type, l->multiplex_value, l->start_bit, l->name) <
+           std::tuple(l->type, r->multiplex_value, r->start_bit, r->name);
   });
   return ret;
 }
