@@ -21,7 +21,7 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_enabled
 from selfdrive.test.update_ci_routes import upload_route
-from tools.lib.route import Route
+from tools.lib.route import Route, SegmentName
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
@@ -250,8 +250,10 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
 
   setup_env(CP=CP, controlsState=controlsState, log_dir=outdir)
 
+  device_type = next(iter(lr)).initData.deviceType
   params = Params()
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
+  params.put_bool("WideCameraOnly", device_type != "tici")
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
   fake_daemons = {
@@ -302,13 +304,18 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
         del additional_fake_daemons[d]
 
   all_fake_daemons = {**fake_daemons, **additional_fake_daemons}
+  processes_to_run = managed_processes.copy()
 
   try:
     # TODO: make first run of onnxruntime CUDA provider fast
     if "modeld" not in all_fake_daemons:
-      managed_processes["modeld"].start()
+      processes_to_run["modeld"].start()
+    else:
+      del processes_to_run["modeld"]
     if "dmonitoringmodeld" not in all_fake_daemons:
-      managed_processes["dmonitoringmodeld"].start()
+      processes_to_run["dmonitoringmodeld"].start()
+    else:
+      del processes_to_run["dmonitoringmodeld"]
     time.sleep(5)
 
     # start procs up
@@ -316,9 +323,9 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
            + ['ui', 'manage_athenad', 'uploader', 'soundd', 'micd', 'navd']
     
     print("Faked daemons:", ", ".join(all_fake_daemons.keys()))
-    print("Running daemons:", ", ".join([key for key in managed_processes.keys() if key not in ignore]))
+    print("Running daemons:", ", ".join([key for key in processes_to_run.keys() if key not in ignore]))
 
-    ensure_running(managed_processes.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
+    ensure_running(processes_to_run.values(), started=True, params=Params(), CP=car.CarParams(), not_run=ignore)
     for procs in all_fake_daemons.values():
       for p in procs:
         p.start()
@@ -332,7 +339,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
       time.sleep(1)
   finally:
     # kill everything
-    for p in managed_processes.values():
+    for p in processes_to_run.values():
       p.stop()
     for procs in all_fake_daemons.values():
       for p in procs:
@@ -403,8 +410,8 @@ if __name__ == "__main__":
   parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
   parser.add_argument("--whitelist-procs", type=comma_separated_list, default="all",
                       help="Comma-separated whitelist of processes to regen (e.g. controlsd). Pass 'all' to whitelist all processes.")
-  parser.add_argument("route", type=str, help="The source route")
-  parser.add_argument("seg", type=int, help="Segment in source route")
+  parser.add_argument("segment", type=str, help="The source segment or path to local directory")
   args = parser.parse_args()
 
-  regen_and_save(args.route, args.seg, args.whitelist_procs, args.upload, outdir=args.outdir)
+  segment = SegmentName(args.segment)
+  regen_and_save(segment.route_name.canonical_name, segment.segment_num, args.whitelist_procs, args.upload, outdir=args.outdir)
