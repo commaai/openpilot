@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import IntFlag
+from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
