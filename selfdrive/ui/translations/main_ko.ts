@@ -855,6 +855,26 @@ This may take up to a minute.</source>
         <source>Uninstall</source>
         <translation>제거</translation>
     </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation>업데이트 확인 실패</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation>최신 상태, 마지막으로 확인 %1</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation>다운로드</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation>업데이트 가능</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation>업데이트 안함</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1031,6 +1051,26 @@ This may take up to a minute.</source>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
     </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1071,23 +1111,23 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi 설정</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 참여하세요.</translation>
     </message>
     <message>
         <source>Open Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>설정 열기</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation type="unfinished"></translation>
+        <translation>트레이닝 데이터 업로드</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>귀하의 데이터는 운전 모델을 교육하고 openpilot을 개선하는 데 사용됩니다.</translation>
     </message>
 </context>
 <context>

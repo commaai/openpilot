@@ -19,7 +19,7 @@ from panda.python import Panda
 from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_enabled
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_openpilot_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -343,7 +343,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+  if not check_openpilot_enabled(LogReader(os.path.join(seg_path, "rlog"))):
     raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
