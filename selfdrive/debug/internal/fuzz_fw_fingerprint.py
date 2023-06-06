@@ -24,16 +24,13 @@ if __name__ == "__main__":
   wrong_match = 0
   confusions = defaultdict(set)
 
-  for _ in tqdm(range(1)):
+  for _ in tqdm(range(10)):
     for candidate, fws in FWS.items():
       fw_dict = {}
       for (tp, addr, subaddr), fw_list in fws.items():
         fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
-      print(f"Testing {candidate}")
-      matches = match_fw_to_car_fuzzy(fw_dict, log=False)
-      print(matches)
-      print()
+      matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)
 
       total += 1
       if len(matches) == 1:

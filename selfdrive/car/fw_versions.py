@@ -72,6 +72,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
   matched_ecus = set()
+  match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
     for version in versions:
@@ -81,12 +82,14 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
 
       if len(candidates) == 1:
         matched_ecus.add(ecu_key)
+        match_count += 1
         if candidate is None:
           candidate = candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
         elif candidate != candidates[0]:
           return set()
 
+  print(candidate, match_count, len(matched_ecus), match_count == len(matched_ecus))
   if len(matched_ecus) >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
