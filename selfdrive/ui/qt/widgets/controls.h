@@ -234,8 +234,10 @@ public:
       button_gorup->addButton(button, i);
     }
 
-    QObject::connect(button_gorup, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
-      params.put(key, std::to_string(id));
+    QObject::connect(button_gorup, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
+      if (checked) {
+        params.put(key, std::to_string(id));
+      }
     });
   }
 
