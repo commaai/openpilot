@@ -57,10 +57,10 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
   # impossible to get 3 matching versions, even if two models with shared parts are released at the same
   # time and only one is in our database.
-  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
+  exclude_types = [Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(list)
+  all_fw_versions = defaultdict(set)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
@@ -69,22 +69,38 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
       if addr[0] in exclude_types:
         continue
       for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+        all_fw_versions[(addr[1], addr[2], f)].add(candidate)
 
   match_count = 0
   candidate = None
+  matches = defaultdict(set)
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(addr[0], addr[1], version)]
+      matches[(addr[0], addr[1])] |= candidates
 
-      if len(candidates) == 1:
-        match_count += 1
-        if candidate is None:
-          candidate = candidates[0]
-        # We uniquely matched two different cars. No fuzzy match possible
-        elif candidate != candidates[0]:
-          return set()
+      # if len(candidates) == 1:
+      #   match_count += 1
+      #   if candidate is None:
+      #     candidate = candidates[0]
+      #   # We uniquely matched two different cars. No fuzzy match possible
+      #   elif candidate != candidates[0]:
+      #     return set()
+
+  if len(matches) > 0:
+    print('matches', matches)
+    candidates = set.union(*matches.values())
+    if candidates == 1:
+      candidate = list(candidates)[0]
+      if list(matches.values()).count(candidate) > 2:
+        return {candidate}
+      else:
+        return set()
+    else:
+      return set()
+  else:
+    return set()
 
   if match_count >= 2:
     if log:
@@ -132,8 +148,8 @@ def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
 def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   # Try exact matching first
   exact_matches = []
-  if allow_exact:
-    exact_matches = [(True, match_fw_to_car_exact)]
+  # if allow_exact:
+  #   exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
