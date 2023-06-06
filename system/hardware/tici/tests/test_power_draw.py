@@ -26,7 +26,7 @@ PROCS = [
   Proc('modeld', 0.93, atol=0.2),
   Proc('dmonitoringmodeld', 0.4),
   Proc('encoderd', 0.23),
-  Proc('mapsd', 0.1),
+  Proc('mapsd', 0.05),
   Proc('navmodeld', 0.05),
 ]
 

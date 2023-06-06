@@ -14,11 +14,12 @@ from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
-from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
+from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.test_processes import format_diff
 from system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
+from tools.lib.helpers import save_log
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
