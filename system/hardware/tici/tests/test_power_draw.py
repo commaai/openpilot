@@ -4,6 +4,7 @@ import time
 import math
 from dataclasses import dataclass
 from tabulate import tabulate
+from threading import Thread
 
 import cereal.messaging as messaging
 from system.hardware import HARDWARE, TICI
@@ -26,8 +27,20 @@ PROCS = [
   Proc('dmonitoringmodeld', 0.4),
   Proc('encoderd', 0.23),
   Proc('mapsd', 0.1),
-  Proc('navmodeld', 0.02),
+  Proc('navmodeld', 0.05),
 ]
+
+def send_llk_msg(done):
+  pm = messaging.PubMaster(['liveLocationKalman'])
+  msg = messaging.new_message('liveLocationKalman')
+  msg.liveLocationKalman.positionGeodetic = {'value': [32.7174, -117.16277, 0], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
+  msg.liveLocationKalman.status = 'valid'
+
+  # Send liveLocationKalman at 20hz
+  while not done():
+    pm.send('liveLocationKalman', msg)
+    time.sleep(1/20)
 
 
 class TestPowerDraw(unittest.TestCase):
@@ -49,26 +62,21 @@ class TestPowerDraw(unittest.TestCase):
 
   def test_camera_procs(self):
     baseline = get_power()
-    pm = messaging.PubMaster(['liveLocationKalman'])
-    msg = messaging.new_message('liveLocationKalman')
-    msg.liveLocationKalman.positionGeodetic = {'value': [32.7174, -117.16277, 0], 'std': [0., 0., 0.], 'valid': True}
-    msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-    msg.liveLocationKalman.status = 'valid'
+    done = False
+    thread = Thread(target=send_llk_msg, args=(lambda: done,), daemon=True)
+    thread.start()
 
     prev = baseline
     used = {}
     for proc in PROCS:
       managed_processes[proc.name].start()
-
-      # Send liveLocationKalman at 20hz
-      for _ in range(int(20*proc.warmup)):
-        pm.send('liveLocationKalman', msg)
-        time.sleep(1/20)
+      time.sleep(proc.warmup)
 
       now = get_power(8)
       used[proc.name] = now - prev
       prev = now
 
+    done = True
     manager_cleanup()
 
     tab = []
