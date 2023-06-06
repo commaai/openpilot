@@ -84,7 +84,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
     vipc_server->start_listener();
 
     pm.reset(new PubMaster({"navThumbnail", "mapRenderState"}));
-    sm.reset(new SubMaster({"liveLocationKalman", "navRoute", "roadCameraState", "modelV2"}, {"liveLocationKalman"}));
+    sm.reset(new SubMaster({"liveLocationKalman", "navRoute", "roadCameraState", "modelV2"}, {"liveLocationKalman", "modelV2"}));
 
     timer = new QTimer(this);
     timer->setSingleShot(true);
@@ -96,7 +96,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 void MapRenderer::msgUpdate() {
   sm->update(1000);
 
-  if (sm->updated("modelV2")) {
+  if (sm->updated("liveLocationKalman") || sm->updated("modelV2")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
