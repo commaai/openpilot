@@ -2,6 +2,7 @@
 import os
 import time
 import signal
+import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
@@ -332,7 +333,28 @@ def get_process_config(name):
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def replay_process(cfg, lr, fingerprint=None):
+def replay_process_with_name(name, lr, *args, **kwargs):
+  cfg = get_process_config(name)
+  return replay_process(cfg, lr, *args, **kwargs)
+
+
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
+  all_msgs = list(lr)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint)
+
+  if return_all_logs:
+    keys = set(cfg.subs)
+    modified_logs = [m for m in all_msgs if m.which() not in keys]
+    modified_logs.extend(process_logs)
+    modified_logs.sort(key=lambda m: m.logMonoTime)
+    log_msgs = modified_logs
+  else:
+    log_msgs = process_logs
+
+  return log_msgs
+
+
+def _replay_single_process(cfg, lr, fingerprint):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -417,8 +439,11 @@ def replay_process(cfg, lr, fingerprint=None):
       return log_msgs
 
 
-def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
-  os.environ["PARAMS_ROOT"] = "/dev/shm/params"
+def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, log_dir=None):
+  if platform.system() != "Darwin":
+    os.environ["PARAMS_ROOT"] = "/dev/shm/params"
+  if log_dir is not None:
+    os.environ["LOG_ROOT"] = log_dir
 
   params = Params()
   params.clear_all()
@@ -480,7 +505,7 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None):
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
 
-def check_enabled(msgs):
+def check_openpilot_enabled(msgs):
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:

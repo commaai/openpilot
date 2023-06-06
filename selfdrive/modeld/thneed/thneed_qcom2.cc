@@ -43,7 +43,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
   if (request == IOCTL_KGSL_DRAWCTXT_CREATE) {
     struct kgsl_drawctxt_create *create = (struct kgsl_drawctxt_create *)argp;
     create->flags &= ~KGSL_CONTEXT_PRIORITY_MASK;
-    create->flags |= 1 << KGSL_CONTEXT_PRIORITY_SHIFT;   // priority from 1-15, 1 is max priority
+    create->flags |= 6 << KGSL_CONTEXT_PRIORITY_SHIFT;   // priority from 1-15, 1 is max priority
     printf("IOCTL_KGSL_DRAWCTXT_CREATE: creating context with flags 0x%x\n", create->flags);
   }
 
