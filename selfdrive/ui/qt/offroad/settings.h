@@ -68,16 +68,16 @@ private:
   void updateToggles();
 };
 
-class LongitudinalPersonality : public AbstractControl {
+class ButtonParamControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LongitudinalPersonality();
+  ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                          std::vector<QString> button_texts, std::vector<int> button_widths);
 
 private:
-  QPushButton btnaggressive;
-  QPushButton btnstandard;
-  QPushButton btnrelaxed;
+  std::string key;
+  std::vector<QPushButton*> buttons;
   QString unselect_style;
   QString select_style;
   Params params;
@@ -85,6 +85,7 @@ private:
   int get_param();
   void set_param(int new_value);
   void refresh();
+  
 };
 
 class SoftwarePanel : public ListWidget {

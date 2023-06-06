@@ -27,18 +27,8 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 
-LongitudinalPersonality::LongitudinalPersonality() : AbstractControl(tr("Driving Personality"),
-                                                             tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake."),
-                                                             "../assets/offroad/icon_speed_limit.png") {
-
-  std::vector<QPushButton*> buttons;
-  hlayout->addWidget(&btnaggressive);
-  hlayout->addWidget(&btnstandard);
-  hlayout->addWidget(&btnrelaxed);
-
-  btnaggressive.setText(tr("aggressive"));
-  btnstandard.setText(tr("standard"));
-  btnrelaxed.setText(tr("relaxed"));
+ButtonParamControl::ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
+                                                 std::vector<QString> button_texts, std::vector<int> button_widths) : AbstractControl(title, desc, icon) {
 
   select_style = (R"(
       padding: 0;
@@ -56,50 +46,39 @@ LongitudinalPersonality::LongitudinalPersonality() : AbstractControl(tr("Driving
       color: #E4E4E4;
       background-color: #393939;
     )");
-
-  btnaggressive.setFixedSize(300, 100);
-  btnstandard.setFixedSize(250, 100);
-  btnrelaxed.setFixedSize(225, 100);
-
-  QObject::connect(&btnaggressive, &QPushButton::clicked, [=]() {
-    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::AGGRESSIVE)).toStdString());
+  key = param.toStdString();
+  for (int i = 0; i < button_texts.size(); i++) {
+    QPushButton *button = new QPushButton();
+    button->setText(button_texts[i]);
+    hlayout->addWidget(button);
+    button->setFixedSize(button_widths[i], 100);
+    button->setStyleSheet(unselect_style);
+    buttons.push_back(button);
+    QObject::connect(button, &QPushButton::clicked, [=]() {
+      params.put(key, (QString::number(i)).toStdString());
     refresh();
-  });
-
-  QObject::connect(&btnstandard, &QPushButton::clicked, [=]() {
-    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::STANDARD)).toStdString());
-    refresh();
-  });
-
-  QObject::connect(&btnrelaxed, &QPushButton::clicked, [=]() {
-    params.put("LongitudinalPersonality", (QString::number((int) cereal::LongitudinalPersonality::RELAXED)).toStdString());
-    refresh();
-  });
-  refresh();
+    });
+  }
 }
 
- int LongitudinalPersonality::get_param() {
-    return std::stoi(params.get("LongitudinalPersonality"));
+ int ButtonParamControl::get_param() {
+    return std::stoi(params.get(key));
   };
 
- void LongitudinalPersonality::set_param(int new_value) {
+ void ButtonParamControl::set_param(int new_value) {
     new_value = std::clamp(new_value, (int) cereal::LongitudinalPersonality::AGGRESSIVE, (int) cereal::LongitudinalPersonality::RELAXED);
     QString values = QString::number(new_value);
-    params.put("LongitudinalPersonality", values.toStdString());
+    params.put(key, values.toStdString());
     refresh();
  };
 
-void LongitudinalPersonality::refresh() {
+void ButtonParamControl::refresh() {
   int value = get_param();
-  btnaggressive.setStyleSheet(unselect_style);
-  btnstandard.setStyleSheet(unselect_style);
-  btnrelaxed.setStyleSheet(unselect_style);
-  if (value == (int) cereal::LongitudinalPersonality::AGGRESSIVE) {
-    btnaggressive.setStyleSheet(select_style);
-  } else if (value == (int) cereal::LongitudinalPersonality::STANDARD) {
-    btnstandard.setStyleSheet(select_style);
-  } else if (value == (int) cereal::LongitudinalPersonality::RELAXED) {
-    btnrelaxed.setStyleSheet(select_style);
+  for (int i = 0; i < buttons.size(); i++) {
+    buttons[i]->setStyleSheet(unselect_style);
+    if (value == i) {
+      buttons[i]->setStyleSheet(select_style);
+    }
   }
 }
 
@@ -166,6 +145,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 #endif
   };
 
+
+  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
+  std::vector<int> longi_button_widths{300, 250, 225};
+  ButtonParamControl* long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
+                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake."),
+                                          "../assets/offroad/icon_speed_limit.png",
+                                          longi_button_texts, longi_button_widths);
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
@@ -177,7 +163,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
     // insert longitudinal personality after NDOG toggle
     if (param == "DisengageOnAccelerator") {
-      addItem(new LongitudinalPersonality());
+      addItem(long_personality_setting);
     }
   }
 
