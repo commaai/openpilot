@@ -154,7 +154,11 @@ class Footnote(Enum):
   PASSAT = CarFootnote(
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
-  VW_EXP_LONG = CarFootnote (
+  SKODA_HEATED_WINDSHIELD = CarFootnote(
+    "Some Škoda vehicles are equipped with heated windshields, which are known " +
+    "to block GPS signal needed for some comma three functionality.",
+    Column.MODEL)
+  VW_EXP_LONG = CarFootnote(
     "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
     "are limited to using stock ACC.",
     Column.LONGITUDINAL)
@@ -170,7 +174,9 @@ class VWCarInfo(CarInfo):
   car_parts: CarParts = CarParts.common([CarHarness.j533])
 
   def init_make(self, CP: car.CarParams):
-    self.footnotes.insert(0, Footnote.VW_EXP_LONG)
+    self.footnotes.append(Footnote.VW_EXP_LONG)
+    if "SKODA" in CP.carFingerprint:
+      self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)
 
     if CP.carFingerprint in (CAR.CRAFTER_MK2, CAR.TRANSPORTER_T61):
       self.car_parts = CarParts([Device.three_angled_mount, CarHarness.j533])
@@ -1121,6 +1127,7 @@ FW_VERSIONS = {
   },
   CAR.SKODA_KAROQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018P \xf1\x895472',
       b'\xf1\x8705E906018P \xf1\x896020',
       b'\xf1\x8705L906022BS\xf1\x890913',
     ],
@@ -1129,14 +1136,17 @@ FW_VERSIONS = {
       b'\xf1\x870GC300014L \xf1\x892802',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\x0e1213001211001101131112012100',
       b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\0161213001211001101131122012100',
       b'\xf1\x873Q0959655DE\xf1\x890731\xf1\x82\x0e1213001211001101131121012J00',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563T6090500',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567T6100500',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567T6100700',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AB\xf1\x890397',
       b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
