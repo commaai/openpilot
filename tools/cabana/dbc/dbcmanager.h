@@ -43,7 +43,7 @@ public:
   inline int signalCount(const MessageId &id) const { return findDBCFile(id)->signalCount(id); }
   int signalCount() const;
   int msgCount() const;
-  inline int dbcCount() const { return dbc_files.size(); }
+  inline int dbcCount() const { return allDBCFiles().size(); }
   int nonEmptyDBCCount() const;
 
   DBCFile *findDBCFile(const uint8_t source) const;

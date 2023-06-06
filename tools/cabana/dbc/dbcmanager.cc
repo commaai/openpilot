@@ -90,15 +90,18 @@ QStringList DBCManager::signalNames() const {
 }
 
 int DBCManager::signalCount() const {
-  return std::accumulate(dbc_files.cbegin(), dbc_files.cend(), 0, [](int &n, auto &f) { return n + f.second->signalCount(); });
+  auto files = allDBCFiles();
+  return std::accumulate(files.cbegin(), files.cend(), 0, [](int &n, auto &f) { return n + f->signalCount(); });
 }
 
 int DBCManager::msgCount() const {
-  return std::accumulate(dbc_files.cbegin(), dbc_files.cend(), 0, [](int &n, auto &f) { return n + f.second->msgCount(); });
+  auto files = allDBCFiles();
+  return std::accumulate(files.cbegin(), files.cend(), 0, [](int &n, auto &f) { return n + f->msgCount(); });
 }
 
 int DBCManager::nonEmptyDBCCount() const {
-  return std::count_if(dbc_files.cbegin(), dbc_files.cend(), [](auto &f) { return !f.second->isEmpty(); });
+  auto files = allDBCFiles();
+  return std::count_if(files.cbegin(), files.cend(), [](auto &f) { return !f->isEmpty(); });
 }
 
 DBCFile *DBCManager::findDBCFile(const uint8_t source) const {
