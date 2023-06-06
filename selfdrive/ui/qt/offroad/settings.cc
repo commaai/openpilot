@@ -79,7 +79,7 @@ LongitudinalPersonality::LongitudinalPersonality() : AbstractControl(tr("Driving
 }
 
  int LongitudinalPersonality::get_param() {
-    return stoi(params.get("LongitudinalPersonality"));
+    return std::stoi(params.get("LongitudinalPersonality"));
   };
 
  void LongitudinalPersonality::set_param(int new_value) {
