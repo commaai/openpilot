@@ -48,6 +48,52 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_addrs)
 
 
+def match_fw_to_car_fuzzy_orig(fw_versions_dict, log=True, exclude=None):
+  """Do a fuzzy FW match. This function will return a match, and the number of firmware version
+  that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
+  the match is rejected."""
+
+  # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
+  # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
+  # impossible to get 3 matching versions, even if two models with shared parts are released at the same
+  # time and only one is in our database.
+  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
+
+  # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
+  all_fw_versions = defaultdict(list)
+  for candidate, fw_by_addr in FW_VERSIONS.items():
+    if candidate == exclude:
+      continue
+
+    for addr, fws in fw_by_addr.items():
+      if addr[0] in exclude_types:
+        continue
+      for f in fws:
+        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+
+  match_count = 0
+  candidate = None
+  for addr, versions in fw_versions_dict.items():
+    for version in versions:
+      # All cars that have this FW response on the specified address
+      candidates = all_fw_versions[(addr[0], addr[1], version)]
+
+      if len(candidates) == 1:
+        match_count += 1
+        if candidate is None:
+          candidate = candidates[0]
+        # We uniquely matched two different cars. No fuzzy match possible
+        elif candidate != candidates[0]:
+          return set()
+
+  if match_count >= 2:
+    if log:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+    return {candidate}
+  else:
+    return set()
+
+
 def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
@@ -139,6 +185,27 @@ def match_fw_to_car_exact(fw_versions_dict, _=None) -> Set[str]:
         break
 
   return set(candidates.keys()) - set(invalid)
+
+
+def match_fw_to_car_orig(fw_versions, allow_exact=True, allow_fuzzy=True):
+  # Try exact matching first
+  exact_matches = []
+  if allow_exact:
+    exact_matches = [(True, match_fw_to_car_exact)]
+  if allow_fuzzy:
+    exact_matches.append((False, match_fw_to_car_fuzzy_orig))
+
+  for exact_match, match_func in exact_matches:
+    # For each brand, attempt to fingerprint using all FW returned from its queries
+    matches = set()
+    for brand in VERSIONS.keys():
+      fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
+      matches |= match_func(fw_versions_dict, FW_QUERY_CONFIGS[brand])
+
+    if len(matches):
+      return exact_match, matches
+
+  return True, set()
 
 
 def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
