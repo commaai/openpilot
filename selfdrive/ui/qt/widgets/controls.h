@@ -201,8 +201,7 @@ class ButtonParamControl : public AbstractControl {
   Q_OBJECT
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                                                  std::vector<QString> button_texts, std::vector<int> button_widths) : AbstractControl(title, desc, icon) {
-
+                     std::vector<QString> button_texts, std::vector<int> button_widths) : AbstractControl(title, desc, icon) {
     select_style = (R"(
         padding: 0;
         border-radius: 50px;
@@ -229,34 +228,36 @@ public:
       buttons.push_back(button);
       QObject::connect(button, &QPushButton::clicked, [=]() {
         params.put(key, (QString::number(i)).toStdString());
-      refresh();
+        refresh();
       });
     }
+    refresh();
   }
 
-  int get_param() {
+  void read_param() {
     auto value = params.get(key);
     if (!value.empty()) {
-      return std::stoi(value);
-    } else {
-      return 0;
-    };
+      param_value = std::stoi(value);
+    }
   };
   void set_param(int new_value) {
-      QString values = QString::number(new_value);
-      params.put(key, values.toStdString());
-      refresh();
+    QString values = QString::number(new_value);
+    params.put(key, values.toStdString());
+    refresh();
   };
 
   void refresh() {
-    int value = get_param();
+    read_param();
     for (int i = 0; i < buttons.size(); i++) {
       buttons[i]->setStyleSheet(unselect_style);
-      if (value == i) {
+      if (param_value == i) {
         buttons[i]->setStyleSheet(select_style);
       }
     }
-  }
+  };
+  void showEvent(QShowEvent *event) override {
+    refresh();
+  };
 
 private:
   std::string key;
@@ -264,6 +265,7 @@ private:
   QString unselect_style;
   QString select_style;
   Params params;
+  int param_value = 0;
 };
 
 
