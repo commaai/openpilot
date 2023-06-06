@@ -12,16 +12,6 @@ from tools.lib.logreader import LogReader
 EPSILON = sys.float_info.epsilon
 
 
-def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
-
-  if compress:
-    dat = bz2.compress(dat)
-
-  with open(dest, "wb") as f:
-    f.write(dat)
-
-
 def remove_ignored_fields(msg, ignore):
   msg = msg.as_builder()
   for key in ignore:
