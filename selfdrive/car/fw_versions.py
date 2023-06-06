@@ -125,16 +125,13 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         for platform_code in config.fuzzy_get_platform_codes(fws):
           all_platform_codes[(addr[1], addr[2], platform_code)].append(candidate)
 
-  matches = defaultdict(set)
-  match_count = 0
+  matched_ecus = set()
   candidate = None
-  print('herererer')
-  print(fw_versions_dict)
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
-      candidates = all_fw_versions[(addr[0], addr[1], version)]
-      # matches[(addr[0], addr[1])] |= candidates
+      ecu_key = (addr[0], addr[1])
+      candidates = all_fw_versions[(*ecu_key, version)]
       print(candidates)
 
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
@@ -145,37 +142,21 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         if len(platform_codes) == 1:
           print('one platform code')
           platform_code = list(platform_codes)[0]
-          candidates = all_platform_codes[(addr[0], addr[1], platform_code)]
-          # matches[(addr[0], addr[1])] |= candidates
+          candidates = all_platform_codes[(*ecu_key, platform_code)]
           print('candidates', candidates)
-      matches[(addr[0], addr[1])] |= set(candidates)
 
       print()
       if len(candidates) == 1:
-        match_count += 1
+        matched_ecus.add(ecu_key)
         if candidate is None:
           candidate = candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
         elif candidate != candidates[0]:
           return set()
 
-  print('matches', matches)
-  if len(matches) > 0:
-    candidates = set.union(*matches.values())
-
-    print('final candidates', candidates)
-    print('final matches', dict(matches))
-
-  else:
-    return set()
-
-  # for addr, candidates in matches.items():
-  #   if
-  #   print(addr, candidates)
-
-  if match_count >= config.fuzzy_min_match_count:
+  if len(matched_ecus) >= config.fuzzy_min_match_count:
     if log:
-      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {candidate}
   else:
     return set()
