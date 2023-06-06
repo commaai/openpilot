@@ -1154,6 +1154,7 @@ FW_VERSIONS = {
   CAR.SKODA_KODIAQ_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027DD\xf1\x893123',
+      b'\xf1\x8704E906027NB\xf1\x896517',
       b'\xf1\x8704L906026DE\xf1\x895418',
       b'\xf1\x8704L906026EJ\xf1\x893661',
       b'\xf1\x8704L906026HT\xf1\x893617',
