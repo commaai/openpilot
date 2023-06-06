@@ -68,26 +68,6 @@ private:
   void updateToggles();
 };
 
-class ButtonParamControl : public AbstractControl {
-  Q_OBJECT
-
-public:
-  ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                          std::vector<QString> button_texts, std::vector<int> button_widths);
-
-private:
-  std::string key;
-  std::vector<QPushButton*> buttons;
-  QString unselect_style;
-  QString select_style;
-  Params params;
-
-  int get_param();
-  void set_param(int new_value);
-  void refresh();
-  
-};
-
 class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:

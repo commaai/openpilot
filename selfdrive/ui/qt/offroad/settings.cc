@@ -27,65 +27,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 
-ButtonParamControl::ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                                                 std::vector<QString> button_texts, std::vector<int> button_widths) : AbstractControl(title, desc, icon) {
-
-  select_style = (R"(
-      padding: 0;
-      border-radius: 50px;
-      font-size: 45px;
-      font-weight: 500;
-      color: #E4E4E4;
-      background-color: #33Ab4C;
-    )");
-  unselect_style = (R"(
-      padding: 0;
-      border-radius: 50px;
-      font-size: 45px;
-      font-weight: 350;
-      color: #E4E4E4;
-      background-color: #393939;
-    )");
-  key = param.toStdString();
-  for (int i = 0; i < button_texts.size(); i++) {
-    QPushButton *button = new QPushButton();
-    button->setText(button_texts[i]);
-    hlayout->addWidget(button);
-    button->setFixedSize(button_widths[i], 100);
-    button->setStyleSheet(unselect_style);
-    buttons.push_back(button);
-    QObject::connect(button, &QPushButton::clicked, [=]() {
-      params.put(key, (QString::number(i)).toStdString());
-    refresh();
-    });
-  }
-}
-
- int ButtonParamControl::get_param() {
-   auto value = params.get(key);
-   if (!value.empty()) {
-     return std::stoi(value);
-   } else {
-     return 0;
-   };
- };
- void ButtonParamControl::set_param(int new_value) {
-    new_value = std::clamp(new_value, (int) cereal::LongitudinalPersonality::AGGRESSIVE, (int) cereal::LongitudinalPersonality::RELAXED);
-    QString values = QString::number(new_value);
-    params.put(key, values.toStdString());
-    refresh();
- };
-
-void ButtonParamControl::refresh() {
-  int value = get_param();
-  for (int i = 0; i < buttons.size(); i++) {
-    buttons[i]->setStyleSheet(unselect_style);
-    if (value == i) {
-      buttons[i]->setStyleSheet(select_style);
-    }
-  }
-}
-
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon, confirm
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
