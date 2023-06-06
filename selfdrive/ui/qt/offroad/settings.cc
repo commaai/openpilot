@@ -89,6 +89,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 #endif
   };
 
+
+  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
+  ButtonParamControl* long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
+                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake."),
+                                          "../assets/offroad/icon_speed_limit.png",
+                                          longi_button_texts);
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
@@ -97,6 +103,11 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
+
+    // insert longitudinal personality after NDOG toggle
+    if (param == "DisengageOnAccelerator") {
+      addItem(long_personality_setting);
+    }
   }
 
   // Toggles with confirmation dialogs
