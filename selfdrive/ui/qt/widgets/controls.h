@@ -223,18 +223,18 @@ public:
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
 
-    QButtonGroup *button_gorup = new QButtonGroup(this);
-    button_gorup->setExclusive(true);
+    QButtonGroup *button_group = new QButtonGroup(this);
+    button_group->setExclusive(true);
     for (int i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setCheckable(true);
       button->setChecked(i == value);
       button->setStyleSheet(style);
       hlayout->addWidget(button);
-      button_gorup->addButton(button, i);
+      button_group->addButton(button, i);
     }
 
-    QObject::connect(button_gorup, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
+    QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
       if (checked) {
         params.put(key, std::to_string(id));
       }
