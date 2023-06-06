@@ -1,10 +1,30 @@
 #include "tools/cabana/streams/livestream.h"
 
+struct LiveStream::Logger {
+  Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
+
+  void write(const char *data, const size_t size) {
+    int n = (seconds_since_epoch() - start_ts) / 60.0;
+    if (std::exchange(segment_num, n) != segment_num) {
+      QString dir = QString("%1/%2--%3")
+                        .arg(settings.log_path)
+                        .arg(QDateTime::fromSecsSinceEpoch(start_ts).toString("yyyy-MM-dd--hh-mm-ss"))
+                        .arg(n);
+      util::create_directories(dir.toStdString(), 0755);
+      fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
+    }
+
+    fs->write(data, size);
+  }
+
+  std::unique_ptr<std::ofstream> fs;
+  int segment_num;
+  uint64_t start_ts;
+};
+
 LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   if (settings.log_livestream) {
-    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
-    util::create_directories(path, 0755);
-    fs.reset(new std::ofstream(path + "/rlog", std::ios::binary | std::ios::out));
+    logger = std::make_unique<Logger>();
   }
   stream_thread = new QThread(this);
 
@@ -34,8 +54,8 @@ LiveStream::~LiveStream() {
 
 // called in streamThread
 void LiveStream::handleEvent(const char *data, const size_t size) {
-  if (fs) {
-    fs->write(data, size);
+  if (logger) {
+    logger->write(data, size);
   }
 
   std::lock_guard lk(lock);
