@@ -2,9 +2,9 @@
 import unittest
 import time
 import math
+import threading
 from dataclasses import dataclass
 from tabulate import tabulate
-from threading import Thread
 
 import cereal.messaging as messaging
 from system.hardware import HARDWARE, TICI
@@ -38,7 +38,7 @@ def send_llk_msg(done):
   msg.liveLocationKalman.status = 'valid'
 
   # Send liveLocationKalman at 20hz
-  while not done():
+  while not done.is_set():
     pm.send('liveLocationKalman', msg)
     time.sleep(1/20)
 
@@ -62,8 +62,8 @@ class TestPowerDraw(unittest.TestCase):
 
   def test_camera_procs(self):
     baseline = get_power()
-    done = False
-    thread = Thread(target=send_llk_msg, args=(lambda: done,), daemon=True)
+    done = threading.Event()
+    thread = threading.Thread(target=send_llk_msg, args=(done,), daemon=True)
     thread.start()
 
     prev = baseline
@@ -76,7 +76,7 @@ class TestPowerDraw(unittest.TestCase):
       used[proc.name] = now - prev
       prev = now
 
-    done = True
+    done.set()
     manager_cleanup()
 
     tab = []
