@@ -57,9 +57,13 @@ int main(int argc, char *argv[]) {
   QDir::setCurrent(current.absolutePath());
 
   // wait for the UI to update
+  int frames = 0;
   QObject::connect(uiState(), &UIState::uiUpdate, [&](const UIState &s) {
-    saveWidgetAsImage(&w, output);
-    app.quit();
+    frames++;
+    if (frames == 15) {
+      saveWidgetAsImage(&w, output);
+      app.quit();
+    }
   });
 
   return app.exec();
