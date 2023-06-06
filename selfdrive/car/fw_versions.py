@@ -72,7 +72,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
   matched_ecus = set()
-  match_count = 0
   candidate = None
   for addr, versions in fw_versions_dict.items():
     for version in versions:
@@ -82,7 +81,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
 
       if len(candidates) == 1:
         matched_ecus.add(ecu_key)
-        match_count += 1
         if candidate is None:
           candidate = candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
