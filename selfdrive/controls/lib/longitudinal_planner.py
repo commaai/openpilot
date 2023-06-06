@@ -65,10 +65,9 @@ class LongitudinalPlanner:
     self.personality = log.LongitudinalPersonality.standard
 
   def read_param(self):
-    param_value = self.params.get('LongitudinalPersonality')
-    if param_value is not None:
-      self.personality = int(param_value)
-    else:
+    try:
+      self.personality = int(self.params.get('LongitudinalPersonality'))
+    except (ValueError, TypeError):
       self.personality = log.LongitudinalPersonality.standard
 
   @staticmethod
