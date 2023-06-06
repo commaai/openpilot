@@ -180,6 +180,7 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, hud_contr
       "Signal2": 0,
       "Signal3": 0,
       "Cruise_Distance": 10,
+      "LKAS_State_Msg": 0,
       "Signal4": 1,
       "Conventional_Cruise": 0,
       "Signal5": 0,
