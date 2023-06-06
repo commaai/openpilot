@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import capnp
+import copy
 from dataclasses import dataclass, field
 import struct
 from typing import Dict, List, Optional, Tuple
@@ -57,10 +58,12 @@ class Request:
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
+  # Whether this query should be run on the first auxiliary panda (CAN FD cars for example)
+  auxiliary: bool = False
   # FW responses from these queries will not be used for fingerprinting
   logging: bool = False
-  # These requests are done once OBD multiplexing is disabled, after all others
-  non_obd: bool = False
+  # boardd toggles OBD multiplexing on/off as needed
+  obd_multiplexing: bool = True
 
 
 @dataclass
@@ -71,3 +74,10 @@ class FwQueryConfig:
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
+
+  def __post_init__(self):
+    for i in range(len(self.requests)):
+      if self.requests[i].auxiliary:
+        new_request = copy.deepcopy(self.requests[i])
+        new_request.bus += 4
+        self.requests.append(new_request)

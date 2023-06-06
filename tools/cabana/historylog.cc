@@ -14,11 +14,14 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
     if (index.column() == 0) {
       return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
-    return show_signals ? QString::number(m.sig_values[index.column() - 1]) : toHex(m.data);
+    int i = index.column() - 1;
+    return show_signals ? QString::number(m.sig_values[i], 'f', sigs[i]->precision) : toHex(m.data);
   } else if (role == ColorsRole) {
     return QVariant::fromValue(m.colors);
   } else if (role == BytesRole) {
     return m.data;
+  } else if (role == Qt::TextAlignmentRole) {
+    return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
   return {};
 }
@@ -36,7 +39,7 @@ void HistoryLogModel::refresh(bool fetch_message) {
   last_fetch_time = 0;
   has_more_data = true;
   messages.clear();
-  hex_colors.clear();
+  hex_colors = {};
   if (fetch_message) {
     updateState();
   }
@@ -116,54 +119,52 @@ template <class InputIt>
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, InputIt last, uint64_t min_time) {
   std::deque<HistoryLogModel::Message> msgs;
   QVector<double> values(sigs.size());
-  for (auto it = first; it != last && (*it)->mono_time > min_time; ++it) {
-    if ((*it)->which == cereal::Event::Which::CAN) {
-      for (const auto &c : (*it)->event.getCan()) {
-        if (msg_id.address == c.getAddress() && msg_id.source == c.getSrc()) {
-          const auto dat = c.getDat();
-          for (int i = 0; i < sigs.size(); ++i) {
-            values[i] = get_raw_value((uint8_t *)dat.begin(), dat.size(), *sigs[i]);
-          }
-          if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
-            auto &m = msgs.emplace_back();
-            m.mono_time = (*it)->mono_time;
-            m.data = QByteArray((char *)dat.begin(), dat.size());
-            m.sig_values = values;
-            if (msgs.size() >= batch_size && min_time == 0)
-              return msgs;
-          }
-        }
+  for (; first != last && (*first)->mono_time > min_time; ++first) {
+    const CanEvent *e = *first;
+    for (int i = 0; i < sigs.size(); ++i) {
+      values[i] = get_raw_value(e->dat, e->size, *sigs[i]);
+    }
+    if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
+      auto &m = msgs.emplace_back();
+      m.mono_time = e->mono_time;
+      m.data = QByteArray((const char *)e->dat, e->size);
+      m.sig_values = values;
+      if (msgs.size() >= batch_size && min_time == 0) {
+        return msgs;
       }
     }
   }
   return msgs;
 }
 
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::iterator first, std::vector<const Event*>::iterator last, uint64_t min_time);
-template std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData<>(std::vector<const Event*>::reverse_iterator first, std::vector<const Event*>::reverse_iterator last, uint64_t min_time);
-
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
-  auto events = can->events();
+  const QList<uint8_t> mask;
+  const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
 
+  const auto speed = can->getSpeed();
   if (dynamic_mode) {
-    auto first = std::upper_bound(events->rbegin(), events->rend(), from_time, [=](uint64_t ts, auto &e) { return e->mono_time < ts; });
-    auto msgs = fetchData(first, events->rend(), min_time);
+    auto first = std::upper_bound(events.rbegin(), events.rend(), from_time, [](uint64_t ts, auto e) {
+      return ts > e->mono_time;
+    });
+    auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
         it->colors = hex_colors.colors;
       }
     }
     return msgs;
   } else {
     assert(min_time == 0);
-    auto first = std::upper_bound(events->begin(), events->end(), from_time, [=](uint64_t ts, auto &e) { return ts < e->mono_time; });
-    auto msgs = fetchData(first, events->end(), 0);
+    auto first = std::upper_bound(events.cbegin(), events.cend(), from_time, [](uint64_t ts, auto e) {
+      return ts < e->mono_time;
+    });
+    auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
-      for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(it->data, it->mono_time / (double)1e9, freq);
+      for (auto it = msgs.begin(); it != msgs.end(); ++it) {
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -192,6 +193,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
+  painter->setPen(palette().color(settings.theme == DARK_THEME ? QPalette::BrightText : QPalette::Text));
   painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 
@@ -222,7 +224,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
   comp_box->addItems({">", "=", "!=", "<"});
   value_edit->setClearButtonEnabled(true);
-  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
+  value_edit->setValidator(new DoubleValidator(this));
   dynamic_mode->setChecked(true);
   dynamic_mode->setEnabled(!can->liveStreaming());
 
@@ -235,7 +237,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   delegate = new MessageBytesDelegate(this);
   logs->setItemDelegateForColumn(1, new MessageBytesDelegate(this));
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
-  logs->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | (Qt::Alignment)Qt::TextWordWrap);
+  logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   logs->verticalHeader()->setVisible(false);
   logs->setFrameShape(QFrame::NoFrame);
