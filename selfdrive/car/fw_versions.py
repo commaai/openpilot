@@ -106,6 +106,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
+  # TODO: actually fine to be a set. we never assumed that there would be duplicate fw versions,
+  #  but now there can be duplicate platform codes for a platform. well we now get the set of platform codes for a
+  #  platform so it's actually fine as a list now, but it might make it easier to understand if it's a set
   all_fw_versions = defaultdict(list)
   all_platform_codes = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
