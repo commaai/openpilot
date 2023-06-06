@@ -854,6 +854,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMH MFC  AT EUR LHD 1.00 1.06 99211-S1500 220727',
       b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
+      b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.06 99211-S1500 220727'
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.03 99211-S2500 220414',
     ],
     (Ecu.transmission, 0x7e1, None): [
