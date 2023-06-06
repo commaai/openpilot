@@ -91,6 +91,269 @@
     </message>
 </context>
 <context>
+    <name>ButtonParamControl</name>
+    <message>
+        <source>Enable openpilot</source>
+        <translation type="obsolete">openpilot 사용</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation type="obsolete">어댑티브 크루즈 컨트롤 및 차선 유지 운전자 보조를 위해 openpilot 시스템을 사용하십시오. 이 기능을 사용하려면 항상 주의를 기울여야 합니다. 설정변경은 장치 재부팅후 적용됩니다.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="obsolete">openpilot 롱컨트롤 (알파)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="obsolete">경고: openpilot 롱컨트롤은 알파 기능으로 차량의 자동긴급제동(AEB)를 비활성화합니다.</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="obsolete">이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="obsolete">실험적 모드</translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
+        <translation type="obsolete">가속페달 조작시 해제</translation>
+    </message>
+    <message>
+        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
+        <translation type="obsolete">활성화된 경우 가속 페달을 누르면 openpilot이 해제됩니다.</translation>
+    </message>
+    <message>
+        <source>Enable Lane Departure Warnings</source>
+        <translation type="obsolete">차선 이탈 경고 사용</translation>
+    </message>
+    <message>
+        <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
+        <translation type="obsolete">차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향지시등 없이 감지된 차선 위를 주행할 경우 차선이탈 경고를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Record and Upload Driver Camera</source>
+        <translation type="obsolete">운전자 카메라 녹화 및 업로드</translation>
+    </message>
+    <message>
+        <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
+        <translation type="obsolete">운전자 카메라에서 데이터를 업로드하고 운전자 모니터링 알고리즘을 개선합니다.</translation>
+    </message>
+    <message>
+        <source>Use Metric System</source>
+        <translation type="obsolete">미터법 사용</translation>
+    </message>
+    <message>
+        <source>Display speed in km/h instead of mph.</source>
+        <translation type="obsolete">mph 대신 km/h로 속도를 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Show ETA in 24h Format</source>
+        <translation type="obsolete">24시간 형식으로 도착예정시간 표시</translation>
+    </message>
+    <message>
+        <source>Use 24h format instead of am/pm</source>
+        <translation type="obsolete">오전/오후 대신 24시간 형식 사용</translation>
+    </message>
+    <message>
+        <source>Show Map on Left Side of UI</source>
+        <translation type="obsolete">UI 왼쪽에 지도 표시</translation>
+    </message>
+    <message>
+        <source>Show map on left side when in split screen view.</source>
+        <translation type="obsolete">분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="obsolete">openpilot은 기본적으로 &lt;b&gt;안정적 모드&lt;/b&gt;로 주행합니다. 실험적 모드는 안정적 모드에 준비되지 않은 &lt;b&gt;알파 수준 기능&lt;/b&gt;을 활성화 합니다. 실험적 모드의 특징은 아래에 나열되어 있습니다</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation type="obsolete">🌮 E2E 롱컨트롤 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="obsolete">주행모델이 가속과 감속을 제어하도록 합니다. openpilot은 신호등과 정지표지판을 보고 멈추는 것을 포함하여 운전자가 생각하는것처럼 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 상한선으로만 작용합니다. 이것은 알파 기능이므로 사용에 주의해야 합니다.</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="obsolete">새로운 주행 시각화</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="obsolete">주행 시각화는 저속에서 도로를 향하는 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드의 로고도 우측상단에 표시됩니다.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="obsolete">차량에 장착된 ACC가 롱컨트롤에 사용되기 때문에 현재 이 차량은 실험적 모드를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="obsolete">오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="obsolete">오픈파일럿 롱컨트롤의 실험 버전은 실험적 모드와 함께 릴리즈 되지 않은 브랜치에서 테스트할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="obsolete">실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">Dongle ID</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">Serial</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">운전자 카메라</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">미리보기</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">운전자 모니터링이 좋은 가시성을 갖도록 운전자를 향한 카메라를 미리 봅니다. (차량연결은 해제되어있어야 합니다)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">캘리브레이션</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">재설정</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">캘리브레이션을 재설정하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">리셋</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">트레이닝 가이드</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">다시보기</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">openpilot의 규칙, 기능 및 제한 다시보기</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">트레이닝 가이드를 다시보시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">다시보기</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">규제</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">보기</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">언어 변경</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">변경</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">언어를 선택하세요</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">재부팅</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">전원 종료</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilot은 좌우측은 4° 이내, 위쪽은 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> 사용자의 장치가 %1° %2 및 %3° %4 위치에 설치되어있습니다.</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">아래로</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">위로</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">좌측으로</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">우측으로</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">재부팅 하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">재부팅 하려면 해제하세요</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">전원을 종료하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">전원을 종료하려면 해제하세요</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">장치</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">네트워크</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">토글</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">소프트웨어</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">네비게이션</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -310,29 +573,6 @@
     <message>
         <source>Installing...</source>
         <translation>설치중...</translation>
-    </message>
-</context>
-<context>
-    <name>LongitudinalPersonality</name>
-    <message>
-        <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>aggressive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>relaxed</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1073,6 +1313,178 @@ This may take up to a minute.</source>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">Dongle ID</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">Serial</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">운전자 카메라</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">미리보기</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">운전자 모니터링이 좋은 가시성을 갖도록 운전자를 향한 카메라를 미리 봅니다. (차량연결은 해제되어있어야 합니다)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">캘리브레이션</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">재설정</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">캘리브레이션을 재설정하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">리셋</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">트레이닝 가이드</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">다시보기</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">openpilot의 규칙, 기능 및 제한 다시보기</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">트레이닝 가이드를 다시보시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">다시보기</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">규제</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">보기</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">언어 변경</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">변경</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">언어를 선택하세요</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">재부팅</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">전원 종료</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilot은 좌우측은 4° 이내, 위쪽은 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> 사용자의 장치가 %1° %2 및 %3° %4 위치에 설치되어있습니다.</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">아래로</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">위로</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">좌측으로</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">우측으로</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">재부팅 하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">재부팅 하려면 해제하세요</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">전원을 종료하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">전원을 종료하려면 해제하세요</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">장치</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">네트워크</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">토글</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">소프트웨어</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">네비게이션</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

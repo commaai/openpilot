@@ -91,6 +91,249 @@
     </message>
 </context>
 <context>
+    <name>ButtonParamControl</name>
+    <message>
+        <source>Enable openpilot</source>
+        <translation type="obsolete">Openpilot aktivieren</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation type="obsolete">Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="obsolete">Experimenteller Modus</translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
+        <translation type="obsolete">Bei Gasbetätigung ausschalten</translation>
+    </message>
+    <message>
+        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
+        <translation type="obsolete">Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
+    </message>
+    <message>
+        <source>Enable Lane Departure Warnings</source>
+        <translation type="obsolete">Spurverlassenswarnungen aktivieren</translation>
+    </message>
+    <message>
+        <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
+        <translation type="obsolete">Erhalte Warnungen, zurück in die Spur zu lenken, wenn dein Auto über eine erkannte Fahrstreifenmarkierung ohne aktivierten Blinker mit mehr als 50 km/h fährt.</translation>
+    </message>
+    <message>
+        <source>Record and Upload Driver Camera</source>
+        <translation type="obsolete">Fahrerkamera aufnehmen und hochladen</translation>
+    </message>
+    <message>
+        <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
+        <translation type="obsolete">Lade Daten der Fahreraufmerksamkeitsüberwachungskamera hoch, um die Fahreraufmerksamkeitsüberwachungsalgorithmen zu verbessern.</translation>
+    </message>
+    <message>
+        <source>Use Metric System</source>
+        <translation type="obsolete">Benutze das metrische System</translation>
+    </message>
+    <message>
+        <source>Display speed in km/h instead of mph.</source>
+        <translation type="obsolete">Zeige die Geschwindigkeit in km/h anstatt von mph.</translation>
+    </message>
+    <message>
+        <source>Show ETA in 24h Format</source>
+        <translation type="obsolete">Zeige die Ankunftszeit im 24 Stunden Format</translation>
+    </message>
+    <message>
+        <source>Use 24h format instead of am/pm</source>
+        <translation type="obsolete">Benutze das 24Stunden Format anstatt am/pm</translation>
+    </message>
+    <message>
+        <source>Show Map on Left Side of UI</source>
+        <translation type="obsolete">Zeige die Karte auf der linken Seite</translation>
+    </message>
+    <message>
+        <source>Show map on left side when in split screen view.</source>
+        <translation type="obsolete">Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="obsolete">Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation type="obsolete">🌮 Ende-zu-Ende Tempomat 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="obsolete">Lass das Fahrmodell Gas und Bremse kontrollieren. Openpilot wird so fahren, wie es dies von einem Menschen erwarten würde; inklusive des Anhaltens für Ampeln und Stoppschildern. Da das Fahrmodell entscheidet wie schnell es fährt stellt die gesetzte Geschwindigkeit lediglich das obere Limit dar. Dies ist ein Alpha-level Funktion. Fehler sind zu erwarten.</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="obsolete">Neue Fahrvisualisierung</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="obsolete">Die Fahrvisualisierung wechselt bei niedrigen Geschwindigkeiten zur Straßengewandten Weitwinkelkamera, um manche Kurven besser zu zeigen. Außerdem wird das Experimenteller Modus logo oben rechts angezeigt.</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="obsolete">Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="obsolete">Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">Dongle ID</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">Nicht verfügbar</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">Seriennummer</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">Fahrerkamera</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">VORSCHAU</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">Vorschau der auf den Fahrer gerichteten Kamera, um sicherzustellen, dass die Fahrerüberwachung eine gute Sicht hat. (Fahrzeug muss aus sein)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">Neu kalibrieren</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">RESET</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">Bist du sicher, dass du die Kalibrierung zurücksetzen möchtest?</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">Zurücksetzen</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">Trainingsanleitung wiederholen</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">TRAINING</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">Wiederhole die Regeln, Fähigkeiten und Limitierungen von Openpilot</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">Bist du sicher, dass du die Trainingsanleitung wiederholen möchtest?</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">Überprüfen</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">Rechtliche Hinweise</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">ANSEHEN</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">Sprache ändern</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">ÄNDERN</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">Sprache wählen</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">Neustart</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">Ausschalten</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 8° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> Deine Geräteausrichtung ist %1° %2 und %3° %4.</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">unten</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">oben</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">links</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">rechts</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">Bist du sicher, dass du das Gerät neu starten möchtest?</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">Für Neustart deaktivieren</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">Bist du sicher, dass du das Gerät ausschalten möchtest?</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">Zum Ausschalten deaktivieren</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">x</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">Gerät</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">Netzwerk</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">Schalter</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">Software</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">Navigation</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -311,29 +554,6 @@
     <message>
         <source>Installing...</source>
         <translation>Installiere...</translation>
-    </message>
-</context>
-<context>
-    <name>LongitudinalPersonality</name>
-    <message>
-        <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>aggressive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>relaxed</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1056,16 +1276,160 @@ This may take up to a minute.</source>
         <translation>Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">Dongle ID</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">Nicht verfügbar</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">Seriennummer</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">Fahrerkamera</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">VORSCHAU</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">Vorschau der auf den Fahrer gerichteten Kamera, um sicherzustellen, dass die Fahrerüberwachung eine gute Sicht hat. (Fahrzeug muss aus sein)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">Neu kalibrieren</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">RESET</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">Bist du sicher, dass du die Kalibrierung zurücksetzen möchtest?</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">Zurücksetzen</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">Trainingsanleitung wiederholen</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">TRAINING</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">Wiederhole die Regeln, Fähigkeiten und Limitierungen von Openpilot</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">Bist du sicher, dass du die Trainingsanleitung wiederholen möchtest?</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">Überprüfen</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">Rechtliche Hinweise</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">ANSEHEN</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">Sprache ändern</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">ÄNDERN</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">Sprache wählen</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">Neustart</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">Ausschalten</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 8° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> Deine Geräteausrichtung ist %1° %2 und %3° %4.</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">unten</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">oben</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">links</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">rechts</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">Bist du sicher, dass du das Gerät neu starten möchtest?</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">Für Neustart deaktivieren</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">Bist du sicher, dass du das Gerät ausschalten möchtest?</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">Zum Ausschalten deaktivieren</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">x</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">Gerät</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">Netzwerk</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">Schalter</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">Software</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">Navigation</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1077,6 +1441,34 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -91,6 +91,249 @@
     </message>
 </context>
 <context>
+    <name>ButtonParamControl</name>
+    <message>
+        <source>Enable openpilot</source>
+        <translation type="obsolete">启用openpilot</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation type="obsolete">使用openpilot进行自适应巡航和车道保持辅助。使用此功能时您必须时刻保持注意力。该设置的更改在熄火时生效。</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="obsolete">测试模式</translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
+        <translation type="obsolete">踩油门时取消控制</translation>
+    </message>
+    <message>
+        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
+        <translation type="obsolete">启用后，踩下油门踏板将取消openpilot。</translation>
+    </message>
+    <message>
+        <source>Enable Lane Departure Warnings</source>
+        <translation type="obsolete">启用车道偏离警告</translation>
+    </message>
+    <message>
+        <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
+        <translation type="obsolete">车速超过31mph（50km/h）时，若检测到车辆越过车道线且未打转向灯，系统将发出警告以提醒您返回车道。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Driver Camera</source>
+        <translation type="obsolete">录制并上传驾驶员摄像头</translation>
+    </message>
+    <message>
+        <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
+        <translation type="obsolete">上传驾驶员摄像头的数据，帮助改进驾驶员监控算法。</translation>
+    </message>
+    <message>
+        <source>Use Metric System</source>
+        <translation type="obsolete">使用公制单位</translation>
+    </message>
+    <message>
+        <source>Display speed in km/h instead of mph.</source>
+        <translation type="obsolete">显示车速时，以km/h代替mph。</translation>
+    </message>
+    <message>
+        <source>Show ETA in 24h Format</source>
+        <translation type="obsolete">以24小时格式显示预计到达时间</translation>
+    </message>
+    <message>
+        <source>Use 24h format instead of am/pm</source>
+        <translation type="obsolete">使用24小时制代替am/pm</translation>
+    </message>
+    <message>
+        <source>Show Map on Left Side of UI</source>
+        <translation type="obsolete">在介面左侧显示地图</translation>
+    </message>
+    <message>
+        <source>Show map on left side when in split screen view.</source>
+        <translation type="obsolete">在分屏模式中，将地图置于屏幕左侧。</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="obsolete">openpilot 默认 &lt;b&gt;轻松模式&lt;/b&gt;驾驶车辆。试验模式启用一些轻松模式之外的 &lt;b&gt;试验性功能&lt;/b&gt;。试验性功能包括：</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation type="obsolete">🌮 端到端（End-to-End） 纵向控制 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="obsolete">允许驾驶模型控制加速和制动，openpilot将模仿人类驾驶车辆，包括在红灯和停车让行标识前停车。鉴于驾驶模型确定行驶车速，所设定的车速仅作为上限。此功能尚处于早期测试状态，有可能会出现操作错误。</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="obsolete">新驾驶视角</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="obsolete">当低速行驶时，驾驶视角将切换到前向广角摄像头，便于更完整地显示转向路径。右上角将显示试验模式图标。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="obsolete">由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="obsolete">启用试验性的纵向控制，以便允许使用试验模式。</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">设备ID（Dongle ID）</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">序列号</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">驾驶员摄像头</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">预览</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">打开并预览驾驶员摄像头，以确保驾驶员监控具有良好视野。（仅熄火时可用）</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">重置设备校准</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">重置</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">您确定要重置设备校准吗？</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">重置</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">新手指南</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">查看</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">查看openpilot的使用规则，以及其功能和限制。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">您确定要查看新手指南吗？</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">预览</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">监管信息</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">查看</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">切换语言</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">切换</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">选择语言</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">重启</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">关机</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> 您的设备校准为%1° %2、%3° %4。</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">朝下</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">朝上</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">朝左</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">朝右</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">您确定要重新启动吗？</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">取消openpilot以重新启动</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">您确定要关机吗？</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">取消openpilot以关机</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">设备</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">网络</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">设定</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">软件</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">导航</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -310,29 +553,6 @@
     <message>
         <source>Installing...</source>
         <translation>正在安装……</translation>
-    </message>
-</context>
-<context>
-    <name>LongitudinalPersonality</name>
-    <message>
-        <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>aggressive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>relaxed</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1048,16 +1268,160 @@ This may take up to a minute.</source>
         <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">设备ID（Dongle ID）</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">序列号</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">驾驶员摄像头</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">预览</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">打开并预览驾驶员摄像头，以确保驾驶员监控具有良好视野。（仅熄火时可用）</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">重置设备校准</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">重置</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">您确定要重置设备校准吗？</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">重置</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">新手指南</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">查看</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">查看openpilot的使用规则，以及其功能和限制。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">您确定要查看新手指南吗？</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">预览</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">监管信息</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">查看</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">切换语言</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">切换</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">选择语言</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">重启</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">关机</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下8°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> 您的设备校准为%1° %2、%3° %4。</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">朝下</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">朝上</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">朝左</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">朝右</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">您确定要重新启动吗？</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">取消openpilot以重新启动</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">您确定要关机吗？</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">取消openpilot以关机</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">设备</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">网络</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">设定</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">软件</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">导航</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1069,6 +1433,34 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

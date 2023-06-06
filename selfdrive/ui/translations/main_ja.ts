@@ -91,6 +91,249 @@
     </message>
 </context>
 <context>
+    <name>ButtonParamControl</name>
+    <message>
+        <source>Enable openpilot</source>
+        <translation type="obsolete">openpilot を有効化</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation type="obsolete">openpilotによるアダプティブクルーズコントロールとレーンキーピングドライバーアシストを利用します。この機能を利用する際は、常に前方への注意が必要です。この設定を変更すると、車の電源が切れた時に反映されます。</translation>
+    </message>
+    <message>
+        <source>Experimental Mode</source>
+        <translation type="obsolete">実験モード</translation>
+    </message>
+    <message>
+        <source>Disengage on Accelerator Pedal</source>
+        <translation type="obsolete">ｱｸｾﾙを踏むと openpilot を中断</translation>
+    </message>
+    <message>
+        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
+        <translation type="obsolete">この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
+    </message>
+    <message>
+        <source>Enable Lane Departure Warnings</source>
+        <translation type="obsolete">車線逸脱警報機能を有効化</translation>
+    </message>
+    <message>
+        <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
+        <translation type="obsolete">時速31マイル（50km）を超えるスピードで走行中、ウインカーを作動させずに検出された車線ライン上に車両が触れた場合、手動で車線内に戻るように警告を行います。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Driver Camera</source>
+        <translation type="obsolete">車内カメラの録画とアップロード</translation>
+    </message>
+    <message>
+        <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
+        <translation type="obsolete">車内カメラの映像をアップロードし、ドライバー監視システムのアルゴリズムの向上に役立てます。</translation>
+    </message>
+    <message>
+        <source>Use Metric System</source>
+        <translation type="obsolete">メートル法を使用</translation>
+    </message>
+    <message>
+        <source>Display speed in km/h instead of mph.</source>
+        <translation type="obsolete">速度は mph ではなく km/h で表示されます。</translation>
+    </message>
+    <message>
+        <source>Show ETA in 24h Format</source>
+        <translation type="obsolete">24時間表示</translation>
+    </message>
+    <message>
+        <source>Use 24h format instead of am/pm</source>
+        <translation type="obsolete">AM/PM の代わりに24時間形式を使用します</translation>
+    </message>
+    <message>
+        <source>Show Map on Left Side of UI</source>
+        <translation type="obsolete">ﾃﾞｨｽﾌﾟﾚｲの左側にﾏｯﾌﾟを表示</translation>
+    </message>
+    <message>
+        <source>Show map on left side when in split screen view.</source>
+        <translation type="obsolete">分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
+    </message>
+    <message>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation type="obsolete">openpilotは標準ではゆっくりとくつろげる運転を提供します。この実験モードを有効にすると、以下のくつろげる段階ではない開発中の機能を利用する事ができます。</translation>
+    </message>
+    <message>
+        <source>🌮 End-to-End Longitudinal Control 🌮</source>
+        <translation type="obsolete">🌮 エンドツーエンドアクセル制御 🌮</translation>
+    </message>
+    <message>
+        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="obsolete">openpilotにアクセルとブレーキを任せます。openpilotは赤信号や一時停止サインでの停止を含み、人間と同じように考えて運転を行います。openpilotが運転速度を決定するため、あなたが設定する速度は上限速度になります。この機能は実験段階のため、openpilotの運転ミスに常に備えて注意してください。</translation>
+    </message>
+    <message>
+        <source>New Driving Visualization</source>
+        <translation type="obsolete">新しい運転画面</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="obsolete">新しい運転画面では、低速時に広角カメラの映像を表示することで、曲がる際の道路の視覚を向上します。実験段階を表すマークが右上に表示されます。</translation>
+    </message>
+    <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation type="obsolete">この車のACCがアクセル制御を行うため実験モードを利用することができません。</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation type="obsolete">実験段階のopenpilotによるアクセル制御を有効にしてください。</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">ドングル番号 (Dongle ID)</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">シリアル番号</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">車内カメラ</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">プレビュー</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">車内カメラをプレビューして、ドライバー監視システムの視界を確認ができます。(車両の電源を切る必要があります)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">ｷｬﾘﾌﾞﾚｰｼｮﾝをﾘｾｯﾄ</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">ﾘｾｯﾄ</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">ｷｬﾘﾌﾞﾚｰｼｮﾝをリセットしてもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">リセット</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">使い方の確認</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">見る</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">openpilot の特徴を見る</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">使い方の確認をしますか？</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">確認</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">認証情報</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">見る</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">言語を変更</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">変更</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">言語を選択</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">再起動</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">電源を切る</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilotの本体は、左右4°以内、上5°、下8°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> このデバイスは%2 %1°、%4 %3°の向きに設置されています。</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">下</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">上</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">左</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">右</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">再起動してもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">openpilot をキャンセルして再起動ができます</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">シャットダウンしてもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">openpilot をキャンセルしてシャットダウンができます</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">デバイス</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">ﾈｯﾄﾜｰｸ</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">機能設定</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">ｿﾌﾄｳｪｱ</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">ﾅﾋﾞｹﾞｰｼｮﾝ</translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -310,29 +553,6 @@
     <message>
         <source>Installing...</source>
         <translation>インストールしています...</translation>
-    </message>
-</context>
-<context>
-    <name>LongitudinalPersonality</name>
-    <message>
-        <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>aggressive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>standard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>relaxed</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1050,16 +1270,160 @@ This may take up to a minute.</source>
         <translation>この車のACCがアクセル制御を行うため実験モードを利用することができません。</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>実験段階のopenpilotによるアクセル制御を有効にしてください。</translation>
+    </message>
+    <message>
+        <source>Dongle ID</source>
+        <translation type="obsolete">ドングル番号 (Dongle ID)</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="obsolete">N/A</translation>
+    </message>
+    <message>
+        <source>Serial</source>
+        <translation type="obsolete">シリアル番号</translation>
+    </message>
+    <message>
+        <source>Driver Camera</source>
+        <translation type="obsolete">車内カメラ</translation>
+    </message>
+    <message>
+        <source>PREVIEW</source>
+        <translation type="obsolete">プレビュー</translation>
+    </message>
+    <message>
+        <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
+        <translation type="obsolete">車内カメラをプレビューして、ドライバー監視システムの視界を確認ができます。(車両の電源を切る必要があります)</translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="obsolete">ｷｬﾘﾌﾞﾚｰｼｮﾝをﾘｾｯﾄ</translation>
+    </message>
+    <message>
+        <source>RESET</source>
+        <translation type="obsolete">ﾘｾｯﾄ</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation type="obsolete">ｷｬﾘﾌﾞﾚｰｼｮﾝをリセットしてもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="obsolete">リセット</translation>
+    </message>
+    <message>
+        <source>Review Training Guide</source>
+        <translation type="obsolete">使い方の確認</translation>
+    </message>
+    <message>
+        <source>REVIEW</source>
+        <translation type="obsolete">見る</translation>
+    </message>
+    <message>
+        <source>Review the rules, features, and limitations of openpilot</source>
+        <translation type="obsolete">openpilot の特徴を見る</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="obsolete">使い方の確認をしますか？</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="obsolete">確認</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="obsolete">認証情報</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation type="obsolete">見る</translation>
+    </message>
+    <message>
+        <source>Change Language</source>
+        <translation type="obsolete">言語を変更</translation>
+    </message>
+    <message>
+        <source>CHANGE</source>
+        <translation type="obsolete">変更</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="obsolete">言語を選択</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="obsolete">再起動</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="obsolete">電源を切る</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation type="obsolete">openpilotの本体は、左右4°以内、上5°、下8°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
+    </message>
+    <message>
+        <source> Your device is pointed %1° %2 and %3° %4.</source>
+        <translation type="obsolete"> このデバイスは%2 %1°、%4 %3°の向きに設置されています。</translation>
+    </message>
+    <message>
+        <source>down</source>
+        <translation type="obsolete">下</translation>
+    </message>
+    <message>
+        <source>up</source>
+        <translation type="obsolete">上</translation>
+    </message>
+    <message>
+        <source>left</source>
+        <translation type="obsolete">左</translation>
+    </message>
+    <message>
+        <source>right</source>
+        <translation type="obsolete">右</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reboot?</source>
+        <translation type="obsolete">再起動してもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Disengage to Reboot</source>
+        <translation type="obsolete">openpilot をキャンセルして再起動ができます</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to power off?</source>
+        <translation type="obsolete">シャットダウンしてもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Disengage to Power Off</source>
+        <translation type="obsolete">openpilot をキャンセルしてシャットダウンができます</translation>
+    </message>
+    <message>
+        <source>×</source>
+        <translation type="obsolete">×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="obsolete">デバイス</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation type="obsolete">ﾈｯﾄﾜｰｸ</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="obsolete">機能設定</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="obsolete">ｿﾌﾄｳｪｱ</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation type="obsolete">ﾅﾋﾞｹﾞｰｼｮﾝ</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1071,6 +1435,34 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
