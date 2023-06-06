@@ -62,9 +62,13 @@ ButtonParamControl::ButtonParamControl(const QString &param, const QString &titl
 }
 
  int ButtonParamControl::get_param() {
-    return std::stoi(params.get(key));
-  };
-
+   auto value = params.get(key);
+   if (!value.empty()) {
+     return std::stoi(value);
+   } else {
+     return 0;
+   };
+ };
  void ButtonParamControl::set_param(int new_value) {
     new_value = std::clamp(new_value, (int) cereal::LongitudinalPersonality::AGGRESSIVE, (int) cereal::LongitudinalPersonality::RELAXED);
     QString values = QString::number(new_value);
