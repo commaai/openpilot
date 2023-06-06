@@ -60,7 +60,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   exclude_types = [Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(set)
+  all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
@@ -69,42 +69,27 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
       if addr[0] in exclude_types:
         continue
       for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].add(candidate)
+        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
-  match_count = 0
+  matched_ecus = []
   candidate = None
-  matches = defaultdict(set)
   for addr, versions in fw_versions_dict.items():
     for version in versions:
       # All cars that have this FW response on the specified address
-      candidates = all_fw_versions[(addr[0], addr[1], version)]
-      matches[(addr[0], addr[1])] |= candidates
+      ecu_key = (addr[0], addr[1])
+      candidates = all_fw_versions[(*ecu_key, version)]
 
-      # if len(candidates) == 1:
-      #   match_count += 1
-      #   if candidate is None:
-      #     candidate = candidates[0]
-      #   # We uniquely matched two different cars. No fuzzy match possible
-      #   elif candidate != candidates[0]:
-      #     return set()
+      if len(candidates) == 1 and ecu_key not in matched_ecus:
+        matched_ecus.append(ecu_key)
+        if candidate is None:
+          candidate = candidates[0]
+        # We uniquely matched two different cars. No fuzzy match possible
+        elif candidate != candidates[0]:
+          return set()
 
-  if len(matches) > 0:
-    print('matches', matches)
-    candidates = set.union(*matches.values())
-    if candidates == 1:
-      candidate = list(candidates)[0]
-      if list(matches.values()).count(candidate) > 2:
-        return {candidate}
-      else:
-        return set()
-    else:
-      return set()
-  else:
-    return set()
-
-  if match_count >= 2:
+  if len(matched_ecus) >= 2:
     if log:
-      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {match_count} matching ECUs")
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {candidate}
   else:
     return set()
