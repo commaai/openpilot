@@ -89,7 +89,7 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
 
     if self.car_fingerprint in PREGLOBAL_CARS:
-      ret.cruiseState.speed = cp_cruise.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+      ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
     else:
       ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
