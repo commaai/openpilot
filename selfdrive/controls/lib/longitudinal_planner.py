@@ -68,6 +68,8 @@ class LongitudinalPlanner:
     param_value = self.params.get('LongitudinalPersonality')
     if param_value is not None:
       self.personality = int(param_value)
+    else:
+      self.personality = log.LongitudinalPersonality.standard
 
   @staticmethod
   def parse_model(model_msg, model_error):
