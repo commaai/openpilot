@@ -133,8 +133,8 @@ def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
 def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
   # Try exact matching first
   exact_matches = []
-  # if allow_exact:
-  #   exact_matches = [(True, match_fw_to_car_exact)]
+  if allow_exact:
+    exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
