@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QButtonGroup>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -60,7 +61,7 @@ public:
 public slots:
   void showDescription() {
     description->setVisible(true);
-  };
+  }
 
 signals:
   void showDescriptionEvent();
@@ -106,7 +107,7 @@ signals:
   void clicked();
 
 public slots:
-  void setEnabled(bool enabled) { btn.setEnabled(enabled); };
+  void setEnabled(bool enabled) { btn.setEnabled(enabled); }
 
 private:
   QPushButton btn;
@@ -163,7 +164,7 @@ public:
   void setConfirmation(bool _confirm, bool _store_confirm) {
     confirm = _confirm;
     store_confirm = _store_confirm;
-  };
+  }
 
   void setActiveIcon(const QString &icon) {
     active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
@@ -175,11 +176,11 @@ public:
       toggle.togglePosition();
       setIcon(state);
     }
-  };
+  }
 
   void showEvent(QShowEvent *event) override {
     refresh();
-  };
+  }
 
 private:
   void setIcon(bool state) {
@@ -188,7 +189,7 @@ private:
     } else if (!icon_pixmap.isNull()) {
       icon_label->setPixmap(icon_pixmap);
     }
-  };
+  }
 
   std::string key;
   Params params;
@@ -196,80 +197,54 @@ private:
   bool confirm = false;
   bool store_confirm = false;
 };
- 
+
 class ButtonParamControl : public AbstractControl {
   Q_OBJECT
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     std::vector<QString> button_texts, std::vector<int> button_widths) : AbstractControl(title, desc, icon) {
-    select_style = (R"(
-        padding: 0;
+                     const std::vector<QString> &button_texts) : AbstractControl(title, desc, icon) {
+    const QString style = R"(
+      QPushButton {
         border-radius: 50px;
-        font-size: 45px;
+        font-size: 40px;
         font-weight: 500;
-        color: #E4E4E4;
-        background-color: #33Ab4C;
-      )");
-    unselect_style = (R"(
-        padding: 0;
-        border-radius: 50px;
-        font-size: 45px;
-        font-weight: 350;
+        height:100px;
+        padding: 0 25 0 25;
         color: #E4E4E4;
         background-color: #393939;
-      )");
-    key = param.toStdString();
-    for (int i = 0; i < button_texts.size(); i++) {
-      QPushButton *button = new QPushButton();
-      button->setText(button_texts[i]);
-      hlayout->addWidget(button);
-      button->setFixedSize(button_widths[i], 100);
-      button->setStyleSheet(unselect_style);
-      buttons.push_back(button);
-      QObject::connect(button, &QPushButton::clicked, [=]() {
-        params.put(key, (QString::number(i)).toStdString());
-        refresh();
-      });
-    }
-    refresh();
-  }
-
-  void read_param() {
-    auto value = params.get(key);
-    if (!value.empty()) {
-      param_value = std::stoi(value);
-    }
-  };
-  void set_param(int new_value) {
-    QString values = QString::number(new_value);
-    params.put(key, values.toStdString());
-    refresh();
-  };
-
-  void refresh() {
-    read_param();
-    for (int i = 0; i < buttons.size(); i++) {
-      buttons[i]->setStyleSheet(unselect_style);
-      if (param_value == i) {
-        buttons[i]->setStyleSheet(select_style);
       }
+      QPushButton:pressed {
+        background-color: #4a4a4a;
+      }
+      QPushButton:checked {
+        background-color: #33Ab4C;
+      }
+    )";
+    key = param.toStdString();
+    int value = atoi(params.get(key).c_str());
+
+    QButtonGroup *button_group = new QButtonGroup(this);
+    button_group->setExclusive(true);
+    for (int i = 0; i < button_texts.size(); i++) {
+      QPushButton *button = new QPushButton(button_texts[i], this);
+      button->setCheckable(true);
+      button->setChecked(i == value);
+      button->setStyleSheet(style);
+      hlayout->addWidget(button);
+      button_group->addButton(button, i);
     }
-  };
-  void showEvent(QShowEvent *event) override {
-    refresh();
-  };
+
+    QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
+      if (checked) {
+        params.put(key, std::to_string(id));
+      }
+    });
+  }
 
 private:
   std::string key;
-  std::vector<QPushButton*> buttons;
-  QString unselect_style;
-  QString select_style;
   Params params;
-  int param_value = 0;
 };
-
-
-
 
 class ListWidget : public QWidget {
   Q_OBJECT
@@ -310,7 +285,7 @@ class LayoutWidget : public QWidget {
 public:
   LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
     setLayout(l);
-  };
+  }
 };
 
 class ClickableWidget : public QWidget {
