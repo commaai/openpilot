@@ -378,7 +378,6 @@ class LongitudinalMpc:
 
       self.source = 'e2e' if x_and_cruise[1,0] < x_and_cruise[1,1] else 'cruise'
 
-
     else:
       raise NotImplementedError(f'Planner mode {self.mode} not recognized in planner update')
 
