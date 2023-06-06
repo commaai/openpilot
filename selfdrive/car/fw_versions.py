@@ -106,8 +106,8 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(set)
-  all_platform_codes = defaultdict(set)
+  all_fw_versions = defaultdict(list)
+  all_platform_codes = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
@@ -115,12 +115,12 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     for addr, fws in fw_by_addr.items():
       if addr[0] not in exclude_types:
         for f in fws:
-          all_fw_versions[(addr[1], addr[2], f)].add(candidate)
+          all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
       # Add platform codes to lookup dict if config specifies a function
       if addr[0] in config.fuzzy_ecus and config.fuzzy_get_platform_codes is not None:
         for platform_code in config.fuzzy_get_platform_codes(fws):
-          all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+          all_platform_codes[(addr[1], addr[2], platform_code)].append(candidate)
 
   match_count = 0
   candidate = None
@@ -139,9 +139,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       if len(candidates) == 1:
         match_count += 1
         if candidate is None:
-          candidate = list(candidates)[0]
+          candidate = candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
-        elif candidate != list(candidates)[0]:
+        elif candidate != candidates[0]:
           return set()
 
   if match_count >= config.fuzzy_min_match_count:
