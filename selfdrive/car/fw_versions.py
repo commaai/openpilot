@@ -57,7 +57,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
   # impossible to get 3 matching versions, even if two models with shared parts are released at the same
   # time and only one is in our database.
-  exclude_types = [Ecu.eps, Ecu.debug]
+  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
@@ -89,7 +89,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
         elif candidate != candidates[0]:
           return set()
 
-  print(candidate, match_count, len(matched_ecus), match_count == len(matched_ecus))
   if len(matched_ecus) >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
