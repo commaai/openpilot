@@ -9,8 +9,34 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   std::vector<const Signal*> ret;
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
-  std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
+  std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
+    if (l->start_bit != r->start_bit) {
+      return l->start_bit < r->start_bit;
+    }
+    // For VECTOR__INDEPENDENT_SIG_MSG, many signals have same start bit
+    return l->name < r->name;
+  });
   return ret;
+}
+
+void cabana::Msg::updateMask() {
+  mask = QVector<uint8_t>(size, 0x00).toList();
+  for (auto &sig : sigs) {
+    int i = sig.msb / 8;
+    int bits = sig.size;
+    while (i >= 0 && i < size && bits > 0) {
+      int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
+      int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
+
+      int sz = msb - lsb + 1;
+      int shift = (lsb - (i * 8));
+
+      mask[i] |= ((1ULL << sz) - 1) << shift;
+
+      bits -= size;
+      i = sig.is_little_endian ? i - 1 : i + 1;
+    }
+  }
 }
 
 void cabana::Signal::updatePrecision() {
@@ -20,7 +46,7 @@ void cabana::Signal::updatePrecision() {
 QString cabana::Signal::formatValue(double value) const {
   // Show enum string
   for (auto &[val, desc] : val_desc) {
-    if (std::abs(value - val.toInt()) < 1e-6) {
+    if (std::abs(value - val) < 1e-6) {
       return desc;
     }
   }
@@ -93,5 +119,3 @@ std::pair<int, int> getSignalRange(const cabana::Signal *s) {
   int to = from + s->size - 1;
   return {from, to};
 }
-
-std::vector<std::string> allDBCNames() { return get_dbc_names(); }

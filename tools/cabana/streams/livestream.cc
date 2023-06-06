@@ -1,12 +1,30 @@
 #include "tools/cabana/streams/livestream.h"
 
-#include <QTimer>
+struct LiveStream::Logger {
+  Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
+
+  void write(const char *data, const size_t size) {
+    int n = (seconds_since_epoch() - start_ts) / 60.0;
+    if (std::exchange(segment_num, n) != segment_num) {
+      QString dir = QString("%1/%2--%3")
+                        .arg(settings.log_path)
+                        .arg(QDateTime::fromSecsSinceEpoch(start_ts).toString("yyyy-MM-dd--hh-mm-ss"))
+                        .arg(n);
+      util::create_directories(dir.toStdString(), 0755);
+      fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
+    }
+
+    fs->write(data, size);
+  }
+
+  std::unique_ptr<std::ofstream> fs;
+  int segment_num;
+  uint64_t start_ts;
+};
 
 LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   if (settings.log_livestream) {
-    std::string path = (settings.log_path + "/" + QDateTime::currentDateTime().toString("yyyy-MM-dd--hh-mm-ss") + "--0").toStdString();
-    util::create_directories(path, 0755);
-    fs.reset(new std::ofstream(path + "/rlog", std::ios::binary | std::ios::out));
+    logger = std::make_unique<Logger>();
   }
   stream_thread = new QThread(this);
 
@@ -21,11 +39,9 @@ void LiveStream::startUpdateTimer() {
   timer_id = update_timer.timerId();
 }
 
-void LiveStream::startStreamThread() {
-  // delay the start of the thread to avoid calling startStreamThread
-  // in the constructor when other classes' slots have not been connected to
-  // the signals of the livestream.
-  QTimer::singleShot(0, [this]() { stream_thread->start(); });
+void LiveStream::start() {
+  emit streamStarted();
+  stream_thread->start();
   startUpdateTimer();
 }
 
@@ -38,8 +54,8 @@ LiveStream::~LiveStream() {
 
 // called in streamThread
 void LiveStream::handleEvent(const char *data, const size_t size) {
-  if (fs) {
-    fs->write(data, size);
+  if (logger) {
+    logger->write(data, size);
   }
 
   std::lock_guard lk(lock);
@@ -71,7 +87,6 @@ void LiveStream::updateEvents() {
   if (first_update_ts == 0) {
     first_update_ts = nanos_since_boot();
     first_event_ts = current_event_ts = all_events_.back()->mono_time;
-    emit streamStarted();
   }
 
   if (paused_ || prev_speed != speed_) {

@@ -6,17 +6,18 @@ from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create
   create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
 
+LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
-  # Note that we do curvature error limiting after the rate limits since they are just for tuning reasons
-  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, CarControllerParams)
-
   # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
   if v_ego_raw > 9:
     apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR,
                            current_curvature + CarControllerParams.CURVATURE_ERROR)
+
+  # Curvature rate limit after driver torque limit
+  apply_curvature = apply_std_steer_angle_limits(apply_curvature, apply_curvature_last, v_ego_raw, CarControllerParams)
 
   return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
@@ -69,7 +70,7 @@ class CarController:
       if self.CP.carFingerprint in CANFD_CARS:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
-        counter = self.frame // CarControllerParams.STEER_STEP
+        counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
         can_sends.append(create_lat_ctl2_msg(self.packer, mode, 0., 0., -apply_curvature, 0., counter))
       else:
         can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
@@ -81,17 +82,14 @@ class CarController:
     ### longitudinal control ###
     # send acc msg at 50Hz
     if self.CP.openpilotLongitudinalControl and (self.frame % CarControllerParams.ACC_CONTROL_STEP) == 0:
+      # Both gas and accel are in m/s^2, accel is used solely for braking
       accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+      gas = accel
+      if not CC.longActive or gas < CarControllerParams.MIN_GAS:
+        gas = CarControllerParams.INACTIVE_GAS
 
-      precharge_brake = accel < -0.1
-      if accel > -0.5:
-        gas = accel
-        decel = False
-      else:
-        gas = -5.0
-        decel = True
-
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, precharge_brake, decel))
+      stopping = CC.actuators.longControlState == LongCtrlState.stopping
+      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
@@ -100,7 +98,9 @@ class CarController:
       can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
     # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_acc_ui_msg(self.packer, main_on, CC.latActive, hud_control, CS.acc_tja_status_stock_values))
+      can_sends.append(create_acc_ui_msg(self.packer, self.CP, main_on, CC.latActive,
+                                         CS.out.cruiseState.standstill, hud_control,
+                                         CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive

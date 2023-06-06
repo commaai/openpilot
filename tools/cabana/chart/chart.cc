@@ -44,9 +44,9 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   signal_value_font.setPointSize(9);
 
-  QObject::connect(axis_y, &QValueAxis::rangeChanged, [this]() { resetChartCache(); });
-  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, [this]() { resetChartCache(); });
-  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, [this]() { resetChartCache(); });
+  QObject::connect(axis_y, &QValueAxis::rangeChanged, this, &ChartView::resetChartCache);
+  QObject::connect(axis_y, &QAbstractAxis::titleTextChanged, this, &ChartView::resetChartCache);
+  QObject::connect(window()->windowHandle(), &QWindow::screenChanged, this, &ChartView::resetChartCache);
 
   QObject::connect(dbc(), &DBCManager::signalRemoved, this, &ChartView::signalRemoved);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &ChartView::signalUpdated);
@@ -259,10 +259,10 @@ void ChartView::updateSeriesPoints() {
   }
 }
 
-void ChartView::updateSeries(const cabana::Signal *sig) {
+void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
   for (auto &s : sigs) {
     if (!sig || s.sig == sig) {
-      if (!can->liveStreaming()) {
+      if (clear) {
         s.vals.clear();
         s.step_vals.clear();
         s.last_value_mono_time = 0;

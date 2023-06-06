@@ -8,13 +8,13 @@
 #include <QObject>
 #include <QString>
 #include <QSet>
-#include <QDebug>
 
 #include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcfile.h"
 
 typedef QSet<uint8_t> SourceSet;
 const SourceSet SOURCE_ALL = {};
+const int INVALID_SOURCE = 0xff;
 
 class DBCManager : public QObject {
   Q_OBJECT
@@ -33,11 +33,13 @@ public:
   void updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig);
   void removeSignal(const MessageId &id, const QString &sig_name);
 
-  void updateMsg(const MessageId &id, const QString &name, uint32_t size);
+  void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
   void removeMsg(const MessageId &id);
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
+
+  const QList<uint8_t>& mask(const MessageId &id) const;
 
   std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
   const cabana::Msg *msg(const MessageId &id) const;
@@ -57,6 +59,7 @@ public:
 
 private:
   SourceSet sources;
+  QList<uint8_t> empty_mask;
 
 public slots:
   void updateSources(const SourceSet &s);

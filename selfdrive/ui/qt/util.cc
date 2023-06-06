@@ -59,7 +59,8 @@ void configFont(QPainter &p, const QString &family, int size, const QString &sty
 }
 
 void clearLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
+  while (layout->count() > 0) {
+    QLayoutItem* item = layout->takeAt(0);
     if (QWidget* widget = item->widget()) {
       widget->deleteLater();
     }

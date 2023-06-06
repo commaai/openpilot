@@ -19,7 +19,7 @@ from panda.python import Panda
 from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_enabled
+from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_openpilot_enabled
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -243,15 +243,14 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   if frs is None:
     frs = dict()
 
-  params = Params()
-  os.environ["LOG_ROOT"] = outdir
-
   # Get and setup initial state
   CP = [m for m in lr if m.which() == 'carParams'][0].carParams
   controlsState = [m for m in lr if m.which() == 'controlsState'][0].controlsState
   liveCalibration = [m for m in lr if m.which() == 'liveCalibration'][0]
 
-  setup_env(CP=CP, controlsState=controlsState)
+  setup_env(CP=CP, controlsState=controlsState, log_dir=outdir)
+
+  params = Params()
   params.put("CalibrationParams", liveCalibration.as_builder().to_bytes())
 
   vs, cam_procs = replay_cameras(lr, frs, disable_tqdm=disable_tqdm)
@@ -283,10 +282,9 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   # TODO add configs for modeld, dmonitoringmodeld
   fakeable_daemons = {}
   for config in CONFIGS:
-    replayable_messages = set([msg for sub in config.pub_sub.values() for msg in sub])
     processes = [
       multiprocessing.Process(target=replay_service, args=(msg, lr)) 
-      for msg in replayable_messages
+      for msg in config.subs
     ]
     fakeable_daemons[config.proc_name] = processes
 
@@ -345,7 +343,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   segment = params.get("CurrentRoute", encoding='utf-8') + "--0"
   seg_path = os.path.join(outdir, segment)
   # check to make sure openpilot is engaged in the route
-  if not check_enabled(LogReader(os.path.join(seg_path, "rlog"))):
+  if not check_openpilot_enabled(LogReader(os.path.join(seg_path, "rlog"))):
     raise Exception(f"Route did not engage for long enough: {segment}")
 
   return seg_path
