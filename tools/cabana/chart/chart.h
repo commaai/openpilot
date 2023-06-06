@@ -56,7 +56,7 @@ private slots:
   void manageSignals();
   void handleMarkerClicked();
   void msgUpdated(MessageId id);
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id == id; }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:

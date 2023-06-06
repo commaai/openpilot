@@ -37,20 +37,18 @@ void DBCFile::open(const QString &content) {
     m.name = msg.name.c_str();
     m.size = msg.size;
     for (auto &s : msg.sigs) {
-      m.sigs.push_back({});
-      auto &sig = m.sigs.last();
-      sig.name = s.name.c_str();
-      sig.start_bit = s.start_bit;
-      sig.msb = s.msb;
-      sig.lsb = s.lsb;
-      sig.size = s.size;
-      sig.is_signed = s.is_signed;
-      sig.factor = s.factor;
-      sig.offset = s.offset;
-      sig.is_little_endian = s.is_little_endian;
-      sig.updatePrecision();
+      auto sig = m.sigs.emplace_back(new cabana::Signal);
+      sig->name = s.name.c_str();
+      sig->start_bit = s.start_bit;
+      sig->msb = s.msb;
+      sig->lsb = s.lsb;
+      sig->size = s.size;
+      sig->is_signed = s.is_signed;
+      sig->factor = s.factor;
+      sig->offset = s.offset;
+      sig->is_little_endian = s.is_little_endian;
     }
-    m.updateMask();
+    m.update();
   }
   parseExtraInfo(content);
 
@@ -92,9 +90,9 @@ bool DBCFile::writeContents(const QString &fn) {
 
 cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
   if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
-    m->sigs.push_back(sig);
-    m->updateMask();
-    return &m->sigs.last();
+    auto s = m->sigs.emplace_back(new cabana::Signal(sig));
+    m->update();
+    return s;
   }
   return nullptr;
 }
@@ -103,7 +101,7 @@ cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &si
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
     if (auto s = (cabana::Signal *)m->sig(sig_name)) {
       *s = sig;
-      m->updateMask();
+      m->update();
       return s;
     }
   }
@@ -117,10 +115,11 @@ cabana::Signal *DBCFile::getSignal(const MessageId &id, const QString &sig_name)
 
 void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
   if (auto m = const_cast<cabana::Msg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
+    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s->name == sig_name; });
     if (it != m->sigs.end()) {
+      delete *it;
       m->sigs.erase(it);
-      m->updateMask();
+      m->update();
     }
   }
 }

@@ -171,7 +171,6 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
-  s.updatePrecision();
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
@@ -249,17 +248,14 @@ void SignalModel::removeSignal(const cabana::Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id == msg_id) {
+  if (id.address == msg_id.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    int i = 0;
-    for (; i < root->children.size(); ++i) {
-      if (sig->start_bit < root->children[i]->sig->start_bit) break;
-    }
+    int i = dbc()->msg(msg_id)->indexOf(sig);
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
@@ -348,7 +344,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       path.addRoundedRect(icon_rect, 3, 3);
       painter->setPen(item->highlight ? Qt::white : Qt::black);
       painter->setFont(label_font);
-      painter->fillPath(path, getColor(item->sig).darker(item->highlight ? 125 : 0));
+      painter->fillPath(path, item->sig->color.darker(item->highlight ? 125 : 0));
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       r.setLeft(icon_rect.right() + h_margin * 2);
