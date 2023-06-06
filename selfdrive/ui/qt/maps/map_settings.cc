@@ -12,7 +12,7 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
+MapPanel::MapPanel(QWidget* parent) : QFrame(parent) {
   stack = new QStackedWidget;
 
   QWidget * main_widget = new QWidget;

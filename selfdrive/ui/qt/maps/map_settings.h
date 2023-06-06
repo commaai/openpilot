@@ -1,17 +1,18 @@
 #pragma once
+
+#include <QFrame>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QWidget>
 #include <QStackedWidget>
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
-class MapPanel : public QWidget {
+class MapPanel : public QFrame {
   Q_OBJECT
 public:
   explicit MapPanel(QWidget* parent = nullptr);
