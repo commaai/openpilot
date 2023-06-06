@@ -67,7 +67,7 @@ class LongitudinalPlanner:
   def read_param(self):
     try:
       self.personality = int(self.params.get('LongitudinalPersonality'))
-    except Exception:
+    except (ValueError, TypeError):
       self.personality = log.LongitudinalPersonality.standard
 
   @staticmethod
