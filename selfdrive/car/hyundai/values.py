@@ -1652,6 +1652,7 @@ FW_VERSIONS = {
   CAR.IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
+      b'\xf1\x8799110GI000\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.02 99211-GI010 211206',
@@ -1662,6 +1663,27 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT EUR RHD 1.00 1.02 99211-GI010 211206',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.03 99211-GI010 220401',
+      b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.06 99211-GI010 230110',
+    ],
+    (Ecu.abs, 0x7D1, None): [
+      b'\xf1\x00NE1 IEB \x07 110"\x08& 58520-GI010',
+	    b'\xf1\x8758520GI010\xf1\x00NE1 IEB \x07 110"\x08& 58520-GI010',
+    ],
+    (Ecu.eps, 0x7D4, None): [
+      b'\xf1\x00NE  MDPS R 1.00 1.07 57700GI000  4NEDR107',
+      b'\xf1\x8757700GI000 \xf1\x00NE  MDPS R 1.00 1.07 57700GI000  4NEDR107',
+    ],
+    (Ecu.adas, 0x730, None): [
+      b'\xf1\x00NE1 ADRV 1.00 1.09 230109',
+    ],
+    (Ecu.cornerRadar, 0x7B7, None): [
+      b'\xf1\x00NE  BCW RR 1.00 , 1.01 (v\x12U#\x00\x02\x04\x13',
+    ],
+    (Ecu.hvac, 0x7B3, None): [
+      b"\xf1\x00NE1   97255-GI132CONTROL ASS'Y-DATC  1.14.00 NE1 DATC(-)1.2   ",
+    ],
+    (Ecu.parkingAdas, 0x7B1, None): [
+      b'\xf1\x10NE1  ADAS_PRK ANL 1.00 1.07 99910-GI400',
     ],
   },
   CAR.TUCSON_4TH_GEN: {
