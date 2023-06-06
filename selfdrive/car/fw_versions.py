@@ -74,9 +74,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   matched_ecus = set()
   candidate = None
   for addr, versions in fw_versions_dict.items():
+    ecu_key = (addr[0], addr[1])
     for version in versions:
       # All cars that have this FW response on the specified address
-      ecu_key = (addr[0], addr[1])
       candidates = all_fw_versions[(*ecu_key, version)]
 
       if len(candidates) == 1:
