@@ -856,23 +856,23 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>failed to check for update</source>
-        <translation type="unfinished"></translation>
+        <translation>更新檢查失敗</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
+        <translation>已更新為最新版本 最後一次檢查時間 %1</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
-        <translation type="unfinished"></translation>
+        <translation>下載</translation>
     </message>
     <message>
         <source>update available</source>
-        <translation type="unfinished"></translation>
+        <translation>有新的更新可進行安裝</translation>
     </message>
     <message>
         <source>never</source>
-        <translation type="unfinished"></translation>
+        <translation>永不</translation>
     </message>
 </context>
 <context>
@@ -1040,35 +1040,35 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot縱向控制 (早期版本)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: Openpilot縱向控制在本車輛上仍為早期版本 啟動時會關閉自動緊急煞車系統 (AEB)</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>在本車上 Openpilot預設將使用車輛內建的ACC作為縱向控制方式 啟動本開關以切換至Openpilot縱向控制 當使用Openpilot縱向控制時 建議一併啟用實驗模式</translation>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>激進</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>標準</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>輕鬆</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
+        <translation>駕駛風格</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation type="unfinished"></translation>
+        <translation>建議使用標準模式。在激進模式下 Openpilot會較為貼近前車 且油門跟煞車的控制會較為激烈</translation>
     </message>
 </context>
 <context>
@@ -1110,23 +1110,23 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>設定Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>連接Wi-Fi來上傳駕駛資料 以協助改善Openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>開啟設定</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation type="unfinished"></translation>
+        <translation>訓練資料上傳中</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>您的資料將會用在AI模型訓練上 協助改善Openpilot</translation>
     </message>
 </context>
 <context>
