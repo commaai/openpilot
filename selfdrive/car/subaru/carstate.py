@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
 
 
 class CarState(CarStateBase):
@@ -58,9 +58,6 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
-    if self.car_fingerprint not in PREGLOBAL_CARS:
-      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
@@ -78,11 +75,15 @@ class CarState(CarStateBase):
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+      ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
+      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
+      self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
+    if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
+      self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
 
     return ret
 
@@ -109,6 +110,7 @@ class CarState(CarStateBase):
   def get_global_es_distance_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
+      ("CHECKSUM", "ES_Distance"),
       ("Signal1", "ES_Distance"),
       ("Cruise_Fault", "ES_Distance"),
       ("Cruise_Throttle", "ES_Distance"),
@@ -249,7 +251,8 @@ class CarState(CarStateBase):
       ]
     else:
       signals = [
-        ("Counter", "ES_DashStatus"),
+        ("COUNTER", "ES_DashStatus"),
+        ("CHECKSUM", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
@@ -257,7 +260,7 @@ class CarState(CarStateBase):
         ("LKAS_State_Msg", "ES_DashStatus"),
         ("Signal2", "ES_DashStatus"),
         ("Cruise_Soft_Disable", "ES_DashStatus"),
-        ("EyeSight_Status_Msg", "ES_DashStatus"),
+        ("Cruise_Status_Msg", "ES_DashStatus"),
         ("Signal3", "ES_DashStatus"),
         ("Cruise_Distance", "ES_DashStatus"),
         ("Signal4", "ES_DashStatus"),
@@ -277,6 +280,7 @@ class CarState(CarStateBase):
         ("Cruise_State", "ES_DashStatus"),
 
         ("COUNTER", "ES_LKAS_State"),
+        ("CHECKSUM", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
@@ -301,6 +305,17 @@ class CarState(CarStateBase):
       if CP.carFingerprint not in GLOBAL_GEN2:
         signals += CarState.get_global_es_distance_signals()[0]
         checks += CarState.get_global_es_distance_signals()[1]
+
+      if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
+        signals += [
+          ("COUNTER", "INFOTAINMENT_STATUS"),
+          ("CHECKSUM", "INFOTAINMENT_STATUS"),
+          ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
+          ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
+          ("Signal1", "INFOTAINMENT_STATUS"),
+          ("Signal2", "INFOTAINMENT_STATUS"),
+        ]
+        checks.append(("INFOTAINMENT_STATUS", 10))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 

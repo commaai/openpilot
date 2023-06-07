@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -22,8 +22,13 @@ if [ -z "\$PYENV_ROOT" ]; then
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
+
+  # setup now without restarting shell
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+  export PYENV_ROOT="$HOME/.pyenv"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
 fi
-source $RC_FILE
 
 export MAKEFLAGS="-j$(nproc)"
 
@@ -40,32 +45,39 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==21.3.1
-pip install pipenv==2021.11.23
+pip install pip==22.3.1
+pip install poetry==1.2.2
 
-if [ -d "./xx" ]; then
-  echo "WARNING: using xx Pipfile ******"
-  export PIPENV_SYSTEM=1
-  export PIPENV_PIPFILE=./xx/Pipfile
+poetry config virtualenvs.prefer-active-python true --local
+
+if [[ -n "$XX" ]] || [[ "$(basename "$(dirname "$(pwd)")")" == "xx" ]]; then
+  XX=true
 fi
 
-if [ -z "$PIPENV_SYSTEM" ]; then
-  echo "PYTHONPATH=${PWD}" > .env
-  RUN="pipenv run"
+POETRY_INSTALL_ARGS="--no-cache --no-root"
+
+if [ -n "$XX" ]; then
+  echo "WARNING: using xx dependency group, installing globally"
+  poetry config virtualenvs.create false --local
+  POETRY_INSTALL_ARGS="$POETRY_INSTALL_ARGS --with xx --sync"
 else
-  RUN=""
+  echo "PYTHONPATH=${PWD}" > .env
+  poetry self add poetry-dotenv-plugin@^0.1.0
 fi
 
 echo "pip packages install..."
-pipenv sync --dev
-pipenv --clear
+poetry install $POETRY_INSTALL_ARGS
 pyenv rehash
 
-echo "pre-commit hooks install..."
-shopt -s nullglob
-for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-  cd $DIR/$(dirname $f)
-  if [ -e ".git" ]; then
-    $RUN pre-commit install
-  fi
-done
+[ -n "$XX" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
+
+if [ "$(uname)" != "Darwin" ]; then
+  echo "pre-commit hooks install..."
+  shopt -s nullglob
+  for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
+    cd $DIR/$(dirname $f)
+    if [ -e ".git" ]; then
+      $RUN pre-commit install
+    fi
+  done
+fi

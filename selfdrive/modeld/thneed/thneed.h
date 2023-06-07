@@ -12,7 +12,7 @@
 
 #include <CL/cl.h>
 
-#include "selfdrive/modeld/thneed/include/msm_kgsl.h"
+#include "msm_kgsl.h"
 
 using namespace std;
 

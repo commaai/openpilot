@@ -157,13 +157,14 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setHighConversionGain(frame_data.high_conversion_gain);
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
-  framed.setLensPos(frame_data.lens_pos);
-  framed.setLensErr(frame_data.lens_err);
-  framed.setLensTruePos(frame_data.lens_true_pos);
   framed.setProcessingTime(frame_data.processing_time);
 
+  const float ev = c->cur_ev[frame_data.frame_id % 3];
+  const float perc = util::map_val(ev, c->min_ev, c->max_ev, 0.0f, 100.0f);
+  framed.setExposureValPercent(perc);
+
   if (c->camera_id == CAMERA_ID_AR0231) {
-    framed.setSensor(cereal::FrameData::ImageSensor::AR0321);
+    framed.setSensor(cereal::FrameData::ImageSensor::AR0231);
   } else if (c->camera_id == CAMERA_ID_OX03C10) {
     framed.setSensor(cereal::FrameData::ImageSensor::OX03C10);
   }

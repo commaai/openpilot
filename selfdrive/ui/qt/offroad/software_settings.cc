@@ -54,7 +54,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   connect(targetBranchBtn, &ButtonControl::clicked, [=]() {
     auto current = params.get("GitBranch");
     QStringList branches = QString::fromStdString(params.get("UpdaterAvailableBranches")).split(",");
-    for (QString b : {current.c_str(), "devel-staging", "devel", "master-ci", "master"}) {
+    for (QString b : {current.c_str(), "devel-staging", "devel", "nightly", "master-ci", "master"}) {
       auto i = branches.indexOf(b);
       if (i >= 0) {
         branches.removeAt(i);
@@ -77,7 +77,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   // uninstall button
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), this)) {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to uninstall?"), tr("Uninstall"), this)) {
       params.putBool("DoUninstall", true);
     }
   });
@@ -126,30 +126,30 @@ void SoftwarePanel::updateLabels() {
     downloadBtn->setValue(updater_state);
   } else {
     if (failed) {
-      downloadBtn->setText("CHECK");
-      downloadBtn->setValue("failed to check for update");
+      downloadBtn->setText(tr("CHECK"));
+      downloadBtn->setValue(tr("failed to check for update"));
     } else if (params.getBool("UpdaterFetchAvailable")) {
-      downloadBtn->setText("DOWNLOAD");
-      downloadBtn->setValue("update available");
+      downloadBtn->setText(tr("DOWNLOAD"));
+      downloadBtn->setValue(tr("update available"));
     } else {
-      QString lastUpdate = "never";
+      QString lastUpdate = tr("never");
       auto tm = params.get("LastUpdateTime");
       if (!tm.empty()) {
         lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
       }
-      downloadBtn->setText("CHECK");
-      downloadBtn->setValue("up to date, last checked " + lastUpdate);
+      downloadBtn->setText(tr("CHECK"));
+      downloadBtn->setValue(tr("up to date, last checked %1").arg(lastUpdate));
     }
     downloadBtn->setEnabled(true);
   }
   targetBranchBtn->setValue(QString::fromStdString(params.get("UpdaterTargetBranch")));
 
   // current + new versions
-  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")).left(40));
+  versionLbl->setText(QString::fromStdString(params.get("UpdaterCurrentDescription")));
   versionLbl->setDescription(QString::fromStdString(params.get("UpdaterCurrentReleaseNotes")));
 
   installBtn->setVisible(!is_onroad && params.getBool("UpdateAvailable"));
-  installBtn->setValue(QString::fromStdString(params.get("UpdaterNewDescription")).left(35));
+  installBtn->setValue(QString::fromStdString(params.get("UpdaterNewDescription")));
   installBtn->setDescription(QString::fromStdString(params.get("UpdaterNewReleaseNotes")));
 
   update();

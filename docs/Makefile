@@ -41,7 +41,7 @@ clean:
 
 	@echo "Building rst files..."
 	sphinx-apidoc -o "$(DOCSBUILDDIR)" ../ \
-		../xx ../laika_repo ../rednose_repo ../pyextra ../notebooks ../panda_jungle \
+		../xx ../laika_repo ../rednose_repo ../notebooks ../panda_jungle \
 		../third_party \
 		../panda/examples \
 		../scripts \

@@ -8,4 +8,4 @@ Additionally, on specific supported cars (see ACC column in [supported cars](CAR
 * Stock ACC is replaced by openpilot ACC.
 * openpilot FCW operates in addition to stock FCW.
 
-openpilot should preserve all other vehicle's stock features, including, but are not limited to: FCW, Automatic Emergency Braking (AEB), auto high-beam, blind spot warning, and side collision warning.
+openpilot should preserve all other vehicle's stock features, including, but not limited to: FCW, Automatic Emergency Braking (AEB), auto high-beam, blind spot warning, and side collision warning.

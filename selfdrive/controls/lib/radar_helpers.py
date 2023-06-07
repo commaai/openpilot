@@ -2,8 +2,7 @@ from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 
 
-# the longer lead decels, the more likely it will keep decelerating
-# TODO is this a good default?
+# Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
 
 # radar tracks
@@ -131,15 +130,16 @@ class Cluster():
       "aLeadTau": float(self.aLeadTau)
     }
 
-  def get_RadarState_from_vision(self, lead_msg, v_ego):
+  def get_RadarState_from_vision(self, lead_msg, v_ego, model_v_ego):
+    lead_v_rel_pred = lead_msg.v[0] - model_v_ego
     return {
       "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
       "yRel": float(-lead_msg.y[0]),
-      "vRel": float(lead_msg.v[0] - v_ego),
-      "vLead": float(lead_msg.v[0]),
-      "vLeadK": float(lead_msg.v[0]),
-      "aLeadK": float(0),
-      "aLeadTau": _LEAD_ACCEL_TAU,
+      "vRel": float(lead_v_rel_pred),
+      "vLead": float(v_ego + lead_v_rel_pred),
+      "vLeadK": float(v_ego + lead_v_rel_pred),
+      "aLeadK": 0.0,
+      "aLeadTau": 0.3,
       "fcw": False,
       "modelProb": float(lead_msg.prob),
       "radar": False,
@@ -152,7 +152,8 @@ class Cluster():
 
   def potential_low_speed_lead(self, v_ego):
     # stop for stuff in front of you and low speed, even without model confirmation
-    return abs(self.yRel) < 1.0 and (v_ego < v_ego_stationary) and self.dRel < 25
+    # Radar points closer than 0.75, are almost always glitches on toyota radars
+    return abs(self.yRel) < 1.0 and (v_ego < v_ego_stationary) and (0.75 < self.dRel < 25)
 
   def is_potential_fcw(self, model_prob):
     return model_prob > .9

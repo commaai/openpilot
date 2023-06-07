@@ -4,9 +4,10 @@ from typing import Dict, List, Optional, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
+from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -27,6 +28,7 @@ class CarControllerParams:
   NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
   NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
+  NIDEC_GAS_MAX = 198  # 0xc6
   NIDEC_BRAKE_MAX = 1024 // 4
 
   BOSCH_ACCEL_MIN = -3.5  # m/s^2
@@ -85,12 +87,12 @@ class CAR:
   FIT = "HONDA FIT 2018"
   FREED = "HONDA FREED 2020"
   HRV = "HONDA HRV 2019"
+  HRV_3G = "HONDA HR-V 2023"
   ODYSSEY = "HONDA ODYSSEY 2018"
   ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
   ACURA_RDX = "ACURA RDX 2018"
   ACURA_RDX_3G = "ACURA RDX 2020"
   PILOT = "HONDA PILOT 2017"
-  PASSPORT = "HONDA PASSPORT 2021"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
@@ -105,50 +107,93 @@ class Footnote(Enum):
 @dataclass
 class HondaCarInfo(CarInfo):
   package: str = "Honda Sensing"
-  min_steer_speed: float = 12. * CV.MPH_TO_MS
+
+  def init_make(self, CP: car.CarParams):
+    if CP.carFingerprint in HONDA_BOSCH:
+      self.car_parts = CarParts.common([CarHarness.bosch_b]) if CP.carFingerprint in HONDA_BOSCH_RADARLESS else CarParts.common([CarHarness.bosch_a])
+    else:
+      self.car_parts = CarParts.common([CarHarness.nidec])
 
 
 CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.ACCORD: [
-    HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+    HondaCarInfo("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
   ],
-  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", harness=Harness.nidec, video_link="https://youtu.be/-IkImTe1NYE"),
+  CAR.ACCORDH: HondaCarInfo("Honda Accord Hybrid 2018-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.CIVIC: HondaCarInfo("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE"),
   CAR.CIVIC_BOSCH: [
-    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-    HondaCarInfo("Honda Civic Hatchback 2017-21", harness=Harness.bosch_a),
+    HondaCarInfo("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8", footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
   ],
   CAR.CIVIC_BOSCH_DIESEL: None,  # same platform
   CAR.CIVIC_2022: [
-    HondaCarInfo("Honda Civic 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
-    HondaCarInfo("Honda Civic Hatchback 2022", "All", min_steer_speed=0., harness=Harness.bosch_b),
+    HondaCarInfo("Honda Civic 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
+    HondaCarInfo("Honda Civic Hatchback 2022", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
   ],
-  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS, harness=Harness.nidec),
-  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", harness=Harness.nidec),
-  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", harness=Harness.bosch_a),
+  CAR.ACURA_ILX: HondaCarInfo("Acura ILX 2016-19", "AcuraWatch Plus", min_steer_speed=25. * CV.MPH_TO_MS),
+  CAR.CRV: HondaCarInfo("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.CRV_5G: HondaCarInfo("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.CRV_EU: None,  # HondaCarInfo("Honda CR-V EU", "Touring"),  # Euro version of CRV Touring
-  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", harness=Harness.bosch_a),
-  CAR.FIT: HondaCarInfo("Honda Fit 2018-20", harness=Harness.nidec),
-  CAR.FREED: HondaCarInfo("Honda Freed 2020", harness=Harness.nidec),
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", harness=Harness.nidec),
-  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20", min_steer_speed=0., harness=Harness.nidec),
+  CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV_3G: HondaCarInfo("Honda HR-V 2023", "All"),
+  CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
-  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", harness=Harness.nidec),
-  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.PILOT: HondaCarInfo("Honda Pilot 2016-22", harness=Harness.nidec),
-  CAR.PASSPORT: HondaCarInfo("Honda Passport 2019-21", "All", harness=Harness.nidec),
-  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-22", harness=Harness.nidec),
-  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
-  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS, harness=Harness.bosch_a),
+  CAR.ACURA_RDX: HondaCarInfo("Acura RDX 2016-18", "AcuraWatch Plus", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.ACURA_RDX_3G: HondaCarInfo("Acura RDX 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.PILOT: [
+    HondaCarInfo("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
+    HondaCarInfo("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
+  ],
+  CAR.RIDGELINE: HondaCarInfo("Honda Ridgeline 2017-23", min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.INSIGHT: HondaCarInfo("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS),
+  CAR.HONDA_E: HondaCarInfo("Honda e 2020", "All", min_steer_speed=3. * CV.MPH_TO_MS),
 }
+
+HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xF112)
+HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(0xF112)
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # Currently used to fingerprint
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.UDS_VERSION_RESPONSE],
+      bus=1,
     ),
+
+    # Data collection requests:
+    # Log extra identifiers for current ECUs
+    Request(
+      [HONDA_VERSION_REQUEST],
+      [HONDA_VERSION_RESPONSE],
+      bus=1,
+      logging=True,
+    ),
+    # Nidec PT bus
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+      bus=0,
+      logging=True,
+    ),
+    # Bosch PT bus
+    Request(
+      [StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.UDS_VERSION_RESPONSE],
+      bus=1,
+      logging=True,
+      obd_multiplexing=False,
+    ),
+  ],
+  extra_ecus=[
+    # The only other ECU on PT bus accessible by camera on radarless Civic
+    (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
 
@@ -237,7 +282,7 @@ FW_VERSIONS = {
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
-      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA,A150\x00\x00', # modified firmware
       b'39990-TVE-H130\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [
@@ -325,10 +370,12 @@ FW_VERSIONS = {
       b'57114-TWA-A050\x00\x00',
       b'57114-TWA-A530\x00\x00',
       b'57114-TWA-B520\x00\x00',
+      b'57114-TWB-H030\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TWA-A440\x00\x00',
       b'77959-TWA-L420\x00\x00',
+      b'77959-TWB-H220\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TWA-A010\x00\x00',
@@ -342,6 +389,7 @@ FW_VERSIONS = {
       b'78109-TWA-A230\x00\x00',
       b'78109-TWA-L010\x00\x00',
       b'78109-TWA-L210\x00\x00',
+      b'78109-TWA-H210\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TWA-A910\x00\x00',
@@ -353,16 +401,19 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TWA-A070\x00\x00',
       b'36161-TWA-A330\x00\x00',
+      b'36161-TWB-H040\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TWA-A070\x00\x00',
       b'36802-TWA-A080\x00\x00',
       b'36802-TWA-A330\x00\x00',
+      b'36802-TWB-H060\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A340\x00\x00',
+      b'39990-TWB-H120\x00\x00',
     ],
   },
   CAR.CIVIC: {
@@ -447,7 +498,7 @@ FW_VERSIONS = {
       b'78109-TED-Q510\x00\x00',
       b'78109-TEG-A310\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TBA-A020\x00\x00',
       b'36161-TBA-A030\x00\x00',
       b'36161-TBA-A040\x00\x00',
@@ -965,7 +1016,7 @@ FW_VERSIONS = {
       b'77959-THR-A110\x00\x00',
       b'77959-THR-X010\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-THR-A020\x00\x00',
       b'36161-THR-A030\x00\x00',
       b'36161-THR-A110\x00\x00',
@@ -1032,6 +1083,23 @@ FW_VERSIONS = {
       b'54008-THR-A020\x00\x00',
     ],
   },
+  CAR.ODYSSEY_CHN: {
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-T6D-H220\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-T6A-J010\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-T6A-F310\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T6A-P040\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-T6A-P110\x00\x00',
+    ],
+  },
   CAR.PILOT: {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A520\x00\x00',
@@ -1044,6 +1112,9 @@ FW_VERSIONS = {
       b'28101-5EZ-A060\x00\x00',
       b'28101-5EZ-A100\x00\x00',
       b'28101-5EZ-A210\x00\x00',
+      b'28101-5EZ-A600\x00\x00',
+      b'28101-5EZ-A430\x00\x00',
+      b'28101-5EZ-A700\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-RLV-4060\x00\x00',
@@ -1055,6 +1126,11 @@ FW_VERSIONS = {
       b'37805-RLV-C520\x00\x00',
       b'37805-RLV-C530\x00\x00',
       b'37805-RLV-C910\x00\x00',
+      b'37805-RLV-B220\x00\x00',
+      b'37805-RLV-B210\x00\x00',
+      b'37805-RLV-L160\x00\x00',
+      b'37805-RLV-B420\x00\x00',
+      b'37805-RLV-F120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TG7-A030\x00\x00',
@@ -1068,8 +1144,9 @@ FW_VERSIONS = {
       b'39990-TG7-A060\x00\x00',
       b'39990-TG7-A070\x00\x00',
       b'39990-TGS-A230\x00\x00',
+      b'39990-TGS-A320\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TG7-A310\x00\x00',
       b'36161-TG7-A520\x00\x00',
       b'36161-TG7-A630\x00\x00',
@@ -1087,6 +1164,8 @@ FW_VERSIONS = {
       b'36161-TGS-A130\x00\x00',
       b'36161-TGT-A030\x00\x00',
       b'36161-TGT-A130\x00\x00',
+      b'36161-TGS-A030\x00\x00',
+      b'36161-TGS-A220\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A020\x00\x00',
@@ -1094,6 +1173,7 @@ FW_VERSIONS = {
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
       b'77959-TGS-A010\x00\x00',
+      b'77959-TGS-A110\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TG7-A040\x00\x00',
@@ -1124,6 +1204,10 @@ FW_VERSIONS = {
       b'78109-TGS-AP20\x00\x00',
       b'78109-TGT-AJ20\x00\x00',
       b'78109-TGT-AK30\x00\x00',
+      b'78109-TGS-AT20\x00\x00',
+      b'78109-TGS-AX20\x00\x00',
+      b'78109-TGS-AJ20\x00\x00',
+      b'78109-TGS-AC10\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A130\x00\x00',
@@ -1140,44 +1224,12 @@ FW_VERSIONS = {
       b'57114-TGT-A530\x00\x00',
     ],
   },
-  CAR.PASSPORT: {
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
-      b'37805-RLV-B220\x00\x00',
-      b'37805-RLV-B210\x00\x00',
-    ],
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TGS-A230\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36161-TGS-A030\x00\x00',
-      b'36161-TGS-A130\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TG7-A040\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TGS-A010\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x18da0bf1, None): [
-      b'54008-TG7-A530\x00\x00',
-    ],
-    (Ecu.transmission, 0x18da1ef1, None): [
-      b'28101-5EZ-A600\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
-      b'78109-TGS-AT20\x00\x00',
-      b'78109-TGS-AX20\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-TGS-A530\x00\x00',
-    ],
-  },
   CAR.ACURA_RDX: {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TX5-A220\x00\x00',
       b'57114-TX4-A220\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-TX5-A030\x00\x00',
       b'36161-TX4-A030\x00\x00',
     ],
@@ -1203,6 +1255,7 @@ FW_VERSIONS = {
       b'37805-5YF-A750\x00\x00',
       b'37805-5YF-A850\x00\x00',
       b'37805-5YF-A870\x00\x00',
+      b'37805-5YF-AD20\x00\x00',
       b'37805-5YF-C210\x00\x00',
       b'37805-5YF-C220\x00\x00',
       b'37805-5YF-C410\000\000',
@@ -1211,16 +1264,20 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TJB-A030\x00\x00',
       b'57114-TJB-A040\x00\x00',
+      b'57114-TJB-A120\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TJB-A040\x00\x00',
       b'36802-TJB-A050\x00\x00',
+      b'36802-TJB-A540\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TJB-A040\x00\x00',
+      b'36161-TJB-A530\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TJB-A520\x00\x00',
+      b'54008-TJB-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28102-5YK-A610\x00\x00',
@@ -1228,6 +1285,7 @@ FW_VERSIONS = {
       b'28102-5YK-A630\x00\x00',
       b'28102-5YK-A700\x00\x00',
       b'28102-5YK-A711\x00\x00',
+      b'28102-5YK-A800\x00\x00',
       b'28102-5YL-A620\x00\x00',
       b'28102-5YL-A700\x00\x00',
       b'28102-5YL-A711\x00\x00',
@@ -1239,6 +1297,7 @@ FW_VERSIONS = {
       b'78109-TJB-AB10\x00\x00',
       b'78109-TJB-AD10\x00\x00',
       b'78109-TJB-AF10\x00\x00',
+      b'78109-TJB-AQ20\x00\x00',
       b'78109-TJB-AR10\x00\x00',
       b'78109-TJB-AS10\000\000',
       b'78109-TJB-AU10\x00\x00',
@@ -1250,22 +1309,26 @@ FW_VERSIONS = {
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TJB-A040\x00\x00',
+      b'77959-TJB-A120\x00\x00',
       b'77959-TJB-A210\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TJB-A040\x00\x00',
       b'46114-TJB-A050\x00\x00',
       b'46114-TJB-A060\x00\x00',
+      b'46114-TJB-A120\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TJB-A040\x00\x00',
       b'38897-TJB-A110\x00\x00',
       b'38897-TJB-A120\x00\x00',
+      b'38897-TJB-A220\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TJB-A030\x00\x00',
       b'39990-TJB-A040\x00\x00',
-      b'39990-TJB-A130\x00\x00'
+      b'39990-TJB-A070\x00\x00',
+      b'39990-TJB-A130\x00\x00',
     ],
   },
   CAR.RIDGELINE: {
@@ -1274,7 +1337,7 @@ FW_VERSIONS = {
       b'39990-T6Z-A030\x00\x00',
       b'39990-T6Z-A050\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab0f1, None): [
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36161-T6Z-A020\x00\x00',
       b'36161-T6Z-A310\x00\x00',
       b'36161-T6Z-A420\x00\x00',
@@ -1365,6 +1428,32 @@ FW_VERSIONS = {
       b'78109-THW-A110\x00\x00',
     ],
   },
+  CAR.HRV_3G: {
+    (Ecu.eps, 0x18DA30F1, None): [
+      b'39990-3W0-A030\x00\x00',
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None): [
+      b'38897-3W1-A010\x00\x00',
+    ],
+    (Ecu.srs, 0x18DA53F1, None): [
+      b'77959-3V0-A820\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None): [
+      b'78108-3V1-A220\x00\x00',
+    ],
+    (Ecu.vsa, 0x18DA28F1, None): [
+      b'57114-3W0-A040\x00\x00',
+    ],
+    (Ecu.transmission, 0x18DA1EF1, None): [
+      b'28101-6EH-A010\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18DA10F1, None): [
+      b'37805-6CT-A710\x00\x00',
+    ],
+    (Ecu.electricBrakeBooster, 0x18DA2BF1, None): [
+      b'46114-3W0-A020\x00\x00',
+    ],
+  },
   CAR.ACURA_ILX: {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TX6-A010\x00\x00',
@@ -1413,6 +1502,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x18DA30F1, None): [
       b'39990-T39-A130\x00\x00',
       b'39990-T43-J020\x00\x00',
+      b'39990-T24-T120\x00\x00',
     ],
     (Ecu.gateway, 0x18DAEFF1, None): [
       b'38897-T20-A020\x00\x00',
@@ -1420,11 +1510,13 @@ FW_VERSIONS = {
       b'38897-T21-A010\x00\x00',
       b'38897-T20-A210\x00\x00',
       b'38897-T20-A310\x00\x00',
+      b'38897-T24-Z120\x00\x00',
     ],
     (Ecu.srs, 0x18DA53F1, None): [
       b'77959-T20-A970\x00\x00',
       b'77959-T47-A940\x00\x00',
       b'77959-T47-A950\x00\x00',
+      b'77959-T20-M820\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18DA60F1, None): [
       b'78108-T21-A220\x00\x00',
@@ -1432,16 +1524,26 @@ FW_VERSIONS = {
       b'78108-T23-A110\x00\x00',
       b'78108-T21-A230\x00\x00',
       b'78108-T22-A020\x00\x00',
+      b'78108-T21-MB10\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-T20-A070\x00\x00',
+      b'36161-T20-A080\x00\x00',
+      b'36161-T20-A060\x00\x00',
+      b'36161-T47-A070\x00\x00',
+      b'36161-T24-T070\x00\x00',
     ],
     (Ecu.vsa, 0x18DA28F1, None): [
       b'57114-T20-AB40\x00\x00',
       b'57114-T43-JB30\x00\x00',
+      b'57114-T24-TB30\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-65D-A020\x00\x00',
       b'28101-65D-A120\x00\x00',
       b'28101-65H-A020\x00\x00',
       b'28101-65H-A120\x00\x00',
+      b'28101-65J-N010\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-64L-A540\x00\x00',
@@ -1449,6 +1551,7 @@ FW_VERSIONS = {
       b'37805-64S-A720\x00\x00',
       b'37805-64A-A540\x00\x00',
       b'37805-64A-A620\x00\x00',
+      b'37805-64D-P510\x00\x00',
     ],
   },
 }
@@ -1469,10 +1572,10 @@ DBC = {
   CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.FREED: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.HRV_3G: dbc_dict('honda_civic_ex_2022_can_generated', None),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.PASSPORT: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
@@ -1487,8 +1590,8 @@ STEER_THRESHOLD = {
 
 HONDA_NIDEC_ALT_PCM_ACCEL = {CAR.ODYSSEY}
 HONDA_NIDEC_ALT_SCM_MESSAGES = {CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN,
-                                CAR.PILOT, CAR.PASSPORT, CAR.RIDGELINE}
+                                CAR.PILOT, CAR.RIDGELINE}
 HONDA_BOSCH = {CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G,
-               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022}
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G}
-HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022}
+               CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G}
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = {CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G, CAR.HRV_3G}
+HONDA_BOSCH_RADARLESS = {CAR.CIVIC_2022, CAR.HRV_3G}

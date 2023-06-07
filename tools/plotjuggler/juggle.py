@@ -11,10 +11,10 @@ import requests
 import argparse
 
 from common.basedir import BASEDIR
-from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
+from tools.lib.helpers import save_log
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
@@ -89,7 +89,7 @@ def juggle_route(route_or_segment_name, segment_count, qlog, can, layout, dbc=No
     query = parse_qs(urlparse(route_or_segment_name).query)
     route_or_segment_name = query["route"][0]
 
-  if route_or_segment_name.startswith(("http://", "https://")) or os.path.isfile(route_or_segment_name):
+  if route_or_segment_name.startswith(("http://", "https://", "cd:/")) or os.path.isfile(route_or_segment_name):
     logs = [route_or_segment_name]
   elif ci:
     route_or_segment_name = SegmentName(route_or_segment_name, allow_route_name=True)

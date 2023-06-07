@@ -42,7 +42,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent* e) override;
 
 private:
-  CameraViewWidget *cameraView;
+  CameraWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;
 };

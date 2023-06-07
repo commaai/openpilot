@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDateTime>
 #include <QFutureSynchronizer>
 
 #include "tools/replay/framereader.h"
@@ -27,6 +28,7 @@ public:
   Route(const QString &route, const QString &data_dir = {});
   bool load();
   inline const QString &name() const { return route_.str; }
+  inline const QDateTime datetime() const { return date_time_; }
   inline const QString &dir() const { return data_dir_; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
@@ -41,13 +43,14 @@ protected:
   RouteIdentifier route_ = {};
   QString data_dir_;
   std::map<int, SegmentFile> segments_;
+  QDateTime date_time_;
 };
 
 class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, uint32_t flags);
+  Segment(int n, const SegmentFile &files, uint32_t flags, const std::set<cereal::Event::Which> &allow = {});
   ~Segment();
   inline bool isLoaded() const { return !loading_ && !abort_; }
 
@@ -65,4 +68,5 @@ protected:
   std::atomic<int> loading_ = 0;
   QFutureSynchronizer<void> synchronizer_;
   uint32_t flags;
+  std::set<cereal::Event::Which> allow;
 };
