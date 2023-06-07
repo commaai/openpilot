@@ -147,6 +147,8 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
+    assert len(canmsgs) != 0, "CAN messages are required for carParams initialization"
+
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
@@ -256,7 +258,7 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -265,7 +267,7 @@ CONFIGS = [
     subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -278,7 +280,7 @@ CONFIGS = [
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
     config_callback=locationd_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -307,7 +309,7 @@ CONFIGS = [
     subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
