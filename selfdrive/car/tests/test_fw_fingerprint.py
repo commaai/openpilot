@@ -52,7 +52,7 @@ class TestFwFingerprint(unittest.TestCase):
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
     valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
     if len(valid_ecus) < 2:
-      raise unittest.SkipTest("Car model needs more ECUs that can be used for fuzzy matching")
+      raise unittest.SkipTest("Car model does not have enough ECUs compatible with fuzzy matching")
 
     fw = []
     for ecu in valid_ecus:
