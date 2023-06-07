@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Set, Union
@@ -345,12 +346,37 @@ FINGERPRINTS = {
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes = set()
+  # platform_code_pattern = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
+  platform_code_pattern = re.compile(b'((?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
+  # codes = set()
+  codes = defaultdict(set)
   for fw in fw_versions:
-    match = PLATFORM_CODE_PATTERN.search(fw)
+    match = platform_code_pattern.search(fw)
     if match is not None:
-      codes.add(match.group())
-  return codes
+      code, date = match.groups()
+      codes[code].add(date[:4])
+
+  final_codes = set()
+  for code, dates in codes.items():
+    min_date = min(dates)
+    max_date = max(dates)
+    min_year, min_month = int(min_date[:2]), int(min_date[2:])
+    max_year, max_month = int(max_date[:2]), int(max_date[2:])
+    # Add all dates between the two as bytes:
+    for year in range(min_year, max_year + 1):
+      for month in range(1, 13):
+        if year == min_year and month < min_month:
+          continue
+        if year == max_year and month > max_month:
+          continue
+
+        final_codes.add(code + b'_' + (str(year).zfill(2) + str(month).zfill(2)).encode())
+
+    print(code, [d for d in dates], min_date, max_date)
+
+  print('final_codes', final_codes)
+
+  return final_codes
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
