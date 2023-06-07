@@ -147,7 +147,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, match_brand=brand)
+      matches |= match_func(fw_versions_dict)
 
     if len(matches):
       return exact_match, matches
