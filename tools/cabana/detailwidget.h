@@ -1,20 +1,28 @@
 #pragma once
 
-#include <QScrollArea>
+#include <QDialogButtonBox>
+#include <QSplitter>
 #include <QTabWidget>
-#include <QToolBar>
-#include <QUndoStack>
+#include <QTextEdit>
 
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/cabana/binaryview.h"
-#include "tools/cabana/chartswidget.h"
+#include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/historylog.h"
-#include "tools/cabana/signaledit.h"
+#include "tools/cabana/signalview.h"
 
+class MainWindow;
 class EditMessageDialog : public QDialog {
 public:
-  EditMessageDialog(const QString &msg_id, const QString &title, int size, QWidget *parent);
+  EditMessageDialog(const MessageId &msg_id, const QString &title, int size, QWidget *parent);
+  void validateName(const QString &text);
 
+  MessageId msg_id;
+  QString original_name;
+  QDialogButtonBox *btn_box;
   QLineEdit *name_edit;
+  QTextEdit *comment_edit;
+  QLabel *error_label;
   QSpinBox *size_spin;
 };
 
@@ -23,33 +31,38 @@ class DetailWidget : public QWidget {
 
 public:
   DetailWidget(ChartsWidget *charts, QWidget *parent);
-  void setMessage(const QString &message_id);
-  void dbcMsgChanged(int show_form_idx = -1);
-  QUndoStack *undo_stack = nullptr;
+  void setMessage(const MessageId &message_id);
+  void refresh();
 
 private:
-  void showForm(const Signal *sig);
-  void updateChartState(const QString &id, const Signal *sig, bool opened);
   void showTabBarContextMenu(const QPoint &pt);
-  void addSignal(int start_bit, int size, bool little_endian);
-  void resizeSignal(const Signal *sig, int from, int to);
-  void saveSignal(const Signal *sig, const Signal &new_sig);
-  void removeSignal(const Signal *sig);
   void editMsg();
   void removeMsg();
-  void updateState(const QHash<QString, CanData> * msgs = nullptr);
+  void updateState(const QHash<MessageId, CanData> * msgs = nullptr);
 
-  QString msg_id;
-  QLabel *name_label, *time_label, *warning_label;
+  MessageId msg_id;
+  QLabel *time_label, *warning_icon, *warning_label;
+  ElidedLabel *name_label;
   QWidget *warning_widget;
-  QVBoxLayout *signals_layout;
-  QTabBar *tabbar;
+  TabBar *tabbar;
   QTabWidget *tab_widget;
-  QToolBar *toolbar;
-  QAction *remove_msg_act;
-  HistoryLog *history_log;
+  QToolButton *remove_btn;
+  LogsWidget *history_log;
   BinaryView *binary_view;
-  QScrollArea *scroll;
+  SignalView *signal_view;
   ChartsWidget *charts;
-  QList<SignalEdit *> signal_list;
+  QSplitter *splitter;
+};
+
+class CenterWidget : public QWidget {
+  Q_OBJECT
+public:
+  CenterWidget(QWidget *parent);
+  void setMessage(const MessageId &msg_id);
+  void clear();
+
+private:
+  QWidget *createWelcomeWidget();
+  DetailWidget *detail_widget = nullptr;
+  QWidget *welcome_widget = nullptr;
 };

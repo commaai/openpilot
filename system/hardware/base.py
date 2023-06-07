@@ -44,10 +44,6 @@ class HardwareBase(ABC):
     pass
 
   @abstractmethod
-  def is_sound_playing(self):
-    pass
-
-  @abstractmethod
   def get_imei(self, slot) -> str:
     pass
 
@@ -138,6 +134,9 @@ class HardwareBase(ABC):
   @abstractmethod
   def get_networks(self):
     pass
+
+  def has_internal_panda(self) -> bool:
+    return False
 
   def reset_internal_panda(self):
     pass

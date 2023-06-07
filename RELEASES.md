@@ -1,8 +1,59 @@
-Version 0.9.1 (2022-12-XX)
+Version 0.9.3 (2023-06-XX)
 ========================
-* Adjust alert volume using ambient noise level
-* Removed driver monitoring timer resetting on interaction if face detected and distracted
+* New driving model
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode lead follow distance is shorter and quicker gas/brake response
+  * In relaxed mode lead follow distance is longer
+
+Version 0.9.2 (2023-05-22)
+========================
+* New driving model
+  * Reduced turn diving
+  * Trained on a new dataset
+* UI updates
+  * New experimental mode visualization
+  * Draw MPC path instead of model-predicted path
+* AGNOS 7
+  * Faster boot time
+  * Fixes rare no sounds bug
+  * Fixes bootsplash bug at extreme temperatures
+* Buick LaCrosse 2017-19 support thanks to koch-cf!
+* Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
+* Ford Bronco Sport 2021-22 support
+* Ford Escape 2020-22 support
+* Ford Explorer 2020-22 support
+* Ford Kuga 2020-22 support
+* Ford Maverick 2022-23 support
+* Genesis GV80 2023 support thanks to JWingate80!
+* Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
+* Kia Niro EV 2023 support thanks to JosselinLecocq!
+* Lexus ES 2017-18 support
+* Lincoln Aviator 2021 support
+* Škoda Fabia 2022-23 support thanks to jyoung8607!
+
+
+Version 0.9.1 (2023-02-28)
+========================
+* New driving model
+  * 30% improved height estimation resulting in better driving performance for tall cars
+* Driver monitoring: removed timer resetting on user interaction if distracted
+* UI updates
+  * Adjust alert volume using ambient noise level
+  * Driver monitoring icon shows driver's head pose
+  * German translation thanks to Vrabetz and CzokNorris!
+* Cadillac Escalade 2017 support thanks to rickygilleland!
+* Chevrolet Bolt EV 2022-23 support thanks to JasonJShuler!
+* Genesis GV60 2023 support thanks to sunnyhaibin!
+* Hyundai Tucson 2022-23 support
+* Kia K5 Hybrid 2020 support thanks to sunnyhaibin!
+* Kia Niro Hybrid 2023 support thanks to sunnyhaibin!
+* Kia Sorento 2022-23 support thanks to sunnyhaibin!
 * Kia Sorento Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Toyota C-HR 2021 support thanks to eFiniLan!
+* Toyota C-HR Hybrid 2022 support thanks to Korben00!
+* Volkswagen Crafter and MAN TGE 2017-23 support thanks to jyoung8607!
 
 Version 0.9.0 (2022-11-21)
 ========================

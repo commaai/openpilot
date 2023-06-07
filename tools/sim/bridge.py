@@ -128,7 +128,7 @@ def imu_callback(imu, vehicle_state):
     vehicle_state.bearing_deg = math.degrees(imu.compass)
     dat = messaging.new_message('accelerometer')
     dat.accelerometer.sensor = 4
-    dat.accelerometer.type = 0x1
+    dat.accelerometer.type = 0x10
     dat.accelerometer.timestamp = dat.logMonoTime  # TODO: use the IMU timestamp
     dat.accelerometer.init('acceleration')
     dat.accelerometer.acceleration.v = [imu.accelerometer.x, imu.accelerometer.y, imu.accelerometer.z]
@@ -211,7 +211,10 @@ def fake_driver_monitoring(exit_event: threading.Event):
   while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverStateV2')
+    dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
     dat.driverStateV2.leftDriverData.faceProb = 1.0
+    dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
+    dat.driverStateV2.rightDriverData.faceProb = 1.0
     pm.send('driverStateV2', dat)
 
     # dmonitoringd output

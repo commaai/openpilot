@@ -40,9 +40,6 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
-  img_path = width() == WIDE_WIDTH ? "../assets/training_wide/" : "../assets/training/";
-  boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
-
   currentIndex = 0;
   image.load(img_path + "step0.png");
   click_timer.start();
@@ -113,6 +110,9 @@ void TermsPage::showEvent(QShowEvent *event) {
   accept_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #465BEA;
+    }
+    QPushButton:pressed {
+      background-color: #3049F4;
     }
     QPushButton:disabled {
       background-color: #4F4F4F;

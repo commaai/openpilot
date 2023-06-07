@@ -35,11 +35,13 @@ public:
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
+  void stopVipcThread();
 
 signals:
   void clicked();
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived();
+  void vipcAvailableStreamsUpdated(std::set<VisionStreamType>);
 
 protected:
   void paintGL() override;
@@ -51,7 +53,9 @@ protected:
   void updateCalibration(const mat3 &calib);
   void vipcThread();
   void clearFrames();
-  void stopVipcThread();
+
+  int glWidth();
+  int glHeight();
 
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
@@ -71,6 +75,7 @@ protected:
   int stream_stride = 0;
   std::atomic<VisionStreamType> active_stream_type;
   std::atomic<VisionStreamType> requested_stream_type;
+  std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
 
   // Calibration
@@ -88,4 +93,7 @@ protected:
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived();
+  void availableStreamsUpdated(std::set<VisionStreamType> streams);
 };
+
+Q_DECLARE_METATYPE(std::set<VisionStreamType>);

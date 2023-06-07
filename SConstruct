@@ -5,6 +5,10 @@ import sysconfig
 import platform
 import numpy as np
 
+import SCons.Errors
+
+SCons.Warnings.warningAsException(True)
+
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -71,10 +75,10 @@ if arch == "aarch64" and AGNOS:
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+  "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
@@ -118,7 +122,7 @@ else:
       f"#third_party/libyuv/{yuv_dir}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/Library",
-      f"{brew_prefix}/opt/openssl/lib",
+      f"{brew_prefix}/opt/openssl@3.0/lib",
       f"{brew_prefix}/Cellar",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
@@ -131,7 +135,7 @@ else:
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
       f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl/include",
+      f"{brew_prefix}/opt/openssl@3.0/include",
     ]
   # Linux 86_64
   else:
@@ -197,10 +201,6 @@ env = Environment(
     "#third_party/libyuv/include",
     "#third_party/json11",
     "#third_party/curl/include",
-    "#third_party/libgralloc/include",
-    "#third_party/android_frameworks_native/include",
-    "#third_party/android_hardware_libhardware/include",
-    "#third_party/android_system_core/include",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
@@ -282,7 +282,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -311,10 +311,17 @@ else:
   qt_libs = [f"Qt5{m}" for m in qt_modules]
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
   elif arch != "Darwin":
     qt_libs += ["GL"]
+qt_env['QT3DIR'] = qt_env['QTDIR']
 
-qt_env.Tool('qt')
+# compatibility for older SCons versions
+try:
+  qt_env.Tool('qt3')
+except SCons.Errors.UserError:
+  qt_env.Tool('qt')
+
 qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
 qt_flags = [
   "-D_REENTRANT",
@@ -387,10 +394,10 @@ rednose_config = {
 if arch != "larch64":
   rednose_config['to_build'].update({
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
+    'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
     'pos_computer_4': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'pos_computer_5': ('#rednose/helpers/lst_sq_computer.py', False, [], []),
     'feature_handler_5': ('#rednose/helpers/feature_handler.py', False, [], []),
-    'lane': ('#xx/pipeline/lib/ekf/lane_kf.py', True, [], rednose_deps),
   })
 
 Export('rednose_config')
@@ -398,12 +405,17 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/camerad/SConscript',
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
+  'system/ubloxd/SConscript',
+  'system/loggerd/SConscript',
 ])
 if arch != "Darwin":
-  SConscript(['system/logcatd/SConscript'])
+  SConscript([
+    'system/camerad/SConscript',
+    'system/sensord/SConscript',
+    'system/logcatd/SConscript',
+  ])
 
 # Build openpilot
 
@@ -420,26 +432,16 @@ SConscript(['third_party/SConscript'])
 SConscript(['common/kalman/SConscript'])
 SConscript(['common/transformations/SConscript'])
 
-SConscript(['selfdrive/modeld/SConscript'])
-
-SConscript(['selfdrive/controls/lib/cluster/SConscript'])
+SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
-
-SConscript(['selfdrive/boardd/SConscript'])
-
-SConscript(['selfdrive/loggerd/SConscript'])
-
 SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/sensord/SConscript'])
-SConscript(['selfdrive/ui/SConscript'])
 SConscript(['selfdrive/navd/SConscript'])
+SConscript(['selfdrive/modeld/SConscript'])
+SConscript(['selfdrive/ui/SConscript'])
 
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if (arch in ['x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
-
-  opendbc = abspath([File('opendbc/can/libdbc.so')])
-  Export('opendbc')
   SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')

@@ -11,10 +11,7 @@ def get_url(route_name, segment_num, log_type="rlog"):
   ext = "hevc" if log_type.endswith('camera') else "bz2"
   return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
-
-def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
-
+def get_sas_token():
   sas_token = os.environ.get("AZURE_TOKEN", None)
   if os.path.isfile(TOKEN_PATH):
     sas_token = open(TOKEN_PATH).read().strip()
@@ -22,9 +19,20 @@ def upload_file(path, name):
   if sas_token is None:
     sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw \
                                          --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
-  service = BlockBlobService(account_name="commadataci", sas_token=sas_token)
+
+  return sas_token
+
+def upload_bytes(data, name):
+  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
+  service.create_blob_from_bytes("openpilotci", name, data)
+  return BASE_URL + name
+
+def upload_file(path, name):
+  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+  service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
   service.create_blob_from_path("openpilotci", name, path)
-  return "https://commadataci.blob.core.windows.net/openpilotci/" + name
+  return BASE_URL + name
 
 
 if __name__ == "__main__":

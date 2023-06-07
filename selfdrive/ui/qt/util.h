@@ -17,11 +17,13 @@ QMap<QString, QString> getSupportedLanguages();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
+void sigTermHandler(int s);
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-void initApp(int argc, char *argv[]);
+void initApp(int argc, char *argv[], bool disable_hidpi = true);
 QWidget* topWidget (QWidget* widget);
 QPixmap loadPixmap(const QString &fileName, const QSize &size = {}, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio);
+QPixmap bootstrapPixmap(const QString &id);
 
 QRect getTextRect(QPainter &p, int flags, const QString &text);
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom);

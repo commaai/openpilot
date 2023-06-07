@@ -1,5 +1,4 @@
 import random
-import subprocess
 
 from cereal import log
 from system.hardware.base import HardwareBase, ThermalConfig
@@ -17,9 +16,6 @@ class Pc(HardwareBase):
 
   def get_sound_card_online(self):
     return True
-
-  def is_sound_playing(self):
-    return "RUNNING" in subprocess.check_output(["pactl", "list", "short", "sinks"]).decode('utf8')
 
   def reboot(self, reason=None):
     print("REBOOT!")

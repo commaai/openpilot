@@ -46,10 +46,19 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #ifdef TRAFFIC_CONVENTION
   s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
+
+#ifdef DRIVING_STYLE
+  s->m->addDrivingStyle(s->driving_style, DRIVING_STYLE_LEN);
+#endif
+
+#ifdef NAV
+  s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+#endif
+
 }
 
 ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
-                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, bool prepare_only) {
+                              const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, float *driving_style, float *nav_features, bool prepare_only) {
 #ifdef DESIRE
   std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
@@ -65,6 +74,14 @@ ModelOutput* model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* wbuf,
     }
   }
 LOGT("Desire enqueued");
+#endif
+
+#ifdef NAV
+  std::memcpy(s->nav_features, nav_features, sizeof(float)*NAV_FEATURE_LEN);
+#endif
+
+#ifdef DRIVING_STYLE
+  std::memcpy(s->driving_style, driving_style, sizeof(float)*DRIVING_STYLE_LEN);
 #endif
 
   int rhd_idx = is_rhd;
@@ -183,7 +200,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
 }
 
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z) {
   xyzt.setT(to_kj_array_ptr(t));
   xyzt.setX(to_kj_array_ptr(x));
@@ -192,7 +209,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
 }
 
 template<size_t size>
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
                const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
   fill_xyzt(xyzt, t, x, y, z);
@@ -373,15 +390,18 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
   const auto &t_std = net_outputs.wide_from_device_euler.std;
+  const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+  const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
   posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
+  posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
   posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
-
+  posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

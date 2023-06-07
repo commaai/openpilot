@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -30,6 +30,10 @@ class CarControllerParams:
       self.STEER_MAX = 2047
 
 
+class SubaruFlags(IntFlag):
+  SEND_INFOTAINMENT = 1
+
+
 class CAR:
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
@@ -49,13 +53,13 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  harness: Enum = Harness.subaru_a
+  car_parts: CarParts = CarParts.common([CarHarness.subaru_a])
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
-  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", harness=Harness.subaru_b),
-  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", harness=Harness.subaru_b),
+  CAR.OUTBACK: SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+  CAR.LEGACY: SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
   CAR.IMPREZA: [
     SubaruCarInfo("Subaru Impreza 2017-19"),
     SubaruCarInfo("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
@@ -63,7 +67,7 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   ],
   CAR.IMPREZA_2020: [
     SubaruCarInfo("Subaru Impreza 2020-22"),
-    SubaruCarInfo("Subaru Crosstrek 2020-21"),
+    SubaruCarInfo("Subaru Crosstrek 2020-23"),
     SubaruCarInfo("Subaru XV 2020-21"),
   ],
   CAR.FORESTER: SubaruCarInfo("Subaru Forester 2019-21", "All"),
@@ -185,6 +189,7 @@ FW_VERSIONS = {
       b'\x00\x00d\xdc\x00\x00\x00\x00',
       b'\x00\x00dd\x00\x00\x00\x00',
       b'\x00\x00c\xf4\x1f@ \x07',
+      b'\x00\x00e\x1c\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xaa\x61\x66\x73\x07',
@@ -205,6 +210,8 @@ FW_VERSIONS = {
       b'\xc5!dr\x07',
       b'\xaa!aw\x07',
       b'\xaa!av\x07',
+      b'\xaa\x01bt\x07',
+      b'\xc5!ap\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe3\xe5\x46\x31\x00',
@@ -220,6 +227,7 @@ FW_VERSIONS = {
       b'\xe4\xf5\002\000\000',
       b'\xe3\xd0\x081\x00',
       b'\xe3\xf5\x06\x00\x00',
+      b'\xe3\xd5\x161\x00',
     ],
   },
   CAR.IMPREZA_2020: {
@@ -235,12 +243,14 @@ FW_VERSIONS = {
       b'\x9a\xc0\000\000',
       b'\n\xc0\004\000',
       b'\x9a\xc0\x04\x00',
+      b'\n\xc0\x04\x01',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\000\000eb\037@ \"',
-      b'\000\000e\x8f\037@ )',
+      b'\x00\x00e\x8f\x1f@ )',
       b'\x00\x00eq\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
+      b'\x00\x00e\x8f\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xca!ap\a',
@@ -250,6 +260,9 @@ FW_VERSIONS = {
       b'\xcc!fp\a',
       b'\xca!f@\x07',
       b'\xca!fp\x07',
+      b'\xf3"f@\x07',
+      b'\xe6!fp\x07',
+      b'\xf3"fp\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
@@ -258,6 +271,8 @@ FW_VERSIONS = {
       b'\xe7\xf5D0\000',
       b'\xf1\x00\xd7\x10@',
       b'\xe6\xf5D0\x00',
+      b'\xe9\xf6F0\x00',
+      b'\xe9\xf5B0\x00',
     ],
   },
   CAR.FORESTER: {
@@ -267,9 +282,12 @@ FW_VERSIONS = {
       b'\xa3 \031\024\000',
       b'\xa3  \x14\x01',
       b'\xf1\x00\xbb\r\x05',
+      b'\xa3 \x18&\x00',
+      b'\xa3 \x19&\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x8d\xc0\x04\x00',
+      b'\x8d\xc0\x00\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00e!\x1f@ \x11',
@@ -278,6 +296,8 @@ FW_VERSIONS = {
       b'\xf1\x00\xac\x02\x00',
       b'\x00\x00e!\x00\x00\x00\x00',
       b'\x00\x00e\x97\x00\x00\x00\x00',
+      b'\x00\x00e^\x1f@ !',
+      b'\x00\x00e^\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xb6"`A\x07',
@@ -286,6 +306,7 @@ FW_VERSIONS = {
       b'\xcb\"`p\a',
       b'\xf1\x00\xa2\x10\n',
       b'\xcf"`p\x07',
+      b'\xb6\xa2`A\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\032\xf6B0\000',
@@ -293,6 +314,8 @@ FW_VERSIONS = {
       b'\032\xf6b`\000',
       b'\x1a\xf6B`\x00',
       b'\x1a\xf6b0\x00',
+      b'\x1a\xe6B1\x00',
+      b'\x1a\xe6F1\x00',
     ],
   },
   CAR.FORESTER_PREGLOBAL: {
@@ -460,6 +483,7 @@ FW_VERSIONS = {
       b'\xa1 "\t\x01',
       b'\xa1  \x08\x02',
       b'\xa1 \x06\x02',
+      b'\xa1  \x07\x02',
       b'\xa1  \x08\x00',
       b'\xa1 "\t\x00',
     ],
@@ -471,6 +495,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00eJ\x00\x1f@ \x19\x00',
       b'\000\000e\x80\000\037@ \031\000',
+      b'\x00\x00e\x9a\x00\x00\x00\x00\x00\x00',
       b'\x00\x00e\x9a\x00\x1f@ 1\x00',
       b'\x00\x00eJ\x00\x00\x00\x00\x00\x00',
     ],
@@ -480,10 +505,12 @@ FW_VERSIONS = {
       b'\xde"`0\a',
       b'\xf1\x82\xbc,\xa0q\a',
       b'\xf1\x82\xe3,\xa0@\x07',
+      b'\xe2"`0\x07',
       b'\xe2"`p\x07',
       b'\xf1\x82\xe2,\xa0@\x07',
       b'\xbc"`q\x07',
       b'\xe3,\xa0@\x07',
+      b'\xbc,\xa0u\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xfe\xf7@\x00',
@@ -491,7 +518,9 @@ FW_VERSIONS = {
       b'\xa5\xfe\xf6@\x00',
       b'\xa7\x8e\xf40\x00',
       b'\xf1\x82\xa7\xf6D@\x00',
+      b'\xa7\xf6D@\x00',
       b'\xa7\xfe\xf4@\x00',
+      b'\xa5\xfe\xf8@\x00',
     ],
   },
 }

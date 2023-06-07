@@ -4,17 +4,17 @@ import signal
 import time
 import unittest
 
+from cereal import car
 from common.params import Params
 import selfdrive.manager.manager as manager
-from selfdrive.manager.process import DaemonProcess
+from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
 
 os.environ['FAKEUPLOAD'] = "1"
 
 MAX_STARTUP_TIME = 3
-ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not DaemonProcess) and p.enabled and (p.name not in ['pandad', ])]
-
+BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 class TestManager(unittest.TestCase):
   def setUp(self):
@@ -47,24 +47,25 @@ class TestManager(unittest.TestCase):
     HARDWARE.set_power_save(False)
     manager.manager_init()
     manager.manager_prepare()
-    for p in ALL_PROCESSES:
-      managed_processes[p].start()
+
+    CP = car.CarParams.new_message()
+    procs = ensure_running(managed_processes.values(), True, Params(), CP, not_run=BLACKLIST_PROCS)
 
     time.sleep(10)
 
-    for p in reversed(ALL_PROCESSES):
-      with self.subTest(proc=p):
-        state = managed_processes[p].get_process_state_msg()
-        self.assertTrue(state.running, f"{p} not running")
-        exit_code = managed_processes[p].stop(retry=False)
+    for p in procs:
+      with self.subTest(proc=p.name):
+        state = p.get_process_state_msg()
+        self.assertTrue(state.running, f"{p.name} not running")
+        exit_code = p.stop(retry=False)
 
-        self.assertTrue(exit_code is not None, f"{p} failed to exit")
+        self.assertTrue(exit_code is not None, f"{p.name} failed to exit")
 
         # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
         exit_codes = [0, 1]
-        if managed_processes[p].sigkill:
+        if p.sigkill:
           exit_codes = [-signal.SIGKILL]
-        self.assertIn(exit_code, exit_codes, f"{p} died with {exit_code}")
+        self.assertIn(exit_code, exit_codes, f"{p.name} died with {exit_code}")
 
 
 if __name__ == "__main__":
