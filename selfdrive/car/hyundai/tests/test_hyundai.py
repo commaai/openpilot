@@ -3,7 +3,7 @@ from collections import defaultdict
 import unittest
 
 from cereal import car
-from selfdrive.car.hyundai.values import CAR, CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS, CAN_GEARS, LEGACY_SAFETY_MODE_CAR, CHECKSUM, CAMERA_SCC_CAR
+from selfdrive.car.hyundai.values import CAR, CANFD_CAR, FW_QUERY_CONFIG, FW_VERSIONS, CAN_GEARS, LEGACY_SAFETY_MODE_CAR, CHECKSUM, CAMERA_SCC_CAR, PLATFORM_CODE_PATTERN
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -33,6 +33,18 @@ class TestHyundaiFingerprint(unittest.TestCase):
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
+
+  def test_fws_for_platform_codes(self):
+    # Tests platform code behavior in the FW versions
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        for ecu, fws in ecus.items():
+          if ecu[0] in FW_QUERY_CONFIG.fuzzy_ecus:
+            # some newer CAN FD cars have date codes in a different format we don't yet parse,
+            # for now assert date format is consistent across the platform
+            # TODO: use FW_QUERY_CONFIG.fuzzy_get_platform_codes
+            has_date = {PLATFORM_CODE_PATTERN.search(fw).groups(1) is None for fw in fws}
+            self.assertEqual(len(has_date), 1)
 
   def test_fuzzy_platform_codes(self):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
