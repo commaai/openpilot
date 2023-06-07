@@ -50,30 +50,24 @@ class TestFwFingerprint(unittest.TestCase):
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match(self, brand, car_model, ecus):
-    # if car_model != 'HYUNDAI SONATA 2020':
-    # if not car_model.startswith('HYUNDAI'):
-    #   raise unittest.SkipTest("Only test HYUNDAI SONATA 2020")
     CP = car.CarParams.new_message()
     fw = []
     for ecu, fw_versions in ecus.items():
-      if len(fw_versions) < 2:
+      if len(fw_versions) < 1:
         raise unittest.SkipTest("Car model has no FW versions")
-      if ecu[0] in FUZZY_EXCLUDE_ECUS:
-        continue
       ecu_name, addr, sub_addr = ecu
-      for random_version in random.sample(fw_versions, 2):
+      for random_version in random.sample(fw_versions, 1):
+        # fw.append(car.CarParams.CarFw(ecu=ecu_name, fwVersion=random_version, brand=brand,
+        #                     address=addr, subAddress=0 if sub_addr is None else sub_addr))
         fw.append({"ecu": ecu_name, "fwVersion": random_version, 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
     CP.carFw = fw
-
     _, matches = match_fw_to_car(CP.carFw, allow_exact=False)
-    # self.assertFingerprints(matches, car_model)
-    print([(f['address'], f['subAddress']) for f in fw])
-    # if len([(f['address'], f['subAddress']) for f in fw]) < 2:
-    if len([(f['address'], f['subAddress']) for f in fw]) < 2:
-      print('asserting true')
-      self.assertTrue(len(matches) != 1, (car_model, [(f['address'], f['subAddress']) for f in fw]))
 
+    valid_ecu_cnt = [f['ecu'] for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
+    if len(valid_ecu_cnt) < 2:
+      print('asserting no matches')
+      self.assertTrue(len(matches) != 1, (car_model, [(f['address'], f['subAddress']) for f in fw]))
 
   def test_no_duplicate_fw_versions(self):
     for car_model, ecus in FW_VERSIONS.items():
