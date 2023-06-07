@@ -63,7 +63,7 @@ class TestFwFingerprint(unittest.TestCase):
       CP = car.CarParams.new_message(carFw=fw)
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
-      # Assert no match if there are not enough valid ECUs
+      # Assert no match if there are not enough matching ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
       if len(unique_ecus) < 2:
         self.assertEqual(len(matches), 0)
