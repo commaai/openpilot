@@ -63,7 +63,10 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
         return "Data";
       }
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(sigs[section - 1]->color);
+      // Alpha-blend the signal color with the background to ensure contrast
+      QColor sigColor = sigs[section - 1]->color;
+      sigColor.setAlpha(128);
+      return QBrush(sigColor);
     }
   }
   return {};
