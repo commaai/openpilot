@@ -44,6 +44,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
     self.assertEqual(codes, {b"CV1"})
 
+    # TODO: this
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125'])
+    self.assertEqual(codes, {b"LX2_1901"})
+
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
       b'\xf1\x00DH LKAS 1.1 -150210',
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
