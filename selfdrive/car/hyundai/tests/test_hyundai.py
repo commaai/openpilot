@@ -34,7 +34,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             raise unittest.SkipTest
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
-  def test_fws_for_platform_codes(self):
+  def test_consistent_fw_dates(self):
     # Tests platform code behavior in the FW versions
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
