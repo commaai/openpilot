@@ -355,25 +355,25 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       code, date = match.groups()
       codes[code].add(date)
 
+  # Create platform codes for all dates within range if ECU has FW dates
   final_codes = set()
   for code, dates in codes.items():
-    # dates = {d[:4] for d in dates if d is not None}
-    print(code, dates)
     # radar ECU does not have dates
     if None in dates:
       final_codes.add(code)
       continue
 
-    min_date = min(dates)
-    max_date = max(dates)
+    min_date, max_date = min(dates), max(dates)
     current_year, current_month = int(min_date[:2]), int(min_date[2:4])
     max_year, max_month = int(max_date[:2]), int(max_date[2:4])
+    print(current_year, current_month, max_year, max_month)
+    return set()
     while current_year < max_year or current_month <= max_month:
-      final_codes.add(code + b'_' + (str(current_year).zfill(2) + str(current_month).zfill(2)).encode())
+      print(current_month, current_year)
+      date_code = str(current_year).zfill(2) + str(current_month).zfill(2)
+      final_codes.add(code + b'_' + date_code.encode())
       current_year += (current_month + 1) // 13
       current_month = (current_month % 12) + 1
-
-  print('final_codes', final_codes)
 
   return final_codes
 
