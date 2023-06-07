@@ -35,12 +35,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
   def test_consistent_fw_dates(self):
-    # Tests platform code behavior in the FW versions
+    # Asserts firmware dates are consistent across the platform
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
           if ecu[0] in FW_QUERY_CONFIG.fuzzy_ecus:
-            # some newer CAN FD cars have date codes in a different format we don't yet parse,
+            # some newer CAN FD platforms have date codes in a different format we don't yet parse,
             # for now assert date format is consistent across the platform
             # TODO: use FW_QUERY_CONFIG.fuzzy_get_platform_codes
             has_date = {PLATFORM_CODE_PATTERN.search(fw).groups(1) is None for fw in fws}
