@@ -38,8 +38,6 @@ class TestFwFingerprint(unittest.TestCase):
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
-        if not len(fw_versions):
-          raise unittest.SkipTest("Car model has no FW versions")
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
@@ -50,7 +48,7 @@ class TestFwFingerprint(unittest.TestCase):
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
-    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
+    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS]
     if not len(valid_ecus):
       raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
 
@@ -67,18 +65,19 @@ class TestFwFingerprint(unittest.TestCase):
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
       if len(unique_ecus) < 2:
-        self.assertEqual(len(matches), 0)
+        self.assertEqual(len(matches), 0, car_model)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
         self.assertFingerprints(matches, car_model)
 
-  def test_no_duplicate_fw_versions(self):
+  def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
-            self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
+            self.assertFalse(len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}')
+            self.assertGreater(len(ecu_fw), 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}')
 
   def test_all_addrs_map_to_one_ecu(self):
     for brand, cars in VERSIONS.items():
