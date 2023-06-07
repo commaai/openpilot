@@ -63,8 +63,8 @@ class TestFwFingerprint(unittest.TestCase):
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
       # Assert no match if there are not enough valid ECUs
-      valid_ecus = [f['ecu'] for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
-      if len(valid_ecus) < 2:
+      valid_ecus = [(f['address'], f['subAddress']) for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
+      if len(set(valid_ecus)) < 2:
         self.assertEqual(len(matches), 0, valid_ecus)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
