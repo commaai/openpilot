@@ -48,24 +48,26 @@ class TestFwFingerprint(unittest.TestCase):
       self.assertFingerprints(matches, car_model)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_fuzzy_match(self, brand, car_model, ecus):
-    # TODO: speed up fuzzy matching and test more
-    CP = car.CarParams.new_message()
-    for _ in range(5):
-      fw = []
-      for ecu, fw_versions in ecus.items():
-        if not len(fw_versions):
-          raise unittest.SkipTest("Car model has no FW versions")
-        ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+  def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
+    # Asserts that fuzzy matching does not count matching FW, but ECU address keys
+    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
+    if not len(valid_ecus):
+      raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
+
+    fw = []
+    for ecu in valid_ecus:
+      ecu_name, addr, sub_addr = ecu
+      for _ in range(5):
+        # Add multiple FW versions to simulate ECU returning to multiple queries in a brand
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-      CP.carFw = fw
+      CP = car.CarParams.new_message(carFw=fw)
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
-      # Assert no match if there are not enough valid ECUs
-      valid_ecus = [f['ecu'] for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
-      if len(valid_ecus) < 2:
-        self.assertEqual(len(matches), 0, valid_ecus)
+      # Assert no match if there are not enough unique ECUs
+      unique_ecus = {(f['address'], f['subAddress']) for f in fw}
+      if len(unique_ecus) < 2:
+        self.assertEqual(len(matches), 0)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
         self.assertFingerprints(matches, car_model)
