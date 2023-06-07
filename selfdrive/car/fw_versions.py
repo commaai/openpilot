@@ -37,7 +37,6 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    # if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
@@ -287,7 +286,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  # requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
   requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
