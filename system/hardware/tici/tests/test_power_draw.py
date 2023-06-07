@@ -3,7 +3,7 @@ import unittest
 import time
 import math
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from tabulate import tabulate
 from typing import List
 
@@ -20,16 +20,16 @@ SAMPLE_TIME = 8  # Sample power for 8 seconds
 class Proc:
   name: str
   power: float
+  msgs: List[str]
   rtol: float = 0.05
   atol: float = 0.12
   warmup: float = 6.
-  msgs: List[str] = field(default_factory=list)
 
 PROCS = [
-  Proc('camerad', 2.1),
+  Proc('camerad', 2.1, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc('modeld', 0.93, atol=0.2, msgs=['modelV2']),
   Proc('dmonitoringmodeld', 0.4, msgs=['driverStateV2']),
-  Proc('encoderd', 0.23),
+  Proc('encoderd', 0.23, msgs=[]),
   Proc('mapsd', 0.05, msgs=['mapRenderState']),
   Proc('navmodeld', 0.05, msgs=['navModel']),
 ]
@@ -99,7 +99,7 @@ class TestPowerDraw(unittest.TestCase):
       tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
         self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
-        self.assertTrue(math.isclose(msgs_expected, msgs_received, rel_tol=.1))
+        self.assertTrue(math.isclose(msgs_expected, msgs_received, rel_tol=.02, abs_tol=2))
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
