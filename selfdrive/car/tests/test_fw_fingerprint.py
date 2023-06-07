@@ -51,21 +51,24 @@ class TestFwFingerprint(unittest.TestCase):
   def test_fuzzy_match(self, brand, car_model, ecus):
     # TODO: speed up fuzzy matching and test more
     CP = car.CarParams.new_message()
+    # if car_model != "HYUNDAI IONIQ ELECTRIC LIMITED 2019":
+    #   raise unittest.SkipTest
     for _ in range(1):
       fw = []
       for ecu, fw_versions in ecus.items():
         if not len(fw_versions):
           raise unittest.SkipTest("Car model has no FW versions")
         ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
-                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+        fw.extend([{"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr}]*2)
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
       # Assert no match if there are not enough valid ECUs
       valid_ecus = [(f['address'], f['subAddress']) for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
+      print(valid_ecus, matches)
       if len(set(valid_ecus)) < 2:
-        self.assertEqual(len(matches), 0)
+        self.assertEqual(len(matches), 0, valid_ecus)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
         self.assertFingerprints(matches, car_model)
