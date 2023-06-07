@@ -103,12 +103,10 @@ def match_fw_to_car_exact(fw_versions_dict, match_brand=None) -> Set[str]:
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
   invalid = []
-  candidates = FW_VERSIONS
+  candidates = {c: f for c, f in FW_VERSIONS.items() if
+                match_brand is None or MODEL_TO_BRAND[c] == match_brand}
 
   for candidate, fws in candidates.items():
-    if match_brand is not None and MODEL_TO_BRAND[candidate] != match_brand:
-      continue
-
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
     for ecu, expected_versions in fws.items():
       ecu_type = ecu[0]
