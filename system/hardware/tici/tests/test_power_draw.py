@@ -2,7 +2,6 @@
 import unittest
 import time
 import math
-import queue
 import threading
 from dataclasses import dataclass, field
 from tabulate import tabulate
@@ -43,19 +42,9 @@ def send_llk_msg(done):
 
   # Send liveLocationKalman at 20hz
   while not done.is_set():
+    msg.clear_write_flag()
     pm.send('liveLocationKalman', msg)
     time.sleep(1/20)
-
-def get_msg_count(sm, listen_q, msg_count_q, done):
-  while (msgs := listen_q.get()) is not None:
-    done.clear()
-    msg_count = {k:0 for k in msgs}
-    while not done.is_set():
-      sm.update(1000)
-      for msg in msgs:
-        if sm.updated[msg]:
-          msg_count[msg] += 1
-    msg_count_q.put(msg_count)
 
 
 class TestPowerDraw(unittest.TestCase):
@@ -76,35 +65,27 @@ class TestPowerDraw(unittest.TestCase):
     manager_cleanup()
 
   def test_camera_procs(self):
-    pub_done = threading.Event()
-    pub_thread = threading.Thread(target=send_llk_msg, args=(pub_done,), daemon=True)
+    done = threading.Event()
+    pub_thread = threading.Thread(target=send_llk_msg, args=(done,), daemon=True)
     pub_thread.start()
-
-    sm = messaging.SubMaster([msg for proc in PROCS for msg in proc.msgs])
-    listen_q = queue.Queue()
-    msg_count_q = queue.Queue()
-    sub_done = threading.Event()
-    sub_thread = threading.Thread(target=get_msg_count, args=(sm, listen_q, msg_count_q, sub_done), daemon=True)
-    sub_thread.start()
 
     baseline = get_power()
     prev = baseline
     used = {}
     msg_counts = {}
     for proc in PROCS:
-      listen_q.put(proc.msgs)
+      socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
       managed_processes[proc.name].start()
       time.sleep(proc.warmup)
+      for sock in socks.values():
+        messaging.drain_sock_raw(sock)
 
       now = get_power(8)
       used[proc.name] = now - prev
-      prev = now
+      for msg,sock in socks.items():
+        msg_counts[msg] = len(messaging.drain_sock_raw(sock))
 
-      sub_done.set()
-      msg_counts.update(msg_count_q.get())
-
-    pub_done.set()
-    listen_q.put(None)
+    done.set()
     manager_cleanup()
 
     tab = [['process', 'expected (W)', 'measured (W)']]
@@ -117,10 +98,10 @@ class TestPowerDraw(unittest.TestCase):
         self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
       for msg in proc.msgs:
         received = msg_counts[msg]
-        expected = (proc.warmup + 8) * service_list[msg].frequency
+        expected = 8 * service_list[msg].frequency
         msgtab.append([msg, int(expected), received])
         with self.subTest(proc=proc.name, msg=msg):
-          self.assertTrue(math.isclose(expected, received, rel_tol=.15))
+          self.assertTrue(math.isclose(expected, received, rel_tol=.1))
     print(tabulate(msgtab))
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
