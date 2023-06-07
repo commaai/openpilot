@@ -94,7 +94,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
+def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -129,7 +129,7 @@ def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
   return set(candidates.keys()) - set(invalid)
 
 
-def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   # Try exact matching first
   exact_matches = []
   if allow_exact:
@@ -142,7 +142,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict)
+      matches |= match_func(fw_versions_dict, log=log)
 
     if len(matches):
       return exact_match, matches
