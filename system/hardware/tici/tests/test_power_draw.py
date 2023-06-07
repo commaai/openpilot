@@ -14,6 +14,7 @@ from system.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
+SAMPLE_TIME = 8  # Sample power for 8 seconds
 
 @dataclass
 class Proc:
@@ -80,7 +81,7 @@ class TestPowerDraw(unittest.TestCase):
       for sock in socks.values():
         messaging.drain_sock_raw(sock)
 
-      now = get_power(8)
+      now = get_power(SAMPLE_TIME)
       used[proc.name] = now - prev
       prev = now
       for msg,sock in socks.items():
@@ -89,21 +90,16 @@ class TestPowerDraw(unittest.TestCase):
     done.set()
     manager_cleanup()
 
-    tab = [['process', 'expected (W)', 'measured (W)']]
-    msgtab = [['message', '# expected', '# received']]
+    tab = [['process', 'expected (W)', 'measured (W)', '# msgs expected', '# msgs received']]
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
-      tab.append([proc.name, round(expected, 2), round(cur, 2)])
+      msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
+      msgs_expected = int(sum(SAMPLE_TIME * service_list[msg].frequency for msg in proc.msgs))
+      tab.append([proc.name, round(expected, 2), round(cur, 2), msgs_expected, msgs_received])
       with self.subTest(proc=proc.name):
         self.assertTrue(math.isclose(cur, expected, rel_tol=proc.rtol, abs_tol=proc.atol))
-      for msg in proc.msgs:
-        received = msg_counts[msg]
-        expected = 8 * service_list[msg].frequency
-        msgtab.append([msg, int(expected), received])
-        with self.subTest(proc=proc.name, msg=msg):
-          self.assertTrue(math.isclose(expected, received, rel_tol=.1))
-    print(tabulate(msgtab))
+        self.assertTrue(math.isclose(msgs_expected, msgs_received, rel_tol=.1))
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
 
