@@ -70,7 +70,7 @@ class TestFwFingerprint(unittest.TestCase):
       elif len(matches):
         self.assertFingerprints(matches, car_model)
 
-  def test_no_duplicate_fw_versions(self):
+  def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, ecu_fw in ecus.items():
