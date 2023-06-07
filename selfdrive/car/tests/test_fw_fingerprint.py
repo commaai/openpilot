@@ -76,7 +76,8 @@ class TestFwFingerprint(unittest.TestCase):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
-            self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
+            self.assertFalse(len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}')
+            self.assertGreater(len(ecu_fw), 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}')
 
   def test_all_addrs_map_to_one_ecu(self):
     for brand, cars in VERSIONS.items():
