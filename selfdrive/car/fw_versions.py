@@ -28,11 +28,16 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
+def is_brand(filter_brand, brand):
+  return filter_brand is None or filter_brand == brand
+
+
 def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
+    # if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
+    if is_brand(filter_brand, fw.brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
@@ -62,7 +67,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, match_brand=None, log=True, exclude=
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
-    if match_brand is not None and MODEL_TO_BRAND[candidate] != match_brand:
+    if not is_brand(match_brand, MODEL_TO_BRAND[candidate]):
       continue
 
     if candidate == exclude:
@@ -104,7 +109,7 @@ def match_fw_to_car_exact(fw_versions_dict, match_brand=None) -> Set[str]:
   needs to match the database."""
   invalid = []
   candidates = {c: f for c, f in FW_VERSIONS.items() if
-                match_brand is None or MODEL_TO_BRAND[c] == match_brand}
+                is_brand(match_brand, MODEL_TO_BRAND[c])}
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
@@ -281,7 +286,8 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
+  # requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
+  requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(query_brand, brand)]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
