@@ -10,8 +10,7 @@ from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, match_fw_to_car, \
-                                      get_fw_versions
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -36,7 +35,7 @@ class TestFwFingerprint(unittest.TestCase):
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_exact_match(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
-    for _ in range(20):
+    for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
         if not len(fw_versions):
