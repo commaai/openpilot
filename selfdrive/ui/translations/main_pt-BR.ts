@@ -1037,7 +1037,7 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>Uma versão experimental do controle longitudinal openpilot pode ser testada, juntamente com o modo Experimental, em branches de desenvolvimento.</translation>
+        <translation type="vanished">Uma versão experimental do controle longitudinal openpilot pode ser testada, juntamente com o modo Experimental, em branches de desenvolvimento.</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
@@ -1073,6 +1073,10 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
