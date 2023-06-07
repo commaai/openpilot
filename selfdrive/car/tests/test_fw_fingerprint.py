@@ -60,7 +60,6 @@ class TestFwFingerprint(unittest.TestCase):
       for _ in range(5):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-
       CP = car.CarParams.new_message(carFw=fw)
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
