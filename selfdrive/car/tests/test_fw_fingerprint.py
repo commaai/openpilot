@@ -52,18 +52,19 @@ class TestFwFingerprint(unittest.TestCase):
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
     valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
     if len(valid_ecus) < 2:
-      raise unittest.SkipTest("Car model has no ECUs that can be used for fuzzy matching")
+      raise unittest.SkipTest("Car model needs more ECUs that can be used for fuzzy matching")
 
     fw = []
-    for idx, ecu in enumerate(valid_ecus):
-      ecu_name, addr, sub_addr = ecu  # valid_ecus[0]
+    for ecu in valid_ecus:
+      ecu_name, addr, sub_addr = ecu
       for _ in range(5):
+        # Add multiple FW versions to simulate ECU returning to multiple queries in a brand
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP = car.CarParams.new_message(carFw=fw)
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
 
-      # Assert no match if there are not enough matching ECUs
+      # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
       if len(unique_ecus) < 2:
         self.assertEqual(len(matches), 0)
