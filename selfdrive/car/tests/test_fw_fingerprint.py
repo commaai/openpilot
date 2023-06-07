@@ -10,7 +10,7 @@ from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car, get_fw_versions
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -33,7 +33,7 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(candidates[0], expected)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_fw_fingerprint(self, brand, car_model, ecus):
+  def test_exact_match(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
     for _ in range(200):
       fw = []
@@ -44,8 +44,31 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw)
+      _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
       self.assertFingerprints(matches, car_model)
+
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fuzzy_match(self, brand, car_model, ecus):
+    # TODO: speed up fuzzy matching and test more
+    CP = car.CarParams.new_message()
+    for _ in range(5):
+      fw = []
+      for ecu, fw_versions in ecus.items():
+        if not len(fw_versions):
+          raise unittest.SkipTest("Car model has no FW versions")
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP.carFw = fw
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+
+      # Assert no match if there are not enough valid ECUs
+      valid_ecus = [f['ecu'] for f in fw if f['ecu'] not in FUZZY_EXCLUDE_ECUS]
+      if len(valid_ecus) < 2:
+        self.assertEqual(len(matches), 0, valid_ecus)
+      # There won't always be a match due to shared FW, but if there is it should be correct
+      elif len(matches):
+        self.assertFingerprints(matches, car_model)
 
   def test_no_duplicate_fw_versions(self):
     for car_model, ecus in FW_VERSIONS.items():

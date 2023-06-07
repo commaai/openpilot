@@ -15,6 +15,7 @@ from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
+FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
 FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
@@ -58,12 +59,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
 
-  # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
-  # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
-  # impossible to get 3 matching versions, even if two models with shared parts are released at the same
-  # time and only one is in our database.
-  exclude_types = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
-
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
@@ -71,7 +66,11 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
       continue
 
     for addr, fws in fw_by_addr.items():
-      if addr[0] in exclude_types:
+      # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
+      # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
+      # impossible to get 3 matching versions, even if two models with shared parts are released at the same
+      # time and only one is in our database.
+      if addr[0] in FUZZY_EXCLUDE_ECUS:
         continue
       for f in fws:
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
