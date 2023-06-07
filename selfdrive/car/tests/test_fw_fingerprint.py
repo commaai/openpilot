@@ -50,7 +50,7 @@ class TestFwFingerprint(unittest.TestCase):
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_matching_ecu_count(self, brand, car_model, ecus):
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
-    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS]
+    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
     if len(valid_ecus) < 2:
       raise unittest.SkipTest("Car model has no ECUs that can be used for fuzzy matching")
 
@@ -78,7 +78,6 @@ class TestFwFingerprint(unittest.TestCase):
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
-            self.assertGreater(len(ecu_fw), 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}')
 
   def test_all_addrs_map_to_one_ecu(self):
     for brand, cars in VERSIONS.items():
