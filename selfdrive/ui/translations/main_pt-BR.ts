@@ -1072,8 +1072,8 @@ Isso pode levar até um minuto.</translation>
         <translation>Personalidade de Condução</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake.</source>
-        <translation>Neutro é o recomendado. No modo disputador o openpilot irá seguir o carro da frente mais próximo e ser mais agressivo com a aceleração e frenagem.</translation>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation>Neutro é o recomendado. No modo disputador o openpilot irá seguir o carro da frente mais próximo e ser mais agressivo com a aceleração e frenagem. In relaxed mode openpilot will stay further away from lead cars.</translation>
     </message>
 </context>
 <context>
