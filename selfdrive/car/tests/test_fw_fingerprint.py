@@ -65,7 +65,7 @@ class TestFwFingerprint(unittest.TestCase):
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
       if len(unique_ecus) < 2:
-        self.assertEqual(len(matches), 0)
+        self.assertEqual(len(matches), 0, car_model)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
         self.assertFingerprints(matches, car_model)
