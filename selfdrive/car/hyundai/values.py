@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Set, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Union
 
 from cereal import car
 from panda.python import uds
@@ -348,20 +348,26 @@ FINGERPRINTS = {
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   # platform_code_pattern = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
   platform_code_pattern = re.compile(b'((?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
-  # codes = set()
-  codes = defaultdict(set)
+  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     match = platform_code_pattern.search(fw)
     if match is not None:
       code, date = match.groups()
-      codes[code].add(date[:4])
+      codes[code].add(date)
 
   final_codes = set()
   for code, dates in codes.items():
+    # dates = {d[:4] for d in dates if d is not None}
+    print(code, dates)
+    # radar ECU does not have dates
+    if None in dates:
+      final_codes.add(code)
+      continue
+
     min_date = min(dates)
     max_date = max(dates)
-    current_year, current_month = int(min_date[:2]), int(min_date[2:])
-    max_year, max_month = int(max_date[:2]), int(max_date[2:])
+    current_year, current_month = int(min_date[:2]), int(min_date[2:4])
+    max_year, max_month = int(max_date[:2]), int(max_date[2:4])
     while current_year < max_year or current_month <= max_month:
       final_codes.add(code + b'_' + (str(current_year).zfill(2) + str(current_month).zfill(2)).encode())
       current_year += (current_month + 1) // 13
@@ -385,7 +391,8 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
-PLATFORM_CODE_PATTERN = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
+# PLATFORM_CODE_PATTERN = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
+PLATFORM_CODE_PATTERN = re.compile(b'((?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
