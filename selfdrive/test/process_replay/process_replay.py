@@ -6,6 +6,7 @@ import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
+from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car
@@ -340,9 +341,9 @@ def replay_process_with_name(name, lr, *args, **kwargs):
   return replay_process(cfg, lr, *args, **kwargs)
 
 
-def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, disable_progress=False):
   all_msgs = list(lr)
-  process_logs = _replay_single_process(cfg, all_msgs, fingerprint)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint, disable_progress)
 
   if return_all_logs:
     keys = set(cfg.subs)
@@ -356,7 +357,7 @@ def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
   return log_msgs
 
 
-def _replay_single_process(cfg, lr, fingerprint):
+def _replay_single_process(cfg, lr, fingerprint, disable_progress):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -404,7 +405,7 @@ def _replay_single_process(cfg, lr, fingerprint):
 
         # Do the replay
         cnt = 0
-        for msg in pub_msgs:
+        for msg in tqdm(pub_msgs, disable=disable_progress):
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
