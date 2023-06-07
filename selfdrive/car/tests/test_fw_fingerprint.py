@@ -48,7 +48,7 @@ class TestFwFingerprint(unittest.TestCase):
       self.assertFingerprints(matches, car_model)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_fuzzy_matching_ecu_count(self, brand, car_model, ecus):
+  def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
     valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS and len(ecus[e])]
     if len(valid_ecus) < 2:
