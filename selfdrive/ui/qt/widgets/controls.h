@@ -230,6 +230,7 @@ public:
       button->setCheckable(true);
       button->setChecked(i == value);
       button->setStyleSheet(style);
+      button->setMinimumWidth(225);
       hlayout->addWidget(button);
       button_group->addButton(button, i);
     }
