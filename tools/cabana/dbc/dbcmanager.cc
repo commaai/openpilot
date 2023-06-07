@@ -1,12 +1,5 @@
 #include "tools/cabana/dbc/dbcmanager.h"
-
-#include <QFile>
-#include <QRegularExpression>
-#include <QTextStream>
-#include <QVector>
-#include <limits>
-#include <sstream>
-
+#include <algorithm>
 
 bool DBCManager::open(SourceSet s, const QString &dbc_file_name, QString *error) {
   for (int i = 0; i < dbc_files.size(); i++) {
@@ -119,6 +112,7 @@ void DBCManager::addSignal(const MessageId &id, const cabana::Signal &sig) {
   cabana::Signal *s = dbc_file->addSignal(id, sig);
 
   if (s != nullptr) {
+    dbc_sources.insert(id.source);
     for (uint8_t source : dbc_sources) {
       emit signalAdded({.source = source, .address = id.address}, s);
     }
@@ -150,12 +144,12 @@ void DBCManager::removeSignal(const MessageId &id, const QString &sig_name) {
   }
 }
 
-void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size) {
+void DBCManager::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
   auto sources_dbc_file = findDBCFile(id);
   assert(sources_dbc_file); // This should be impossible
   auto [dbc_sources, dbc_file] = *sources_dbc_file;
 
-  dbc_file->updateMsg(id, name, size);
+  dbc_file->updateMsg(id, name, size, comment);
 
   for (uint8_t source : dbc_sources) {
     emit msgUpdated({.source = source, .address = id.address});
@@ -186,6 +180,15 @@ QString DBCManager::newSignalName(const MessageId &id) {
   assert(sources_dbc_file); // This should be impossible
   auto [_, dbc_file] = *sources_dbc_file;
   return dbc_file->newSignalName(id);
+}
+
+const QList<uint8_t>& DBCManager::mask(const MessageId &id) const {
+  auto sources_dbc_file = findDBCFile(id);
+  if (!sources_dbc_file) {
+    return empty_mask;
+  }
+  auto [_, dbc_file] = *sources_dbc_file;
+  return dbc_file->mask(id);
 }
 
 std::map<MessageId, cabana::Msg> DBCManager::getMessages(uint8_t source) {
@@ -270,13 +273,7 @@ int DBCManager::dbcCount() const {
 }
 
 int DBCManager::nonEmptyDBCCount() const {
-  int cnt = 0;
-  for (auto &[_, dbc_file] : dbc_files) {
-    if (!dbc_file->isEmpty()) {
-      cnt++;
-    }
-  }
-  return cnt;
+  return std::count_if(dbc_files.cbegin(), dbc_files.cend(), [](auto &f) { return !f.second->isEmpty(); });
 }
 
 void DBCManager::updateSources(const SourceSet &s) {

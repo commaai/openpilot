@@ -124,16 +124,16 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
-          case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
-          case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::Offset: return doubleToString(item->sig->offset);
+          case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
           case Item::Comment: return item->sig->comment;
-          case Item::Min: return item->sig->min;
-          case Item::Max: return item->sig->max;
+          case Item::Min: return doubleToString(item->sig->min);
+          case Item::Max: return doubleToString(item->sig->max);
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc << QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val).arg(desc);
             }
             return val_desc.join(" ");
           }
@@ -166,8 +166,8 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Factor: s.factor = value.toDouble(); break;
     case Item::Unit: s.unit = value.toString(); break;
     case Item::Comment: s.comment = value.toString(); break;
-    case Item::Min: s.min = value.toString(); break;
-    case Item::Max: s.max = value.toString(); break;
+    case Item::Min: s.min = value.toDouble(); break;
+    case Item::Max: s.max = value.toDouble(); break;
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
@@ -226,11 +226,11 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     QString name = dbc()->newMsgName(msg_id);
-    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size(), ""));
     msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = 0, .max = std::pow(2, size) - 1};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
@@ -284,8 +284,8 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-  double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  double_validator = new DoubleValidator(this);
+
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
 }
@@ -459,7 +459,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);
-  tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
+
+  // Use a distinctive background for the whole row containing a QSpinBox or QLineEdit
+  QString nodeBgColor = palette().color(QPalette::AlternateBase).name(QColor::HexArgb);
+  tree->setStyleSheet(QString("QSpinBox{background-color:%1;border:none;} QLineEdit{background-color:%1;}").arg(nodeBgColor));
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -477,10 +480,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -590,48 +593,40 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 }
 
 void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id))) return;
-
   const auto &last_msg = can->lastMessage(model->msg_id);
+  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
+
   for (auto item : model->root->children) {
     double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
-    item->sig_val = QString::number(value, 'f', item->sig->precision);
-    // Show unit
-    if (!item->sig->unit.isEmpty()) {
-      item->sig_val += " " + item->sig->unit;
-    }
-    // Show enum string
-    for (auto &[val, desc] : item->sig->val_desc) {
-      if (std::abs(value - val.toInt()) < 1e-6) {
-        item->sig_val = desc;
-      }
-    }
+    item->sig_val = item->sig->formatValue(value);
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 
-  // update visible sparkline
-  QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
-  int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
-  int value_width = std::min<int>(max_value_width, size.width() * 0.35);
-  size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
-
   QModelIndex top = tree->indexAt(QPoint(0, 0));
-  QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
-  int start_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
-  int end_row = model->rowCount() - 1;
-  if (bottom.isValid()) {
-    end_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
-  }
-  QFutureSynchronizer<void> synchronizer;
-  for (int i = start_row; i <= end_row; ++i) {
-    auto item = model->getItem(model->index(i, 1));
-    auto &s = item->sparkline;
-    if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-      synchronizer.addFuture(QtConcurrent::run(
-          &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+  if (top.isValid()) {
+    // update visible sparkline
+    int first_visible_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
+    int last_visible_row = model->rowCount() - 1;
+    QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
+    if (bottom.isValid()) {
+      last_visible_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
+    }
+
+    QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
+    int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
+    int value_width = std::min<int>(max_value_width, size.width() * 0.35);
+    size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
+
+    QFutureSynchronizer<void> synchronizer;
+    for (int i = first_visible_row; i <= last_visible_row; ++i) {
+      auto item = model->getItem(model->index(i, 1));
+      auto &s = item->sparkline;
+      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
+        synchronizer.addFuture(QtConcurrent::run(
+            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+      }
     }
   }
-  synchronizer.waitForFinished();
 
   for (int i = 0; i < model->rowCount(); ++i) {
     emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
@@ -670,7 +665,7 @@ ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, Q
 
   int row = 0;
   for (auto &[val, desc] : descriptions) {
-    table->setItem(row, 0, new QTableWidgetItem(val));
+    table->setItem(row, 0, new QTableWidgetItem(QString::number(val)));
     table->setItem(row, 1, new QTableWidgetItem(desc));
     ++row;
   }
@@ -700,7 +695,7 @@ void ValueDescriptionDlg::save() {
     QString val = table->item(i, 0)->text().trimmed();
     QString desc = table->item(i, 1)->text().trimmed();
     if (!val.isEmpty() && !desc.isEmpty()) {
-      val_desc.push_back({val, desc});
+      val_desc.push_back({val.toDouble(), desc});
     }
   }
   QDialog::accept();
@@ -710,7 +705,7 @@ QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QSty
   QLineEdit *edit = new QLineEdit(parent);
   edit->setFrame(false);
   if (index.column() == 0) {
-    edit->setValidator(new QIntValidator(edit));
+    edit->setValidator(new DoubleValidator(parent));
   }
   return edit;
 }

@@ -22,6 +22,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
   REPLAY_FLAG_FULL_SPEED = 0x0200,
   REPLAY_FLAG_NO_VIPC = 0x0400,
+  REPLAY_FLAG_ALL_SERVICES = 0x0800,
 };
 
 enum class FindFlag {
@@ -40,7 +41,7 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
+  Replay(QString route, QStringList allow, QStringList block, QStringList base_blacklist, SubMaster *sm = nullptr,
           uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
@@ -67,7 +68,7 @@ public:
   inline QDateTime currentDateTime() const { return route_->datetime().addSecs(currentSeconds()); }
   inline uint64_t routeStartTime() const { return route_start_ts_; }
   inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
-  inline int totalSeconds() const { return segments_.size() * 60; }
+  inline int totalSeconds() const { return (!segments_.empty()) ? (segments_.rbegin()->first + 1) * 60 : 0; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::vector<Event *> *events() const { return events_.get(); }
