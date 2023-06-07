@@ -65,11 +65,11 @@ class TestPowerDraw(unittest.TestCase):
     manager_cleanup()
 
   def test_camera_procs(self):
-    done = threading.Event()
-    pub_thread = threading.Thread(target=send_llk_msg, args=(done,), daemon=True)
-    pub_thread.start()
-
     baseline = get_power()
+    done = threading.Event()
+    thread = threading.Thread(target=send_llk_msg, args=(done,), daemon=True)
+    thread.start()
+
     prev = baseline
     used = {}
     msg_counts = {}
@@ -82,6 +82,7 @@ class TestPowerDraw(unittest.TestCase):
 
       now = get_power(8)
       used[proc.name] = now - prev
+      prev = now
       for msg,sock in socks.items():
         msg_counts[msg] = len(messaging.drain_sock_raw(sock))
 
