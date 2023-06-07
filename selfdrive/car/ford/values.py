@@ -213,8 +213,6 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7E0, None): [
       b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-    (Ecu.shiftByWire, 0x732, None): [
-    ],
   },
   CAR.MAVERICK_MK1: {
     (Ecu.eps, 0x730, None): [

@@ -126,19 +126,19 @@ void SoftwarePanel::updateLabels() {
     downloadBtn->setValue(updater_state);
   } else {
     if (failed) {
-      downloadBtn->setText("CHECK");
-      downloadBtn->setValue("failed to check for update");
+      downloadBtn->setText(tr("CHECK"));
+      downloadBtn->setValue(tr("failed to check for update"));
     } else if (params.getBool("UpdaterFetchAvailable")) {
-      downloadBtn->setText("DOWNLOAD");
-      downloadBtn->setValue("update available");
+      downloadBtn->setText(tr("DOWNLOAD"));
+      downloadBtn->setValue(tr("update available"));
     } else {
-      QString lastUpdate = "never";
+      QString lastUpdate = tr("never");
       auto tm = params.get("LastUpdateTime");
       if (!tm.empty()) {
         lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
       }
-      downloadBtn->setText("CHECK");
-      downloadBtn->setValue("up to date, last checked " + lastUpdate);
+      downloadBtn->setText(tr("CHECK"));
+      downloadBtn->setValue(tr("up to date, last checked %1").arg(lastUpdate));
     }
     downloadBtn->setEnabled(true);
   }

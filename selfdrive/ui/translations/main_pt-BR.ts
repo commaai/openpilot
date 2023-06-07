@@ -859,6 +859,26 @@ Isso pode levar até um minuto.</translation>
         <source>Uninstall</source>
         <translation>Desinstalar</translation>
     </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation>falha ao verificar por atualizações</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation>atualizado, última verificação %1</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation>BAIXAR</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation>atualização disponível</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation>nunca</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1034,6 +1054,26 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>Neste carro, o openpilot tem como padrão o ACC embutido do carro em vez do controle longitudinal do openpilot. Habilite isso para alternar para o controle longitudinal openpilot. Recomenda-se ativar o modo Experimental ao ativar o alfa de controle longitudinal openpilot.</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>Disputador</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>Neutro</translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation>Calmo</translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation>Personalidade de Condução</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation>Neutro é o recomendado. No modo disputador o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
     </message>
 </context>
 <context>
