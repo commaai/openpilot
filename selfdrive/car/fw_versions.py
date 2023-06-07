@@ -28,8 +28,9 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
-def is_brand(filter_brand, brand):
-  return filter_brand is None or filter_brand == brand
+def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
+  """Returns if brand matches filter_brand or no brand filter is specified"""
+  return filter_brand is None or brand == filter_brand
 
 
 def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
@@ -37,7 +38,7 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
     # if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
-    if is_brand(filter_brand, fw.brand) and not fw.logging:
+    if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
@@ -67,7 +68,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, match_brand=None, log=True, exclude=
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
-    if not is_brand(match_brand, MODEL_TO_BRAND[candidate]):
+    if not is_brand(MODEL_TO_BRAND[candidate], match_brand):
       continue
 
     if candidate == exclude:
@@ -109,7 +110,7 @@ def match_fw_to_car_exact(fw_versions_dict, match_brand=None) -> Set[str]:
   needs to match the database."""
   invalid = []
   candidates = {c: f for c, f in FW_VERSIONS.items() if
-                is_brand(match_brand, MODEL_TO_BRAND[c])}
+                is_brand(MODEL_TO_BRAND[c], match_brand)}
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
@@ -287,7 +288,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
   # requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
-  requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(query_brand, brand)]
+  requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
