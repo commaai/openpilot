@@ -14,7 +14,7 @@ from system.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
 
-SAMPLE_TIME = 8  # Sample power for 8 seconds
+SAMPLE_TIME = 8   # seconds to sample power
 
 @dataclass
 class Proc:
