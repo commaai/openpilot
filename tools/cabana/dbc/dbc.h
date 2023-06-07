@@ -1,10 +1,10 @@
 #pragma once
 
-#include <limits>
 #include <QColor>
 #include <QList>
 #include <QMetaType>
 #include <QString>
+#include <limits>
 
 #include "opendbc/can/common_dbc.h"
 
@@ -85,7 +85,6 @@ public:
 
   QList<uint8_t> mask;
   void update();
-
 };
 
 bool operator==(const cabana::Signal &l, const cabana::Signal &r);
