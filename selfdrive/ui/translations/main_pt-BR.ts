@@ -861,23 +861,23 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>failed to check for update</source>
-        <translation type="unfinished"></translation>
+        <translation>falha ao verificar por atualizações</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
+        <translation>atualizado, última verificação %1</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
-        <translation type="unfinished"></translation>
+        <translation>BAIXAR</translation>
     </message>
     <message>
         <source>update available</source>
-        <translation type="unfinished"></translation>
+        <translation>atualização disponível</translation>
     </message>
     <message>
         <source>never</source>
-        <translation type="unfinished"></translation>
+        <translation>nunca</translation>
     </message>
 </context>
 <context>
@@ -1057,23 +1057,23 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>Disputador</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>Neutro</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>Calmo</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
+        <translation>Personalidade de Condução</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation type="unfinished"></translation>
+        <translation>Neutro é o recomendado. No modo disputador o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
     </message>
 </context>
 <context>
