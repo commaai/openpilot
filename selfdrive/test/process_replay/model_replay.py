@@ -94,6 +94,7 @@ def nav_model_replay(lr):
 
   return log_msgs
 
+from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 
 def model_replay(lr, frs):
   if not PC:
@@ -102,96 +103,20 @@ def model_replay(lr, frs):
   else:
     spinner = None
 
-  vipc_server = VisionIpcServer("camerad")
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size))
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size))
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_f_frame_size))
-  vipc_server.start_listener()
+  log_msgs = []
+  all_msgs = list(lr)
+  if not SEND_EXTRA_INPUTS:
+    all_msgs = [msg for msg in all_msgs if msg.which() not in ["liveCalibration", "lateralPlan"]]
 
-  sm = messaging.SubMaster(['modelV2', 'driverStateV2'])
-  pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
+  modeld = get_process_config("modeld")
+  dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
   try:
-    managed_processes['modeld'].start()
-    managed_processes['dmonitoringmodeld'].start()
-    time.sleep(5)
-    sm.update(1000)
-
-    log_msgs = []
-    last_desire = None
-    recv_cnt = defaultdict(int)
-    frame_idxs = defaultdict(int)
-
-    # init modeld with valid calibration
-    cal_msgs = [msg for msg in lr if msg.which() == "liveCalibration"]
-    for _ in range(5):
-      pm.send(cal_msgs[0].which(), cal_msgs[0].as_builder())
-      time.sleep(0.1)
-
-    msgs = defaultdict(list)
-    for msg in lr:
-      msgs[msg.which()].append(msg)
-
-    for cam_msgs in zip_longest(msgs['roadCameraState'], msgs['wideRoadCameraState'], msgs['driverCameraState']):
-      # need a pair of road/wide msgs
-      if None in (cam_msgs[0], cam_msgs[1]):
-        break
-
-      for msg in cam_msgs:
-        if msg is None:
-          continue
-
-        if SEND_EXTRA_INPUTS:
-          if msg.which() == "liveCalibration":
-            last_calib = list(msg.liveCalibration.rpyCalib)
-            pm.send(msg.which(), replace_calib(msg, last_calib))
-          elif msg.which() == "lateralPlan":
-            last_desire = msg.lateralPlan.desire
-            dat = messaging.new_message('lateralPlan')
-            dat.lateralPlan.desire = last_desire
-            pm.send('lateralPlan', dat)
-
-        if msg.which() in VIPC_STREAM:
-          msg = msg.as_builder()
-          camera_state = getattr(msg, msg.which())
-          img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="nv12")[0]
-          frame_idxs[msg.which()] += 1
-
-          # send camera state and frame
-          camera_state.frameId = frame_idxs[msg.which()]
-          pm.send(msg.which(), msg)
-          vipc_server.send(VIPC_STREAM[msg.which()], img.flatten().tobytes(), camera_state.frameId,
-                           camera_state.timestampSof, camera_state.timestampEof)
-
-          recv = None
-          if msg.which() in ('roadCameraState', 'wideRoadCameraState'):
-            if min(frame_idxs['roadCameraState'], frame_idxs['wideRoadCameraState']) > recv_cnt['modelV2']:
-              recv = "modelV2"
-          elif msg.which() == 'driverCameraState':
-            recv = "driverStateV2"
-
-          # wait for a response
-          with Timeout(15, f"timed out waiting for {recv}"):
-            if recv:
-              recv_cnt[recv] += 1
-              log_msgs.append(messaging.recv_one(sm.sock[recv]))
-
-          if spinner:
-            spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
-                           frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
-
-
-      if any(frame_idxs[c] >= frs[c].frame_count for c in frame_idxs.keys()) or frame_idxs['roadCameraState'] == MAX_FRAMES:
-        break
-      else:
-        print(f'Received {frame_idxs["roadCameraState"]} frames')
-
+    log_msgs.extend(replay_process(modeld, all_msgs, frs))
+    log_msgs.extend(replay_process(dmonitoringmodeld, all_msgs, frs))
   finally:
     if spinner:
       spinner.close()
-    managed_processes['modeld'].stop()
-    managed_processes['dmonitoringmodeld'].stop()
-
 
   return log_msgs
 
