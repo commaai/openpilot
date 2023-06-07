@@ -28,11 +28,16 @@ def chunks(l, n=128):
     yield l[i:i + n]
 
 
+def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
+  """Returns if brand matches filter_brand or no brand filter is specified"""
+  return filter_brand is None or brand == filter_brand
+
+
 def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
                   filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
   fw_versions_dict = defaultdict(set)
   for fw in fw_versions:
-    if (filter_brand is None or fw.brand == filter_brand) and not fw.logging:
+    if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
       fw_versions_dict[(fw.address, sub_addr)].add(fw.fwVersion)
   return dict(fw_versions_dict)
@@ -95,7 +100,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
+def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -130,7 +135,7 @@ def match_fw_to_car_exact(fw_versions_dict) -> Set[str]:
   return set(candidates.keys()) - set(invalid)
 
 
-def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
+def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   # Try exact matching first
   exact_matches = []
   if allow_exact:
@@ -143,7 +148,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict)
+      matches |= match_func(fw_versions_dict, log=log)
 
     if len(matches):
       return exact_match, matches
@@ -278,7 +283,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
-  requests = [(brand, config, r) for brand, config, r in REQUESTS if query_brand is None or brand == query_brand]
+  requests = [(brand, config, r) for brand, config, r in REQUESTS if is_brand(brand, query_brand)]
   for addr in tqdm(addrs, disable=not progress):
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
