@@ -360,19 +360,12 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   for code, dates in codes.items():
     min_date = min(dates)
     max_date = max(dates)
-    min_year, min_month = int(min_date[:2]), int(min_date[2:])
+    current_year, current_month = int(min_date[:2]), int(min_date[2:])
     max_year, max_month = int(max_date[:2]), int(max_date[2:])
-    # Add all dates between the two as bytes:
-    for year in range(min_year, max_year + 1):
-      for month in range(1, 13):
-        if year == min_year and month < min_month:
-          continue
-        if year == max_year and month > max_month:
-          continue
-
-        final_codes.add(code + b'_' + (str(year).zfill(2) + str(month).zfill(2)).encode())
-
-    print(code, [d for d in dates], min_date, max_date)
+    while current_year < max_year or current_month <= max_month:
+      final_codes.add(code + b'_' + (str(current_year).zfill(2) + str(current_month).zfill(2)).encode())
+      current_year += (current_month + 1) // 13
+      current_month = (current_month % 12) + 1
 
   print('final_codes', final_codes)
 
