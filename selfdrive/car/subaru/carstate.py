@@ -437,14 +437,14 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_uds_signals():
-    signals += [
+    signals = [
       ("PCI", "EYESIGHT_UDS_RESPONSE"),
       ("SID", "EYESIGHT_UDS_RESPONSE"),
       ("DID", "EYESIGHT_UDS_RESPONSE"),
       ("DATA", "EYESIGHT_UDS_RESPONSE")
     ]
 
-    checks += [
+    checks = [
       ("EYESIGHT_UDS_RESPONSE", 5) # just because eyesight is sending UDS messages doesn't mean its the correct messages, need dbc multiplexing
     ]
 
