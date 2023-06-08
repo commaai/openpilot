@@ -86,9 +86,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     ecu_key = (addr[0], addr[1])
     for version in versions:
       # All cars that have this FW response on the specified address
-      ecu_key = (addr[0], addr[1])
       candidates = all_fw_versions[(*ecu_key, version)]
-      print(candidates)
 
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
       if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
