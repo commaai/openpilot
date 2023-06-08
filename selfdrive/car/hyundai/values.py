@@ -348,11 +348,9 @@ FINGERPRINTS = {
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  # platform_code_pattern = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
-  platform_code_pattern = re.compile(b'((?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
   codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
-    match = platform_code_pattern.search(fw)
+    match = PLATFORM_CODE_PATTERN.search(fw)
     if match is not None:
       code, date = match.groups()
       codes[code].add(date)
@@ -384,8 +382,8 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
-# PLATFORM_CODE_PATTERN = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
-PLATFORM_CODE_PATTERN = re.compile(b'((?<=\xf1\x00)[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
+PLATFORM_CODE_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+                                   b')[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
