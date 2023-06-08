@@ -10,7 +10,8 @@ from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, match_fw_to_car, get_fw_versions
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, MODEL_TO_BRAND, VERSIONS, \
+                                      match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -53,6 +54,7 @@ class TestFwFingerprint(unittest.TestCase):
       raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
 
     fw = []
+    config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[car_model]]
     for ecu in valid_ecus:
       ecu_name, addr, sub_addr = ecu
       for _ in range(5):
@@ -64,7 +66,7 @@ class TestFwFingerprint(unittest.TestCase):
 
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
-      if len(unique_ecus) < 2:
+      if len(unique_ecus) < config.fuzzy_min_match_count:
         self.assertEqual(len(matches), 0, car_model)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
