@@ -1,4 +1,7 @@
 import re
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
@@ -344,6 +347,7 @@ FINGERPRINTS = {
   }],
 }
 
+import time
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   # platform_code_pattern = re.compile(b'(?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2}')
@@ -363,19 +367,30 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       final_codes.add(code)
       continue
 
-    min_date, max_date = min(dates), max(dates)
-    current_year, current_month = int(min_date[:2]), int(min_date[2:4])
-    max_year, max_month = int(max_date[:2]), int(max_date[2:4])
-    print(current_year, current_month, max_year, max_month)
-    return set()
-    while current_year < max_year or current_month <= max_month:
-      print(current_month, current_year)
-      date_code = str(current_year).zfill(2) + str(current_month).zfill(2)
-      final_codes.add(code + b'_' + date_code.encode())
-      current_year += (current_month + 1) // 13
-      current_month = (current_month % 12) + 1
-
+    delta = relativedelta(months=1)
+    dates = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(dates), until=max(dates)):
+      final_codes.add(code + b'_' + date.strftime('%y%m').encode())
   return final_codes
+
+  #   # current_date = datetime.strptime(max(dates).decode(), '%y%m%d')
+  #   # max_date = datetime.strptime(max(dates).decode(), '%y%m%d')
+  #   print('code, dates:', code, datesp)
+  #
+  #   min_date, max_date = min(dates), max(dates)
+  #   current_year, current_month = int(min_date[:2]), int(min_date[2:4])
+  #   max_year, max_month = int(max_date[:2]), int(max_date[2:4])
+  #   # print(current_year, current_month, max_year, max_month)
+  #   # return set()
+  #   while current_year < max_year or current_month < max_month:
+  #     time.sleep(0.1)
+  #     print(current_month, current_year, max_month, max_year)
+  #     date_code = str(current_year).zfill(2) + str(current_month).zfill(2)
+  #     final_codes.add(code + b'_' + date_code.encode())
+  #     current_year += (current_month + 1) // 13
+  #     current_month = (current_month % 12) + 1
+  #
+  # return final_codes
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
