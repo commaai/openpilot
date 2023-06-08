@@ -129,7 +129,7 @@ jobs:
     - name: Cleanup scons cache
       run: |
         rm -rf /tmp/scons_cache/*
-        scons -j$(nproc) --cache-populate"
+        scons -j$(nproc) --cache-populate
     - name: Remove pre-existing Homebrew packages for caching
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
