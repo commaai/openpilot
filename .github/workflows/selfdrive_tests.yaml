@@ -108,6 +108,7 @@ jobs:
         path: |
           ~/.pyenv
           ~/Library/Caches/pypoetry
+          ~/Library/Caches/Homebrew/Cask/gcc-arm-*
           /usr/local/Cellar
           /usr/local/opt
           /opt/homebrew/Cellar
