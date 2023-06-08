@@ -92,12 +92,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
 
       # If no exact FW matches, try brand-specific fuzzy fingerprinting
       if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
-        platform_codes = config.fuzzy_get_platform_codes([version])
-        if len(platform_codes) == 1:
-          platform_code = list(platform_codes)[0]
+        for platform_code in config.fuzzy_get_platform_codes([version]):
           candidates = all_platform_codes[(*ecu_key, platform_code)]
 
-      print()
       if len(candidates) == 1:
         matched_ecus.add(ecu_key)
         if candidate is None:
