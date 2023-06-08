@@ -3,6 +3,10 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
+# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
+MAX_STEER_RATE = 100  # deg/s
+MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -12,6 +16,7 @@ class CarController:
 
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
+    self.steer_rate_counter = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -32,13 +37,24 @@ class CarController:
       new_steer = int(round(apply_steer))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
+      # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
+      if CC.latActive and True:  # abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+        self.steer_rate_counter += 1
+      else:
+        self.steer_rate_counter = 0
+
+      apply_steer_req = 1
       if not CC.latActive:
         apply_steer = 0
+        apply_steer_req = 0
+      elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+        apply_steer_req = 0
+        self.steer_rate_counter = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, apply_steer_req))
 
       self.apply_steer_last = apply_steer
 
