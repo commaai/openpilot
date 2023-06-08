@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-from collections import defaultdict
 from datetime import datetime
+import random
 import unittest
 
 from cereal import car
+from selfdrive.car.tests.test_fw_fingerprint import TestFwFingerprintBase
+from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
                                          FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_PATTERN
 
@@ -11,7 +13,7 @@ Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
-class TestHyundaiFingerprint(unittest.TestCase):
+class TestHyundaiFingerprint(TestFwFingerprintBase):
   def test_canfd_not_in_can_features(self):
     can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
@@ -84,10 +86,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(codes, {b'LX2-2111', b'LX2-2112', b'LX2-2201', b'LX2-2202',
                              b'ON-1904', b'ON-1905', b'ON-1906', b'ON-1907'})
 
-  def test_excluded_platforms(self):
+  def test_excluded_platforms_new(self):
     # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
     # This list can be shrunk as we combine platforms and detect features
-    excluded_platforms = [
+    excluded_platforms = {
       CAR.GENESIS_G70,
       CAR.GENESIS_G70_2020,
       CAR.TUCSON_4TH_GEN,
@@ -95,61 +97,23 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
       CAR.SANTA_CRUZ_1ST_GEN,
       CAR.KIA_SPORTAGE_5TH_GEN,
-    ]
+    }
 
-    all_platform_codes = defaultdict(set)
+    platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
-      for addr, fws in fw_by_addr.items():
-        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
-          continue
+      fw = []
+      for ecu, fw_versions in fw_by_addr.items():
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': 'hyundai',
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP = car.CarParams.new_message(carFw=fw)
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      if len(matches):
+        self.assertFingerprints(matches, platform)
+      else:
+        platforms_with_shared_codes.add(platform)
 
-        # print(platform, FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws))
-        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-          all_platform_codes[(addr[1], addr[2], platform_code)].add(platform)
-
-    platforms_with_shared_codes = []
-    for platform, fw_by_addr in FW_VERSIONS.items():
-      candidate = None
-      bad = False
-      print()
-      print('platform', platform)
-      shared_codes = []
-      candidates = set()
-
-      for addr, fws in fw_by_addr.items():
-        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
-          continue
-
-        for fw in fws:
-          # Returns one or none, all cars that have this platform code
-          for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw]):
-            candidates = all_platform_codes[(addr[1], addr[2], platform_code)]
-          if len(candidates) == 1:
-            print('got candidates', platform, fw, candidates)
-            if candidate is None:
-              candidate = list(candidates)[0]
-            # We uniquely matched two different cars. No fuzzy match possible
-            elif candidate != list(candidates)[0]:
-              bad = True
-
-        # print('after', addr[0], platform, FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws))
-        # for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-        #   candidates = all_platform_codes[(addr[1], addr[2], platform_code)]
-        #   print('candidates', candidates)
-        #   if len(candidates) == 1:
-        #     if candidate is None:
-        #       candidate = list(candidates)[0]
-        #     elif candidate != list(candidates)[0]:
-        #       bad = True
-        #   shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
-
-      # If all the platform codes for this platform are shared with another platform,
-      # we cannot fuzzy fingerprint this platform
-      print(platform, shared_codes)
-      if bad or candidate is None:  # all(shared_codes):
-        platforms_with_shared_codes.append(platform)
-
-    self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
+    self.assertEqual(platforms_with_shared_codes, excluded_platforms)
 
 
 if __name__ == "__main__":
