@@ -424,16 +424,16 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_infotainment_status_signals():
-      signals = [
-        ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
-        ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
-        ("Signal1", "INFOTAINMENT_STATUS"),
-        ("Signal2", "INFOTAINMENT_STATUS"),
-      ]
+    signals = [
+      ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
+      ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
+      ("Signal1", "INFOTAINMENT_STATUS"),
+      ("Signal2", "INFOTAINMENT_STATUS"),
+    ]
 
-      checks = [("INFOTAINMENT_STATUS", 10)]
+    checks = [("INFOTAINMENT_STATUS", 10)]
 
-      return signals, checks
+    return signals, checks
 
   @staticmethod
   def get_uds_signals():
