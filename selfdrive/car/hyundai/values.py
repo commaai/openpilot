@@ -12,6 +12,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -358,13 +359,21 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   # Create platform codes for all dates within range if ECU has FW dates
   final_codes = set()
   for code, dates in codes.items():
-    if None in dates:
-      final_codes.add(code)
-      continue
+    parsed = set()
+    for date in dates:
+      if date is None:
+        final_codes.add(code)
+        break
 
-    parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
-    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+      try:
+        parsed.add(datetime.strptime(date.decode()[:4], '%y%m'))
+      except ValueError:
+        cloudlog.exception(f'Error parsing date in FW version: {code}, {date}')
+        break
+
+    else:
+      for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+        final_codes.add(code + b'-' + date.strftime('%y%m').encode())
 
   return final_codes
 
@@ -451,7 +460,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 FW_VERSIONS = {
   CAR.HYUNDAI_GENESIS: {
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00DH LKAS 1.1 -159210',
       b'\xf1\x00DH LKAS 1.4 -140110',
       b'\xf1\x00DH LKAS 1.5 -140425',
     ],
