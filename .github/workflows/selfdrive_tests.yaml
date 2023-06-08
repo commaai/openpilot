@@ -94,6 +94,13 @@ jobs:
         echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
         brew list --formula -1 >> $GITHUB_ENV
         echo 'EOF' >> $GITHUB_ENV
+    - name: Restore scons cache
+      id: scons-restore-cache
+      uses: actions/cache/restore@v3
+      with:
+        path: /tmp/scons_cache
+        key: macos_scons-${{ github.sha }}
+        restore-keys: macos_scons-
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
@@ -105,7 +112,6 @@ jobs:
           /usr/local/opt
           /opt/homebrew/Cellar
           /opt/homebrew/opt
-          /tmp/scons_cache
           ~/github_brew_cache_entries.txt
         key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos-
@@ -123,6 +129,7 @@ jobs:
         source tools/openpilot_env.sh
         poetry run scons -j$(nproc)
     - name: Cleanup scons cache
+      # if: github.ref == 'refs/heads/master'
       run: |
         source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
@@ -137,6 +144,14 @@ jobs:
           fi
         done
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+    - name: Save scons cache
+      id: scons-save-cache
+      uses: actions/cache/save@v3
+      # if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: macos_scons-${{ github.sha }}
+        restore-keys: macos_scons-
 
   docker_push:
     name: docker push
