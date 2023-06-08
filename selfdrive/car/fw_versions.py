@@ -87,11 +87,13 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     ecu_key = (addr[0], addr[1])
     for version in versions:
       # If brand does not implement the platform code functions, try to match with
-      # full FW versions. Else, use platform codes
+      # full FW versions.
+      candidates = set()
       if config.fuzzy_get_platform_codes is None:
         # All cars that have this FW response on the specified address
         candidates = all_fw_versions[(*ecu_key, version)]
       else:
+        # Returns one or none, all cars that have this platform code and within date range
         for platform_code in config.fuzzy_get_platform_codes([version]):
           candidates = all_platform_codes[(*ecu_key, platform_code)]
 
