@@ -129,7 +129,7 @@ jobs:
         source tools/openpilot_env.sh
         poetry run scons -j$(nproc)
     - name: Cleanup scons cache
-      # if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       run: |
         source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
@@ -147,7 +147,7 @@ jobs:
     - name: Save scons cache
       id: scons-save-cache
       uses: actions/cache/save@v3
-      # if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       with:
         path: /tmp/scons_cache
         key: macos_scons-${{ github.sha }}
