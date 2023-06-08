@@ -128,7 +128,7 @@ jobs:
       run: |
         source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
-        scons -j$(nproc) --cache-populate
+        poetry run scons -j$(nproc) --cache-populate
     - name: Remove pre-existing Homebrew packages for caching
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
