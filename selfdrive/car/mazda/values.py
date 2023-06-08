@@ -1,10 +1,9 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -38,7 +37,7 @@ class CAR:
 @dataclass
 class MazdaCarInfo(CarInfo):
   package: str = "All"
-  harness: Enum = Harness.mazda
+  car_parts: CarParts = CarParts.common([CarHarness.mazda])
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
@@ -265,6 +264,7 @@ FW_VERSIONS = {
       b'PA34-188K2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PX4F-188K2-D\000\000\000\000\000\000\000\000\000\000\000\000',
       b'PYH7-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PYH7-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'K131-67XK2-A\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -296,6 +296,7 @@ FW_VERSIONS = {
       b'PXM4-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM4-188K2-D\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PXM6-188K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'PXGW-188K2-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [
       b'K131-67XK2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',

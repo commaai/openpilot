@@ -35,6 +35,8 @@ const float  GPS_VEL_STD_RESET_THRESHOLD = 0.5;
 const float  GPS_ORIENTATION_ERROR_RESET_THRESHOLD = 1.0;
 const int    GPS_ORIENTATION_ERROR_RESET_CNT = 3;
 
+const bool   DEBUG = getenv("DEBUG") != nullptr && std::string(getenv("DEBUG")) != "0";
+
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
   for (int i = 0; i < floatlist.size(); i++) {
@@ -161,6 +163,9 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
   init_measurement(fix.initAccelerationCalibrated(), acc_calib, acc_calib_std, this->calibrated);
+  if (DEBUG) {
+    init_measurement(fix.initFilterState(), predicted_state, predicted_std, true);
+  }
 
   double old_mean = 0.0, new_mean = 0.0;
   int i = 0;
@@ -180,6 +185,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
   fix.setDeviceStable(!this->device_fell);
   fix.setExcessiveResets(this->reset_tracker > MAX_RESET_TRACKER);
+  fix.setTimeToFirstFix(std::isnan(this->ttff) ? -1. : this->ttff);
   this->device_fell = false;
 
   //fix.setGpsWeek(this->time.week);
@@ -506,7 +512,7 @@ void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibra
     this->calib = live_calib;
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
-    this->calibrated = log.getCalStatus() == 1;
+    this->calibrated = log.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
     this->observation_values_invalid["liveCalibration"] *= DECAY;
   }
 }
@@ -528,6 +534,9 @@ void Localizer::finite_check(double current_time) {
 void Localizer::time_check(double current_time) {
   if (std::isnan(this->last_reset_time)) {
     this->last_reset_time = current_time;
+  }
+  if (std::isnan(this->first_valid_log_time)) {
+    this->first_valid_log_time = current_time;
   }
   double filter_time = this->kf->get_filter_time();
   bool big_time_gap = !std::isnan(filter_time) && (current_time - filter_time > 10);
@@ -699,6 +708,11 @@ int Localizer::locationd_thread() {
       bool inputsOK = sm.allAliveAndValid() && this->are_inputs_ok();
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
+
+      // Log time to first fix
+      if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
+        this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
+      }
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, inputsOK, sensorsOK, gpsOK, filterInitialized);
