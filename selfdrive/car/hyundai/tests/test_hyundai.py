@@ -57,7 +57,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_fuzzy_platform_codes(self):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
-    self.assertEqual(codes, {b"DH_1502"})
+    self.assertEqual(codes, {b"DH-1502"})
 
     # Some cameras and all radars do not have dates
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
@@ -71,7 +71,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ])
-    self.assertEqual(codes, {b"DH_1502", b"AEhe", b"CV1"})
+    self.assertEqual(codes, {b"DH-1502", b"AEhe", b"CV1"})
 
     # Returned platform codes must inclusively contain start/end dates
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
@@ -80,58 +80,47 @@ class TestHyundaiFingerprint(unittest.TestCase):
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720',
     ])
-    self.assertEqual(codes, {b'LX2_2111', b'LX2_2112', b'LX2_2201', b'LX2_2202',
-                             b'ON_1904', b'ON_1905', b'ON_1906', b'ON_1907'})
+    self.assertEqual(codes, {b'LX2-2111', b'LX2-2112', b'LX2-2201', b'LX2-2202',
+                             b'ON-1904', b'ON-1905', b'ON-1906', b'ON-1907'})
 
-  # def test_excluded_platforms(self):
-  #   # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
-  #   # This list can be shrunk as we combine platforms and detect features
-  #   excluded_platforms = [
-  #     CAR.HYUNDAI_GENESIS,
-  #     CAR.IONIQ,
-  #     CAR.IONIQ_PHEV_2019,
-  #     CAR.IONIQ_PHEV,
-  #     CAR.IONIQ_EV_2020,
-  #     CAR.IONIQ_EV_LTD,
-  #     CAR.IONIQ_HEV_2022,
-  #     CAR.SANTA_FE,
-  #     CAR.SANTA_FE_2022,
-  #     CAR.KIA_STINGER,
-  #     CAR.KIA_STINGER_2022,
-  #     CAR.GENESIS_G70,
-  #     CAR.GENESIS_G70_2020,
-  #     CAR.TUCSON_4TH_GEN,
-  #     CAR.TUCSON_HYBRID_4TH_GEN,
-  #     CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
-  #     CAR.SANTA_CRUZ_1ST_GEN,
-  #     CAR.KIA_SPORTAGE_5TH_GEN,
-  #   ]
-  #
-  #   all_platform_codes = defaultdict(set)
-  #   for platform, fw_by_addr in FW_VERSIONS.items():
-  #     for addr, fws in fw_by_addr.items():
-  #       if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
-  #         continue
-  #
-  #       for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-  #         all_platform_codes[(addr[1], addr[2], platform_code)].add(platform)
-  #
-  #   platforms_with_shared_codes = []
-  #   for platform, fw_by_addr in FW_VERSIONS.items():
-  #     shared_codes = []
-  #     for addr, fws in fw_by_addr.items():
-  #       if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
-  #         continue
-  #
-  #       for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-  #         shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
-  #
-  #     # If all the platform codes for this platform are shared with another platform,
-  #     # we cannot fuzzy fingerprint this platform
-  #     if all(shared_codes):
-  #       platforms_with_shared_codes.append(platform)
-  #
-  #   self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
+  def test_excluded_platforms(self):
+    # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
+    # This list can be shrunk as we combine platforms and detect features
+    excluded_platforms = [
+      CAR.GENESIS_G70,
+      CAR.GENESIS_G70_2020,
+      CAR.TUCSON_4TH_GEN,
+      CAR.TUCSON_HYBRID_4TH_GEN,
+      CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+      CAR.SANTA_CRUZ_1ST_GEN,
+      CAR.KIA_SPORTAGE_5TH_GEN,
+    ]
+
+    all_platform_codes = defaultdict(set)
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      for addr, fws in fw_by_addr.items():
+        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
+          continue
+
+        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
+          all_platform_codes[(addr[1], addr[2], platform_code)].add(platform)
+
+    platforms_with_shared_codes = []
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      shared_codes = []
+      for addr, fws in fw_by_addr.items():
+        if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
+          continue
+
+        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
+          shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
+
+      # If all the platform codes for this platform are shared with another platform,
+      # we cannot fuzzy fingerprint this platform
+      if all(shared_codes):
+        platforms_with_shared_codes.append(platform)
+
+    self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
 
 
 if __name__ == "__main__":
