@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from datetime import datetime
 from collections import defaultdict
 import unittest
 
@@ -46,10 +47,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
               # TODO: use FW_QUERY_CONFIG.fuzzy_get_platform_codes
               _, date = PLATFORM_CODE_PATTERN.search(fw).groups()
               dates.add(date)
-              if date is None:
-                continue
-              parsed = datetime.strptime(date.decode(), '%y%m%d')
-              self.assertTrue(2013 < parsed.year < 2023, parsed)
+              if date is not None:
+                # Assert date is parsable and reasonable
+                parsed = datetime.strptime(date.decode(), '%y%m%d')
+                self.assertTrue(2013 < parsed.year < 2023, parsed)
+
+            # Either no dates should exist or all dates should be parsed
             self.assertEqual(len({d is None for d in dates}), 1)
 
   def test_fuzzy_platform_codes(self):
