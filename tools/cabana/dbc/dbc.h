@@ -44,7 +44,6 @@ struct std::hash<MessageId> {
 };
 
 typedef QList<std::pair<double, QString>> ValueDescription;
-class DBCFile;
 
 namespace cabana {
 
@@ -52,9 +51,9 @@ class Signal {
 public:
   Signal() = default;
   Signal(const Signal &other) = default;
+  void update();
   bool getValue(const uint8_t *data, size_t data_size, double *val) const;
   QString formatValue(double value) const;
-  void update();
   bool operator==(const cabana::Signal &other) const;
   inline bool operator!=(const cabana::Signal &other) const { return !(*this == other); }
 
