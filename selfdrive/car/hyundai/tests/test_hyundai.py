@@ -36,7 +36,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
   def test_fuzzy_fw_dates(self):
-    # Some newer CAN FD platforms have date codes in a different format we don't yet parse,
+    # Some newer platforms have date codes in a different format we don't yet parse,
     # for now assert date format is consistent across each platform
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
