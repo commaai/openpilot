@@ -101,12 +101,14 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
-      fw = []
+      car_fw = []
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
-        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': 'hyundai',
-                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-      CP = car.CarParams.new_message(carFw=fw)
+        for fw in fw_versions:
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
+                         "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+
+      CP = car.CarParams.new_message(carFw=car_fw)
       _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
       if len(matches):
         self.assertFingerprints(matches, platform)
