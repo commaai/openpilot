@@ -343,7 +343,7 @@ def replay_process_with_name(name, lr, *args, **kwargs):
 
 
 def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, disable_progress=False):
-  all_msgs = migrate_all(lr)
+  all_msgs = migrate_all(lr, old_logtime=True)
   process_logs = _replay_single_process(cfg, all_msgs, fingerprint, disable_progress)
 
   if return_all_logs:
