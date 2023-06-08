@@ -3,7 +3,7 @@ from cereal import messaging
 
 def migrate_all(lr, old_logtime=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
-  msgs = migrate_carParams(msgs)
+  msgs = migrate_carParams(msgs, old_logtime)
 
   return msgs
 
