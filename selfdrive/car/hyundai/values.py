@@ -360,7 +360,6 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   # Create platform codes for all dates within range if ECU has FW dates
   final_codes = set()
   for code, dates in codes.items():
-    # radar ECU does not have dates
     if None in dates:
       final_codes.add(code)
       continue
