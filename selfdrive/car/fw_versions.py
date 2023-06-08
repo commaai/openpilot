@@ -61,6 +61,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
+  # Platform codes are brand-specific and used to match with as a backup if exact FW matches don't exist
   all_platform_codes = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
