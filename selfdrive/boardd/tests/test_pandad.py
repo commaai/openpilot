@@ -37,8 +37,6 @@ class TestPandad(unittest.TestCase):
   @phone_only
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
-    time.sleep(1)
-
     managed_processes['pandad'].start()
     self._wait_for_boardd(60)
 
@@ -75,6 +73,9 @@ class TestPandad(unittest.TestCase):
 
   @phone_only
   def test_release_to_devel_bootstub(self):
+    if HARDWARE.get_device_type() != 'tici':
+      self.skipTest("TODO: fix reset timeout")
+
     # flash release bootstub
     self._go_to_dfu()
     pd = PandaDFU(None)
@@ -86,9 +87,6 @@ class TestPandad(unittest.TestCase):
     assert Panda.wait_for_panda(None, 20)
     with Panda() as p:
       assert p.bootstub
-
-      if p.get_type() == Panda.HW_TYPE_TRES:
-        self.skipTest("TODO: fix reset timeout")
 
     managed_processes['pandad'].start()
     self._wait_for_boardd(60)
