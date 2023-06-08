@@ -114,9 +114,7 @@ jobs:
     - name: Brew link restored dependencies
       run: |
         if [ -f ~/github_brew_cache_entries.txt ]; then
-          while read pkg; do
-            brew link --force "$pkg" # `--force` for keg-only packages
-          done < ~/github_brew_cache_entries.txt
+          brew link --force $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
         else
           echo "Cache entries not found"
         fi
@@ -128,6 +126,7 @@ jobs:
         poetry run scons -j$(nproc)
     - name: Cleanup scons cache
       run: |
+        source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
         scons -j$(nproc) --cache-populate
     - name: Remove pre-existing Homebrew packages for caching
