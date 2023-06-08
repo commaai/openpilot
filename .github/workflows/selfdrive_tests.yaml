@@ -103,8 +103,10 @@ jobs:
           ~/Library/Caches/pypoetry
           /usr/local/Cellar
           /usr/local/opt
+          /usr/local/Caskroom
           /opt/homebrew/Cellar
           /opt/homebrew/opt
+          /opt/homebrew/Caskroom
           /tmp/scons_cache
           ~/github_brew_cache_entries.txt
         key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
