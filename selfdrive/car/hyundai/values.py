@@ -362,8 +362,8 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       final_codes.add(code)
       continue
 
-    dates = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
-    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(dates), until=max(dates)):
+    parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
       final_codes.add(code + b'-' + date.strftime('%y%m').encode())
 
   return final_codes
