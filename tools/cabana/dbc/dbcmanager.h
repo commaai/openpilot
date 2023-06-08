@@ -1,15 +1,9 @@
 #pragma once
 
 #include <map>
-#include <optional>
 
-#include <QList>
-#include <QMetaType>
-#include <QObject>
-#include <QString>
 #include <QSet>
 
-#include "tools/cabana/dbc/dbc.h"
 #include "tools/cabana/dbc/dbcfile.h"
 
 typedef QSet<uint8_t> SourceSet;
@@ -38,28 +32,26 @@ public:
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
+  const QList<uint8_t>& mask(const MessageId &id);
 
-  const QList<uint8_t>& mask(const MessageId &id) const;
+  const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source);
+  cabana::Msg *msg(const MessageId &id);
+  cabana::Msg* msg(uint8_t source, const QString &name);
 
-  std::map<MessageId, cabana::Msg> getMessages(uint8_t source);
-  const cabana::Msg *msg(const MessageId &id) const;
-  const cabana::Msg* msg(uint8_t source, const QString &name);
+  QStringList signalNames();
+  int signalCount(const MessageId &id);
+  int signalCount();
+  int msgCount();
+  int dbcCount();
+  int nonEmptyDBCCount();
 
-  QStringList signalNames() const;
-  int signalCount(const MessageId &id) const;
-  int signalCount() const;
-  int msgCount() const;
-  int dbcCount() const;
-  int nonEmptyDBCCount() const;
-
-  std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const uint8_t source) const;
-  std::optional<std::pair<SourceSet, DBCFile*>> findDBCFile(const MessageId &id) const;
+  DBCFile *findDBCFile(const uint8_t source);
+  inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
 
   QList<std::pair<SourceSet, DBCFile*>> dbc_files;
 
 private:
   SourceSet sources;
-  QList<uint8_t> empty_mask;
 
 public slots:
   void updateSources(const SourceSet &s);

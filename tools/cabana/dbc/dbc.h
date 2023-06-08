@@ -72,9 +72,13 @@ public:
   Msg() = default;
   Msg(const Msg &other) { *this = other; }
   ~Msg();
+  cabana::Signal *addSignal(const cabana::Signal &sig);
+  cabana::Signal *updateSignal(const QString &sig_name, const cabana::Signal &sig);
+  void removeSignal(const QString &sig_name);
   Msg &operator=(const Msg &other);
   int indexOf(const cabana::Signal *sig) const;
-  const cabana::Signal *sig(const QString &sig_name) const;
+  cabana::Signal *sig(const QString &sig_name) const;
+  QString newSignalName();
   inline const std::vector<cabana::Signal *> &getSignals() const { return sigs; }
 
   uint32_t address;

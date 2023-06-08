@@ -30,8 +30,8 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
 
   msg_cb = new QComboBox(this);
   // TODO: update when src_bus_combo changes
-  for (auto &[id, msg] : dbc()->getMessages(0)) {
-    msg_cb->addItem(msg.name, id.address);
+  for (auto &[address, msg] : dbc()->getMessages(0)) {
+    msg_cb->addItem(msg.name, address);
   }
   msg_cb->model()->sort(0);
   msg_cb->setCurrentIndex(0);
