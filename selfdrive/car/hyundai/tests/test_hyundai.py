@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from datetime import datetime
-import random
 import unittest
 
 from cereal import car
