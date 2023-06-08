@@ -246,7 +246,6 @@ public:
   }
 
   void setEnabled(bool enable) {
-    title_label->setEnabled(enable);
     for (auto btn : button_group->buttons()) {
       btn->setEnabled(enable);
     }
