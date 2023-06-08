@@ -5,7 +5,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN1, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags, Buttons
 
 
 PREV_BUTTON_SAMPLES = 8
@@ -93,7 +93,6 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
-
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
       (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
@@ -141,7 +140,7 @@ class CarState(CarStateBase):
       self.brake_status_msg = copy.copy(cp_brakes.vl["Brake_Status"])
     
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
-    cp_buttons = cp_cam if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
+    cp_buttons = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
 
     self.prev_cruise_buttons = self.cruise_buttons[-1]
 
@@ -152,14 +151,15 @@ class CarState(CarStateBase):
       if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
       
-      self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
+      if self.CP.carFingerprint not in PREGLOBAL_CARS:
+        self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
 
     else:
       self.es_distance_msg = None
       self.es_dashstatus_msg = None
       self.es_infotainmentstatus_msg = None
 
-      button_data = cruise_buttons_conversion_gen2_uds(cp_buttons.vl["EYESIGHT_UDS_RESPONSE"])
+      button_data = cruise_buttons_conversion_gen2_uds(cp_cam.vl["EYESIGHT_UDS_RESPONSE"])
       if button_data is not None:
         self.cruise_buttons.append(button_data)
 
@@ -338,7 +338,7 @@ class CarState(CarStateBase):
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
-  def get_global_cam_es_signals(CP):
+  def get_common_es_signals(CP):
     if CP.carFingerprint in PREGLOBAL_CARS:
       signals = [
         ("Cruise_Set_Speed", "ES_DashStatus"),
@@ -423,36 +423,52 @@ class CarState(CarStateBase):
     return signals, checks
 
   @staticmethod
-  def get_cam_can_parser(CP):
-    if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
-      signals, checks = CarState.get_global_cam_es_signals(CP)
-    else:
-      signals, checks = [], []
-    
-    if CP.carFingerprint in GLOBAL_GEN1:
-      signals += CarState.get_global_es_signals()[0]
-      checks += CarState.get_global_es_signals()[1]
-
-    if CP.flags & SubaruFlags.SEND_INFOTAINMENT and not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
-      signals += [
+  def get_infotainment_status_signals():
+      signals = [
         ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
         ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
         ("Signal1", "INFOTAINMENT_STATUS"),
         ("Signal2", "INFOTAINMENT_STATUS"),
       ]
-      checks.append(("INFOTAINMENT_STATUS", 10))
+
+      checks = [("INFOTAINMENT_STATUS", 10)]
+
+      return signals, checks
+
+  @staticmethod
+  def get_uds_signals():
+    signals += [
+      ("PCI", "EYESIGHT_UDS_RESPONSE"),
+      ("SID", "EYESIGHT_UDS_RESPONSE"),
+      ("DID", "EYESIGHT_UDS_RESPONSE"),
+      ("DATA", "EYESIGHT_UDS_RESPONSE")
+    ]
+
+    checks += [
+      ("EYESIGHT_UDS_RESPONSE", 5) # just because eyesight is sending UDS messages doesn't mean its the correct messages, need dbc multiplexing
+    ]
+
+    return signals, checks
+
+  @staticmethod
+  def get_cam_can_parser(CP):
+    signals, checks = [], []
+
+    if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      signals = CarState.get_common_es_signals(CP)[0]
+      checks = CarState.get_common_es_signals(CP)[1]
+      
+    if CP.carFingerprint not in (PREGLOBAL_CARS + GLOBAL_GEN2):
+      signals += CarState.get_global_es_signals()[0]
+      checks += CarState.get_global_es_signals()[1]
+
+    if CP.flags & SubaruFlags.SEND_INFOTAINMENT and not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      signals += CarState.get_infotainment_status_signals()[0]
+      checks += CarState.get_infotainment_status_signals()[1]
   
     if (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
-      signals += [
-        ("PCI", "EYESIGHT_UDS_RESPONSE"),
-        ("SID", "EYESIGHT_UDS_RESPONSE"),
-        ("DID", "EYESIGHT_UDS_RESPONSE"),
-        ("DATA", "EYESIGHT_UDS_RESPONSE")
-      ]
-
-      checks += [
-        ("EYESIGHT_UDS_RESPONSE", 5) # just because eyesight is sending UDS messages doesn't mean its the correct messages, need dbc multiplexing
-      ]
+      signals += CarState.get_uds_signals()[0]
+      checks += CarState.get_uds_signals()[1]
     
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
@@ -461,7 +477,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
 
-      if CP.carFingerprint in GLOBAL_GEN2 and not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
+      if not (CP.flags & SubaruFlags.GEN2_DISABLE_FWD_CAMERA.value):
         signals += CarState.get_global_es_signals()[0]
         checks += CarState.get_global_es_signals()[1]
       
