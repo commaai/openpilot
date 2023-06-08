@@ -216,7 +216,7 @@ public:
       QPushButton:pressed {
         background-color: #4a4a4a;
       }
-      QPushButton:checked {
+      QPushButton:checked:enabled {
         background-color: #33Ab4C;
       }
       QPushButton:disabled {
