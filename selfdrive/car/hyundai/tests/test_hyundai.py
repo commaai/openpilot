@@ -103,22 +103,50 @@ class TestHyundaiFingerprint(unittest.TestCase):
         if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
           continue
 
+        # print(platform, FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws))
         for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
           all_platform_codes[(addr[1], addr[2], platform_code)].add(platform)
 
     platforms_with_shared_codes = []
     for platform, fw_by_addr in FW_VERSIONS.items():
+      candidate = None
+      bad = False
+      print()
+      print('platform', platform)
       shared_codes = []
+      candidates = set()
+
       for addr, fws in fw_by_addr.items():
         if addr[0] not in FW_QUERY_CONFIG.fuzzy_ecus:
           continue
 
-        for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
-          shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
+        for fw in fws:
+          # Returns one or none, all cars that have this platform code
+          for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw]):
+            candidates = all_platform_codes[(addr[1], addr[2], platform_code)]
+          if len(candidates) == 1:
+            print('got candidates', platform, fw, candidates)
+            if candidate is None:
+              candidate = list(candidates)[0]
+            # We uniquely matched two different cars. No fuzzy match possible
+            elif candidate != list(candidates)[0]:
+              bad = True
+
+        # print('after', addr[0], platform, FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws))
+        # for platform_code in FW_QUERY_CONFIG.fuzzy_get_platform_codes(fws):
+        #   candidates = all_platform_codes[(addr[1], addr[2], platform_code)]
+        #   print('candidates', candidates)
+        #   if len(candidates) == 1:
+        #     if candidate is None:
+        #       candidate = list(candidates)[0]
+        #     elif candidate != list(candidates)[0]:
+        #       bad = True
+        #   shared_codes.append(len(all_platform_codes[(addr[1], addr[2], platform_code)]) > 1)
 
       # If all the platform codes for this platform are shared with another platform,
       # we cannot fuzzy fingerprint this platform
-      if all(shared_codes):
+      print(platform, shared_codes)
+      if bad or candidate is None:  # all(shared_codes):
         platforms_with_shared_codes.append(platform)
 
     self.assertEqual(set(platforms_with_shared_codes), set(excluded_platforms))
