@@ -4,9 +4,8 @@ from datetime import datetime
 import unittest
 
 from cereal import car
-from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAN_GEARS, CAR, \
-                                         CHECKSUM, CHECKSUM, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
-                                         PLATFORM_CODE_PATTERN
+from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_PATTERN
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
