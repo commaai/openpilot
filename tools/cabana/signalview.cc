@@ -459,7 +459,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);
-  tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
+
+  // Use a distinctive background for the whole row containing a QSpinBox or QLineEdit
+  QString nodeBgColor = palette().color(QPalette::AlternateBase).name(QColor::HexArgb);
+  tree->setStyleSheet(QString("QSpinBox{background-color:%1;border:none;} QLineEdit{background-color:%1;}").arg(nodeBgColor));
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);

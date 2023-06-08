@@ -5,7 +5,7 @@ import unittest
 
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
-from selfdrive.car.docs_definitions import CarPart, Column, PartType, Star
+from selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from selfdrive.car.honda.values import CAR as HONDA
 
 
@@ -74,11 +74,12 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        car_part_type = [p.value.type for p in car.car_parts.parts]
-        self.assertTrue(len(car.car_parts.parts) > 0, f"Need to specify car parts: {car.name}")
+        car_part_type = [p.type for p in car.car_parts.all_parts()]
+        car_parts = [p for p in car.car_parts.all_parts()]
+        self.assertTrue(len(car_parts) > 0, f"Need to specify car parts: {car.name}")
         self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")
         self.assertTrue(car_part_type.count(PartType.mount) == 1, f"Need to specify one mount: {car.name}")
-        self.assertTrue(CarPart.right_angle_obd_c_cable_1_5ft in car.car_parts.parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
+        self.assertTrue(Cable.right_angle_obd_c_cable_1_5ft in car_parts, f"Need to specify a right angle OBD-C cable (1.5ft): {car.name}")
 
 
 if __name__ == "__main__":

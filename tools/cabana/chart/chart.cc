@@ -213,9 +213,19 @@ void ChartView::updateTitle() {
   for (QLegendMarker *marker : chart()->legend()->markers()) {
     QObject::connect(marker, &QLegendMarker::clicked, this, &ChartView::handleMarkerClicked, Qt::UniqueConnection);
   }
+
+  // Use CSS to draw titles in the WindowText color
+  auto tmp = palette().color(QPalette::WindowText);
+  auto titleColorCss = tmp.name(QColor::HexArgb);
+  // Draw message details in similar color, but slightly fade it to the background
+  tmp.setAlpha(180);
+  auto msgColorCss = tmp.name(QColor::HexArgb);
+
   for (auto &s : sigs) {
     auto decoration = s.series->isVisible() ? "none" : "line-through";
-    s.series->setName(QString("<span style=\"text-decoration:%1\"><b>%2</b> <font color=\"gray\">%3 %4</font></span>").arg(decoration, s.sig->name, msgName(s.msg_id), s.msg_id.toString()));
+    s.series->setName(QString("<span style=\"text-decoration:%1; color:%2\"><b>%3</b> <font color=\"%4\">%5 %6</font></span>")
+                      .arg(decoration, titleColorCss, s.sig->name,
+                           msgColorCss, msgName(s.msg_id), s.msg_id.toString()));
   }
   split_chart_act->setEnabled(sigs.size() > 1);
   resetChartCache();

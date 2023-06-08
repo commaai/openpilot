@@ -9,7 +9,13 @@ std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
   std::vector<const Signal*> ret;
   ret.reserve(sigs.size());
   for (auto &sig : sigs) ret.push_back(&sig);
-  std::sort(ret.begin(), ret.end(), [](auto l, auto r) { return l->start_bit < r->start_bit; });
+  std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
+    if (l->start_bit != r->start_bit) {
+      return l->start_bit < r->start_bit;
+    }
+    // For VECTOR__INDEPENDENT_SIG_MSG, many signals have same start bit
+    return l->name < r->name;
+  });
   return ret;
 }
 

@@ -36,12 +36,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_openpilot.png",
     },
     {
-      "ExperimentalMode",
-      tr("Experimental Mode"),
-      "",
-      "../assets/img_experimental_white.svg",
-    },
-    {
       "ExperimentalLongitudinalEnabled",
       tr("openpilot Longitudinal Control (Alpha)"),
       QString("<b>%1</b><br><br>%2")
@@ -50,16 +44,22 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_speed_limit.png",
     },
     {
+      "ExperimentalMode",
+      tr("Experimental Mode"),
+      "",
+      "../assets/img_experimental_white.svg",
+    },
+    {
+      "DisengageOnAccelerator",
+      tr("Disengage on Accelerator Pedal"),
+      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
+      "../assets/offroad/icon_disengage_on_accelerator.svg",
+    },
+    {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/offroad/icon_warning.png",
-    },
-    {
-      "IsMetric",
-      tr("Use Metric System"),
-      tr("Display speed in km/h instead of mph."),
-      "../assets/offroad/icon_metric.png",
     },
     {
       "RecordFront",
@@ -68,10 +68,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_monitoring.png",
     },
     {
-      "DisengageOnAccelerator",
-      tr("Disengage on Accelerator Pedal"),
-      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-      "../assets/offroad/icon_disengage_on_accelerator.svg",
+      "IsMetric",
+      tr("Use Metric System"),
+      tr("Display speed in km/h instead of mph."),
+      "../assets/offroad/icon_metric.png",
     },
 #ifdef ENABLE_MAPS
     {
@@ -89,6 +89,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 #endif
   };
 
+
+  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
+  ButtonParamControl* long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
+                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars."),
+                                          "../assets/offroad/icon_speed_limit.png",
+                                          longi_button_texts);
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
@@ -97,6 +103,11 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
+
+    // insert longitudinal personality after NDOG toggle
+    if (param == "DisengageOnAccelerator") {
+      addItem(long_personality_setting);
+    }
   }
 
   // Toggles with confirmation dialogs
