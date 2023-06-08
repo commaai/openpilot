@@ -56,42 +56,32 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(len({d is None for d in dates}), 1)
 
   def test_fuzzy_platform_codes(self):
-    return
-    # codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
-    # self.assertEqual(codes, {b"DH"})
-    #
-    # codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
-    # self.assertEqual(codes, {b"AEhe"})
-    #
-    # codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
-    # self.assertEqual(codes, {b"CV1"})
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    self.assertEqual(codes, {b"DH_1502"})
 
-    # TODO: this
-    # codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
-    #   b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 191125',
-    #   b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 200108',
-    #   b'\xf1\x00LX3 MFC  AT USA LHD 1.00 1.03 99211-S8100 190408',
-    #   b'\xf1\x00LX3 MFC  AT USA LHD 1.00 1.03 99211-S8100 190719',
-    # ])
-    # # print('ret', codes)
-    # # self.assertEqual(codes, {b'LX2_1911', b'LX2_1912', b'LX2_2001'})
-    # self.assertEqual(codes, {b'LX3_1907', b'LX3_1906', b'LX2_1911', b'LX2_1912', b'LX3_1905', b'LX2_2001', b'LX3_1904'})
+    # Some cameras and all radars do not have dates
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    self.assertEqual(codes, {b"AEhe"})
+
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    self.assertEqual(codes, {b"CV1"})
 
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 999999',
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 999999',
-      b'\xf1\x00LX3 MFC  AT USA LHD 1.00 1.03 99211-S8100 99999',
-      b'\xf1\x00LX3 MFC  AT USA LHD 1.00 1.03 99211-S8100 99999',
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
+      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ])
-    print(codes)
-    self.assertEqual(codes, {b'LX2', b'LX3'})
+    self.assertEqual(codes, {b"DH_1502", b"AEhe", b"CV1"})
 
-    # codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
-    #   b'\xf1\x00DH LKAS 1.1 -150210',
-    #   b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
-    #   b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
-    # ])
-    # self.assertEqual(codes, {b"DH", b"AEhe", b"CV1"})
+    # Returned platform codes must inclusively contain start/end dates
+    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720',
+    ])
+    self.assertEqual(codes, {b'LX2_2111', b'LX2_2112', b'LX2_2201', b'LX2_2202',
+                             b'ON_1904', b'ON_1905', b'ON_1906', b'ON_1907'})
 
   # def test_excluded_platforms(self):
   #   # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
