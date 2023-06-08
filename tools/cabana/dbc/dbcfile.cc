@@ -37,20 +37,18 @@ void DBCFile::open(const QString &content) {
     m.name = msg.name.c_str();
     m.size = msg.size;
     for (auto &s : msg.sigs) {
-      m.sigs.push_back({});
-      auto &sig = m.sigs.last();
-      sig.name = s.name.c_str();
-      sig.start_bit = s.start_bit;
-      sig.msb = s.msb;
-      sig.lsb = s.lsb;
-      sig.size = s.size;
-      sig.is_signed = s.is_signed;
-      sig.factor = s.factor;
-      sig.offset = s.offset;
-      sig.is_little_endian = s.is_little_endian;
-      sig.updatePrecision();
+      auto sig = m.sigs.emplace_back(new cabana::Signal);
+      sig->name = s.name.c_str();
+      sig->start_bit = s.start_bit;
+      sig->msb = s.msb;
+      sig->lsb = s.lsb;
+      sig->size = s.size;
+      sig->is_signed = s.is_signed;
+      sig->factor = s.factor;
+      sig->offset = s.offset;
+      sig->is_little_endian = s.is_little_endian;
     }
-    m.updateMask();
+    m.update();
   }
   parseExtraInfo(content);
 
@@ -58,7 +56,7 @@ void DBCFile::open(const QString &content) {
 }
 
 bool DBCFile::save() {
-  assert (!filename.isEmpty());
+  assert(!filename.isEmpty());
   if (writeContents(filename)) {
     cleanupAutoSaveFile();
     return true;
@@ -90,41 +88,6 @@ bool DBCFile::writeContents(const QString &fn) {
   return false;
 }
 
-cabana::Signal *DBCFile::addSignal(const MessageId &id, const cabana::Signal &sig) {
-  if (auto m = const_cast<cabana::Msg *>(msg(id.address))) {
-    m->sigs.push_back(sig);
-    m->updateMask();
-    return &m->sigs.last();
-  }
-  return nullptr;
-}
-
- cabana::Signal *DBCFile::updateSignal(const MessageId &id, const QString &sig_name, const cabana::Signal &sig) {
-  if (auto m = const_cast<cabana::Msg *>(msg(id))) {
-    if (auto s = (cabana::Signal *)m->sig(sig_name)) {
-      *s = sig;
-      m->updateMask();
-      return s;
-    }
-  }
-  return nullptr;
-}
-
-cabana::Signal *DBCFile::getSignal(const MessageId &id, const QString &sig_name) {
-  auto m = msg(id);
-  return m ? (cabana::Signal *)m->sig(sig_name) : nullptr;
-}
-
-void DBCFile::removeSignal(const MessageId &id, const QString &sig_name) {
-  if (auto m = const_cast<cabana::Msg *>(msg(id))) {
-    auto it = std::find_if(m->sigs.begin(), m->sigs.end(), [&](auto &s) { return s.name == sig_name; });
-    if (it != m->sigs.end()) {
-      m->sigs.erase(it);
-      m->updateMask();
-    }
-  }
-}
-
 void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
@@ -133,60 +96,17 @@ void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size,
   m.comment = comment;
 }
 
-void DBCFile::removeMsg(const MessageId &id) {
-  msgs.erase(id.address);
-}
-
-QString DBCFile::newMsgName(const MessageId &id) {
-  return QString("NEW_MSG_") + QString::number(id.address, 16).toUpper();
-}
-
-QString DBCFile::newSignalName(const MessageId &id) {
-  auto m = msg(id);
-  assert(m != nullptr);
-
-  QString name;
-  for (int i = 1; /**/; ++i) {
-    name = QString("NEW_SIGNAL_%1").arg(i);
-    if (m->sig(name) == nullptr) break;
-  }
-  return name;
-}
-
-const QList<uint8_t>& DBCFile::mask(const MessageId &id) const {
-  auto m = msg(id);
-  return m ? m->mask : empty_mask;
-}
-
-const cabana::Msg *DBCFile::msg(uint32_t address) const {
+cabana::Msg *DBCFile::msg(uint32_t address) {
   auto it = msgs.find(address);
   return it != msgs.end() ? &it->second : nullptr;
 }
 
-const cabana::Msg* DBCFile::msg(const QString &name) {
-  auto it = std::find_if(msgs.cbegin(), msgs.cend(), [&name](auto &m) { return m.second.name == name; });
-  return it != msgs.cend() ? &(it->second) : nullptr;
+cabana::Msg *DBCFile::msg(const QString &name) {
+  auto it = std::find_if(msgs.begin(), msgs.end(), [&name](auto &m) { return m.second.name == name; });
+  return it != msgs.end() ? &(it->second) : nullptr;
 }
 
-QStringList DBCFile::signalNames() const {
-  // Used for autocompletion
-  QStringList ret;
-  for (auto const& [_, msg] : msgs) {
-    for (auto sig: msg.getSignals()) {
-      ret << sig->name;
-    }
-  }
-  ret.sort();
-  ret.removeDuplicates();
-  return ret;
-}
-
-int DBCFile::signalCount(const MessageId &id) const {
-  if (msgs.count(id.address) == 0) return 0;
-  return msgs.at(id.address).sigs.size();
-}
-
-int DBCFile::signalCount() const {
+int DBCFile::signalCount() {
   return std::accumulate(msgs.cbegin(), msgs.cend(), 0, [](int &n, const auto &m) { return n + m.second.sigs.size(); });
 }
 
@@ -194,8 +114,8 @@ void DBCFile::parseExtraInfo(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
-  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"([^"]*)\";)");
-  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"([^"]*)\";)");
+  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"([^"]*)\"\s*;)");
+  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"([^"]*)\"\s*;)");
   static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
 
   int line_num = 0;
