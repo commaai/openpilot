@@ -35,6 +35,7 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
+common/time.py
 
 common/kalman/.gitignore
 common/kalman/*
