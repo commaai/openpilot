@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <set>
 
 #include "tools/cabana/dbc/dbcfile.h"
@@ -29,26 +30,25 @@ public:
   void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment);
   void removeMsg(const MessageId &id);
 
-  inline QString newMsgName(const MessageId &id) const { return findDBCFile(id)->newMsgName(id); }
-  inline QString newSignalName(const MessageId &id) const { return findDBCFile(id)->newSignalName(id); }
+  QString newMsgName(const MessageId &id);
+  QString newSignalName(const MessageId &id);
+  const QList<uint8_t>& mask(const MessageId &id);
 
-  inline const QList<uint8_t> &mask(const MessageId &id) const { return findDBCFile(id)->mask(id); }
+  const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source);
+  cabana::Msg *msg(const MessageId &id);
+  cabana::Msg* msg(uint8_t source, const QString &name);
+
+  QStringList signalNames();
+  int signalCount(const MessageId &id);
+  int signalCount();
+  int msgCount();
+  int dbcCount();
+  int nonEmptyDBCCount();
+
   const SourceSet sources(const DBCFile *dbc_file) const;
-
-  inline const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source) const { return findDBCFile(source)->getMessages(); }
-  inline const cabana::Msg *msg(const MessageId &id) const { return findDBCFile(id)->msg(id); }
-  inline const cabana::Msg *msg(uint8_t source, const QString &name) const { return findDBCFile(source)->msg(name); }
-
-  QStringList signalNames() const;
-  inline int signalCount(const MessageId &id) const { return findDBCFile(id)->signalCount(id); }
-  int signalCount() const;
-  int msgCount() const;
-  inline int dbcCount() const { return allDBCFiles().size(); }
-  int nonEmptyDBCCount() const;
-
-  DBCFile *findDBCFile(const uint8_t source) const;
-  inline DBCFile *findDBCFile(const MessageId &id) const { return findDBCFile(id.source); }
-  std::set<DBCFile *> allDBCFiles() const;
+  DBCFile *findDBCFile(const uint8_t source);
+  inline DBCFile *findDBCFile(const MessageId &id) { return findDBCFile(id.source); }
+  std::set<DBCFile *> allDBCFiles();
 
 signals:
   void signalAdded(MessageId id, const cabana::Signal *sig);
@@ -59,7 +59,7 @@ signals:
   void DBCFileChanged();
 
 private:
-  mutable std::map<int, std::shared_ptr<DBCFile>> dbc_files;
+  std::map<int, std::shared_ptr<DBCFile>> dbc_files;
 };
 
 DBCManager *dbc();

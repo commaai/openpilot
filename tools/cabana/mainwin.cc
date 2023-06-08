@@ -373,7 +373,7 @@ void MainWindow::eventsMerged() {
 
 void MainWindow::save() {
   // Save all open DBC files
-  for (auto &dbc_file : dbc()->allDBCFiles()) {
+  for (auto dbc_file : dbc()->allDBCFiles()) {
     if (dbc_file->isEmpty()) continue;
     saveFile(dbc_file);
   }
@@ -381,7 +381,7 @@ void MainWindow::save() {
 
 void MainWindow::saveAs() {
   // Save as all open DBC files. Should not be called with more than 1 file open
-  for (auto &dbc_file : dbc()->allDBCFiles()) {
+  for (auto dbc_file : dbc()->allDBCFiles()) {
     if (dbc_file->isEmpty()) continue;
     saveFileAs(dbc_file);
   }
@@ -389,7 +389,7 @@ void MainWindow::saveAs() {
 
 void MainWindow::autoSave() {
   if (!UndoStack::instance()->isClean()) {
-    for (auto &dbc_file : dbc()->allDBCFiles()) {
+    for (auto dbc_file : dbc()->allDBCFiles()) {
       if (!dbc_file->filename.isEmpty()) {
         dbc_file->autoSave();
       }
@@ -398,7 +398,7 @@ void MainWindow::autoSave() {
 }
 
 void MainWindow::cleanupAutoSaveFile() {
-  for (auto &dbc_file : dbc()->allDBCFiles()) {
+  for (auto dbc_file : dbc()->allDBCFiles()) {
     dbc_file->cleanupAutoSaveFile();
   }
 }
@@ -446,7 +446,7 @@ void MainWindow::saveFileAs(DBCFile *dbc_file) {
 
 void MainWindow::saveToClipboard() {
   // Copy all open DBC files to clipboard. Should not be called with more than 1 file open
-  for (auto &dbc_file : dbc()->allDBCFiles()) {
+  for (auto dbc_file : dbc()->allDBCFiles()) {
     if (dbc_file->isEmpty()) continue;
     saveFileToClipboard(dbc_file);
   }
@@ -485,7 +485,7 @@ void MainWindow::updateLoadSaveMenus() {
     bus_menu->addAction(tr("Load DBC From Clipboard..."), [=]() { loadFromClipboard(ss, false); });
 
     // Show sub-menu for each dbc for this source.
-    QString bus_menu_fn;
+    QString file_name = "No DBCs loaded";
     if (auto dbc_file = dbc()->findDBCFile(source)) {
       bus_menu->addSeparator();
       bus_menu->addAction(dbc_file->name() + " (" + toString(dbc()->sources(dbc_file)) + ")")->setEnabled(false);
@@ -494,11 +494,12 @@ void MainWindow::updateLoadSaveMenus() {
       bus_menu->addAction(tr("Copy to Clipboard..."), [=]() { saveFileToClipboard(dbc_file); });
       bus_menu->addAction(tr("Remove from this bus..."), [=]() { closeFile(ss); });
       bus_menu->addAction(tr("Remove from all buses..."), [=]() { closeFile(dbc_file); });
-      bus_menu_fn = dbc_file->name();
+
+      file_name = dbc_file->name();
     }
 
     manage_dbcs_menu->addMenu(bus_menu);
-    bus_menu->setTitle(tr("Bus %1 (%2)").arg(source).arg(bus_menu_fn.isEmpty() ? "No DBCs loaded" : bus_menu_fn));
+    bus_menu->setTitle(tr("Bus %1 (%2)").arg(source).arg(file_name));
   }
 
   QStringList title;

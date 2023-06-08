@@ -24,8 +24,6 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
     for (uint8_t bus : can->sources) {
       cb->addItem(QString::number(bus), bus);
     }
-    cb->model()->sort(0);
-    cb->setCurrentIndex(0);
   }
 
   msg_cb = new QComboBox(this);

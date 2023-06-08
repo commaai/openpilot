@@ -1,10 +1,10 @@
 #pragma once
 
-#include <limits>
 #include <QColor>
 #include <QList>
 #include <QMetaType>
 #include <QString>
+#include <limits>
 
 #include "opendbc/can/common_dbc.h"
 
@@ -52,10 +52,11 @@ class Signal {
 public:
   Signal() = default;
   Signal(const Signal &other) = default;
-  QString formatValue(double value) const;
   bool getValue(const uint8_t *data, size_t data_size, double *val) const;
+  QString formatValue(double value) const;
+  void update();
   bool operator==(const cabana::Signal &other) const;
-  inline bool operator!=(const cabana::Signal &other) { return !(*this == other); }
+  inline bool operator!=(const cabana::Signal &other) const { return !(*this == other); }
 
   enum class Type {
     Normal = 0,
@@ -73,18 +74,12 @@ public:
   QString unit;
   QString comment;
   ValueDescription val_desc;
+  int precision = 0;
+  QColor color;
 
   // Multiplexed
   int multiplex_value = 0;
   Signal *multiplexor = nullptr;
-
-  int precision = 0;
-  QColor color;
-
-private:
-  void update();
-
-  friend class Msg;
 };
 
 class Msg {
@@ -92,9 +87,14 @@ public:
   Msg() = default;
   Msg(const Msg &other) { *this = other; }
   ~Msg();
+  cabana::Signal *addSignal(const cabana::Signal &sig);
+  cabana::Signal *updateSignal(const QString &sig_name, const cabana::Signal &sig);
+  void removeSignal(const QString &sig_name);
   Msg &operator=(const Msg &other);
   int indexOf(const cabana::Signal *sig) const;
-  const cabana::Signal *sig(const QString &sig_name) const;
+  cabana::Signal *sig(const QString &sig_name) const;
+  QString newSignalName();
+  void update();
   inline const std::vector<cabana::Signal *> &getSignals() const { return sigs; }
 
   uint32_t address;
@@ -105,11 +105,6 @@ public:
 
   QList<uint8_t> mask;
   cabana::Signal *multiplexor = nullptr;
-
-private:
-  void update();
-
-  friend class ::DBCFile;
 };
 
 }  // namespace cabana

@@ -6,9 +6,35 @@ uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
 
+// cabana::Msg
+
 cabana::Msg::~Msg() {
   for (auto s : sigs) {
     delete s;
+  }
+}
+
+cabana::Signal *cabana::Msg::addSignal(const cabana::Signal &sig) {
+  auto s = sigs.emplace_back(new cabana::Signal(sig));
+  update();
+  return s;
+}
+
+cabana::Signal *cabana::Msg::updateSignal(const QString &sig_name, const cabana::Signal &new_sig) {
+  auto s = sig(sig_name);
+  if (s) {
+    *s = new_sig;
+    update();
+  }
+  return s;
+}
+
+void cabana::Msg::removeSignal(const QString &sig_name) {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
+  if (it != sigs.end()) {
+    delete *it;
+    sigs.erase(it);
+    update();
   }
 }
 
@@ -28,8 +54,8 @@ cabana::Msg &cabana::Msg::operator=(const cabana::Msg &other) {
   return *this;
 }
 
-const cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
-  auto it = std::find_if(sigs.cbegin(), sigs.cend(), [&](auto &s) { return s->name == sig_name; });
+cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
   return it != sigs.end() ? *it : nullptr;
 }
 
@@ -38,6 +64,15 @@ int cabana::Msg::indexOf(const cabana::Signal *sig) const {
     if (sigs[i] == sig) return i;
   }
   return -1;
+}
+
+QString cabana::Msg::newSignalName() {
+  QString new_name;
+  for (int i = 1; /**/; ++i) {
+    new_name = QString("NEW_SIGNAL_%1").arg(i);
+    if (sig(new_name) == nullptr) break;
+  }
+  return new_name;
 }
 
 void cabana::Msg::update() {
@@ -96,7 +131,7 @@ void cabana::Signal::update() {
 
 QString cabana::Signal::formatValue(double value) const {
   // Show enum string
-  for (auto &[val, desc] : val_desc) {
+  for (const auto &[val, desc] : val_desc) {
     if (std::abs(value - val) < 1e-6) {
       return desc;
     }

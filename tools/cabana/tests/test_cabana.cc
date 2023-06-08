@@ -82,7 +82,7 @@ BO_ 162 message_1: 8 XXX
 
 VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
-CM_ BO_ 160 "message comment";
+CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
 CM_ SG_ 160 signal_2 "multiple line comment
 1
@@ -98,7 +98,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs.size() == 2);
   REQUIRE(file.msg("message_1") != nullptr);
 
-  auto &sig_1 = msg->sigs[0];
+  auto sig_1 = msg->sigs[0];
   REQUIRE(sig_1->name == "signal_1");
   REQUIRE(sig_1->start_bit == 0);
   REQUIRE(sig_1->size == 12);
