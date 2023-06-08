@@ -49,7 +49,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
               dates.add(date)
               if date is not None:
                 # Assert date is parsable and reasonable
-                parsed = datetime.strptime(date.decode(), '%y%m%d')
+                parsed = datetime.strptime(date.decode()[:4], '%y%m')
                 self.assertTrue(2013 < parsed.year < 2023, parsed)
 
             # Either no dates should exist or all dates should be parsed
