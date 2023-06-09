@@ -77,6 +77,7 @@ MainWindow::MainWindow() : QMainWindow() {
 }
 
 void MainWindow::createActions() {
+  // File menu
   QMenu *file_menu = menuBar()->addMenu(tr("&File"));
   file_menu->addAction(tr("Open Stream..."), this, &MainWindow::openStream);
   close_stream_act = file_menu->addAction(tr("Close stream"), this, &MainWindow::closeStream);
@@ -124,6 +125,7 @@ void MainWindow::createActions() {
   file_menu->addSeparator();
   file_menu->addAction(tr("E&xit"), qApp, &QApplication::closeAllWindows)->setShortcuts(QKeySequence::Quit);
 
+  // Edit Menu
   QMenu *edit_menu = menuBar()->addMenu(tr("&Edit"));
   auto undo_act = UndoStack::instance()->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
@@ -138,14 +140,22 @@ void MainWindow::createActions() {
   commands_act->setDefaultWidget(new QUndoView(UndoStack::instance()));
   commands_menu->addAction(commands_act);
 
-  edit_menu->addSeparator();
-  edit_menu->addAction(tr("Reset Window Layout"),
-                       [this]() { restoreState(default_state); });
+  // View Menu
+  QMenu *view_menu = menuBar()->addMenu(tr("&View"));
+  auto act = view_menu->addAction(tr("Full Screen"), this, &MainWindow::toggleFullScreen, QKeySequence::FullScreen);
+  addAction(act);
+  view_menu->addSeparator();
+  view_menu->addAction(messages_dock->toggleViewAction());
+  view_menu->addAction(video_dock->toggleViewAction());
+  view_menu->addSeparator();
+  view_menu->addAction(tr("Reset Window Layout"), [this]() { restoreState(default_state); });
 
+  // Tools Menu
   tools_menu = menuBar()->addMenu(tr("&Tools"));
   tools_menu->addAction(tr("Find &Similar Bits"), this, &MainWindow::findSimilarBits);
   tools_menu->addAction(tr("&Find Signal"), this, &MainWindow::findSignal);
 
+  // Help Menu
   QMenu *help_menu = menuBar()->addMenu(tr("&Help"));
   help_menu->addAction(tr("Help"), this, &MainWindow::onlineHelp)->setShortcuts(QKeySequence::HelpContents);
   help_menu->addAction(tr("About &Qt"), qApp, &QApplication::aboutQt);
@@ -155,13 +165,13 @@ void MainWindow::createDockWindows() {
   messages_dock = new QDockWidget(tr("MESSAGES"), this);
   messages_dock->setObjectName("MessagesPanel");
   messages_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-  messages_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+  messages_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
   addDockWidget(Qt::LeftDockWidgetArea, messages_dock);
 
   video_dock = new QDockWidget("", this);
   video_dock->setObjectName(tr("VideoPanel"));
   video_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
+  video_dock->setFeatures(QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
   addDockWidget(Qt::RightDockWidgetArea, video_dock);
 }
 
@@ -206,8 +216,6 @@ void MainWindow::createStatusBar() {
 void MainWindow::createShortcuts() {
   auto shortcut = new QShortcut(QKeySequence(Qt::Key_Space), this, nullptr, nullptr, Qt::ApplicationShortcut);
   QObject::connect(shortcut, &QShortcut::activated, []() { can->pause(!can->isPaused()); });
-  shortcut = new QShortcut(QKeySequence(QKeySequence::FullScreen), this, nullptr, nullptr, Qt::ApplicationShortcut);
-  QObject::connect(shortcut, &QShortcut::activated, this, &MainWindow::toggleFullScreen);
   // TODO: add more shortcuts here.
 }
 
