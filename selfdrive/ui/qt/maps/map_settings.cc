@@ -206,6 +206,7 @@ void MapPanel::refresh() {
   prev_destinations = cur_destinations;
   clear();
 
+  // add favorites before recents
   bool has_recents = false;
   for (auto &save_type: {"favorite", "recent"}) {
     for (auto location : doc.array()) {
