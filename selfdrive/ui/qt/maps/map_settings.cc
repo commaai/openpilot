@@ -15,6 +15,8 @@ static QString shorten(const QString &str, int max_len) {
 MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
   setContentsMargins(36, 36, 36, 36);
 
+  QStackedLayout *stack = new QStackedLayout(this);
+
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(20);
@@ -118,6 +120,38 @@ MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
   main_layout->addWidget(recent_scroller);
+
+  // No prime upsell
+  QWidget * no_prime_widget = new QWidget;
+  {
+    QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
+    QLabel *signup_header = new QLabel(tr("Try the Navigation Beta"));
+    signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
+    signup_header->setAlignment(Qt::AlignCenter);
+
+    no_prime_layout->addWidget(signup_header);
+    no_prime_layout->addSpacing(50);
+
+    QLabel *screenshot = new QLabel;
+    QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
+    screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
+    no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
+
+    QLabel *signup = new QLabel(tr("Get turn-by-turn directions displayed and more with a comma\nprime subscription. Sign up now: https://connect.comma.ai"));
+    signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
+    signup->setAlignment(Qt::AlignCenter);
+
+    no_prime_layout->addSpacing(20);
+    no_prime_layout->addWidget(signup);
+    no_prime_layout->addStretch();
+  }
+
+  stack->addWidget(main_widget);
+  stack->addWidget(no_prime_widget);
+  connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
+    stack->setCurrentIndex(prime_type ? 0 : 1);
+  });
+
 
   // TODO: remove this
   cur_destinations = R"([
