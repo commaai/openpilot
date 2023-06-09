@@ -21,7 +21,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   // Home & Work layout
   QHBoxLayout *home_work_layout = new QHBoxLayout;
-  home_work_layout->setSpacing(50);
   {
     // Home
     QHBoxLayout *home_layout = new QHBoxLayout;
@@ -36,7 +35,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     home_layout->addWidget(home_address);
 
     home_layout->addStretch();
-    home_work_layout->addLayout(home_layout, 1);
+
 
     // Work
     QHBoxLayout *work_layout = new QHBoxLayout;
@@ -51,6 +50,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     work_layout->addWidget(work_address);
 
     work_layout->addStretch();
+
+    home_work_layout->addLayout(home_layout, 1);
+    home_work_layout->addSpacing(50);
     home_work_layout->addLayout(work_layout, 1);
   }
 
