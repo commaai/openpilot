@@ -332,7 +332,7 @@ class Controls:
     if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
       if not_running != self.not_running_prev:
-        cloudlog.event("process_not_running", not_running=not_running)
+        cloudlog.event("process_not_running", not_running=not_running, error=True)
       self.not_running_prev = not_running
     else:
       if not SIMULATION and not self.rk.lagging:
