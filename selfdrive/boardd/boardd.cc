@@ -94,7 +94,7 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
       }
     }
   } else if (dir == SyncTimeDir::FROM_PANDA) {
-    LOGW("System time: %s RTC time: %s", get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+    LOGW("System time: %s, RTC time: %s", get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
 
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
       const struct timeval tv = {mktime(&rtc_time), 0};
