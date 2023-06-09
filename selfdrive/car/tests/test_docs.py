@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from contextlib import redirect_stdout
 import os
 import re
 import unittest
@@ -28,11 +27,10 @@ class TestCarDocs(unittest.TestCase):
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
 
   def test_docs_diff(self):
-    with redirect_stdout(None):
-      dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
-      dump_car_info(dump_path)
-      print_car_info_diff(dump_path)
-      os.remove(dump_path)
+    dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+    dump_car_info(dump_path)
+    print_car_info_diff(dump_path)
+    os.remove(dump_path)
 
   def test_duplicate_years(self):
     make_model_years = defaultdict(list)
