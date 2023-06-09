@@ -164,10 +164,16 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, hud_control, cruise
 
   values["LKAS_ACTIVE"] = 1  # Show LKAS lane lines
 
-  values["LKAS_Dash_State"] = 0 if not cruise_on else (1 if not enabled else 2)
+  values["LKAS_Dash_State"] = 0 if not cruise_on else (2 if enabled else 1)
 
-  values["LKAS_Left_Line_Visible"] = int(hud_control.leftLaneVisible)
-  values["LKAS_Right_Line_Visible"] = int(hud_control.rightLaneVisible)
+  values["LKAS_Left_Line_Enable"] = int(hud_control.leftLaneVisible)
+  values["LKAS_Right_Line_Enable"] = int(hud_control.rightLaneVisible)
+
+  values["LKAS_Left_Line_Light_Blink"] = int(hud_control.leftLaneDepart)
+  values["LKAS_Right_Line_Light_Blink"] = int(hud_control.rightLaneDepart)
+
+  values["LKAS_Left_Line_Visible"] = cruise_on
+  values["LKAS_Right_Line_Visible"] = cruise_on
 
   return packer.make_can_msg("ES_LKAS_State", 0, values)
 
@@ -232,12 +238,12 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, hud_contr
     values["LKAS_State_Msg"] = 0
 
   if enabled and long_active:
-    values["Cruise_State"] = 2
     values["Car_Follow"] = int(hud_control.leadVisible)
     values["Cruise_Fault"] = 0
 
   values["Cruise_Activated"] = enabled
   values["Cruise_Disengaged"] = not enabled
+  values["Cruise_State"] = 2 if (cruise_on and not enabled) else 0
   values["Conventional_Cruise"] = False
   values["Cruise_On"] = cruise_on
   values["Cruise_Set_Speed"] = hud_control.setSpeed * CV.MS_TO_MPH if hud_control.speedVisible else 0 # TODO: handle kph on dash
