@@ -47,7 +47,7 @@ procs = [
   NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"], enabled=False),
   NativeProcess("sensord", "system/sensord", ["./sensord"], enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], offroad=True, watchdog_max_dt=(5 if not PC else None)),
-  NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"], offroad=True),
+  NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"]),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"]),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),

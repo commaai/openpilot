@@ -273,7 +273,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s.name).hasMatch(); });
+        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
         break;
       }
       case Column::SOURCE:

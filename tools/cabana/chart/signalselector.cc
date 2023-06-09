@@ -91,7 +91,7 @@ void SignalSelector::updateAvailableList(int index) {
 }
 
 void SignalSelector::addItemToList(QListWidget *parent, const MessageId id, const cabana::Signal *sig, bool show_msg_name) {
-  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(getColor(sig).name(), sig->name);
+  QString text = QString("<span style=\"color:%0;\">■ </span> %1").arg(sig->color.name(), sig->name);
   if (show_msg_name) text += QString(" <font color=\"gray\">%0 %1</font>").arg(msgName(id), id.toString());
 
   QLabel *label = new QLabel(text);

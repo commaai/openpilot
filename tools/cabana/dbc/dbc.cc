@@ -1,32 +1,96 @@
 #include "tools/cabana/dbc/dbc.h"
+
 #include "tools/cabana/util.h"
 
 uint qHash(const MessageId &item) {
   return qHash(item.source) ^ qHash(item.address);
 }
 
-std::vector<const cabana::Signal*> cabana::Msg::getSignals() const {
-  std::vector<const Signal*> ret;
-  ret.reserve(sigs.size());
-  for (auto &sig : sigs) ret.push_back(&sig);
-  std::sort(ret.begin(), ret.end(), [](auto l, auto r) {
-    if (l->start_bit != r->start_bit) {
-      return l->start_bit < r->start_bit;
-    }
-    // For VECTOR__INDEPENDENT_SIG_MSG, many signals have same start bit
-    return l->name < r->name;
-  });
-  return ret;
+// cabana::Msg
+
+cabana::Msg::~Msg() {
+  for (auto s : sigs) {
+    delete s;
+  }
 }
 
-void cabana::Msg::updateMask() {
+cabana::Signal *cabana::Msg::addSignal(const cabana::Signal &sig) {
+  auto s = sigs.emplace_back(new cabana::Signal(sig));
+  update();
+  return s;
+}
+
+cabana::Signal *cabana::Msg::updateSignal(const QString &sig_name, const cabana::Signal &new_sig) {
+  auto s = sig(sig_name);
+  if (s) {
+    *s = new_sig;
+    update();
+  }
+  return s;
+}
+
+void cabana::Msg::removeSignal(const QString &sig_name) {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
+  if (it != sigs.end()) {
+    delete *it;
+    sigs.erase(it);
+    update();
+  }
+}
+
+cabana::Msg &cabana::Msg::operator=(const cabana::Msg &other) {
+  address = other.address;
+  name = other.name;
+  size = other.size;
+  comment = other.comment;
+
+  for (auto s : sigs) delete s;
+  sigs.clear();
+  for (auto s : other.sigs) {
+    sigs.push_back(new cabana::Signal(*s));
+  }
+
+  update();
+  return *this;
+}
+
+cabana::Signal *cabana::Msg::sig(const QString &sig_name) const {
+  auto it = std::find_if(sigs.begin(), sigs.end(), [&](auto &s) { return s->name == sig_name; });
+  return it != sigs.end() ? *it : nullptr;
+}
+
+int cabana::Msg::indexOf(const cabana::Signal *sig) const {
+  for (int i = 0; i < sigs.size(); ++i) {
+    if (sigs[i] == sig) return i;
+  }
+  return -1;
+}
+
+QString cabana::Msg::newSignalName() {
+  QString new_name;
+  for (int i = 1; /**/; ++i) {
+    new_name = QString("NEW_SIGNAL_%1").arg(i);
+    if (sig(new_name) == nullptr) break;
+  }
+  return new_name;
+}
+
+void cabana::Msg::update() {
   mask = QVector<uint8_t>(size, 0x00).toList();
+  // sort signals
+  std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) {
+    return std::tie(l->start_bit, l->name) < std::tie(r->start_bit, r->name);
+  });
+
   for (auto &sig : sigs) {
-    int i = sig.msb / 8;
-    int bits = sig.size;
+    sig->update();
+
+    // update mask
+    int i = sig->msb / 8;
+    int bits = sig->size;
     while (i >= 0 && i < size && bits > 0) {
-      int lsb = (int)(sig.lsb / 8) == i ? sig.lsb : i * 8;
-      int msb = (int)(sig.msb / 8) == i ? sig.msb : (i + 1) * 8 - 1;
+      int lsb = (int)(sig->lsb / 8) == i ? sig->lsb : i * 8;
+      int msb = (int)(sig->msb / 8) == i ? sig->msb : (i + 1) * 8 - 1;
 
       int sz = msb - lsb + 1;
       int shift = (lsb - (i * 8));
@@ -34,18 +98,27 @@ void cabana::Msg::updateMask() {
       mask[i] |= ((1ULL << sz) - 1) << shift;
 
       bits -= size;
-      i = sig.is_little_endian ? i - 1 : i + 1;
+      i = sig->is_little_endian ? i - 1 : i + 1;
     }
   }
 }
 
-void cabana::Signal::updatePrecision() {
+// cabana::Signal
+
+void cabana::Signal::update() {
+  float h = 19 * (float)lsb / 64.0;
+  h = fmod(h, 1.0);
+  size_t hash = qHash(name);
+  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
+  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+
+  color = QColor::fromHsvF(h, s, v);
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
 QString cabana::Signal::formatValue(double value) const {
   // Show enum string
-  for (auto &[val, desc] : val_desc) {
+  for (const auto &[val, desc] : val_desc) {
     if (std::abs(value - val) < 1e-6) {
       return desc;
     }
