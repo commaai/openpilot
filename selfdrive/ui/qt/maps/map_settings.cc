@@ -17,7 +17,8 @@ MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
 
   QStackedLayout *stack = new QStackedLayout(this);
 
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  QWidget *main_widget = new QWidget;
+  QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(20);
 
