@@ -86,7 +86,7 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
                              b'ON-1904', b'ON-1905', b'ON-1906', b'ON-1907'})
 
   def test_excluded_platforms_new(self):
-    # Asserts a list of platforms that will not fuzzy fingerprint due to shared platform codes
+    # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms and detect features
     excluded_platforms = {
       CAR.GENESIS_G70,

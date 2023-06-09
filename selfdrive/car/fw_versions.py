@@ -81,52 +81,34 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
         for platform_code in config.fuzzy_get_platform_codes(fws):
           all_platform_codes[(addr[1], addr[2], platform_code)].append(candidate)
 
-  # TODO: we really want to support both ways of fuzzy FP, but we don't want to partially match with both.
-  #  meaning we get one radar platform code match, no camera platform code match, and a random exact FW ECU match.
-  #  when matching with platform codes, it should be all ECUs specified in the config
-  #  and if we don't match all ECUs with platform codes, we should fall back on normal full FW fuzzy matching, not mixing both
-  #  UPDATE: i'm reframing this such that fuzzy FP adds matches, not replaces any logic or matches or minimum count.
-  #  makes it easier to understand/less complex and doesn't try to fix general issues with fuzzy FP by masking over it
-  #  by splitting up fuzzy FP into exact matching vs. platform code matching. that should be handled explicitly.
-  #  there may be issues with this approach, but they weren't already there, and this PR is trying to do a lot already
-  def fuzzy_match(use_config):
-    matched_ecus = set()
-    candidate = None
-    for addr, versions in fw_versions_dict.items():
-      ecu_key = (addr[0], addr[1])
-      for version in versions:
-        candidates = set()
-        if use_config:
-          # Returns one or none, all cars that have this platform code
-          for platform_code in config.fuzzy_get_platform_codes([version]):
-            candidates = all_platform_codes[(*ecu_key, platform_code)]
-        else:
-          # All cars that have this FW response on the specified address
-          candidates = all_fw_versions[(*ecu_key, version)]
+  matched_ecus = set()
+  candidate = None
+  for addr, versions in fw_versions_dict.items():
+    ecu_key = (addr[0], addr[1])
+    for version in versions:
+      # All cars that have this FW response on the specified address
+      candidates = all_fw_versions[(*ecu_key, version)]
 
-        if len(candidates) == 1:
-          matched_ecus.add(ecu_key)
-          if candidate is None:
-            candidate = candidates[0]
-          # We uniquely matched two different cars. No fuzzy match possible
-          elif candidate != candidates[0]:
-            return None, matched_ecus
+      # If not one candidate for this ECU and version, try platform codes + dates
+      if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
+        # Returns one or none, all cars that have this platform code
+        for platform_code in config.fuzzy_get_platform_codes([version]):
+          candidates = all_platform_codes[(*ecu_key, platform_code)]
 
-    return candidate, matched_ecus
+      if len(candidates) == 1:
+        matched_ecus.add(ecu_key)
+        if candidate is None:
+          candidate = candidates[0]
+        # We uniquely matched two different cars. No fuzzy match possible
+        elif candidate != candidates[0]:
+          return set()
 
-  # Try to fuzzy fingerprint both with and without platform codes independently
-  for use_config in {config.fuzzy_get_platform_codes is not None}:
-    candidate, matched_ecus = fuzzy_match(use_config)
-
-    if candidate is None:
-      continue
-
-    # Note that it is possible to match to a candidate without all its ECUs being present
-    # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
-    if len(matched_ecus) >= config.fuzzy_min_match_count:
-      if log:
-        cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
-      return {candidate}
+  # Note that it is possible to match to a candidate without all its ECUs being present
+  # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
+  if len(matched_ecus) >= config.fuzzy_min_match_count:
+    if log:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
+    return {candidate}
 
   return set()
 
