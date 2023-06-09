@@ -284,7 +284,6 @@ void MapPanel::refresh() {
         has_recents = true;
       }
     }
-
   }
 
   if (!has_recents) {
