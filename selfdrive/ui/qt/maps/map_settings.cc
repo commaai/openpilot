@@ -208,7 +208,7 @@ void MapPanel::refresh() {
 
   // add favorites before recents
   bool has_recents = false;
-  for (auto &save_type: {"favorite", "recent"}) {
+  for (auto &save_type: {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto location : doc.array()) {
       auto obj = location.toObject();
 
@@ -219,7 +219,7 @@ void MapPanel::refresh() {
 
       if (type != save_type) continue;
 
-      if (type == "favorite" && label == "home") {
+      if (type == NAV_TYPE_FAVORITE && label == NAV_FAVORITE_LABEL_HOME) {
         home_address->setText(name);
         home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
@@ -227,7 +227,7 @@ void MapPanel::refresh() {
           navigateTo(obj);
           emit closeSettings();
         });
-      } else if (type == "favorite" && label == "work") {
+      } else if (type == NAV_TYPE_FAVORITE && label == NAV_FAVORITE_LABEL_WORK) {
         work_address->setText(name);
         work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
@@ -245,7 +245,7 @@ void MapPanel::refresh() {
         sp.setRetainSizeWhenHidden(true);
         star->setSizePolicy(sp);
 
-        star->setVisible(type == "favorite");
+        star->setVisible(type == NAV_TYPE_FAVORITE);
         star->setStyleSheet(R"(font-size: 60px;)");
         layout->addWidget(star);
         layout->addSpacing(10);

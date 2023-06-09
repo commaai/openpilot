@@ -11,6 +11,12 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
+const QString NAV_TYPE_FAVORITE = "favorite";
+const QString NAV_TYPE_RECENT = "recent";
+
+const QString NAV_FAVORITE_LABEL_HOME = "home";
+const QString NAV_FAVORITE_LABEL_WORK = "work";
+
 class MapPanel : public QWidget {
   Q_OBJECT
 public:
