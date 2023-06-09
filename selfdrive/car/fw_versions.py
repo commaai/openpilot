@@ -86,15 +86,11 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
   for addr, versions in fw_versions_dict.items():
     ecu_key = (addr[0], addr[1])
     for version in versions:
-      # Fall back to matching with full FW versions if brand does not implement platform codes
-      candidates = set()
-      # TODO: we might want to try both, the only reason we'd want to replace exact with platform codes is if
-      # previous function was giving us false positives, which it isn't. we lose fuzzy FP for a lot of platforms
-      # with just platform codes on two ECUs...
-      if config.fuzzy_get_platform_codes is None:
-        # All cars that have this FW response on the specified address
-        candidates = all_fw_versions[(*ecu_key, version)]
-      else:
+      # All cars that have this FW response on the specified address
+      candidates = all_fw_versions[(*ecu_key, version)]
+
+      # If no exact FW matches, try brand-specific fuzzy fingerprinting
+      if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
         # Returns one or none, all cars that have this platform code
         for platform_code in config.fuzzy_get_platform_codes([version]):
           candidates = all_platform_codes[(*ecu_key, platform_code)]
