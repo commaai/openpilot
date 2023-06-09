@@ -11,7 +11,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from tools.joystick.bodyav import BodyMic, BodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
+from tools.joystick.bodyav import BodyMic, EncodedBodyVideo, WebClientSpeaker, force_codec, play_sound, MediaBlackhole
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
@@ -142,8 +142,8 @@ async def offer(request):
       elif track.kind == "video":
         await blackhole.stop()
 
-  video_sender = pc.addTrack(BodyVideo(request.app))
-  force_codec(pc, video_sender)
+  video_sender = pc.addTrack(EncodedBodyVideo())
+  force_codec(pc, video_sender, forced_codec='video/H264')
   _ = pc.addTrack(BodyMic())
 
   await pc.setRemoteDescription(offer)

@@ -7,12 +7,10 @@ import pyaudio
 import wave
 
 from aiortc.contrib.media import MediaBlackhole
-from aiortc.mediastreams import VideoStreamTrack, AudioStreamTrack, MediaStreamError
+from aiortc.mediastreams import AudioStreamTrack, MediaStreamError
 from aiortc.rtcrtpsender import RTCRtpSender
-from av import VideoFrame, CodecContext, Packet
+from av import CodecContext, Packet
 from pydub import AudioSegment
-
-from cereal.visionipc import VisionIpcClient, VisionStreamType
 
 
 IMG_H_ORIG, IMG_W_ORIG = 604*2, 964*2
@@ -27,12 +25,6 @@ SOUNDS = {
   'error': '../../selfdrive/assets/sounds/warning_immediate.wav',
 }
 
-def get_yuv(buf, w, h, stride, uv_offset):
-  y = np.array(buf[:uv_offset], dtype=np.uint8).reshape((-1, stride))[:h, :w]
-  u = np.array(buf[uv_offset::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
-  v = np.array(buf[uv_offset+1::2], dtype=np.uint8).reshape((-1, stride//2))[:h//2, :w//2]
-  return y, u, v
-
 def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
   codec = [codec for codec in codecs if codec.mimeType == forced_codec]
@@ -41,40 +33,52 @@ def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   transceiver.setCodecPreferences(codec)
 
 
-class BodyVideo(VideoStreamTrack):
-  def __init__(self, app):
+import fractions
+import time
+from typing import Tuple
+import cereal.messaging as messaging
+from aiortc.mediastreams import (
+    VIDEO_CLOCK_RATE,
+    VIDEO_PTIME,
+    VIDEO_TIME_BASE,
+    AudioStreamTrack,
+    MediaStreamTrack,
+    VideoStreamTrack,
+)
+
+class EncodedVideoStream(MediaStreamTrack):
+  kind = "video"
+
+  _start: float
+  _timestamp: int
+
+  def __init__(self):
     super().__init__()
-    self.vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
-    self.app = app
+    sock_name = 'driverEncodeData'
+    messaging.context = messaging.Context()
+    self.sock = messaging.sub_sock(sock_name, None, conflate=True)
 
-  async def recv(self):
-    if os.environ.get('FAKE_CAMERA') == '1':
-      frame = VideoFrame.from_ndarray(np.zeros((int(IMG_H * 1.5), IMG_W), np.uint8), format="yuv420p")
-      time.sleep(0.05)
-    else:
-      if not self.vipc_client.is_connected():
-        self.vipc_client.connect(True)
-      yuv_img_raw = self.vipc_client.recv()
-      if yuv_img_raw is None or not yuv_img_raw.any():
-        frame = VideoFrame.from_ndarray(np.zeros((int(self.vipc_client.height * 1.5), self.vipc_client.width), np.uint8), format="yuv420p")
-      else:
-        y, u, v = get_yuv(yuv_img_raw, self.vipc_client.width, self.vipc_client.height, self.vipc_client.stride, self.vipc_client.uv_offset)
-        yuv[:IMG_W * IMG_H] = y[::DOWNSCALE, ::DOWNSCALE].flatten()
-        yuv[IMG_W * IMG_H : (5 * IMG_W * IMG_H) // 4] = u[::DOWNSCALE, ::DOWNSCALE].flatten()
-        yuv[(5 * IMG_W * IMG_H) // 4:] = v[::DOWNSCALE, ::DOWNSCALE].flatten()
-        frame = VideoFrame.from_ndarray(yuv.reshape(((int(IMG_H * 1.5), IMG_W))), format="yuv420p")
+  # TODO I have no idea what this does and if it's right
+  async def next_timestamp(self) -> Tuple[int, fractions.Fraction]:
+        if hasattr(self, "_timestamp"):
+            self._timestamp += int((1/20) * VIDEO_CLOCK_RATE)
+            wait = self._start + (self._timestamp / VIDEO_CLOCK_RATE) - time.time()
+            await asyncio.sleep(wait)
+        else:
+            self._start = time.time()
+            self._timestamp = 0
+        return self._timestamp, VIDEO_TIME_BASE
 
-        # rgb = np.dstack((y, y, y))
-        # cropped = get_crop(rgb)
-        # res = run_inference(ort_session, cropped)
-        # print(res)
-        # # cropped = annotate_img(cropped, res)
-        # frame = VideoFrame.from_ndarray(cropped, format="rgb24")
-
+  async def recv(self) -> Packet:
     pts, time_base = await self.next_timestamp()
-    frame.pts = pts
-    frame.time_base = time_base
-    return frame
+    msg = messaging.recv_one(self.sock)
+    evta = getattr(msg, msg.which())
+    packet = Packet(len(evta.header + evta.data))
+    packet.update(bytes(evta.header + evta.data))
+
+    packet.time_base = time_base
+    packet.pts = pts
+    return packet
 
 
 class WebClientSpeaker(MediaBlackhole):
