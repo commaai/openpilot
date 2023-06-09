@@ -83,6 +83,10 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
 
   matched_ecus = set()
   candidate = None
+  # TODO: we really want to support both ways of fuzzy FP, but we don't want to partially match with both.
+  #  meaning we get one radar platform code match, no camera platform code match, and a random exact FW ECU match.
+  #  when matching with platform codes, it should be all ECUs specified in the config
+  #  and if we don't match all ECUs with platform codes, we should fall back on normal full FW fuzzy matching, not mixing both
   for addr, versions in fw_versions_dict.items():
     ecu_key = (addr[0], addr[1])
     for version in versions:
