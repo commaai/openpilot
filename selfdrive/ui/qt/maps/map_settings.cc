@@ -13,41 +13,43 @@ static QString shorten(const QString &str, int max_len) {
 }
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
-  stack = new QStackedWidget;
+  QStackedLayout *stack = new QStackedLayout(this);
 
-  QWidget * main_widget = new QWidget;
+  QWidget *main_widget = new QWidget;
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   const int icon_size = 200;
 
-  // Home
-  QHBoxLayout *home_layout = new QHBoxLayout;
-  home_button = new QPushButton;
-  home_button->setIconSize(QSize(icon_size, icon_size));
-  home_layout->addWidget(home_button);
-
-  home_address = new QLabel;
-  home_address->setWordWrap(true);
-  home_layout->addSpacing(30);
-  home_layout->addWidget(home_address);
-  home_layout->addStretch();
-
-  // Work
-  QHBoxLayout *work_layout = new QHBoxLayout;
-  work_button = new QPushButton;
-  work_button->setIconSize(QSize(icon_size, icon_size));
-  work_layout->addWidget(work_button);
-
-  work_address = new QLabel;
-  work_address->setWordWrap(true);
-  work_layout->addSpacing(30);
-  work_layout->addWidget(work_address);
-  work_layout->addStretch();
-
   // Home & Work layout
   QHBoxLayout *home_work_layout = new QHBoxLayout;
-  home_work_layout->addLayout(home_layout, 1);
-  home_work_layout->addSpacing(50);
-  home_work_layout->addLayout(work_layout, 1);
+  {
+    // Home
+    QHBoxLayout *home_layout = new QHBoxLayout;
+    home_button = new QPushButton;
+    home_button->setIconSize(QSize(icon_size, icon_size));
+    home_layout->addWidget(home_button);
+
+    home_address = new QLabel;
+    home_address->setWordWrap(true);
+    home_layout->addSpacing(30);
+    home_layout->addWidget(home_address);
+    home_layout->addStretch();
+
+    // Work
+    QHBoxLayout *work_layout = new QHBoxLayout;
+    work_button = new QPushButton;
+    work_button->setIconSize(QSize(icon_size, icon_size));
+    work_layout->addWidget(work_button);
+
+    work_address = new QLabel;
+    work_address->setWordWrap(true);
+    work_layout->addSpacing(30);
+    work_layout->addWidget(work_address);
+    work_layout->addStretch();
+
+    home_work_layout->addLayout(home_layout, 1);
+    home_work_layout->addSpacing(50);
+    home_work_layout->addLayout(work_layout, 1);
+  }
 
   main_layout->addLayout(home_work_layout);
   main_layout->addSpacing(20);
@@ -118,9 +120,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
     stack->setCurrentIndex(prime_type ? 0 : 1);
   });
-
-  QVBoxLayout *wrapper = new QVBoxLayout(this);
-  wrapper->addWidget(stack);
 
 
   clear();
