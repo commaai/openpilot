@@ -154,7 +154,6 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
   if allow_exact:
     exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
-    # Try first with standard fuzzy fingerprinting, then with config
     exact_matches.append((False, match_fw_to_car_fuzzy))
 
   for exact_match, match_func in exact_matches:
