@@ -29,8 +29,6 @@ NAV_FRAMES = 50
 NO_NAV = "NO_NAV" in os.environ
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
-VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
-               "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
 def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
