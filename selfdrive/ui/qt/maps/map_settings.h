@@ -10,7 +10,6 @@
 #include <QStackedWidget>
 
 #include "common/params.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
 
 class MapPanel : public QFrame {
   Q_OBJECT
@@ -27,13 +26,15 @@ private:
   void refresh();
 
   Params params;
-  QString prev_destinations, cur_destinations;
-  QStackedWidget *stack;
+  bool invalidated;
+  QString cur_destinations;
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
   QVBoxLayout *recent_layout;
   QWidget *current_widget;
-  ButtonControl *current_route;
+  QLabel *current_route;
+
+  const int ICON_SIZE = 200;
 
 signals:
   void closeSettings();

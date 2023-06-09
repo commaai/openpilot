@@ -7,8 +7,6 @@ QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
   line->setStyleSheet(R"(
-    margin-left: 40px;
-    margin-right: 40px;
     border-width: 1px;
     border-bottom-style: solid;
     border-color: gray;
