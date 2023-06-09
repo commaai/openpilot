@@ -23,32 +23,27 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QHBoxLayout *home_work_layout = new QHBoxLayout;
   {
     // Home
-    QHBoxLayout *home_layout = new QHBoxLayout;
-
     home_button = new QPushButton;
     home_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
-    home_layout->addWidget(home_button);
-
     home_address = new QLabel;
     home_address->setWordWrap(true);
+
+    QHBoxLayout *home_layout = new QHBoxLayout;
+    home_layout->addWidget(home_button);
     home_layout->addSpacing(30);
     home_layout->addWidget(home_address);
-
     home_layout->addStretch();
 
-
     // Work
-    QHBoxLayout *work_layout = new QHBoxLayout;
-
     work_button = new QPushButton;
     work_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
-    work_layout->addWidget(work_button);
-
     work_address = new QLabel;
     work_address->setWordWrap(true);
+
+    QHBoxLayout *work_layout = new QHBoxLayout;
+    work_layout->addWidget(work_button);
     work_layout->addSpacing(30);
     work_layout->addWidget(work_address);
-
     work_layout->addStretch();
 
     home_work_layout->addLayout(home_layout, 1);
