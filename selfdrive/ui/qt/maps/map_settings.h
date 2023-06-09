@@ -11,6 +11,8 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
+const int MAP_PANEL_ICON_SIZE = 200;
+
 const QString NAV_TYPE_FAVORITE = "favorite";
 const QString NAV_TYPE_RECENT = "recent";
 

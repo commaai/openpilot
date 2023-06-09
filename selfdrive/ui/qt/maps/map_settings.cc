@@ -17,44 +17,45 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   QWidget *main_widget = new QWidget;
   QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
-  const int icon_size = 200;
+  main_layout->setSpacing(20);
 
   // Home & Work layout
   QHBoxLayout *home_work_layout = new QHBoxLayout;
+  home_work_layout->setSpacing(50);
   {
     // Home
     QHBoxLayout *home_layout = new QHBoxLayout;
+
     home_button = new QPushButton;
-    home_button->setIconSize(QSize(icon_size, icon_size));
+    home_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
     home_layout->addWidget(home_button);
 
     home_address = new QLabel;
     home_address->setWordWrap(true);
     home_layout->addSpacing(30);
     home_layout->addWidget(home_address);
+
     home_layout->addStretch();
+    home_work_layout->addLayout(home_layout, 1);
 
     // Work
     QHBoxLayout *work_layout = new QHBoxLayout;
+
     work_button = new QPushButton;
-    work_button->setIconSize(QSize(icon_size, icon_size));
+    work_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
     work_layout->addWidget(work_button);
 
     work_address = new QLabel;
     work_address->setWordWrap(true);
     work_layout->addSpacing(30);
     work_layout->addWidget(work_address);
-    work_layout->addStretch();
 
-    home_work_layout->addLayout(home_layout, 1);
-    home_work_layout->addSpacing(50);
+    work_layout->addStretch();
     home_work_layout->addLayout(work_layout, 1);
   }
 
   main_layout->addLayout(home_work_layout);
-  main_layout->addSpacing(20);
   main_layout->addWidget(horizontal_line());
-  main_layout->addSpacing(20);
 
   // Current route
   {
@@ -83,7 +84,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QLabel *recents_title = new QLabel(tr("Recent Destinations"));
   recents_title->setStyleSheet("font-size: 55px");
   main_layout->addWidget(recents_title);
-  main_layout->addSpacing(20);
 
   recent_layout = new QVBoxLayout;
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
