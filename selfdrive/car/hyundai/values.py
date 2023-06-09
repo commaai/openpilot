@@ -364,14 +364,12 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       final_codes.add(code)
       continue
 
-    parsed = set()
-    for date in dates:
-      try:
-        parsed.add(datetime.strptime(date.decode()[:4], '%y%m'))
-      except ValueError:
-        cloudlog.exception(f'Error parsing date in FW version: {code}, {date}')
-        final_codes.add(code)
-        continue
+    try:
+      parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+    except ValueError:
+      cloudlog.exception(f'Error parsing date in FW versions: {code}, {dates}')
+      final_codes.add(code)
+      continue
 
     for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
       final_codes.add(code + b'-' + date.strftime('%y%m').encode())
