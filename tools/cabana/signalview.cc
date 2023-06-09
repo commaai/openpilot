@@ -146,7 +146,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? signalToolTip(item->sig) : item->sig_val;
+      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
     }
   }
   return {};
