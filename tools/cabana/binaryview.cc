@@ -344,17 +344,7 @@ QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::ToolTipRole) {
     auto item = (const BinaryViewModel::Item *)index.internalPointer();
     if (item && !item->sigs.empty()) {
-      auto sig = item->sigs.back();
-      return tr(R"(
-        %1<br /><span font-size:small">
-        Start Bit: %2<br />
-        Size: %3<br />
-        MSB: %4<br />
-        LSB: %5<br />
-        Little Endian: %6<br />
-        Signed: %7</span>
-        )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
-          .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
+      return signalToolTip(item->sigs.back());
     }
   }
   return {};
