@@ -37,7 +37,7 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
         max_val += 1;
       }
     }
-    render(getColor(sig), size);
+    render(sig->color, size);
   } else {
     pixmap = QPixmap();
     min_val = -1;

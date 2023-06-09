@@ -165,7 +165,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->selection_color = getColor(s);
+        delegate->selection_color = s->color;
         break;
       }
     }
@@ -381,7 +381,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
-          painter->fillRect(option.rect, getColor(bin_view->hovered_sig).darker(125));  // 4/5x brightness
+          painter->fillRect(option.rect, s->color.darker(125));  // 4/5x brightness
         } else {
           drawSignalCell(painter, option, index, s);
         }
@@ -434,15 +434,14 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
 
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  auto sig_color = getColor(sig);
-  QColor color = sig_color;
+  QColor color = sig->color;
   color.setAlpha(item->bg_color.alpha());
   // Mixing the signal colour with the Base background color to fade it
   painter->fillRect(rc, QApplication::palette().color(QPalette::Base));
   painter->fillRect(rc, color);
 
   // Draw edges
-  color = sig_color.darker(125);
+  color = sig->color.darker(125);
   painter->setPen(QPen(color, 1));
   if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
   if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());
