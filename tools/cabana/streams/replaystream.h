@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/prefix.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 class ReplayStream : public AbstractStream {
@@ -7,12 +8,13 @@ class ReplayStream : public AbstractStream {
 
 public:
   ReplayStream(QObject *parent);
-  ~ReplayStream();
+  void start() override;
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); };
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
+  double totalSeconds() const override { return replay->totalSeconds(); }
   inline VisionStreamType visionStreamType() const override { return replay->hasFlag(REPLAY_FLAG_ECAM) ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD; }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
   inline double currentSec() const override { return replay->currentSeconds(); }
@@ -28,6 +30,7 @@ private:
   void mergeSegments();
   std::unique_ptr<Replay> replay = nullptr;
   std::set<int> processed_segments;
+  std::unique_ptr<OpenpilotPrefix> op_prefix;
 };
 
 class OpenReplayWidget : public AbstractOpenStreamWidget {

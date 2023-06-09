@@ -19,7 +19,7 @@ inline std::string log_root() {
   return Hardware::PC() ? util::getenv("HOME") + "/.comma/media/0/realdata" : "/data/media/0/realdata";
 }
 inline std::string params() {
-  return Hardware::PC() ? util::getenv("HOME") + "/.comma/params" : "/data/params";
+  return Hardware::PC() ? util::getenv("PARAMS_ROOT", util::getenv("HOME") + "/.comma/params") : "/data/params";
 }
 inline std::string rsa_file() {
   return Hardware::PC() ? util::getenv("HOME") + "/.comma/persist/comma/id_rsa" : "/persist/comma/id_rsa";

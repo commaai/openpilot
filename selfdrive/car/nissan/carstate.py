@@ -14,8 +14,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
-    self.lkas_hud_msg = None
-    self.lkas_hud_info_msg = None
+    self.lkas_hud_msg = {}
+    self.lkas_hud_info_msg = {}
 
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
@@ -171,6 +171,7 @@ class CarState(CarStateBase):
         ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE"),
         ("NEW_SIGNAL_2", "CRUISE_THROTTLE"),
         ("GAS_PRESSED_INVERTED", "CRUISE_THROTTLE"),
+        ("COUNTER", "CRUISE_THROTTLE"),
         ("unsure1", "CRUISE_THROTTLE"),
         ("unsure2", "CRUISE_THROTTLE"),
         ("unsure3", "CRUISE_THROTTLE"),

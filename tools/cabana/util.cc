@@ -1,7 +1,9 @@
 #include "tools/cabana/util.h"
 
+#include <QColor>
 #include <QFontDatabase>
 #include <QHelpEvent>
+#include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
 #include <QToolTip>
@@ -82,17 +84,6 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   return size;
 }
 
-bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (e->type() == QEvent::ToolTip && index.column() == 0) {
-    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
-      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
-      return true;
-    }
-  }
-  QToolTip::hideText();
-  return false;
-}
-
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto data = index.data(BytesRole);
   if (!data.isValid()) {
@@ -131,15 +122,27 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   painter->setPen(old_pen);
 }
 
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
+// TabBar
 
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
+}
 
-  return QColor::fromHsvF(h, s, v);
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
+  }
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
@@ -147,6 +150,13 @@ NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
+}
+
+DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
+  // Match locale of QString::toDouble() instead of system
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
+  setLocale(locale);
 }
 
 namespace utils {
@@ -191,7 +201,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();
@@ -217,10 +227,6 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
 }

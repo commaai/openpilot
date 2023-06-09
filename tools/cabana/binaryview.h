@@ -14,8 +14,8 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
-  bool isSameColor(const QModelIndex &index, int dx, int dy) const;
-  void drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  bool hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  void drawSignalCell(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index, const cabana::Signal *sig) const;
 
   QFont small_font, hex_font;
   QColor selection_color;
@@ -40,7 +40,7 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QColor(102, 86, 169, 0);
+    QColor bg_color = QColor(102, 86, 169, 255);
     bool is_msb = false;
     bool is_lsb = false;
     QString val;
