@@ -109,8 +109,8 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {candidate}
-
-  return set()
+  else:
+    return set()
 
 
 def match_fw_to_car_exact(fw_versions_dict, config=None, log=True) -> Set[str]:
