@@ -752,7 +752,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8A12',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
-      b'\xf1\x00TM  MDPS R 1.00 1.02 57700-S1100 4TMDP102'
+      b'\xf1\x00TM  MDPS R 1.00 1.02 57700-S1100 4TMDP102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.01 99211-S1010 181207',
@@ -854,7 +854,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMH MFC  AT EUR LHD 1.00 1.06 99211-S1500 220727',
       b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
-      b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.06 99211-S1500 220727'
+      b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.06 99211-S1500 220727',
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.03 99211-S2500 220414',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -1612,19 +1612,19 @@ FW_VERSIONS = {
   },
   CAR.KIA_SORENTO: {
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00UMP LKAS AT USA LHD 1.01 1.01 95740-C6550 d01'
+      b'\xf1\x00UMP LKAS AT USA LHD 1.01 1.01 95740-C6550 d01',
     ],
     (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00UM ESC \x0c 12 \x18\x05\x06 58910-C6330'
+      b'\xf1\x00UM ESC \x0c 12 \x18\x05\x06 58910-C6330',
     ],
     (Ecu.fwdRadar, 0x7D0, None): [
-      b'\xf1\x00UM__ SCC F-CUP      1.00 1.00 96400-C6500         '
+      b'\xf1\x00UM__ SCC F-CUP      1.00 1.00 96400-C6500         ',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87LDKUAA0348164HE3\x87www\x87www\x88\x88\xa8\x88w\x88\x97xw\x88\x97x\x86o\xf8\xff\x87f\x7f\xff\x15\xe0\xf1\x81U811\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U811\x00\x00\x00\x00\x00\x00TUM4G33NL3V|DG'
+      b'\xf1\x87LDKUAA0348164HE3\x87www\x87www\x88\x88\xa8\x88w\x88\x97xw\x88\x97x\x86o\xf8\xff\x87f\x7f\xff\x15\xe0\xf1\x81U811\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U811\x00\x00\x00\x00\x00\x00TUM4G33NL3V|DG',
     ],
     (Ecu.engine, 0x7e0, None): [
-      b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00'
+      b'\xf1\x81640F0051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.KIA_SORENTO_PHEV_4TH_GEN: {
