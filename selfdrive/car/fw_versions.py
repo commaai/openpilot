@@ -77,7 +77,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
           all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
       # Add platform codes to lookup dict if config specifies a function
-      if config.fuzzy_get_platform_codes is not None and addr[0] in config.fuzzy_ecus:
+      if addr[0] in config.fuzzy_ecus and config.fuzzy_get_platform_codes is not None:
         for platform_code in config.fuzzy_get_platform_codes(fws):
           all_platform_codes[(addr[1], addr[2], platform_code)].append(candidate)
 
