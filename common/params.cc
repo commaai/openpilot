@@ -113,7 +113,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"ForcePowerDown", CLEAR_ON_MANAGER_START},
+    {"ForcePowerDown", PERSISTENT},
     {"GitBranch", PERSISTENT},
     {"GitCommit", PERSISTENT},
     {"GitDiff", PERSISTENT},
