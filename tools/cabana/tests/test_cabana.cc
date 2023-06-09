@@ -121,4 +121,6 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[0]->type == cabana::Signal::Type::Multiplexor);
   REQUIRE(msg->sigs[1]->type == cabana::Signal::Type::Multiplexed);
   REQUIRE(msg->sigs[1]->multiplex_value == 4);
+  REQUIRE(msg->sigs[1]->start_bit == 12);
+  REQUIRE(msg->sigs[1]->size == 1);
 }

@@ -411,13 +411,14 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         QFontMetrics fm(minmax_font);
         value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
       } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
+        // display freq of multiplexed signal
         painter->setFont(label_font);
         QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
         painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
         QFontMetrics fm(label_font);
         value_adjust = fm.width(freq) + 10;
       }
-      // value
+      // signal value
       painter->setFont(option.font);
       rect.adjust(value_adjust, 0, -button_size.width(), 0);
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rect.width());

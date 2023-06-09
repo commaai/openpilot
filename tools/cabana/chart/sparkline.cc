@@ -39,6 +39,11 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
         max_val += 1;
       }
     }
+  } else {
+    values.clear();
+  }
+
+  if (!values.empty()) {
     render(sig->color, size);
   } else {
     pixmap = QPixmap();
@@ -48,6 +53,14 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
 }
 
 void Sparkline::render(const QColor &color, QSize size) {
+  const double xscale = (size.width() - 1) / (double)time_range;
+  const double yscale = (size.height() - 3) / (max_val - min_val);
+  points.clear();
+  points.reserve(values.size());
+  for (auto &v : values) {
+    points.emplace_back(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
+  }
+
   qreal dpr = qApp->devicePixelRatio();
   size *= dpr;
   if (size != pixmap.size()) {
@@ -55,25 +68,14 @@ void Sparkline::render(const QColor &color, QSize size) {
   }
   pixmap.setDevicePixelRatio(dpr);
   pixmap.fill(Qt::transparent);
-
-  if (!values.empty()) {
-    const double xscale = (size.width() - 1) / (double)time_range;
-    const double yscale = (size.height() - 3) / (max_val - min_val);
-    points.clear();
-    points.reserve(values.size());
-    for (const auto &v : values) {
-      points.emplace_back(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
-    }
-
-    QPainter painter(&pixmap);
-    painter.setRenderHint(QPainter::Antialiasing, points.size() < 500);
-    painter.setPen(color);
-    painter.drawPolyline(points.data(), points.size());
-    painter.setPen(QPen(color, 3));
-    if ((points.back().x() - points.front().x()) / points.size() > 8) {
-      painter.drawPoints(points.data(), points.size());
-    } else {
-      painter.drawPoint(points.back());
-    }
+  QPainter painter(&pixmap);
+  painter.setRenderHint(QPainter::Antialiasing, points.size() < 500);
+  painter.setPen(color);
+  painter.drawPolyline(points.data(), points.size());
+  painter.setPen(QPen(color, 3));
+  if ((points.back().x() - points.front().x()) / points.size() > 8) {
+    painter.drawPoints(points.data(), points.size());
+  } else {
+    painter.drawPoint(points.back());
   }
 }
