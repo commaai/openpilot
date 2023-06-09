@@ -20,6 +20,7 @@ from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -27,8 +28,6 @@ CI = "CI" in os.environ
 TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
-VIPC_STREAM = {"roadCameraState": VisionStreamType.VISION_STREAM_ROAD, "driverCameraState": VisionStreamType.VISION_STREAM_DRIVER,
-               "wideRoadCameraState": VisionStreamType.VISION_STREAM_WIDE_ROAD}
 
 class ReplayContext:
   def __init__(self, cfg):
@@ -145,10 +144,6 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
     rc.wait_for_next_recv(False)
 
 
-def modeld_calibration_callback(rc, pm, msgs, fingerprint):
-  pass
-
-
 def get_car_params_callback(rc, pm, msgs, fingerprint):
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
@@ -200,6 +195,7 @@ class ModeldCameraSyncRcvCallback:
     self.road_present = False
     self.wide_road_present = False
     self.is_dual_camera = True
+    self.min_frame_id = None
 
   def __call__(self, msg, cfg, frame):
     if msg.which() == "initData":
@@ -209,7 +205,9 @@ class ModeldCameraSyncRcvCallback:
       return False
     
     camera_state = getattr(msg, msg.which())
-    if camera_state.frameId >= 1200:
+    if self.min_frame_id is None:
+      self.min_frame_id = camera_state.frameId
+    if (camera_state.frameId - self.min_frame_id) >= 1200:
       return False
     
     if not self.is_dual_camera:
@@ -383,10 +381,10 @@ CONFIGS = [
     subs=["modelV2", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     config_callback=None,
-    init_callback=modeld_calibration_callback,
+    init_callback=None,
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
-    main_pub=vipc_get_endpoint_name("camerad", VIPC_STREAM["roadCameraState"]),
+    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
   ),
@@ -396,10 +394,10 @@ CONFIGS = [
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.dspExecutionTime"],
     config_callback=None,
-    init_callback=modeld_calibration_callback,
+    init_callback=None,
     should_recv_callback=dmonitoringmodeld_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
-    main_pub=vipc_get_endpoint_name("camerad", VIPC_STREAM["driverCameraState"]),
+    main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["driverCameraState"],
   ),
@@ -470,7 +468,7 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
       vipc_server = None
       if len(cfg.vision_pubs) != 0:
         assert frs is not None, "frs must be provided when replaying process using vision streams"
-        assert all(st in VIPC_STREAM for st in cfg.vision_pubs), f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
+        assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
         assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
         vipc_server = setup_vision_ipc(cfg, lr)
 
@@ -513,11 +511,11 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
                 pm.send(m.which(), m.as_builder())
                 # send frames if needed
                 if vipc_server is not None and m.which() in cfg.vision_pubs:
-                  camera_state = getattr(msg, msg.which())
+                  camera_state = getattr(m, m.which())
+                  camera_meta = meta_from_camera_state(m.which())
                   img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
-                  vipc_server.send(VIPC_STREAM[m.which()], img.flatten().tobytes(),
+                  vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-
               msg_queue = []
 
               rc.unlock_sockets()
@@ -542,15 +540,12 @@ def setup_vision_ipc(cfg, lr):
   assert len(cfg.vision_pubs) != 0
 
   device_type = next(msg.initData.deviceType for msg in lr if msg.which() == "initData")
-  is_eon = device_type == "eon"
 
   vipc_server = VisionIpcServer("camerad")
-  if "roadCameraState" in cfg.vision_pubs:
-    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(eon_f_frame_size if is_eon else tici_f_frame_size))
-  if "driverCameraState" in cfg.vision_pubs:
-    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(eon_d_frame_size if is_eon else tici_d_frame_size))
-  if device_type == "tici" and "wideRoadCameraState" in cfg.vision_pubs:
-    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *(tici_e_frame_size))
+  streams_metas = available_streams(lr)
+  for meta in streams_metas:
+    if meta.camera_state in cfg.vision_pubs:
+      vipc_server.create_buffers(meta.stream, 5, False, *meta.frame_sizes[device_type])
   vipc_server.start_listener()
 
   return vipc_server
