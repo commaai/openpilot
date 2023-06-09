@@ -367,7 +367,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
     try:
       parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
     except ValueError:
-      cloudlog.exception(f'Error parsing date in FW versions: {code}, {dates}')
+      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
       final_codes.add(code)
       continue
 
