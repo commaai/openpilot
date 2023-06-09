@@ -1,23 +1,17 @@
-import time
 import asyncio
 import io
-import os
 import numpy as np
 import pyaudio
 import wave
 
 from aiortc.contrib.media import MediaBlackhole
-from aiortc.mediastreams import AudioStreamTrack, MediaStreamError
+from aiortc.mediastreams import  AudioStreamTrack, MediaStreamError, MediaStreamTrack
+from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 from aiortc.rtcrtpsender import RTCRtpSender
 from av import CodecContext, Packet
 from pydub import AudioSegment
+import cereal.messaging as messaging
 
-
-IMG_H_ORIG, IMG_W_ORIG = 604*2, 964*2
-DOWNSCALE = 4
-IMG_H = IMG_H_ORIG // DOWNSCALE
-IMG_W = IMG_W_ORIG // DOWNSCALE
-yuv = np.zeros((int(IMG_H * 1.5 *IMG_W)), dtype=np.uint8)
 AUDIO_RATE = 16000
 SOUNDS = {
   'engage': '../../selfdrive/assets/sounds/engage.wav',
@@ -33,20 +27,7 @@ def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   transceiver.setCodecPreferences(codec)
 
 
-import fractions
-import time
-from typing import Tuple
-import cereal.messaging as messaging
-from aiortc.mediastreams import (
-    VIDEO_CLOCK_RATE,
-    VIDEO_PTIME,
-    VIDEO_TIME_BASE,
-    AudioStreamTrack,
-    MediaStreamTrack,
-    VideoStreamTrack,
-)
-
-class EncodedVideoStream(MediaStreamTrack):
+class EncodedBodyVideo(MediaStreamTrack):
   kind = "video"
 
   _start: float
@@ -54,30 +35,26 @@ class EncodedVideoStream(MediaStreamTrack):
 
   def __init__(self):
     super().__init__()
-    sock_name = 'driverEncodeData'
+    sock_name = 'roadEncodeData'
+    #os.environ['ZMQ'] = '1'
+    #addr='192.168.1.101'
     messaging.context = messaging.Context()
     self.sock = messaging.sub_sock(sock_name, None, conflate=True)
-
-  # TODO I have no idea what this does and if it's right
-  async def next_timestamp(self) -> Tuple[int, fractions.Fraction]:
-        if hasattr(self, "_timestamp"):
-            self._timestamp += int((1/20) * VIDEO_CLOCK_RATE)
-            wait = self._start + (self._timestamp / VIDEO_CLOCK_RATE) - time.time()
-            await asyncio.sleep(wait)
-        else:
-            self._start = time.time()
-            self._timestamp = 0
-        return self._timestamp, VIDEO_TIME_BASE
+    self.pts = 0
 
   async def recv(self) -> Packet:
-    pts, time_base = await self.next_timestamp()
-    msg = messaging.recv_one(self.sock)
+    msg = messaging.recv_one_or_none(self.sock)
+    while msg is None:
+      await asyncio.sleep(0.005)
+      msg = messaging.recv_one_or_none(self.sock)
+    
     evta = getattr(msg, msg.which())
-    packet = Packet(len(evta.header + evta.data))
-    packet.update(bytes(evta.header + evta.data))
+    self.last_idx = evta.idx.encodeId
 
-    packet.time_base = time_base
-    packet.pts = pts
+    packet = Packet(evta.header + evta.data)
+    packet.time_base = VIDEO_TIME_BASE
+    packet.pts = self.pts
+    self.pts += 0.05 * VIDEO_CLOCK_RATE
     return packet
 
 
