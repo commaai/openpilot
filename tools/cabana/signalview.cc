@@ -331,7 +331,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   if (item && item->type == SignalModel::Item::Sig) {
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
-      painter->fillRect(option.rect, option.palette.highlight());
+      painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
     }
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
