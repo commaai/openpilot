@@ -88,8 +88,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     for version in versions:
       # Fall back to matching with full FW versions if brand does not implement platform codes
       candidates = set()
-      # TODO: can revert and test both now that we're changing to requiring 2 ecus again.
-      #  maybe
       if config.fuzzy_get_platform_codes is None:
         # All cars that have this FW response on the specified address
         candidates = all_fw_versions[(*ecu_key, version)]
