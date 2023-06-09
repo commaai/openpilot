@@ -356,24 +356,25 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       code, date = match.groups()
       codes[code].add(date)
 
-  # Create platform codes for all dates within range if ECU has FW dates
+  # Create platform codes for all dates inclusive if ECU has FW dates
   final_codes = set()
   for code, dates in codes.items():
+    # Radar and some cameras don't have FW dates
+    if None in dates:
+      final_codes.add(code)
+      continue
+
     parsed = set()
     for date in dates:
-      if date is None:
-        final_codes.add(code)
-        break
-
       try:
         parsed.add(datetime.strptime(date.decode()[:4], '%y%m'))
       except ValueError:
         cloudlog.exception(f'Error parsing date in FW version: {code}, {date}')
-        break
+        final_codes.add(code)
+        continue
 
-    else:
-      for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-        final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
 
   return final_codes
 
