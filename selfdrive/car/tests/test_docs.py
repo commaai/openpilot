@@ -33,6 +33,7 @@ class TestCarDocs(unittest.TestCase):
         dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
         dump_car_info(dump_path)
         print_car_info_diff(dump_path)
+        os.remove(dump_path)
     except Exception:
       self.fail("print_docs_diff.py is broken")
 
