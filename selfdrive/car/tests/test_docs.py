@@ -28,14 +28,11 @@ class TestCarDocs(unittest.TestCase):
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
 
   def test_docs_diff(self):
-    try:
-      with redirect_stdout(None):
-        dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
-        dump_car_info(dump_path)
-        print_car_info_diff(dump_path)
-        os.remove(dump_path)
-    except Exception:
-      self.fail("print_docs_diff.py is broken")
+    with redirect_stdout(None):
+      dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+      dump_car_info(dump_path)
+      print_car_info_diff(dump_path)
+      os.remove(dump_path)
 
   def test_duplicate_years(self):
     make_model_years = defaultdict(list)
