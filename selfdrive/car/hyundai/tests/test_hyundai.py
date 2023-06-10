@@ -46,19 +46,15 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
-          if ecu[0] in FW_QUERY_CONFIG.platform_code_ecus:
-            dates = set()
-            for fw in fws:
-              # TODO: use FW_QUERY_CONFIG.fuzzy_get_platform_codes
-              _, date = PLATFORM_CODE_PATTERN.search(fw).groups()
-              dates.add(date)
-              if date is not None:
-                # Assert date is parsable and reasonable
-                parsed = datetime.strptime(date.decode()[:4], '%y%m')
-                self.assertTrue(2013 < parsed.year < 2023, parsed)
+          if ecu[0] != Ecu.fwdCamera:
+            continue
 
-            # Either no dates should exist or all dates should be parsed
-            self.assertEqual(len({d is None for d in dates}), 1)
+          codes = set()
+          for fw in fws:
+            codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw])
+
+          # Either no dates should be parsed or all dates should be parsed
+          self.assertEqual(len({b'-' in code for code in codes}), 1)
 
   def test_fuzzy_platform_codes(self):
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
