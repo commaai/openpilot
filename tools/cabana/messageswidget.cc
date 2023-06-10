@@ -32,6 +32,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
 
   view->setItemDelegate(delegate);
+  view->setHeader(header);
   view->setModel(model);
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
@@ -40,7 +41,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->setHeader(header);
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
