@@ -62,6 +62,7 @@ struct RemoteEncoder {
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
 =======
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
+  // TODO: this should be done better
   const EncoderInfo* encoder_info;
   for (const auto &cam : cameras_logged) {
     for (const auto &candidate_encoder_info: cam.encoder_infos) {
