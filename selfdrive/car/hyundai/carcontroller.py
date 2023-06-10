@@ -163,6 +163,8 @@ class CarController:
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                 left_lane_warning, right_lane_warning))
 
+      use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
+
       if not self.CP.openpilotLongitudinalControl:
         if CC.cruiseControl.cancel:
           can_sends.append(hyundaican.create_clu11(self.packer, self.frame, CS.clu11, Buttons.CANCEL, self.CP.carFingerprint))
@@ -175,8 +177,6 @@ class CarController:
               self.last_button_frame = self.frame
 
       if self.frame % 2 == 0 and self.CP.openpilotLongitudinalControl:
-        use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-
         # TODO: unclear if this is needed
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
