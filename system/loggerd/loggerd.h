@@ -56,9 +56,9 @@ public:
 
 class LogCameraInfo {
 public:
+  int fps = MAIN_FPS;
   CameraType type;
   VisionStreamType stream_type;
-  int fps;
   std::vector<EncoderInfo> encoder_infos;
 };
 
@@ -72,7 +72,7 @@ const EncoderInfo main_wide_road_encoder_info = {
 };
 const EncoderInfo main_driver_encoder_info = {
    .publish_name = "driverEncodeData",
-  .filename = "ecamera.hevc",
+  .filename = "dcamera.hevc",
   .record = Params().getBool("RecordFront"),
 };
 
@@ -89,21 +89,18 @@ const EncoderInfo qcam_encoder_info = {
 const LogCameraInfo road_camera_info{
     .type = RoadCam,
     .stream_type = VISION_STREAM_ROAD,
-    .fps=MAIN_FPS,
     .encoder_infos = {main_road_encoder_info, qcam_encoder_info}
     };
 
 const LogCameraInfo wide_road_camera_info{
     .type = WideRoadCam,
     .stream_type = VISION_STREAM_WIDE_ROAD,
-    .fps=MAIN_FPS,
-    .encoder_infos = {main_wide_road_encoder_info}
+   .encoder_infos = {main_wide_road_encoder_info}
     };
   
 const LogCameraInfo driver_camera_info{
     .type = DriverCam,
     .stream_type = VISION_STREAM_DRIVER,
-    .fps=MAIN_FPS,
     .encoder_infos = {main_driver_encoder_info}
     };
 

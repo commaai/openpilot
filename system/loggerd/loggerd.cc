@@ -58,16 +58,7 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  // TODO: this should be done better
-  const EncoderInfo* encoder_info;
-  for (const auto &cam : cameras_logged) {
-    for (const auto &candidate_encoder_info: cam.encoder_infos) {
-      if (candidate_encoder_info.publish_name == name) {
-        encoder_info = &candidate_encoder_info;
-      }
-    }
-  }
+int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
   int bytes_count = 0;
 
   // extract the message
@@ -101,7 +92,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg: re.q) {
-          bytes_count += handle_encoder_msg(s, qmsg, name, re);
+          bytes_count += handle_encoder_msg(s, qmsg, name, re, encoder_info);
         }
         re.q.clear();
       }
@@ -117,10 +108,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (encoder_info->record) {
+        if (encoder_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            encoder_info->filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            encoder_info->frame_width, encoder_info->frame_height, encoder_info->fps, idx.getType()));
+            encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -217,10 +208,10 @@ void loggerd_thread() {
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
-  // init encoders
-  s.last_camera_seen_tms = millis_since_boot();
+  std::map<std::string, EncoderInfo> encoder_infos_dict;
   for (const auto &cam : cameras_logged) {
-    for (int i = 0; i < sizeof(cam.encoder_infos); ++i) {
+    for (const auto &encoder_info: cam.encoder_infos) {
+      encoder_infos_dict[encoder_info.publish_name] = encoder_info;
       s.max_waiting++;
     }
   }
@@ -241,7 +232,7 @@ void loggerd_thread() {
 
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock], encoder_infos_dict[qs.name]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
