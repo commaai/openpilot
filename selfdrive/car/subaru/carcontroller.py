@@ -37,23 +37,25 @@ class CarController:
       new_steer = int(round(apply_steer))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
-      # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-      if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-        self.steer_rate_counter += 1
-      else:
-        self.steer_rate_counter = 0
-
       apply_steer_req = 1
-      if not CC.latActive:
-        apply_steer = 0
-        apply_steer_req = 0
+
+      if self.CP.carFingerprint in GLOBAL_GEN2:
+        # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
+        if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+          self.steer_rate_counter += 1
+        else:
+          self.steer_rate_counter = 0
         
-      if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-        apply_steer_req = 0
-        self.steer_rate_counter = 0
-      
-      if abs(CS.out.steeringAngleDeg) > 85: # 90 degree steering lockout
-        apply_steer_req = 0
+        if not CC.latActive:
+          apply_steer = 0
+          apply_steer_req = 0
+
+        if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+          apply_steer_req = 0
+          self.steer_rate_counter = 0
+        
+        if abs(CS.out.steeringAngleDeg) > 85: # 90 degree steering lockout
+          apply_steer_req = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
