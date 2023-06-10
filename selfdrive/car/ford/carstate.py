@@ -14,10 +14,22 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
-      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"]
+      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
+
+    self.vehicle_sensors_valid = False
+    self.hybrid_platform = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
+
+    # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
+    # we do not support these cars at this time.
+    # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
+    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
+
+    # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
+    # The vehicle usually recovers out of this state within a minute of normal driving
+    self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
     ret.vEgoRaw = cp.vl["BrakeSysFeatures"]["Veh_V_ActlBrk"] * CV.KPH_TO_MS
@@ -37,7 +49,7 @@ class CarState(CarStateBase):
     # steering wheel
     ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
-    ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
+    ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     # ret.espDisabled = False  # TODO: find traction control signal
@@ -48,10 +60,11 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
+    ret.accFaulted = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (1, 2)
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
-      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnGear_D_RqDrv"], None)
+      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"])
       ret.gearShifter = self.parse_gear_shifter(gear)
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
@@ -62,7 +75,7 @@ class CarState(CarStateBase):
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
-    ret.stockAeb = ret.stockFcw and ret.cruiseState.enabled
+    ret.stockAeb = bool(cp_cam.vl["ACCDATA_2"]["CmbbBrkDecel_B_Rq"])
 
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
@@ -92,6 +105,8 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
+
       ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
       ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
       ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
@@ -105,6 +120,7 @@ class CarState(CarStateBase):
       ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
       ("AccEnbl_B_RqDrv", "Cluster_Info1_FD1"),              # PCM ACC enable
       ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
+      ("StePinCompAnEst_D_Qf", "SteeringPinion_Data"),       # PSCM estimated steering angle (quality flag)
                                                              # Calculates steering angle (and offset) from pinion
                                                              # angle and driving measurements.
                                                              # StePinRelInit_An_Sns is the pinion angle, initialised
@@ -118,14 +134,13 @@ class CarState(CarStateBase):
       ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
       ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
       ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
-      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthru the remaining buttons
+      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthrough the remaining buttons
       ("WiprFront_D_Stat", "Steering_Data_FD1"),
       ("LghtAmb_D_Sns", "Steering_Data_FD1"),
       ("AccButtnGapDecPress", "Steering_Data_FD1"),
       ("AccButtnGapIncPress", "Steering_Data_FD1"),
       ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("AslButtnOnOffPress", "Steering_Data_FD1"),
-      ("CcAslButtnCnclPress", "Steering_Data_FD1"),
       ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
       ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
       ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
@@ -139,7 +154,6 @@ class CarState(CarStateBase):
       ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
       ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
       ("CcAslButtnSetPress", "Steering_Data_FD1"),
-      ("CcAsllButtnResPress", "Steering_Data_FD1"),
       ("CcButtnOffPress", "Steering_Data_FD1"),
       ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
       ("CcButtnOnOffPress", "Steering_Data_FD1"),
@@ -154,6 +168,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
@@ -171,7 +186,7 @@ class CarState(CarStateBase):
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [
-        ("TrnGear_D_RqDrv", "Gear_Shift_by_Wire_FD1"),       # GWM transmission gear position
+        ("TrnRng_D_RqGsm", "Gear_Shift_by_Wire_FD1"),        # GWM transmission gear position
       ]
       checks += [
         ("Gear_Shift_by_Wire_FD1", 10),
@@ -202,6 +217,8 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
+
       ("HaDsply_No_Cs", "ACCDATA_3"),
       ("HaDsply_No_Cnt", "ACCDATA_3"),
       ("AccStopStat_D_Dsply", "ACCDATA_3"),         # ACC stopped status message
@@ -216,7 +233,7 @@ class CarState(CarStateBase):
       ("FcwMemStat_B_Actl", "ACCDATA_3"),           # FCW enabled setting
       ("AccTGap_B_Dsply", "ACCDATA_3"),             # ACC time gap display setting
       ("CadsAlignIncplt_B_Actl", "ACCDATA_3"),
-      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC follow mode display setting
+      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC lead indicator
       ("CadsRadrBlck_B_Actl", "ACCDATA_3"),
       ("CmbbPostEvnt_B_Dsply", "ACCDATA_3"),        # AEB event status
       ("AccStopMde_B_Dsply", "ACCDATA_3"),          # ACC stop mode display setting
@@ -233,9 +250,7 @@ class CarState(CarStateBase):
       ("FeatNoIpmaActl", "IPMA_Data"),
       ("PersIndexIpma_D_Actl", "IPMA_Data"),
       ("AhbcRampingV_D_Rq", "IPMA_Data"),           # AHB ramping
-      ("LaActvStats_D_Dsply", "IPMA_Data"),         # LKAS status (lines)
       ("LaDenyStats_B_Dsply", "IPMA_Data"),         # LKAS error
-      ("LaHandsOff_D_Dsply", "IPMA_Data"),          # LKAS hands on chime
       ("CamraDefog_B_Req", "IPMA_Data"),            # Windshield heater?
       ("CamraStats_D_Dsply", "IPMA_Data"),          # Camera status
       ("DasAlrtLvl_D_Dsply", "IPMA_Data"),          # DAS alert level
@@ -248,6 +263,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("ACCDATA_2", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]

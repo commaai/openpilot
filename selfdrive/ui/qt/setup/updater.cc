@@ -46,7 +46,14 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
 
     QPushButton *install = new QPushButton(tr("Install"));
     install->setObjectName("navBtn");
-    install->setStyleSheet("background-color: #465BEA;");
+    install->setStyleSheet(R"(
+      QPushButton {
+        background-color: #465BEA;
+      }
+      QPushButton:pressed {
+        background-color: #3049F4;
+      }
+    )");
     QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
     hlayout->addWidget(install);
   }
@@ -123,6 +130,9 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
       font-weight: 400;
       border-radius: 10px;
       background-color: #333333;
+    }
+    QPushButton#navBtn:pressed {
+      background-color: #444444;
     }
     QProgressBar {
       border: none;

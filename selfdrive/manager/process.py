@@ -290,10 +290,11 @@ class DaemonProcess(ManagerProcess):
 
 
 def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
-                   not_run: Optional[List[str]]=None) -> None:
+                   not_run: Optional[List[str]]=None) -> List[ManagerProcess]:
   if not_run is None:
     not_run = []
 
+  running = []
   for p in procs:
     # Conditions that make a process run
     run = any((
@@ -311,7 +312,10 @@ def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None
 
     if run:
       p.start()
+      running.append(p)
     else:
       p.stop(block=False)
 
     p.check_watchdog(started)
+
+  return running

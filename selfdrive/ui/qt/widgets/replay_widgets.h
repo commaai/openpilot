@@ -11,6 +11,7 @@
 #include "tools/replay/replay.h"
 
 class RouteListWidget : public ListWidget {
+  Q_OBJECT
 public:
   RouteListWidget(QWidget *parent);
 

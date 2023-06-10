@@ -8,7 +8,6 @@ jobs:
   build_masterci:
     name: build master-ci
     runs-on: ubuntu-20.04
-    timeout-minutes: 60
     if: github.repository == 'commaai/openpilot'
     steps:
     - name: Wait for green check mark

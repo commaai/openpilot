@@ -3,12 +3,9 @@ Testing the GPS receiver using GPS spoofing. At the moment only
 static location relpay is supported.
 
 # Usage
-```
-# on host, start gps signal simulation
-./run_static_lime.py
-```
+on C3 run `rpc_server.py`, on host PC run `fuzzy_testing.py`
 
-`run_static_lime.py` downloads the latest ephemeris file from
+`simulate_gps_signal.py` downloads the latest ephemeris file from
 https://cddis.nasa.gov/archive/gnss/data/daily/20xx/brdc/.
 
 

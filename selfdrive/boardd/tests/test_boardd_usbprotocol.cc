@@ -16,7 +16,8 @@ int random_int(int min, int max) {
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);
   void test_can_send();
-  void test_can_recv();
+  void test_can_recv(uint32_t chunk_size = 0);
+  void test_chunked_can_recv();
 
   std::map<int, std::string> test_data;
   int can_list_size = 0;
@@ -58,11 +59,7 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
 void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
-    uint32_t magic;
-    memcpy(&magic, &chunk[0], sizeof(uint32_t));
-
-    REQUIRE(magic == CAN_TRANSACTION_MAGIC);
-    unpacked_data.insert(unpacked_data.end(), &chunk[sizeof(uint32_t)], &chunk[size]);
+    unpacked_data.insert(unpacked_data.end(), chunk, &chunk[size]);
   });
   REQUIRE(unpacked_data.size() == total_pakets_size);
 
@@ -77,16 +74,30 @@ void PandaTest::test_can_send() {
     REQUIRE(header.addr == cnt);
     REQUIRE(test_data.find(data_len) != test_data.end());
     const std::string &dat = test_data[data_len];
-    REQUIRE(memcmp(dat.data(), &unpacked_data[pos + 5], dat.size()) == 0);
+    REQUIRE(memcmp(dat.data(), &unpacked_data[pos + sizeof(can_header)], dat.size()) == 0);
     ++cnt;
   }
   REQUIRE(cnt == can_list_size);
 }
 
-void PandaTest::test_can_recv() {
+void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
   std::vector<can_frame> frames;
-  this->pack_can_buffer(can_data_list, [&](uint8_t *data, size_t size) {
-    this->unpack_can_buffer(data, size, frames);
+  this->pack_can_buffer(can_data_list, [&](uint8_t *data, uint32_t size) {
+    if (rx_chunk_size == 0) {
+      REQUIRE(this->unpack_can_buffer(data, size, frames));
+    } else {
+      this->receive_buffer_size = 0;
+      uint32_t pos = 0;
+
+      while(pos < size) {
+        uint32_t chunk_size = std::min(rx_chunk_size, size - pos);
+        memcpy(&this->receive_buffer[this->receive_buffer_size], &data[pos], chunk_size);
+        this->receive_buffer_size += chunk_size;
+        pos += chunk_size;
+
+        REQUIRE(this->unpack_can_buffer(this->receive_buffer, this->receive_buffer_size, frames));
+      }
+    }
   });
 
   REQUIRE(frames.size() == can_list_size);
@@ -109,6 +120,9 @@ TEST_CASE("send/recv CAN 2.0 packets") {
   SECTION("can_receive") {
     test.test_can_recv();
   }
+  SECTION("chunked_can_receive") {
+    test.test_can_recv(0x40);
+  }
 }
 
 TEST_CASE("send/recv CAN FD packets") {
@@ -121,5 +135,8 @@ TEST_CASE("send/recv CAN FD packets") {
   }
   SECTION("can_receive") {
     test.test_can_recv();
+  }
+  SECTION("chunked_can_receive") {
+    test.test_can_recv(0x40);
   }
 }

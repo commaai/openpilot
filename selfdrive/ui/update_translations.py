@@ -19,7 +19,7 @@ def update_translations(vanish=False, plural_only=None, translations_dir=TRANSLA
 
   for file in translation_files.values():
     tr_file = os.path.join(translations_dir, f"{file}.ts")
-    args = f"lupdate -locations none -recursive {UI_DIR} -ts {tr_file}"
+    args = f"lupdate -locations none -recursive {UI_DIR} -ts {tr_file} -I {BASEDIR}"
     if vanish:
       args += " -no-obsolete"
     if file in plural_only:

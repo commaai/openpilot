@@ -25,56 +25,31 @@ private:
   int currentIndex = 0;
 
   // Bounding boxes for each training guide step
-  const QRect continueBtnStandard = {1620, 0, 300, 1080};
-  QVector<QRect> boundingRectStandard {
-    QRect(112, 804, 619, 166),
-    continueBtnStandard,
-    continueBtnStandard,
-    QRect(1476, 565, 253, 308),
-    QRect(1501, 529, 184, 108),
-    continueBtnStandard,
-    QRect(1613, 665, 178, 153),
-    QRect(1220, 0, 420, 730),
-    QRect(1335, 499, 440, 147),
-    QRect(112, 820, 996, 148),
-    QRect(1412, 199, 316, 333),
-    continueBtnStandard,
-    QRect(1237, 63, 683, 1017),
-    continueBtnStandard,
-    QRect(1455, 110, 313, 860),
-    QRect(1253, 519, 383, 228),
-    continueBtnStandard,
-    continueBtnStandard,
-    QRect(630, 804, 626, 164),
-    QRect(108, 804, 426, 164),
-  };
-
-  const QRect continueBtnWide = {1840, 0, 320, 1080};
-  QVector<QRect> boundingRectWide {
+  const QRect continueBtn = {1840, 0, 320, 1080};
+  QVector<QRect> boundingRect {
     QRect(112, 804, 618, 164),
-    continueBtnWide,
-    continueBtnWide,
+    continueBtn,
+    continueBtn,
     QRect(1641, 558, 210, 313),
     QRect(1662, 528, 184, 108),
-    continueBtnWide,
+    continueBtn,
     QRect(1814, 621, 211, 170),
     QRect(1350, 0, 497, 755),
-    QRect(1553, 516, 406, 112),
+    QRect(1540, 386, 468, 238),
     QRect(112, 804, 1126, 164),
     QRect(1598, 199, 316, 333),
-    continueBtnWide,
+    continueBtn,
     QRect(1364, 90, 796, 990),
-    continueBtnWide,
+    continueBtn,
     QRect(1593, 114, 318, 853),
     QRect(1379, 511, 391, 243),
-    continueBtnWide,
-    continueBtnWide,
+    continueBtn,
+    continueBtn,
     QRect(630, 804, 626, 164),
     QRect(108, 804, 426, 164),
   };
 
-  QString img_path;
-  QVector<QRect> boundingRect;
+  const QString img_path = "../assets/training/";
   QElapsedTimer click_timer;
 
 signals:

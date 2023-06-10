@@ -31,7 +31,7 @@ class TestStateMachine(unittest.TestCase):
 
   def setUp(self):
     CarInterface, CarController, CarState = interfaces["mock"]
-    CP = CarInterface.get_params("mock")
+    CP = CarInterface.get_non_essential_params("mock")
     CI = CarInterface(CP, CarController, CarState)
 
     self.controlsd = Controls(CI=CI)
