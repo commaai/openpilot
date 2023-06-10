@@ -3,7 +3,7 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
-# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
+# Temp fault over ~20 deg/s for longer than ~8 frames
 MAX_STEER_RATE = 20  # deg/s
 MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
 
