@@ -39,6 +39,10 @@ class CarController:
 
       apply_steer_req = 1
 
+      if not CC.latActive:
+        apply_steer = 0
+        apply_steer_req = 0
+
       if self.CP.carFingerprint in GLOBAL_GEN2:
         # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
         if CC.latActive and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
@@ -46,10 +50,6 @@ class CarController:
         else:
           self.steer_rate_counter = 0
         
-        if not CC.latActive:
-          apply_steer = 0
-          apply_steer_req = 0
-
         if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
           apply_steer_req = 0
           self.steer_rate_counter = 0
