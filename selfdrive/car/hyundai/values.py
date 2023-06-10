@@ -451,8 +451,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
   get_platform_codes=get_platform_codes,
-  # Hyundai works best with camera and radar (which have standardized platform codes)
-  platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera],
+  # Camera and radar should exist on all cars
+  platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
 FW_VERSIONS = {
