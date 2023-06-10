@@ -59,9 +59,14 @@ struct RemoteEncoder {
 };
 
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
-    ((name == "wideRoadEncodeData") ? cameras_logged[2] :
-    ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+  const EncoderInfo* encoder_info;
+  for (const auto &cam : cameras_logged) {
+    for (const auto &candidate_encoder_info: cam.encoder_infos) {
+      if (candidate_encoder_info.publish_name == name) {
+        encoder_info = &candidate_encoder_info;
+      }
+    }
+  }
   int bytes_count = 0;
 
   // extract the message
@@ -111,10 +116,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (cam_info.record) {
+        if (encoder_info->record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+            encoder_info->filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            encoder_info->frame_width, encoder_info->frame_height, encoder_info->fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -214,8 +219,9 @@ void loggerd_thread() {
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
   for (const auto &cam : cameras_logged) {
-    s.max_waiting++;
-    if (cam.has_qcamera) { s.max_waiting++; }
+    for (int i = 0; i < sizeof(cam.encoder_infos); ++i) {
+      s.max_waiting++;
+    }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;

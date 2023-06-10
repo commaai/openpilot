@@ -14,9 +14,11 @@
 class VideoEncoder {
 public:
   VideoEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
-              int bitrate, cereal::EncodeIndex::Type codec, int out_width, int out_height)
+              int bitrate, cereal::EncodeIndex::Type codec, int out_width, int out_height,
+              const char* publish_name)
   : filename(filename), type(type), in_width(in_width), in_height(in_height), fps(fps),
-    bitrate(bitrate), codec(codec), out_width(out_width), out_height(out_height) { }
+    bitrate(bitrate), codec(codec), out_width(out_width), out_height(out_height),
+    publish_name(publish_name) { }
   virtual ~VideoEncoder();
   virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open(const char* path) = 0;
@@ -28,6 +30,7 @@ public:
 
 protected:
   const char* filename;
+  const char* publish_name;
   int in_width, in_height;
   int out_width, out_height, fps;
   int bitrate;
