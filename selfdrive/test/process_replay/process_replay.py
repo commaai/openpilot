@@ -25,6 +25,7 @@ from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, av
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+MAX_FRAMES_PER_SEGMENT = 1200
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
@@ -186,7 +187,7 @@ def torqued_rcv_callback(msg, cfg, frame):
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
-  return msg.which() == "driverCameraState" and msg.driverCameraState.frameId < 1200
+  return msg.which() == "driverCameraState" and msg.driverCameraState.frameId < MAX_FRAMES_PER_SEGMENT
 
 
 class ModeldCameraSyncRcvCallback:
@@ -206,7 +207,7 @@ class ModeldCameraSyncRcvCallback:
     camera_state = getattr(msg, msg.which())
     if self.min_frame_id is None:
       self.min_frame_id = camera_state.frameId
-    if (camera_state.frameId - self.min_frame_id) >= 1200:
+    if (camera_state.frameId - self.min_frame_id) >= MAX_FRAMES_PER_SEGMENT:
       return False
     
     if not self.is_dual_camera:
