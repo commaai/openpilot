@@ -450,7 +450,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.cornerRadar, 0x7b7, None),
   ],
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
-  get_platform_codes=get_platform_codes,
+  fuzzy_get_platform_codes=get_platform_codes,
   # Camera and radar should exist on all cars
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
