@@ -126,4 +126,3 @@ signals:
   void instructionsChanged(cereal::NavInstruction::Reader instruction);
   void ETAChanged(float seconds, float seconds_typical, float distance);
 };
-

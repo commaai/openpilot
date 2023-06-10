@@ -22,7 +22,7 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
-  explicit MapSettings(QWidget* parent = nullptr);
+  explicit MapSettings(QWidget *parent = nullptr);
 
   void navigateTo(const QJsonObject &place);
   void parseResponse(const QString &response, bool success);
