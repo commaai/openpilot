@@ -136,7 +136,7 @@ class TestFwFingerprint(unittest.TestCase):
             for addr, fws in fw_by_addr.items():
               if addr[0] in config.platform_code_ecus:
                 for f in fws:
-                  self.assertEqual(1, len(config.fuzzy_get_platform_codes([f])))
+                  self.assertEqual(1, len(config.get_platform_codes([f])), f"Unable to parse FW: {f}")
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
