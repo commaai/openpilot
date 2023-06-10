@@ -58,20 +58,7 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-<<<<<<< HEAD
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
-=======
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  // TODO: this should be done better
-  const EncoderInfo* encoder_info;
-  for (const auto &cam : cameras_logged) {
-    for (const auto &candidate_encoder_info: cam.encoder_infos) {
-      if (candidate_encoder_info.publish_name == name) {
-        encoder_info = &candidate_encoder_info;
-      }
-    }
-  }
->>>>>>> Compiles
   int bytes_count = 0;
 
   // extract the message
@@ -84,7 +71,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   // encoderd can have started long before loggerd
   if (!re.seen_first_packet) {
     re.seen_first_packet = true;
-    re.encoderd_segment_offset = idx.getSegmentNum();
+    re.encoderd_segment_offset = idx.getSegmentNum(); 
     LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
@@ -119,17 +106,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-<<<<<<< HEAD
         if (encoder_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
             encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
             encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));
-=======
-        if (encoder_info->record) {
-          re.writer.reset(new VideoWriter(s->segment_path,
-            encoder_info->filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            encoder_info->frame_width, encoder_info->frame_height, encoder_info->fps, idx.getType()));
->>>>>>> Compiles
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -225,12 +205,8 @@ void loggerd_thread() {
 
   std::map<std::string, EncoderInfo> encoder_infos_dict;
   for (const auto &cam : cameras_logged) {
-<<<<<<< HEAD
     for (const auto &encoder_info: cam.encoder_infos) {
       encoder_infos_dict[encoder_info.publish_name] = encoder_info;
-=======
-    for (int i = 0; i < sizeof(cam.encoder_infos); ++i) {
->>>>>>> Compiles
       s.max_waiting++;
     }
   }
