@@ -1,11 +1,44 @@
+from collections import defaultdict
+
 from cereal import messaging
 
 
 def migrate_all(lr, old_logtime=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
+  msgs = migrate_cameraStates(msgs, old_logtime)
 
   return msgs
+
+
+def migrate_cameraStates(lr, old_logtime=False):
+  all_msgs = []
+  min_frames_ids = {}
+  prev_frame_ids = defaultdict(int)
+
+  for msg in sorted(lr, key=lambda msg: msg.logMonoTime):
+    if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
+      all_msgs.append(msg)
+      continue
+
+    new_msg = messaging.new_message(msg.which())
+
+    # old logs may have invalid frameIds - relative to route as a whole, not invidudual segment
+    camera_state = getattr(msg, msg.which()).as_builder()
+    assert camera_state.frameId >= prev_frame_ids[msg.which()], f"Corrupted camera state: {msg.which()}. Future camera state has lesser frameId."
+    if msg.which() not in min_frames_ids:
+      min_frames_ids[msg.which()] = camera_state.frameId
+    camera_state.frameId = camera_state.frameId - min_frames_ids[msg.which()]
+    prev_frame_ids[msg.which()] = camera_state.frameId
+
+    if old_logtime:
+      new_msg.logMonoTime = msg.logMonoTime
+    new_msg.valid = msg.valid  
+    setattr(new_msg, msg.which(), camera_state)
+
+    all_msgs.append(new_msg.as_reader())
+  
+  return all_msgs
 
 
 def migrate_carParams(lr, old_logtime=False):
