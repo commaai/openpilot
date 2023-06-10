@@ -328,7 +328,7 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
         <source>Current Destination</source>
         <translation>現在の目的地</translation>

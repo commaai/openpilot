@@ -355,7 +355,7 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
         <source>Current Destination</source>
         <translation>ปลายทางปัจจุบัน</translation>

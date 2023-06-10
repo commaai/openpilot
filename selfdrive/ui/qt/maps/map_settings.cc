@@ -12,7 +12,7 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
+MapSettings::MapSettings(QWidget* parent) : QFrame(parent), invalidated(true) {
   setContentsMargins(36, 36, 36, 36);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -153,7 +153,7 @@ MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
       RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
-      QObject::connect(repeater, &RequestRepeater::requestDone, this, &MapPanel::parseResponse);
+      QObject::connect(repeater, &RequestRepeater::requestDone, this, &MapSettings::parseResponse);
     }
 
     // Destination set while offline
@@ -179,12 +179,12 @@ MapPanel::MapPanel(QWidget* parent) : QFrame(parent), invalidated(true) {
   }
 }
 
-void MapPanel::showEvent(QShowEvent *event) {
+void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
   if (invalidated) refresh();
 }
 
-void MapPanel::clear() {
+void MapSettings::clear() {
   home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
   home_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
   home_address->setText(tr("No home\nlocation set"));
@@ -198,7 +198,7 @@ void MapPanel::clear() {
   clearLayout(recent_layout);
 }
 
-void MapPanel::updateCurrentRoute() {
+void MapSettings::updateCurrentRoute() {
   auto dest = QString::fromStdString(params.get("NavDestination"));
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
   if (dest.size() && !doc.isNull()) {
@@ -209,7 +209,7 @@ void MapPanel::updateCurrentRoute() {
   current_widget->setVisible(dest.size() && !doc.isNull());
 }
 
-void MapPanel::parseResponse(const QString &response, bool success) {
+void MapSettings::parseResponse(const QString &response, bool success) {
   if (!success) return;
   if (cur_destinations == response) return;
 
@@ -220,7 +220,7 @@ void MapPanel::parseResponse(const QString &response, bool success) {
   }
 }
 
-void MapPanel::refresh() {
+void MapSettings::refresh() {
   invalidated = false;
 
   QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
@@ -320,7 +320,7 @@ void MapPanel::refresh() {
   repaint();
 }
 
-void MapPanel::navigateTo(const QJsonObject &place) {
+void MapSettings::navigateTo(const QJsonObject &place) {
   QJsonDocument doc(place);
   params.put("NavDestination", doc.toJson().toStdString());
   updateCurrentRoute();

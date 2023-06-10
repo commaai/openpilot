@@ -137,9 +137,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: MapPanel/PrimeAdWidget
+    // left: MapSettings/PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-    left_widget->addWidget(new MapPanel);
+    left_widget->addWidget(new MapSettings);
     left_widget->addWidget(new PrimeAdWidget);
 
     left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);

@@ -19,10 +19,10 @@ const QString NAV_TYPE_RECENT = "recent";
 const QString NAV_FAVORITE_LABEL_HOME = "home";
 const QString NAV_FAVORITE_LABEL_WORK = "work";
 
-class MapPanel : public QFrame {
+class MapSettings : public QFrame {
   Q_OBJECT
 public:
-  explicit MapPanel(QWidget* parent = nullptr);
+  explicit MapSettings(QWidget* parent = nullptr);
 
   void navigateTo(const QJsonObject &place);
   void parseResponse(const QString &response, bool success);
