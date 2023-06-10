@@ -134,7 +134,7 @@ class TestFwFingerprint(unittest.TestCase):
           # Assert every supported ECU FW version returns one platform code
           for fw_by_addr in VERSIONS[brand].values():
             for addr, fws in fw_by_addr.items():
-              if addr[0] in config.fuzzy_ecus:
+              if addr[0] in config.platform_code_ecus:
                 for f in fws:
                   self.assertEqual(1, len(config.fuzzy_get_platform_codes([f])))
 
