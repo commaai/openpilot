@@ -4,8 +4,8 @@ from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
 
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
-MAX_STEER_RATE = 26  # deg/s
-MAX_STEER_RATE_FRAMES = 14  # tx control frames needed before torque can be cut
+MAX_STEER_RATE = 20  # deg/s
+MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
 
 
 class CarController:
@@ -47,9 +47,13 @@ class CarController:
       if not CC.latActive:
         apply_steer = 0
         apply_steer_req = 0
-      elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+        
+      if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
         apply_steer_req = 0
         self.steer_rate_counter = 0
+      
+      if abs(CS.out.steeringAngleDeg) > 85: # 90 degree steering lockout
+        apply_steer_req = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))

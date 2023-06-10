@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
-    self.prev_angles = np.zeros(5)
+    self.prev_angles = np.zeros(3)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -52,7 +52,7 @@ class CarState(CarStateBase):
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
 
     # Circle Buffer
-    self.prev_angles = self.prev_angles[np.array((4,0,1,2,3))]
+    self.prev_angles = self.prev_angles[np.array((2,0,1))]
     self.prev_angles[0] = ret.steeringAngleDeg
 
     ret.steeringRateDeg = float(np.mean(np.gradient(self.prev_angles, DT_CTRL)))
