@@ -96,7 +96,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   if (option.state & QStyle::State_Selected) {
-    painter->fillRect(option.rect, option.palette.highlight());
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
