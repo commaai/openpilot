@@ -56,6 +56,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertEqual(len({b'-' in code for code in codes}), 1)
 
   def test_fuzzy_platform_codes(self):
+    # Asserts basic platform code parsing behavior
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(codes, {b"DH-1502"})
 
