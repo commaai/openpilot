@@ -78,8 +78,6 @@ class FwQueryConfig:
   # Brand-specific fuzzy fingerprinting config options:
   # A function to get unique, platform-specific identification codes for a set of versions
   fuzzy_get_platform_codes: Optional[Callable[[List[bytes]], Set[bytes]]] = None
-  # The minimum number of version matches to fuzzy fingerprint
-  fuzzy_min_match_count: int = 2
   # List of ECUs expected to have platform codes
   platform_code_ecus: List[capnp.lib.capnp._EnumModule] = field(default_factory=list)
 

@@ -68,7 +68,7 @@ class TestFwFingerprint(TestFwFingerprintBase):
 
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
-      if len(unique_ecus) < config.fuzzy_min_match_count:
+      if len(unique_ecus) < 2:
         self.assertEqual(len(matches), 0, car_model)
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
@@ -132,11 +132,8 @@ class TestFwFingerprint(TestFwFingerprintBase):
       with self.subTest(brand=brand):
         if config.fuzzy_get_platform_codes is None:
           self.assertEqual(len(config.platform_code_ecus), 0, "Cannot specify platform code ECUs without full config")
-          self.assertEqual(config.fuzzy_min_match_count, 2, "Cannot override minimum match count without full config")
         else:
           self.assertGreater(len(config.platform_code_ecus), 0, "Need to specify platform code ECUs")
-          self.assertEqual(config.fuzzy_min_match_count, len(config.platform_code_ecus),
-                           "Fuzzy ECU match count must equal number of fuzzy ECUs")
 
           # Assert every supported ECU FW version returns one platform code
           for fw_by_addr in VERSIONS[brand].values():

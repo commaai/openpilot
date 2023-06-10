@@ -105,7 +105,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
 
   # Note that it is possible to match to a candidate without all its ECUs being present
   # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
-  if len(matched_ecus) >= config.fuzzy_min_match_count:
+  if len(matched_ecus) >= 2:
     if log:
       cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {candidate}
