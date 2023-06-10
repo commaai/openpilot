@@ -140,6 +140,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
+    // TODO this should be dealt with generically
     if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
     if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
     if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
