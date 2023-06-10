@@ -6,7 +6,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
-
+import numpy as np
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
-    self.prev_angle = 0
+    self.prev_angles = np.zeros(5)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -50,9 +50,12 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
-    ret.steeringRateDeg = (ret.steeringAngleDeg - self.prev_angle) / DT_CTRL
 
-    self.prev_angle = ret.steeringAngleDeg
+    # Circle Buffer
+    self.prev_angles = self.prev_angles[np.array((4,0,1,2,3))]
+    self.prev_angles[0] = ret.steeringAngleDeg
+
+    ret.steeringRateDeg = float(np.mean(np.gradient(self.prev_angles, DT_CTRL)))
 
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
