@@ -74,6 +74,8 @@ class FwQueryConfig:
   non_essential_ecus: Dict[capnp.lib.capnp._EnumModule, List[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: List[Tuple[capnp.lib.capnp._EnumModule, int, Optional[int]]] = field(default_factory=list)
+
+  # Brand-specific fuzzy fingerprinting config options:
   # A function to get unique, platform-specific identification codes for a set of versions
   get_platform_codes: Optional[Callable[[List[bytes]], Set[bytes]]] = None
   # List of ECUs expected to have platform codes
