@@ -392,7 +392,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
       painter->setFont(option.font);
       painter->drawText(r, option.displayAlignment, text);
-    } else if (index.column() == 1) {
+    } else if (index.column() == 1 && !item->sparkline.pixmap.isNull()) {
       // sparkline
       QSize sparkline_size = item->sparkline.pixmap.size() / item->sparkline.pixmap.devicePixelRatio();
       painter->drawPixmap(QRect(r.topLeft(), sparkline_size), item->sparkline.pixmap);
