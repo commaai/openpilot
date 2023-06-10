@@ -95,7 +95,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
 
   if len(matched_ecus) >= 2:
     # TODO: verify that this is safe and makes sense by looking at data
-    # Ensure all ECUs in database have responded to FW queries
+    # Ensure all ECUs in database have responded to FW queries before matching
     candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[candidate]}
     if len(candidate_ecus - seen_ecus) > 0:
       if log:
