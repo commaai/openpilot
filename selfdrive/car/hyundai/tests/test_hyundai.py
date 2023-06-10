@@ -126,7 +126,7 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
         # Only test fuzzy ECUs so excluded platforms for platforms codes are accurate
         # We can still fuzzy match via exact FW matches
         ecu_name, addr, sub_addr = ecu
-        if ecu_name not in FW_QUERY_CONFIG.fuzzy_ecus:
+        if ecu_name not in FW_QUERY_CONFIG.platform_code_ecus:
           continue
 
         for fw in fw_versions:
