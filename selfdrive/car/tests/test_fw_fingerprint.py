@@ -56,7 +56,6 @@ class TestFwFingerprint(TestFwFingerprintBase):
       raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
 
     fw = []
-    config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[car_model]]
     for ecu in valid_ecus:
       ecu_name, addr, sub_addr = ecu
       for _ in range(5):
