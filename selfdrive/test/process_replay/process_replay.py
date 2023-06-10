@@ -482,6 +482,7 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
       try:
         # Wait for process to startup
         with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+          # TODO this should be all(), but it's not working with modeld
           while not any(pm.all_readers_updated(s) for s in cfg.pubs):
             time.sleep(0)
 
@@ -534,6 +535,36 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
         managed_processes[cfg.proc_name].stop()
 
       return log_msgs
+
+
+from collections import defaultdict
+def migrate_cameraStates(lr, old_logtime=False):
+  all_msgs = []
+  min_frames_ids = {}
+  prev_frame_ids = defaultdict(int)
+
+  for msg in sorted(lr, key=lambda msg: msg.logMonoTime):
+    if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
+      all_msgs.append(msg)
+      continue
+
+    new_msg = messaging.new_message(msg.which())
+
+    camera_state = getattr(msg, msg.which()).as_builder()
+    assert camera_state.frameId >= prev_frame_ids[msg.which()], f"Corrupted camera state: {msg.which()}. Future camera state has lesser frameId."
+    if min_frames_ids[msg.which()] is None:
+      min_frames_ids[msg.which()] = camera_state.frameId
+    camera_state.frameId = camera_state.frameId - min_frames_ids[msg.which()]
+    prev_frame_ids[msg.which()] = camera_state.frameId
+
+    if old_logtime:
+      new_msg.logMonoTime = msg.logMonoTime
+    new_msg.valid = msg.valid  
+    setattr(new_msg, msg.which(), camera_state)
+
+    all_msgs.append(new_msg.as_reader())
+  
+  return all_msgs
 
 
 def setup_vision_ipc(cfg, lr):
