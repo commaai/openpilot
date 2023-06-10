@@ -16,6 +16,7 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.test_processes import format_diff
+from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from system.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
@@ -39,6 +40,21 @@ def replace_calib(msg, calib):
   if calib is not None:
     msg.liveCalibration.rpyCalib = calib.tolist()
   return msg
+
+
+def trim_logs_to_max_frames(logs, max_frames, frs_types):
+  all_msgs = []
+  cam_state_counts = defaultdict(int)
+  # keep adding messages until cam states are equal to MAX_FRAMES
+  for msg in sorted(logs, key=lambda m: m.logMonoTime):
+    all_msgs.append(msg)
+    if msg.which() in frs_types:
+      cam_state_counts[msg.which()] += 1
+
+    if all(cam_state_counts[state] == max_frames for state in frs_types.keys()):
+      break
+
+  return all_msgs
 
 
 def nav_model_replay(lr):
@@ -92,7 +108,6 @@ def nav_model_replay(lr):
 
   return log_msgs
 
-from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 
 def model_replay(lr, frs):
   if not PC:
@@ -102,7 +117,10 @@ def model_replay(lr, frs):
     spinner = None
 
   log_msgs = []
-  all_msgs = list(lr)
+
+  # modeld is using frame pairs
+  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES + 1, frs)
+  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, frs)
   if not SEND_EXTRA_INPUTS:
     all_msgs = [msg for msg in all_msgs if msg.which() not in ["liveCalibration", "lateralPlan"]]
 
@@ -110,8 +128,10 @@ def model_replay(lr, frs):
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
   try:
-    log_msgs.extend(replay_process(modeld, all_msgs, frs))
-    log_msgs.extend(replay_process(dmonitoringmodeld, all_msgs, frs))
+    modeld_msgs = replay_process(modeld, modeld_logs, frs)
+    dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
+    log_msgs.extend([m for m in modeld_msgs if m.which() == "modelV2"])
+    log_msgs.extend([m for m in dmonitoringmodeld_msgs if m.which() == "driverStateV2"])
   finally:
     if spinner:
       spinner.close()
