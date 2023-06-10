@@ -589,10 +589,6 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>软件</translation>
     </message>
-    <message>
-        <source>Navigation</source>
-        <translation>导航</translation>
-    </message>
 </context>
 <context>
     <name>Setup</name>

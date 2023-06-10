@@ -593,10 +593,6 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>Software</translation>
     </message>
-    <message>
-        <source>Navigation</source>
-        <translation>Navigation</translation>
-    </message>
 </context>
 <context>
     <name>Setup</name>

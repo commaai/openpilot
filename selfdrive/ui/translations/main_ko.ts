@@ -592,10 +592,6 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>소프트웨어</translation>
     </message>
-    <message>
-        <source>Navigation</source>
-        <translation>네비게이션</translation>
-    </message>
 </context>
 <context>
     <name>Setup</name>

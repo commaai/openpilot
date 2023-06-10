@@ -591,10 +591,6 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>軟體</translation>
     </message>
-    <message>
-        <source>Navigation</source>
-        <translation>導航</translation>
-    </message>
 </context>
 <context>
     <name>Setup</name>
