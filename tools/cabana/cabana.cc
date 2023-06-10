@@ -83,5 +83,8 @@ int main(int argc, char *argv[]) {
     w.loadFile(dbc_file);
   }
   w.show();
-  return app.exec();
+
+  int ret = app.exec();
+  delete can;
+  return ret;
 }

@@ -6,6 +6,7 @@ import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
+from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car
@@ -77,9 +78,9 @@ class ReplayContext:
   def wait_for_recv_called(self):
     messaging.wait_for_one_event(self.all_recv_called_events)
 
-  def wait_for_next_recv(self, end_of_cycle):
+  def wait_for_next_recv(self, trigger_empty_recv):
     index = messaging.wait_for_one_event(self.all_recv_called_events)
-    if self.drained_pub is not None and end_of_cycle:
+    if self.drained_pub is not None and trigger_empty_recv:
       self.all_recv_called_events[index].clear()
       self.all_recv_ready_events[index].set()
       self.all_recv_called_events[index].wait()
@@ -147,6 +148,8 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
+    assert len(canmsgs) != 0, "CAN messages are required for carParams initialization"
+
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
@@ -256,7 +259,7 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -265,7 +268,7 @@ CONFIGS = [
     subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -278,7 +281,7 @@ CONFIGS = [
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
     config_callback=locationd_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -307,7 +310,7 @@ CONFIGS = [
     subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
@@ -333,7 +336,28 @@ def get_process_config(name):
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def replay_process(cfg, lr, fingerprint=None):
+def replay_process_with_name(name, lr, *args, **kwargs):
+  cfg = get_process_config(name)
+  return replay_process(cfg, lr, *args, **kwargs)
+
+
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, disable_progress=False):
+  all_msgs = list(lr)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint, disable_progress)
+
+  if return_all_logs:
+    keys = set(cfg.subs)
+    modified_logs = [m for m in all_msgs if m.which() not in keys]
+    modified_logs.extend(process_logs)
+    modified_logs.sort(key=lambda m: m.logMonoTime)
+    log_msgs = modified_logs
+  else:
+    log_msgs = process_logs
+
+  return log_msgs
+
+
+def _replay_single_process(cfg, lr, fingerprint, disable_progress):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -381,7 +405,7 @@ def replay_process(cfg, lr, fingerprint=None):
 
         # Do the replay
         cnt = 0
-        for msg in pub_msgs:
+        for msg in tqdm(pub_msgs, disable=disable_progress):
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
@@ -396,12 +420,17 @@ def replay_process(cfg, lr, fingerprint=None):
                 for s in sockets.values():
                   messaging.recv_one_or_none(s)
 
+              # empty recv on drained pub indicates the end of messages, only do that if there're any
+              trigger_empty_recv = False
+              if cfg.drained_pub:
+                trigger_empty_recv = next((True for m in msg_queue if m.which() == cfg.drained_pub), False)
+
               for m in msg_queue:
                 pm.send(m.which(), m.as_builder())
               msg_queue = []
 
               rc.unlock_sockets()
-              rc.wait_for_next_recv(True)
+              rc.wait_for_next_recv(trigger_empty_recv)
 
               for s in resp_sockets:
                 ms = messaging.drain_sock(sockets[s])  
@@ -484,7 +513,7 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, 
       params.put_bool("ExperimentalLongitudinalEnabled", True)
 
 
-def check_enabled(msgs):
+def check_openpilot_enabled(msgs):
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:
