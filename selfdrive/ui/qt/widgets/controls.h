@@ -269,7 +269,9 @@ class ListWidget : public QWidget {
     outer_layout.addStretch();
   }
   inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
+  inline void insertItem(int index, QWidget *w) { inner_layout.insertWidget(index, w); }
   inline void addItem(QLayout *layout) { inner_layout.addLayout(layout); }
+  inline void insertItem(int index, QLayout *layout) { inner_layout.insertLayout(index, layout); }
   inline void setSpacing(int spacing) { inner_layout.setSpacing(spacing); }
 
 private:

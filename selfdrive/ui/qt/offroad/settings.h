@@ -52,21 +52,37 @@ private:
   Params params;
 };
 
-class TogglesPanel : public ListWidget {
+class TogglesWidget : public ListWidget {
   Q_OBJECT
 public:
-  explicit TogglesPanel(SettingsWindow *parent);
+  explicit TogglesWidget(SettingsWindow *parent, std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs);
   void showEvent(QShowEvent *event) override;
 
 public slots:
   void expandToggleDescription(const QString &param);
 
-private:
+protected:
   Params params;
   std::map<std::string, ParamControl*> toggles;
+
+  virtual void updateToggles() {};
+};
+
+class DrivingPanel : public TogglesWidget {
+  Q_OBJECT
+public:
+  explicit DrivingPanel(SettingsWindow *parent);
+
+private:
   ButtonParamControl *long_personality_setting;
 
-  void updateToggles();
+  void updateToggles() override;
+};
+
+class TogglesPanel : public TogglesWidget {
+  Q_OBJECT
+public:
+  explicit TogglesPanel(SettingsWindow *parent);
 };
 
 class SoftwarePanel : public ListWidget {

@@ -26,75 +26,7 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // param, title, desc, icon, confirm
-  std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
-    {
-      "OpenpilotEnabledToggle",
-      tr("Enable openpilot"),
-      tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
-      "../assets/offroad/icon_openpilot.png",
-    },
-    {
-      "ExperimentalLongitudinalEnabled",
-      tr("openpilot Longitudinal Control (Alpha)"),
-      QString("<b>%1</b><br><br>%2")
-      .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
-      "../assets/offroad/icon_speed_limit.png",
-    },
-    {
-      "ExperimentalMode",
-      tr("Experimental Mode"),
-      "",
-      "../assets/img_experimental_white.svg",
-    },
-    {
-      "DisengageOnAccelerator",
-      tr("Disengage on Accelerator Pedal"),
-      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-      "../assets/offroad/icon_disengage_on_accelerator.svg",
-    },
-    {
-      "IsLdwEnabled",
-      tr("Enable Lane Departure Warnings"),
-      tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
-      "../assets/offroad/icon_warning.png",
-    },
-    {
-      "RecordFront",
-      tr("Record and Upload Driver Camera"),
-      tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-      "../assets/offroad/icon_monitoring.png",
-    },
-    {
-      "IsMetric",
-      tr("Use Metric System"),
-      tr("Display speed in km/h instead of mph."),
-      "../assets/offroad/icon_metric.png",
-    },
-#ifdef ENABLE_MAPS
-    {
-      "NavSettingTime24h",
-      tr("Show ETA in 24h Format"),
-      tr("Use 24h format instead of am/pm"),
-      "../assets/offroad/icon_metric.png",
-    },
-    {
-      "NavSettingLeftSide",
-      tr("Show Map on Left Side of UI"),
-      tr("Show map on left side when in split screen view."),
-      "../assets/offroad/icon_road.png",
-    },
-#endif
-  };
-
-
-  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
-  long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
-                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars."),
-                                          "../assets/offroad/icon_speed_limit.png",
-                                          longi_button_texts);
+TogglesWidget::TogglesWidget(SettingsWindow *parent, std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs) : ListWidget(parent) {
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
@@ -103,12 +35,59 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
-
-    // insert longitudinal personality after NDOG toggle
-    if (param == "DisengageOnAccelerator") {
-      addItem(long_personality_setting);
-    }
   }
+}
+
+void TogglesWidget::expandToggleDescription(const QString &param) {
+  toggles[param.toStdString()]->showDescription();
+}
+
+void TogglesWidget::showEvent(QShowEvent *event) {
+  updateToggles();
+}
+
+DrivingPanel::DrivingPanel(SettingsWindow *parent) : TogglesWidget(parent, {
+  {
+    "OpenpilotEnabledToggle",
+    tr("Enable openpilot"),
+    tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
+    "../assets/offroad/icon_openpilot.png",
+  },
+  {
+    "ExperimentalLongitudinalEnabled",
+    tr("openpilot Longitudinal Control (Alpha)"),
+    QString("<b>%1</b><br><br>%2")
+        .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
+        .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
+    "../assets/offroad/icon_speed_limit.png",
+  },
+  {
+    "ExperimentalMode",
+    tr("Experimental Mode"),
+    "",
+    "../assets/img_experimental_white.svg",
+  },
+  {
+    "DisengageOnAccelerator",
+    tr("Disengage on Accelerator Pedal"),
+    tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
+    "../assets/offroad/icon_disengage_on_accelerator.svg",
+  },
+  {
+    "IsLdwEnabled",
+    tr("Enable Lane Departure Warnings"),
+    tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
+    "../assets/offroad/icon_warning.png",
+  },
+}) {
+  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
+  long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
+                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars."),
+                                          "../assets/offroad/icon_speed_limit.png",
+                                          longi_button_texts);
+
+  // insert longitudinal personality after NDOG toggle
+  insertItem(4, long_personality_setting);
 
   // Toggles with confirmation dialogs
   toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
@@ -120,15 +99,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
 }
 
-void TogglesPanel::expandToggleDescription(const QString &param) {
-  toggles[param.toStdString()]->showDescription();
-}
-
-void TogglesPanel::showEvent(QShowEvent *event) {
-  updateToggles();
-}
-
-void TogglesPanel::updateToggles() {
+void DrivingPanel::updateToggles() {
   auto e2e_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = QString("%1<br>"
@@ -187,6 +158,36 @@ void TogglesPanel::updateToggles() {
     e2e_toggle->setDescription(e2e_description);
     op_long_toggle->setVisible(false);
   }
+}
+
+TogglesPanel::TogglesPanel(SettingsWindow *parent) : TogglesWidget(parent, {
+  {
+    "RecordFront",
+    tr("Record and Upload Driver Camera"),
+    tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
+    "../assets/offroad/icon_monitoring.png",
+  },
+  {
+    "IsMetric",
+    tr("Use Metric System"),
+    tr("Display speed in km/h instead of mph."),
+    "../assets/offroad/icon_metric.png",
+  },
+#ifdef ENABLE_MAPS
+  {
+    "NavSettingTime24h",
+    tr("Show ETA in 24h Format"),
+    tr("Use 24h format instead of am/pm"),
+    "../assets/offroad/icon_metric.png",
+  },
+  {
+    "NavSettingLeftSide",
+    tr("Show Map on Left Side of UI"),
+    tr("Show map on left side when in split screen view."),
+    "../assets/offroad/icon_road.png",
+  },
+#endif
+}) {
 }
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
@@ -375,12 +376,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
+  DrivingPanel *driving = new DrivingPanel(this);
+  QObject::connect(this, &SettingsWindow::expandToggleDescription, driving, &TogglesWidget::expandToggleDescription);
+
   TogglesPanel *toggles = new TogglesPanel(this);
-  QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+  QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesWidget::expandToggleDescription);
 
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), new Networking(this)},
+    {tr("Driving"), driving},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
   };
