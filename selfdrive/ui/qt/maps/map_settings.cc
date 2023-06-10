@@ -12,7 +12,7 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-MapSettings::MapSettings(QWidget* parent) : QFrame(parent), invalidated(true) {
+MapSettings::MapSettings(QWidget* parent) : QFrame(parent) {
   setContentsMargins(36, 36, 36, 36);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -181,7 +181,7 @@ MapSettings::MapSettings(QWidget* parent) : QFrame(parent), invalidated(true) {
 
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
-  if (invalidated) refresh();
+  refresh();
 }
 
 void MapSettings::clear() {
@@ -211,17 +211,15 @@ void MapSettings::updateCurrentRoute() {
 
 void MapSettings::parseResponse(const QString &response, bool success) {
   if (!success) return;
-  if (cur_destinations == response) return;
 
   cur_destinations = response;
-  invalidated = true;
   if (isVisible()) {
     refresh();
   }
 }
 
 void MapSettings::refresh() {
-  invalidated = false;
+  if (cur_destinations == prev_destinations) return;
 
   QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
   if (doc.isNull()) {
@@ -229,6 +227,7 @@ void MapSettings::refresh() {
     return;
   }
 
+  prev_destinations = cur_destinations;
   clear();
 
   // add favorites before recents

@@ -34,8 +34,7 @@ private:
   void refresh();
 
   Params params;
-  bool invalidated;
-  QString cur_destinations;
+  QString prev_destinations, cur_destinations;
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
   QVBoxLayout *recent_layout;
