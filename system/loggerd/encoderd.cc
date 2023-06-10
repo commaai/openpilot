@@ -57,7 +57,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
           encoders.push_back(new Encoder(encoder_info.filename, cam_info.type, buf_info.width, buf_info.height,
                                         encoder_info.fps, encoder_info.bitrate,
                                         encoder_info.encode_type,
-                                        buf_info.width, buf_info.height,
+                                        encoder_info.frame_width, encoder_info.frame_height,
                                         encoder_info.publish_name));
         }
       } else {
