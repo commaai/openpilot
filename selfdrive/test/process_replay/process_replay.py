@@ -11,8 +11,7 @@ from tqdm import tqdm
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import service_list
-from cereal.visionipc import VisionIpcServer, VisionStreamType, get_endpoint_name as vipc_get_endpoint_name
-from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size, eon_f_frame_size, eon_d_frame_size
+from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from common.params import Params
 from common.timeout import Timeout
 from common.realtime import DT_CTRL
