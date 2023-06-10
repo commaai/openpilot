@@ -192,13 +192,3 @@ std::pair<int, int> getSignalRange(const cabana::Signal *s) {
   int to = from + s->size - 1;
   return {from, to};
 }
-
-QString signalToolTip(const cabana::Signal *sig) {
-  return QObject::tr(R"(
-    %1<br /><span font-size:small">
-    Start Bit: %2 Size: %3<br />
-    MSB: %4 LSB: %5<br />
-    Little Endian: %6 Signed: %7</span>
-  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
-     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
-}

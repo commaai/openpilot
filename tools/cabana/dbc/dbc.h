@@ -104,4 +104,3 @@ void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
 std::pair<int, int> getSignalRange(const cabana::Signal *s);
 inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
 inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }
-QString signalToolTip(const cabana::Signal *sig);
