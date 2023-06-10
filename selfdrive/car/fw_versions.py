@@ -93,14 +93,15 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
         elif candidate != candidates[0]:
           return set()
 
-  # Note that it is possible to match to a candidate without all its ECUs being present
-  # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
   if len(matched_ecus) >= 2:
-    if log:
-      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
-    return {candidate}
-  else:
-    return set()
+    # TODO: verify that this is safe and makes sense by looking at data
+    # Ensure all ECUs in database have responded to FW queries
+    candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[candidate]}
+    if len(candidate_ecus - seen_ecus) > 0:
+      if log:
+        cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
+      return {candidate}
+  return set()
 
 
 def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
