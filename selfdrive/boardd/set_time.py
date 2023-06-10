@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import datetime
 import os
-import struct
-import usb1
+import datetime
+from panda import Panda
 
-REQUEST_IN = usb1.ENDPOINT_IN | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE
-MIN_DATE = datetime.datetime(year=2021, month=4, day=1)
+MIN_DATE = datetime.datetime(year=2023, month=4, day=1)
 
 def set_time(logger):
   sys_time = datetime.datetime.today()
@@ -14,24 +12,27 @@ def set_time(logger):
     return
 
   try:
-    ctx = usb1.USBContext()
-    dev = ctx.openByVendorIDAndProductID(0xbbaa, 0xddcc)
-    if dev is None:
-      logger.info("No panda found")
+    ps = Panda.list()
+    if len(ps) == 0:
+      logger.error("Failed to set time, no pandas found")
       return
 
-    # Set system time from panda RTC time
-    dat = dev.controlRead(REQUEST_IN, 0xa0, 0, 0, 8)
-    a = struct.unpack("HBBBBBB", dat)
-    panda_time = datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
-    if panda_time > MIN_DATE:
-      logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
-      os.system(f"TZ=UTC date -s '{panda_time}'")
+    for s in ps:
+      with Panda(serial=s) as p:
+        if not p.is_internal():
+          continue
+
+        # Set system time from panda RTC time
+        panda_time = p.get_datetime()
+        if panda_time > MIN_DATE:
+          logger.info(f"adjusting time from '{sys_time}' to '{panda_time}'")
+          os.system(f"TZ=UTC date -s '{panda_time}'")
+        break
   except Exception:
-    logger.warn("Failed to fetch time from panda")
+    logger.exception("Failed to fetch time from panda")
 
 if __name__ == "__main__":
   import logging
-  logging.basicConfig(level=logging.INFO)
+  logging.basicConfig(level=logging.DEBUG)
 
   set_time(logging)

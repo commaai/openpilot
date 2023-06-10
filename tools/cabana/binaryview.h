@@ -6,7 +6,7 @@
 #include <QStyledItemDelegate>
 #include <QTableView>
 
-#include "tools/cabana/dbcmanager.h"
+#include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
 
 class BinaryItemDelegate : public QStyledItemDelegate {
@@ -14,8 +14,8 @@ public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void setSelectionColor(const QColor &color) { selection_color = color; }
-  bool isSameColor(const QModelIndex &index, int dx, int dy) const;
-  void drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  bool hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  void drawSignalCell(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index, const cabana::Signal *sig) const;
 
   QFont small_font, hex_font;
   QColor selection_color;
@@ -26,6 +26,7 @@ public:
   BinaryViewModel(QObject *parent) : QAbstractTableModel(parent) {}
   void refresh();
   void updateState();
+  void updateItem(int row, int col, const QString &val, const QColor &color);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
@@ -39,11 +40,12 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QColor(102, 86, 169, 0);
+    QColor bg_color = QColor(102, 86, 169, 255);
     bool is_msb = false;
     bool is_lsb = false;
-    QString val = "-";
+    QString val;
     QList<const cabana::Signal *> sigs;
+    bool valid = false;
   };
   std::vector<Item> items;
 

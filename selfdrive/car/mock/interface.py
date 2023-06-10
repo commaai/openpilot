@@ -19,7 +19,7 @@ class CarInterface(CarInterfaceBase):
     self.prev_speed = 0.
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mock"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.

@@ -518,14 +518,6 @@ location set</source>
         <source>comma prime</source>
         <translation>comma 高級會員</translation>
     </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA 積分</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -862,6 +854,26 @@ This may take up to a minute.</source>
         <source>Uninstall</source>
         <translation>解除安裝</translation>
     </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation>檢查更新失敗</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation>已經是最新版本，上次檢查時間為 %1</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation>下載</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation>有可用的更新</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation>從未更新</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -963,10 +975,6 @@ This may take up to a minute.</source>
         <translation>上傳駕駛監控的錄像來協助我們提升駕駛監控的準確率。</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>使用 openpilot 縱向控制（實驗）</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>油門取消控車</translation>
     </message>
@@ -993,14 +1001,6 @@ This may take up to a minute.</source>
     <message>
         <source>Experimental Mode</source>
         <translation>實驗模式</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>警告：openpilot 縱向控制在這輛車上仍屬實驗性質，啟用後會喪失自動緊急煞車 (AEB) 功能。</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation>在本車輛中，openpilot預設將使用原車內建的ACC系統，而非openpilot縱向控制。開啟此開關來啟用openpilot縱向控制，使用此選項時建議一併啟用實驗模式。</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1038,6 +1038,38 @@ This may take up to a minute.</source>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>openpilot 縱向控制 (Alpha 版)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>警告：此車輛的 Openpilot 縱向控制功能目前處於 Alpha 版本，使用此功能將會停用自動緊急制動（AEB）功能。</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>在這輛車上，Openpilot 預設使用車輛內建的主動巡航控制（ACC），而非 Openpilot 的縱向控制。啟用此項功能可切換至 Openpilot 的縱向控制。當啟用 Openpilot 縱向控制 Alpha 版本時，建議同時啟用實驗性模式（Experimental mode）。</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>積極</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>標準</translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation>舒適</translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation>駕駛風格</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation>推薦使用標準模式。在積極模式中，openpilot 會更靠近前車並在加速和剎車方面更積極。在舒適模式中，openpilot 會與前車保持較遠的距離。</translation>
+    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1072,6 +1104,29 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>更新失敗</translation>
+    </message>
+</context>
+<context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation>設置 Wi-Fi 連接</translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation>請連接至 Wi-Fi 以上傳駕駛數據，並協助改進 openpilot。</translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation>開啟設置</translation>
+    </message>
+    <message>
+        <source>Uploading training data</source>
+        <translation>正在上傳訓練數據</translation>
+    </message>
+    <message>
+        <source>Your data is used to train driving models and help improve openpilot</source>
+        <translation>您的數據將用於訓練駕駛模型並協助改進 openpilot</translation>
     </message>
 </context>
 <context>

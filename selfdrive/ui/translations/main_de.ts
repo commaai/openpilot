@@ -517,14 +517,6 @@ location set</source>
         <source>comma prime</source>
         <translation>comma prime</translation>
     </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA PUNKTE</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -866,6 +858,26 @@ This may take up to a minute.</source>
         <source>Uninstall</source>
         <translation>Deinstallieren</translation>
     </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -993,20 +1005,8 @@ This may take up to a minute.</source>
         <translation>Experimenteller Modus</translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
-        <translation>Experimenteller Openpilot Tempomat</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is experimental for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>WARNUNG: Der Openpilot Tempomat ist für dieses Auto experimentell und deaktiviert den Notbremsassistenten.</translation>
-    </message>
-    <message>
         <source>Disengage on Accelerator Pedal</source>
         <translation>Bei Gasbetätigung ausschalten</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when using experimental openpilot longitudinal control.</source>
-        <translation>Bei diesem auto wird standardmäßig der im Auto eingebaute adaptive Tempomat anstelle des Openpilot Tempomats benutzt. Aktiviere diesen Schalter, um zum Openpilot Tempomaten zu wechseln. Es ist empfohlen den Experimentellen Modus bei Nutzung des Openpilot Tempomats zu aktivieren.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1044,6 +1044,38 @@ This may take up to a minute.</source>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1078,6 +1110,29 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>Aktualisierung fehlgeschlagen</translation>
+    </message>
+</context>
+<context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uploading training data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your data is used to train driving models and help improve openpilot</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

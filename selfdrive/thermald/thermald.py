@@ -313,9 +313,6 @@ def thermald_thread(end_event, hw_queue):
       should_start = should_start and all(startup_conditions.values())
 
     if should_start != should_start_prev or (count == 0):
-      params.put_bool("IsOnroad", should_start)
-      params.put_bool("IsOffroad", not should_start)
-
       params.put_bool("IsEngaged", False)
       engaged_prev = False
       HARDWARE.set_power_save(not should_start)
