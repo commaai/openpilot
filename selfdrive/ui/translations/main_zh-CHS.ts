@@ -342,16 +342,6 @@
         <translation>最近目的地</translation>
     </message>
     <message>
-        <source>Try the Navigation Beta</source>
-        <translation>试用导航测试版</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。
-立即注册：https://connect.comma.ai</translation>
-    </message>
-    <message>
         <source>No home
 location set</source>
         <translation>家：未设定</translation>

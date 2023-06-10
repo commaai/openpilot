@@ -343,16 +343,6 @@
         <translation>Destinos Recentes</translation>
     </message>
     <message>
-        <source>Try the Navigation Beta</source>
-        <translation>Experimente a Navegação Beta</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com
-uma assinatura prime. Inscreva-se agora:  https://connect.comma.ai</translation>
-    </message>
-    <message>
         <source>No home
 location set</source>
         <translation>Sem local

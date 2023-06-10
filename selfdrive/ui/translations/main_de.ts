@@ -343,16 +343,6 @@
         <translation>Letzte Ziele</translation>
     </message>
     <message>
-        <source>Try the Navigation Beta</source>
-        <translation>Beta Navigation ausprobieren</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Erhalte echtzeit Wegführung und mehr mit dem comma prime
-Abonnement. Melde dich jetzt an: https://connect.comma.ai</translation>
-    </message>
-    <message>
         <source>No home
 location set</source>
         <translation>Keine Heimadresse gesetzt</translation>

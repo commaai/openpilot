@@ -342,16 +342,6 @@
         <translation>최근 목적지</translation>
     </message>
     <message>
-        <source>Try the Navigation Beta</source>
-        <translation>네비게이션(베타)를 사용해보세요</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>자세한 경로안내를 원하시면 comma prime을 구독하세요.
-등록：https://connect.comma.ai</translation>
-    </message>
-    <message>
         <source>No home
 location set</source>
         <translation>집

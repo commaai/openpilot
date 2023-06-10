@@ -342,16 +342,6 @@
         <translation>最近の目的地</translation>
     </message>
     <message>
-        <source>Try the Navigation Beta</source>
-        <translation>β版ﾅﾋﾞｹﾞｰｼｮﾝを試す</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>より詳細な案内情報を得ることができます。
-詳しくはこちら：https://connect.comma.ai</translation>
-    </message>
-    <message>
         <source>No home
 location set</source>
         <translation>自宅の住所はまだ
