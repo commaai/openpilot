@@ -122,7 +122,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "CR_VSM_Alive": idx % 0xF,
   }
 
-  # send CF_VSM_ConfMode and AEB_Status to cars that do not accept FCA messages, otherwise TCS13|ACCEnable would fault
+  # For cars that do not broadcast FCA messages, send CF_VSM_ConfMode = 1 and AEB_Status = 1 to prevent TCS13|ACCEnable fault
   if not has_fca:
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1  # AEB disabled
@@ -142,7 +142,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
-  # only send FCA11 to cars that accept FCA messages, otherwise TCS13|ACCEnable would fault
+  # For cars that do not broadcast FCA messages, do not send FCA messages to prevent TCS13|ACCEnable fault
   if has_fca:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
@@ -169,7 +169,7 @@ def create_acc_opt(packer, has_fca):
   }
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
-  # only send FCA12 to cars that accept FCA messages, otherwise TCS13|ACCEnable would fault
+  # For cars that do not broadcast FCA messages, do not send FCA messages to prevent TCS13|ACCEnable fault
   if has_fca:
     fca12_values = {
       "FCA_DrvSetState": 2,
