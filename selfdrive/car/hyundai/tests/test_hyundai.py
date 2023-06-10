@@ -42,11 +42,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
-    # for now assert date format is consistent across each platform
+    # for now assert date format is consistent for all FW across each platform
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
-          if ecu[0] != Ecu.fwdCamera:
+          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
             continue
 
           codes = set()
