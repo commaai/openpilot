@@ -38,12 +38,6 @@ class CarControllerParams:
     pass
 
 
-class CANBUS:
-  main = 0
-  radar = 1
-  camera = 2
-
-
 class CAR:
   BRONCO_SPORT_MK1 = "FORD BRONCO SPORT 1ST GEN"
   ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"

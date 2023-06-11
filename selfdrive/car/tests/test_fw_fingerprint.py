@@ -123,6 +123,21 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
+  def test_fuzzy_fingerprint_config(self):
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand=brand):
+        if config.fuzzy_get_platform_codes is None:
+          self.assertEqual(len(config.platform_code_ecus), 0, "Cannot specify platform code ECUs without full config")
+        else:
+          self.assertGreater(len(config.platform_code_ecus), 0, "Need to specify platform code ECUs")
+
+          # Assert every supported ECU FW version returns one platform code
+          for fw_by_addr in VERSIONS[brand].values():
+            for addr, fws in fw_by_addr.items():
+              if addr[0] in config.platform_code_ecus:
+                for f in fws:
+                  self.assertEqual(1, len(config.fuzzy_get_platform_codes([f])), f"Unable to parse FW: {f}")
+
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
