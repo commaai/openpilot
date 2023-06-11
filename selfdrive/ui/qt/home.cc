@@ -57,6 +57,8 @@ void HomeWindow::updateState(const UIState &s) {
     body->setEnabled(true);
     slayout->setCurrentWidget(body);
   }
+
+  if (sidebar->isVisible() && onroad->isMapVisible()) sidebar->hide();
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
