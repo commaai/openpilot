@@ -18,21 +18,17 @@ class CanBus(CanBusBase):
     if hda2:
       self._a, self._e = 0, 1
 
-    self._a += self.offset
-    self._e += self.offset
-    self._cam = 2 + self.offset
-
   @property
   def ECAN(self):
-    return self._e
+    return self._e + self.offset
 
   @property
   def ACAN(self):
-    return self._a
+    return self._a + self.offset
 
   @property
   def CAM(self):
-    return self._cam
+    return 2 + self.offset
 
 
 def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
