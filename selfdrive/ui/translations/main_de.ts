@@ -285,43 +285,43 @@
     <name>DrivingPanel</name>
     <message>
         <source>Enable openpilot</source>
-        <translation type="unfinished">Openpilot aktivieren</translation>
+        <translation>Openpilot aktivieren</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation type="unfinished">Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
+        <translation>Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished">Experimenteller Modus</translation>
+        <translation>Experimenteller Modus</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation type="unfinished">Bei Gasbetätigung ausschalten</translation>
+        <translation>Bei Gasbetätigung ausschalten</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation type="unfinished">Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
+        <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
-        <translation type="unfinished">Spurverlassenswarnungen aktivieren</translation>
+        <translation>Spurverlassenswarnungen aktivieren</translation>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation type="unfinished">Erhalte Warnungen, zurück in die Spur zu lenken, wenn dein Auto über eine erkannte Fahrstreifenmarkierung ohne aktivierten Blinker mit mehr als 50 km/h fährt.</translation>
+        <translation>Erhalte Warnungen, zurück in die Spur zu lenken, wenn dein Auto über eine erkannte Fahrstreifenmarkierung ohne aktivierten Blinker mit mehr als 50 km/h fährt.</translation>
     </message>
     <message>
         <source>Aggressive</source>
@@ -345,27 +345,27 @@
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished">Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
+        <translation>Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
     </message>
     <message>
         <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation type="unfinished">🌮 Ende-zu-Ende Tempomat 🌮</translation>
+        <translation>🌮 Ende-zu-Ende Tempomat 🌮</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished">Lass das Fahrmodell Gas und Bremse kontrollieren. Openpilot wird so fahren, wie es dies von einem Menschen erwarten würde; inklusive des Anhaltens für Ampeln und Stoppschildern. Da das Fahrmodell entscheidet wie schnell es fährt stellt die gesetzte Geschwindigkeit lediglich das obere Limit dar. Dies ist ein Alpha-level Funktion. Fehler sind zu erwarten.</translation>
+        <translation>Lass das Fahrmodell Gas und Bremse kontrollieren. Openpilot wird so fahren, wie es dies von einem Menschen erwarten würde; inklusive des Anhaltens für Ampeln und Stoppschildern. Da das Fahrmodell entscheidet wie schnell es fährt stellt die gesetzte Geschwindigkeit lediglich das obere Limit dar. Dies ist ein Alpha-level Funktion. Fehler sind zu erwarten.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
-        <translation type="unfinished">Neue Fahrvisualisierung</translation>
+        <translation>Neue Fahrvisualisierung</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished">Die Fahrvisualisierung wechselt bei niedrigen Geschwindigkeiten zur Straßengewandten Weitwinkelkamera, um manche Kurven besser zu zeigen. Außerdem wird das Experimenteller Modus logo oben rechts angezeigt.</translation>
+        <translation>Die Fahrvisualisierung wechselt bei niedrigen Geschwindigkeiten zur Straßengewandten Weitwinkelkamera, um manche Kurven besser zu zeigen. Außerdem wird das Experimenteller Modus logo oben rechts angezeigt.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished">Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
+        <translation>Der experimentelle Modus ist momentan für dieses Auto nicht verfügbar da es den eingebauten adaptiven Tempomaten des Autos benutzt.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
@@ -377,7 +377,7 @@
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="unfinished">Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
+        <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
     </message>
 </context>
 <context>
