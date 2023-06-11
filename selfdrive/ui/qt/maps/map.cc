@@ -316,10 +316,6 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   }
 }
 
-//void MapWindow::showEvent(QShowEvent *event) {
-//  emit mapWindowShown();
-//}
-
 void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
