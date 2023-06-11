@@ -108,11 +108,13 @@ jobs:
         path: |
           ~/.pyenv
           ~/Library/Caches/pypoetry
-          ~/Library/Caches/Homebrew/Cask/gcc-arm-*
           /usr/local/Cellar
           /usr/local/opt
+          /usr/local/Caskroom/gcc-arm-*
           /opt/homebrew/Cellar
           /opt/homebrew/opt
+          /opt/homebrew/Caskroom/gcc-arm-*
+          /Applications/ArmGNUToolchain
           ~/github_brew_cache_entries.txt
         key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos-
@@ -120,6 +122,10 @@ jobs:
       run: |
         if [ -f ~/github_brew_cache_entries.txt ]; then
           brew link --force $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
+          if [ -d /Applications/ArmGNUToolchain ]; then # link gcc-arm-embedded manually
+            GCC_TOOLCHAIN="$(echo /Applications/ArmGNUToolchain/**/**/bin)"
+            echo "$GCC_TOOLCHAIN" >> $GITHUB_PATH
+          fi
         else
           echo "Cache entries not found"
         fi
