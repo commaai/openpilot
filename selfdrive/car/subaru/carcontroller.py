@@ -7,6 +7,9 @@ from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarCon
 MAX_STEER_RATE = 20  # deg/s
 MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
 
+MAX_STEER_ANGLE = 85
+MAX_STEER_ANGLE_FRAMES = 8
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -17,6 +20,7 @@ class CarController:
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
     self.steer_rate_counter = 0
+    self.steer_angle_counter = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -50,12 +54,18 @@ class CarController:
         else:
           self.steer_rate_counter = 0
         
+        if abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE:
+          self.steer_angle_counter += 1
+        else:
+          self.steer_angle_counter = 0
+        
         if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
           apply_steer_req = 0
           self.steer_rate_counter = 0
         
-        if abs(CS.out.steeringAngleDeg) > 85: # 90 degree steering lockout
+        if self.steer_angle_counter > MAX_STEER_ANGLE_FRAMES:
           apply_steer_req = 0
+          self.steer_angle_counter = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
