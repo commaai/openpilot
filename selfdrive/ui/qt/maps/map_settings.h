@@ -11,6 +11,14 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
+const int MAP_PANEL_ICON_SIZE = 200;
+
+const QString NAV_TYPE_FAVORITE = "favorite";
+const QString NAV_TYPE_RECENT = "recent";
+
+const QString NAV_FAVORITE_LABEL_HOME = "home";
+const QString NAV_FAVORITE_LABEL_WORK = "work";
+
 class MapPanel : public QWidget {
   Q_OBJECT
 public:
@@ -27,7 +35,6 @@ private:
 
   Params params;
   QString prev_destinations, cur_destinations;
-  QStackedWidget *stack;
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
   QVBoxLayout *recent_layout;

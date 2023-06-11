@@ -1,6 +1,10 @@
+import re
+from datetime import datetime
+from dateutil import rrule
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Union
 
 from cereal import car
 from panda.python import uds
@@ -8,6 +12,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -342,6 +347,36 @@ FINGERPRINTS = {
   }],
 }
 
+
+def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
+  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+  for fw in fw_versions:
+    match = PLATFORM_CODE_PATTERN.search(fw)
+    if match is not None:
+      code, date = match.groups()
+      codes[code].add(date)
+
+  # Create platform codes for all dates inclusive if ECU has FW dates
+  final_codes = set()
+  for code, dates in codes.items():
+    # Radar and some cameras don't have FW dates
+    if None in dates:
+      final_codes.add(code)
+      continue
+
+    try:
+      parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+    except ValueError:
+      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
+      final_codes.add(code)
+      continue
+
+    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+
+  return final_codes
+
+
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
 
@@ -354,6 +389,9 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(0xf100)
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+PLATFORM_CODE_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+                                   b')[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -411,6 +449,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
+  fuzzy_get_platform_codes=get_platform_codes,
+  # Camera and radar should exist on all cars
+  platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
 FW_VERSIONS = {

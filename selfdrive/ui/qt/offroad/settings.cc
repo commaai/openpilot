@@ -47,6 +47,7 @@ void TogglesWidget::showEvent(QShowEvent *event) {
 }
 
 DrivingPanel::DrivingPanel(SettingsWindow *parent) : TogglesWidget(parent, {
+  // param, title, desc, icon
   {
     "OpenpilotEnabledToggle",
     tr("Enable openpilot"),
@@ -161,6 +162,7 @@ void DrivingPanel::updateToggles() {
 }
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : TogglesWidget(parent, {
+  // param, title, desc, icon
   {
     "RecordFront",
     tr("Record and Upload Driver Camera"),
