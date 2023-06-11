@@ -39,7 +39,8 @@ TogglesWidget::TogglesWidget(SettingsWindow *parent, std::vector<std::tuple<QStr
 }
 
 void TogglesWidget::expandToggleDescription(const QString &param) {
-  toggles[param.toStdString()]->showDescription();
+  auto toggle = toggles[param.toStdString()];
+  if (toggle) toggle->showDescription();
 }
 
 void TogglesWidget::showEvent(QShowEvent *event) {
