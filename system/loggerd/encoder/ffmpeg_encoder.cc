@@ -60,6 +60,7 @@ void FfmpegEncoder::encoder_open(const char* path) {
   int err = avcodec_open2(this->codec_ctx, codec, NULL);
   assert(err >= 0);
 
+  writer_open(path);
   is_open = true;
   segment_num++;
   counter = 0;
@@ -68,6 +69,7 @@ void FfmpegEncoder::encoder_open(const char* path) {
 void FfmpegEncoder::encoder_close() {
   if (!is_open) return;
 
+  writer_close();
   avcodec_free_context(&codec_ctx);
   is_open = false;
 }
