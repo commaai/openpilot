@@ -306,10 +306,6 @@ bool MapWindow::gestureEvent(QGestureEvent *event) {
   return true;
 }
 
-void MapWindow::showEvent(QShowEvent *event) {
-  emit mapWindowShown();
-}
-
 void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   QPinchGesture::ChangeFlags changeFlags = gesture->changeFlags();
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {
@@ -319,6 +315,10 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
     zoom_counter = PAN_TIMEOUT;
   }
 }
+
+//void MapWindow::showEvent(QShowEvent *event) {
+//  emit mapWindowShown();
+//}
 
 void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {

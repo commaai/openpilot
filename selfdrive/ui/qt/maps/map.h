@@ -72,9 +72,6 @@ public:
   MapWindow(const QMapboxGLSettings &);
   ~MapWindow();
 
-signals:
-  void mapWindowShown();
-
 private:
   void initializeGL() final;
   void paintGL() final;
@@ -93,7 +90,7 @@ private:
   bool event(QEvent *event) final;
   bool gestureEvent(QGestureEvent *event);
   void pinchTriggered(QPinchGesture *gesture);
-  void showEvent(QShowEvent *event);
+  void showEvent(QShowEvent *event) { emit mapWindowShown(); };
 
   bool m_sourceAdded = false;
 
@@ -126,6 +123,7 @@ public slots:
   void offroadTransition(bool offroad);
 
 signals:
+  void mapWindowShown();
   void distanceChanged(float distance);
   void instructionsChanged(cereal::NavInstruction::Reader instruction);
   void ETAChanged(float seconds, float seconds_typical, float distance);
