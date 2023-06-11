@@ -116,8 +116,8 @@ jobs:
           /opt/homebrew/Caskroom/gcc-arm-*
           /Applications/ArmGNUToolchain
           ~/github_brew_cache_entries.txt
-        key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
-        restore-keys: macos-
+        key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
+        restore-keys: macos_deps-
     - name: Brew link restored dependencies
       run: |
         if [ -f ~/github_brew_cache_entries.txt ]; then
