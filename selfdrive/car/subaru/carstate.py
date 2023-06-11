@@ -42,6 +42,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
     self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
+    self.is_metric = False
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -80,6 +81,9 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
 
+    self.is_metric = (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
+                     (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1)
+
     steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
@@ -93,8 +97,7 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
-    if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
-      (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
+    if not self.is_metric:
       ret.cruiseState.speed *= CV.MPH_TO_KPH
     
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1

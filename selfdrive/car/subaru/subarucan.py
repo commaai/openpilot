@@ -177,7 +177,7 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, hud_control, cruise
 
   return packer.make_can_msg("ES_LKAS_State", 0, values)
 
-def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, brake_cmd, brake_value, hud_control, cruise_on): 
+def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, brake_cmd, brake_value, hud_control, is_metric, cruise_on): 
   if dashstatus_msg is None:
     values = {
       "PCB_Off": 0,
@@ -246,7 +246,9 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, brake_cmd
   values["Cruise_State"] = 2 if (cruise_on and not enabled) else 0
   values["Conventional_Cruise"] = False
   values["Cruise_On"] = cruise_on
-  values["Cruise_Set_Speed"] = hud_control.setSpeed * CV.MS_TO_MPH if hud_control.speedVisible else 0 # TODO: handle kph on dash
+  
+  speed = hud_control.setSpeed * (CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH)
+  values["Cruise_Set_Speed"] = speed if hud_control.speedVisible else 0
 
   if brake_cmd:
     values["Brake_Lights"] = 1 if brake_value >= 70 else 0
