@@ -8,6 +8,7 @@ class CanBus(CanBusBase):
     super().__init__(CP, fingerprint)
 
     if hda2 is None:
+      assert CP is not None
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
