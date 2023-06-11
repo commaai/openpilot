@@ -75,7 +75,7 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
   ],
   CAR.EXPLORER_MK6: [
     FordCarInfo("Ford Explorer 2020-22"),
-    FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
+    FordCarInfo("Lincoln Aviator 2020-21", "Co-Pilot360 Plus"),
   ],
   CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Adaptive Cruise Control with Lane Centering"),
   CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
@@ -172,6 +172,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7E0, None): [
       b'LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'LB5A-14C204-AZL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-BUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
