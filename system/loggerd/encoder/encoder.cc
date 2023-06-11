@@ -38,4 +38,5 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
   auto bytes = words->asBytes();
   e->pm->send(e->service_name, bytes.begin(), bytes.size());
+  delete words;
 }
