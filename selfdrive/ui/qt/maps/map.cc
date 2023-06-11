@@ -306,6 +306,10 @@ bool MapWindow::gestureEvent(QGestureEvent *event) {
   return true;
 }
 
+void MapWindow::showEvent(QShowEvent *event) {
+  emit mapWindowShown();
+}
+
 void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   QPinchGesture::ChangeFlags changeFlags = gesture->changeFlags();
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {

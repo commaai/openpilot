@@ -72,6 +72,9 @@ public:
   MapWindow(const QMapboxGLSettings &);
   ~MapWindow();
 
+signals:
+  void mapWindowShown();
+
 private:
   void initializeGL() final;
   void paintGL() final;
@@ -90,6 +93,7 @@ private:
   bool event(QEvent *event) final;
   bool gestureEvent(QGestureEvent *event);
   void pinchTriggered(QPinchGesture *gesture);
+  void showEvent(QShowEvent *event);
 
   bool m_sourceAdded = false;
 

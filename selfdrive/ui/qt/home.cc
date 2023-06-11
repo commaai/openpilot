@@ -29,6 +29,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
+  QObject::connect(onroad, &OnroadWindow::mapWindowShown, this, [=] { showSidebar(false); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
@@ -57,8 +58,6 @@ void HomeWindow::updateState(const UIState &s) {
     body->setEnabled(true);
     slayout->setCurrentWidget(body);
   }
-
-  if (sidebar->isVisible() && onroad->isMapVisible()) sidebar->hide();
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
