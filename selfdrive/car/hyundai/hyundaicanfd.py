@@ -11,7 +11,7 @@ class CanBus(CanBusBase):
     # have a different harness than the HDA1 and non-HDA variants in order to split
     # a different bus, since the steering is done by different ECUs.
     self._a, self._e = 1, 0
-    if hda2:
+    if hda2 or CP.flags & HyundaiFlags.CANFD_HDA2.value:
       self._a, self._e = 0, 1
 
     self._a += self.offset
