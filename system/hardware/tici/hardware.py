@@ -467,6 +467,10 @@ class Tici(HardwareBase):
     gpio_init(GPIO.SOM_ST_IO, True)
     gpio_set(GPIO.SOM_ST_IO, 1)
 
+    # move first thermal throttling trip point up a bit
+    for z in (21, 33, 34):
+      sudo_write("98500", f"/sys/devices/virtual/thermal/thermal_zone{z}/trip_point_0_temp")
+
     # *** IRQ config ***
 
     # move these off the default core
