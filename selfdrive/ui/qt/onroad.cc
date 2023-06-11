@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <QDebug>
+#include <QMouseEvent>
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -80,6 +81,9 @@ void OnroadWindow::updateState(const UIState &s) {
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
+    if (map->isVisible() && e->windowPos().x() >= 1080) {
+      return;
+    }
     map->setVisible(!sidebarVisible && !map->isVisible());
   }
   // propagation event to parent(HomeWindow)
