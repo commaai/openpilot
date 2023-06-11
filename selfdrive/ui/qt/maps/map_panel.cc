@@ -7,7 +7,7 @@
 #include "selfdrive/ui/ui.h"
 
 MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : QFrame(parent) {
-  auto stack = new QStackedLayout(this);
+  stack = new QStackedLayout(this);
   stack->setContentsMargins(0, 0, 0, 0);
 
   auto map = new MapWindow(mapboxSettings);
@@ -27,4 +27,8 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
       border: none;
     }
   )");
+}
+
+bool MapPanel::isShowingMap() const {
+  return stack->currentIndex() == 0;
 }

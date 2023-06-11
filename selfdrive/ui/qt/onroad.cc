@@ -81,7 +81,7 @@ void OnroadWindow::updateState(const UIState &s) {
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
-    if (map->isVisible() && e->windowPos().x() >= 1080) {
+    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
       return;
     }
     map->setVisible(!sidebarVisible && !map->isVisible());
