@@ -136,7 +136,7 @@ class CarController:
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control, CS.out.cruiseState.available))
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, brake_cmd, brake_value, hud_control, CS.out.cruiseState.available))
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control, CS.out.cruiseState.available))
 
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
