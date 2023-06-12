@@ -17,7 +17,7 @@ def generate_translations_include():
     for alert in json.load(f).values():
       content += "QT_TRANSLATE_NOOP(\"OffroadAlert\", \"" + alert['text'].replace('\n', '\\n').replace('\"', '\\"') + "\");\n"
 
-  #TODO translate events from selfdrive/controls/lib/events.py
+  # TODO translate events from selfdrive/controls/lib/events.py
 
   with open(os.path.join(BASEDIR, "selfdrive/ui/translations/generated.h"), "w") as f:
     f.write(content)
