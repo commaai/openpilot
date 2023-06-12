@@ -547,7 +547,7 @@ def setup_vision_ipc(cfg, lr):
   streams_metas = available_streams(lr)
   for meta in streams_metas:
     if meta.camera_state in cfg.vision_pubs:
-      vipc_server.create_buffers(meta.stream, 5, False, *meta.frame_sizes[device_type])
+      vipc_server.create_buffers(meta.stream, 2, False, *meta.frame_sizes[device_type])
   vipc_server.start_listener()
 
   return vipc_server
