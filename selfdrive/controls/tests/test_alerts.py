@@ -126,8 +126,7 @@ class TestAlerts(unittest.TestCase):
       set_offroad_alert(a, True, extra_text="a"*i)
 
       written_alert = json.loads(params.get(a, encoding='utf8'))
-      written_extra = written_alert['extra']
-      self.assertTrue("a"*i == written_extra)
+      self.assertTrue("a"*i == written_alert['extra'])
       self.assertTrue(alert["text"] == written_alert['text'])
 
 if __name__ == "__main__":
