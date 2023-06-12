@@ -192,7 +192,7 @@ int main(int argc, char **argv) {
   while (!do_exit) {
     auto streams = VisionIpcClient::getAvailableStreams("camerad", false);
     if (!streams.empty()) {
-      main_wide_camera = (streams.size() == 1 && streams.count(VISION_STREAM_WIDE_ROAD) == 1);
+      main_wide_camera = streams.count(VISION_STREAM_ROAD) == 0;
       break;
     }
 
