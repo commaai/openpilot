@@ -125,9 +125,10 @@ class TestAlerts(unittest.TestCase):
       alert = self.offroad_alerts[a]
       set_offroad_alert(a, True, extra_text="a"*i)
 
-      expected_txt = alert['text'] + "a"*i
-      written_txt = json.loads(params.get(a, encoding='utf8'))['text']
-      self.assertTrue(expected_txt == written_txt)
+      written_alert = json.loads(params.get(a, encoding='utf8'))
+      written_extra = written_alert['extra']
+      self.assertTrue("a"*i == written_extra)
+      self.assertTrue(alert["text"] == written_alert['text'])
 
 if __name__ == "__main__":
   unittest.main()
