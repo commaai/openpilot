@@ -35,7 +35,6 @@
 
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = 10000000;
-const int DCAM_BITRATE = MAIN_BITRATE;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
@@ -56,6 +55,7 @@ public:
 
 class LogCameraInfo {
 public:
+  const char *thread_name;
   int fps = MAIN_FPS;
   CameraType type;
   VisionStreamType stream_type;
@@ -87,18 +87,21 @@ const EncoderInfo qcam_encoder_info = {
 
 
 const LogCameraInfo road_camera_info{
+    .thread_name = "road_cam_encoder",
     .type = RoadCam,
     .stream_type = VISION_STREAM_ROAD,
     .encoder_infos = {main_road_encoder_info, qcam_encoder_info}
     };
 
 const LogCameraInfo wide_road_camera_info{
+    .thread_name = "wide_road_cam_encoder",
     .type = WideRoadCam,
     .stream_type = VISION_STREAM_WIDE_ROAD,
    .encoder_infos = {main_wide_road_encoder_info}
     };
   
 const LogCameraInfo driver_camera_info{
+    .thread_name = "driver_cam_encoder",
     .type = DriverCam,
     .stream_type = VISION_STREAM_DRIVER,
     .encoder_infos = {main_driver_encoder_info}
