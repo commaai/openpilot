@@ -431,10 +431,27 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
 
     size_t j = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-         f <= size_t(cereal::PandaState::FaultType::HEARTBEAT_LOOP_WATCHDOG); f++) {
+         f <= size_t(cereal::PandaState::FaultType::LOGGING_RATE); f++) {
       if (fault_bits.test(f)) {
         faults.set(j, cereal::PandaState::FaultType(f));
         j++;
+      }
+    }
+
+    // Logs
+    std::vector<log_t> logs = panda->get_logs();
+    auto log_list = ps.initLogs(logs.size());
+
+    for (int k = 0; k<logs.size(); k++) {
+      log_list[k].setId(logs[k].id);
+      log_list[k].setUptime(logs[k].uptime);
+      log_list[k].setMsg(capnp::Text::Reader(logs[k].msg));
+
+      if (logs[k].timestamp.year == 0) {
+        log_list[k].setUnixTimestamp(0);
+      } else {
+        struct tm tm = Panda::timestamp_to_tm(logs[k].timestamp);
+        log_list[k].setUnixTimestamp((uint) mktime(&tm));
       }
     }
   }

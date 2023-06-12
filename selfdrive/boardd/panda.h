@@ -12,6 +12,8 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
 #include "panda/board/can_definitions.h"
+#include "panda/board/drivers/rtc_definitions.h"
+#include "panda/board/drivers/logging_definitions.h"
 #include "selfdrive/boardd/panda_comms.h"
 
 #define USB_TX_SOFT_LIMIT   (0x100U)
@@ -58,6 +60,7 @@ public:
 
   // Static functions
   static std::vector<std::string> list(bool usb_only=false);
+  static struct tm timestamp_to_tm(timestamp_t time);
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
@@ -82,6 +85,7 @@ public:
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
   void can_reset_communications();
+  std::vector<log_t> get_logs(bool get_all=false);
 
 protected:
   // for unit tests
