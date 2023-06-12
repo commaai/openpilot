@@ -18,6 +18,7 @@ from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from selfdrive.test.process_replay.migration import migrate_all
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -342,7 +343,7 @@ def replay_process_with_name(name, lr, *args, **kwargs):
 
 
 def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, disable_progress=False):
-  all_msgs = list(lr)
+  all_msgs = migrate_all(lr, old_logtime=True)
   process_logs = _replay_single_process(cfg, all_msgs, fingerprint, disable_progress)
 
   if return_all_logs:
