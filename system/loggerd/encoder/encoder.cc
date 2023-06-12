@@ -5,9 +5,7 @@ VideoEncoder::~VideoEncoder() {}
 
 void VideoEncoder::publisher_init() {
   // publish
-  service_name = this->type == DriverCam ? "driverEncodeData" :
-    (this->type == WideRoadCam ? "wideRoadEncodeData" :
-    (this->in_width == this->out_width ? "roadEncodeData" : "qRoadEncodeData"));
+  service_name = this->publish_name;
   pm.reset(new PubMaster({service_name}));
 }
 
