@@ -75,7 +75,6 @@ const EncoderInfo main_wide_road_encoder_info = {
   .filename = "ecamera.hevc",
   .get_encode_data_func = &cereal::Event::Reader::getWideRoadEncodeData,
   .set_encode_idx_func = &cereal::Event::Builder::setWideRoadEncodeIdx,
-
 };
 const EncoderInfo main_driver_encoder_info = {
    .publish_name = "driverEncodeData",
