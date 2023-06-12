@@ -9,6 +9,7 @@ from common.realtime import sec_since_boot, config_realtime_process, Priority, R
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
 from system.swaglog import cloudlog
@@ -82,8 +83,6 @@ class Controls:
       ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
-      if self.params.get_bool('WideCameraOnly'):
-        ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
@@ -438,6 +437,10 @@ class Controls:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
       if all_valid or timed_out or SIMULATION:
+        available_streams = VisionIpcClient.available_streams("camerad", block=False)
+        if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
+          self.sm.ignore_alive.append('roadCameraState')
+
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
