@@ -11,5 +11,5 @@ public:
 
   bool isShowingMap() const;
 private:
-  QStackedLayout *stack;
+  QStackedLayout *content_stack;
 };
