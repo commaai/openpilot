@@ -51,6 +51,8 @@ public:
   int fps = MAIN_FPS;
   int bitrate = MAIN_BITRATE;
   cereal::EncodeIndex::Type encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C;
+  ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
+  void (cereal::Event::Builder::*set_encode_idx_func)(::cereal::EncodeIndex::Reader);
 };
 
 class LogCameraInfo {
@@ -65,15 +67,21 @@ public:
 const EncoderInfo main_road_encoder_info = {
   .publish_name = "roadEncodeData",
   .filename = "fcamera.hevc",
+  .get_encode_data_func = &cereal::Event::Reader::getRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setRoadEncodeIdx,
 };
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
+  .get_encode_data_func = &cereal::Event::Reader::getWideRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setWideRoadEncodeIdx,
 };
 const EncoderInfo main_driver_encoder_info = {
    .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
   .record = Params().getBool("RecordFront"),
+  .get_encode_data_func = &cereal::Event::Reader::getDriverEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setDriverEncodeIdx,
 };
 
 const EncoderInfo qcam_encoder_info = {
@@ -83,6 +91,8 @@ const EncoderInfo qcam_encoder_info = {
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .frame_width = 526,
   .frame_height = 330,
+  .get_encode_data_func = &cereal::Event::Reader::getQRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setQRoadEncodeIdx,
 };
 
 
