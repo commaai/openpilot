@@ -35,7 +35,7 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
 
 
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
-  util::set_thread_name(cam_info.encoder_infos[0].filename);
+  util::set_thread_name(cam_info.thread_name);
 
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
@@ -50,7 +50,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGW("encoder %s init %dx%d", cam_info.encoder_infos[0].filename, buf_info.width, buf_info.height);
+      LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
 
       if (buf_info.width > 0 && buf_info.height > 0) {
         for (const auto &encoder_info: cam_info.encoder_infos){
@@ -80,7 +80,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.encoder_infos[0].filename, buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;
