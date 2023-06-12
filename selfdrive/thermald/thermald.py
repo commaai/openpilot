@@ -40,7 +40,7 @@ HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'ne
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
 THERMAL_BANDS = OrderedDict({
   ThermalStatus.green: ThermalBand(None, 80.0),
-  ThermalStatus.yellow: ThermalBand(75.0, 96.0),
+  ThermalStatus.yellow: ThermalBand(75.0, 98.0),
   ThermalStatus.red: ThermalBand(88.0, 107.),
   ThermalStatus.danger: ThermalBand(94.0, None),
 })
