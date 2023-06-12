@@ -4,13 +4,9 @@ import sys
 import time
 from collections import defaultdict
 from typing import Any
-from itertools import zip_longest
 
 import cereal.messaging as messaging
-from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.spinner import Spinner
-from common.timeout import Timeout
-from common.transformations.camera import tici_f_frame_size, tici_d_frame_size
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -28,18 +24,11 @@ MAX_FRAMES = 100 if PC else 600
 NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
-SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
+SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0") != "0")
 
 
 def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
-
-
-def replace_calib(msg, calib):
-  msg = msg.as_builder()
-  if calib is not None:
-    msg.liveCalibration.rpyCalib = calib.tolist()
-  return msg
 
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types):
@@ -122,7 +111,8 @@ def model_replay(lr, frs):
   modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES + 1, frs)
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, frs)
   if not SEND_EXTRA_INPUTS:
-    all_msgs = [msg for msg in all_msgs if msg.which() not in ["liveCalibration", "lateralPlan"]]
+    modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
@@ -140,7 +130,6 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
-
   update = "--update" in sys.argv
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
