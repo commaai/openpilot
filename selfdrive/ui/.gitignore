@@ -12,4 +12,4 @@ qt/setup/setup
 qt/setup/reset
 qt/setup/wifi
 qt/setup/updater
-translations/generated.h
+translations/generated_translations.h

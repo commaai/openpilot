@@ -8,7 +8,7 @@ from common.basedir import BASEDIR
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
-TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "generated.h")
+TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "generated_translations.h")
 
 def generate_translations_include():
   # offroad alerts
