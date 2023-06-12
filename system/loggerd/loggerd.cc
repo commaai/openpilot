@@ -58,11 +58,8 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-
-
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
   int bytes_count = 0;
-
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
