@@ -201,9 +201,9 @@ int main(int argc, char **argv) {
     util::sleep_for(100);
   }
 
-  LOGW("vision stream set up, main_wide_camera: %d, use_extra_client: %d", main_wide_camera, use_extra_client);
   VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
   VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  LOGW("vision stream set up, main_wide_camera: %d, use_extra_client: %d", main_wide_camera, use_extra_client);
 
   while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);
