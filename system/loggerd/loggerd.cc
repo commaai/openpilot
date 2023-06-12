@@ -64,10 +64,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  // TODO this should be dealt with generically
-  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
-    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  auto edata = (event.*(encoder_info.get_encode_data_func))();
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
@@ -140,11 +137,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
-    // TODO this should be dealt with generically
-    if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
-    if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
-    if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
-    if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+    (evt.*(encoder_info.set_encode_idx_func))(idx);
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
