@@ -13,6 +13,7 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from common.dict_helpers import strip_deprecated_keys
+from common.time import MIN_DATE
 from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
@@ -272,7 +273,7 @@ def thermald_thread(end_event, hw_queue):
 
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
-    startup_conditions["time_valid"] = (now.year > 2020) or (now.year == 2020 and now.month >= 10)
+    startup_conditions["time_valid"] = now > MIN_DATE
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
