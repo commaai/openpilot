@@ -348,42 +348,64 @@ FINGERPRINTS = {
 }
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict) -> Set[str]:
+def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None) -> Set[str]:
   # TODO: return any number of candidates, have match_fw_to_car handle it
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
 
-  # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
-  all_fw_versions = defaultdict(list)
+  # # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
+  # all_fw_versions = defaultdict(list)
+  # Platform codes are brand-specific unique identifiers for each platform, less specific than a FW version
+  all_platform_codes = defaultdict(set)
+  # Car model to set of FW dates in the database
+  all_fw_dates = defaultdict(set)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
 
     for addr, fws in fw_by_addr.items():
-      # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
-      # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
-      # impossible to get 3 matching versions, even if two models with shared parts are released at the same
-      # time and only one is in our database.
-      if addr[0] in FUZZY_EXCLUDE_ECUS:
-        continue
-      for f in fws:
-        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+      # Add platform codes to lookup dict if config specifies a function
+      if addr[0] in FW_QUERY_CONFIG.platform_code_ecus:
+        # print()
+        # print(addr)
+        for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes_new(fws):
+          # print('code', candidate, platform_code, date)
+          all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
+          # Add date for ECU and candidate if it exists
+          if date is not None:
+            all_fw_dates[(addr[1], addr[2], candidate)].add(date)
 
   matched_ecus = set()
   candidate = None
   for addr, versions in fw_versions_dict.items():
     ecu_key = (addr[0], addr[1])
     for version in versions:
-      # All cars that have this FW response on the specified address
-      candidates = all_fw_versions[(*ecu_key, version)]
+      # for code, date in get_platform_codes_new([version]):
+      #   print(code)
+
+      candidates = set()
+      ecu_date = None
+      # Returns one or none, all cars that have this platform code
+      for platform_code, date in get_platform_codes_new([version]):
+        print('platform_code', platform_code)
+        candidates = all_platform_codes[(*ecu_key, platform_code)]
+        ecu_date = date
+      print('here123', addr, version, candidates, ecu_date)
+      print()
 
       if len(candidates) == 1:
+        candidate_dates = all_fw_dates[(addr[0], addr[1], list(candidates)[0])]
+        print('candidates_dates', candidate_dates)
+        if ecu_date is not None and len(candidate_dates):
+          if not (min(candidate_dates) <= ecu_date <= max(candidate_dates)):
+            continue
+
         matched_ecus.add(ecu_key)
         if candidate is None:
-          candidate = candidates[0]
+          candidate = list(candidates)[0]
         # We uniquely matched two different cars. No fuzzy match possible
-        elif candidate != candidates[0]:
+        elif candidate != list(candidates)[0]:
           return set()
 
   # Note that it is possible to match to a candidate without all its ECUs being present
