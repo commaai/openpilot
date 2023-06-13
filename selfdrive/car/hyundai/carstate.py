@@ -428,6 +428,18 @@ class CarState(CarStateBase):
             ("FCA12", 50),
           ]
       else:
+        signals += [
+          ("MainMode_ACC", "SCC11"),
+          ("VSetDis", "SCC11"),
+          ("SCCInfoDisplay", "SCC11"),
+          ("ACC_ObjDist", "SCC11"),
+          ("ACCMode", "SCC12"),
+        ]
+        checks += [
+          ("SCC11", 50),
+          ("SCC12", 50),
+        ]
+
         if CP.flags & HyundaiFlags.USE_FCA.value:
           signals += [
             ("FCA_CmdAct", "FCA11"),
