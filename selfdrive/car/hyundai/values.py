@@ -4,7 +4,7 @@ from dateutil import rrule
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -348,7 +348,7 @@ FINGERPRINTS = {
 }
 
 
-def get_platform_codes_new(fw_versions: List[bytes]) -> Set[bytes]:
+def get_platform_codes_new(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes, bytes]]:
   codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
   codes_new = set()  # unique keys (code, part, date)
   for fw in fw_versions:
@@ -480,6 +480,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
   fuzzy_get_platform_codes=get_platform_codes,
+  fuzzy_get_platform_codes_new=get_platform_codes_new,
   # Camera and radar should exist on all cars
   # TODO: use abs, it has the platform code and part number on many platforms
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
