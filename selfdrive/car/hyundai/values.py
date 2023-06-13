@@ -4,7 +4,7 @@ from dateutil import rrule
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Union, cast
 
 from cereal import car
 from panda.python import uds
@@ -362,20 +362,19 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   final_codes = set()
   for code, dates in codes.items():
     # Radar and some cameras don't have FW dates
-    # if None in dates:
-    if not all(isinstance(d, bytes) for d in dates):
+    if None in dates:
       final_codes.add(code)
       continue
 
     try:
-      parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+      parsed = {datetime.strptime(cast(bytes, date).decode()[:4], '%y%m') for date in dates}
     except ValueError:
       cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
       final_codes.add(code)
       continue
 
-    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+    for monthly in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+      final_codes.add(code + b'-' + monthly.strftime('%y%m').encode())
 
   return final_codes
 
