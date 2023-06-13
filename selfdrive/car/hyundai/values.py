@@ -358,6 +358,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None) -> Set[str]:
   # all_fw_versions = defaultdict(list)
   # Platform codes are brand-specific unique identifiers for each platform, less specific than a FW version
   all_platform_codes = defaultdict(set)
+  # This will be (addr, subaddr, Optional[radar_code], Optional[camera_code], Optional[eps_code]) -> {candidates}
+  # TODO: need to check for ECU existence below. None can be missing or unparsable...
+  all_platform_codes_new = defaultdict(set)
   # Car model to set of FW dates in the database
   all_fw_dates = defaultdict(set)
   for candidate, fw_by_addr in FW_VERSIONS.items():
