@@ -18,15 +18,17 @@ def generate_onroad_alert_translations():
   cp = car.CarParams.new_message()
   cs = car.CarState.new_message()
   sm = messaging.SubMaster(CONTROL_PACKETS + CAMERA_PACKETS)
+  translated = set()
 
-  content = '// onroad alerts'
+  content = '// onroad alerts\n'
   for event in EVENTS.values():
     for alert in event.values():
       if not isinstance(alert, Alert):
         alert = alert(cp, cs, sm, False, 0)
       for text in (alert.alert_text_1, alert.alert_text_2):
         text = text.split('|')[0]
-        if (text):
+        if (text and text not in translated):
+          translated.add(text)
           content += f'QT_TRANSLATE_NOOP("OnroadAlerts", R"({text})");\n'
 
   return content
