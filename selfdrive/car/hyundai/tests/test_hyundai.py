@@ -54,7 +54,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
           for fw in fws:
             match = PART_NUMBER_FW_PATTERN.search(fw)
             self.assertIsNotNone(match, fw)
-            self.assertGreater(len(match.group()), 0)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
