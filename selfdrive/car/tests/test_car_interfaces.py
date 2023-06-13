@@ -92,7 +92,6 @@ class TestCarInterfaces(unittest.TestCase):
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
-
     for _ in range(10):
       car_interface.update(CC, [])
       car_interface.apply(CC, 0)
