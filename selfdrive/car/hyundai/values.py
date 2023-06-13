@@ -4,7 +4,7 @@ from dateutil import rrule
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Tuple, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Tuple, Union, cast
 
 from cereal import car
 from panda.python import uds
@@ -374,11 +374,13 @@ def get_platform_codes_new(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes, 
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+  codes: DefaultDict[bytes, Set[Optional[bytes]]] = defaultdict(set)
   for fw in fw_versions:
-    match = PLATFORM_CODE_FW_PATTERN.search(fw)
-    if match is not None:
-      code, date = match.groups()
+    code_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
+                              DATE_FW_PATTERN.search(fw))
+    if code_match is not None:
+      code = code_match.group()
+      date = date_match.group() if date_match else None
       codes[code].add(date)
 
   # Create platform codes for all dates inclusive if ECU has FW dates
@@ -390,14 +392,14 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
       continue
 
     try:
-      parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
+      parsed = {datetime.strptime(cast(bytes, date).decode()[:4], '%y%m') for date in dates}
     except ValueError:
       cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
       final_codes.add(code)
       continue
 
-    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+    for monthly in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+      final_codes.add(code + b'-' + monthly.strftime('%y%m').encode())
 
   return final_codes
 
@@ -417,8 +419,7 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
 PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
-                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
-PLATFORM_CODE_FW_PATTERN_NEW = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})')
 DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
 PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
 
