@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import datetime
 import os
+# restrict to 1 thread in libraries like numpy
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
 import signal
 import subprocess
 import sys
@@ -94,9 +97,6 @@ def manager_init() -> None:
 
   if not is_dirty():
     os.environ['CLEAN'] = '1'
-
-  # restrict to 1 thread in libraries like numpy
-  os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
   # init logging
   sentry.init(sentry.SentryProject.SELFDRIVE)
