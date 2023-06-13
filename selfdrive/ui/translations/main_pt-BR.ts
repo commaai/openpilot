@@ -1057,7 +1057,7 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation>Disputador</translation>
+        <translation>Disputa</translation>
     </message>
     <message>
         <source>Standard</source>
@@ -1069,11 +1069,11 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation>Personalidade de Condução</translation>
+        <translation>Temperamento de Direção</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>Neutro é o recomendado. No modo disputador o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
+        <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
     </message>
 </context>
 <context>

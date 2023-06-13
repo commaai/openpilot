@@ -4566,6 +4566,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-python-dateutil"
+version = "2.8.19.13"
+description = "Typing stubs for python-dateutil"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "types-pyyaml"
 version = "6.0.12"
 description = "Typing stubs for PyYAML"
@@ -4804,7 +4812,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "8c0419671beb3e8c8f0add750929f5be32be6fa3f077d44614cbd598b4cadc00"
+content-hash = "2e03ebb1f6c441a0154531ee92f6f1f8c9e74544d4295d3753029bb8dcd457d1"
 
 [metadata.files]
 adal = [
@@ -8596,6 +8604,10 @@ types-certifi = [
 types-pycurl = [
     {file = "types-pycurl-7.45.1.tar.gz", hash = "sha256:82e00aa2981595bfa55e5a3bac42221eb3435b0026dffbe1177f6ac9f2d51200"},
     {file = "types_pycurl-7.45.1-py3-none-any.whl", hash = "sha256:9eab3414da4a1b1e9a628bd288fc5172b8c182e1d9fb6d8d082441b0fd64baed"},
+]
+types-python-dateutil = [
+    {file = "types-python-dateutil-2.8.19.13.tar.gz", hash = "sha256:09a0275f95ee31ce68196710ed2c3d1b9dc42e0b61cc43acc369a42cb939134f"},
+    {file = "types_python_dateutil-2.8.19.13-py3-none-any.whl", hash = "sha256:0b0e7c68e7043b0354b26a1e0225cb1baea7abb1b324d02b50e2d08f1221043f"},
 ]
 types-pyyaml = [
     {file = "types-PyYAML-6.0.12.tar.gz", hash = "sha256:f6f350418125872f3f0409d96a62a5a5ceb45231af5cc07ee0034ec48a3c82fa"},

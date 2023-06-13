@@ -13,6 +13,7 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from common.dict_helpers import strip_deprecated_keys
+from common.time import MIN_DATE
 from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
@@ -41,7 +42,7 @@ HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'ne
 THERMAL_BANDS = OrderedDict({
   ThermalStatus.green: ThermalBand(None, 80.0),
   ThermalStatus.yellow: ThermalBand(75.0, 96.0),
-  ThermalStatus.red: ThermalBand(80.0, 107.),
+  ThermalStatus.red: ThermalBand(88.0, 107.),
   ThermalStatus.danger: ThermalBand(94.0, None),
 })
 
@@ -272,7 +273,7 @@ def thermald_thread(end_event, hw_queue):
 
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
-    startup_conditions["time_valid"] = (now.year > 2020) or (now.year == 2020 and now.month >= 10)
+    startup_conditions["time_valid"] = now > MIN_DATE
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
@@ -286,8 +287,11 @@ def thermald_thread(end_event, hw_queue):
                                                params.get_bool("Passive")
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
-    # if any CPU gets above 107 or the battery gets above 63, kill all processes
-    # controls will warn with CPU above 95 or battery above 60
+
+    # must be at an engageable thermal band to go onroad
+    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red
+
+    # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 

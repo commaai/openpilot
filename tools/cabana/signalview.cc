@@ -146,7 +146,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? item->sig->name : item->sig_val;
+      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
     }
   }
   return {};
@@ -171,7 +171,6 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
-  s.updatePrecision();
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
@@ -249,17 +248,14 @@ void SignalModel::removeSignal(const cabana::Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id == msg_id) {
+  if (id.address == msg_id.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    int i = 0;
-    for (; i < root->children.size(); ++i) {
-      if (sig->start_bit < root->children[i]->sig->start_bit) break;
-    }
+    int i = dbc()->msg(msg_id)->indexOf(sig);
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
@@ -304,20 +300,6 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
   return {width, QApplication::fontMetrics().height()};
 }
 
-bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (event && event->type() == QEvent::ToolTip && index.isValid()) {
-    auto item = (SignalModel::Item *)index.internalPointer();
-    if (item->type == SignalModel::Item::Sig && index.column() == 1) {
-      QRect rc = option.rect.adjusted(0, 0, -option.rect.width() * 0.4, 0);
-      if (rc.contains(event->pos())) {
-        event->setAccepted(false);
-        return false;
-      }
-    }
-  }
-  return QStyledItemDelegate::helpEvent(event, view, option, index);
-}
-
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (editor && item->type == SignalModel::Item::Sig && index.column() == 1) {
@@ -335,7 +317,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   if (item && item->type == SignalModel::Item::Sig) {
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
-      painter->fillRect(option.rect, option.palette.highlight());
+      painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
     }
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
@@ -348,7 +330,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       path.addRoundedRect(icon_rect, 3, 3);
       painter->setPen(item->highlight ? Qt::white : Qt::black);
       painter->setFont(label_font);
-      painter->fillPath(path, getColor(item->sig).darker(item->highlight ? 125 : 0));
+      painter->fillPath(path, item->sig->color.darker(item->highlight ? 125 : 0));
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       r.setLeft(icon_rect.right() + h_margin * 2);
