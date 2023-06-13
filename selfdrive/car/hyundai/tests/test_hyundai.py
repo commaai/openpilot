@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+import re
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
@@ -38,6 +39,16 @@ class TestHyundaiFingerprint(unittest.TestCase):
           if fuzzy_ecu == Ecu.eps and car_model in no_eps_platforms:
             continue
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
+
+  def test_fw_part_number(self):
+    # Hyundai places the look-up-able part number in their FW versions, assert consistency
+    pattern = re.compile(b'[0-9]{5}-[A-Z]')
+    for car_model, ecus in FW_VERSIONS.items():
+      for ecu, fws in ecus.items():
+        for fw in fws:
+          match = pattern.search(fw)
+          if match is None and ecu[0] not in (Ecu.engine, Ecu.transmission):
+            print('missing part', car_model, ECU_NAME[ecu[0]], fw)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
