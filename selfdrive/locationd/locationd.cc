@@ -673,14 +673,17 @@ void Localizer::configure_gnss_source(LocalizerGnssSource source) {
 }
 
 int Localizer::locationd_thread() {
-  LocalizerGnssSource source = Params().getBool("UbloxAvailable", true) ? LocalizerGnssSource::UBLOX : LocalizerGnssSource::QCOM;
-  this->configure_gnss_source(source);
+  LocalizerGnssSource source;
   const char* gps_location_socket;
-  if (this->gnss_source == LocalizerGnssSource::UBLOX) {
+  if (Params().getBool("UbloxAvailable", true)) {
+    source = LocalizerGnssSource::UBLOX;
     gps_location_socket = "gpsLocationExternal";
   } else {
+    source = LocalizerGnssSource::QCOM;
     gps_location_socket = "gpsLocation";
   }
+
+  this->configure_gnss_source(source);
   const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
 
