@@ -303,7 +303,7 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
     device_type = next(iter(lr)).initData.deviceType
-    if device_type == 'tici':
+    if device_type in ['tici', 'tizi']:
       wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     else:
       wfr = None
