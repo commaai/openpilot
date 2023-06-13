@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
@@ -24,6 +25,26 @@ class TestHyundaiFingerprint(unittest.TestCase):
       ecus_not_in_whitelist = ecus - whitelisted_ecus
       ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
       self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
+
+  def test_shared_part_numbers(self):
+    all_part_numbers = defaultdict(set)
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        if car_model == CAR.HYUNDAI_GENESIS:
+          raise unittest.SkipTest("No part numbers for car model")
+
+        for ecu, fws in ecus.items():
+          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+            continue
+
+          for fw in fws:
+            match = PART_NUMBER_FW_PATTERN.search(fw)
+            all_part_numbers[(*ecu, match.group())].add(car_model)
+            self.assertIsNotNone(match, fw)
+
+    for ecu, platforms in all_part_numbers.items():
+      if len(platforms) > 1:
+        print('shared parts', (ECU_NAME[ecu[0]], ecu[1], ecu[2], ecu[3]), platforms)
 
   def test_blacklisted_fws(self):
     blacklisted_fw = {(Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X']}
