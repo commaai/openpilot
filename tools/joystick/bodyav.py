@@ -35,7 +35,7 @@ class EncodedBodyVideo(MediaStreamTrack):
 
   def __init__(self):
     super().__init__()
-    sock_name = 'roadEncodeData'
+    sock_name = 'livestreamDriverEncodeData'
     #os.environ['ZMQ'] = '1'
     #addr='192.168.1.101'
     messaging.context = messaging.Context()
