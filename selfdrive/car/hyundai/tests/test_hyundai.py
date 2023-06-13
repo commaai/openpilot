@@ -41,19 +41,25 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
   def test_fw_part_number(self):
-    missing = 0
     # Hyundai places the look-up-able part number in their FW versions, assert consistency
+    # Uses a lookbehind with the format: (?<=1.00 )(95740-G2400)
+    # Part number separator is sometimes missing or a slash instead of dash
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
+    missing = 0
     pattern = re.compile(b'(?<=[0-9][\\.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
     for car_model, ecus in FW_VERSIONS.items():
+      print()
+      print(car_model)
       for ecu, fws in ecus.items():
         for fw in fws:
           match = pattern.search(fw)
+          if match is not None:
+            print(ECU_NAME[ecu[0]], fw, 'match:', match.groups())
           if match is None and ecu[0] not in (Ecu.engine, Ecu.transmission, Ecu.abs):
             missing += 1
             print('missing part', car_model, ECU_NAME[ecu[0]], fw)
           if match is not None and ecu[0] in (Ecu.engine, Ecu.transmission):
-            print('shouldn\'t have match!', car_model, ECU_NAME[ecu[0]], fw, match.group())
+            print('shouldn\'t have match!', car_model, ECU_NAME[ecu[0]], fw, match.groups())
     print('missing', missing)
 
   def test_fuzzy_fw_dates(self):
