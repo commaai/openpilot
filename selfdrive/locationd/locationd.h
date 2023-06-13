@@ -90,6 +90,9 @@ private:
   bool standstill = true;
   int32_t orientation_reset_count = 0;
   float gps_std_factor;
+  float gps_variance_factor;
+  float gps_vertical_variance_factor;
+  double gps_time_offset;
 
   void configure_gnss_source(LocalizerGnssSource source);
 };
