@@ -324,12 +324,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
   VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
-  float ecef_pos_std;
-  if (gnss_source == LocalizerGnssSource::UBLOX) {
-    ecef_pos_std = std::sqrt(std::pow(log.getAccuracy(), 2) + std::pow(log.getVerticalAccuracy(), 2));
-  } else {
-    ecef_pos_std = std::sqrt(3 * std::pow(log.getVerticalAccuracy(), 2));
-  }
+  float ecef_pos_std = std::sqrt(this->gps_variance_factor * std::pow(log.getAccuracy(), 2) + this->gps_vertical_variance_factor * std::pow(log.getVerticalAccuracy(), 2));
   MatrixXdr ecef_pos_R = Vector3d::Constant(std::pow(this->gps_std_factor * ecef_pos_std, 2)).asDiagonal();
   MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(this->gps_std_factor * log.getSpeedAccuracy(), 2)).asDiagonal();
 
@@ -371,10 +366,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
 
   double sensor_time = log.getMeasTime() * 1e-9;
-  if (gnss_source == LocalizerGnssSource::UBLOX)
-    sensor_time -= GPS_UBLOX_SENSOR_TIME_OFFSET;
-  else
-    sensor_time -= GPS_QUECTEL_SENSOR_TIME_OFFSET;
+  sensor_time -= this->gps_time_offset;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
@@ -667,8 +659,14 @@ void Localizer::configure_gnss_source(LocalizerGnssSource source) {
   this->gnss_source = source;
   if (source == LocalizerGnssSource::UBLOX) {
     this->gps_std_factor = 10.0;
+    this->gps_variance_factor = 1.0;
+    this->gps_vertical_variance_factor = 1.0;
+    this->gps_time_offset = GPS_UBLOX_SENSOR_TIME_OFFSET;
   } else {
     this->gps_std_factor = 2.0;
+    this->gps_variance_factor = 0.0;
+    this->gps_vertical_variance_factor = 3.0;
+    this->gps_time_offset = GPS_QUECTEL_SENSOR_TIME_OFFSET;
   }
 }
 
