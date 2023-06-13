@@ -151,6 +151,15 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       matches |= match_func(fw_versions_dict, log=log)
 
+      # If brand specifies a custom fuzzy matching function, add its matches.
+      # If standard fuzzy matching function and custom one don't agree, there will be
+      # multiple matches and a candidate will not be returned
+      # TODO: we return if len() > 0, might need to change that slightly to be more like fuzzy behavior
+      #  match_fw_to_car_exact can return multiple matches, match_fw_to_car_fuzzy only returns one or none
+      config = FW_QUERY_CONFIGS[brand]
+      if not exact_match and config.match_fw_to_car_fuzzy:
+        matches |= config.match_fw_to_car_fuzzy(fw_versions_dict)
+
     if len(matches):
       return exact_match, matches
 

@@ -348,6 +348,54 @@ FINGERPRINTS = {
 }
 
 
+def match_fw_to_car_fuzzy(fw_versions_dict) -> Set[str]:
+  # TODO: return any number of candidates, have match_fw_to_car handle it
+  """Do a fuzzy FW match. This function will return a match, and the number of firmware version
+  that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
+  the match is rejected."""
+
+  # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
+  all_fw_versions = defaultdict(list)
+  for candidate, fw_by_addr in FW_VERSIONS.items():
+    if candidate == exclude:
+      continue
+
+    for addr, fws in fw_by_addr.items():
+      # These ECUs are known to be shared between models (EPS only between hybrid/ICE version)
+      # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
+      # impossible to get 3 matching versions, even if two models with shared parts are released at the same
+      # time and only one is in our database.
+      if addr[0] in FUZZY_EXCLUDE_ECUS:
+        continue
+      for f in fws:
+        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
+
+  matched_ecus = set()
+  candidate = None
+  for addr, versions in fw_versions_dict.items():
+    ecu_key = (addr[0], addr[1])
+    for version in versions:
+      # All cars that have this FW response on the specified address
+      candidates = all_fw_versions[(*ecu_key, version)]
+
+      if len(candidates) == 1:
+        matched_ecus.add(ecu_key)
+        if candidate is None:
+          candidate = candidates[0]
+        # We uniquely matched two different cars. No fuzzy match possible
+        elif candidate != candidates[0]:
+          return set()
+
+  # Note that it is possible to match to a candidate without all its ECUs being present
+  # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
+  if len(matched_ecus) >= 2:
+    if log:
+      cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
+    return {candidate}
+  else:
+    return set()
+
+
 def get_platform_codes_new(fw_versions: List[bytes]) -> \
   Set[Tuple[bytes, Optional[bytes]]]:
   codes_new = set()  # unique keys (code-Optional[part], date)
@@ -360,7 +408,7 @@ def get_platform_codes_new(fw_versions: List[bytes]) -> \
       part = part_match.group() if part_match else None
       date = date_match.group() if date_match else None
       if part is not None:
-        # part number starts with generic ECU part number, add what is specific to platform
+        # part number starts with generic ECU part type, add what is specific to platform
         code += b"-" + part[-5:]
 
       codes_new.add((code, date))
@@ -476,6 +524,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
   fuzzy_get_platform_codes=get_platform_codes,
   fuzzy_get_platform_codes_new=get_platform_codes_new,
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
   # Camera and radar should exist on all cars
   # TODO: use abs, it has the platform code and part number on many platforms
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
