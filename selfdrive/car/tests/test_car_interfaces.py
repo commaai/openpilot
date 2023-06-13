@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import math
 import unittest
+import hypothesis.strategies as st
+from hypothesis import given, settings
 import importlib
 from parameterized import parameterized
 
@@ -9,11 +11,36 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
 
+def get_random_car_control():
+  def actuators():
+    return st.fixed_dictionaries({
+      'gas': st.floats(min_value=0.0, max_value=1.0, width=32),
+      'brake': st.floats(min_value=0.0, max_value=1.0, width=32),
+      'steer': st.floats(min_value=-1.0, max_value=1.0, width=32),
+      'steerOutputCan': st.floats(width=32),
+      'steeringAngleDeg': st.floats(width=32),
+      'curvature' : st.floats(width=32),
+      'speed' : st.floats(width=32),
+      'accel' : st.floats(width=32)
+      })
+
+  return st.fixed_dictionaries({
+    'enabled': st.booleans(),
+    'latActive': st.booleans(),
+    'longActive': st.booleans(),
+    'actuators': actuators(),
+    'actuatorsOutput': actuators(),
+    'orientationNED': st.lists(st.floats(width=32)),
+    'angularVelocity': st.lists(st.floats(width=32)),
+    'cruiseControl': st.fixed_dictionaries({'cancel': st.booleans(), 'resume': st.booleans(), 'override': st.booleans()})
+    })
 
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
-  def test_car_interfaces(self, car_name):
+  @settings(max_examples=5)
+  @given(cc_msg=get_random_car_control())
+  def test_car_interfaces(self, car_name, cc_msg):
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -57,14 +84,15 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
     # Run car interface
-    CC = car.CarControl.new_message()
+    CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
       car_interface.apply(CC, 0)
       car_interface.apply(CC, 0)
 
-    CC = car.CarControl.new_message()
+    CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+
     for _ in range(10):
       car_interface.update(CC, [])
       car_interface.apply(CC, 0)
