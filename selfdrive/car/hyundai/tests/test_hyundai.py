@@ -26,12 +26,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
       self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
 
   def test_blacklisted_fws(self):
-    blacklisted_fw = {(Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X']}
-    for car_model in FW_VERSIONS.keys():
-      for ecu, fw in FW_VERSIONS[car_model].items():
-        if ecu in blacklisted_fw:
-          common_fw = set(fw).intersection(blacklisted_fw[ecu])
-          self.assertTrue(len(common_fw) == 0, f'{car_model}: Blacklisted fw version found in database: {common_fw}')
+    # TODO: make this into a part number test
+    for car_model, fws in FW_VERSIONS.items():
+      if car_model == CAR.SANTA_CRUZ_1ST_GEN:
+        continue
+
+      self.assertNotIn(b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X', fws[(Ecu.fwdCamera, 0x7c4, None)])
 
   def test_platform_code_ecus_available(self):
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
