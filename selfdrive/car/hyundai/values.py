@@ -348,6 +348,31 @@ FINGERPRINTS = {
 }
 
 
+def get_platform_codes_new(fw_versions: List[bytes]) -> Set[bytes]:
+  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+  codes_new = set()  # unique keys (code, part, date)
+  for fw in fw_versions:
+    code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN_NEW.search(fw),
+                                          PART_NUMBER_FW_PATTERN.search(fw),
+                                          DATE_FW_PATTERN.search(fw))
+    if code_match is not None:
+      code = code_match.group()
+      part = part_match.group() if part_match else None
+      date = date_match.group() if date_match else None
+      # code, date = match.groups()
+      # date_new = DATE_FW_PATTERN.search(fw)
+      # if date is None:
+      #   print('dates', date, date_new)
+      #   assert date_new is None
+      # else:
+      #   print('dates', date, date_new.group())
+      #   assert date_new.group() == date
+      print(code, date)
+      codes[code].add(date)
+      codes_new.add((code, part, date))
+  return codes_new
+
+
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
@@ -393,6 +418,8 @@ HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x4
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
 PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
+PLATFORM_CODE_FW_PATTERN_NEW = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] + b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
 PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
 
 FW_QUERY_CONFIG = FwQueryConfig(

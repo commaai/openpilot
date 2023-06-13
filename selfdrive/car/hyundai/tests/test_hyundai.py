@@ -5,7 +5,8 @@ from cereal import car
 from selfdrive.car.tests.test_fw_fingerprint import TestFwFingerprintBase
 from selfdrive.car.fw_versions import match_fw_to_car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, \
+                                         get_platform_codes_new
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -41,6 +42,10 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
             continue
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
+  # def test_fuzzy_part_numbers(self):
+  #   pattern =
+  #   match =
+
   def test_fw_part_number(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
@@ -74,6 +79,28 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
           self.assertEqual(len({b'-' in code for code in codes}), 1)
 
   def test_fuzzy_platform_codes(self):
+    codes = get_platform_codes_new([b'\xf1\x00DH LKAS 1.1 -150210'])
+    print('codes0', codes)
+
+    codes = get_platform_codes_new([
+      b'\xf1\x00DH LKAS 1.1 -150210',
+      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
+      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
+    ])
+    print('codes1', codes)
+
+    codes = get_platform_codes_new([
+      b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
+      b'\xf1\x00DN8 MFC  AT RUS LHD 1.00 1.03 99211-L1000 190705',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.03 99211-L0000 210603',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
+      b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.07 99211-L1000 211223',
+    ])
+    print('codes2', codes)
+
     # Asserts basic platform code parsing behavior
     codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(codes, {b"DH-1502"})
