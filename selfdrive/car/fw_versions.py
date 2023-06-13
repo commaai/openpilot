@@ -54,15 +54,13 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
+def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
 
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
-  # Platform codes are brand-specific unique identifiers for each platform, less specific than a FW version
-  all_platform_codes = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
     if candidate == exclude:
       continue
@@ -72,14 +70,10 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
       # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
       # impossible to get 3 matching versions, even if two models with shared parts are released at the same
       # time and only one is in our database.
-      if addr[0] not in FUZZY_EXCLUDE_ECUS:
-        for f in fws:
-          all_fw_versions[(addr[1], addr[2], f)].append(candidate)
-
-      # Add platform codes to lookup dict if config specifies a function
-      if addr[0] in config.platform_code_ecus and config.fuzzy_get_platform_codes is not None:
-        for platform_code in config.fuzzy_get_platform_codes(fws):
-          all_platform_codes[(addr[1], addr[2], platform_code)].append(candidate)
+      if addr[0] in FUZZY_EXCLUDE_ECUS:
+        continue
+      for f in fws:
+        all_fw_versions[(addr[1], addr[2], f)].append(candidate)
 
   matched_ecus = set()
   candidate = None
@@ -88,12 +82,6 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     for version in versions:
       # All cars that have this FW response on the specified address
       candidates = all_fw_versions[(*ecu_key, version)]
-
-      # If not one candidate for this ECU and version, try platform codes + dates
-      if len(candidates) != 1 and config.fuzzy_get_platform_codes is not None:
-        # Returns one or none, all cars that have this platform code
-        for platform_code in config.fuzzy_get_platform_codes([version]):
-          candidates = all_platform_codes[(*ecu_key, platform_code)]
 
       if len(candidates) == 1:
         matched_ecus.add(ecu_key)
@@ -113,7 +101,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, config, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict, config=None, log=True) -> Set[str]:
+def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -161,7 +149,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, FW_QUERY_CONFIGS[brand], log=log)
+      matches |= match_func(fw_versions_dict, log=log)
 
     if len(matches):
       return exact_match, matches
