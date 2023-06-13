@@ -63,7 +63,10 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
         return "Data";
       }
     } else if (role == Qt::BackgroundRole && section > 0 && show_signals) {
-      return QBrush(getColor(sigs[section - 1]));
+      // Alpha-blend the signal color with the background to ensure contrast
+      QColor sigColor = sigs[section - 1]->color;
+      sigColor.setAlpha(128);
+      return QBrush(sigColor);
     }
   }
   return {};
@@ -224,7 +227,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
   comp_box->addItems({">", "=", "!=", "<"});
   value_edit->setClearButtonEnabled(true);
-  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
+  value_edit->setValidator(new DoubleValidator(this));
   dynamic_mode->setChecked(true);
   dynamic_mode->setEnabled(!can->liveStreaming());
 

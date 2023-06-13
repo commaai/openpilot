@@ -1,6 +1,11 @@
 Version 0.9.3 (2023-06-XX)
 ========================
 * New driving model
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode lead follow distance is shorter and quicker gas/brake response
+  * In relaxed mode lead follow distance is longer
 
 Version 0.9.2 (2023-05-22)
 ========================

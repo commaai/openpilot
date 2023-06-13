@@ -1,6 +1,5 @@
 #include "tools/cabana/tools/findsignal.h"
 
-#include <QDoubleValidator>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -138,8 +137,7 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   undo_btn->setEnabled(false);
   reset_btn->setEnabled(false);
 
-  auto double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);
+  auto double_validator = new DoubleValidator(this);
   for (auto edit : {value1, value2, factor_edit, offset_edit, first_time_edit, last_time_edit}) {
     edit->setValidator(double_validator);
   }

@@ -192,9 +192,9 @@ class Laikad:
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
-      constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO: Understand and use remaining unknown constellations
       try:
+        constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
       except NotImplementedError:
         good_constellation = False

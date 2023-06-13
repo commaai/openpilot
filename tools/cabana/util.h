@@ -2,11 +2,10 @@
 
 #include <cmath>
 
-#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
-#include <QColor>
+#include <QDoubleValidator>
 #include <QFont>
 #include <QRegExpValidator>
 #include <QStringBuilder>
@@ -21,7 +20,7 @@ class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);
@@ -80,14 +79,18 @@ private:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
-
 public:
   NameValidator(QObject *parent=nullptr);
   QValidator::State validate(QString &input, int &pos) const override;
+};
+
+class DoubleValidator : public QDoubleValidator {
+  Q_OBJECT
+public:
+  DoubleValidator(QObject *parent = nullptr);
 };
 
 namespace utils {
@@ -133,3 +136,4 @@ private:
 };
 
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);

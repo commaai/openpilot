@@ -33,6 +33,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
 
   view->setItemDelegate(delegate);
   view->setModel(model);
+  view->setHeader(header);
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
@@ -40,7 +41,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->setHeader(header);
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
@@ -254,9 +254,13 @@ static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
   unsigned int min = std::numeric_limits<unsigned int>::min();
   unsigned int max = std::numeric_limits<unsigned int>::max();
   auto s = filter.split('-');
-  bool ok = s.size() <= 2;
+  bool ok = s.size() >= 1 && s.size() <= 2;
   if (ok && !s[0].isEmpty()) min = s[0].toUInt(&ok, base);
-  if (ok && s.size() == 2 && !s[1].isEmpty()) max = s[1].toUInt(&ok, base);
+  if (ok && s.size() == 1) {
+    max = min;
+  } else if (ok && s.size() == 2 && !s[1].isEmpty()) {
+    max = s[1].toUInt(&ok, base);
+  }
   return ok && value >= min && value <= max;
 }
 
@@ -269,7 +273,7 @@ bool MessageListModel::matchMessage(const MessageId &id, const CanData &data, co
       case Column::NAME: {
         const auto msg = dbc()->msg(id);
         match = re.match(msg ? msg->name : UNTITLED).hasMatch();
-        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s.name).hasMatch(); });
+        match |= msg && std::any_of(msg->sigs.cbegin(), msg->sigs.cend(), [&re](const auto &s) { return re.match(s->name).hasMatch(); });
         break;
       }
       case Column::SOURCE:
