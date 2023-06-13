@@ -89,24 +89,24 @@ const EncoderInfo stream_road_encoder_info = {
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = 1000000,
-  .get_encode_data_func = &cereal::Event::Reader::getStreamRoadEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setStreamRoadEncodeIdx,
+  .get_encode_data_func = &cereal::Event::Reader::getLivestreamRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setLivestreamRoadEncodeIdx,
 };
 const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "streamWideRoadEncodeData",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = 1000000,
-  .get_encode_data_func = &cereal::Event::Reader::getStreamWideRoadEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setStreamWideRoadEncodeIdx,
+  .get_encode_data_func = &cereal::Event::Reader::getLivestreamWideRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setLivestreamWideRoadEncodeIdx,
 };
 const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "streamDriverEncodeData",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = 1000000,
-  .get_encode_data_func = &cereal::Event::Reader::getStreamDriverEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setStreamDriverEncodeIdx,
+  .get_encode_data_func = &cereal::Event::Reader::getLivestreamDriverEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setLivestreamDriverEncodeIdx,
 };
 
 const EncoderInfo qcam_encoder_info = {
