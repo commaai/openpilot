@@ -44,7 +44,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     missing = 0
     # Hyundai places the look-up-able part number in their FW versions, assert consistency
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
-    pattern = re.compile(b'[0-9][\\.,][0-9]{2} [0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9]')
+    pattern = re.compile(b'(?<=[0-9][\\.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
     for car_model, ecus in FW_VERSIONS.items():
       for ecu, fws in ecus.items():
         for fw in fws:
