@@ -3,6 +3,7 @@
 import os
 import usb1
 import time
+import json
 import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
@@ -125,6 +126,16 @@ def main() -> NoReturn:
 
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
+
+      # store last panda logs
+      LOG_AMOUNT = 100
+      logs = {}
+      for panda in pandas:
+        try:
+          logs[panda.get_usb_serial()] = panda.get_logs(True)[-LOG_AMOUNT:]
+        except Exception:
+          cloudlog.exception(f"Error getting logs for {panda.get_usb_serial()}")
+      params.put("PandaLogs", json.dumps(logs))
 
       for panda in pandas:
         # check health for lost heartbeat
