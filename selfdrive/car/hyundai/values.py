@@ -367,17 +367,20 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None) -> Set[str]:
     if candidate == exclude:
       continue
 
+    ecu_code_key = defaultdict(set)
     for addr, fws in fw_by_addr.items():
       # Add platform codes to lookup dict if config specifies a function
       if addr[0] in FW_QUERY_CONFIG.platform_code_ecus:
         # print()
         # print(addr)
         for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes_new(fws):
+          ecu_code_key[addr[0]].add(platform_code)
           # print('code', candidate, platform_code, date)
           all_platform_codes[(addr[1], addr[2], platform_code)].add(candidate)
           # Add date for ECU and candidate if it exists
           if date is not None:
             all_fw_dates[(addr[1], addr[2], candidate)].add(date)
+    print('ecu_code_key', candidate, ecu_code_key)
 
   matched_ecus = set()
   candidate = None
