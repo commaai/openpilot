@@ -453,7 +453,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   fuzzy_get_platform_codes=get_platform_codes,
   # Camera and radar should exist on all cars
-  # TODO: use abs, it has usable platform code and part number on many platforms
+  # TODO: use abs, it has the platform code and part number on many platforms
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
