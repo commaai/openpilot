@@ -86,7 +86,10 @@ Localizer::Localizer() {
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
 }
 
-Localizer::Localizer(bool has_ublox) : Localizer() { ublox_available = has_ublox; }
+Localizer::Localizer(bool has_ublox) : Localizer() { 
+  this->ublox_available = has_ublox;
+  this->setup_gps(has_ublox);
+}
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd predicted_state = this->kf->get_x();
@@ -664,15 +667,22 @@ void Localizer::determine_gps_mode(double current_time) {
   }
 }
 
+void Localizer::setup_gps(bool has_ublox) {
+  if (ublox_available) {
+    this->gps_std_factor = 10.0;
+  } else {
+    this->gps_std_factor = 2.0;
+  }
+}
+
 int Localizer::locationd_thread() {
   ublox_available = Params().getBool("UbloxAvailable", true);
+  this->setup_gps(ublox_available);
   const char* gps_location_socket;
   if (ublox_available) {
     gps_location_socket = "gpsLocationExternal";
-    this->gps_std_factor = 10.0;
   } else {
     gps_location_socket = "gpsLocation";
-    this->gps_std_factor = 2.0;
   }
   const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "carParams", "accelerometer", "gyroscope"};
