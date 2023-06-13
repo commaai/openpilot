@@ -451,6 +451,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   fuzzy_get_platform_codes=get_platform_codes,
   # Camera and radar should exist on all cars
+  # TODO: use abs, it has usable platform code and part number on many platforms
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
@@ -628,11 +629,11 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0210\x00 4DNAC102',
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
-      b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
+      # b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP100',
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
+      # b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x8756310-L0010\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x8756310-L0210\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC101',
       b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103',
@@ -1335,10 +1336,6 @@ FW_VERSIONS = {
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x04 101 \x11\x13 58520-K4010',
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
       b'\xf1\x00OS IEB \r 102"\x05\x16 58520-K4010',
-      # TODO: these return from the MULTI request, above return from LONG
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xd3\x00\x00\x00\x00\xff\xb7\xff\xee\xff\xe0\x00\xc0\xc0\xfc\xd5\xfc\x00\x00U\x10\xffP\xf5\xff\xfd\x00\x00\x00\x00\xfc\x00\x01',
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xdb\x00\x00\x00\x00\xff\xb1\xff\xd9\xff\xd2\x00\xc0\xc0\xfc\xd5\xfc\x00\x00U\x10\xff\xd6\xf5\x00\x06\x00\x00\x00\x14\xfd\x00\x04',
-      b'\x01\x04\x7f\xff\xff\xf8\xff\xff\x00\x00\x01\xd3\x00\x00\x00\x00\xff\xb7\xff\xf4\xff\xd9\x00\xc0',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\x00OSP LKA  AT CND LHD 1.00 1.02 99211-J9110 802',
@@ -1534,10 +1531,8 @@ FW_VERSIONS = {
       b'\xf1\x8799110AA000\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106',
-      b'\xf1\x8756310/AA070\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
-      b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106\xf1\xa01.06',
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
+      b'\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
