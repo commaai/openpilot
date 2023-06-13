@@ -86,23 +86,28 @@ void Panda::set_rtc(struct tm sys_time) {
   handle->control_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
 }
 
-struct tm Panda::timestamp_to_tm(timestamp_t time) {
-  struct tm new_time = { 0 };
-  new_time.tm_year = time.year - 1900; // tm struct has year defined as years since 1900
-  new_time.tm_mon  = time.month - 1;
-  new_time.tm_mday = time.day;
-  new_time.tm_hour = time.hour;
-  new_time.tm_min  = time.minute;
-  new_time.tm_sec  = time.second;
-  return new_time;
-}
-
 struct tm Panda::get_rtc() {
-  timestamp_t rtc_time = {0};
+  struct __attribute__((packed)) timestamp_t {
+    uint16_t year; // Starts at 0
+    uint8_t month;
+    uint8_t day;
+    uint8_t weekday;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+  } rtc_time = {0};
 
   handle->control_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
 
-  return Panda::timestamp_to_tm(rtc_time);
+  struct tm new_time = { 0 };
+  new_time.tm_year = rtc_time.year - 1900; // tm struct has year defined as years since 1900
+  new_time.tm_mon  = rtc_time.month - 1;
+  new_time.tm_mday = rtc_time.day;
+  new_time.tm_hour = rtc_time.hour;
+  new_time.tm_min  = rtc_time.minute;
+  new_time.tm_sec  = rtc_time.second;
+
+  return new_time;
 }
 
 void Panda::set_fan_speed(uint16_t fan_speed) {
@@ -249,21 +254,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 
 void Panda::can_reset_communications() {
   handle->control_write(0xc0, 0, 0);
-}
-
-std::vector<log_t> Panda::get_logs(bool get_all) {
-  std::vector<log_t> logs;
-  log_t log;
-  int recv;
-
-  do {
-    recv = handle->control_read(0xfd, ((get_all && (logs.size() == 0)) ? 1 : 0), 0, (uint8_t *) &log, sizeof(log_t));
-    if (recv == sizeof(log_t)) {
-      logs.push_back(log);
-    }
-  } while(recv == sizeof(log_t));
-
-  return logs;
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_frame> &out_vec) {
