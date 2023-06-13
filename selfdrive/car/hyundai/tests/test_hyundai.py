@@ -42,7 +42,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_fw_part_number(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
-
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         if car_model == CAR.HYUNDAI_GENESIS:
