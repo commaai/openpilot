@@ -1536,6 +1536,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x8756310/AA070\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
+      b'\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
