@@ -180,7 +180,7 @@ void CanData::compute(const char *can_data, const int size, double current_sec, 
     dat.resize(size);
     bit_change_counts.resize(size);
     colors = QVector(size, QColor(0, 0, 0, 0));
-    last_change_t = QVector(size, ts);
+    last_change_t.assign(size, ts);
     last_delta.resize(size);
     same_delta_counter.resize(size);
   } else {
