@@ -673,8 +673,8 @@ void Localizer::configure_gnss_source(LocalizerGnssSource source) {
 }
 
 int Localizer::locationd_thread() {
-  bool ublox_available = Params().getBool("UbloxAvailable", true);
-  this->configure_gnss_source(ublox_available ? LocalizerGnssSource::UBLOX : LocalizerGnssSource::QCOM);
+  LocalizerGnssSource source = Params().getBool("UbloxAvailable", true) ? LocalizerGnssSource::UBLOX : LocalizerGnssSource::QCOM;
+  this->configure_gnss_source(source);
   const char* gps_location_socket;
   if (this->gnss_source == LocalizerGnssSource::UBLOX) {
     gps_location_socket = "gpsLocationExternal";
