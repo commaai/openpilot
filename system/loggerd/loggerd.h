@@ -87,7 +87,7 @@ const EncoderInfo main_driver_encoder_info = {
 };
 
 const EncoderInfo stream_road_encoder_info = {
-  .publish_name = "streamRoadEncodeData",
+  .publish_name = "livestreamRoadEncodeData",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = LIVESTREAM_BITRATE,
@@ -95,7 +95,7 @@ const EncoderInfo stream_road_encoder_info = {
   .set_encode_idx_func = &cereal::Event::Builder::setLivestreamRoadEncodeIdx,
 };
 const EncoderInfo stream_wide_road_encoder_info = {
-  .publish_name = "streamWideRoadEncodeData",
+  .publish_name = "livestreamWideRoadEncodeData",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = LIVESTREAM_BITRATE,
@@ -103,7 +103,7 @@ const EncoderInfo stream_wide_road_encoder_info = {
   .set_encode_idx_func = &cereal::Event::Builder::setLivestreamWideRoadEncodeIdx,
 };
 const EncoderInfo stream_driver_encoder_info = {
-  .publish_name = "streamDriverEncodeData",
+  .publish_name = "livestreamDriverEncodeData",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = LIVESTREAM_BITRATE,
