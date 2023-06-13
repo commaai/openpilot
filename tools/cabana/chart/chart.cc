@@ -289,14 +289,16 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
-        double value = get_raw_value(e->dat, e->size, *s.sig);
-        double ts = e->mono_time / 1e9 - route_start_time;  // seconds
-        s.vals.append({ts, value});
-        if (!s.step_vals.empty()) {
-          s.step_vals.append({ts, s.step_vals.back().y()});
+        double value = 0;
+        if (s.sig->getValue(e->dat, e->size, &value)) {
+          double ts = e->mono_time / 1e9 - route_start_time;  // seconds
+          s.vals.append({ts, value});
+          if (!s.step_vals.empty()) {
+            s.step_vals.append({ts, s.step_vals.back().y()});
+          }
+          s.step_vals.append({ts, value});
+          s.last_value_mono_time = e->mono_time;
         }
-        s.step_vals.append({ts, value});
-        s.last_value_mono_time = e->mono_time;
       }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);

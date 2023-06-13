@@ -77,12 +77,18 @@ QString cabana::Msg::newSignalName() {
 
 void cabana::Msg::update() {
   mask = QVector<uint8_t>(size, 0x00).toList();
+  multiplexor = nullptr;
+
   // sort signals
   std::sort(sigs.begin(), sigs.end(), [](auto l, auto r) {
-    return std::tie(l->start_bit, l->name) < std::tie(r->start_bit, r->name);
+    return std::tie(r->type, l->multiplex_value, l->start_bit, l->name) <
+           std::tie(l->type, r->multiplex_value, r->start_bit, r->name);
   });
 
-  for (auto &sig : sigs) {
+  for (auto sig : sigs) {
+    if (sig->type == cabana::Signal::Type::Multiplexor) {
+      multiplexor = sig;
+    }
     sig->update();
 
     // update mask
@@ -99,6 +105,13 @@ void cabana::Msg::update() {
 
       bits -= size;
       i = sig->is_little_endian ? i - 1 : i + 1;
+    }
+  }
+
+  for (auto sig : sigs) {
+    sig->multiplexor = sig->type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
+    if (!sig->multiplexor) {
+      sig->multiplex_value = 0;
     }
   }
 }
@@ -131,6 +144,24 @@ QString cabana::Signal::formatValue(double value) const {
   return val_str;
 }
 
+bool cabana::Signal::getValue(const uint8_t *data, size_t data_size, double *val) const {
+  if (multiplexor && get_raw_value(data, data_size, *multiplexor) != multiplex_value) {
+    return false;
+  }
+  *val = get_raw_value(data, data_size, *this);
+  return true;
+}
+
+bool cabana::Signal::operator==(const cabana::Signal &other) const {
+  return name == other.name && size == other.size &&
+         start_bit == other.start_bit &&
+         msb == other.msb && lsb == other.lsb &&
+         is_signed == other.is_signed && is_little_endian == other.is_little_endian &&
+         factor == other.factor && offset == other.offset &&
+         min == other.min && max == other.max && comment == other.comment && unit == other.unit && val_desc == other.val_desc &&
+         multiplex_value == other.multiplex_value && type == other.type;
+}
+
 // helper functions
 
 static QVector<int> BIG_ENDIAN_START_BITS = []() {
@@ -161,15 +192,6 @@ double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal
     val -= ((val >> (sig.size - 1)) & 0x1) ? (1ULL << sig.size) : 0;
   }
   return val * sig.factor + sig.offset;
-}
-
-bool cabana::operator==(const cabana::Signal &l, const cabana::Signal &r) {
-  return l.name == r.name && l.size == r.size &&
-         l.start_bit == r.start_bit &&
-         l.msb == r.msb && l.lsb == r.lsb &&
-         l.is_signed == r.is_signed && l.is_little_endian == r.is_little_endian &&
-         l.factor == r.factor && l.offset == r.offset &&
-         l.min == r.min && l.max == r.max && l.comment == r.comment && l.unit == r.unit && l.val_desc == r.val_desc;
 }
 
 int bigEndianStartBitsIndex(int start_bit) { return BIG_ENDIAN_START_BITS[start_bit]; }
