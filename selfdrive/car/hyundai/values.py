@@ -1,10 +1,11 @@
 import re
+from collections import defaultdict
 from datetime import datetime
 from dateutil import rrule
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Union
+import functools
+from typing import DefaultDict, Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -346,6 +347,29 @@ FINGERPRINTS = {
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 546: 8, 547: 8, 548: 8, 549: 8, 576: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1064: 8, 1078: 4, 1107: 5, 1123: 8, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1180: 8, 1186: 2, 1191: 2, 1193: 8, 1210: 8, 1225: 8, 1227: 8, 1265: 4, 1280: 8, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1384: 8, 1407: 8, 1419: 8, 1427: 6, 1456: 4, 1470: 8, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2005: 8, 2008: 8, 2012: 8
   }],
 }
+
+
+@functools.cache
+def parse_platform_code(fw_version: bytes) -> Tuple[Optional[bytes], Optional[bytes]]:
+  match = PLATFORM_CODE_PATTERN.search(fw_version)
+  code, date = None, None
+  if match is not None:
+    code, date = match.groups()
+  return code, date
+
+
+def hyundai_fuzzy(fw_versions_dict) -> Set[str]:
+  all_platform_codes = defaultdict(set)
+  for candidate, fw_by_addr in FW_VERSIONS.items():
+    for addr, fws in fw_by_addr.items():
+      if addr[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+        continue
+
+      for fw in fws:
+        code, date = parse_platform_code(fw)
+        if code is not None:
+          all_platform_codes[(addr[1], addr[2], code)].add(candidate)
+
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
