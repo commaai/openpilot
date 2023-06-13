@@ -46,7 +46,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Part number separator is sometimes missing or a slash instead of dash
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
     missing = 0
-    pattern = re.compile(b'(?<=[0-9][\\.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+    pattern = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
     for car_model, ecus in FW_VERSIONS.items():
       print()
       print(car_model)
