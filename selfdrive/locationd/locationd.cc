@@ -84,7 +84,6 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
-  this->gnss_source = gnss_source;
   this->configure_gnss_source(gnss_source);
 }
 
@@ -665,6 +664,7 @@ void Localizer::determine_gps_mode(double current_time) {
 }
 
 void Localizer::configure_gnss_source(LocalizerGnssSource source) {
+  this->gnss_source = source;
   if (source == LocalizerGnssSource::UBLOX) {
     this->gps_std_factor = 10.0;
   } else {
