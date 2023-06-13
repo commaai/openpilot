@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import unittest
 import re
+from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -45,22 +46,48 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Uses a lookbehind with the format: (?<=1.00 )(95740-G2400)
     # Part number separator is sometimes missing or a slash instead of dash
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
-    missing = 0
-    pattern = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+    ecus_to_part = defaultdict(set)
+    cars_ecus_to_part = defaultdict(lambda: defaultdict(set))
+    min_fws = defaultdict(int)
+    # TODO: common constant
+    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
+                                    CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
+
     for car_model, ecus in FW_VERSIONS.items():
-      print()
-      print(car_model)
+      if car_model == CAR.HYUNDAI_GENESIS:
+        continue
+
       for ecu, fws in ecus.items():
+        if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+          continue
+
+        min_fws[car_model] = min(len(fws), min_fws[car_model] or 9999999999999)
         for fw in fws:
-          match = pattern.search(fw)
-          if match is not None:
-            print(ECU_NAME[ecu[0]], fw, 'match:', match.groups())
-          if match is None and ecu[0] not in (Ecu.engine, Ecu.transmission, Ecu.abs):
-            missing += 1
-            print('missing part', car_model, ECU_NAME[ecu[0]], fw)
-          if match is not None and ecu[0] in (Ecu.engine, Ecu.transmission):
-            print('shouldn\'t have match!', car_model, ECU_NAME[ecu[0]], fw, match.groups())
-    print('missing', missing)
+          match = PART_NUMBER_FW_PATTERN.search(fw)
+          ecus_to_part[ECU_NAME[ecu[0]]].add(match.groups()[0][:5])
+          cars_ecus_to_part[car_model][ECU_NAME[ecu[0]]].add(match.groups()[0])
+          print(match)
+          self.assertIsNotNone(match, fw)
+
+    # print(dict(ecus_to_part))
+    # print({k: {v: vv for v, vv in v.items()} for k, v in cars_ecus_to_part.items()})
+    for k, v in cars_ecus_to_part.items():
+      print(k, 'min_fws:', min_fws[k], dict(v))
+    # missing = 0
+    #   print()
+    #   print(car_model)
+    #   for ecu, fws in ecus.items():
+    #     for fw in fws:
+    #       match = PART_NUMBER_FW_PATTERN.search(fw)
+    #       if car_model == CAR.HYUNDAI_GENESIS and ecu[0] == Ecu
+    #       if match is not None:
+    #         print(ECU_NAME[ecu[0]], fw, 'match:', match.groups())
+    #       if match is None and ecu[0] not in (Ecu.engine, Ecu.transmission, Ecu.abs):
+    #         missing += 1
+    #         print('missing part', car_model, ECU_NAME[ecu[0]], fw)
+    #       if match is not None and ecu[0] in (Ecu.engine, Ecu.transmission):
+    #         print('shouldn\'t have match!', car_model, ECU_NAME[ecu[0]], fw, match.groups())
+    # print('missing', missing)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
