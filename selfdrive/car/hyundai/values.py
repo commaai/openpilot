@@ -349,7 +349,7 @@ FINGERPRINTS = {
 }
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def parse_platform_code(fw_version: bytes) -> Tuple[Optional[bytes], Optional[bytes]]:
   match = PLATFORM_CODE_PATTERN.search(fw_version)
   code, date = None, None
