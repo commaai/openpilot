@@ -349,7 +349,7 @@ FINGERPRINTS = {
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+  codes: DefaultDict[bytes, Set[Optional[bytes]]] = defaultdict(set)
   for fw in fw_versions:
     code_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
                               DATE_FW_PATTERN.search(fw))
@@ -362,7 +362,8 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
   final_codes = set()
   for code, dates in codes.items():
     # Radar and some cameras don't have FW dates
-    if None in dates:
+    # if None in dates:
+    if not all(isinstance(d, bytes) for d in dates):
       final_codes.add(code)
       continue
 
