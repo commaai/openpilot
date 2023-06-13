@@ -45,8 +45,8 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 
 class EncoderInfo {
 public:
-  const char *publish_name;
-  const char *filename;
+  const char *publish_name = "";
+  const char *filename = "";
   bool record = true;
   int frame_width = 1928;
   int frame_height = 1208;
@@ -59,7 +59,7 @@ public:
 
 class LogCameraInfo {
 public:
-  const char *thread_name;
+  const char *thread_name = "";
   int fps = MAIN_FPS;
   CameraType type;
   VisionStreamType stream_type;
