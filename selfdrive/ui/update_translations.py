@@ -3,13 +3,33 @@ import argparse
 import json
 import os
 
+import cereal.messaging as messaging
+from cereal import car
 from common.basedir import BASEDIR
+from selfdrive.controls.controlsd import CAMERA_PACKETS, CONTROL_PACKETS
+from selfdrive.controls.lib.events import EVENTS, Alert
 
 UI_DIR = os.path.join(BASEDIR, "selfdrive", "ui")
 TRANSLATIONS_DIR = os.path.join(UI_DIR, "translations")
 LANGUAGES_FILE = os.path.join(TRANSLATIONS_DIR, "languages.json")
 TRANSLATIONS_INCLUDE_FILE = os.path.join(TRANSLATIONS_DIR, "alerts_generated.h")
 
+def generate_onroad_alert_translations():
+  cp = car.CarParams.new_message()
+  cs = car.CarState.new_message()
+  sm = messaging.SubMaster(CONTROL_PACKETS + CAMERA_PACKETS)
+
+  content = '// onroad alerts'
+  for event in EVENTS.values():
+    for alert in event.values():
+      if not isinstance(alert, Alert):
+        alert = alert(cp, cs, sm, False, 0)
+      for text in (alert.alert_text_1, alert.alert_text_2):
+        text = text.split('|')[0]
+        if (text):
+          content += f'QT_TRANSLATE_NOOP("OnroadAlerts", R"({text})");\n'
+
+  return content
 
 def generate_translations_include():
   # offroad alerts
