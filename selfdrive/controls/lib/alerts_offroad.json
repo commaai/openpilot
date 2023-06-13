@@ -15,7 +15,7 @@
   "Offroad_UpdateFailed": {
     "text": "Unable to download updates\n%1",
     "severity": 1,
-    "_comment": "Append the command and error to the text."
+    "_comment": "Set extra field to the failed reason."
   },
   "Offroad_InvalidTime": {
     "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
