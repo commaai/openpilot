@@ -135,7 +135,7 @@ def main() -> NoReturn:
           logs[panda.get_usb_serial()] = panda.get_logs(True)[-LOG_AMOUNT:]
         except Exception:
           cloudlog.exception(f"Error getting logs for {panda.get_usb_serial()}")
-      params.put("PandaLogs", json.dumps(logs))
+      params.put("PandaLogs", json.dumps(logs, default=str))
 
       for panda in pandas:
         # check health for lost heartbeat
