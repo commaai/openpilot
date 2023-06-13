@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, PLATFORM_CODE_FW_PATTERN
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -39,9 +39,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
           for fw in fws:
             match = PART_NUMBER_FW_PATTERN.search(fw)
-            code, date = PLATFORM_CODE_FW_PATTERN.search(fw).groups()
-            print(code, date)
-            all_part_numbers[(*ecu, code + b" " + match.group() + b" " + (date or b""))].add(car_model)
+            all_part_numbers[(*ecu, match.group())].add(car_model)
             self.assertIsNotNone(match, fw)
 
     for ecu, platforms in all_part_numbers.items():
