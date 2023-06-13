@@ -348,27 +348,17 @@ FINGERPRINTS = {
 }
 
 
-def get_platform_codes_new(fw_versions: List[bytes]) -> Set[Tuple[bytes, bytes, bytes]]:
-  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+def get_platform_codes_new(fw_versions: List[bytes]) -> \
+  Set[Tuple[Optional[bytes], Optional[bytes], Optional[bytes]]]:
   codes_new = set()  # unique keys (code, part, date)
   for fw in fw_versions:
-    code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN_NEW.search(fw),
+    code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
                                           PART_NUMBER_FW_PATTERN.search(fw),
                                           DATE_FW_PATTERN.search(fw))
     if code_match is not None:
       code = code_match.group()
       part = part_match.group() if part_match else None
       date = date_match.group() if date_match else None
-      # code, date = match.groups()
-      # date_new = DATE_FW_PATTERN.search(fw)
-      # if date is None:
-      #   print('dates', date, date_new)
-      #   assert date_new is None
-      # else:
-      #   print('dates', date, date_new.group())
-      #   assert date_new.group() == date
-      print(code, date)
-      codes[code].add(date)
       codes_new.add((code, part, date))
   return codes_new
 
