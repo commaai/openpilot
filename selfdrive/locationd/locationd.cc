@@ -70,7 +70,7 @@ static VectorXd rotate_std(const MatrixXdr& rot_matrix, const VectorXd& std_in) 
   return rotate_cov(rot_matrix, std_in.array().square().matrix().asDiagonal()).diagonal().array().sqrt();
 }
 
-Localizer::Localizer() {
+Localizer::Localizer(LocalizerGnssSource gnss_source) {
   this->kf = std::make_unique<LiveKalman>();
   this->reset_kalman();
 
@@ -84,11 +84,8 @@ Localizer::Localizer() {
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
-}
-
-Localizer::Localizer(bool has_ublox) : Localizer() { 
-  this->ublox_available = has_ublox;
-  this->setup_gps(has_ublox);
+  this->gnss_source = gnss_source;
+  this->configure_gnss_source(gnss_source);
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
@@ -329,7 +326,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   VectorXd ecef_pos = this->converter->ned2ecef({ 0.0, 0.0, 0.0 }).to_vector();
   VectorXd ecef_vel = this->converter->ned2ecef({ log.getVNED()[0], log.getVNED()[1], log.getVNED()[2] }).to_vector() - ecef_pos;
   float ecef_pos_std;
-  if (ublox_available) {
+  if (gnss_source == LocalizerGnssSource::UBLOX) {
     ecef_pos_std = std::sqrt(std::pow(log.getAccuracy(), 2) + std::pow(log.getVerticalAccuracy(), 2));
   } else {
     ecef_pos_std = std::sqrt(3 * std::pow(log.getVerticalAccuracy(), 2));
@@ -375,7 +372,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
 
   double sensor_time = log.getMeasTime() * 1e-9;
-  if (ublox_available)
+  if (gnss_source == LocalizerGnssSource::UBLOX)
     sensor_time -= GPS_UBLOX_SENSOR_TIME_OFFSET;
   else
     sensor_time -= GPS_QUECTEL_SENSOR_TIME_OFFSET;
@@ -667,8 +664,8 @@ void Localizer::determine_gps_mode(double current_time) {
   }
 }
 
-void Localizer::setup_gps(bool has_ublox) {
-  if (ublox_available) {
+void Localizer::configure_gnss_source(LocalizerGnssSource source) {
+  if (source == LocalizerGnssSource::UBLOX) {
     this->gps_std_factor = 10.0;
   } else {
     this->gps_std_factor = 2.0;
@@ -676,10 +673,10 @@ void Localizer::setup_gps(bool has_ublox) {
 }
 
 int Localizer::locationd_thread() {
-  ublox_available = Params().getBool("UbloxAvailable", true);
-  this->setup_gps(ublox_available);
+  bool ublox_available = Params().getBool("UbloxAvailable", true);
+  this->configure_gnss_source(ublox_available ? LocalizerGnssSource::UBLOX : LocalizerGnssSource::QCOM);
   const char* gps_location_socket;
-  if (ublox_available) {
+  if (this->gnss_source == LocalizerGnssSource::UBLOX) {
     gps_location_socket = "gpsLocationExternal";
   } else {
     gps_location_socket = "gpsLocation";
