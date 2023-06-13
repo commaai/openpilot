@@ -3,7 +3,7 @@ import unittest
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -38,6 +38,22 @@ class TestHyundaiFingerprint(unittest.TestCase):
           if fuzzy_ecu == Ecu.eps and car_model in no_eps_platforms:
             continue
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
+
+  def test_fw_part_number(self):
+    # Hyundai places the ECU part number in their FW versions, assert all parsable
+    # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        if car_model == CAR.HYUNDAI_GENESIS:
+          raise unittest.SkipTest("No part numbers for car model")
+
+        for ecu, fws in ecus.items():
+          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+            continue
+
+          for fw in fws:
+            match = PART_NUMBER_FW_PATTERN.search(fw)
+            self.assertIsNotNone(match, fw)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
