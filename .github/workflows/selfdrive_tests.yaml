@@ -115,8 +115,8 @@ jobs:
           /opt/homebrew/Cellar
           /opt/homebrew/opt
           /opt/homebrew/Caskroom/gcc-arm-*
-          /Applications/ArmGNUToolchain
-          !/Applications/ArmGNUToolchain/**/**/.fseventsd
+          /Applications/ArmGNUToolchain/*/*/*
+          !/Applications/ArmGNUToolchain/*/*/.fseventsd
         key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos_deps-
     - name: Brew link restored dependencies
