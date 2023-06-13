@@ -106,6 +106,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: |
+          ~/github_brew_cache_entries.txt
           ~/.pyenv
           ~/Library/Caches/pypoetry
           /usr/local/Cellar
@@ -115,7 +116,7 @@ jobs:
           /opt/homebrew/opt
           /opt/homebrew/Caskroom/gcc-arm-*
           /Applications/ArmGNUToolchain
-          ~/github_brew_cache_entries.txt
+          !/Applications/ArmGNUToolchain/**/**/.fseventsd
         key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos_deps-
     - name: Brew link restored dependencies
