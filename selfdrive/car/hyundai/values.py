@@ -349,17 +349,21 @@ FINGERPRINTS = {
 
 
 def get_platform_codes_new(fw_versions: List[bytes]) -> \
-  Set[Tuple[Optional[bytes], Optional[bytes], Optional[bytes]]]:
-  codes_new = set()  # unique keys (code, part, date)
+  Set[Tuple[bytes, Optional[bytes]]]:
+  codes_new = set()  # unique keys (code-Optional[part], date)
   for fw in fw_versions:
     code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
                                           PART_NUMBER_FW_PATTERN.search(fw),
                                           DATE_FW_PATTERN.search(fw))
     if code_match is not None:
-      code = code_match.group()
+      code: bytes = code_match.group()
       part = part_match.group() if part_match else None
       date = date_match.group() if date_match else None
-      codes_new.add((code, part, date))
+      if part is not None:
+        # part number starts with generic ECU part number, add what is specific to platform
+        code += b"-" + part[-5:]
+
+      codes_new.add((code, date))
   return codes_new
 
 
