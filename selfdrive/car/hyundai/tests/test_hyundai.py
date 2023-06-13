@@ -73,21 +73,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # print({k: {v: vv for v, vv in v.items()} for k, v in cars_ecus_to_part.items()})
     for k, v in cars_ecus_to_part.items():
       print(k, 'min_fws:', min_fws[k], dict(v))
-    # missing = 0
-    #   print()
-    #   print(car_model)
-    #   for ecu, fws in ecus.items():
-    #     for fw in fws:
-    #       match = PART_NUMBER_FW_PATTERN.search(fw)
-    #       if car_model == CAR.HYUNDAI_GENESIS and ecu[0] == Ecu
-    #       if match is not None:
-    #         print(ECU_NAME[ecu[0]], fw, 'match:', match.groups())
-    #       if match is None and ecu[0] not in (Ecu.engine, Ecu.transmission, Ecu.abs):
-    #         missing += 1
-    #         print('missing part', car_model, ECU_NAME[ecu[0]], fw)
-    #       if match is not None and ecu[0] in (Ecu.engine, Ecu.transmission):
-    #         print('shouldn\'t have match!', car_model, ECU_NAME[ecu[0]], fw, match.groups())
-    # print('missing', missing)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
