@@ -254,7 +254,6 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     self.params.put("CalibrationParams", msg.to_bytes())
-    self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
 
     self._args = arguments
     self._carla_objects = []
@@ -545,23 +544,17 @@ if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
 
-  try:
-    carla_bridge = CarlaBridge(args)
-    p = carla_bridge.run(q)
+  carla_bridge = CarlaBridge(args)
+  p = carla_bridge.run(q)
 
-    if args.joystick:
-      # start input poll for joystick
-      from tools.sim.lib.manual_ctrl import wheel_poll_thread
+  if args.joystick:
+    # start input poll for joystick
+    from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-      wheel_poll_thread(q)
-    else:
-      # start input poll for keyboard
-      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+    wheel_poll_thread(q)
+  else:
+    # start input poll for keyboard
+    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-      keyboard_poll_thread(q)
-    p.join()
-
-  finally:
-    # Try cleaning up the wide camera param
-    # in case users want to use replay after
-    Params().remove("WideCameraOnly")
+    keyboard_poll_thread(q)
+  p.join()

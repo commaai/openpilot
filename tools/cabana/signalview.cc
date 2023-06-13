@@ -146,7 +146,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? item->sig->name : item->sig_val;
+      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
     }
   }
   return {};
@@ -298,20 +298,6 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
     width = std::min<int>(option.widget->size().width() / 3.0, it.value());
   }
   return {width, QApplication::fontMetrics().height()};
-}
-
-bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (event && event->type() == QEvent::ToolTip && index.isValid()) {
-    auto item = (SignalModel::Item *)index.internalPointer();
-    if (item->type == SignalModel::Item::Sig && index.column() == 1) {
-      QRect rc = option.rect.adjusted(0, 0, -option.rect.width() * 0.4, 0);
-      if (rc.contains(event->pos())) {
-        event->setAccepted(false);
-        return false;
-      }
-    }
-  }
-  return QStyledItemDelegate::helpEvent(event, view, option, index);
 }
 
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
