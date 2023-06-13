@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import unittest
-import re
-from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
@@ -42,37 +40,22 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
   def test_fw_part_number(self):
-    # Hyundai places the look-up-able part number in their FW versions, assert consistency
-    # Uses a lookbehind with the format: (?<=1.00 )(95740-G2400)
-    # Part number separator is sometimes missing or a slash instead of dash
+    # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
-    ecus_to_part = defaultdict(set)
-    cars_ecus_to_part = defaultdict(lambda: defaultdict(set))
-    min_fws = defaultdict(int)
-    # TODO: common constant
-    no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
-                                    CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
 
     for car_model, ecus in FW_VERSIONS.items():
-      if car_model == CAR.HYUNDAI_GENESIS:
-        continue
+      with self.subTest(car_model=car_model):
+        if car_model == CAR.HYUNDAI_GENESIS:
+          raise unittest.SkipTest("No part numbers for car model")
 
-      for ecu, fws in ecus.items():
-        if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
-          continue
+        for ecu, fws in ecus.items():
+          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+            continue
 
-        min_fws[car_model] = min(len(fws), min_fws[car_model] or 9999999999999)
-        for fw in fws:
-          match = PART_NUMBER_FW_PATTERN.search(fw)
-          ecus_to_part[ECU_NAME[ecu[0]]].add(match.groups()[0][:5])
-          cars_ecus_to_part[car_model][ECU_NAME[ecu[0]]].add(match.groups()[0])
-          print(match)
-          self.assertIsNotNone(match, fw)
-
-    # print(dict(ecus_to_part))
-    # print({k: {v: vv for v, vv in v.items()} for k, v in cars_ecus_to_part.items()})
-    for k, v in cars_ecus_to_part.items():
-      print(k, 'min_fws:', min_fws[k], dict(v))
+          for fw in fws:
+            match = PART_NUMBER_FW_PATTERN.search(fw)
+            self.assertIsNotNone(match, fw)
+            self.assertGreater(len(match.group()), 0)
 
   def test_fuzzy_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
