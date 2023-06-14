@@ -389,18 +389,16 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
         break
 
       # Don't check dates if not expected
-      if not len(expected_dates):
-        continue
+      if len(expected_dates):
+        # ECU needs to have dates if expected for candidate
+        if not len(found_dates) and len(expected_dates):
+          invalid.append(candidate)
+          break
 
-      # ECU needs to have dates if expected for candidate
-      if not len(found_dates) and len(expected_dates):
-        invalid.append(candidate)
-        break
-
-      # Check new dates within range in the database
-      if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-        invalid.append(candidate)
-        break
+        # Check new dates within range in the database
+        if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+          invalid.append(candidate)
+          break
 
   matches = set(candidates.keys()) - set(invalid)
   print('final matches', matches)
