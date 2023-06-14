@@ -5,7 +5,8 @@ import random
 from cereal import car
 from selfdrive.car.fw_versions import match_fw_to_car, build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, \
+                                         PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -34,7 +35,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
-        for fuzzy_ecu in FW_QUERY_CONFIG.platform_code_ecus:
+        for fuzzy_ecu in PLATFORM_CODE_ECUS:
           if fuzzy_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
           if fuzzy_ecu == Ecu.eps and car_model in no_eps_platforms:
@@ -44,13 +45,14 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_fw_part_number(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
+    # TODO: combine with test below
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         if car_model == CAR.HYUNDAI_GENESIS:
           raise unittest.SkipTest("No part numbers for car model")
 
         for ecu, fws in ecus.items():
-          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+          if ecu[0] not in PLATFORM_CODE_ECUS:
             continue
 
           for fw in fws:
@@ -63,12 +65,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
-          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+          if ecu[0] not in PLATFORM_CODE_ECUS:
             continue
 
           codes = set()
           for fw in fws:
-            codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw])
+            codes |= get_platform_codes([fw])
 
           # Either no parts should be parsed or all parts should be parsed
           self.assertEqual(len({b"-" in code[0] for code in codes}), 1)
@@ -77,24 +79,24 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_fuzzy_platform_codes(self):
     # Asserts basic platform code parsing behavior
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    results = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(results, {(b"DH", b"150210")})
 
     # Some cameras and all radars do not have dates
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    results = get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
     self.assertEqual(results, {(b'AEhe-G2000', None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    results = get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
     self.assertEqual(results, {(b"CV1-CV000", None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+    results = get_platform_codes([
       b'\xf1\x00DH LKAS 1.1 -150210',
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ])
     self.assertEqual(results, {(b"DH", b"150210"), (b'AEhe-G2000', None), (b"CV1-CV000", None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+    results = get_platform_codes([
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
@@ -103,7 +105,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
                                (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
 
-  def test_excluded_platforms_new(self):
+  def test_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms and detect features
     excluded_platforms = {
@@ -121,7 +123,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
         # We can still fuzzy match via exact FW matches
         ecu_name, addr, sub_addr = ecu
         # TODO: if we use match_fw_for_car we need this continue
-        # if ecu_name not in FW_QUERY_CONFIG.platform_code_ecus:
+        # if ecu_name not in PLATFORM_CODE_ECUS:
         #   continue
 
         for fw in fw_versions:

@@ -352,12 +352,12 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
-      if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+      if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
       expected_platform_codes = set()
       expected_dates = set()
-      for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes(expected_versions):
+      for platform_code, date in get_platform_codes(expected_versions):
         expected_platform_codes.add(platform_code)
         if date is not None:
           expected_dates.add(date)
@@ -365,7 +365,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
       found_versions = fw_versions_dict.get(addr, set())
       found_platform_codes = set()
       found_dates = set()
-      for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes(found_versions):
+      for platform_code, date in get_platform_codes(found_versions):
         found_platform_codes.add(platform_code)
         if date is not None:
           found_dates.add(date)
@@ -391,7 +391,8 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
-  codes_new = set()  # unique keys (code-Optional[part], date)
+  # Returns unique, platform-specific identification codes for a set of versions
+  codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
     code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
                                           PART_NUMBER_FW_PATTERN.search(fw),
@@ -404,8 +405,8 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
         # part number starts with generic ECU part type, add what is specific to platform
         code += b"-" + part[-5:]
 
-      codes_new.add((code, date))
-  return codes_new
+      codes.add((code, date))
+  return codes
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -421,11 +422,17 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
+# Constants for fuzzy fingerprinting:
 # Regex patterns for parsing platform code, FW date, and part number from FW versions
 PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})')
 DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
 PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# Camera and radar should exist on all cars
+# TODO: use abs, it has the platform code and part number on many platforms
+# List of ECUs expected to have platform codes
+PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -483,12 +490,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
-  # Custom fuzzy fingerprinting config using platform codes + FW dates:
-  fuzzy_get_platform_codes=get_platform_codes,
+  # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
-  # Camera and radar should exist on all cars
-  # TODO: use abs, it has the platform code and part number on many platforms
-  platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
 FW_VERSIONS = {
