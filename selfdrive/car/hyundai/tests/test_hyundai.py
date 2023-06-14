@@ -120,11 +120,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
         for fw in fw_versions:
-          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "brand": "hyundai",
-                         "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
+                         "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand="hyundai"))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
