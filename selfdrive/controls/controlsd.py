@@ -314,10 +314,9 @@ class Controls:
                           pandaState.alternativeExperience != self.CP.alternativeExperience
       else:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
-
       
-      #if safety_mismatch or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
-      #  self.events.add(EventName.controlsMismatch)
+      if safety_mismatch or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
+        self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
@@ -348,7 +347,6 @@ class Controls:
     if CS.canTimeout:
       self.events.add(EventName.canBusMissing)
     elif not CS.canValid:
-      print("can not valid")
       self.events.add(EventName.canError)
 
     # generic catch-all. ideally, a more specific event should be added above instead
