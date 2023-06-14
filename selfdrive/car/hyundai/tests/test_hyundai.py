@@ -23,8 +23,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
       ecus_not_in_whitelist = ecus - whitelisted_ecus
-      ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
-      self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
+      ecu_strings = ", ".join([f"Ecu.{ECU_NAME[ecu]}" for ecu in ecus_not_in_whitelist])
+      self.assertEqual(len(ecus_not_in_whitelist), 0,
+                       f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
@@ -45,7 +46,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_fw_part_numbers(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
-    # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
+    # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         if car_model == CAR.HYUNDAI_GENESIS:
@@ -73,7 +74,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             codes |= get_platform_codes([fw])
 
           # Either no dates should be parsed or all dates should be parsed
-          self.assertEqual(len({b'-' in code for code in codes}), 1)
+          self.assertEqual(len({b"-" in code for code in codes}), 1)
 
   def test_platform_codes_all_parsable(self):
     # Assert every supported ECU FW version returns one platform code
@@ -85,32 +86,32 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
   def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior for a few cases
-    codes = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    codes = get_platform_codes([b"\xf1\x00DH LKAS 1.1 -150210"])
     self.assertEqual(codes, {b"DH-1502"})
 
     # Some cameras and all radars do not have dates
-    codes = get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    codes = get_platform_codes([b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         "])
     self.assertEqual(codes, {b"AEhe"})
 
-    codes = get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    codes = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
     self.assertEqual(codes, {b"CV1"})
 
     codes = get_platform_codes([
-      b'\xf1\x00DH LKAS 1.1 -150210',
-      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
-      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
+      b"\xf1\x00DH LKAS 1.1 -150210",
+      b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
+      b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
     ])
     self.assertEqual(codes, {b"DH-1502", b"AEhe", b"CV1"})
 
     # Returned platform codes must inclusively contain start/end dates
     codes = get_platform_codes([
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
-      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
-      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720',
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720",
     ])
-    self.assertEqual(codes, {b'LX2-2111', b'LX2-2112', b'LX2-2201', b'LX2-2202',
-                             b'ON-1904', b'ON-1905', b'ON-1906', b'ON-1907'})
+    self.assertEqual(codes, {b"LX2-2111", b"LX2-2112", b"LX2-2201", b"LX2-2202",
+                             b"ON-1904", b"ON-1905", b"ON-1906", b"ON-1907"})
 
 
 if __name__ == "__main__":
