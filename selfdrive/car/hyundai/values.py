@@ -374,20 +374,15 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
       if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
-      expected_platform_codes = set()
-      expected_dates = set()
-      for platform_code, date in get_platform_codes(expected_versions):
-        expected_platform_codes.add(platform_code)
-        if date is not None:
-          expected_dates.add(date)
+      # Expected platform codes & dates
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_dates = {date for _, date in codes if date is not None}
 
-      found_platform_codes = set()
-      found_dates = set()
-      found_versions = fw_versions_dict.get(addr, set())
-      for platform_code, date in get_platform_codes(found_versions):
-        found_platform_codes.add(platform_code)
-        if date is not None:
-          found_dates.add(date)
+      # Found platform codes & dates
+      codes = get_platform_codes(fw_versions_dict.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_dates = {date for _, date in codes if date is not None}
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
