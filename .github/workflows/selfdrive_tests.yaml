@@ -130,6 +130,7 @@ jobs:
           echo "Cache entries not found"
         fi
     - name: Install dependencies
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
     - name: Build openpilot
       run: |
