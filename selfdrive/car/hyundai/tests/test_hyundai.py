@@ -3,7 +3,8 @@ import unittest
 
 from cereal import car
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, PLATFORM_CODE_ECUS, \
+                                         get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -32,12 +33,20 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
-        for fuzzy_ecu in FW_QUERY_CONFIG.platform_code_ecus:
+        for fuzzy_ecu in PLATFORM_CODE_ECUS:
           if fuzzy_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
           if fuzzy_ecu == Ecu.eps and car_model in no_eps_platforms:
             continue
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
+
+  def test_fuzzy_fingerprint_config(self):
+    # Assert every supported ECU FW version returns one platform code
+    for fw_by_addr in FW_VERSIONS.values():
+      for addr, fws in fw_by_addr.items():
+        if addr[0] in PLATFORM_CODE_ECUS:
+          for f in fws:
+            self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
 
   def test_fw_part_number(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
@@ -48,7 +57,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
           raise unittest.SkipTest("No part numbers for car model")
 
         for ecu, fws in ecus.items():
-          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+          if ecu[0] not in PLATFORM_CODE_ECUS:
             continue
 
           for fw in fws:
@@ -61,29 +70,29 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
-          if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
+          if ecu[0] not in PLATFORM_CODE_ECUS:
             continue
 
           codes = set()
           for fw in fws:
-            codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw])
+            codes |= get_platform_codes([fw])
 
           # Either no dates should be parsed or all dates should be parsed
           self.assertEqual(len({b'-' in code for code in codes}), 1)
 
   def test_fuzzy_platform_codes(self):
     # Asserts basic platform code parsing behavior
-    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    codes = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(codes, {b"DH-1502"})
 
     # Some cameras and all radars do not have dates
-    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    codes = get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
     self.assertEqual(codes, {b"AEhe"})
 
-    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    codes = get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
     self.assertEqual(codes, {b"CV1"})
 
-    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+    codes = get_platform_codes([
       b'\xf1\x00DH LKAS 1.1 -150210',
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
@@ -91,7 +100,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(codes, {b"DH-1502", b"AEhe", b"CV1"})
 
     # Returned platform codes must inclusively contain start/end dates
-    codes = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
+    codes = get_platform_codes([
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
