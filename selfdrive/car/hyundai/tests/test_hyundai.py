@@ -48,7 +48,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number
-    # - expected parsing of FW dates
+    # - expected parsing of ECU FW dates
 
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
