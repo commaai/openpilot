@@ -75,9 +75,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
           for fw in fws:
             codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw])
 
-          # Either no dates should be parsed or all dates should be parsed
+          # Either no parts should be parsed or all parts should be parsed
+          self.assertEqual(len({b"-" in code[0] for code in codes}), 1)
+          # Same with dates
           self.assertEqual(len({code[1] is not None for code in codes}), 1)
-          # self.assertEqual(len({code[2] is not None for code in codes}), 1)
 
   def test_fuzzy_platform_codes(self):
     # Asserts basic platform code parsing behavior
