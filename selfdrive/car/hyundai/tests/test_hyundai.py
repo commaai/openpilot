@@ -49,6 +49,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
 
   def test_fw_part_number(self):
+    # TODO: combine test when get_platform_codes parses part numbers
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
     for car_model, ecus in FW_VERSIONS.items():
