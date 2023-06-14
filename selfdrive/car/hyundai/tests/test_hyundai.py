@@ -116,6 +116,8 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
+      # if platform != 'KIA SORENTO PLUG-IN HYBRID 4TH GEN':
+      #   continue
       car_fw = []
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
@@ -125,6 +127,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
       CP = car.CarParams.new_message(carFw=car_fw)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+      print('returned', platform, matches)
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
