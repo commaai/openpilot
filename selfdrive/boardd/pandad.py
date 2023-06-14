@@ -134,8 +134,9 @@ def main() -> NoReturn:
           cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
         if first_run:
-          # update time from RTC
-          set_time(cloudlog)
+          if panda.is_internal():
+            # update time from RTC
+            set_time(cloudlog)
 
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
