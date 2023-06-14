@@ -73,7 +73,7 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
 
           codes = set()
           for fw in fws:
-            codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([fw])
+            codes |= FW_QUERY_CONFIG.fuzzy_get_platform_codes([fw])
 
           # Either no dates should be parsed or all dates should be parsed
           self.assertEqual(len({code[1] is not None for code in codes}), 1)
@@ -81,24 +81,24 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
 
   def test_fuzzy_platform_codes(self):
     # Asserts basic platform code parsing behavior
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([b'\xf1\x00DH LKAS 1.1 -150210'])
+    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(results, {(b"DH", b"150210")})
 
     # Some cameras and all radars do not have dates
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
+    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
     self.assertEqual(results, {(b'AEhe-G2000', None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
     self.assertEqual(results, {(b"CV1-CV000", None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([
+    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
       b'\xf1\x00DH LKAS 1.1 -150210',
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
       b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
     ])
     self.assertEqual(results, {(b"DH", b"150210"), (b'AEhe-G2000', None), (b"CV1-CV000", None)})
 
-    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes_new([
+    results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',

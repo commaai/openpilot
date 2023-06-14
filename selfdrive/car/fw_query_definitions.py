@@ -78,7 +78,7 @@ class FwQueryConfig:
   # Brand-specific fuzzy fingerprinting config options:
   # A function to get unique, platform-specific identification codes for a set of versions
   # TODO: remove this? maybe we want to keep it to test generically
-  fuzzy_get_platform_codes_new: Optional[Callable[[List[bytes]], Set[Tuple[bytes, bytes, bytes]]]] = None
+  fuzzy_get_platform_codes: Optional[Callable[[List[bytes]], Set[Tuple[bytes, bytes, bytes]]]] = None
   # TODO: correct typing would be nice
   match_fw_to_car_fuzzy: Optional[Callable[[List[bytes]], Set[Tuple[bytes, bytes, bytes]]]] = None
   # List of ECUs expected to have platform codes
