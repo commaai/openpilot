@@ -106,7 +106,7 @@ def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
-  invalid = []
+  invalid = set()
   candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():
@@ -130,10 +130,10 @@ def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
         continue
 
       if not any([found_version in expected_versions for found_version in found_versions]):
-        invalid.append(candidate)
+        invalid.add(candidate)
         break
 
-  return set(candidates.keys()) - set(invalid)
+  return set(candidates.keys()) - invalid
 
 
 def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
