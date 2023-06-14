@@ -117,10 +117,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for platform, fw_by_addr in FW_VERSIONS.items():
       car_fw = []
       for ecu, fw_versions in fw_by_addr.items():
-        # Only test fuzzy ECUs so excluded platforms for platforms codes are accurate
-        # We can still fuzzy match via exact FW matches
         ecu_name, addr, sub_addr = ecu
-
         for fw in fw_versions:
           car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
                          "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
