@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import unittest
-import random
 
 from cereal import car
-from selfdrive.car.fw_versions import match_fw_to_car, build_fw_dict
+from selfdrive.car.fw_versions import build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
                                          FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, PLATFORM_CODE_ECUS, \
                                          get_platform_codes
@@ -133,16 +132,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
         # Only test fuzzy ECUs so excluded platforms for platforms codes are accurate
         # We can still fuzzy match via exact FW matches
         ecu_name, addr, sub_addr = ecu
-        # TODO: if we use match_fw_for_car we need this continue
-        # if ecu_name not in PLATFORM_CODE_ECUS:
-        #   continue
 
         for fw in fw_versions:
           car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
                          "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      # _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand='hyundai'))
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
