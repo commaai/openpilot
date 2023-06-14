@@ -124,8 +124,13 @@ class TestFwFingerprint(unittest.TestCase):
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
   def test_fuzzy_fingerprint_config(self):
-    # TODO test SOMETHING
-    pass
+    # These brands implement their own fuzzy fingerprinting function
+    fuzzy_brands = {"hyundai"}
+    for brand, config in FW_QUERY_CONFIGS.items():
+      self.assertEqual(config.match_fw_to_car_fuzzy is not None, brand in fuzzy_brands)
+      if config.match_fw_to_car_fuzzy is not None:
+        matches = config.match_fw_to_car_fuzzy({}, log=False)
+        self.assertTrue(isinstance(matches, set))
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
