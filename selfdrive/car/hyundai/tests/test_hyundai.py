@@ -51,6 +51,30 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # - every supported ECU FW version has a part number
     # - expected parsing of ECU FW dates
 
+    # Some platforms have date codes in a different format we don't yet parse (or are missing).
+    # For now, assert list of expected missing date cars
+    no_dates_platforms = {
+      # CAN FD
+      CAR.TUCSON_4TH_GEN,
+      CAR.TUCSON_HYBRID_4TH_GEN,
+      CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+      CAR.SANTA_CRUZ_1ST_GEN,
+      CAR.KIA_SPORTAGE_5TH_GEN,
+      # CAN
+      CAR.KONA,
+      CAR.SONATA_LF,
+      CAR.VELOSTER,
+      CAR.KIA_CEED,
+      CAR.KIA_FORTE,
+      CAR.KONA_EV,
+      CAR.KONA_EV_2022,
+      CAR.KIA_OPTIMA_G4,
+      CAR.KIA_OPTIMA_G4_FL,
+      CAR.ELANTRA,
+      CAR.KONA_HEV,
+      CAR.KIA_SORENTO,
+    }
+
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
@@ -63,10 +87,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
             codes |= result
 
-          # Some newer platforms have date codes in a different format we don't yet parse,
-          # for now assert we can parse all FW or none
-          self.assertEqual(len({date is not None for _, date in codes}), 1,
-                           "Not all FW dates are parsable")
+          # So far we've only seen dates in fwdCamera
+          if car_model in no_dates_platforms or ecu[0] != Ecu.fwdCamera:
+            self.assertTrue(all({date is None for _, date in codes}))
+          else:
+            self.assertTrue(all({date is not None for _, date in codes}))
 
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest("No part numbers for car model")
