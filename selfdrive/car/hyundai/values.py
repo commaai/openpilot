@@ -348,9 +348,9 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
-    code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
-                                          PART_NUMBER_FW_PATTERN.search(fw),
-                                          DATE_FW_PATTERN.search(fw))
+    code_match = PLATFORM_CODE_FW_PATTERN.search(fw)
+    part_match = PART_NUMBER_FW_PATTERN.search(fw)
+    date_match = DATE_FW_PATTERN.search(fw)
     if code_match is not None:
       code: bytes = code_match.group()
       part = part_match.group() if part_match else None
