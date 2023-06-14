@@ -27,7 +27,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
-  # fingerprint in the absense of full FW matches:
+  # fingerprint in the absence of full FW matches:
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
