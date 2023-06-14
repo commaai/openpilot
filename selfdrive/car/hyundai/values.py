@@ -390,7 +390,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
   return set(candidates.keys()) - set(invalid)
 
 
-def get_platform_codes_new(fw_versions: List[bytes]) -> \
+def get_platform_codes(fw_versions: List[bytes]) -> \
   Set[Tuple[bytes, Optional[bytes]]]:
   codes_new = set()  # unique keys (code-Optional[part], date)
   for fw in fw_versions:
@@ -485,7 +485,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.cornerRadar, 0x7b7, None),
   ],
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
-  fuzzy_get_platform_codes=get_platform_codes_new,
+  fuzzy_get_platform_codes=get_platform_codes,
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
   # Camera and radar should exist on all cars
   # TODO: use abs, it has the platform code and part number on many platforms
