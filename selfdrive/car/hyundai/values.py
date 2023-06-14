@@ -1,10 +1,7 @@
 import re
-from datetime import datetime
-from dateutil import rrule
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -12,7 +9,6 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
-from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
