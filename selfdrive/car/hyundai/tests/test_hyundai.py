@@ -25,7 +25,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
       ecus_not_in_whitelist = ecus - whitelisted_ecus
       ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
-      self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
+      self.assertEqual(len(ecus_not_in_whitelist), 0, f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
@@ -71,34 +71,34 @@ class TestHyundaiFingerprint(unittest.TestCase):
             raise unittest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
-          # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
+          # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
           self.assertTrue(all({b"-" in code for code, _ in codes}),
                           f"FW does not have part number: {fw}")
 
   def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior for a few cases
-    results = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
+    results = get_platform_codes([b"\xf1\x00DH LKAS 1.1 -150210"])
     self.assertEqual(results, {(b"DH", b"150210")})
 
     # Some cameras and all radars do not have dates
-    results = get_platform_codes([b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         '])
-    self.assertEqual(results, {(b'AEhe-G2000', None)})
+    results = get_platform_codes([b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         "])
+    self.assertEqual(results, {(b"AEhe-G2000", None)})
 
-    results = get_platform_codes([b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         '])
+    results = get_platform_codes([b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         "])
     self.assertEqual(results, {(b"CV1-CV000", None)})
 
     results = get_platform_codes([
-      b'\xf1\x00DH LKAS 1.1 -150210',
-      b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
-      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
+      b"\xf1\x00DH LKAS 1.1 -150210",
+      b"\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ",
+      b"\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ",
     ])
-    self.assertEqual(results, {(b"DH", b"150210"), (b'AEhe-G2000', None), (b"CV1-CV000", None)})
+    self.assertEqual(results, {(b"DH", b"150210"), (b"AEhe-G2000", None), (b"CV1-CV000", None)})
 
     results = get_platform_codes([
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222',
-      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103',
-      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405',
-      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720',
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 220222",
+      b"\xf1\x00LX2 MFC  AT USA LHD 1.00 1.08 99211-S8100 211103",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9100 190405",
+      b"\xf1\x00ON  MFC  AT USA LHD 1.00 1.03 99211-S9100 190720",
     ])
     self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
                                (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
@@ -119,11 +119,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
         for fw in fw_versions:
-          car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "brand": "hyundai",
                          "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
 
       CP = car.CarParams.new_message(carFw=car_fw)
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand='hyundai'))
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand="hyundai"))
       if len(matches) == 1:
         self.assertEqual(list(matches)[0], platform)
       else:
