@@ -383,15 +383,11 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
       print('found', candidate, ecu, found_platform_codes, found_dates)
       print()
 
-      if not len(found_versions):
-        pass  # No Hyundai platform code ECU should be missing on car
-        # # Some models can sometimes miss an ecu, or show on two different addresses
-        # if candidate in config.non_essential_ecus.get(ecu_type, []):
-        #   continue
-
-        # # Ignore non essential ecus
-        # if ecu_type not in ESSENTIAL_ECUS:
-        #   continue
+      # Exceptions for missing information
+      if not len(found_dates):
+        # Ignore missing FW dates if they don't exist in the database for this candidate and ECU
+        if not len(expected_dates):
+          continue
 
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         invalid.append(candidate)
