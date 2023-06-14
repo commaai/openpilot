@@ -44,25 +44,12 @@ class TestHyundaiFingerprint(unittest.TestCase):
             continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
-  def test_fw_part_numbers(self):
-    # Hyundai places the ECU part number in their FW versions, assert all parsable
-    # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
-    for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model):
-        if car_model == CAR.HYUNDAI_GENESIS:
-          raise unittest.SkipTest("No part numbers for car model")
+  def test_fw_format(self):
+    # Asserts:
+    # - every supported ECU FW version returns one platform code
+    # - every supported ECU FW version has a part number
+    # - expected parsing of FW dates
 
-        for ecu, fws in ecus.items():
-          if ecu[0] not in PLATFORM_CODE_ECUS:
-            continue
-
-          for fw in fws:
-            match = PART_NUMBER_FW_PATTERN.search(fw)
-            self.assertIsNotNone(match, fw)
-
-  def test_fw_dates(self):
-    # Some newer platforms have date codes in a different format we don't yet parse,
-    # for now assert date format is consistent for all FW across each platform
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
@@ -71,18 +58,23 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
           codes = set()
           for fw in fws:
-            codes |= get_platform_codes([fw])
+            result = get_platform_codes([fw])
+            self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
+            codes |= result
 
-          # Either no dates should be parsed or all dates should be parsed
-          self.assertEqual(len({b"-" in code for code in codes}), 1)
+          # Some newer platforms have date codes in a different format we don't yet parse,
+          # for now assert we can parse all FW or none
+          self.assertEqual(len({b"-" in code for code in codes}), 1,
+                           "Not all FW dates are parsable")
 
-  def test_platform_codes_all_parsable(self):
-    # Assert every supported ECU FW version returns one platform code
-    for fw_by_addr in FW_VERSIONS.values():
-      for addr, fws in fw_by_addr.items():
-        if addr[0] in PLATFORM_CODE_ECUS:
-          for f in fws:
-            self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
+          if car_model == CAR.HYUNDAI_GENESIS:
+            raise unittest.SkipTest("No part numbers for car model")
+
+          # Hyundai places the ECU part number in their FW versions, assert all parsable
+          # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
+          for fw in fws:
+            match = PART_NUMBER_FW_PATTERN.search(fw)
+            self.assertIsNotNone(match, fw)
 
   def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior for a few cases
