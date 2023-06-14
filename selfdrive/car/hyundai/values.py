@@ -348,6 +348,58 @@ FINGERPRINTS = {
 }
 
 
+def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
+  """Do an exact FW match. Returns all cars that match the given
+  FW versions for a list of "essential" ECUs. If an ECU is not considered
+  essential the FW version can be missing to get a fingerprint, but if it's present it
+  needs to match the database."""
+  invalid = []
+  candidates = FW_VERSIONS
+
+  for candidate, fws in candidates.items():
+    config = FW_QUERY_CONFIG
+    for ecu, expected_versions in fws.items():
+      if ecu[0] not in config.platform_code_ecus:
+        continue
+
+      expected_platform_codes = set()
+      expected_dates = set()
+      for platform_code, date in config.fuzzy_get_platform_codes_new(expected_versions):
+        expected_platform_codes.add(platform_code)
+        if date is not None:
+          expected_dates.add(date)
+      print('\nexpected', candidate, ecu, expected_platform_codes, expected_dates)
+
+      ecu_type = ecu[0]
+      addr = ecu[1:]
+
+      found_versions = fw_versions_dict.get(addr, set())
+      found_platform_codes = set()
+      found_dates = set()
+      for platform_code, date in config.fuzzy_get_platform_codes_new(found_versions):
+        found_platform_codes.add(platform_code)
+        if date is not None:
+          found_dates.add(date)
+      print('found', candidate, ecu, found_platform_codes, found_dates)
+      print()
+
+      if not len(found_versions):
+        pass  # No Hyundai platform code ECU should be missing on car
+        # # Some models can sometimes miss an ecu, or show on two different addresses
+        # if candidate in config.non_essential_ecus.get(ecu_type, []):
+        #   continue
+
+        # # Ignore non essential ecus
+        # if ecu_type not in ESSENTIAL_ECUS:
+        #   continue
+
+      if not any([found_version in expected_versions for found_version in found_versions]):
+        invalid.append(candidate)
+        break
+
+  return set(candidates.keys()) - set(invalid)
+
+
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None) -> Set[str]:
   # TODO: return any number of candidates, have match_fw_to_car handle it
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
@@ -552,7 +604,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
   fuzzy_get_platform_codes=get_platform_codes,
   fuzzy_get_platform_codes_new=get_platform_codes_new,
-  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
+  # match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy_new,
   # Camera and radar should exist on all cars
   # TODO: use abs, it has the platform code and part number on many platforms
   platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
