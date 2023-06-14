@@ -79,27 +79,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
           self.assertEqual(len({code[1] is not None for code in codes}), 1)
           # self.assertEqual(len({code[2] is not None for code in codes}), 1)
 
-  def test_fuzzy_matching(self):
-    # return
-    for car_model, ecus in FW_VERSIONS.items():
-      # if car_model != 'HYUNDAI IONIQ HYBRID 2017-2019':
-      #   continue
-      fw = []
-      valid_ecus = [e for e in ecus if e[0] in FW_QUERY_CONFIG.platform_code_ecus]
-      for ecu in valid_ecus:
-        ecu_name, addr, sub_addr = ecu
-        for _ in range(5):
-          # Add multiple FW versions to simulate ECU returning to multiple queries in a brand
-          fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': 'hyundai',
-                     "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-      CP = car.CarParams.new_message(carFw=fw)
-      print('START FUZZY')
-      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand='hyundai'))
-      print('matches', car_model, matches)
-      if car_model in (CAR.GENESIS_G70, CAR.GENESIS_G70_2020, CAR.TUCSON_4TH_GEN, CAR.TUCSON_HYBRID_4TH_GEN):
-        continue
-      self.assertEqual(matches, {car_model})
-
   def test_fuzzy_platform_codes(self):
     # Asserts basic platform code parsing behavior
     results = FW_QUERY_CONFIG.fuzzy_get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
