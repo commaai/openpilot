@@ -390,8 +390,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
   return set(candidates.keys()) - set(invalid)
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> \
-  Set[Tuple[bytes, Optional[bytes]]]:
+def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
   codes_new = set()  # unique keys (code-Optional[part], date)
   for fw in fw_versions:
     code_match, part_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
