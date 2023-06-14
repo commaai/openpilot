@@ -381,9 +381,9 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
         if date is not None:
           expected_dates.add(date)
 
-      found_versions = fw_versions_dict.get(addr, set())
       found_platform_codes = set()
       found_dates = set()
+      found_versions = fw_versions_dict.get(addr, set())
       for platform_code, date in get_platform_codes(found_versions):
         found_platform_codes.add(platform_code)
         if date is not None:
