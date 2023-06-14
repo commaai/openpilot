@@ -349,16 +349,14 @@ FINGERPRINTS = {
 
 
 def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
-  """Do an exact FW match. Returns all cars that match the given
-  FW versions for a list of "essential" ECUs. If an ECU is not considered
-  essential the FW version can be missing to get a fingerprint, but if it's present it
-  needs to match the database."""
   invalid = []
   candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIG
     for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
       if ecu[0] not in config.platform_code_ecus:
         continue
 
@@ -368,10 +366,6 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
         expected_platform_codes.add(platform_code)
         if date is not None:
           expected_dates.add(date)
-      print('\nexpected', candidate, ecu, expected_platform_codes, expected_dates)
-
-      ecu_type = ecu[0]
-      addr = ecu[1:]
 
       found_versions = fw_versions_dict.get(addr, set())
       found_platform_codes = set()
@@ -380,8 +374,6 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
         found_platform_codes.add(platform_code)
         if date is not None:
           found_dates.add(date)
-      print('found', candidate, ecu, found_platform_codes, found_dates)
-      print()
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
@@ -391,17 +383,15 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
       # Don't check dates if not expected
       if len(expected_dates):
         # ECU needs to have dates if expected for candidate
-        if not len(found_dates) and len(expected_dates):
+        if not len(found_dates):
           invalid.append(candidate)
           break
 
-        # Check new dates within range in the database
+        # Check all dates within range in the database
         if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
           invalid.append(candidate)
           break
 
-  matches = set(candidates.keys()) - set(invalid)
-  print('final matches', matches)
   return set(candidates.keys()) - set(invalid)
 
 
