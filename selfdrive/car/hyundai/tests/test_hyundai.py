@@ -44,7 +44,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
-  def test_platform_codes_format(self):
+  def test_fw_format(self):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number
