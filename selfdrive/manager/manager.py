@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 import datetime
 import os
-print('PRINT ALL ENVIRONMENT VARIABLES')
-print(os.environ)
-# restrict to 1 thread in libraries like numpy
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-
 import signal
 import subprocess
 import sys
