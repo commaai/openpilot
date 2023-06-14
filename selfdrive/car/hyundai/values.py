@@ -458,10 +458,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
-  # fuzzy_get_platform_codes=get_platform_codes,
-  # # Camera and radar should exist on all cars
-  # # TODO: use abs, it has the platform code and part number on many platforms
-  # platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
 )
 
 FW_VERSIONS = {
