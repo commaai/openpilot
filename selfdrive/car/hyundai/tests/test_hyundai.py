@@ -42,10 +42,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
             continue
           self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
 
-  # def test_fuzzy_part_numbers(self):
-  #   pattern =
-  #   match =
-
   def test_fw_part_number(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
