@@ -394,7 +394,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
         invalid.add(candidate)
         break
 
-      # Don't check dates if not expected
+      # Don't check dates if none in database
       if len(expected_dates):
         # ECU needs to have dates if expected for candidate
         if not len(found_dates):

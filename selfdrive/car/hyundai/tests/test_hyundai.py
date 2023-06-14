@@ -4,8 +4,7 @@ import unittest
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, PLATFORM_CODE_ECUS, \
-                                         get_platform_codes
+                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
