@@ -383,22 +383,31 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
       print('found', candidate, ecu, found_platform_codes, found_dates)
       print()
 
-      # Exceptions for missing information
-      if not len(found_dates):
-        # Ignore missing FW dates if they don't exist in the database for this candidate and ECU
-        if not len(expected_dates):
-          continue
-
+      # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        print('invalidated')
         invalid.append(candidate)
         break
 
-      # If dates exist, check new versions within seen range in the database
-      if len(found_dates) and len(expected_dates):
-        if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-          invalid.append(candidate)
-          break
+      # ECU needs to have dates if expected for candidate
+      if not len(found_dates) and len(expected_dates):
+        print('invalidated')
+        invalid.append(candidate)
+        break
 
+      # Don't check dates if not expected
+      if not len(expected_dates):
+        continue
+
+      # Check new dates within range in the database
+      if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+        print('invalidated')
+        invalid.append(candidate)
+        break
+      print('not invalidated!')
+
+  matches = set(candidates.keys()) - set(invalid)
+  print('final matches', matches)
   return set(candidates.keys()) - set(invalid)
 
 
