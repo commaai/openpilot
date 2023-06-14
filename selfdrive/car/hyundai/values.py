@@ -353,16 +353,15 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
   candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():
-    config = FW_QUERY_CONFIG
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
-      if ecu[0] not in config.platform_code_ecus:
+      if ecu[0] not in FW_QUERY_CONFIG.platform_code_ecus:
         continue
 
       expected_platform_codes = set()
       expected_dates = set()
-      for platform_code, date in config.fuzzy_get_platform_codes(expected_versions):
+      for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes(expected_versions):
         expected_platform_codes.add(platform_code)
         if date is not None:
           expected_dates.add(date)
@@ -370,7 +369,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
       found_versions = fw_versions_dict.get(addr, set())
       found_platform_codes = set()
       found_dates = set()
-      for platform_code, date in config.fuzzy_get_platform_codes(found_versions):
+      for platform_code, date in FW_QUERY_CONFIG.fuzzy_get_platform_codes(found_versions):
         found_platform_codes.add(platform_code)
         if date is not None:
           found_dates.add(date)
