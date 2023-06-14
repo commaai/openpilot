@@ -108,11 +108,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms and detect features
     excluded_platforms = {
-      CAR.GENESIS_G70,
+      CAR.GENESIS_G70,            # shared platform code, part number, and date
       CAR.GENESIS_G70_2020,
       CAR.TUCSON_4TH_GEN,
-      CAR.TUCSON_HYBRID_4TH_GEN,
-    } | set(CANFD_CAR - EV_CAR)
+      CAR.TUCSON_HYBRID_4TH_GEN,  # shared platform code and part number
+    } | set(CANFD_CAR - EV_CAR)   # shared platform codes
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
