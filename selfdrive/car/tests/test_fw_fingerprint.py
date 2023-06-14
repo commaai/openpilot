@@ -127,7 +127,6 @@ class TestFwFingerprint(unittest.TestCase):
     # TODO test SOMETHING
     pass
 
-
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
