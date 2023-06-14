@@ -254,6 +254,7 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     self.params.put("CalibrationParams", msg.to_bytes())
+    self.params.put_bool("DisengageOnAccelerator", True)
 
     self._args = arguments
     self._carla_objects = []
