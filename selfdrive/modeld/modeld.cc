@@ -147,7 +147,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     run_count++;
 
     float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
-    bool prepare_only = false; //vipc_dropped_frames > 0;
+    bool prepare_only = vipc_dropped_frames > 0;
 
     if (prepare_only) {
       LOGE("skipping model eval. Dropped %d frames", vipc_dropped_frames);
