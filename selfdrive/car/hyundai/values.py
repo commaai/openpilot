@@ -393,9 +393,15 @@ def match_fw_to_car_fuzzy_new(fw_versions_dict, log=True) -> Set[str]:
         # if ecu_type not in ESSENTIAL_ECUS:
         #   continue
 
-      if not any([found_version in expected_versions for found_version in found_versions]):
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         invalid.append(candidate)
         break
+
+      # If dates exist, check new versions within seen range in the database
+      if len(found_dates) and len(expected_dates):
+        if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+          invalid.append(candidate)
+          break
 
   return set(candidates.keys()) - set(invalid)
 
