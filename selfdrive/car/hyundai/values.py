@@ -414,37 +414,6 @@ def get_platform_codes_new(fw_versions: List[bytes]) -> \
   return codes_new
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes: DefaultDict[bytes, Set[Optional[bytes]]] = defaultdict(set)
-  for fw in fw_versions:
-    code_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
-                              DATE_FW_PATTERN.search(fw))
-    if code_match is not None:
-      code = code_match.group()
-      date = date_match.group() if date_match else None
-      codes[code].add(date)
-
-  # Create platform codes for all dates inclusive if ECU has FW dates
-  final_codes = set()
-  for code, dates in codes.items():
-    # Radar and some cameras don't have FW dates
-    if None in dates:
-      final_codes.add(code)
-      continue
-
-    try:
-      parsed = {datetime.strptime(cast(bytes, date).decode()[:4], '%y%m') for date in dates}
-    except ValueError:
-      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
-      final_codes.add(code)
-      continue
-
-    for monthly in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + monthly.strftime('%y%m').encode())
-
-  return final_codes
-
-
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
 
@@ -521,7 +490,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.cornerRadar, 0x7b7, None),
   ],
   # Custom fuzzy fingerprinting config using platform codes + FW dates:
-  fuzzy_get_platform_codes=get_platform_codes,
   fuzzy_get_platform_codes_new=get_platform_codes_new,
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
   # Camera and radar should exist on all cars
