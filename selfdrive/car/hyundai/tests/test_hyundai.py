@@ -3,7 +3,6 @@ import unittest
 import random
 
 from cereal import car
-from selfdrive.car.tests.test_fw_fingerprint import TestFwFingerprintBase
 from selfdrive.car.fw_versions import match_fw_to_car, build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
                                          FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, \
@@ -13,7 +12,7 @@ Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
-class TestHyundaiFingerprint(TestFwFingerprintBase):
+class TestHyundaiFingerprint(unittest.TestCase):
   def test_canfd_not_in_can_features(self):
     can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, CAMERA_SCC_CAR)
     for car_model in CANFD_CAR:
@@ -137,52 +136,32 @@ class TestHyundaiFingerprint(TestFwFingerprintBase):
       CAR.GENESIS_G70_2020,
       CAR.TUCSON_4TH_GEN,
       CAR.TUCSON_HYBRID_4TH_GEN,
-      CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
-      CAR.SANTA_CRUZ_1ST_GEN,
-      CAR.KIA_SPORTAGE_5TH_GEN,
-      CAR.KIA_OPTIMA_G4_FL,
-      CAR.KIA_NIRO_EV_2ND_GEN,
-      CAR.KIA_NIRO_HEV_2021,
-      CAR.SANTA_FE,
-      CAR.SANTA_FE_HEV_2022,
-      CAR.IONIQ_EV_2020,
-      CAR.SANTA_FE_2022,
-      CAR.IONIQ_PHEV,
-      CAR.KIA_OPTIMA_G4,
-      CAR.KIA_NIRO_PHEV,
-      CAR.IONIQ,
-      CAR.KIA_NIRO_HEV_2ND_GEN,
-      CAR.SANTA_FE_PHEV_2022,
-      CAR.HYUNDAI_GENESIS,
-      CAR.KIA_STINGER,
-      CAR.IONIQ_PHEV_2019,
-      CAR.IONIQ_EV_LTD,
-      CAR.KIA_STINGER_2022,
-      CAR.IONIQ_HEV_2022,
     }
-  #
-  #   platforms_with_shared_codes = set()
-  #   for platform, fw_by_addr in FW_VERSIONS.items():
-  #     car_fw = []
-  #     for ecu, fw_versions in fw_by_addr.items():
-  #       # Only test fuzzy ECUs so excluded platforms for platforms codes are accurate
-  #       # We can still fuzzy match via exact FW matches
-  #       ecu_name, addr, sub_addr = ecu
-  #       if ecu_name not in FW_QUERY_CONFIG.platform_code_ecus:
-  #         continue
-  #
-  #       for fw in fw_versions:
-  #         car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
-  #                        "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
-  #
-  #     CP = car.CarParams.new_message(carFw=car_fw)
-  #     _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
-  #     if len(matches):
-  #       self.assertFingerprints(matches, platform)
-  #     else:
-  #       platforms_with_shared_codes.add(platform)
-  #
-  #   self.assertEqual(platforms_with_shared_codes, excluded_platforms)
+
+    platforms_with_shared_codes = set()
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      car_fw = []
+      for ecu, fw_versions in fw_by_addr.items():
+        # Only test fuzzy ECUs so excluded platforms for platforms codes are accurate
+        # We can still fuzzy match via exact FW matches
+        ecu_name, addr, sub_addr = ecu
+        # TODO: if we use match_fw_for_car we need this continue
+        # if ecu_name not in FW_QUERY_CONFIG.platform_code_ecus:
+        #   continue
+
+        for fw in fw_versions:
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, 'brand': 'hyundai',
+                         "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+
+      CP = car.CarParams.new_message(carFw=car_fw)
+      # _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw, filter_brand='hyundai'))
+      if len(matches) == 1:
+        self.assertEqual(list(matches)[0], platform)
+      else:
+        platforms_with_shared_codes.add(platform)
+
+    self.assertEqual(platforms_with_shared_codes, excluded_platforms)
 
 
 if __name__ == "__main__":

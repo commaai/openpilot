@@ -26,14 +26,12 @@ class FakeSocket:
     pass
 
 
-class TestFwFingerprintBase(unittest.TestCase):
+class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
     self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
     self.assertEqual(candidates[0], expected)
 
-
-class TestFwFingerprint(TestFwFingerprintBase):
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_exact_match(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
