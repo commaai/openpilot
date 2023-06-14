@@ -9,11 +9,11 @@ if __name__ == "__main__":
   for car_model, ecus in FW_VERSIONS.items():
     print()
     print(car_model)
-    for ecu, fws in sorted(ecus.items(), key=lambda x: x[0][0]):
+    for ecu in sorted(ecus, key=lambda x: int(x[0])):
       if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
-      platform_codes = get_platform_codes(fws)
+      platform_codes = get_platform_codes(ecus[ecu])
       codes = {code for code, _ in platform_codes}
       dates = {date for _, date in platform_codes if date is not None}
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
