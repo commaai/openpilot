@@ -367,13 +367,13 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
-  # invalid = set(CANFD_CAR - EV_CAR)
-  # candidates = FW_VERSIONS
-  matches = set()
+  platform_blacklist = set(CANFD_CAR - EV_CAR)
+  candidates = set()
 
   for candidate, fws in FW_VERSIONS.items():
-    valid_ecus = 0
-    platform_code_ecus = len([ecu for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS])
+    # Keep track of ECUs which pass all checks (platform codes, within date range)
+    valid_ecus = set()
+    expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
@@ -392,32 +392,24 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
-        # invalid.add(candidate)
         break
 
       # Don't check dates if none in database
       if len(expected_dates):
         if not len(found_dates):
-          # invalid.add(candidate)
           break
 
         # Check all dates within range in the database, format is %y%m%d
         if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-          # invalid.add(candidate)
           break
 
-      valid_ecus += 1
+      valid_ecus.add(addr)
 
-    print('all_checks', candidate, valid_ecus)
-    # if len(all_checks) and all(all_checks):
-    if valid_ecus == platform_code_ecus:
-      print('adding candidate:', candidate)
-      matches.add(candidate)
+    # If all checks for each present ECU FW version, add candidate
+    if len(expected_ecus - valid_ecus) == 0:
+      candidates.add(candidate)
 
-  blacklist = set(CANFD_CAR - EV_CAR)
-  print('matches', matches, 'blacklist', matches - blacklist)
-
-  return matches - blacklist  # set(candidates.keys()) - invalid
+  return candidates - platform_blacklist
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
