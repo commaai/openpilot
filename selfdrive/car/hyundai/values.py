@@ -364,7 +364,10 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
 
 
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
-  invalid = set()
+  # Non-electric CAN FD platforms often do not have platform code specifiers needed
+  # to distinguish between hybrid and ICE. All EVs so far are either exclusively
+  # electric or specify electric in the platform code.
+  invalid = set(CANFD_CAR - EV_CAR)
   candidates = FW_VERSIONS
 
   for candidate, fws in candidates.items():

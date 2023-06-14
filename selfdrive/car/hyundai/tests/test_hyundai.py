@@ -3,8 +3,9 @@ import unittest
 
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
-from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_ECUS, get_platform_codes
+from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, EV_CAR, \
+                                         FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_ECUS, \
+                                         get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -111,7 +112,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.GENESIS_G70_2020,
       CAR.TUCSON_4TH_GEN,
       CAR.TUCSON_HYBRID_4TH_GEN,
-    }
+    } | set(CANFD_CAR - EV_CAR)
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
