@@ -365,8 +365,9 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
 
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
   invalid = set()
+  candidates = FW_VERSIONS
 
-  for candidate, fws in FW_VERSIONS.items():
+  for candidate, fws in candidates.items():
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
@@ -405,7 +406,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
           invalid.add(candidate)
           break
 
-  return set(FW_VERSIONS.keys()) - invalid
+  return set(candidates.keys()) - invalid
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
