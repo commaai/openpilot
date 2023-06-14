@@ -26,30 +26,24 @@ class TestHyundaiFingerprint(unittest.TestCase):
       ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
       self.assertEqual(len(ecus_not_in_whitelist), 0, f'{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}')
 
+  # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
+  # fingerprint in the absense of full FW matches:
   def test_platform_code_ecus_available(self):
+    # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL,
                                     CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
-        for fuzzy_ecu in PLATFORM_CODE_ECUS:
-          if fuzzy_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
+        for platform_code_ecu in PLATFORM_CODE_ECUS:
+          if platform_code_ecu in (Ecu.fwdRadar, Ecu.eps) and car_model == CAR.HYUNDAI_GENESIS:
             continue
-          if fuzzy_ecu == Ecu.eps and car_model in no_eps_platforms:
+          if platform_code_ecu == Ecu.eps and car_model in no_eps_platforms:
             continue
-          self.assertIn(fuzzy_ecu, [e[0] for e in ecus])
+          self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 
-  def test_fuzzy_fingerprint_config(self):
-    # Assert every supported ECU FW version returns one platform code
-    for fw_by_addr in FW_VERSIONS.values():
-      for addr, fws in fw_by_addr.items():
-        if addr[0] in PLATFORM_CODE_ECUS:
-          for f in fws:
-            self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
-
-  def test_fw_part_number(self):
-    # TODO: combine test when get_platform_codes parses part numbers
+  def test_fw_part_numbers(self):
     # Hyundai places the ECU part number in their FW versions, assert all parsable
     # Some examples of valid formats: '56310-L0010', '56310L0010', '56310/M6300'
     for car_model, ecus in FW_VERSIONS.items():
@@ -65,7 +59,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             match = PART_NUMBER_FW_PATTERN.search(fw)
             self.assertIsNotNone(match, fw)
 
-  def test_fuzzy_fw_dates(self):
+  def test_fw_dates(self):
     # Some newer platforms have date codes in a different format we don't yet parse,
     # for now assert date format is consistent for all FW across each platform
     for car_model, ecus in FW_VERSIONS.items():
@@ -81,7 +75,15 @@ class TestHyundaiFingerprint(unittest.TestCase):
           # Either no dates should be parsed or all dates should be parsed
           self.assertEqual(len({b'-' in code for code in codes}), 1)
 
-  def test_fuzzy_platform_codes(self):
+  def test_platform_codes_all_parsable(self):
+    # Assert every supported ECU FW version returns one platform code
+    for fw_by_addr in FW_VERSIONS.values():
+      for addr, fws in fw_by_addr.items():
+        if addr[0] in PLATFORM_CODE_ECUS:
+          for f in fws:
+            self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
+
+  def test_platform_codes_spot_check(self):
     # Asserts basic platform code parsing behavior
     codes = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(codes, {b"DH-1502"})
