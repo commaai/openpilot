@@ -364,10 +364,9 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
 
 
 def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
-  invalid = []
-  candidates = FW_VERSIONS
+  invalid = set()
 
-  for candidate, fws in candidates.items():
+  for candidate, fws in FW_VERSIONS.items():
     for ecu, expected_versions in fws.items():
       addr = ecu[1:]
       # Only check ECUs expected to have platform codes
@@ -391,22 +390,22 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True) -> Set[str]:
 
       # Check platform code + part number matches for any found versions
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
-        invalid.append(candidate)
+        invalid.add(candidate)
         break
 
       # Don't check dates if not expected
       if len(expected_dates):
         # ECU needs to have dates if expected for candidate
         if not len(found_dates):
-          invalid.append(candidate)
+          invalid.add(candidate)
           break
 
         # Check all dates within range in the database
         if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
-          invalid.append(candidate)
+          invalid.add(candidate)
           break
 
-  return set(candidates.keys()) - set(invalid)
+  return set(FW_VERSIONS.keys()) - invalid
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
