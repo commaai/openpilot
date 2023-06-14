@@ -125,6 +125,7 @@ class TestFwFingerprint(unittest.TestCase):
 
   def test_fuzzy_fingerprint_config(self):
     # TODO: test SOMETHING about fuzzy function...
+    pass
     # for brand, config in FW_QUERY_CONFIGS.items():
     #   with self.subTest(brand=brand):
     #     if config.fuzzy_get_platform_codes is None:
