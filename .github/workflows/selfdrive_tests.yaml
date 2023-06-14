@@ -116,7 +116,6 @@ jobs:
           /opt/homebrew/opt
           /opt/homebrew/Caskroom/gcc-arm-*
           /Applications/ArmGNUToolchain/*/*/*
-          !/Applications/ArmGNUToolchain/*/*/.fseventsd
         key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
         restore-keys: macos_deps-
     - name: Brew link restored dependencies
@@ -152,6 +151,9 @@ jobs:
           fi
         done
         comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+        # .fseventsd directory causes permission errors in dep caching step
+        # its used by the system to observe changes within the directory - toolchain works without it, just remove it
+        sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
     - name: Save scons cache
       id: scons-save-cache
       uses: actions/cache/save@v3
