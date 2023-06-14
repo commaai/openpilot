@@ -367,7 +367,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
-  platform_blacklist = set(CANFD_CAR - EV_CAR)
+  fuzzy_platform_blacklist = set(CANFD_CAR - EV_CAR)
   candidates = set()
 
   for candidate, fws in FW_VERSIONS.items():
@@ -409,7 +409,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
     if len(valid_expected_ecus - valid_found_ecus) == 0:
       candidates.add(candidate)
 
-  return candidates - platform_blacklist
+  return candidates - fuzzy_platform_blacklist
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
