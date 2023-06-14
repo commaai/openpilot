@@ -18,6 +18,8 @@ ROLL_MAX_DELTA = math.radians(20.0) * DT_MDL  # 20deg in 1 second is well within
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
 ROLL_STD_MAX = math.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
+AVG_OFFSET_MAX = 10.0
+AVG_OFFSET_LOWERED_MAX = 8.0
 
 
 class ParamsLearner:
@@ -157,6 +159,7 @@ def main(sm=None, pm=None):
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
   roll = 0.0
+  avg_offset_valid = True
 
   while True:
     sm.update()
@@ -180,6 +183,10 @@ def main(sm=None, pm=None):
       roll_std = float(P[States.ROAD_ROLL])
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      if avg_offset_valid:
+        avg_offset_valid = abs(angle_offset_average) < AVG_OFFSET_MAX
+      else:
+        avg_offset_valid = abs(angle_offset_average) < AVG_OFFSET_LOWERED_MAX
 
       msg = messaging.new_message('liveParameters')
 
@@ -192,7 +199,7 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((
-        abs(liveParameters.angleOffsetAverageDeg) < 10.0,
+        avg_offset_valid,
         abs(liveParameters.angleOffsetDeg) < 10.0,
         abs(liveParameters.roll) < ROLL_MAX,
         roll_std < ROLL_STD_MAX,
