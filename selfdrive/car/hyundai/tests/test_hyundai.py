@@ -84,7 +84,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(get_platform_codes([f])), f"Unable to parse FW: {f}")
 
   def test_platform_codes_spot_check(self):
-    # Asserts basic platform code parsing behavior
+    # Asserts basic platform code parsing behavior with a few cases
     codes = get_platform_codes([b'\xf1\x00DH LKAS 1.1 -150210'])
     self.assertEqual(codes, {b"DH-1502"})
 
