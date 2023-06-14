@@ -24,8 +24,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
       ecus_not_in_whitelist = ecus - whitelisted_ecus
-      ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_in_whitelist])
-      self.assertEqual(len(ecus_not_in_whitelist), 0, f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
+      ecu_strings = ", ".join([f"Ecu.{ECU_NAME[ecu]}" for ecu in ecus_not_in_whitelist])
+      self.assertEqual(len(ecus_not_in_whitelist), 0,
+                       f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
@@ -48,7 +49,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number
-    # - expected parsing of FW dates
+    # - expected parsing of ECU FW dates
 
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
