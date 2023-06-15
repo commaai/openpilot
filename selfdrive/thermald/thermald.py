@@ -411,7 +411,7 @@ def thermald_thread(end_event, hw_queue):
       # save last one before going onroad
       if should_start and not should_start_prev:
         try:
-          params.put("OffroadDeviceState", json.dumps(dat))
+          params.put("LastOffroadStatusPacket", json.dumps(dat))
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
