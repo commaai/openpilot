@@ -105,7 +105,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   action->setVisible(true);
 }
 
-void MapSettings::DestinationWidget::clear(const QString &label) {
+void MapSettings::DestinationWidget::unset(const QString &label) {
   setProperty("current", false);
   setDisabled(true);
 
@@ -115,7 +115,7 @@ void MapSettings::DestinationWidget::clear(const QString &label) {
   action->setVisible(false);
 }
 
-MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
+MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) {
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QVBoxLayout(this);
@@ -151,6 +151,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
 
 
   current_container = new QWidget(this);
+  current_container->setVisible(false);
   auto *current_layout = new QVBoxLayout(current_container);
   current_layout->setContentsMargins(0, 0, 0, 0);
   current_layout->setSpacing(0);
@@ -209,7 +210,6 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
     }
   ])";
 
-  clear();
   refresh();  // TODO: remove this
 
   if (auto dongle_id = getDongleId()) {
@@ -245,36 +245,34 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
 
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
-  refresh();
-}
-
-void MapSettings::clear() {
-  current_container->setVisible(false);
-  clearLayout(destinations_layout);
 }
 
 void MapSettings::updateCurrentRoute() {
   auto dest = QString::fromStdString(params.get("NavDestination"));
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
-  auto visible = dest.size() && !doc.isNull();
-  if (visible) {
-    current_destination = new NavDestination(doc.object());
+  if (dest.size() && !doc.isNull()) {
+    auto new_destination = new NavDestination(doc.object());
+    if (new_destination->equals(current_destination)) {
+      return;
+    }
+    current_destination = new_destination;
     current_widget->set(current_destination, true);
+    needs_refresh = true;
   }
-  current_container->setVisible(visible);
+  current_container->setVisible(dest.size() && !doc.isNull());
+  refresh();
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
   if (!success) return;
 
   cur_destinations = response;
-  if (isVisible()) {
-    refresh();
-  }
+  refresh();
 }
 
 void MapSettings::refresh() {
-  if (cur_destinations == prev_destinations) return;
+  if (!isVisible() || !needs_refresh) return;
+  needs_refresh = false;
 
   QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
   if (doc.isNull()) {
@@ -282,16 +280,13 @@ void MapSettings::refresh() {
     return;
   }
 
-  prev_destinations = cur_destinations;
-  clear();
-
   bool has_home = false, has_work = false;
 
   auto destinations = std::vector<NavDestination*>();
   for (auto el : doc.array()) {
     auto destination = new NavDestination(el.toObject());
 
-    // we add home and work later if they are missing
+    // add home and work later if they are missing
     if (destination->isFavorite()) {
       if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
       else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
@@ -302,6 +297,8 @@ void MapSettings::refresh() {
 
     destinations.push_back(destination);
   }
+
+  clearLayout(destinations_layout);
 
   QLabel *title = new QLabel(tr("recent destinations"));
   title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
@@ -328,12 +325,12 @@ void MapSettings::refresh() {
   // add home and work if missing
   if (!has_home) {
     auto widget = new DestinationWidget(this);
-    widget->clear(NAV_FAVORITE_LABEL_HOME);
+    widget->unset(NAV_FAVORITE_LABEL_HOME);
     destinations_layout->insertWidget(0, widget);
   }
   if (!has_work) {
     auto widget = new DestinationWidget(this);
-    widget->clear(NAV_FAVORITE_LABEL_WORK);
+    widget->unset(NAV_FAVORITE_LABEL_WORK);
     destinations_layout->insertWidget(1, widget);
   }
 

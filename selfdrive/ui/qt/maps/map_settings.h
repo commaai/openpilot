@@ -56,14 +56,14 @@ public:
   void navigateTo(const QJsonObject &place);
   void parseResponse(const QString &response, bool success);
   void updateCurrentRoute();
-  void clear();
 
 private:
   void showEvent(QShowEvent *event) override;
   void refresh();
 
   Params params;
-  QString prev_destinations, cur_destinations;
+  QString cur_destinations;
+  bool needs_refresh;
   QVBoxLayout *destinations_layout;
   QWidget *current_container;
   NavDestination *current_destination;
@@ -79,7 +79,7 @@ public:
   explicit DestinationWidget(QWidget *parent = nullptr);
 
   void set(NavDestination *, bool current = false);
-  void clear(const QString &label);
+  void unset(const QString &label);
 
 private:
   struct NavIcons {
