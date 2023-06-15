@@ -128,7 +128,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(results, {(b"LX2-S8100", b"220222"), (b"LX2-S8100", b"211103"),
                                (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")})
 
-  def test_excluded_platforms(self):
+  def test_fuzzy_excluded_platforms(self):
     # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
     # This list can be shrunk as we combine platforms and detect features
     excluded_platforms = {
