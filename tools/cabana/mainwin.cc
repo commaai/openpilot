@@ -482,7 +482,7 @@ void MainWindow::updateLoadSaveMenus() {
   manage_dbcs_menu->clear();
   manage_dbcs_menu->setEnabled(dynamic_cast<DummyStream *>(can) == nullptr);
 
-  for (uint8_t source : can->sources) {
+  for (int source : can->sources) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly
 
     SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};

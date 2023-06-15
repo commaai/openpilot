@@ -189,9 +189,11 @@ int main(int argc, char **argv) {
   LOGW("models loaded, modeld starting");
 
   bool main_wide_camera = false;
+  bool use_extra_client = true; // set to false to use single camera
   while (!do_exit) {
     auto streams = VisionIpcClient::getAvailableStreams("camerad", false);
     if (!streams.empty()) {
+      use_extra_client = streams.count(VISION_STREAM_WIDE_ROAD) > 0 && streams.count(VISION_STREAM_ROAD) > 0;
       main_wide_camera = streams.count(VISION_STREAM_ROAD) == 0;
       break;
     }
@@ -199,9 +201,9 @@ int main(int argc, char **argv) {
     util::sleep_for(100);
   }
 
-  bool use_extra_client = !main_wide_camera;  // set for single camera mode
   VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
   VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  LOGW("vision stream set up, main_wide_camera: %d, use_extra_client: %d", main_wide_camera, use_extra_client);
 
   while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);

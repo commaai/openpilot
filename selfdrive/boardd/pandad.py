@@ -10,6 +10,7 @@ from functools import cmp_to_key
 from panda import Panda, PandaDFU, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.boardd.set_time import set_time
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
@@ -133,6 +134,11 @@ def main() -> NoReturn:
           cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
         if first_run:
+          if panda.is_internal():
+            # update time from RTC
+            set_time(cloudlog)
+
+          # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
           if panda.is_internal():
             HARDWARE.reset_internal_panda()
