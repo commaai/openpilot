@@ -1,6 +1,6 @@
 #include "map_settings.h"
 
-#include <algorithm>
+#include <vector>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
@@ -273,10 +273,10 @@ void MapSettings::refresh() {
   prev_destinations = cur_destinations;
   clear();
 
-  auto destinations = std::transform(
-    doc.array().begin(), doc.array().end(), std::vector<NavDestination*>(),
-    [](const QJsonValue &val) { return new NavDestination(val.toObject()); }
-  );
+  auto destinations = std::vector<NavDestination*>();
+  for (auto destination : doc.array()) {
+    destinations.push_back(new NavDestination(destination.toObject()));
+  }
 
   // add favorites before recents
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
