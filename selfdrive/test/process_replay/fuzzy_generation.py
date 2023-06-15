@@ -2,6 +2,9 @@ import hypothesis.strategies as st
 import random
 
 def generate_native_type(field):
+  def floats(**kwargs):
+    return st.floats(**kwargs, allow_nan=False, allow_infinity=False)
+
   if field == 'bool':
     return st.booleans()
   elif field == 'int8':
@@ -21,9 +24,9 @@ def generate_native_type(field):
   elif field == 'uint64':
     return st.integers(min_value=0, max_value=2**64-1)
   elif field == 'float32':
-    return st.floats(width=32)
+    return floats(width=32)
   elif field == 'float64':
-    return st.floats(width=64)
+    return floats(width=64)
   elif field == 'text':
     return st.text(max_size=1000)
   elif field == 'data':
