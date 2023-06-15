@@ -1,10 +1,7 @@
 import re
-from datetime import datetime
-from dateutil import rrule
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Union, cast
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -12,7 +9,6 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
-from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -348,35 +344,73 @@ FINGERPRINTS = {
 }
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes: DefaultDict[bytes, Set[Optional[bytes]]] = defaultdict(set)
+def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+  # Returns unique, platform-specific identification codes for a set of versions
+  codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
-    code_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
-                              DATE_FW_PATTERN.search(fw))
+    code_match = PLATFORM_CODE_FW_PATTERN.search(fw)
+    part_match = PART_NUMBER_FW_PATTERN.search(fw)
+    date_match = DATE_FW_PATTERN.search(fw)
     if code_match is not None:
-      code = code_match.group()
+      code: bytes = code_match.group()
+      part = part_match.group() if part_match else None
       date = date_match.group() if date_match else None
-      codes[code].add(date)
+      if part is not None:
+        # part number starts with generic ECU part type, add what is specific to platform
+        code += b"-" + part[-5:]
 
-  # Create platform codes for all dates inclusive if ECU has FW dates
-  final_codes = set()
-  for code, dates in codes.items():
-    # Radar and some cameras don't have FW dates
-    if None in dates:
-      final_codes.add(code)
-      continue
+      codes.add((code, date))
+  return codes
 
-    try:
-      parsed = {datetime.strptime(cast(bytes, date).decode()[:4], '%y%m') for date in dates}
-    except ValueError:
-      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
-      final_codes.add(code)
-      continue
 
-    for monthly in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + monthly.strftime('%y%m').encode())
+def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
+  # Non-electric CAN FD platforms often do not have platform code specifiers needed
+  # to distinguish between hybrid and ICE. All EVs so far are either exclusively
+  # electric or specify electric in the platform code.
+  fuzzy_platform_blacklist = set(CANFD_CAR - EV_CAR)
+  candidates = set()
 
-  return final_codes
+  for candidate, fws in FW_VERSIONS.items():
+    # Keep track of ECUs which pass all checks (platform codes, within date range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
+        continue
+
+      # Expected platform codes & dates
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_dates = {date for _, date in codes if date is not None}
+
+      # Found platform codes & dates
+      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_dates = {date for _, date in codes if date is not None}
+
+      # Check platform code + part number matches for any found versions
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      if ecu[0] in DATE_FW_ECUS:
+        # If ECU can have a FW date, require it to exist
+        # (this excludes candidates in the database without dates)
+        if not len(expected_dates) or not len(found_dates):
+          break
+
+        # Check any date within range in the database, format is %y%m%d
+        if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+          break
+
+      valid_found_ecus.add(addr)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return candidates - fuzzy_platform_blacklist
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -460,6 +494,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
+  # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 FW_VERSIONS = {

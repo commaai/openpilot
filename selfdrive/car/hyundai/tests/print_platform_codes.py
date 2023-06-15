@@ -13,14 +13,9 @@ if __name__ == "__main__":
       if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
-      codes = set()
-      dates = set()
-      for fw in ecus[ecu]:
-        code = list(get_platform_codes([fw]))[0]
-        codes.add(code.split(b"-")[0])
-        if b"-" in code:
-          dates.add(code.split(b"-")[1])
-
+      platform_codes = get_platform_codes(ecus[ecu])
+      codes = {code for code, _ in platform_codes}
+      dates = {date for _, date in platform_codes if date is not None}
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
       print(f'    Codes: {codes}')
       print(f'    Dates: {dates}')
