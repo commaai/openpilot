@@ -7,9 +7,9 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-// static QString shorten(const QString &str, int max_len) {
-//   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
-// }
+static QString shorten(const QString &str, int max_len) {
+  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
+}
 
 MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
   setContentsMargins(0, 0, 0, 0);
@@ -32,7 +32,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   subtitle = new QLabel(this);
   subtitle->setStyleSheet("color: #A0A0A0;");
   inner_frame->addWidget(subtitle);
-  frame->addLayout(inner_frame);
+  frame->addLayout(inner_frame, 1);
 
   action = new QLabel(this);
   action->setObjectName("action");
@@ -81,20 +81,21 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   auto icon_pixmap = icons().recent;
 
   if (destination->isFavorite()) {
-    title_text = destination->label;
-    subtitle_text = destination->name + " " + destination->details;
     if (destination->label == NAV_FAVORITE_LABEL_HOME) {
+      title_text = tr("Home");
+      subtitle_text = destination->name + " " + destination->details;
       icon_pixmap = icons().home;
     } else if (destination->label == NAV_FAVORITE_LABEL_WORK) {
+      title_text = tr("Work");
+      subtitle_text = destination->name + " " + destination->details;
       icon_pixmap = icons().work;
     } else {
       icon_pixmap = icons().favorite;
     }
   }
 
-  // TODO: shorten text
-  title->setText(title_text);
-  subtitle->setText(subtitle_text);
+  title->setText(shorten(title_text, 30));
+  subtitle->setText(shorten(subtitle_text, 30));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
 
@@ -321,14 +322,16 @@ void MapSettings::refresh() {
     }
   }
 
-  if (destinations_layout->count()) {
-    QLabel *title = new QLabel(tr("recent destinations"));
-    title->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
-    destinations_layout->insertWidget(0, title);
-  } else {
-    QLabel *no_recents = new QLabel(tr("no recent destinations"));
-    no_recents->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
-    destinations_layout->addWidget(no_recents);
+  // add home and work if missing
+  if (!has_home) {
+    auto widget = new DestinationWidget(this);
+    widget->clear(tr("home"));
+    destinations_layout->insertWidget(0, widget);
+  }
+  if (!has_work) {
+    auto widget = new DestinationWidget(this);
+    widget->clear(tr("work"));
+    destinations_layout->insertWidget(1, widget);
   }
 
   destinations_layout->addStretch();
