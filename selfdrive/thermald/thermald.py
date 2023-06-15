@@ -398,7 +398,8 @@ def thermald_thread(end_event, hw_queue):
     statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
-    if (count % int(600. / DT_TRML)) == 0:
+    rising_edge_started = should_start and not should_start_prev
+    if rising_edge_started or (count % int(600. / DT_TRML)) == 0:
       dat = {
         'count': count,
         'pandaStates': [strip_deprecated_keys(p.to_dict()) for p in pandaStates],
@@ -409,7 +410,7 @@ def thermald_thread(end_event, hw_queue):
       cloudlog.event("STATUS_PACKET", **dat)
 
       # save last one before going onroad
-      if should_start and not should_start_prev:
+      if rising_edge_started:
         try:
           params.put("LastOffroadStatusPacket", json.dumps(dat))
         except Exception:
