@@ -1,7 +1,5 @@
 #include "map_settings.h"
 
-#include <QDebug>
-
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -77,17 +75,17 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
 
   auto title_text = destination->name;
   auto subtitle_text = destination->details;
-  auto icon_pixmap = NAV_ICON_RECENT;
+  auto icon_pixmap = icons().recent;
 
   if (destination->isFavorite()) {
     title_text = destination->label;
     subtitle_text = destination->name + " " + destination->details;
     if (destination->label == NAV_FAVORITE_LABEL_HOME) {
-      icon_pixmap = NAV_ICON_HOME;
+      icon_pixmap = icons().home;
     } else if (destination->label == NAV_FAVORITE_LABEL_WORK) {
-      icon_pixmap = NAV_ICON_WORK;
+      icon_pixmap = icons().work;
     } else {
-      icon_pixmap = NAV_ICON_FAVORITE;
+      icon_pixmap = icons().favorite;
     }
   }
 
@@ -229,7 +227,6 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
-  qDebug() << "MapSettings" << width() << height();
   updateCurrentRoute();
   refresh();
 }

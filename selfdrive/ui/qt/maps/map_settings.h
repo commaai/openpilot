@@ -17,15 +17,6 @@ const QString NAV_TYPE_RECENT = "recent";
 const QString NAV_FAVORITE_LABEL_HOME = "home";
 const QString NAV_FAVORITE_LABEL_WORK = "work";
 
-const auto NAV_ICON_HOME =
-    loadPixmap("../assets/navigation/icon_home.svg", {72, 72});
-const auto NAV_ICON_WORK =
-    loadPixmap("../assets/navigation/icon_work.svg", {72, 72});
-const auto NAV_ICON_FAVORITE =
-    loadPixmap("../assets/navigation/icon_favorite.svg", {72, 72});
-const auto NAV_ICON_RECENT =
-    loadPixmap("../assets/navigation/icon_recent.svg", {72, 72});
-
 class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
@@ -91,6 +82,21 @@ public:
 
   void set(NavDestination *, bool current = false);
   void clear(const QString &label);
+
+private:
+  struct NavIcons {
+    QPixmap home, work, favorite, recent;
+  };
+
+  static NavIcons icons() {
+    static NavIcons nav_icons {
+      loadPixmap("../assets/navigation/icon_home.svg", {72, 72}),
+      loadPixmap("../assets/navigation/icon_work.svg", {72, 72}),
+      loadPixmap("../assets/navigation/icon_favorite.svg", {72, 72}),
+      loadPixmap("../assets/navigation/icon_recent.svg", {72, 72}),
+    };
+    return nav_icons;
+  }
 
 private:
   QLabel *icon, *title, *subtitle, *action;
