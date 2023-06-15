@@ -15,7 +15,7 @@ class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
   @settings(max_examples=5)
-  @given(cc_msg=get_random_msg(car.CarControl))
+  @given(cc_msg=get_random_msg(car.CarControl, real_floats=True))
   def test_car_interfaces(self, car_name, cc_msg):
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
