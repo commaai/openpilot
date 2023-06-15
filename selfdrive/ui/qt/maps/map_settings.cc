@@ -39,6 +39,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
   frame->addWidget(action);
 
+  setFixedHeight(144);
   setStyleSheet(R"(
     ClickableWidget {
       background-color: #292929;
@@ -94,8 +95,8 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
     }
   }
 
-  title->setText(shorten(title_text, 30));
-  subtitle->setText(shorten(subtitle_text, 30));
+  title->setText(shorten(title_text, 32));
+  subtitle->setText(shorten(subtitle_text, 32));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
 
@@ -152,11 +153,13 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   current_container = new QWidget(this);
   auto *current_layout = new QVBoxLayout(current_container);
   current_layout->setContentsMargins(0, 0, 0, 0);
-  current_layout->setSpacing(16);
+  current_layout->setSpacing(0);
 
   auto *current_title = new QLabel(tr("current destination"), this);
   current_title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
   current_layout->addWidget(current_title);
+
+  current_layout->addSpacing(16);
 
   current_widget = new DestinationWidget(this);
   current_widget->setDisabled(true);
@@ -166,6 +169,8 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
     params.remove("NavDestination");
     updateCurrentRoute();
   });
+
+  current_layout->addSpacing(32);
 
   current_layout->addWidget(horizontal_line());
   frame->addWidget(current_container);
@@ -285,11 +290,16 @@ void MapSettings::refresh() {
   auto destinations = std::vector<NavDestination*>();
   for (auto el : doc.array()) {
     auto destination = new NavDestination(el.toObject());
+
+    // we add home and work later if they are missing
     if (destination->isFavorite()) {
       if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
       else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
     }
-    if (destination == current_destination) continue;
+
+    // skip current destination
+    if (destination->equals(current_destination)) continue;
+
     destinations.push_back(destination);
   }
 
@@ -297,6 +307,7 @@ void MapSettings::refresh() {
   title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
   destinations_layout->addWidget(title);
 
+  // TODO: sort: home, work, favorites, recents
   // add favorites before recents
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto destination : destinations) {
