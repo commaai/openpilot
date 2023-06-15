@@ -66,7 +66,7 @@ procs = [
   PythonProcess("radard", "selfdrive.controls.radard"),
   PythonProcess("thermald", "selfdrive.thermald.thermald", offroad=True),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, offroad=True),
-  PythonProcess("updated", "selfdrive.updated", enabled=not PC, onroad=False, offroad=True),
+  PythonProcess("updated", "selfdrive.updated", enabled=True, onroad=False, offroad=True),
   PythonProcess("uploader", "system.loggerd.uploader", offroad=True),
   PythonProcess("statsd", "selfdrive.statsd", offroad=True),
 
