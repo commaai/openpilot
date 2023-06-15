@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import json
 import queue
 import threading
 import time
@@ -375,8 +376,6 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
-    should_start_prev = should_start
-
     # Log to statsd
     statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
     statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
@@ -399,15 +398,26 @@ def thermald_thread(end_event, hw_queue):
     statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
-    if (count % int(600. / DT_TRML)) == 0:
-      cloudlog.event("STATUS_PACKET",
-                     count=count,
-                     pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],
-                     peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
-                     location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
-                     deviceState=strip_deprecated_keys(msg.to_dict()))
+    rising_edge_started = should_start and not should_start_prev
+    if rising_edge_started or (count % int(600. / DT_TRML)) == 0:
+      dat = {
+        'count': count,
+        'pandaStates': [strip_deprecated_keys(p.to_dict()) for p in pandaStates],
+        'peripheralState': strip_deprecated_keys(peripheralState.to_dict()),
+        'location': (strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
+        'deviceState': strip_deprecated_keys(msg.to_dict())
+      }
+      cloudlog.event("STATUS_PACKET", **dat)
+
+      # save last one before going onroad
+      if rising_edge_started:
+        try:
+          params.put("LastOffroadStatusPacket", json.dumps(dat))
+        except Exception:
+          cloudlog.exception("failed to save offroad status")
 
     count += 1
+    should_start_prev = should_start
 
 
 def main():
