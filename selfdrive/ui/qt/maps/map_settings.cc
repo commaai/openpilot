@@ -7,9 +7,9 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-static QString shorten(const QString &str, int max_len) {
-  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
-}
+// static QString shorten(const QString &str, int max_len) {
+//   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
+// }
 
 MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   setContentsMargins(0, 0, 0, 0);
@@ -152,6 +152,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   current_widget->setDisabled(true);
   current_layout->addWidget(current_widget);
 
+  // TODO: clear current on click
   // QObject::connect(clear_button, &QPushButton::clicked, [=]() {
   //   params.remove("NavDestination");
   //   updateCurrentRoute();
@@ -159,10 +160,13 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
 
   current_layout->addWidget(horizontal_line());
 
-  // destinations_list = new QVBoxLayout;
-  // QWidget *recent_widget = new LayoutWidget(recent_layout, this);
-  // ScrollView *recent_scroller = new ScrollView(recent_widget, this);
-  // frame->addWidget(recent_scroller);
+
+  QWidget *destinations_container = new QWidget(this);
+  destinations_layout = new QVBoxLayout(destinations_container);
+  destinations_layout->setContentsMargins(0, 0, 0, 0);
+  destinations_layout->setSpacing(20);
+  ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
+  frame->addWidget(destinations_scroller);
 
 
   // TODO: remove this
@@ -232,7 +236,7 @@ void MapSettings::showEvent(QShowEvent *event) {
 
 void MapSettings::clear() {
   current_container->setVisible(false);
-  clearLayout(recent_layout);
+  clearLayout(destinations_layout);
 }
 
 void MapSettings::updateCurrentRoute() {
@@ -269,7 +273,6 @@ void MapSettings::refresh() {
 
   // iterate over array, skipping current_destination
   // add favorites before recents
-  bool has_recents = false;
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto location : doc.array()) {
       // TODO: create these objects once before loop
@@ -278,79 +281,25 @@ void MapSettings::refresh() {
       if (destination->type != save_type) continue;
       if (destination == current_destination) continue;
 
-      if (destination->isHome()) {
-        home_address->setText(name);
-        home_address->setStyleSheet(R"(font-size: 40px; color: white;)");
-        home_button->setIcon(QPixmap("../assets/navigation/home.png"));
-        QObject::connect(home_button, &QPushButton::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
-      } else if (destination->isWork()) {
-        work_address->setText(name);
-        work_address->setStyleSheet(R"(font-size: 40px; color: white;)");
-        work_button->setIcon(QPixmap("../assets/navigation/work.png"));
-        QObject::connect(work_button, &QPushButton::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
-      } else {
-        ClickableWidget *widget = new ClickableWidget;
-        QHBoxLayout *layout = new QHBoxLayout(widget);
-        layout->setContentsMargins(15, 8, 40, 8);
+      auto widget = new DestinationWidget(this);
+      widget->set(destination, false);
 
-        QLabel *star = new QLabel("★");
-        auto sp = star->sizePolicy();
-        sp.setRetainSizeWhenHidden(true);
-        star->setSizePolicy(sp);
+      QObject::connect(widget, &QPushButton::clicked, [=]() {
+        navigateTo(destination->toJson());
+        emit closeSettings();
+      });
 
-        star->setVisible(destination->isFavorite());
-        star->setStyleSheet(R"(font-size: 60px;)");
-        layout->addWidget(star);
-        layout->addSpacing(10);
-
-        QLabel *recent_label = new QLabel(shorten(name + " " + details, 42));
-        recent_label->setStyleSheet(R"(font-size: 32px;)");
-
-        layout->addWidget(recent_label);
-        layout->addStretch();
-
-        QLabel *arrow = new QLabel("→");
-        arrow->setStyleSheet(R"(font-size: 60px;)");
-        layout->addWidget(arrow);
-
-        widget->setStyleSheet(R"(
-          .ClickableWidget {
-            border-radius: 10px;
-            border-width: 1px;
-            border-style: solid;
-            border-color: gray;
-          }
-          QWidget {
-            background-color: #393939;
-            color: #9c9c9c;
-          }
-        )");
-
-        QObject::connect(widget, &ClickableWidget::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
-
-        recent_layout->addWidget(widget);
-        recent_layout->addSpacing(10);
-        has_recents = true;
-      }
+      destinations_layout->addWidget(widget);
     }
   }
 
-  if (!has_recents) {
+  if (!destinations_layout->count()) {
     QLabel *no_recents = new QLabel(tr("no recent destinations"));
     no_recents->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
-    recent_layout->addWidget(no_recents);
+    destinations_layout->addWidget(no_recents);
   }
 
-  recent_layout->addStretch();
+  destinations_layout->addStretch();
   repaint();
 }
 

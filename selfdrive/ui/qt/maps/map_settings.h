@@ -75,7 +75,7 @@ private:
 
   Params params;
   QString prev_destinations, cur_destinations;
-  QVBoxLayout *recent_layout;
+  QVBoxLayout *destinations_layout;
   QWidget *current_container;
   NavDestination *current_destination;
   DestinationWidget *current_widget;
