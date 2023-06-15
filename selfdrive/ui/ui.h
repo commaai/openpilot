@@ -130,6 +130,7 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
+  ~UIState();
   void updateStatus();
   inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
@@ -153,10 +154,13 @@ public:
 
   QTransform car_space_transform;
 
+  QThread *update_thread = nullptr;
+
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
   void primeTypeChanged(int prime_type);
+  void smUpdateReady();
 
 private slots:
   void update();

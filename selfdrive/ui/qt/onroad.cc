@@ -51,9 +51,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  const SubMaster &sm = *(s.sm);
+
   QColor bgColor = bg_colors[s.status];
-  Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
-  if (s.sm->updated("controlsState") || !alert.equal({})) {
+  Alert alert = Alert::get(sm, s.scene.started_frame);
+  if (sm.updated("controlsState") || !alert.equal({})) {
     if (alert.type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
     } else if (alert.type == "controlsUnresponsivePermanent") {
@@ -74,6 +76,21 @@ void OnroadWindow::updateState(const UIState &s) {
     // repaint border
     bg = bgColor;
     update();
+  }
+
+  if (isVisible()) {
+    // while live, only draw if there's extra time in this 50ms window
+    // also draw if modeld is dead or we're replaying
+    double tsm = (float)(nanos_since_boot() - sm["modelV2"].getLogMonoTime()) / 1e6;
+    bool frame_id_matches = sm["roadCameraState"].getRoadCameraState().getFrameId() == sm["modelV2"].getModelV2().getFrameId();
+    if (((tsm < 10) && frame_id_matches) || !sm.alive("modelV2") || (tsm > 10 * 1000.)) {
+      repaint();
+      nvg->repaint();
+      if (map != nullptr) {
+        map->repaint();
+      }
+    }
+    //printf("tsm %6.2fms %d\n", tsm, frame_id_matches);
   }
 }
 
@@ -730,4 +747,8 @@ void AnnotatedCameraWidget::showEvent(QShowEvent *event) {
 
   ui_update_params(uiState());
   prev_draw_t = millis_since_boot();
+}
+
+void AnnotatedCameraWidget::vipcFrameReceived() {
+  // no update
 }

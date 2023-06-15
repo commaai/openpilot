@@ -91,8 +91,8 @@ protected:
   uint32_t prev_frame_id = 0;
 
 protected slots:
+  virtual void vipcFrameReceived();
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived();
   void availableStreamsUpdated(std::set<VisionStreamType> streams);
 };
 

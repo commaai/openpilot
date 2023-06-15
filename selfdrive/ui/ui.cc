@@ -251,10 +251,24 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   prime_type = std::atoi(params.get("PrimeType").c_str());
   language = QString::fromStdString(params.get("LanguageSetting"));
 
-  // update timer
-  timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+  // start updateThread
+  update_thread = new QThread();
+  connect(update_thread, &QThread::started, [=]() {
+    SubMaster s({"cameraOdometry"});
+    while (!QThread::currentThread()->isInterruptionRequested()) {
+      s.update(1000 / UI_FREQ);
+      emit smUpdateReady();
+    }
+  });
+  connect(update_thread, &QThread::finished, update_thread, &QObject::deleteLater);
+  QObject::connect(this, &UIState::smUpdateReady, this, &UIState::update);
+  update_thread->start();
+}
+
+UIState::~UIState() {
+  update_thread->requestInterruption();
+  update_thread->quit();
+  update_thread->wait();
 }
 
 void UIState::update() {
