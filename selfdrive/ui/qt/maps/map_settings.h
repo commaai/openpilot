@@ -26,6 +26,34 @@ const auto NAV_ICON_FAVORITE =
 const auto NAV_ICON_RECENT =
     loadPixmap("../assets/navigation/icon_recent.svg", {72, 72});
 
+class NavDestination {
+public:
+  explicit NavDestination(const QJsonObject &place)
+      : type(place["type"].toString()), label(place["label"].toString()),
+        name(place["name"].toString()), details(place["details"].toString()) {}
+
+  bool operator==(const NavDestination &other) const {
+    return type == other.type && label == other.label && name == other.name &&
+           details == other.details;
+  }
+
+  bool operator!=(const NavDestination &other) const {
+    return !(*this == other);
+  }
+
+  QJsonObject toJson() const {
+    QJsonObject obj;
+    obj["type"] = type;
+    obj["label"] = label;
+    obj["name"] = name;
+    obj["details"] = details;
+    return obj;
+  }
+
+public:
+  const QString type, label, name, details;
+};
+
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
@@ -46,6 +74,7 @@ private:
   QString prev_destinations, cur_destinations;
   QVBoxLayout *recent_layout;
   QWidget *current_container;
+  NavDestination *current_destination;
   DestinationWidget *current_widget;
 
 signals:
@@ -57,8 +86,7 @@ class MapSettings::DestinationWidget : public QPushButton {
 public:
   explicit DestinationWidget(QWidget *parent = nullptr);
 
-  void set(const QString &type, const QString &label, const QString &name,
-           const QString &details, bool current = false);
+  void set(NavDestination *, bool current = false);
   void clear(const QString &label);
 
 private:

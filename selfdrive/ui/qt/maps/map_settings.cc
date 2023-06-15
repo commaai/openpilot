@@ -71,21 +71,20 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton
   )");
 }
 
-void MapSettings::DestinationWidget::set(const QString &type, const QString &label,
-                                         const QString &name, const QString &details,
+void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
   setProperty("current", current);
 
-  auto title_text = name;
-  auto subtitle_text = details;
+  auto title_text = destination->name;
+  auto subtitle_text = destination->details;
   auto icon_pixmap = NAV_ICON_RECENT;
 
-  if (type == NAV_TYPE_FAVORITE) {
-    title_text = label;
-    subtitle_text = name + " " + details;
-    if (label == NAV_FAVORITE_LABEL_HOME) {
+  if (destination->type == NAV_TYPE_FAVORITE) {
+    title_text = destination->label;
+    subtitle_text = destination->name + " " + destination->details;
+    if (destination->label == NAV_FAVORITE_LABEL_HOME) {
       icon_pixmap = NAV_ICON_HOME;
-    } else if (label == NAV_FAVORITE_LABEL_WORK) {
+    } else if (destination->label == NAV_FAVORITE_LABEL_WORK) {
       icon_pixmap = NAV_ICON_WORK;
     } else {
       icon_pixmap = NAV_ICON_FAVORITE;
@@ -232,17 +231,7 @@ void MapSettings::showEvent(QShowEvent *event) {
 }
 
 void MapSettings::clear() {
-  // current_container->setVisible(false);
-  // home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
-  // home_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
-  // home_address->setText(tr("No home\nlocation set"));
-  // home_button->disconnect();
-
-  // work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
-  // work_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
-  // work_address->setText(tr("No work\nlocation set"));
-  // work_button->disconnect();
-
+  current_container->setVisible(false);
   clearLayout(recent_layout);
 }
 
@@ -251,11 +240,8 @@ void MapSettings::updateCurrentRoute() {
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
   auto visible = dest.size() && !doc.isNull();
   if (visible) {
-    auto type = doc["save_type"].toString();
-    auto label = doc["label"].toString();
-    auto name = doc["place_name"].toString();
-    auto details = doc["place_details"].toString();
-    current_widget->set(type, label, name, details, true);
+    current_destination = new NavDestination(doc.object());
+    current_widget->set(current_destination, true);
   }
   current_container->setVisible(visible);
 }
