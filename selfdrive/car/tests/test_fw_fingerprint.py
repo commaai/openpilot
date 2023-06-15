@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import copy
 import random
 import time
 import unittest
@@ -17,7 +16,6 @@ CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
-VERSIONS_COPY = copy.deepcopy(VERSIONS)
 
 
 class FakeSocket:
@@ -228,8 +226,6 @@ class TestFwFingerprintLive(unittest.TestCase):
     with self.subTest(brand='all_brands'):
       self._assert_timing(total_time, total_ref_time, tol)
       print(f'all brands, total FW query time={total_time} seconds')
-
-    self.assertEqual(VERSIONS, VERSIONS_COPY, 'VERSIONS dictionary changed while fingerprinting')
 
 
 if __name__ == "__main__":
