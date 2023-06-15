@@ -131,8 +131,9 @@ void cabana::Signal::update() {
 
 QString cabana::Signal::formatValue(double value) const {
   // Show enum string
+  int64_t raw_value = (value - offset) / factor;
   for (const auto &[val, desc] : val_desc) {
-    if (std::abs(value - val) < 1e-6) {
+    if (std::abs(raw_value - val) < 1e-6) {
       return desc;
     }
   }
