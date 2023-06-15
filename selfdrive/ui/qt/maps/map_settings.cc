@@ -59,7 +59,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
     ClickableWidget:pressed {
       background-color: #3B3B3B;
     }
-    ClickableWidget[current~="true"]:disabled QLabel {
+    ClickableWidget:disabled > QVBoxLayout > QLabel {
       color: #808080;
     }
 
