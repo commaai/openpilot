@@ -32,6 +32,9 @@ public:
       : type(place["type"].toString()), label(place["label"].toString()),
         name(place["name"].toString()), details(place["details"].toString()) {}
 
+  bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
+  bool isRecent() const { return type == NAV_TYPE_RECENT; }
+
   bool operator==(const NavDestination &other) const {
     return type == other.type && label == other.label && name == other.name &&
            details == other.details;

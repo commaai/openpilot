@@ -79,7 +79,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   auto subtitle_text = destination->details;
   auto icon_pixmap = NAV_ICON_RECENT;
 
-  if (destination->type == NAV_TYPE_FAVORITE) {
+  if (destination->isFavorite()) {
     title_text = destination->label;
     subtitle_text = destination->name + " " + destination->details;
     if (destination->label == NAV_FAVORITE_LABEL_HOME) {
@@ -91,7 +91,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
     }
   }
 
-  // TODO: shorten
+  // TODO: shorten text
   title->setText(title_text);
   subtitle->setText(subtitle_text);
   subtitle->setVisible(true);
@@ -267,20 +267,18 @@ void MapSettings::refresh() {
   prev_destinations = cur_destinations;
   clear();
 
+  // iterate over array, skipping current_destination
   // add favorites before recents
   bool has_recents = false;
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto location : doc.array()) {
-      auto obj = location.toObject();
+      // TODO: create these objects once before loop
+      auto destination = new NavDestination(location.toObject());
 
-      auto type = obj["save_type"].toString();
-      auto label = obj["label"].toString();
-      auto name = obj["place_name"].toString();
-      auto details = obj["place_details"].toString();
+      if (destination->type != save_type) continue;
+      if (destination == current_destination) continue;
 
-      if (type != save_type) continue;
-
-      if (type == NAV_TYPE_FAVORITE && label == NAV_FAVORITE_LABEL_HOME) {
+      if (destination->isHome()) {
         home_address->setText(name);
         home_address->setStyleSheet(R"(font-size: 40px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
@@ -288,7 +286,7 @@ void MapSettings::refresh() {
           navigateTo(obj);
           emit closeSettings();
         });
-      } else if (type == NAV_TYPE_FAVORITE && label == NAV_FAVORITE_LABEL_WORK) {
+      } else if (destination->isWork()) {
         work_address->setText(name);
         work_address->setStyleSheet(R"(font-size: 40px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
@@ -306,7 +304,7 @@ void MapSettings::refresh() {
         sp.setRetainSizeWhenHidden(true);
         star->setSizePolicy(sp);
 
-        star->setVisible(type == NAV_TYPE_FAVORITE);
+        star->setVisible(destination->isFavorite());
         star->setStyleSheet(R"(font-size: 60px;)");
         layout->addWidget(star);
         layout->addSpacing(10);
