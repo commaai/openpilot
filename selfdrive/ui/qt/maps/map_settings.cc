@@ -19,7 +19,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   frame->setSpacing(40);
 
   icon = new QLabel(this);
-  icon->setFixedSize(72, 72);
+  icon->setFixedSize(100, 100);
   frame->addWidget(icon);
 
   auto *inner_frame = new QVBoxLayout;
@@ -48,7 +48,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
     }
     QLabel {
       color: #FFFFFF;
-      font-size: 40px;
+      font-size: 48px;
       font-weight: 400;
     }
 
@@ -128,7 +128,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   heading->setSpacing(32);
 
   auto *title = new QLabel(tr("comma navigation"), this);
-  title->setStyleSheet("color: #FFFFFF; font-size: 48px; font-weight: 500;");
+  title->setStyleSheet("color: #FFFFFF; font-size: 56px; font-weight: 500;");
   heading->addWidget(title, 1);
 
   auto *close_button = new QPushButton("×", this);
@@ -157,7 +157,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   current_layout->setSpacing(0);
 
   auto *current_title = new QLabel(tr("current destination"), this);
-  current_title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
+  current_title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
   current_layout->addWidget(current_title);
 
   current_layout->addSpacing(16);
@@ -301,7 +301,7 @@ void MapSettings::refresh() {
   clearLayout(destinations_layout);
 
   QLabel *title = new QLabel(tr("recent destinations"));
-  title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
+  title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
   destinations_layout->addWidget(title);
 
   // TODO: sort: home, work, favorites, recents

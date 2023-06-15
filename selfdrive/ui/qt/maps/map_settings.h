@@ -88,10 +88,10 @@ private:
 
   static NavIcons icons() {
     static NavIcons nav_icons {
-      loadPixmap("../assets/navigation/icon_home.svg", {72, 72}),
-      loadPixmap("../assets/navigation/icon_work.svg", {72, 72}),
-      loadPixmap("../assets/navigation/icon_favorite.svg", {72, 72}),
-      loadPixmap("../assets/navigation/icon_recent.svg", {72, 72}),
+      loadPixmap("../assets/navigation/icon_home.svg", {100, 100}),
+      loadPixmap("../assets/navigation/icon_work.svg", {100, 100}),
+      loadPixmap("../assets/navigation/icon_favorite.svg", {100, 100}),
+      loadPixmap("../assets/navigation/icon_recent.svg", {100, 100}),
     };
     return nav_icons;
   }
