@@ -316,13 +316,17 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
             addrs_new.append([a])
 
   assert sorted(addrs) == sorted(addrs_new)
+  assert sorted(parallel_addrs) == sorted(parallel_addrs_new)
+  assert ecu_types == ecu_types_new
 
   addrs.insert(0, parallel_addrs)
   addrs_new.insert(0, parallel_addrs_new)
 
   print(sorted(addrs))
+  print(ecu_types)
   print('new')
   print(sorted(addrs_new))
+  print(ecu_types_new)
   assert len(addrs) == 1 and len(addrs_new) == 1
   assert sorted(addrs[0]) == sorted(addrs_new[0])
 
