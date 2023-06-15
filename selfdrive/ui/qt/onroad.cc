@@ -542,15 +542,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     // bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
     // bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
   }
-  const float dbp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getBrakeDisengageProbs()[4];
-  const float dgp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getGasDisengageProbs()[4];
-  const float dsp = sm["modelV2"].getModelV2().getMeta().getDisengagePredictions().getSteerOverrideProbs()[4];
 
-  float cont10 = (1 - dbp) * (1 - dgp) * (1 - dsp);
-  // float cont600 = pow(cont10, 60.0);
-  float dhue = cont10 < 0.3 ? 20 : (cont10 < 0.8 ? (20 + 70 * (cont10-0.3) / 0.5) : 90);
-  dhue = dhue * 0.3 + dhue_last * 0.7;
-  // printf("C1M %.3f, CTM %.3f, HUE %.0f\n", pow(cont10, 6.0), pow(cont10, 60.0), dhue);
+  float score = (scene.scores_buf[0+4] + scene.scores_buf[5+3] + scene.scores_buf[10+2] + scene.scores_buf[15+1] + scene.scores_buf[20+0]) / 5.0;
+  float dhue = score < 0.01 ? 90 : (score < 0.0565 ? 47 : 10);
+  dhue = dhue * 0.1 + dhue_last * 0.9;
   bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
   bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
   dhue_last = dhue;

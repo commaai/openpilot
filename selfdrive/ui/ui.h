@@ -110,6 +110,9 @@ typedef struct UIScene {
   QPolygonF lane_line_vertices[4];
   QPolygonF road_edge_vertices[2];
 
+  // disengage
+  float scores_buf[25] = {1.0}; // 5 * 5
+
   // lead
   QPointF lead_vertices[2];
 
