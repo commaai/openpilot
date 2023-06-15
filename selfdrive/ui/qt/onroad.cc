@@ -544,7 +544,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   float score = (scene.scores_buf[0+4] + scene.scores_buf[5+3] + scene.scores_buf[10+2] + scene.scores_buf[15+1] + scene.scores_buf[20+0]) / 5.0;
-  float dhue = score < 0.01 ? 90 : (score < 0.0565 ? 47 : 10);
+  float dhue = score < RYG_GREEN ? 90 : (score < RYG_YELLOW ? 45 : 10);
   dhue = dhue * 0.1 + dhue_last * 0.9;
   bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
   bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
