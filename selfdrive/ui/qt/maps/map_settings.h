@@ -10,6 +10,7 @@
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 const QString NAV_TYPE_FAVORITE = "favorite";
 const QString NAV_TYPE_RECENT = "recent";
@@ -30,7 +31,6 @@ public:
     return type == other->type && label == other->label &&
            name == other->name && details == other->details;
   }
-
   bool operator!=(NavDestination *other) const { return !(*this == other); }
 
   QJsonObject toJson() const {
@@ -73,7 +73,7 @@ signals:
   void closeSettings();
 };
 
-class MapSettings::DestinationWidget : public QPushButton {
+class MapSettings::DestinationWidget : public ClickableWidget {
   Q_OBJECT
 public:
   explicit DestinationWidget(QWidget *parent = nullptr);

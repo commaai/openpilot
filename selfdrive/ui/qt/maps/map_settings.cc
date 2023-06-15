@@ -1,17 +1,17 @@
 #include "map_settings.h"
 
 #include <vector>
+#include <QDebug>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 // static QString shorten(const QString &str, int max_len) {
 //   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 // }
 
-MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
+MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QHBoxLayout(this);
@@ -40,33 +40,33 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton
   frame->addWidget(action);
 
   setStyleSheet(R"(
-    DestinationWidget {
+    ClickableWidget {
       background-color: #292929;
       border: 1px solid #4DFFFFFF;
       border-radius: 10px;
+    }
+    QLabel {
       color: #FFFFFF;
       font-size: 40px;
       font-weight: 400;
     }
-    DestinationWidget[current="true"] {
+
+    ClickableWidget[current="true"] {
       border: 1px solid #80FFFFFF;
     }
-    DestinationWidget:pressed {
+
+    ClickableWidget:pressed {
       background-color: #3B3B3B;
     }
-    DestinationWidget[current~="true"]:disabled {
+    ClickableWidget[current~="true"]:disabled QLabel {
       color: #808080;
     }
 
     #action {
       font-size: 60px;
     }
-    DestinationWidget:pressed #action {
+    ClickableWidget:pressed #action {
       color: #A0A0A0;
-    }
-
-    QPushButton {
-      border: none;
     }
   )");
 }
@@ -74,6 +74,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton
 void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
   setProperty("current", current);
+  setDisabled(false);
 
   auto title_text = destination->name;
   auto subtitle_text = destination->details;
@@ -95,6 +96,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   title->setText(title_text);
   subtitle->setText(subtitle_text);
   subtitle->setVisible(true);
+  icon->setPixmap(icon_pixmap);
 
   // TODO: use pixmap
   action->setText(current ? "×" : "→");
@@ -102,6 +104,10 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
 }
 
 void MapSettings::DestinationWidget::clear(const QString &label) {
+  setProperty("current", false);
+  setDisabled(true);
+
+  icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
   title->setText(tr("No %1 location set").arg(label));
   subtitle->setVisible(false);
   action->setVisible(false);
@@ -155,7 +161,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   current_widget->setDisabled(true);
   current_layout->addWidget(current_widget);
 
-  QObject::connect(current_widget, &QPushButton::clicked, [=]() {
+  QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
     params.remove("NavDestination");
     updateCurrentRoute();
   });
@@ -273,21 +279,40 @@ void MapSettings::refresh() {
   prev_destinations = cur_destinations;
   clear();
 
+  bool has_home = false, has_work = false;
+
   auto destinations = std::vector<NavDestination*>();
-  for (auto destination : doc.array()) {
-    destinations.push_back(new NavDestination(destination.toObject()));
+  for (auto el : doc.array()) {
+    auto destination = new NavDestination(el.toObject());
+    if (destination->isFavorite()) {
+      if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
+      else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
+    }
+    if (destination == current_destination) continue;
+    destinations.push_back(destination);
+  }
+
+  // add home and work if missing
+  if (!has_home) {
+    auto widget = new DestinationWidget(this);
+    widget->clear(tr("home"));
+    destinations_layout->addWidget(widget);
+  }
+  if (!has_work) {
+    auto widget = new DestinationWidget(this);
+    widget->clear(tr("work"));
+    destinations_layout->addWidget(widget);
   }
 
   // add favorites before recents
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto destination : destinations) {
       if (destination->type != save_type) continue;
-      if (destination == current_destination) continue;
 
       auto widget = new DestinationWidget(this);
       widget->set(destination, false);
 
-      QObject::connect(widget, &QPushButton::clicked, [=]() {
+      QObject::connect(widget, &ClickableWidget::clicked, [=]() {
         navigateTo(destination->toJson());
         emit closeSettings();
       });
@@ -296,7 +321,11 @@ void MapSettings::refresh() {
     }
   }
 
-  if (!destinations_layout->count()) {
+  if (destinations_layout->count()) {
+    QLabel *title = new QLabel(tr("recent destinations"));
+    title->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
+    destinations_layout->insertWidget(0, title);
+  } else {
     QLabel *no_recents = new QLabel(tr("no recent destinations"));
     no_recents->setStyleSheet(R"(font-size: 40px; color: #9c9c9c)");
     destinations_layout->addWidget(no_recents);
