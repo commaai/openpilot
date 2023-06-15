@@ -43,8 +43,8 @@ def main() -> NoReturn:
         msg.errorLogMessage = record
         error_log_message_sock.send(msg.to_bytes())
   finally:
-    ctx.term()
     sock.close()
+    ctx.term()
     log_handler.close()
 
 if __name__ == "__main__":
