@@ -196,11 +196,11 @@ class Laikad:
       try:
         constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
+        report_time = self.gps_time_from_qcom_report(gnss_msg)
       except NotImplementedError:
-        good_constellation = False
+        return False
       # Garbage timestamps with week > 32767 are sometimes sent by module.
       # This is an issue with gpsTime and GLONASS time.
-      report_time = self.gps_time_from_qcom_report(gnss_msg)
       good_week = report_time.week < np.iinfo(np.int16).max
       return good_constellation and good_week
     elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
