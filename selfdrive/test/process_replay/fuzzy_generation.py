@@ -15,11 +15,11 @@ def generate_native_type(field):
   elif field == 'uint8':
     return st.integers(min_value=0, max_value=2**8-1)
   elif field == 'uint16':
-    return st.integers(min_value=0, max_value=2**15-1)
+    return st.integers(min_value=0, max_value=2**16-1)
   elif field == 'uint32':
-    return st.integers(min_value=0, max_value=2**31-1)
+    return st.integers(min_value=0, max_value=2**32-1)
   elif field == 'uint64':
-    return st.integers(min_value=0, max_value=2**63-1)
+    return st.integers(min_value=0, max_value=2**64-1)
   elif field == 'float32':
     return st.floats(width=32)
   elif field == 'float64':
