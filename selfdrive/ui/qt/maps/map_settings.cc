@@ -105,8 +105,8 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   action->setVisible(true);
 }
 
-void MapSettings::DestinationWidget::unset(const QString &label) {
-  setProperty("current", false);
+void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
+  setProperty("current", current);
   setDisabled(true);
 
   if (label.isEmpty()) {
@@ -251,7 +251,6 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
-  refresh();
 }
 
 void MapSettings::updateCurrentRoute() {
@@ -259,18 +258,16 @@ void MapSettings::updateCurrentRoute() {
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
   if (dest.size() && !doc.isNull()) {
     auto new_destination = new NavDestination(doc.object());
-    if (new_destination->equals(current_destination)) {
-      return;
-    }
+    if (new_destination->equals(current_destination)) return;
     current_destination = new_destination;
   }
   if (current_destination) {
     current_widget->set(current_destination, true);
   } else {
-    current_widget->unset("");
+    current_widget->unset("", true);
   }
   needs_refresh = true;
-  refresh();
+  if (isVisible()) refresh();
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
@@ -284,28 +281,31 @@ void MapSettings::refresh() {
   if (!needs_refresh) return;
   needs_refresh = false;
 
-  QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
-  if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on navigation locations";
-    return;
-  }
-
   bool has_home = false, has_work = false;
-
   auto destinations = std::vector<NavDestination*>();
-  for (auto el : doc.array()) {
-    auto destination = new NavDestination(el.toObject());
 
-    // add home and work later if they are missing
-    if (destination->isFavorite()) {
-      if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
-      else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
+  auto destinations_str = cur_destinations.trimmed();
+  if (!destinations_str.isEmpty()) {
+    QJsonDocument doc = QJsonDocument::fromJson(destinations_str.toUtf8());
+    if (doc.isNull()) {
+      qDebug() << "JSON Parse failed on navigation locations" << cur_destinations;
+      return;
     }
+  
+    for (auto el : doc.array()) {
+      auto destination = new NavDestination(el.toObject());
 
-    // skip current destination
-    if (destination->equals(current_destination)) continue;
+      // add home and work later if they are missing
+      if (destination->isFavorite()) {
+        if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
+        else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
+      }
 
-    destinations.push_back(destination);
+      // skip current destination
+      if (destination->equals(current_destination)) continue;
+
+      destinations.push_back(destination);
+    }
   }
 
   clearLayout(destinations_layout);

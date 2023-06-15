@@ -79,7 +79,7 @@ public:
   explicit DestinationWidget(QWidget *parent = nullptr);
 
   void set(NavDestination *, bool current = false);
-  void unset(const QString &label);
+  void unset(const QString &label, bool current = false);
 
 private:
   struct NavIcons {
