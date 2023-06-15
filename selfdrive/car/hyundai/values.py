@@ -363,7 +363,7 @@ def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[by
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
