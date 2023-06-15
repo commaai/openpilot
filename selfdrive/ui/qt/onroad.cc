@@ -125,17 +125,11 @@ QString OnroadAlerts::translateAlertText(const QString &text) {
     auto arg_pos = text.indexOf('|');
     if (arg_pos == -1) {
       translated = tr(text.toUtf8().data());
-    } else {
+   } else {
       translated = tr(text.left(arg_pos).toUtf8().data());
       auto args = text.mid(arg_pos + 1).split(",");
-      if (args.length() == 1) {
-        translated = translated.arg(args[0]);
-      } else if (args.length() == 2) {
-        translated = translated.arg(args[0], args[1]);
-      } else if (args.length() == 3) {
-        translated = translated.arg(args[0], args[1], args[2]);
-      } else {
-        qWarning() << "invalid number of arguments";
+      for (int i = 0; i < args.size(); ++i) {
+        translated = translated.replace(QString("%%1").arg(i + 1), args[i]);
       }
     }
   }
