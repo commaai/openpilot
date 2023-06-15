@@ -13,14 +13,13 @@ from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
-import types
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
 FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
-VERSIONS: Final = types.MappingProxyType(get_interface_attr('FW_VERSIONS', ignore_none=True))
+VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
@@ -224,6 +223,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
+  return
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
     cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
@@ -256,7 +256,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
   List[capnp.lib.capnp._DynamicStructBuilder]:
-  versions = VERSIONS.copy()
+  # versions = VERSIONS.copy()
+  versions = copy.deepcopy(VERSIONS)
   params = Params()
 
   # Each brand can define extra ECUs to query for data collection
@@ -275,8 +276,21 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   parallel_addrs = []
   ecu_types = {}
 
+  addrs_new = []
+  parallel_addrs_new = []
+  ecu_types_new = {}
+
   for brand, brand_versions in versions.items():
+    if brand != 'hyundai':
+      continue
+
+    config = FW_QUERY_CONFIGS[brand]
+    print('brand versions', [ecu for ecu in brand_versions.values()])
+    print('extra_ecus', config.extra_ecus)
+    # for ecu in list(brand_versions.values()) + config.extra_ecus:
     for ecu in brand_versions.values():
+      # print(ecu)
+      print(ecu.keys())
       for ecu_type, addr, sub_addr in ecu.keys():
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
@@ -289,7 +303,28 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           if [a] not in addrs:
             addrs.append([a])
 
+      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
+        a = (brand, addr, sub_addr)
+        if a not in ecu_types_new:
+          ecu_types_new[a] = ecu_type
+
+        if sub_addr is None:
+          if a not in parallel_addrs_new:
+            parallel_addrs_new.append(a)
+        else:
+          if [a] not in addrs_new:
+            addrs_new.append([a])
+
+  assert sorted(addrs) == sorted(addrs_new)
+
   addrs.insert(0, parallel_addrs)
+  addrs_new.insert(0, parallel_addrs_new)
+
+  print(sorted(addrs))
+  print('new')
+  print(sorted(addrs_new))
+  assert len(addrs) == 1 and len(addrs_new) == 1
+  assert sorted(addrs[0]) == sorted(addrs_new[0])
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
