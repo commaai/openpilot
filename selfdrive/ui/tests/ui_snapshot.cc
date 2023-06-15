@@ -9,6 +9,8 @@
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/maps/map_panel.h"
 #include "selfdrive/ui/ui.h"
 
 void saveWidgetAsImage(QWidget *widget, const QString &fileName) {
@@ -48,8 +50,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  MainWindow w;
-  w.setFixedSize(2160, 1080);
+  MapPanel w(get_mapbox_settings());
+  w.setFixedSize(930, 1020);
   w.show();
   app.installEventFilter(&w);
 
@@ -60,7 +62,7 @@ int main(int argc, char *argv[]) {
   int frames = 0;
   QObject::connect(uiState(), &UIState::uiUpdate, [&](const UIState &s) {
     frames++;
-    if (frames == 15) {
+    if (frames == 30) {
       saveWidgetAsImage(&w, output);
       app.quit();
     }

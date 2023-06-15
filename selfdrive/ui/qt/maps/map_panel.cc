@@ -45,6 +45,10 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
     auto map = new MapWindow(mapboxSettings);
     QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
+    QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+      qDebug() << "MapPanel" << width() << height();
+      content_stack->setCurrentIndex(1);
+    });
     map_stack->addWidget(map);
   }
   content_stack->addWidget(map_container);
@@ -59,20 +63,11 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     MapSettings {
       background-color: #333333;
     }
-    MapWindow {
-      border: 1px solid red;
-    }
-    #map_container {
-      border: 1px solid pink;
-    }
-    MapPanel {
-      border: 1px solid green;
-    }
     QLabel {
       color: white;
     }
     QPushButton {
-      border: 1px solid purple;
+      border: none;
     }
   )");
 }

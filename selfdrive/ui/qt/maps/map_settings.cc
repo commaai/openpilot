@@ -180,6 +180,7 @@ MapSettings::MapSettings(QWidget* parent) : QFrame(parent) {
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
+  qDebug() << "MapSettings" << width() << height();
   updateCurrentRoute();
   refresh();
 }
