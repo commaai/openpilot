@@ -3,12 +3,36 @@ import unittest
 
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
-from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, EV_CAR, \
-                                         FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PLATFORM_CODE_ECUS, \
-                                         get_platform_codes
+from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
+                                         EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
+                                         PLATFORM_CODE_ECUS, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+
+# Some platforms have date codes in a different format we don't yet parse (or are missing).
+# For now, assert list of expected missing date cars
+NO_DATES_PLATFORMS = {
+  # CAN FD
+  CAR.TUCSON_4TH_GEN,
+  CAR.TUCSON_HYBRID_4TH_GEN,
+  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+  CAR.SANTA_CRUZ_1ST_GEN,
+  CAR.KIA_SPORTAGE_5TH_GEN,
+  # CAN
+  CAR.KONA,
+  CAR.SONATA_LF,
+  CAR.VELOSTER,
+  CAR.KIA_CEED,
+  CAR.KIA_FORTE,
+  CAR.KONA_EV,
+  CAR.KONA_EV_2022,
+  CAR.KIA_OPTIMA_G4,
+  CAR.KIA_OPTIMA_G4_FL,
+  CAR.ELANTRA,
+  CAR.KONA_HEV,
+  CAR.KIA_SORENTO,
+}
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
@@ -51,30 +75,6 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # - every supported ECU FW version has a part number
     # - expected parsing of ECU FW dates
 
-    # Some platforms have date codes in a different format we don't yet parse (or are missing).
-    # For now, assert list of expected missing date cars
-    no_dates_platforms = {
-      # CAN FD
-      CAR.TUCSON_4TH_GEN,
-      CAR.TUCSON_HYBRID_4TH_GEN,
-      CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
-      CAR.SANTA_CRUZ_1ST_GEN,
-      CAR.KIA_SPORTAGE_5TH_GEN,
-      # CAN
-      CAR.KONA,
-      CAR.SONATA_LF,
-      CAR.VELOSTER,
-      CAR.KIA_CEED,
-      CAR.KIA_FORTE,
-      CAR.KONA_EV,
-      CAR.KONA_EV_2022,
-      CAR.KIA_OPTIMA_G4,
-      CAR.KIA_OPTIMA_G4_FL,
-      CAR.ELANTRA,
-      CAR.KONA_HEV,
-      CAR.KIA_SORENTO,
-    }
-
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, fws in ecus.items():
@@ -87,8 +87,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
             codes |= result
 
-          # So far we've only seen dates in fwdCamera
-          if car_model in no_dates_platforms or ecu[0] != Ecu.fwdCamera:
+          if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
             self.assertTrue(all({date is None for _, date in codes}))
           else:
             self.assertTrue(all({date is not None for _, date in codes}))
@@ -137,7 +136,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.GENESIS_G70_2020,
       CAR.TUCSON_4TH_GEN,         # shared platform code and part number
       CAR.TUCSON_HYBRID_4TH_GEN,
-    } | set(CANFD_CAR - EV_CAR)   # shared platform codes
+    }
+    excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
+    excluded_platforms |= NO_DATES_PLATFORMS       # date codes are required to match
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():

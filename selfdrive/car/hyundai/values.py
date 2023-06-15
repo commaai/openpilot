@@ -394,9 +394,10 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
 
-      # Don't check dates if none in database
-      if len(expected_dates):
-        if not len(found_dates):
+      # FW date checks
+      if ecu[0] in DATE_FW_ECUS:
+        # If ECU can have a FW date, require it to exist
+        if not len(expected_dates) or not len(found_dates):
           break
 
         # Check all dates within range in the database, format is %y%m%d
@@ -434,6 +435,8 @@ PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z]
 # List of ECUs expected to have platform codes, camera and radar should exist on all cars
 # TODO: use abs, it has the platform code and part number on many platforms
 PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
+# So far we've only seen dates in fwdCamera
+DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
