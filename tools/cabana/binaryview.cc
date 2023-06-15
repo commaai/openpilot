@@ -127,15 +127,6 @@ void BinaryView::highlight(const cabana::Signal *sig) {
       }
     }
 
-    if (sig && underMouse()) {
-      QString tooltip = tr(R"(%1<br /><span style="color:gray;font-size:small">
-        Size:%2 LE:%3 SGD:%4</span>
-      )").arg(sig->name).arg(sig->size).arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
-      QToolTip::showText(QCursor::pos(), tooltip, this, rect());
-    } else {
-      QToolTip::showText(QCursor::pos(), "", this, rect());
-    }
-
     hovered_sig = sig;
     emit signalHovered(hovered_sig);
   }
@@ -165,7 +156,7 @@ void BinaryView::mousePressEvent(QMouseEvent *event) {
       if (bit_idx == s->lsb || bit_idx == s->msb) {
         anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
         resize_sig = s;
-        delegate->selection_color = getColor(s);
+        delegate->selection_color = s->color;
         break;
       }
     }
@@ -228,9 +219,12 @@ void BinaryView::refresh() {
 
 QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
   QSet<const cabana::Signal *> overlapping;
-  for (auto &item : model->items) {
-    if (item.sigs.size() > 1)
-      for (auto s : item.sigs) overlapping += s;
+  for (const auto &item : model->items) {
+    if (item.sigs.size() > 1) {
+      for (auto s : item.sigs) {
+        if (s->type == cabana::Signal::Type::Normal) overlapping += s;
+      }
+    }
   }
   return overlapping;
 }
@@ -349,6 +343,16 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   return {};
 }
 
+QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
+  if (role == Qt::ToolTipRole) {
+    auto item = (const BinaryViewModel::Item *)index.internalPointer();
+    if (item && !item->sigs.empty()) {
+      return signalToolTip(item->sigs.back());
+    }
+  }
+  return {};
+}
+
 // BinaryItemDelegate
 
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
@@ -381,7 +385,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
     if (item->sigs.size() > 0) {
       for (auto &s : item->sigs) {
         if (s == bin_view->hovered_sig) {
-          painter->fillRect(option.rect, getColor(bin_view->hovered_sig).darker(125));  // 4/5x brightness
+          painter->fillRect(option.rect, s->color.darker(125));  // 4/5x brightness
         } else {
           drawSignalCell(painter, option, index, s);
         }
@@ -434,13 +438,14 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
   painter->setClipRegion(QRegion(rc).subtracted(subtract));
 
   auto item = (const BinaryViewModel::Item *)index.internalPointer();
-  auto sig_color = getColor(sig);
-  QColor color = sig_color;
+  QColor color = sig->color;
   color.setAlpha(item->bg_color.alpha());
-  painter->fillRect(rc, Qt::white);
+  // Mixing the signal colour with the Base background color to fade it
+  painter->fillRect(rc, QApplication::palette().color(QPalette::Base));
   painter->fillRect(rc, color);
 
-  color = sig_color.darker(125);
+  // Draw edges
+  color = sig->color.darker(125);
   painter->setPen(QPen(color, 1));
   if (draw_left) painter->drawLine(rc.topLeft(), rc.bottomLeft());
   if (draw_right) painter->drawLine(rc.topRight(), rc.bottomRight());

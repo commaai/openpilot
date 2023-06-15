@@ -68,20 +68,16 @@ bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<b
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
-      if (!allow.empty()) {
-        capnp::FlatArrayMessageReader reader(words);
-        auto which = reader.getRoot<cereal::Event>().which();
-        if (allow.find(which) == allow.end()) {
-          words = kj::arrayPtr(reader.getEnd(), words.end());
-          continue;
-        }
-      }
-
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
 #else
       Event *evt = new Event(words);
 #endif
+      if (!allow.empty() && allow.find(evt->which) == allow.end()) {
+        delete evt;
+        words = kj::arrayPtr(evt->reader.getEnd(), words.end());
+        continue;
+      }
 
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||

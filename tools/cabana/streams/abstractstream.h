@@ -20,10 +20,10 @@ struct CanData {
   double freq = 0;
   QByteArray dat;
   QVector<QColor> colors;
-  QVector<double> last_change_t;
-  QVector<std::array<uint32_t, 8>> bit_change_counts;
-  QVector<int> last_delta;
-  QVector<int> same_delta_counter;
+  std::vector<double> last_change_t;
+  std::vector<std::array<uint32_t, 8>> bit_change_counts;
+  std::vector<int> last_delta;
+  std::vector<int> same_delta_counter;
 };
 
 struct CanEvent {

@@ -99,7 +99,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   ref_log_msgs = list(LogReader(ref_log_path))
 
   try:
-    log_msgs = replay_process(cfg, lr)
+    log_msgs = replay_process(cfg, lr, disable_progress=True)
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 

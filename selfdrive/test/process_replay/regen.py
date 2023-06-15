@@ -20,6 +20,7 @@ from selfdrive.car.toyota.values import EPS_SCALE
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, setup_env, check_openpilot_enabled
+from selfdrive.test.process_replay.migration import migrate_all
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
@@ -119,19 +120,17 @@ def replay_service(s, msgs):
 
 def replay_cameras(lr, frs, disable_tqdm=False):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, False),
-    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD, False),
-    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
+  def replay_camera(s, stream, dt, vipc_server, frames, size):
     services = [(s, stream)]
-    if use_extra_client:
-      services.append(("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD))
     pm = messaging.PubMaster([s for s, _ in services])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
@@ -153,12 +152,12 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
-  cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
+  cameras = tici_cameras if (init_data.initData.deviceType in ['tici', 'tizi']) else eon_cameras
 
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream, use_extra_client) in cameras:
+  for (s, dt, size, stream) in cameras:
     fr = frs.get(s, None)
 
     frames = None
@@ -170,76 +169,18 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
-    if use_extra_client:
-      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
+                                     args=(s, stream, dt, vs, frames, size)))
 
   vs.start_listener()
   return vs, p
-
-
-def migrate_carparams(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() == 'carParams':
-      CP = messaging.new_message('carParams')
-      CP.carParams = msg.carParams.as_builder()
-      for car_fw in CP.carParams.carFw:
-        car_fw.brand = CP.carParams.carName
-      msg = CP.as_reader()
-    all_msgs.append(msg)
-
-  return all_msgs
-
-
-def migrate_sensorEvents(lr, old_logtime=False):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() != 'sensorEventsDEPRECATED':
-      all_msgs.append(msg)
-      continue
-
-    # migrate to split sensor events
-    for evt in msg.sensorEventsDEPRECATED:
-      # build new message for each sensor type
-      sensor_service = ''
-      if evt.which() == 'acceleration':
-        sensor_service = 'accelerometer'
-      elif evt.which() == 'gyro' or evt.which() == 'gyroUncalibrated':
-        sensor_service = 'gyroscope'
-      elif evt.which() == 'light' or evt.which() == 'proximity':
-        sensor_service = 'lightSensor'
-      elif evt.which() == 'magnetic' or evt.which() == 'magneticUncalibrated':
-        sensor_service = 'magnetometer'
-      elif evt.which() == 'temperature':
-        sensor_service = 'temperatureSensor'
-
-      m = messaging.new_message(sensor_service)
-      m.valid = True
-      if old_logtime:
-        m.logMonoTime = msg.logMonoTime
-
-      m_dat = getattr(m, sensor_service)
-      m_dat.version = evt.version
-      m_dat.sensor = evt.sensor
-      m_dat.type = evt.type
-      m_dat.source = evt.source
-      if old_logtime:
-        m_dat.timestamp = evt.timestamp
-      setattr(m_dat, evt.which(), getattr(evt, evt.which()))
-
-      all_msgs.append(m.as_reader())
-
-  return all_msgs
 
 
 def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=False):
   if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
 
-  lr = migrate_carparams(list(lr))
-  lr = migrate_sensorEvents(list(lr))
+  lr = migrate_all(lr)
   if frs is None:
     frs = dict()
 
@@ -362,7 +303,7 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
     device_type = next(iter(lr)).initData.deviceType
-    if device_type == 'tici':
+    if device_type in ['tici', 'tizi']:
       wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     else:
       wfr = None

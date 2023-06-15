@@ -113,6 +113,7 @@ class TestOnroad(unittest.TestCase):
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
+    os.system("rm /dev/shm/*")
 
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
@@ -255,6 +256,14 @@ class TestOnroad(unittest.TestCase):
     print(result)
 
     self.assertTrue(cpu_ok)
+
+  def test_memory_usage(self):
+    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
+    print("Memory usage: ", mems)
+
+    # check for big leaks. note that memory usage is
+    # expected to go up while the MSGQ buffers fill up
+    self.assertLessEqual(max(mems) - min(mems), 3.0)
 
   def test_camera_processing_time(self):
     result = "\n"

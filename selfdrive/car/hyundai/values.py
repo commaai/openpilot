@@ -1,6 +1,10 @@
+import re
+from datetime import datetime
+from dateutil import rrule
+from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Optional, Union
+from typing import DefaultDict, Dict, List, Optional, Set, Union, cast
 
 from cereal import car
 from panda.python import uds
@@ -8,6 +12,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -342,6 +347,38 @@ FINGERPRINTS = {
   }],
 }
 
+
+def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
+  codes: DefaultDict[bytes, Set[Optional[bytes]]] = defaultdict(set)
+  for fw in fw_versions:
+    code_match, date_match = (PLATFORM_CODE_FW_PATTERN.search(fw),
+                              DATE_FW_PATTERN.search(fw))
+    if code_match is not None:
+      code = code_match.group()
+      date = date_match.group() if date_match else None
+      codes[code].add(date)
+
+  # Create platform codes for all dates inclusive if ECU has FW dates
+  final_codes = set()
+  for code, dates in codes.items():
+    # Radar and some cameras don't have FW dates
+    if None in dates:
+      final_codes.add(code)
+      continue
+
+    try:
+      parsed = {datetime.strptime(cast(bytes, date).decode()[:4], '%y%m') for date in dates}
+    except ValueError:
+      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
+      final_codes.add(code)
+      continue
+
+    for monthly in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
+      final_codes.add(code + b'-' + monthly.strftime('%y%m').encode())
+
+  return final_codes
+
+
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
 
@@ -354,6 +391,16 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
   p16(0xf100)
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+# Regex patterns for parsing platform code, FW date, and part number from FW versions
+PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
+PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+# TODO: use abs, it has the platform code and part number on many platforms
+PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -587,11 +634,9 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0210\x00 4DNAC102',
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
-      b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP100',
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x8756310-L0010\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x8756310-L0210\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC101',
       b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103',
@@ -752,7 +797,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8A12',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
-      b'\xf1\x00TM  MDPS R 1.00 1.02 57700-S1100 4TMDP102'
+      b'\xf1\x00TM  MDPS R 1.00 1.02 57700-S1100 4TMDP102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT EUR LHD 1.00 1.01 99211-S1010 181207',
@@ -854,7 +899,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TMH MFC  AT EUR LHD 1.00 1.06 99211-S1500 220727',
       b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.03 99211-S1500 210224',
-      b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.06 99211-S1500 220727'
+      b'\xf1\x00TMH MFC  AT USA LHD 1.00 1.06 99211-S1500 220727',
       b'\xf1\x00TMA MFC  AT USA LHD 1.00 1.03 99211-S2500 220414',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -1493,10 +1538,8 @@ FW_VERSIONS = {
       b'\xf1\x8799110AA000\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106',
-      b'\xf1\x8756310/AA070\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
-      b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106\xf1\xa01.06',
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
+      b'\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',

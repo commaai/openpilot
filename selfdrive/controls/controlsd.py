@@ -9,6 +9,7 @@ from common.realtime import sec_since_boot, config_realtime_process, Priority, R
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.conversions import Conversions as CV
 from panda import ALTERNATIVE_EXPERIENCE
 from system.swaglog import cloudlog
@@ -82,8 +83,6 @@ class Controls:
       ignore = ['testJoystick']
       if SIMULATION:
         ignore += ['driverCameraState', 'managerState']
-      if self.params.get_bool('WideCameraOnly'):
-        ignore += ['roadCameraState']
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'] + self.camera_packets,
@@ -170,6 +169,7 @@ class Controls:
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = None
+    self.not_running_prev = None
     self.last_actuators = car.CarControl.Actuators.new_message()
     self.steer_limited = False
     self.desired_curvature = 0.0
@@ -261,7 +261,6 @@ class Controls:
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
       # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
-    # TODO: make tici threshold the same
     if self.sm['deviceState'].memoryUsagePercent > 90 and not SIMULATION:
       self.events.add(EventName.lowMemory)
 
@@ -330,6 +329,9 @@ class Controls:
     not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
     if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
+      if not_running != self.not_running_prev:
+        cloudlog.event("process_not_running", not_running=not_running, error=True)
+      self.not_running_prev = not_running
     else:
       if not SIMULATION and not self.rk.lagging:
         if not self.sm.all_alive(self.camera_packets):
@@ -435,6 +437,12 @@ class Controls:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
       if all_valid or timed_out or SIMULATION:
+        available_streams = VisionIpcClient.available_streams("camerad", block=False)
+        if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
+          self.sm.ignore_alive.append('roadCameraState')
+        if VisionStreamType.VISION_STREAM_WIDE_ROAD not in available_streams:
+          self.sm.ignore_alive.append('wideRoadCameraState')
+
         if not self.read_only:
           self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
