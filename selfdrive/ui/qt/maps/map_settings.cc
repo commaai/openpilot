@@ -3,7 +3,6 @@
 #include <QDebug>
 
 #include "common/util.h"
-#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -12,112 +11,159 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-MapSettings::MapSettings(QWidget* parent) : QFrame(parent) {
-  setContentsMargins(36, 36, 36, 36);
+MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
+  setContentsMargins(0, 0, 0, 0);
 
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(20);
+  auto *frame = new QHBoxLayout(this);
+  frame->setContentsMargins(32, 24, 32, 24);
+  frame->setSpacing(40);
 
-  // Home & Work layout
-  QHBoxLayout *home_work_layout = new QHBoxLayout;
-  {
-    // Home
-    home_button = new QPushButton;
-    home_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
-    home_address = new QLabel;
-    home_address->setWordWrap(true);
+  icon = new QLabel(this);
+  icon->setFixedSize(72, 72);
+  frame->addWidget(icon);
 
-    QHBoxLayout *home_layout = new QHBoxLayout;
-    home_layout->addWidget(home_button);
-    home_layout->addSpacing(30);
-    home_layout->addWidget(home_address);
-    home_layout->addStretch();
+  auto *inner_frame = new QVBoxLayout;
+  inner_frame->setContentsMargins(0, 0, 0, 0);
+  inner_frame->setSpacing(0);
 
-    // Work
-    work_button = new QPushButton;
-    work_button->setIconSize(QSize(MAP_PANEL_ICON_SIZE, MAP_PANEL_ICON_SIZE));
-    work_address = new QLabel;
-    work_address->setWordWrap(true);
+  title = new QLabel(this);
+  inner_frame->addWidget(title);
 
-    QHBoxLayout *work_layout = new QHBoxLayout;
-    work_layout->addWidget(work_button);
-    work_layout->addSpacing(30);
-    work_layout->addWidget(work_address);
-    work_layout->addStretch();
+  subtitle = new QLabel(this);
+  subtitle->setStyleSheet("color: #A0A0A0;");
+  inner_frame->addWidget(subtitle);
+  frame->addLayout(inner_frame);
 
-    home_work_layout->addLayout(home_layout, 1);
-    home_work_layout->addSpacing(50);
-    home_work_layout->addLayout(work_layout, 1);
+  action = new QLabel(this);
+  action->setObjectName("action");
+  action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
+  frame->addWidget(action);
+
+  setStyleSheet(R"(
+    DestinationWidget {
+      background-color: #292929;
+      border: 1px solid #4DFFFFFF;
+      border-radius: 10px;
+      color: #FFFFFF;
+      font-size: 40px;
+      font-weight: 400;
+    }
+    DestinationWidget[current="true"] {
+      border: 1px solid #80FFFFFF;
+    }
+    DestinationWidget:pressed {
+      background-color: #3B3B3B;
+    }
+    DestinationWidget[current~="true"]:disabled {
+      color: #808080;
+    }
+
+    #action {
+      font-size: 60px;
+    }
+    DestinationWidget:pressed #action {
+      color: #A0A0A0;
+    }
+
+    QPushButton {
+      border: none;
+    }
+  )");
+}
+
+void MapSettings::DestinationWidget::set(const QString &type, const QString &label,
+                                         const QString &name, const QString &details,
+                                         bool current) {
+  setProperty("current", current);
+
+  auto title_text = name;
+  auto subtitle_text = details;
+  auto icon_pixmap = NAV_ICON_RECENT;
+
+  if (type == NAV_TYPE_FAVORITE) {
+    title_text = label;
+    subtitle_text = name + " " + details;
+    if (label == NAV_FAVORITE_LABEL_HOME) {
+      icon_pixmap = NAV_ICON_HOME;
+    } else if (label == NAV_FAVORITE_LABEL_WORK) {
+      icon_pixmap = NAV_ICON_WORK;
+    } else {
+      icon_pixmap = NAV_ICON_FAVORITE;
+    }
   }
 
-  main_layout->addLayout(home_work_layout);
-  main_layout->addWidget(horizontal_line());
+  // TODO: shorten
+  title->setText(title_text);
+  subtitle->setText(subtitle_text);
+  subtitle->setVisible(true);
 
-  // Current route
-  current_widget = new QWidget(this);
-  {
-    QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
-    current_layout->setContentsMargins(0, 0, 0, 0);
-    current_layout->setSpacing(20);
+  // TODO: use pixmap
+  action->setText(current ? "×" : "→");
+  action->setVisible(true);
+}
 
-    QHBoxLayout *heading_layout = new QHBoxLayout;
-    heading_layout->setContentsMargins(0, 0, 0, 0);
-    heading_layout->setSpacing(0);
+void MapSettings::DestinationWidget::clear(const QString &label) {
+  title->setText(tr("No %1 location set").arg(label));
+  subtitle->setVisible(false);
+  action->setVisible(false);
+}
 
-    QLabel *title = new QLabel(tr("Current Destination"));
-    title->setStyleSheet("font-size: 50px");
-    heading_layout->addWidget(title);
+MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
+  setContentsMargins(0, 0, 0, 0);
 
-    heading_layout->addStretch();
+  auto *frame = new QVBoxLayout(this);
+  frame->setContentsMargins(40, 40, 40, 40);
+  frame->setSpacing(32);
 
-    QPushButton *clear_button = new QPushButton(tr("CLEAR"));
-    clear_button->setStyleSheet(R"(
-      QPushButton {
-        border-radius: 10px;
-        padding: 24px 40px;
-        border-radius: 40px;
-        font-size: 32px;
-        font-weight: 500;
-        color: #E4E4E4;
-        background-color: #1AC4C4C4;
-      }
-      QPushButton:pressed {
-        background-color: #33C4C4C4;
-      }
-    )");
-    QObject::connect(clear_button, &QPushButton::clicked, [=]() {
-      params.remove("NavDestination");
-      updateCurrentRoute();
-    });
-    heading_layout->addWidget(clear_button);
+  auto *heading = new QHBoxLayout;
+  heading->setContentsMargins(0, 0, 0, 0);
+  heading->setSpacing(32);
 
-    current_layout->addLayout(heading_layout);
+  auto *title = new QLabel(tr("comma navigation"), this);
+  title->setStyleSheet("color: #FFFFFF; font-size: 48px; font-weight: 500;");
+  heading->addWidget(title, 1);
 
-    current_route = new QLabel("");
-    current_route->setStyleSheet(R"(
-      QLabel {
-        font-size: 40px;
-        color: #9C9C9C;
-        font-weight: 400;
-      }
-    )");
-    current_layout->addWidget(current_route);
+  auto *close_button = new QPushButton("×", this);
+  close_button->setStyleSheet(R"(
+    QPushButton {
+      color: #FFFFFF;
+      font-size: 60px;
+      font-weight: 600;
+      border: none;
+    }
+    QPushButton:pressed {
+      color: #A0A0A0;
+    }
+  )");
+  QObject::connect(close_button, &QPushButton::clicked, [=]() {
+    emit closeSettings();
+  });
+  heading->addWidget(close_button);
 
-    current_layout->addSpacing(10);
-    current_layout->addWidget(horizontal_line());
-  }
-  main_layout->addWidget(current_widget);
+  current_container = new QWidget(this);
+  auto *current_layout = new QVBoxLayout(current_container);
+  current_layout->setContentsMargins(0, 0, 0, 0);
+  current_layout->setSpacing(16);
 
-  // Recents
-  QLabel *recents_title = new QLabel(tr("Recent Destinations"));
-  recents_title->setStyleSheet("font-size: 50px");
-  main_layout->addWidget(recents_title);
+  auto *current_title = new QLabel(tr("current destination"), this);
+  current_title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
+  current_layout->addWidget(current_title);
 
-  recent_layout = new QVBoxLayout;
-  QWidget *recent_widget = new LayoutWidget(recent_layout, this);
-  ScrollView *recent_scroller = new ScrollView(recent_widget, this);
-  main_layout->addWidget(recent_scroller);
+  current_widget = new DestinationWidget(this);
+  current_widget->setDisabled(true);
+  current_layout->addWidget(current_widget);
+
+  // QObject::connect(clear_button, &QPushButton::clicked, [=]() {
+  //   params.remove("NavDestination");
+  //   updateCurrentRoute();
+  // });
+
+  current_layout->addWidget(horizontal_line());
+
+  // destinations_list = new QVBoxLayout;
+  // QWidget *recent_widget = new LayoutWidget(recent_layout, this);
+  // ScrollView *recent_scroller = new ScrollView(recent_widget, this);
+  // frame->addWidget(recent_scroller);
 
 
   // TODO: remove this
@@ -186,15 +232,16 @@ void MapSettings::showEvent(QShowEvent *event) {
 }
 
 void MapSettings::clear() {
-  home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
-  home_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
-  home_address->setText(tr("No home\nlocation set"));
-  home_button->disconnect();
+  // current_container->setVisible(false);
+  // home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
+  // home_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
+  // home_address->setText(tr("No home\nlocation set"));
+  // home_button->disconnect();
 
-  work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
-  work_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
-  work_address->setText(tr("No work\nlocation set"));
-  work_button->disconnect();
+  // work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
+  // work_address->setStyleSheet(R"(font-size: 40px; color: grey;)");
+  // work_address->setText(tr("No work\nlocation set"));
+  // work_button->disconnect();
 
   clearLayout(recent_layout);
 }
@@ -202,12 +249,15 @@ void MapSettings::clear() {
 void MapSettings::updateCurrentRoute() {
   auto dest = QString::fromStdString(params.get("NavDestination"));
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
-  if (dest.size() && !doc.isNull()) {
+  auto visible = dest.size() && !doc.isNull();
+  if (visible) {
+    auto type = doc["save_type"].toString();
+    auto label = doc["label"].toString();
     auto name = doc["place_name"].toString();
     auto details = doc["place_details"].toString();
-    current_route->setText(shorten(name + " " + details, 42));
+    current_widget->set(type, label, name, details, true);
   }
-  current_widget->setVisible(dest.size() && !doc.isNull());
+  current_container->setVisible(visible);
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
@@ -233,7 +283,7 @@ void MapSettings::refresh() {
 
   // add favorites before recents
   bool has_recents = false;
-  for (auto &save_type: {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
+  for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto location : doc.array()) {
       auto obj = location.toObject();
 
