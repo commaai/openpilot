@@ -35,15 +35,6 @@ public:
     return !(*this == other);
   }
 
-  QJsonObject toJson() const {
-    QJsonObject obj;
-    obj["type"] = type;
-    obj["label"] = label;
-    obj["name"] = name;
-    obj["details"] = details;
-    return obj;
-  }
-
 public:
   const QString type, label, name, details;
 };

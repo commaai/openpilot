@@ -150,11 +150,10 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   current_widget->setDisabled(true);
   current_layout->addWidget(current_widget);
 
-  // TODO: clear current on click
-  // QObject::connect(clear_button, &QPushButton::clicked, [=]() {
-  //   params.remove("NavDestination");
-  //   updateCurrentRoute();
-  // });
+  QObject::connect(current_widget, &QPushButton::clicked, [=]() {
+    params.remove("NavDestination");
+    updateCurrentRoute();
+  });
 
   current_layout->addWidget(horizontal_line());
 
@@ -273,7 +272,8 @@ void MapSettings::refresh() {
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
     for (auto location : doc.array()) {
       // TODO: create these objects once before loop
-      auto destination = new NavDestination(location.toObject());
+      auto obj = location.toObject();
+      auto destination = new NavDestination(obj);
 
       if (destination->type != save_type) continue;
       if (destination == current_destination) continue;
@@ -282,7 +282,7 @@ void MapSettings::refresh() {
       widget->set(destination, false);
 
       QObject::connect(widget, &QPushButton::clicked, [=]() {
-        navigateTo(destination->toJson());
+        navigateTo(obj);
         emit closeSettings();
       });
 
