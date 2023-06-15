@@ -54,7 +54,7 @@ def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
+def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -77,7 +77,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
 
   matched_ecus = set()
   candidate = None
-  for addr, versions in fw_versions_dict.items():
+  for addr, versions in live_fw_versions.items():
     ecu_key = (addr[0], addr[1])
     for version in versions:
       # All cars that have this FW response on the specified address
@@ -101,7 +101,7 @@ def match_fw_to_car_fuzzy(fw_versions_dict, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -115,7 +115,7 @@ def match_fw_to_car_exact(fw_versions_dict, log=True) -> Set[str]:
       ecu_type = ecu[0]
       addr = ecu[1:]
 
-      found_versions = fw_versions_dict.get(addr, set())
+      found_versions = live_fw_versions.get(addr, set())
       if not len(found_versions):
         # Some models can sometimes miss an ecu, or show on two different addresses
         if candidate in config.non_essential_ecus.get(ecu_type, []):
