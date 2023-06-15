@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, Final, List, Optional, Set, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
 from tqdm import tqdm
 import capnp
 
@@ -150,13 +150,11 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
       matches |= match_func(fw_versions_dict, log=log)
-      print(brand, matches)
 
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
       if not exact_match and not len(matches) and config.match_fw_to_car_fuzzy is not None:
         matches |= config.match_fw_to_car_fuzzy(fw_versions_dict)
-        print('custom', brand, matches)
 
     if len(matches):
       return exact_match, matches
@@ -222,7 +220,6 @@ def get_brand_ecu_matches(ecu_rx_addrs):
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  return
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
     cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
@@ -240,8 +237,8 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
   for brand in sorted(brand_matches, key=lambda b: len(brand_matches[b]), reverse=True):
     # Skip this brand if there are no matching present ECUs
-    # if not len(brand_matches[brand]):
-    #   continue
+    if not len(brand_matches[brand]):
+      continue
 
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
