@@ -394,7 +394,6 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
 
-      # FW date checks
       if ecu[0] in DATE_FW_ECUS:
         # If ECU can have a FW date, require it to exist
         if not len(expected_dates) or not len(found_dates):
