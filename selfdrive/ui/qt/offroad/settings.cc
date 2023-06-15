@@ -174,7 +174,7 @@ void TogglesPanel::updateToggles() {
                           tr("openpilot longitudinal control may come in a future update.");
       if (CP.getExperimentalLongitudinalAvailable()) {
         if (is_release) {
-          long_desc = unavailable + " " + tr("An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+          long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
           long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
         }
