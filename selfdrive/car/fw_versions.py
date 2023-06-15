@@ -276,22 +276,10 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   parallel_addrs = []
   ecu_types = {}
 
-  addrs_new = []
-  parallel_addrs_new = []
-  ecu_types_new = {}
-
   for brand, brand_versions in versions.items():
-    if brand != 'hyundai':
-      continue
-
     config = FW_QUERY_CONFIGS[brand]
-    print('brand versions', [ecu for ecu in brand_versions.values()])
-    print('extra_ecus', config.extra_ecus)
-    # for ecu in list(brand_versions.values()) + config.extra_ecus:
     for ecu in brand_versions.values():
-      # print(ecu)
-      print(ecu.keys())
-      for ecu_type, addr, sub_addr in ecu.keys():
+      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
@@ -303,32 +291,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
           if [a] not in addrs:
             addrs.append([a])
 
-      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
-        a = (brand, addr, sub_addr)
-        if a not in ecu_types_new:
-          ecu_types_new[a] = ecu_type
-
-        if sub_addr is None:
-          if a not in parallel_addrs_new:
-            parallel_addrs_new.append(a)
-        else:
-          if [a] not in addrs_new:
-            addrs_new.append([a])
-
-  assert sorted(addrs) == sorted(addrs_new)
-  assert sorted(parallel_addrs) == sorted(parallel_addrs_new)
-  assert ecu_types == ecu_types_new
-
   addrs.insert(0, parallel_addrs)
-  addrs_new.insert(0, parallel_addrs_new)
-
-  print(sorted(addrs))
-  print(ecu_types)
-  print('new')
-  print(sorted(addrs_new))
-  print(ecu_types_new)
-  assert len(addrs) == 1 and len(addrs_new) == 1
-  assert sorted(addrs[0]) == sorted(addrs_new[0])
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
