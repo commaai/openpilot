@@ -2,12 +2,35 @@
 import unittest
 
 from cereal import car
-from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, FW_QUERY_CONFIG, \
-                                         FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, PART_NUMBER_FW_PATTERN, PLATFORM_CODE_ECUS, \
-                                         get_platform_codes
-
+from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
+                                         FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
+                                         PART_NUMBER_FW_PATTERN, PLATFORM_CODE_ECUS, get_platform_codes
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+
+# Some platforms have date codes in a different format we don't yet parse (or are missing).
+# For now, assert list of expected missing date cars
+NO_DATES_PLATFORMS = {
+  # CAN FD
+  CAR.KIA_SPORTAGE_5TH_GEN,
+  CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
+  CAR.SANTA_CRUZ_1ST_GEN,
+  CAR.TUCSON_4TH_GEN,
+  CAR.TUCSON_HYBRID_4TH_GEN,
+  # CAN
+  CAR.ELANTRA,
+  CAR.KIA_CEED,
+  CAR.KIA_FORTE,
+  CAR.KIA_OPTIMA_G4,
+  CAR.KIA_OPTIMA_G4_FL,
+  CAR.KIA_SORENTO,
+  CAR.KONA,
+  CAR.KONA_EV,
+  CAR.KONA_EV_2022,
+  CAR.KONA_HEV,
+  CAR.SONATA_LF,
+  CAR.VELOSTER,
+}
 
 
 class TestHyundaiFingerprint(unittest.TestCase):
@@ -62,10 +85,10 @@ class TestHyundaiFingerprint(unittest.TestCase):
             self.assertEqual(1, len(result), f"Unable to parse FW: {fw}")
             codes |= result
 
-          # Some newer platforms have date codes in a different format we don't yet parse,
-          # for now assert we can parse all FW or none
-          self.assertEqual(len({b"-" in code for code in codes}), 1,
-                           "Not all FW dates are parsable")
+          if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
+            self.assertTrue(all({b"-" not in code for code in codes}))
+          else:
+            self.assertTrue(all({b"-" in code for code in codes}))
 
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest("No part numbers for car model")
