@@ -406,7 +406,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
       valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
-    if len(valid_expected_ecus - valid_found_ecus) == 0:
+    if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
   return candidates - fuzzy_platform_blacklist
