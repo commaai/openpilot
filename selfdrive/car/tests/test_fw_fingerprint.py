@@ -65,7 +65,7 @@ class TestFwFingerprint(unittest.TestCase):
 
       # If both have matches, they must agree
       if len(matches) == 1 and len(brand_matches) == 1:
-        self.assertEqual(matches, brand_matches, (car_model, matches, brand_matches))
+        self.assertEqual(matches, brand_matches)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
