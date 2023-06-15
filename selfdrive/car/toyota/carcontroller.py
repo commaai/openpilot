@@ -1,5 +1,7 @@
 from cereal import car
+from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
+from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
@@ -29,6 +31,7 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.pcm_accel_compensation = FirstOrderFilter(0.0, 0.1, DT_CTRL)
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -56,7 +59,15 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+
+    # coasting_accel = clip(CS.pcm_neutral_force / self.CP.mass, 0.0, 0.4)  # think this is only flat ground
+    # pcm_accel_cmd = clip(actuators.accel - coasting_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    self.pcm_accel_compensation.update(CS.pcm_accel_net - actuators.accel)
+    pcm_accel_cmd = clip(actuators.accel - clip(self.pcm_accel_compensation.x, -1., 1.),
+                         CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+
+    if not CC.longActive:
+      pcm_accel_cmd = 0.
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
