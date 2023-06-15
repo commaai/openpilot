@@ -2,7 +2,7 @@ from cereal import car
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
+from selfdrive.car import STD_CARGO_KG, apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -25,6 +25,8 @@ class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.torque_rate_limits = CarControllerParams(self.CP)
+    # PCM may or may not use curb weight instead of loaded weight, use average
+    self.comp_mass = self.CP.mass - (STD_CARGO_KG / 2.0)
     self.frame = 0
     self.last_steer = 0
     self.alert_active = False
@@ -60,9 +62,14 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
 
-    # coasting_accel = clip(CS.pcm_neutral_force / self.CP.mass, 0.0, 0.4)  # think this is only flat ground
-    # pcm_accel_cmd = clip(actuators.accel - coasting_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-    self.pcm_accel_compensation.update(CS.pcm_accel_net - actuators.accel)
+    # think this is only flat ground??
+    # if so, we need to compensate for grade to not degrade hills.
+    # then that mostly should cover expected differences in desired vs. outputted accel/force
+    coasting_accel = CS.pcm_neutral_force / self.comp_mass
+    # the PCM should be outputting this
+    desired_pcm_accel = actuators.accel - coasting_accel
+    # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
+    self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
     pcm_accel_cmd = clip(actuators.accel - clip(self.pcm_accel_compensation.x, -1., 1.),
                          CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
