@@ -293,17 +293,9 @@ void MapSettings::refresh() {
     destinations.push_back(destination);
   }
 
-  // add home and work if missing
-  if (!has_home) {
-    auto widget = new DestinationWidget(this);
-    widget->clear(tr("home"));
-    destinations_layout->addWidget(widget);
-  }
-  if (!has_work) {
-    auto widget = new DestinationWidget(this);
-    widget->clear(tr("work"));
-    destinations_layout->addWidget(widget);
-  }
+  QLabel *title = new QLabel(tr("recent destinations"));
+  title->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 500;");
+  destinations_layout->addWidget(title);
 
   // add favorites before recents
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
@@ -325,12 +317,12 @@ void MapSettings::refresh() {
   // add home and work if missing
   if (!has_home) {
     auto widget = new DestinationWidget(this);
-    widget->clear(tr("home"));
+    widget->clear(NAV_FAVORITE_LABEL_HOME);
     destinations_layout->insertWidget(0, widget);
   }
   if (!has_work) {
     auto widget = new DestinationWidget(this);
-    widget->clear(tr("work"));
+    widget->clear(NAV_FAVORITE_LABEL_WORK);
     destinations_layout->insertWidget(1, widget);
   }
 
