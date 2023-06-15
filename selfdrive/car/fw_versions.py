@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 import copy
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
+from typing import Any, DefaultDict, Dict, Final, List, Optional, Set, Tuple
 from tqdm import tqdm
 import capnp
 
@@ -13,13 +13,14 @@ from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
+import types
 
 Ecu = car.CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
 FW_QUERY_CONFIGS = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
-VERSIONS = get_interface_attr('FW_VERSIONS', ignore_none=True)
+VERSIONS: Final = types.MappingProxyType(get_interface_attr('FW_VERSIONS', ignore_none=True))
 
 MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
@@ -256,7 +257,6 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, num_pandas=1, debug=False, progress=False) -> \
   List[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
-  # versions = copy.deepcopy(VERSIONS)
   params = Params()
 
   # Each brand can define extra ECUs to query for data collection
