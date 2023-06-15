@@ -1,5 +1,7 @@
 #include "map_settings.h"
 
+#include <algorithm>
+
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -267,14 +269,14 @@ void MapSettings::refresh() {
   prev_destinations = cur_destinations;
   clear();
 
-  // iterate over array, skipping current_destination
+  auto destinations = std::transform(
+    doc.array().begin(), doc.array().end(), std::vector<NavDestination*>(),
+    [](const QJsonValue &val) { return new NavDestination(val.toObject()); }
+  );
+
   // add favorites before recents
   for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
-    for (auto location : doc.array()) {
-      // TODO: create these objects once before loop
-      auto obj = location.toObject();
-      auto destination = new NavDestination(obj);
-
+    for (auto destination : destinations) {
       if (destination->type != save_type) continue;
       if (destination == current_destination) continue;
 
@@ -282,7 +284,7 @@ void MapSettings::refresh() {
       widget->set(destination, false);
 
       QObject::connect(widget, &QPushButton::clicked, [=]() {
-        navigateTo(obj);
+        navigateTo(destination->toJson());
         emit closeSettings();
       });
 

@@ -26,13 +26,20 @@ public:
   bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
   bool isRecent() const { return type == NAV_TYPE_RECENT; }
 
-  bool operator==(const NavDestination &other) const {
-    return type == other.type && label == other.label && name == other.name &&
-           details == other.details;
+  bool operator==(NavDestination *other) const {
+    return type == other->type && label == other->label &&
+           name == other->name && details == other->details;
   }
 
-  bool operator!=(const NavDestination &other) const {
-    return !(*this == other);
+  bool operator!=(NavDestination *other) const { return !(*this == other); }
+
+  QJsonObject toJson() const {
+    QJsonObject obj;
+    obj["type"] = type;
+    obj["label"] = label;
+    obj["name"] = name;
+    obj["details"] = details;
+    return obj;
   }
 
 public:
