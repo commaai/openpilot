@@ -138,7 +138,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       CAR.TUCSON_HYBRID_4TH_GEN,
     }
     excluded_platforms |= CANFD_CAR - EV_CAR  # shared platform codes
-    excluded_platforms |= NO_DATES_PLATFORMS       # date codes are required to match
+    excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
 
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
