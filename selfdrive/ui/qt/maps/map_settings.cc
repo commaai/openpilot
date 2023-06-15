@@ -169,6 +169,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
     params.remove("NavDestination");
     updateCurrentRoute();
+    refresh();
   });
 
   current_layout->addSpacing(32);
@@ -210,7 +211,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   //   }
   // ])";
 
-  // refresh();  // TODO: remove this
+  refresh();  // TODO: remove this
 
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
@@ -245,6 +246,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
+  refresh();
 }
 
 void MapSettings::updateCurrentRoute() {
@@ -258,20 +260,20 @@ void MapSettings::updateCurrentRoute() {
     current_destination = new_destination;
     current_widget->set(current_destination, true);
     needs_refresh = true;
+    refresh();
   }
   current_container->setVisible(dest.size() && !doc.isNull());
-  refresh();
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
   if (!success) return;
-
+  if (response == cur_destinations) return;
   cur_destinations = response;
   refresh();
 }
 
 void MapSettings::refresh() {
-  if (!isVisible() || !needs_refresh) return;
+  if (!needs_refresh) return;
   needs_refresh = false;
 
   QJsonDocument doc = QJsonDocument::fromJson(cur_destinations.trimmed().toUtf8());
