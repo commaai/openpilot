@@ -400,8 +400,8 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True) -> Set[str]:
         if not len(expected_dates) or not len(found_dates):
           break
 
-        # Check all dates within range in the database, format is %y%m%d
-        if not all(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+        # Check any date within range in the database, format is %y%m%d
+        if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
           break
 
       valid_found_ecus.add(addr)
