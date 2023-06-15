@@ -118,6 +118,7 @@ class CarState(CarStateBase):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
+      ret.aebDisabled = cp_acc.vl["ACC_HUD"]["PCS_INDICATOR"] != 0
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -244,6 +245,7 @@ class CarState(CarStateBase):
           ("ACC_CONTROL", 33),
         ]
       signals += [
+        ("PCS_INDICATOR", "ACC_HUD"),
         ("FCW", "ACC_HUD"),
       ]
       checks += [
@@ -283,6 +285,7 @@ class CarState(CarStateBase):
         ("PRECOLLISION_ACTIVE", "PRE_COLLISION"),
         ("FORCE", "PRE_COLLISION"),
         ("ACC_TYPE", "ACC_CONTROL"),
+        ("PCS_INDICATOR", "ACC_HUD"),
         ("FCW", "ACC_HUD"),
       ]
       checks += [

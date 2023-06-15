@@ -724,7 +724,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
@@ -744,6 +744,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   EventName.espDisabled: {
     ET.SOFT_DISABLE: soft_disable_alert("Electronic Stability Control Disabled"),
     ET.NO_ENTRY: NoEntryAlert("Electronic Stability Control Disabled"),
+  },
+
+  EventName.aebDisabled: {
+    ET.SOFT_DISABLE: soft_disable_alert("Automatic Emergency Braking System Disabled"),
+    ET.NO_ENTRY: NoEntryAlert("Automatic Emergency Braking System Disabled"),
   },
 
   EventName.lowBattery: {
