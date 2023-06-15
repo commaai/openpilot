@@ -1031,10 +1031,6 @@ This may take up to a minute.</source>
         <translation>未來可能會推出openpilot縱向控制</translation>
     </message>
     <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="vanished">在非發行分支中 可找到包含實驗模式的openpilot縱向控制測試版本</translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>

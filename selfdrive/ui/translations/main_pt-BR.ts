@@ -1036,10 +1036,6 @@ Isso pode levar até um minuto.</translation>
         <translation>O controle longitudinal openpilot pode vir em uma atualização futura.</translation>
     </message>
     <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="vanished">Uma versão experimental do controle longitudinal openpilot pode ser testada, juntamente com o modo Experimental, em branches de desenvolvimento.</translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
     </message>
