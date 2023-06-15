@@ -84,11 +84,9 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   if (destination->isFavorite()) {
     if (destination->label == NAV_FAVORITE_LABEL_HOME) {
       title_text = tr("Home");
-      subtitle_text = destination->name + " " + destination->details;
       icon_pixmap = icons().home;
     } else if (destination->label == NAV_FAVORITE_LABEL_WORK) {
       title_text = tr("Work");
-      subtitle_text = destination->name + " " + destination->details;
       icon_pixmap = icons().work;
     } else {
       icon_pixmap = icons().favorite;
