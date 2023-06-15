@@ -211,7 +211,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   //   }
   // ])";
 
-  refresh();  // TODO: remove this
+  // refresh();  // TODO: remove this
 
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
@@ -301,10 +301,6 @@ void MapSettings::refresh() {
   }
 
   clearLayout(destinations_layout);
-
-  QLabel *title = new QLabel(tr("recent destinations"));
-  title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
-  destinations_layout->addWidget(title);
 
   // TODO: sort: home, work, favorites, recents
   // add favorites before recents
