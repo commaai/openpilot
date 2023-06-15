@@ -118,6 +118,8 @@ def model_replay(lr, frs):
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
   try:
+    if spinner:
+      spinner.update("running model replay")
     modeld_msgs = replay_process(modeld, modeld_logs, frs)
     dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
     log_msgs.extend([m for m in modeld_msgs if m.which() == "modelV2"])
