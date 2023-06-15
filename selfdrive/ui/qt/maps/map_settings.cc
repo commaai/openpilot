@@ -186,31 +186,31 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 
 
   // TODO: remove this
-  cur_destinations = R"([
-    {
-      "save_type": "favorite",
-      "label": "home",
-      "place_name": "Home",
-      "place_details": "123 Main St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "favorite",
-      "place_name": "Target",
-      "place_details": "456 Market St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "recent",
-      "place_name": "Whole Foods",
-      "place_details": "789 Mission St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "recent",
-      "place_name": "Safeway",
-      "place_details": "101 4th St, San Francisco, CA 94103, USA"
-    }
-  ])";
+  // cur_destinations = R"([
+  //   {
+  //     "save_type": "favorite",
+  //     "label": "home",
+  //     "place_name": "Home",
+  //     "place_details": "123 Main St, San Francisco, CA 94103, USA"
+  //   },
+  //   {
+  //     "save_type": "favorite",
+  //     "place_name": "Target",
+  //     "place_details": "456 Market St, San Francisco, CA 94103, USA"
+  //   },
+  //   {
+  //     "save_type": "recent",
+  //     "place_name": "Whole Foods",
+  //     "place_details": "789 Mission St, San Francisco, CA 94103, USA"
+  //   },
+  //   {
+  //     "save_type": "recent",
+  //     "place_name": "Safeway",
+  //     "place_details": "101 4th St, San Francisco, CA 94103, USA"
+  //   }
+  // ])";
 
-  refresh();  // TODO: remove this
+  // refresh();  // TODO: remove this
 
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
