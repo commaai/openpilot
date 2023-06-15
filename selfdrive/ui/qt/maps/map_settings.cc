@@ -114,6 +114,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   frame->setContentsMargins(40, 40, 40, 40);
   frame->setSpacing(32);
 
+
   auto *heading = new QHBoxLayout;
   heading->setContentsMargins(0, 0, 0, 0);
   heading->setSpacing(32);
@@ -138,6 +139,8 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
     emit closeSettings();
   });
   heading->addWidget(close_button);
+  frame->addLayout(heading);
+
 
   current_container = new QWidget(this);
   auto *current_layout = new QVBoxLayout(current_container);
@@ -158,6 +161,7 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   });
 
   current_layout->addWidget(horizontal_line());
+  frame->addWidget(current_container);
 
 
   QWidget *destinations_container = new QWidget(this);
