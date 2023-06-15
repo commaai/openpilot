@@ -109,8 +109,14 @@ void MapSettings::DestinationWidget::unset(const QString &label) {
   setProperty("current", false);
   setDisabled(true);
 
-  icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
-  title->setText(tr("No %1 location set").arg(label));
+  if (label.isEmpty()) {
+    icon->setPixmap(icons().directions);
+    title->setText(tr("No destination set"));
+  } else {
+    icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
+    title->setText(tr("No %1 location set").arg(label));
+  }
+
   subtitle->setVisible(false);
   action->setVisible(false);
 }
@@ -151,7 +157,6 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 
 
   current_container = new QWidget(this);
-  current_container->setVisible(false);
   auto *current_layout = new QVBoxLayout(current_container);
   current_layout->setContentsMargins(0, 0, 0, 0);
   current_layout->setSpacing(0);
@@ -258,11 +263,14 @@ void MapSettings::updateCurrentRoute() {
       return;
     }
     current_destination = new_destination;
-    current_widget->set(current_destination, true);
-    needs_refresh = true;
-    refresh();
   }
-  current_container->setVisible(dest.size() && !doc.isNull());
+  if (current_destination) {
+    current_widget->set(current_destination, true);
+  } else {
+    current_widget->unset("");
+  }
+  needs_refresh = true;
+  refresh();
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
