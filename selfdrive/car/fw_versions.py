@@ -223,7 +223,6 @@ def get_brand_ecu_matches(ecu_rx_addrs):
 
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  return
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
     cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
