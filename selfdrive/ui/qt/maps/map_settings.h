@@ -21,8 +21,9 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
-      : type(place["type"].toString()), label(place["label"].toString()),
-        name(place["name"].toString()), details(place["details"].toString()) {}
+      : type(place["save_type"].toString()), label(place["label"].toString()),
+        name(place["place_name"].toString()),
+        details(place["place_details"].toString()) {}
 
   bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
   bool isRecent() const { return type == NAV_TYPE_RECENT; }
@@ -35,10 +36,10 @@ public:
 
   QJsonObject toJson() const {
     QJsonObject obj;
-    obj["type"] = type;
+    obj["save_type"] = type;
     obj["label"] = label;
-    obj["name"] = name;
-    obj["details"] = details;
+    obj["place_name"] = name;
+    obj["place_details"] = details;
     return obj;
   }
 
