@@ -181,10 +181,18 @@ if __name__ == "__main__":
       ref_commit = f.read().strip()
     log_fn = get_log_fn(ref_commit, TEST_ROUTE)
     try:
-      expected_msgs = 2*MAX_FRAMES
+      all_logs = list(LogReader(BASE_URL + log_fn))
+      cmp_log = []
+
+      # logs are ordered based on type: modelV2, driverStateV2, nav messages (navThumbnail, mapRenderState, navModel)
+      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "modelV2")
+      cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES]
+      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+      cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
       if not NO_NAV:
-        expected_msgs += NAV_FRAMES*3
-      cmp_log = list(LogReader(BASE_URL + log_fn))[:expected_msgs]
+        nav_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ["navThumbnail", "mapRenderState", "navModel"])
+        nav_logs = all_logs[nav_start_index:nav_start_index + NAV_FRAMES*3]
+        cmp_log += nav_logs
 
       ignore = [
         'logMonoTime',
