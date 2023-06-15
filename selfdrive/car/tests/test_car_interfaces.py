@@ -9,6 +9,7 @@ from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
 
+
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
