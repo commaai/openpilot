@@ -162,7 +162,7 @@ class TestFwFingerprint(unittest.TestCase):
                          f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
 
 
-class TestFwFingerprintTiming(unittest.TestCase):
+class TestFwFingerprintLive(unittest.TestCase):
   @staticmethod
   def _benchmark(brand, num_pandas, n):
     params = Params()
@@ -186,7 +186,11 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertLess(avg_time, ref_time + tol)
     self.assertGreater(avg_time, ref_time - tol, "Performance seems to have improved, update test refs.")
 
-  def test_fw_query_timing(self):
+  def test_fw_query_live(self):
+    # Runs one of the functions used live to query FW versions from the car (get_fw_versions)
+    # This test asserts a few things:
+    # - Brand and whole query timings
+    # - Global FW versions dict that is uses to query with and match candidates against remains static
     tol = 0.1
     total_ref_time = 4.6
     brand_ref_times = {
@@ -218,7 +222,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
           avg_time = self._benchmark(brand, num_pandas, 5)
           total_time += avg_time
-          # self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
+          self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     with self.subTest(brand='all_brands'):
