@@ -130,7 +130,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QVBoxLayout(this);
-  frame->setContentsMargins(40, 40, 40, 40);
+  frame->setContentsMargins(40, 40, 40, 0);
   frame->setSpacing(0);
 
   auto *heading = new QHBoxLayout;
@@ -175,11 +175,10 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   frame->addWidget(current_widget);
   frame->addSpacing(32);
   frame->addWidget(horizontal_line());
-  frame->addSpacing(32);
 
   QWidget *destinations_container = new QWidget(this);
   destinations_layout = new QVBoxLayout(destinations_container);
-  destinations_layout->setContentsMargins(0, 0, 0, 0);
+  destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
   frame->addWidget(destinations_scroller);
