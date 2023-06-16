@@ -68,7 +68,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
     }
 
     /* no saved destination */
-    ClickableWidget[disabled=true] QLabel {
+    ClickableWidget[set=false] QLabel {
       color: #80FFFFFF;
     }
   )");
@@ -78,7 +78,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
   qDebug() << "DestinationWidget::set" << destination->name << current;
   setProperty("current", current);
-  setDisabled(false);
+  setProperty("set", true);
 
   auto title_text = destination->name;
   auto subtitle_text = destination->details;
@@ -111,7 +111,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
 void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   qDebug() << "DestinationWidget::unset" << label << current;
   setProperty("current", current);
-  setDisabled(true);
+  setProperty("set", false);
 
   if (label.isEmpty()) {
     icon->setPixmap(icons().directions);
