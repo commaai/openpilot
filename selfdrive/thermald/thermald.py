@@ -48,7 +48,7 @@ THERMAL_BANDS = OrderedDict({
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 79.5
+OFFROAD_DANGER_TEMP = 77
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
@@ -261,8 +261,8 @@ def thermald_thread(end_event, hw_queue):
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
-      # If device is offroad we want to cool down before going onroad
-      # since going onroad increases load and can make temps go over 107
+      # if device is offroad and already hot without the extra onroad load,
+      # we want to cool down first before increasing load
       thermal_status = ThermalStatus.danger
     else:
       current_band = THERMAL_BANDS[thermal_status]
