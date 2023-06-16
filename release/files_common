@@ -290,6 +290,7 @@ selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
+selfdrive/test/fuzzy_generation.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
