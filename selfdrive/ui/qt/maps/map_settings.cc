@@ -16,7 +16,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
 
   auto *frame = new QHBoxLayout(this);
   frame->setContentsMargins(32, 24, 32, 24);
-  frame->setSpacing(40);
+  frame->setSpacing(32);
 
   icon = new QLabel(this);
   icon->setFixedSize(96, 96);
@@ -95,8 +95,8 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
     }
   }
 
-  title->setText(shorten(title_text, 26));
-  subtitle->setText(shorten(subtitle_text, 26));
+  title->setText(shorten(title_text, 25));
+  subtitle->setText(shorten(subtitle_text, 25));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
 
@@ -241,7 +241,6 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   setStyleSheet(R"(
     MapSettings {
       background-color: #333333;
-      border: 1px solid red;
     }
   )");
 }
