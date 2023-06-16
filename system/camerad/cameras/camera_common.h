@@ -91,8 +91,6 @@ public:
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
 
-  mat3 yuv_transform;
-
   CameraBuf() = default;
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType yuv_type);
