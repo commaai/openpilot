@@ -146,6 +146,7 @@ def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
+  params = Params()
   if fingerprint:
     CarInterface, _, _ = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
@@ -154,12 +155,15 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
-    assert len(canmsgs) != 0, "CAN messages are required for carParams initialization"
+    has_cached_cp = params.get("CarParamsCache") is not None
+    assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
+    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
-  Params().put("CarParams", CP.to_bytes())
+  params.put("CarParams", CP.to_bytes())
+  return CP
 
 
 def controlsd_rcv_callback(msg, cfg, frame):
