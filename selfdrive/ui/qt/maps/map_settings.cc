@@ -11,7 +11,7 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
+DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QHBoxLayout(this);
@@ -42,40 +42,40 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   setFixedHeight(164);
   setStyleSheet(R"(
     /* default styles */
-    ClickableWidget {
+    DestinationWidget {
       background-color: #292929;
       border: 1px solid #4DFFFFFF;
       border-radius: 10px;
     }
-    ClickableWidget QLabel {
+    DestinationWidget QLabel {
+      background-color: transparent;
       color: #FFFFFF;
       font-size: 48px;
       font-weight: 400;
     }
 
     /* on press */
-    ClickableWidget:pressed {
+    DestinationWidget:pressed {
       background-color: #3B3B3B;
     }
-    ClickableWidget:pressed #action {
+    DestinationWidget:pressed #action {
       color: #A0A0A0;
     }
 
     /* current destination */
-    ClickableWidget[current=true] {
+    DestinationWidget[current=true] {
       background-color: #162440;
       border: 1px solid #80FFFFFF;
     }
 
     /* no saved destination */
-    ClickableWidget[set=false] QLabel {
+    DestinationWidget[set=false] QLabel {
       color: #80FFFFFF;
     }
   )");
 }
 
-void MapSettings::DestinationWidget::set(NavDestination *destination,
-                                         bool current) {
+void DestinationWidget::set(NavDestination *destination, bool current) {
   setProperty("current", current);
   setProperty("set", true);
 
@@ -107,7 +107,7 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   setStyleSheet(styleSheet());
 }
 
-void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
+void DestinationWidget::unset(const QString &label, bool current) {
   setProperty("current", current);
   setProperty("set", false);
 

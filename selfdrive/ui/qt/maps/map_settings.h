@@ -47,11 +47,37 @@ public:
   const QString type, label, name, details;
 };
 
+class DestinationWidget : public ClickableWidget {
+  Q_OBJECT
+public:
+  explicit DestinationWidget(QWidget *parent = nullptr);
+
+  void set(NavDestination *, bool current = false);
+  void unset(const QString &label, bool current = false);
+
+private:
+  struct NavIcons {
+    QPixmap home, work, favorite, recent, directions;
+  };
+
+  static NavIcons icons() {
+    static NavIcons nav_icons {
+        loadPixmap("../assets/navigation/icon_home.svg", {96, 96}),
+        loadPixmap("../assets/navigation/icon_work.svg", {96, 96}),
+        loadPixmap("../assets/navigation/icon_favorite.svg", {96, 96}),
+        loadPixmap("../assets/navigation/icon_recent.svg", {96, 96}),
+        loadPixmap("../assets/navigation/icon_directions.svg", {96, 96}),
+    };
+    return nav_icons;
+  }
+
+private:
+  QLabel *icon, *title, *subtitle, *action;
+};
+
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
-  class DestinationWidget;
-
   explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
 
   void navigateTo(const QJsonObject &place);
@@ -70,32 +96,4 @@ private:
 
 signals:
   void closeSettings();
-};
-
-class MapSettings::DestinationWidget : public ClickableWidget {
-  Q_OBJECT
-public:
-  explicit DestinationWidget(QWidget *parent = nullptr);
-
-  void set(NavDestination *, bool current = false);
-  void unset(const QString &label, bool current = false);
-
-private:
-  struct NavIcons {
-    QPixmap home, work, favorite, recent, directions;
-  };
-
-  static NavIcons icons() {
-    static NavIcons nav_icons {
-      loadPixmap("../assets/navigation/icon_home.svg", {96, 96}),
-      loadPixmap("../assets/navigation/icon_work.svg", {96, 96}),
-      loadPixmap("../assets/navigation/icon_favorite.svg", {96, 96}),
-      loadPixmap("../assets/navigation/icon_recent.svg", {96, 96}),
-      loadPixmap("../assets/navigation/icon_directions.svg", {96, 96}),
-    };
-    return nav_icons;
-  }
-
-private:
-  QLabel *icon, *title, *subtitle, *action;
 };
