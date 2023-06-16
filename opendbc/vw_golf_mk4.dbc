@@ -303,7 +303,8 @@ BO_ 1408 Motor_Flexia: 8 XXX
  SG_ Multiplex_Schalter_Motor_Flexia M : 0|1@1+ (1,0) [0|0] "" XXX
 
 BO_ 1416 Motor_7: 8 XXX
- SG_ Frei_Motor_7_3 : 40|24@1+ (1,0) [0|0] "" XXX
+ SG_ Oltemperatur : 56|8@1+ (1,0) [0|0] "" XXX
+ SG_ Frei_Motor_7_3 : 40|16@1+ (1,0) [0|0] "" XXX
  SG_ Ladedruck : 32|8@1+ (0.01,0) [0|2.54] "bar" XXX
  SG_ Vorzeichen_Motordrehzahlgradien : 31|1@1+ (1,0) [0|0] "" XXX
  SG_ Motordrehzahlgradient : 24|7@1+ (1,0) [0|126] "U/min" XXX
@@ -321,7 +322,8 @@ BO_ 1160 Motor_6: 8 XXX
  SG_ Frei_Motor_6_4 : 58|2@1+ (1,0) [0|0] "" XXX
  SG_ ltemperaturschutz : 57|1@1+ (1,0) [0|0] "" XXX
  SG_ GRA_Bremseingriff_Freigabe : 56|1@1+ (1,0) [0|0] "" XXX
- SG_ Frei_Motor_6_3 : 40|16@1+ (1,0) [0|0] "" XXX
+ SG_ Frei_Motor_6_3 : 48|8@1+ (1,0) [0|0] "" XXX
+ SG_ Ruckmeldung_Momenten : 40|8@1+ (0.39,0) [0|100] "" XXX
  SG_ GRA_Sollbeschleunigung : 32|8@1+ (0.024,-3.984) [-3.984|2.112] "m/s2" XXX
  SG_ Hoeheninfo__Motor_6_ : 24|8@1+ (0.00787,0) [0|2] "" XXX
  SG_ Istmoment_f_r_Getriebe : 16|8@1+ (0.39,0) [0|99] "MDI" XXX
@@ -770,25 +772,19 @@ BO_ 1340 Fahrwerk_1: 1 XXX
  SG_ Ansteuererung_Fahrzeugniveau : 0|4@1+ (1,0) [0|15] "" XXX
 
 BO_ 1472 EPB_1: 8 XXX
- SG_ CHECKSUM : 56|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 0|4@1+ (1,0) [0|15] "" XXX
- SG_ EP1__Text : 52|4@1+ (1,0) [0|8] "" Vector__XXX
- SG_ EP1_Failure_gelb : 51|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Failure_BKL : 50|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Warnton : 49|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Fkt_Lampe : 48|1@1+ (1,0) [0|1] "" Vector__XXX
- SG_ EP1_Freigabe_Ver : 33|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Failureeintr : 32|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Neig_winkel : 16|8@1+ (1,-128) [-128|127] "g" XXX
- SG_ EP1_Verzoegerung : 24|8@1+ (0.048,-7.968) [-7.968|4.224] "g" XXX
- SG_ EP1_Sta_NWS : 15|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Schalterinfo : 13|2@1+ (1,0) [0|3] "" XXX
- SG_ EP1_Spannkraft : 8|5@1+ (1,0) [0|30] "kN" XXX
- SG_ EP1_Sta_Schalter : 7|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Fehler_Sta : 4|2@1+ (1,0) [0|3] "" Vector__XXX
  SG_ EP1_Sta_EPB : 6|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_Failure_Sta : 4|2@1+ (1,0) [0|3] "" XXX
+ SG_ EP1_Sta_Schalter : 7|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Spannkraft : 8|5@1+ (1,0) [0|30] "Unit_KiloNewto" XXX
+ SG_ EP1_Schalterinfo : 13|2@1+ (1,0) [0|3] "" XXX
+ SG_ EP1_Sta_NWS : 15|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Neig_winkel : 16|8@1+ (1,-128) [-128|127] "Unit_PerCentOfForceOfGravi" XXX
+ SG_ EP1_Verzoegerung : 24|8@1+ (0.048,-7.968) [-7.968|4.224] "Unit_MeterPerSeconSquar" XXX
+ SG_ EP1_Fehlereintr : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Freigabe_Ver : 33|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_AutoHold_zul : 34|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_AutoHold_active : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_AutoHold_aktiv : 35|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_SleepInd : 36|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_Status_Kl_15 : 37|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_Lampe_AutoP : 38|1@1+ (1,0) [0|1] "" XXX
@@ -797,9 +793,15 @@ BO_ 1472 EPB_1: 8 XXX
  SG_ EP1_Warnton2 : 41|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_AnfShLock : 42|1@1+ (1,0) [0|1] "" XXX
  SG_ EPB_Autoholdlampe : 43|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_QualNeigWi : 44|1@1+ (1,0) [0|1] "" XXX
  SG_ EP1_KuppModBer : 45|2@1+ (1,0) [0|3] "" XXX
  SG_ EP1_HydrHalten : 47|1@1+ (1,0) [0|1] "" XXX
- SG_ EP1_QualNeigWi : 44|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Fkt_Lampe : 48|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ EP1_Warnton : 49|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1_Fehler_BKL : 50|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ EP1_Fehler_gelb : 51|1@1+ (1,0) [0|1] "" XXX
+ SG_ EP1__Text : 52|4@1+ (1,0) [0|8] "" Vector__XXX
+ SG_ CHECKSUM : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 1326 Diag_Lenkhilfe: 3 XXX
  SG_ Werkstattcode__Diag_ : 16|8@1+ (1,0) [0|0] "" XXX
@@ -1169,28 +1171,39 @@ BO_ 644 Motor_Bremse: 6 XXX
  SG_ MOB_Bremsstgr : 16|11@1+ (0.048852,0) [0|100] "Unit_PerCent" Vector__XXX
  SG_ MOB_Bremsmom : 27|13@1+ (4,0) [0|32760] "Unit_NewtoMeter"  Bremse_MK25AESP
 
-BO_ 870 AWV: 5 XXX
- SG_ AWV_2_Gurtstraffer : 39|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_Infoton : 38|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_2_Warnsymbol : 37|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_2_Warnton : 36|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_2_Ruckprofil : 33|3@1+ (1,0) [0|7] ""  Bremsbooster
- SG_ AWV_2_Freigabe : 32|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_2_Umfeldwarn : 31|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_2_SU_Lampe : 30|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_2_SU_Gong : 29|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_2_SU_Bremsruck : 28|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_2_SU_Warnzeit : 26|2@1+ (1,0) [0|3] ""  Bremsbooster
- SG_ AWV_2_Fehler : 25|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_2_Status : 24|1@1+ (1,0) [0|1] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_res_20 : 20|4@1+ (1,0) [0|0] ""  Bremsbooster
- SG_ AWV_1_Parameter : 18|2@1+ (1,0) [0|3] ""  Bremsbooster
- SG_ AWV_1_Prefill : 17|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_1_Freigabe : 16|1@1+ (1,0) [0|1] ""  Bremsbooster
- SG_ AWV_Text : 12|4@1+ (1,0) [0|15] ""  Gateway_Kbi_VW_A,Bremsbooster
- SG_ AWV_Zaehler : 8|4@1+ (1,0) [0|15] ""  Bremsbooster
- SG_ AWV_Checksumme : 0|8@1+ (1,0) [0|255] ""  Bremsbooster
-
+BO_ 870 AWV: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" Vector__XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" Vector__XXX
+ SG_ AWV_Text : 12|4@1+ (1,0) [0|14] "" Vector__XXX
+ SG_ AWV_1_Freigabe : 16|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_1_Prefill : 17|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_1_Parameter : 18|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ AWV_only : 20|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ AWV_CityANB_Auspraegung : 21|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Halten : 22|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ANB_Teilbremsung_Freigabe : 23|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Status : 24|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Fehler : 25|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_SU_Warnzeit : 26|2@1+ (1,0) [0|3] "" Vector__XXX
+ SG_ AWV_2_SU_Bremsruck : 28|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_SU_Gong : 29|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_SU_Lampe : 30|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Umfeldwarn : 31|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Freigabe : 32|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Ruckprofil : 33|3@1+ (1,0) [0|7] "" Vector__XXX
+ SG_ AWV_2_Warnton : 36|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Warnsymbol : 37|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Infoton : 38|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Gurtstraffer : 39|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Konfiguration_Menueanf : 40|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Konfiguration_Vorw_Menueanf : 41|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Konfiguration_Status : 42|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_Konfiguration_Vorw_Status : 43|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ AWV_2_Abstandswarnung : 51|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ANB_Zielbremsung_Freigabe : 52|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ANB_CM_Anforderung : 53|1@1+ (1,0) [0|1] "" Vector__XXX
+ SG_ ANB_Ziel_Teilbrems_Verz_Anf : 54|10@1+ (0.024,-20.016) [0|1023] "Unit_MeterPerSeconSquar" Vector__XXX
+ 
 BO_ 1470 LDW_Status: 8 XXX
  SG_ LDW_Lernmodus_rechts : 0|2@1+ (1,0) [0|3] "" XXX
  SG_ LDW_Lernmodus_links : 2|2@1+ (1,0) [0|3] "" XXX
@@ -1473,6 +1486,7 @@ CM_ SG_ 640 mechanisches_Motor_Verlustmomen "Mechanical Torque Loss";
 CM_ SG_ 640 Fahrpedalwert_oder_Drosselklapp "Accelerator Pedal or Throttle Position";
 CM_ SG_ 640 Motordrehzahl "Engine Speed";
 CM_ SG_ 640 Momentenangaben_ungenau "Approximate Torque Values";
+CM_ SG_ 640 inneres_Motor_Moment_ohne_exter "Inner torque without external";
 
 CM_ SG_ 644 MOB_CHECKSUM "Checksum MOB";
 CM_ SG_ 644 MOB_COUNTER "Counter MOB";
@@ -1503,6 +1517,9 @@ CM_ SG_ 912 BSK_HD_Hauptraste "Status of trunk lid main detent";
 
 CM_ SG_ 1088 Zaehler_Getriebe_1 "Counter Getriebe_1";
 CM_ SG_ 1088 Waehlhebelposition__Getriebe_1_ "Gear Selector Position";
+CM_ SG_ 1088 inneres_Soll_Motormoment "Desired Inner Torque";
+CM_ SG_ 1088 Schaltabsicht "Shift Intent";
+CM_ SG_ 1088 Wandlerverlustmoment "Converter Torque Loss";
 
 CM_ SG_ 1056 Fehlerstatus_Aussentemp__4_1 "ambient temp error";
 CM_ SG_ 1056 Fehlerstatus_Oeltemperatur_4_1 "oil temp error";
@@ -1513,15 +1530,30 @@ CM_ SG_ 1056 Kuehlmitteltemp__4_1__Kombi_2_ "kombi coolant temperature";
 
 CM_ SG_ 1096 Zaehler_Waehlhebel_1 "Counter Waehlhebel_1";
 
-CM_ SG_ 1152 Checksumme_Motor_5 "Checksum Motor_5";
+CM_ SG_ 1152 CHECKSUM "Checksum Motor_5";
+CM_ SG_ 1152 Anlasser_Ausspuren "Starter Disable";
+CM_ SG_ 1152 Anlasser_Freigabe "Starter Release";
+CM_ SG_ 1152 Klimadrucksignal__Motor_5_ "Air conditioning pressure signal";
+CM_ SG_ 1152 Kraftstoffverbrauchssignal "Fuel consumption signal";
+CM_ SG_ 1152 K_hlerluefteransteuerung "Cooling fan control signal";
+CM_ SG_ 1152 Klimakompressor_Leistungsreduzi "Air conditioning compressor power reduction flag";
+CM_ SG_ 1152 Klimakompressor_aus__Motor_5_ "Air conditioning compressor";
+CM_ SG_ 1152 Anlasser_Freigabe "Starter release";
+CM_ SG_ 1152 OBD_2_Lampe "OBD light";
+CM_ SG_ 1152 E_Gas_Lampe "ETB light";
+CM_ SG_ 1152 Ladekontroll_Lampe "Charge light";
+CM_ SG_ 1152 Vorgluehlampe__Motor_5_ "Glow light";
 
 CM_ SG_ 1160 Zaehler_Motor_6 "Counter Motor_6";
 CM_ SG_ 1160 Hoeheninfo__Motor_6_ "Altitude Correction";
-CM_ SG_ 1160 Istmoment_f_r_Getriebe "Actual Torque";
-CM_ SG_ 1160 Sollmoment_f_r_Getriebe "Target Torque";
+CM_ SG_ 1160 Istmoment_f_r_Getriebe "Actual torque for gear";
+CM_ SG_ 1160 Sollmoment_f_r_Getriebe "Target torque for gearbox";
 CM_ SG_ 1160 Checksumme_Motor_6 "Checksum Motor_6";
+CM_ SG_ 1160 GRA_Sollbeschleunigung "GRA target acceleration";
+CM_ SG_ 1160 Ruckmeldung_Momenten "Feedback torque-integral gear intervention";
 
 CM_ SG_ 1344 Zahler_Getriebe_2 "Counter Getriebe_2";
+CM_ SG_ 1344 Hochschaltlampe "Upshift Flag";
 
 CM_ SG_ 1386 ACA_V_Wunsch "255=unset";
 
@@ -1536,6 +1568,9 @@ CM_ SG_ 1408 Ansaugsystem "Induction System";
 CM_ SG_ 1408 Motorleistung "Maximum engine power";
 
 CM_ SG_ 1416 Ladedruck "Boost Pressure";
+CM_ SG_ 1416 Motordrehzahlgradient "Engine speed gradient";
+CM_ SG_ 1416 Hoeheninfo__Motor_7_ "Altitude correction factor";
+CM_ SG_ 1416 Oltemperatur "Oil temperature";
 
 CM_ SG_ 1470 LDW_Direction "0=right,1=left";
 CM_ SG_ 1470 XX_DLCORTLC1 "Might be DLC or TLC";
@@ -1543,6 +1578,34 @@ CM_ SG_ 1470 XX_DLCORTLC2 "Might be DLC or TLC, might have wrong size";
 
 CM_ SG_ 1550 MFA_v_Signal_02 "0=km/h, 1=mph";
 
+VAL_ 870 AWV_Text 0 "kein_Text" 1 "FrontAssist_aus" 2 "FrontAssist_startet" 3 "FrontAssist_Warnung" 4 "FrontAssist_Sens_reinig" 5 "FrontAssist_Failure" 6 "FrontAssist_Demo" 7 "Vorhalt" 8 "Bremsung_wird_gerade_durchgefuehrt" 9 "Sensor_not_verfuegbar" 10 "Sensor_reinigen" 11 "Service_notwendig_Failure" 12 "Funktion_vom_Fahrer_deactivated" 13 "Funktion_vom_Fahrer_activated" 14 "FrontAssist_zur_Zeit_not_verfuegbar__rev_Failure";
+VAL_ 870 AWV_1_Freigabe 0 "nicht_freigegeben" 1 "freigegeben";
+VAL_ 870 AWV_1_Prefill 0 "keine_Prefill_Anf" 1 "Prefill_Anf";
+VAL_ 870 AWV_1_Parameter 0 "Defaultparametersatz" 1 "Par_leicht_erh_Empf" 2 "Par_erh_Empf" 3 "Par_hoechster_Empf";
+VAL_ 870 AWV_only 0 "ACC_und_AWV_verbaut" 1 "AWV_ohne_ACC_verbaut";
+VAL_ 870 AWV_CityANB_Auspraegung 0 "autom_Bremsung_im_ges_vBereich" 1 "autom_Bremsung_im_def_vBereich";
+VAL_ 870 AWV_Halten 0 "keine_Anforderung" 1 "Anforderung_das_Fzg_im_Stillstand_zu_halten";
+VAL_ 870 ANB_Teilbremsung_Freigabe 0 "Teilbremsung_nicht_freigegeben" 1 "Teilbremsung_freigegeben";
+VAL_ 870 AWV_2_Status 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 870 AWV_2_Fehler 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 870 AWV_2_SU_Warnzeit 0 "frueh" 1 "normal" 2 "spaet" 3 "adaptiv";
+VAL_ 870 AWV_2_SU_Bremsruck 0 "Bremsruck_deaktiviert" 1 "Bremsruck_aktiviert";
+VAL_ 870 AWV_2_SU_Gong 0 "Gong_deaktiviert" 1 "Gong_aktiviert";
+VAL_ 870 AWV_2_SU_Lampe 0 "Lampe_deaktiviert" 1 "Lampe_aktiviert";
+VAL_ 870 AWV_2_Umfeldwarn 0 "keine_Warnung" 1 "Warnung";
+VAL_ 870 AWV_2_Freigabe 0 "keine_Ruckfreigabe" 1 "Ruckfreigabe";
+VAL_ 870 AWV_2_Ruckprofil 0 "kein_Ruck" 1 "Ruckprofil_1" 2 "Ruckprofil_2" 3 "Ruckprofil_3" 4 "Ruckprofil_4" 5 "Ruckprofil_5" 6 "not_erlaubt" 7 "not_erlaubt";
+VAL_ 870 AWV_2_Warnton 0 "Aus" 1 "Ein";
+VAL_ 870 AWV_2_Warnsymbol 0 "Aus" 1 "Ein";
+VAL_ 870 AWV_Infoton 0 "Aus" 1 "Ein";
+VAL_ 870 AWV_2_Gurtstraffer 0 "Gurt_not_straffen" 1 "Gurt_straffen";
+VAL_ 870 AWV_Konfiguration_Menueanf 0 "Menue_deaktivieren" 1 "Menue_aktivieren";
+VAL_ 870 AWV_Konfiguration_Vorw_Menueanf 0 "Menue_deaktivieren" 1 "Menue_aktivieren";
+VAL_ 870 AWV_Konfiguration_Status 0 "AWV_inaktiv" 1 "AWV_aktiv";
+VAL_ 870 AWV_Konfiguration_Vorw_Status 0 "AWV_Vorwarnung_inaktiv" 1 "AWV_Vorwarnung_aktiv";
+VAL_ 870 AWV_2_Abstandswarnung 0 "kein_Warnhinweis" 1 "Warnhinweis";
+VAL_ 870 ANB_Zielbremsung_Freigabe 0 "Zielbremsung_nicht_freigegeben" 1 "Zielbremsung_freigegeben";
+VAL_ 870 ANB_CM_Anforderung 0 "keine_Anforderung" 1 "Anforderung_aktiv";
 
 VAL_ 872 ACS_Sta_ADR 2 "ADR_passiv" 0 "ADR_nicht_aktiv" 1 "ADR_aktiv" 3 "irrev_Fehler" ;
 VAL_ 872 ACS_ADR_Schub 1 "Verz_begr_auf_Schub" 0 "Verz_nicht_begr_auf_Schub" ;
@@ -1577,3 +1640,30 @@ VAL_ 1386 ACA_ID_StaGRA 0 "keine_Anzeige" ;
 VAL_ 1386 ACA_Codierung 0 "ACC" 1 "GRA" ;
 VAL_ 1386 ACA_Tachokranz 0 "nicht_beleuchtet" 1 "beleuchtet" ;
 VAL_ 1386 ACA_Aend_Zeitluecke 1 "Anzeige_angef" 0 "keine_Anzeige" ;
+
+VAL_ 1472 EP1_Fehler_Sta 0 "volle_Funktion" 1 "linke_Seite_fehlerhaft" 2 "rechte_Seite_fehlerhaft" 3 "beide_Seiten_fehlerhaft";
+VAL_ 1472 EP1_Sta_EPB 0 "Bremse_geoeffnet" 1 "Bremse_geschlossen";
+VAL_ 1472 EP1_Sta_Schalter 0 "volle_Funktion" 1 "Schalter_ausser_Funktion";
+VAL_ 1472 EP1_Spannkraft 31 "Fehler";
+VAL_ 1472 EP1_Schalterinfo 0 "keine_Fahreranforderung" 1 "Fahreranforderung_oeffnen" 2 "Fahreranforderung_schliessen" 3 "Schalterfehler";
+VAL_ 1472 EP1_Sta_NWS 0 "volle_Funktion" 1 "keine_Funktion";
+VAL_ 1472 EP1_Fehlereintr 0 "kein_Fehlerspeichereintrag" 1 "Fehlerspeichereintrag";
+VAL_ 1472 EP1_Freigabe_Ver 0 "Verzoegerungsanf_nicht_freigegeb" 1 "Verzoegerungsanf_freigegeben";
+VAL_ 1472 EP1_AutoHold_zul 0 "Pers_nicht_zulaessig" 1 "Pers_zulaessig";
+VAL_ 1472 EP1_AutoHold_aktiv 0 "nein" 1 "ja";
+VAL_ 1472 EP1_SleepInd 0 "CAN_wird_benoetigt" 1 "Sleep_bereit";
+VAL_ 1472 EP1_Status_Kl_15 0 "Kl_15_aus" 1 "Kl_15_ein";
+VAL_ 1472 EP1_Lampe_AutoP 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 1472 EP1_Bremslicht 0 "Aus" 1 "Ein";
+VAL_ 1472 EP1_Warnton1 0 "Aus" 1 "Ein";
+VAL_ 1472 EP1_Warnton2 0 "Aus" 1 "Ein";
+VAL_ 1472 EP1_AnfShLock 0 "Aus" 1 "Ein";
+VAL_ 1472 EPB_Autoholdlampe 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 1472 EP1_QualNeigWi 0 "gueltiger_Wert" 1 "Ersatz_Init_oder_Fehlerwert";
+VAL_ 1472 EP1_KuppModBer 0 "Kuppsensor_aus_Modbereich" 1 "Kupplsensor_im_Modbereich" 2 "Sensorsignal_ungenau" 3 "Sensor_defekt";
+VAL_ 1472 EP1_HydrHalten 0 "Fzg_nicht_hydr_geh" 1 "Fzg_hydr_geh";
+VAL_ 1472 EP1_Fkt_Lampe 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 1472 EP1_Warnton 0 "Warnton_aus" 1 "Warnton_an";
+VAL_ 1472 EP1_Fehler_BKL 0 "BKL_aus" 1 "BKL_an";
+VAL_ 1472 EP1_Fehler_gelb 0 "Lampe_aus" 1 "Lampe_ein";
+VAL_ 1472 EP1__Text 0 "kein_Text" 1 "Text_1" 2 "Text_2" 3 "Text_3" 4 "Text_4" 5 "Text_5" 6 "reserviert" 7 "reserviert" 8 "Text_8";

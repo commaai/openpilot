@@ -100,6 +100,8 @@ void comms_can_write(uint8_t *data, uint32_t len) {
       pos += can_write_buffer.ptr;
     }
   }
+
+  refresh_can_tx_slots_available();
 }
 
 void comms_can_reset(void) {
@@ -110,8 +112,11 @@ void comms_can_reset(void) {
 }
 
 // TODO: make this more general!
-void usb_cb_ep3_out_complete(void) {
-  if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_BULK_TRANSFER)) {
-    usb_outep3_resume_if_paused();
+void refresh_can_tx_slots_available(void) {
+  if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_USB_BULK_TRANSFER)) {
+    can_tx_comms_resume_usb();
+  }
+  if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_SPI_BULK_TRANSFER)) {
+    can_tx_comms_resume_spi();
   }
 }

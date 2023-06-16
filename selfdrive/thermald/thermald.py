@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import json
 import queue
 import threading
 import time
@@ -13,6 +14,7 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from common.dict_helpers import strip_deprecated_keys
+from common.time import MIN_DATE
 from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
@@ -41,12 +43,12 @@ HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'ne
 THERMAL_BANDS = OrderedDict({
   ThermalStatus.green: ThermalBand(None, 80.0),
   ThermalStatus.yellow: ThermalBand(75.0, 96.0),
-  ThermalStatus.red: ThermalBand(80.0, 107.),
+  ThermalStatus.red: ThermalBand(88.0, 107.),
   ThermalStatus.danger: ThermalBand(94.0, None),
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 79.5
+OFFROAD_DANGER_TEMP = 77
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
@@ -165,7 +167,8 @@ def thermald_thread(end_event, hw_queue):
   off_ts = None
   started_ts = None
   started_seen = False
-  thermal_status = ThermalStatus.green
+  startup_blocked_ts = None
+  thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -177,8 +180,8 @@ def thermald_thread(end_event, hw_queue):
     modem_temps=[],
   )
 
-  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
-  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
+  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
+  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
   should_start_prev = False
   in_car = False
   engaged_prev = False
@@ -240,7 +243,7 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
-    # this one is only used for offroad
+    # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
       max(msg.deviceState.cpuTempC),
@@ -251,14 +254,15 @@ def thermald_thread(end_event, hw_queue):
     # this drives the thermal status while onroad
     temp_sources.append(max(msg.deviceState.pmicTempC))
     all_comp_temp = all_temp_filter.update(max(temp_sources))
+    msg.deviceState.maxTempC = all_comp_temp
 
     if fan_controller is not None:
       msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
     if is_offroad_for_5_min and offroad_comp_temp > OFFROAD_DANGER_TEMP:
-      # If device is offroad we want to cool down before going onroad
-      # since going onroad increases load and can make temps go over 107
+      # if device is offroad and already hot without the extra onroad load,
+      # we want to cool down first before increasing load
       thermal_status = ThermalStatus.danger
     else:
       current_band = THERMAL_BANDS[thermal_status]
@@ -272,13 +276,12 @@ def thermald_thread(end_event, hw_queue):
 
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
-    startup_conditions["time_valid"] = (now.year > 2020) or (now.year == 2020 and now.month >= 10)
+    startup_conditions["time_valid"] = now > MIN_DATE
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
-    startup_conditions["offroad_min_time"] = (not started_seen) or ((off_ts is not None) and (sec_since_boot() - off_ts) > 5.)
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
@@ -286,8 +289,11 @@ def thermald_thread(end_event, hw_queue):
                                                params.get_bool("Passive")
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
-    # if any CPU gets above 107 or the battery gets above 63, kill all processes
-    # controls will warn with CPU above 95 or battery above 60
+
+    # must be at an engageable thermal band to go onroad
+    startup_conditions["device_temp_engageable"] = thermal_status < ThermalStatus.red
+
+    # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
@@ -334,10 +340,16 @@ def thermald_thread(end_event, hw_queue):
       if started_ts is None:
         started_ts = sec_since_boot()
         started_seen = True
+        if startup_blocked_ts is not None:
+          cloudlog.event("Startup after block", block_duration=(sec_since_boot() - startup_blocked_ts),
+                         startup_conditions=startup_conditions, onroad_conditions=onroad_conditions,
+                         startup_conditions_prev=startup_conditions_prev, error=True)
+      startup_blocked_ts = None
     else:
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions, error=True)
         startup_conditions_prev = startup_conditions.copy()
+        startup_blocked_ts = sec_since_boot()
 
       started_ts = None
       if off_ts is None:
@@ -371,8 +383,6 @@ def thermald_thread(end_event, hw_queue):
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
-    should_start_prev = should_start
-
     # Log to statsd
     statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
     statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
@@ -395,15 +405,26 @@ def thermald_thread(end_event, hw_queue):
     statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
-    if (count % int(600. / DT_TRML)) == 0:
-      cloudlog.event("STATUS_PACKET",
-                     count=count,
-                     pandaStates=[strip_deprecated_keys(p.to_dict()) for p in pandaStates],
-                     peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
-                     location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
-                     deviceState=strip_deprecated_keys(msg.to_dict()))
+    rising_edge_started = should_start and not should_start_prev
+    if rising_edge_started or (count % int(600. / DT_TRML)) == 0:
+      dat = {
+        'count': count,
+        'pandaStates': [strip_deprecated_keys(p.to_dict()) for p in pandaStates],
+        'peripheralState': strip_deprecated_keys(peripheralState.to_dict()),
+        'location': (strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
+        'deviceState': strip_deprecated_keys(msg.to_dict())
+      }
+      cloudlog.event("STATUS_PACKET", **dat)
+
+      # save last one before going onroad
+      if rising_edge_started:
+        try:
+          params.put("LastOffroadStatusPacket", json.dumps(dat))
+        except Exception:
+          cloudlog.exception("failed to save offroad status")
 
     count += 1
+    should_start_prev = should_start
 
 
 def main():

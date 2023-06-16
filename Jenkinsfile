@@ -154,6 +154,7 @@ pipeline {
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+              ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
               ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
@@ -174,12 +175,12 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
+              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
               ["test power draw", "python system/hardware/tici/tests/test_power_draw.py"],
               ["test loggerd", "python system/loggerd/tests/test_loggerd.py"],
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python system/loggerd/tests/test_encoder.py"],
               ["test pigeond", "python system/sensord/tests/test_pigeond.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
-              ["test pandad", "python selfdrive/boardd/tests/test_pandad.py"],
             ])
           }
         }
@@ -219,7 +220,7 @@ pipeline {
           steps {
             phone_steps("tici-common", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["model replay", "cd selfdrive/test/process_replay && NO_NAV=1 ./model_replay.py"],
+              ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
           }
         }

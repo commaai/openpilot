@@ -35,6 +35,7 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
+common/time.py
 
 common/kalman/.gitignore
 common/kalman/*
@@ -181,7 +182,6 @@ selfdrive/controls/lib/desire_helper.py
 selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/events.py
 selfdrive/controls/lib/latcontrol_angle.py
-selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_torque.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol.py
@@ -290,9 +290,11 @@ selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
+selfdrive/test/fuzzy_generation.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
+selfdrive/test/test_time_to_onroad.py
 
 selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
@@ -468,6 +470,7 @@ body/crypto/**
 cereal/.gitignore
 cereal/__init__.py
 cereal/car.capnp
+cereal/custom.capnp
 cereal/legacy.capnp
 cereal/log.capnp
 cereal/services.py
@@ -477,6 +480,10 @@ cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
+cereal/messaging/event.cc
+cereal/messaging/event.h
+cereal/messaging/impl_fake.cc
+cereal/messaging/impl_fake.h
 cereal/messaging/impl_msgq.cc
 cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc
@@ -559,8 +566,8 @@ opendbc/hyundai_kia_mando_front_radar_generated.dbc
 
 opendbc/mazda_2017.dbc
 
-opendbc/nissan_x_trail_2017.dbc
-opendbc/nissan_leaf_2018.dbc
+opendbc/nissan_x_trail_2017_generated.dbc
+opendbc/nissan_leaf_2018_generated.dbc
 
 opendbc/subaru_global_2017_generated.dbc
 opendbc/subaru_outback_2015_generated.dbc

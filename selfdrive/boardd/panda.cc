@@ -11,7 +11,7 @@
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   handle = std::make_unique<PandaUsbHandle>(serial);
-  LOGW("conntected to %s over USB", serial.c_str());
+  LOGW("connected to %s over USB", serial.c_str());
 
   hw_type = get_hw_type();
 
@@ -36,13 +36,15 @@ std::string Panda::hw_serial() {
   return handle->hw_serial;
 }
 
-std::vector<std::string> Panda::list() {
+std::vector<std::string> Panda::list(bool usb_only) {
   std::vector<std::string> serials = PandaUsbHandle::list();
 
 #if 0
-  for (auto s : PandaSpiHandle::list()) {
-    if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
-      serials.push_back(s);
+  if (!usb_only) {
+    for (auto s : PandaSpiHandle::list()) {
+      if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
+        serials.push_back(s);
+      }
     }
   }
 #endif

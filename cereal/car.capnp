@@ -23,7 +23,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
   enum EventName @0xbaa8c5d505f727de {
     canError @0;
     steerUnavailable @1;
-    brakeUnavailable @2;
     wrongGear @4;
     doorOpen @5;
     seatbeltNotLatched @6;
@@ -140,6 +139,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     startupOneplusDEPRECATED @82;
     startupFuzzyFingerprintDEPRECATED @97;
     noTargetDEPRECATED @25;
+    brakeUnavailableDEPRECATED @2;
   }
 }
 
@@ -166,6 +166,8 @@ struct CarState {
   # gas pedal, 0.0-1.0
   gas @3 :Float32;        # this is user pedal only
   gasPressed @4 :Bool;    # this is user pedal only
+  
+  engineRpm @46 :Float32;
 
   # brake pedal, 0.0-1.0
   brake @5 :Float32;      # this is user pedal only
@@ -187,6 +189,7 @@ struct CarState {
   stockFcw @31 :Bool;
   espDisabled @32 :Bool;
   accFaulted @42 :Bool;
+  carFaultedNonCritical @47 :Bool;  # some ECU is faulted, but car remains controllable
 
   # cruise state
   cruiseState @10 :CruiseState;

@@ -5,14 +5,12 @@ from cython.operator cimport dereference as deref, preincrement as preinc
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.unordered_set cimport unordered_set
-from libc.stdint cimport uint32_t, uint64_t, uint16_t
-from libcpp cimport bool
+from libc.stdint cimport uint32_t
 from libcpp.map cimport map
 
 from .common cimport CANParser as cpp_CANParser
 from .common cimport SignalParseOptions, MessageParseOptions, dbc_lookup, SignalValue, DBC
 
-import os
 import numbers
 from collections import defaultdict
 
@@ -46,7 +44,7 @@ cdef class CANParser:
 
     for i in range(self.dbc[0].msgs.size()):
       msg = self.dbc[0].msgs[i]
-      name = msg.name.decode('utf8')
+      name = msg.name.decode("utf8")
 
       msg_name_to_address[name] = msg.address
       self.address_to_msg_name[msg.address] = name
@@ -61,9 +59,9 @@ cdef class CANParser:
     for i in range(len(signals)):
       s = signals[i]
       if not isinstance(s[1], numbers.Number):
-        if name not in msg_name_to_address:
+        if s[1] not in msg_name_to_address:
           print(msg_name_to_address)
-          raise RuntimeError(f"could not find message {repr(name)} in DBC {self.dbc_name}")
+          raise RuntimeError(f"could not find message {repr(s[1])} in DBC {self.dbc_name}")
         s = (s[0], msg_name_to_address[s[1]])
         signals[i] = s
 
@@ -72,7 +70,7 @@ cdef class CANParser:
       if not isinstance(c[0], numbers.Number):
         if c[0] not in msg_name_to_address:
           print(msg_name_to_address)
-          raise RuntimeError(f"could not find message {repr(name)} in DBC {self.dbc_name}")
+          raise RuntimeError(f"could not find message {repr(c[0])} in DBC {self.dbc_name}")
         c = (msg_name_to_address[c[0]], c[1])
         checks[i] = c
 
@@ -81,7 +79,7 @@ cdef class CANParser:
       signal_addrs = {s[1] for s in signals}
       unchecked = signal_addrs - checked_addrs
       if len(unchecked):
-        err_msg = ', '.join(f"{self.address_to_msg_name[addr].decode()} ({hex(addr)})" for addr in unchecked)
+        err_msg = ", ".join(f"{self.address_to_msg_name[addr].decode()} ({hex(addr)})" for addr in unchecked)
         raise RuntimeError(f"Unchecked addrs: {err_msg}")
 
     cdef vector[SignalParseOptions] signal_options_v
@@ -106,7 +104,7 @@ cdef class CANParser:
 
   def update_strings(self, strings, sendcan=False):
     for v in self.vl_all.values():
-      for l in v.values():
+      for l in v.values():  # no-cython-lint
         l.clear()
 
     cdef vector[SignalValue] new_vals
@@ -154,7 +152,7 @@ cdef class CANDefine():
 
     for i in range(self.dbc[0].msgs.size()):
       msg = self.dbc[0].msgs[i]
-      name = msg.name.decode('utf8')
+      name = msg.name.decode("utf8")
       address = msg.address
       address_to_msg_name[address] = name
 
@@ -163,8 +161,8 @@ cdef class CANDefine():
     for i in range(self.dbc[0].vals.size()):
       val = self.dbc[0].vals[i]
 
-      sgname = val.name.decode('utf8')
-      def_val = val.def_val.decode('utf8')
+      sgname = val.name.decode("utf8")
+      def_val = val.def_val.decode("utf8")
       address = val.address
       msgname = address_to_msg_name[address]
 

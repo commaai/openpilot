@@ -6,6 +6,34 @@ from libcpp.vector cimport vector
 from libcpp cimport bool
 
 
+cdef extern from "cereal/messaging/impl_fake.h":
+  cdef cppclass Event:
+    @staticmethod
+    int wait_for_one(vector[Event], int) except +
+
+    Event()
+    Event(int)
+    void set()
+    int clear()
+    void wait(int) except +
+    bool peek()
+    int fd()
+
+  cdef cppclass SocketEventHandle:
+    @staticmethod
+    void toggle_fake_events(bool)
+    @staticmethod
+    void set_fake_prefix(string)
+    @staticmethod
+    string fake_prefix()
+
+    SocketEventHandle(string, string, bool)
+    bool is_enabled()
+    void set_enabled(bool)
+    Event recv_called()
+    Event recv_ready()
+
+
 cdef extern from "cereal/messaging/messaging.h":
   cdef cppclass Context:
     @staticmethod
