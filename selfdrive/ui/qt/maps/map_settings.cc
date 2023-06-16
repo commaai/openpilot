@@ -164,29 +164,18 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   frame->addLayout(heading);
 
 
-  current_container = new QWidget(this);
-  auto *current_layout = new QVBoxLayout(current_container);
-  current_layout->setContentsMargins(0, 0, 0, 0);
-  current_layout->setSpacing(0);
+  auto *subheading = new QLabel(tr("manage at connect.comma.ai"), this);
+  subheading->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
+  frame->addWidget(subheading);
 
-//  auto *current_title = new QLabel(tr("current destination"), this);
-//  current_title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
-//  current_layout->addWidget(current_title);
-
-  current_layout->addSpacing(16);
 
   current_widget = new DestinationWidget(this);
-  current_layout->addWidget(current_widget);
-
   QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
     params.remove("NavDestination");
     updateCurrentRoute();
   });
-
-  current_layout->addSpacing(32);
-
-  current_layout->addWidget(horizontal_line());
-  frame->addWidget(current_container);
+  frame->addWidget(current_widget);
+  frame->addWidget(horizontal_line());
 
 
   QWidget *destinations_container = new QWidget(this);

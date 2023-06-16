@@ -64,7 +64,6 @@ private:
   QString cur_destinations;
   bool needs_refresh;
   QVBoxLayout *destinations_layout;
-  QWidget *current_container;
   NavDestination *current_destination;
   DestinationWidget *current_widget;
 
