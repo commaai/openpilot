@@ -125,6 +125,8 @@ class LateralPlanner:
     lateralPlan = plan_send.lateralPlan
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
     lateralPlan.dPathPoints = self.y_pts.tolist()
+    lateralPlan.xs = self.lat_mpc.x_sol[0:CONTROL_N, 0].tolist()
+    lateralPlan.ys = self.lat_mpc.x_sol[0:CONTROL_N, 1].tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
 
     lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
@@ -132,6 +134,7 @@ class LateralPlanner:
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
+    lateralPlan.solverCost = self.lat_mpc.cost
 
     lateralPlan.desire = self.DH.desire
     lateralPlan.useLaneLines = False
