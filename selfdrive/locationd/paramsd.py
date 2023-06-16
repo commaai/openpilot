@@ -16,10 +16,11 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = math.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
+ROLL_LOWERED_MAX = math.radians(8)
 ROLL_STD_MAX = math.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
-AVG_OFFSET_MAX = 10.0
-AVG_OFFSET_LOWERED_MAX = 8.0
+OFFSET_MAX = 10.0
+OFFSET_LOWERED_MAX = 8.0
 
 
 class ParamsLearner:
@@ -104,7 +105,7 @@ class ParamsLearner:
       self.kf.filter.reset_rewind()
 
 
-def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: float = AVG_OFFSET_MAX, lowered_threshold: float = AVG_OFFSET_LOWERED_MAX):
+def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: float = OFFSET_MAX, lowered_threshold: float = OFFSET_LOWERED_MAX):
   if current_valid:
     current_valid = abs(val) < threshold
   else:
@@ -195,7 +196,7 @@ def main(sm=None, pm=None):
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
       avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average)
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset)
-      roll_valid = check_valid_with_hysteresis(roll_valid, roll)
+      roll_valid = check_valid_with_hysteresis(roll_valid, roll, threshold=ROLL_MAX, lowered_threshold=ROLL_LOWERED_MAX)
 
       msg = messaging.new_message('liveParameters')
 
