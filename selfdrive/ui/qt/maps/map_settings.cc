@@ -240,6 +240,12 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
       });
     }
   }
+
+  setStyleSheet(R"(
+    MapSettings {
+      background-color: #333333;
+    }
+  )");
 }
 
 void MapSettings::showEvent(QShowEvent *event) {

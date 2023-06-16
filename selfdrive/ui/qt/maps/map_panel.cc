@@ -55,9 +55,6 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   content_stack->addWidget(settings);
 
   setStyleSheet(R"(
-    MapSettings {
-      background-color: #333333;
-    }
     QLabel {
       color: white;
     }
