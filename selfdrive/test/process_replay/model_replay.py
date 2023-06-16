@@ -24,7 +24,7 @@ MAX_FRAMES = 100 if PC else 600
 NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
-SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0") != "0")
+SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 
 def get_log_fn(ref_commit, test_route):
@@ -40,7 +40,7 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types):
     if msg.which() in frs_types:
       cam_state_counts[msg.which()] += 1
 
-    if all(cam_state_counts[state] == max_frames for state in frs_types.keys()):
+    if all(cam_state_counts[state] == max_frames for state in frs_types):
       break
 
   return all_msgs
@@ -108,8 +108,8 @@ def model_replay(lr, frs):
   log_msgs = []
 
   # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES + 1, frs)
-  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, frs)
+  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES + 1, {"roadEncodeIdx", "wideRoadEncodeIdx"})
+  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverEncodeIdx"})
   if not SEND_EXTRA_INPUTS:
     modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
     dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
@@ -222,6 +222,7 @@ if __name__ == "__main__":
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 
+      print(failed, results[TEST_ROUTE]["models"])
       print(diff2)
       print('-------------\n'*5)
       print(diff1)
