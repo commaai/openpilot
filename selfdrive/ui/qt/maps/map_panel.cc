@@ -21,17 +21,17 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     auto ui = new QWidget(this);
     {
       auto ui_layout = new QVBoxLayout(ui);
-      ui_layout->setContentsMargins(0, 0, 0, 0);
+      ui_layout->setContentsMargins(0, 0, 32, 32);
 
       QSize icon_size(128, 128);
       directions_icon = loadPixmap("../assets/navigation/icon_directions.svg", icon_size);
       QPushButton *settings_btn = new QPushButton(directions_icon, "", this);
-      settings_btn->setFixedSize(icon_size);
-      settings_btn->setIconSize({ 96, 96 });
+      settings_btn->setIconSize(icon_size);
       settings_btn->setStyleSheet(R"(
         QPushButton {
           background-color: #292929;
           border-radius: 10px;
+          padding: 16px;
         }
         QPushButton::pressed {
           background-color: #3B3B3B;
