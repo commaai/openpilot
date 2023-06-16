@@ -19,8 +19,8 @@ class TestGMFingerprint(unittest.TestCase):
     # The camera can sometimes be communicating on startup
     if car_model in CAMERA_ACC_CAR - {CAR.TRAILBLAZER}:
       for finger in fingerprints:
-        self.assertIn(CAMERA_DIAGNOSTIC_ADDRESS + GM_RX_OFFSET, finger)
-        self.assertEqual(finger[CAMERA_DIAGNOSTIC_ADDRESS + GM_RX_OFFSET], 8)
+        for required_addr in (CAMERA_DIAGNOSTIC_ADDRESS, CAMERA_DIAGNOSTIC_ADDRESS + GM_RX_OFFSET):
+          self.assertEqual(finger.get(required_addr), 8, required_addr)
 
 
 if __name__ == "__main__":
