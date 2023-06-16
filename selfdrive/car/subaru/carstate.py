@@ -308,6 +308,8 @@ class CarState(CarStateBase):
       if CP.carFingerprint not in GLOBAL_GEN2:
         signals += CarState.get_global_es_distance_signals()[0]
         checks += CarState.get_global_es_distance_signals()[1]
+        signals.append(("Signal2", "ES_Brake"))
+        checks.append(("ES_Brake", 2))
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         signals += [
@@ -328,6 +330,8 @@ class CarState(CarStateBase):
       signals, checks = CarState.get_common_global_signals()
       signals += CarState.get_global_es_distance_signals()[0]
       checks += CarState.get_global_es_distance_signals()[1]
+      signals.append(("Signal2", "ES_Brake"))
+      checks.append(("ES_Brake", 2))
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     return None
