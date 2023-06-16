@@ -88,6 +88,12 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
     ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+      bus=0,
+      logging=True,
+    ),
   ],
 )
 
