@@ -1,4 +1,5 @@
 from cereal import car
+import math
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
@@ -9,6 +10,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
                                         UNSUPPORTED_DSU_CAR
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -31,7 +33,8 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
-    self.pcm_accel_compensation = FirstOrderFilter(0.0, 0.1, DT_CTRL)
+    self.pitch_compensation = 0.0  # not sure if needed
+    self.pcm_accel_compensation = FirstOrderFilter(0.0, 0.1, DT_CTRL)  # avoids minor oscillations
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -60,15 +63,19 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
 
-    # think this is only flat ground??
-    # if so, we need to compensate for grade to not degrade hills.
-    # then that mostly should cover expected differences in desired vs. outputted accel/force
+    # account for pitch, anything we can do feedforward reduces work for controller
+    # and improves response and smoothness
+    if len(CC.orientationNED) and CS.out.vEgo > 1:
+      self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
+
+    # force applied when not actuating anything converted to acceleration
+    # (engine propulsion at low speed, engine braking at high speed)
     coasting_accel = CS.pcm_neutral_force / self.CP.mass
     # the PCM should be outputting this
-    desired_pcm_accel = actuators.accel - coasting_accel
+    desired_pcm_accel = actuators.accel - coasting_accel + self.pitch_compensation
     # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
     self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
-    pcm_accel_cmd = clip(actuators.accel - clip(self.pcm_accel_compensation.x, -1., 1.),
+    pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,
                          CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     if not CC.longActive:
