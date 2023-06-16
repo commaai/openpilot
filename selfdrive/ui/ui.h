@@ -133,10 +133,13 @@ public:
   void updateStatus();
   inline bool worldObjectsVisible() const {
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
-  };
+  }
   inline bool engaged() const {
     return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
-  };
+  }
+
+  void setPrimeType(int type);
+  inline int primeType() const { return prime_type; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -146,7 +149,6 @@ public:
   UIScene scene = {};
 
   bool awake;
-  int prime_type;
   QString language;
 
   QTransform car_space_transform;
@@ -162,7 +164,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  int prime_type_prev = -1;
+  int prime_type = -1;
 };
 
 UIState *uiState();

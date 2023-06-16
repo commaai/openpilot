@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
+import os
 import time
 import unittest
 
 import cereal.messaging as messaging
-from panda import Panda
+from cereal import log
 from common.gpio import gpio_set, gpio_init
+from panda import Panda, PandaDFU
 from selfdrive.test.helpers import phone_only
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
 from system.hardware.tici.pins import GPIO
+
+HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestPandad(unittest.TestCase):
@@ -20,17 +24,19 @@ class TestPandad(unittest.TestCase):
     sm = messaging.SubMaster(['peripheralState'])
     for _ in range(timeout):
       sm.update(1000)
-      if sm.updated['peripheralState']:
+      if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
         break
 
-    if not sm.updated['peripheralState']:
+    if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
+
+  def _go_to_dfu(self):
+    HARDWARE.recover_internal_panda()
+    assert Panda.wait_for_dfu(None, 10)
 
   @phone_only
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
-    time.sleep(1)
-
     managed_processes['pandad'].start()
     self._wait_for_boardd(60)
 
@@ -54,8 +60,36 @@ class TestPandad(unittest.TestCase):
 
     assert any(Panda(s).is_internal() for s in Panda.list())
 
-  #def test_out_of_date_fw(self):
-  #  pass
+  @phone_only
+  def test_best_case_startup_time(self):
+    # run once so we're setup
+    managed_processes['pandad'].start()
+    self._wait_for_boardd()
+    managed_processes['pandad'].stop()
+
+    # should be fast this time
+    managed_processes['pandad'].start()
+    self._wait_for_boardd(8)
+
+  @phone_only
+  def test_release_to_devel_bootstub(self):
+    if HARDWARE.get_device_type() != 'tici':
+      self.skipTest("TODO: fix reset timeout")
+
+    # flash release bootstub
+    self._go_to_dfu()
+    pd = PandaDFU(None)
+    fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
+    with open(fn, "rb") as f:
+      pd.program_bootstub(f.read())
+    pd.reset()
+
+    assert Panda.wait_for_panda(None, 20)
+    with Panda() as p:
+      assert p.bootstub
+
+    managed_processes['pandad'].start()
+    self._wait_for_boardd(60)
 
 
 if __name__ == "__main__":

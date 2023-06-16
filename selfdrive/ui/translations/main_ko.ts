@@ -518,14 +518,6 @@ location set</source>
         <source>comma prime</source>
         <translation>comma prime</translation>
     </message>
-    <message>
-        <source>CONNECT.COMMA.AI</source>
-        <translation>CONNECT.COMMA.AI</translation>
-    </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>COMMA POINTS</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -863,6 +855,26 @@ This may take up to a minute.</source>
         <source>Uninstall</source>
         <translation>제거</translation>
     </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation>업데이트 확인 실패</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation>최신 상태, 마지막으로 확인 %1</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation>다운로드</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation>업데이트 가능</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation>업데이트 안함</translation>
+    </message>
 </context>
 <context>
     <name>SshControl</name>
@@ -1020,10 +1032,6 @@ This may take up to a minute.</source>
         <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
     </message>
     <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>오픈파일럿 롱컨트롤의 실험 버전은 실험적 모드와 함께 릴리즈 되지 않은 브랜치에서 테스트할 수 있습니다.</translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
     </message>
@@ -1038,6 +1046,30 @@ This may take up to a minute.</source>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
+    </message>
+    <message>
+        <source>Aggressive</source>
+        <translation>공격적</translation>
+    </message>
+    <message>
+        <source>Standard</source>
+        <translation>표준</translation>
+    </message>
+    <message>
+        <source>Relaxed</source>
+        <translation>편안한</translation>
+    </message>
+    <message>
+        <source>Driving Personality</source>
+        <translation>주행 모드</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
+        <translation>표준 모드를 권장합니다. 공격적 모드에서는 openpilot은 앞차를 더 가까이 따라가며 가속과 감속을 더 공격적으로 사용합니다. 편안한 모드에서 openpilot은 선두 차량에서 더 멀리 떨어져 있습니다.</translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1073,6 +1105,29 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>업데이트 실패</translation>
+    </message>
+</context>
+<context>
+    <name>WiFiPromptWidget</name>
+    <message>
+        <source>Setup Wi-Fi</source>
+        <translation>Wi-Fi 설정</translation>
+    </message>
+    <message>
+        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 참여하세요.</translation>
+    </message>
+    <message>
+        <source>Open Settings</source>
+        <translation>설정 열기</translation>
+    </message>
+    <message>
+        <source>Uploading training data</source>
+        <translation>트레이닝 데이터 업로드</translation>
+    </message>
+    <message>
+        <source>Your data is used to train driving models and help improve openpilot</source>
+        <translation>귀하의 데이터는 운전 모델을 교육하고 openpilot을 개선하는 데 사용됩니다.</translation>
     </message>
 </context>
 <context>

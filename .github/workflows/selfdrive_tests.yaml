@@ -59,6 +59,8 @@ jobs:
         cp .pre-commit-config.yaml $STRIPPED_DIR
         cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
+        cp pyproject.toml $STRIPPED_DIR
+        cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
         ${{ env.RUN }} "pre-commit run --all"
 
@@ -207,6 +209,7 @@ jobs:
                         $UNIT_TEST system/loggerd && \
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST system/tests && \
                         $UNIT_TEST system/ubloxd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \

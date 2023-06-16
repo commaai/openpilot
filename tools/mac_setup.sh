@@ -52,6 +52,7 @@ brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
+brew "gcc@12"
 cask "gcc-arm-embedded"
 EOS
 

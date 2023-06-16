@@ -18,6 +18,12 @@
 
 // SignalModel
 
+static QString signalTypeToString(cabana::Signal::Type type) {
+  if (type == cabana::Signal::Type::Multiplexor) return "Multiplexor Signal";
+  else if (type == cabana::Signal::Type::Multiplexed) return "Multiplexed Signal";
+  else return "Normal Signal";
+}
+
 SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &SignalModel::refresh);
   QObject::connect(dbc(), &DBCManager::msgUpdated, this, &SignalModel::handleMsgChanged);
@@ -30,7 +36,8 @@ SignalModel::SignalModel(QObject *parent) : root(new Item), QAbstractItemModel(p
 void SignalModel::insertItem(SignalModel::Item *parent_item, int pos, const cabana::Signal *sig) {
   Item *item = new Item{.sig = sig, .parent = parent_item, .title = sig->name, .type = Item::Sig};
   parent_item->children.insert(pos, item);
-  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Extra Info", "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
+  QString titles[]{"Name", "Size", "Little Endian", "Signed", "Offset", "Factor", "Type", "Multiplex Value", "Extra Info",
+                   "Unit", "Comment", "Minimum Value", "Maximum Value", "Value Descriptions"};
   for (int i = 0; i < std::size(titles); ++i) {
     item->children.push_back(new Item{.sig = sig, .parent = item, .title = titles[i], .type = (Item::Type)(i + Item::Name)});
   }
@@ -87,6 +94,9 @@ Qt::ItemFlags SignalModel::flags(const QModelIndex &index) const {
   if (index.column() == 1  && item->type != Item::Sig && item->type != Item::ExtraInfo) {
     flags |= (item->type == Item::Endian || item->type == Item::Signed) ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
   }
+  if (item->type == Item::MultiplexValue && item->sig->type != cabana::Signal::Type::Multiplexed) {
+    flags &= ~Qt::ItemIsEnabled;
+  }
   return flags;
 }
 
@@ -124,16 +134,18 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
           case Item::Sig: return item->sig_val;
           case Item::Name: return item->sig->name;
           case Item::Size: return item->sig->size;
-          case Item::Offset: return QString::number(item->sig->offset, 'f', 6);
-          case Item::Factor: return QString::number(item->sig->factor, 'f', 6);
+          case Item::SignalType: return signalTypeToString(item->sig->type);
+          case Item::MultiplexValue: return item->sig->multiplex_value;
+          case Item::Offset: return doubleToString(item->sig->offset);
+          case Item::Factor: return doubleToString(item->sig->factor);
           case Item::Unit: return item->sig->unit;
           case Item::Comment: return item->sig->comment;
-          case Item::Min: return item->sig->min;
-          case Item::Max: return item->sig->max;
+          case Item::Min: return doubleToString(item->sig->min);
+          case Item::Max: return doubleToString(item->sig->max);
           case Item::Desc: {
             QStringList val_desc;
             for (auto &[val, desc] : item->sig->val_desc) {
-              val_desc << QString("%1 \"%2\"").arg(val, desc);
+              val_desc << QString("%1 \"%2\"").arg(val).arg(desc);
             }
             return val_desc.join(" ");
           }
@@ -146,7 +158,7 @@ QVariant SignalModel::data(const QModelIndex &index, int role) const {
     } else if (role == Qt::DecorationRole && index.column() == 0 && item->type == Item::ExtraInfo) {
       return utils::icon(item->parent->extra_expanded ? "chevron-compact-down" : "chevron-compact-up");
     } else if (role == Qt::ToolTipRole && item->type == Item::Sig) {
-      return (index.column() == 0) ? item->sig->name : item->sig_val;
+      return (index.column() == 0) ? signalToolTip(item->sig) : QString();
     }
   }
   return {};
@@ -160,18 +172,19 @@ bool SignalModel::setData(const QModelIndex &index, const QVariant &value, int r
   switch (item->type) {
     case Item::Name: s.name = value.toString(); break;
     case Item::Size: s.size = value.toInt(); break;
+    case Item::SignalType: s.type = (cabana::Signal::Type)value.toInt(); break;
+    case Item::MultiplexValue: s.multiplex_value = value.toInt(); break;
     case Item::Endian: s.is_little_endian = value.toBool(); break;
     case Item::Signed: s.is_signed = value.toBool(); break;
     case Item::Offset: s.offset = value.toDouble(); break;
     case Item::Factor: s.factor = value.toDouble(); break;
     case Item::Unit: s.unit = value.toString(); break;
     case Item::Comment: s.comment = value.toString(); break;
-    case Item::Min: s.min = value.toString(); break;
-    case Item::Max: s.max = value.toString(); break;
+    case Item::Min: s.min = value.toDouble(); break;
+    case Item::Max: s.max = value.toDouble(); break;
     case Item::Desc: s.val_desc = value.value<ValueDescription>(); break;
     default: return false;
   }
-  s.updatePrecision();
   bool ret = saveSignal(item->sig, s);
   emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
   return ret;
@@ -226,11 +239,11 @@ void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
   auto msg = dbc()->msg(msg_id);
   if (!msg) {
     QString name = dbc()->newMsgName(msg_id);
-    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size()));
+    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size(), ""));
     msg = dbc()->msg(msg_id);
   }
 
-  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = "0", .max = QString::number(std::pow(2, size) - 1)};
+  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = 0, .max = std::pow(2, size) - 1};
   updateSigSizeParamsFromRange(sig, start_bit, size);
   UndoStack::push(new AddSigCommand(msg_id, sig));
 }
@@ -249,17 +262,14 @@ void SignalModel::removeSignal(const cabana::Signal *sig) {
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
-  if (id == msg_id) {
+  if (id.address == msg_id.address) {
     refresh();
   }
 }
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    int i = 0;
-    for (; i < root->children.size(); ++i) {
-      if (sig->start_bit < root->children[i]->sig->start_bit) break;
-    }
+    int i = dbc()->msg(msg_id)->indexOf(sig);
     beginInsertRows({}, i, i);
     insertItem(root.get(), i, sig);
     endInsertRows();
@@ -269,6 +279,14 @@ void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
 void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
+
+    // move row when the order changes.
+    int to = dbc()->msg(msg_id)->indexOf(sig);
+    if (to != row) {
+      beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
+      root->children.move(row, to);
+      endMoveRows();
+    }
   }
 }
 
@@ -284,8 +302,8 @@ void SignalModel::handleSignalRemoved(const cabana::Signal *sig) {
 
 SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   name_validator = new NameValidator(this);
-  double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);  // Match locale of QString::toDouble() instead of system
+  double_validator = new DoubleValidator(this);
+
   label_font.setPointSize(8);
   minmax_font.setPixelSize(10);
 }
@@ -293,29 +311,20 @@ SignalItemDelegate::SignalItemDelegate(QObject *parent) : QStyledItemDelegate(pa
 QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const {
   int width = option.widget->size().width() / 2;
   if (index.column() == 0) {
-    auto text = index.data(Qt::DisplayRole).toString();
+    int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
+    auto text = index.data(Qt::DisplayRole).toString();;
+    auto item = (SignalModel::Item *)index.internalPointer();
+    if (item->type == SignalModel::Item::Sig && item->sig->type != cabana::Signal::Type::Normal) {
+      text += item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
+      spacing += (option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1) * 2;
+    }
     auto it = width_cache.find(text);
     if (it == width_cache.end()) {
-      int spacing = option.widget->style()->pixelMetric(QStyle::PM_TreeViewIndentation) + color_label_width + 8;
-      it = width_cache.insert(text, option.fontMetrics.width(text) + spacing);
+      it = width_cache.insert(text, option.fontMetrics.width(text));
     }
-    width = std::min<int>(option.widget->size().width() / 3.0, it.value());
+    width = std::min<int>(option.widget->size().width() / 3.0, it.value() + spacing);
   }
   return {width, QApplication::fontMetrics().height()};
-}
-
-bool SignalItemDelegate::helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (event && event->type() == QEvent::ToolTip && index.isValid()) {
-    auto item = (SignalModel::Item *)index.internalPointer();
-    if (item->type == SignalModel::Item::Sig && index.column() == 1) {
-      QRect rc = option.rect.adjusted(0, 0, -option.rect.width() * 0.4, 0);
-      if (rc.contains(event->pos())) {
-        event->setAccepted(false);
-        return false;
-      }
-    }
-  }
-  return QStyledItemDelegate::helpEvent(event, view, option, index);
 }
 
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -335,7 +344,7 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   if (item && item->type == SignalModel::Item::Sig) {
     painter->setRenderHint(QPainter::Antialiasing);
     if (option.state & QStyle::State_Selected) {
-      painter->fillRect(option.rect, option.palette.highlight());
+      painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
     }
 
     int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
@@ -348,15 +357,28 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       path.addRoundedRect(icon_rect, 3, 3);
       painter->setPen(item->highlight ? Qt::white : Qt::black);
       painter->setFont(label_font);
-      painter->fillPath(path, getColor(item->sig).darker(item->highlight ? 125 : 0));
+      painter->fillPath(path, item->sig->color.darker(item->highlight ? 125 : 0));
       painter->drawText(icon_rect, Qt::AlignCenter, QString::number(item->row() + 1));
 
       r.setLeft(icon_rect.right() + h_margin * 2);
+      // multiplexer indicator
+      if (item->sig->type != cabana::Signal::Type::Normal) {
+        QString indicator = item->sig->type == cabana::Signal::Type::Multiplexor ? QString(" M ") : QString(" m%1 ").arg(item->sig->multiplex_value);
+        QRect indicator_rect{r.x(), r.y(), option.fontMetrics.width(indicator), r.height()};
+        painter->setBrush(Qt::gray);
+        painter->setPen(Qt::NoPen);
+        painter->drawRoundedRect(indicator_rect, 3, 3);
+        painter->setPen(Qt::white);
+        painter->drawText(indicator_rect, Qt::AlignCenter, indicator);
+        r.setLeft(indicator_rect.right() + h_margin * 2);
+      }
+
+      // name
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, r.width());
       painter->setPen(option.palette.color(option.state & QStyle::State_Selected ? QPalette::HighlightedText : QPalette::Text));
       painter->setFont(option.font);
       painter->drawText(r, option.displayAlignment, text);
-    } else if (index.column() == 1) {
+    } else if (index.column() == 1 && !item->sparkline.pixmap.isNull()) {
       // sparkline
       QSize sparkline_size = item->sparkline.pixmap.size() / item->sparkline.pixmap.devicePixelRatio();
       painter->drawPixmap(QRect(r.topLeft(), sparkline_size), item->sparkline.pixmap);
@@ -374,8 +396,15 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
         painter->drawText(rect, Qt::AlignLeft | Qt::AlignBottom, min);
         QFontMetrics fm(minmax_font);
         value_adjust = std::max(fm.width(min), fm.width(max)) + 5;
+      } else if (item->sig->type == cabana::Signal::Type::Multiplexed) {
+        // display freq of multiplexed signal
+        painter->setFont(label_font);
+        QString freq = QString("%1 hz").arg(item->sparkline.freq(), 0, 'g', 2);
+        painter->drawText(rect.adjusted(5, 0, 0, 0), Qt::AlignLeft | Qt::AlignVCenter, freq);
+        QFontMetrics fm(label_font);
+        value_adjust = fm.width(freq) + 10;
       }
-      // value
+      // signal value
       painter->setFont(option.font);
       rect.adjust(value_adjust, 0, -button_size.width(), 0);
       auto text = option.fontMetrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, rect.width());
@@ -389,10 +418,11 @@ void SignalItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
 QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto item = (SignalModel::Item *)index.internalPointer();
   if (item->type == SignalModel::Item::Name || item->type == SignalModel::Item::Offset ||
-      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
+      item->type == SignalModel::Item::Factor || item->type == SignalModel::Item::MultiplexValue ||
+      item->type == SignalModel::Item::Min || item->type == SignalModel::Item::Max) {
     QLineEdit *e = new QLineEdit(parent);
     e->setFrame(false);
-    e->setValidator(index.row() == 0 ? name_validator : double_validator);
+    e->setValidator(item->type == SignalModel::Item::Name ? name_validator : double_validator);
 
     if (item->type == SignalModel::Item::Name) {
       QCompleter *completer = new QCompleter(dbc()->signalNames());
@@ -407,6 +437,15 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     spin->setFrame(false);
     spin->setRange(1, 64);
     return spin;
+  } else if (item->type == SignalModel::Item::SignalType) {
+    QComboBox *c = new QComboBox(parent);
+    c->addItem(signalTypeToString(cabana::Signal::Type::Normal), (int)cabana::Signal::Type::Normal);
+    if (!dbc()->msg(((SignalModel *)index.model())->msg_id)->multiplexor) {
+      c->addItem(signalTypeToString(cabana::Signal::Type::Multiplexor), (int)cabana::Signal::Type::Multiplexor);
+    } else if (item->sig->type != cabana::Signal::Type::Multiplexor) {
+      c->addItem(signalTypeToString(cabana::Signal::Type::Multiplexed), (int)cabana::Signal::Type::Multiplexed);
+    }
+    return c;
   } else if (item->type == SignalModel::Item::Desc) {
     ValueDescriptionDlg dlg(item->sig->val_desc, parent);
     dlg.setWindowTitle(item->sig->name);
@@ -416,6 +455,15 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
     return nullptr;
   }
   return QStyledItemDelegate::createEditor(parent, option, index);
+}
+
+void SignalItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const {
+  auto item = (SignalModel::Item *)index.internalPointer();
+  if (item->type == SignalModel::Item::SignalType) {
+    model->setData(index, ((QComboBox*)editor)->currentData().toInt());
+    return;
+  }
+  QStyledItemDelegate::setModelData(editor, model, index);
 }
 
 // SignalView
@@ -456,10 +504,14 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   tree->setHeaderHidden(true);
   tree->setMouseTracking(true);
   tree->setExpandsOnDoubleClick(false);
+  tree->setEditTriggers(QAbstractItemView::AllEditTriggers);
   tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   tree->header()->setStretchLastSection(true);
   tree->setMinimumHeight(300);
-  tree->setStyleSheet("QSpinBox{background-color:white;border:none;} QLineEdit{background-color:white;}");
+
+  // Use a distinctive background for the whole row containing a QSpinBox or QLineEdit
+  QString nodeBgColor = palette().color(QPalette::AlternateBase).name(QColor::HexArgb);
+  tree->setStyleSheet(QString("QSpinBox{background-color:%1;border:none;} QLineEdit{background-color:%1;}").arg(nodeBgColor));
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -477,10 +529,10 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
   QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
-  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
+  QObject::connect(can, &AbstractStream::msgsReceived, this, &SignalView::updateState);
 
   setWhatsThis(tr(R"(
     <b>Signal view</b><br />
@@ -590,48 +642,42 @@ void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
 }
 
 void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
-  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id))) return;
-
   const auto &last_msg = can->lastMessage(model->msg_id);
+  if (model->rowCount() == 0 || (msgs && !msgs->contains(model->msg_id)) || last_msg.dat.size() == 0) return;
+
   for (auto item : model->root->children) {
-    double value = get_raw_value((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), *item->sig);
-    item->sig_val = QString::number(value, 'f', item->sig->precision);
-    // Show unit
-    if (!item->sig->unit.isEmpty()) {
-      item->sig_val += " " + item->sig->unit;
-    }
-    // Show enum string
-    for (auto &[val, desc] : item->sig->val_desc) {
-      if (std::abs(value - val.toInt()) < 1e-6) {
-        item->sig_val = desc;
-      }
+    double value = 0;
+    if (item->sig->getValue((uint8_t *)last_msg.dat.constData(), last_msg.dat.size(), &value)) {
+      item->sig_val = item->sig->formatValue(value);
     }
     max_value_width = std::max(max_value_width, fontMetrics().width(item->sig_val));
   }
 
-  // update visible sparkline
-  QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
-  int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
-  int value_width = std::min<int>(max_value_width, size.width() * 0.35);
-  size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
-
   QModelIndex top = tree->indexAt(QPoint(0, 0));
-  QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
-  int start_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
-  int end_row = model->rowCount() - 1;
-  if (bottom.isValid()) {
-    end_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
-  }
-  QFutureSynchronizer<void> synchronizer;
-  for (int i = start_row; i <= end_row; ++i) {
-    auto item = model->getItem(model->index(i, 1));
-    auto &s = item->sparkline;
-    if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
-      synchronizer.addFuture(QtConcurrent::run(
-          &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+  if (top.isValid()) {
+    // update visible sparkline
+    int first_visible_row = top.parent().isValid() ? top.parent().row() + 1 : top.row();
+    int last_visible_row = model->rowCount() - 1;
+    QModelIndex bottom = tree->indexAt(tree->viewport()->rect().bottomLeft());
+    if (bottom.isValid()) {
+      last_visible_row = bottom.parent().isValid() ? bottom.parent().row() : bottom.row();
+    }
+
+    QSize size(tree->columnWidth(1) - delegate->button_size.width(), delegate->button_size.height());
+    int min_max_width = std::min(size.width() - 10, QFontMetrics(delegate->minmax_font).width("-000.00") + 5);
+    int value_width = std::min<int>(max_value_width, size.width() * 0.35);
+    size -= {value_width + min_max_width, style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2};
+
+    QFutureSynchronizer<void> synchronizer;
+    for (int i = first_visible_row; i <= last_visible_row; ++i) {
+      auto item = model->getItem(model->index(i, 1));
+      auto &s = item->sparkline;
+      if (s.last_ts != last_msg.ts || s.size() != size || s.time_range != settings.sparkline_range) {
+        synchronizer.addFuture(QtConcurrent::run(
+            &s, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+      }
     }
   }
-  synchronizer.waitForFinished();
 
   for (int i = 0; i < model->rowCount(); ++i) {
     emit model->dataChanged(model->index(i, 1), model->index(i, 1), {Qt::DisplayRole});
@@ -641,11 +687,6 @@ void SignalView::updateState(const QHash<MessageId, CanData> *msgs) {
 void SignalView::resizeEvent(QResizeEvent* event) {
   updateState();
   QFrame::resizeEvent(event);
-}
-
-void SignalView::leaveEvent(QEvent *event) {
-  emit highlight(nullptr);
-  QWidget::leaveEvent(event);
 }
 
 // ValueDescriptionDlg
@@ -670,7 +711,7 @@ ValueDescriptionDlg::ValueDescriptionDlg(const ValueDescription &descriptions, Q
 
   int row = 0;
   for (auto &[val, desc] : descriptions) {
-    table->setItem(row, 0, new QTableWidgetItem(val));
+    table->setItem(row, 0, new QTableWidgetItem(QString::number(val)));
     table->setItem(row, 1, new QTableWidgetItem(desc));
     ++row;
   }
@@ -700,7 +741,7 @@ void ValueDescriptionDlg::save() {
     QString val = table->item(i, 0)->text().trimmed();
     QString desc = table->item(i, 1)->text().trimmed();
     if (!val.isEmpty() && !desc.isEmpty()) {
-      val_desc.push_back({val, desc});
+      val_desc.push_back({val.toDouble(), desc});
     }
   }
   QDialog::accept();
@@ -710,7 +751,7 @@ QWidget *ValueDescriptionDlg::Delegate::createEditor(QWidget *parent, const QSty
   QLineEdit *edit = new QLineEdit(parent);
   edit->setFrame(false);
   if (index.column() == 0) {
-    edit->setValidator(new QIntValidator(edit));
+    edit->setValidator(new DoubleValidator(parent));
   }
   return edit;
 }

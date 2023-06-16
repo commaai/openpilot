@@ -21,6 +21,7 @@ class TestAmplifier(unittest.TestCase):
     # clear dmesg
     subprocess.check_call("sudo dmesg -C", shell=True)
 
+    Panda.wait_for_panda(None, 30)
     self.panda = Panda()
     self.panda.reset()
 
@@ -38,7 +39,7 @@ class TestAmplifier(unittest.TestCase):
 
   def test_init(self):
     amp = Amplifier(debug=True)
-    r = amp.initialize_configuration(Tici().model)
+    r = amp.initialize_configuration(Tici().get_device_type())
     assert r
     self._check_for_i2c_errors(False)
 
@@ -59,7 +60,7 @@ class TestAmplifier(unittest.TestCase):
       time.sleep(random.randint(0, 5))
 
       amp = Amplifier(debug=True)
-      r = amp.initialize_configuration(Tici().model)
+      r = amp.initialize_configuration(Tici().get_device_type())
       assert r
 
     # make sure we're a good test
