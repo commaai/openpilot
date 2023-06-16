@@ -45,7 +45,12 @@ def main() -> NoReturn:
   finally:
     sock.close()
     ctx.term()
-    log_handler.close()
+
+    # can hit this if interrupted during a rollover
+    try:
+      log_handler.close()
+    except ValueError:
+      pass
 
 if __name__ == "__main__":
   main()
