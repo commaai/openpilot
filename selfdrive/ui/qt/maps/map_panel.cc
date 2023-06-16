@@ -54,11 +54,11 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   }
   content_stack->addWidget(map_container);
 
-  // auto settings = new MapSettings(parent);
-  // QObject::connect(settings, &MapSettings::closeSettings, [=]() {
-  //   content_stack->setCurrentIndex(0);
-  // });
-  // content_stack->addWidget(settings);
+  auto settings = new MapSettings(parent);
+  QObject::connect(settings, &MapSettings::closeSettings, [=]() {
+    content_stack->setCurrentIndex(0);
+  });
+  content_stack->addWidget(settings);
 
   setStyleSheet(R"(
     MapSettings {
