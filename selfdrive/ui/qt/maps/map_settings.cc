@@ -75,12 +75,15 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
 
 void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
+  qDebug() << "DestinationWidget::set";
   setProperty("current", current);
   setDisabled(false);
+  qDebug() << "  a";
 
   auto title_text = destination->name;
   auto subtitle_text = destination->details;
   auto icon_pixmap = icons().recent;
+  qDebug() << "  b";
 
   if (destination->isFavorite()) {
     if (destination->label == NAV_FAVORITE_LABEL_HOME) {
@@ -93,20 +96,25 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
       icon_pixmap = icons().favorite;
     }
   }
+  qDebug() << "  c";
 
   title->setText(shorten(title_text, 26));
   subtitle->setText(shorten(subtitle_text, 26));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
+  qDebug() << "  d";
 
   // TODO: use pixmap
   action->setText(current ? "×" : "→");
   action->setVisible(true);
+  qDebug() << "  e";
 
   repaint();
+  qDebug() << "  done";
 }
 
 void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
+  qDebug() << "DestinationWidget::unset";
   setProperty("current", current);
   setDisabled(true);
 
@@ -126,6 +134,8 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
 
 MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) {
   setContentsMargins(0, 0, 0, 0);
+
+  qDebug() << "MapSettings";
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 40);
@@ -193,6 +203,8 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
   frame->addWidget(destinations_scroller);
 
+  qDebug() << "testing!";
+
 
   // TODO: remove this
   cur_destinations = R"([
@@ -251,15 +263,19 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
+  qDebug() << "MapSettings::showEvent";
   updateCurrentRoute();
 }
 
 void MapSettings::updateCurrentRoute() {
+  qDebug() << "MapSettings::updateCurrentRoute";
   auto dest = QString::fromStdString(params.get("NavDestination"));
   QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
   if (dest.size() && !doc.isNull()) {
+    qDebug() << " got JSON";
     auto new_destination = new NavDestination(doc.object());
     if (new_destination->equals(current_destination)) return;
+    qDebug() << " update current destination";
     current_destination = new_destination;
   }
   if (current_destination) {
@@ -281,6 +297,8 @@ void MapSettings::parseResponse(const QString &response, bool success) {
 void MapSettings::refresh() {
   if (!needs_refresh) return;
   needs_refresh = false;
+
+  qDebug() << "MapSettings::refresh";
 
   bool has_home = false, has_work = false;
   auto destinations = std::vector<NavDestination*>();
