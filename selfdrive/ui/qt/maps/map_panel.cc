@@ -50,7 +50,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   }
   content_stack->addWidget(map_container);
 
-  auto settings = new MapSettings(parent);
+  auto settings = new MapSettings(true, parent);
   QObject::connect(settings, &MapSettings::closeSettings, [=]() {
     content_stack->setCurrentIndex(0);
   });

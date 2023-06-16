@@ -125,7 +125,7 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   setStyleSheet(styleSheet());
 }
 
-MapSettings::MapSettings(QWidget *parent)
+MapSettings::MapSettings(bool closeable, QWidget *parent)
     : QFrame(parent), current_destination(nullptr) {
   setContentsMargins(0, 0, 0, 0);
 
@@ -141,8 +141,9 @@ MapSettings::MapSettings(QWidget *parent)
     title->setStyleSheet("color: #FFFFFF; font-size: 56px; font-weight: 500;");
     heading->addWidget(title, 1);
 
-    auto *close_button = new QPushButton("×", this);
-    close_button->setStyleSheet(R"(
+    if (closeable) {
+      auto *close_button = new QPushButton("×", this);
+      close_button->setStyleSheet(R"(
       QPushButton {
         color: #FFFFFF;
         font-size: 60px;
@@ -153,10 +154,10 @@ MapSettings::MapSettings(QWidget *parent)
         color: #A0A0A0;
       }
     )");
-    QObject::connect(close_button, &QPushButton::clicked, [=]() {
-      emit closeSettings();
-    });
-    heading->addWidget(close_button);
+      QObject::connect(close_button, &QPushButton::clicked,
+                       [=]() { emit closeSettings(); });
+      heading->addWidget(close_button);
+    }
   }
   frame->addLayout(heading);
   frame->addSpacing(16);

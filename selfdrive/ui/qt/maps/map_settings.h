@@ -52,7 +52,7 @@ class MapSettings : public QFrame {
 public:
   class DestinationWidget;
 
-  explicit MapSettings(QWidget *parent = nullptr);
+  explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
 
   void navigateTo(const QJsonObject &place);
   void parseResponse(const QString &response, bool success);
