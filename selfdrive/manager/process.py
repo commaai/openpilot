@@ -91,7 +91,7 @@ class ManagerProcess(ABC):
     pass
 
   def restart(self) -> None:
-    self.stop()
+    self.stop(sig=signal.SIGKILL)
     self.start()
 
   def check_watchdog(self, started: bool) -> None:
@@ -108,21 +108,21 @@ class ManagerProcess(ABC):
     dt = sec_since_boot() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
-      # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG:
         cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool=True, block: bool=True) -> Optional[int]:
+  def stop(self, retry: bool = True, block: bool = True, sig: Optional[signal.Signals] = None) -> Optional[int]:
     if self.proc is None:
       return None
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
         cloudlog.info(f"killing {self.name}")
-        sig = signal.SIGKILL if self.sigkill else signal.SIGINT
+        if sig is None:
+          sig = signal.SIGKILL if self.sigkill else signal.SIGINT
         self.signal(sig)
         self.shutting_down = True
 
@@ -285,7 +285,7 @@ class DaemonProcess(ManagerProcess):
 
     params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True, block=True) -> None:
+  def stop(self, retry=True, block=True, sig=None) -> None:
     pass
 
 

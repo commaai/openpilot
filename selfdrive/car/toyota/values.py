@@ -6,7 +6,7 @@ from typing import Dict, List, Union
 from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, Harness
+from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -102,7 +102,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  harness: Enum = Harness.toyota
+  car_parts: CarParts = CarParts.common([CarHarness.toyota])
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -549,6 +549,7 @@ FW_VERSIONS = {
       b'\x018966306Q5000\x00\x00\x00\x00',
       b'\x018966306Q9000\x00\x00\x00\x00',
       b'\x018966306R3000\x00\x00\x00\x00',
+      b'\x018966306R8000\x00\x00\x00\x00',
       b'\x018966306T3100\x00\x00\x00\x00',
       b'\x018966306T3200\x00\x00\x00\x00',
       b'\x018966306T4000\x00\x00\x00\x00',
@@ -561,6 +562,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0602100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F0602200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
+      b'\x028646F0602300\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F3305200\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
       b'\x028646F3305300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
@@ -1074,6 +1076,7 @@ FW_VERSIONS = {
       b'\x01896630E62200\x00\x00\x00\x00',
       b'\x01896630E64100\x00\x00\x00\x00',
       b'\x01896630E64200\x00\x00\x00\x00',
+      b'\x01896630E64400\x00\x00\x00\x00',
       b'\x01896630EB1000\x00\x00\x00\x00',
       b'\x01896630EB1100\x00\x00\x00\x00',
       b'\x01896630EB1200\x00\x00\x00\x00',
@@ -1128,7 +1131,6 @@ FW_VERSIONS = {
       b'\x01896630EF8000\x00\x00\x00\x00',
       b'\x02896630E66000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630E66100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
-      b'\x01896630EA1000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3000\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896630EB3100\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
     ],
@@ -2015,6 +2017,7 @@ FW_VERSIONS = {
       b'\x01896630ED0000\x00\x00\x00\x00',
       b'\x01896630ED0100\x00\x00\x00\x00',
       b'\x01896630ED6000\x00\x00\x00\x00',
+      b'\x018966348T8000\x00\x00\x00\x00',
       b'\x018966348W5100\x00\x00\x00\x00',
       b'\x018966348W9000\x00\x00\x00\x00',
       b'\x01896634D12000\x00\x00\x00\x00',
@@ -2022,6 +2025,7 @@ FW_VERSIONS = {
       b'\x01896634D43000\x00\x00\x00\x00',
       b'\x01896634D44000\x00\x00\x00\x00',
       b'\x018966348X0000\x00\x00\x00\x00',
+      b'\x01896630ED5000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260E031\x00\x00\x00\x00\x00\x00',
@@ -2047,11 +2051,12 @@ FW_VERSIONS = {
   },
   CAR.LEXUS_RXH_TSS2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02348X5000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348X8000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02348Y3000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D14000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0234D16000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'\x02348X4000\x00\x00\x00\x00\x00\x00\x00\x00A4802000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152648831\x00\x00\x00\x00\x00\x00',

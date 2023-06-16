@@ -5,16 +5,16 @@
 `replay` replays all the messages logged while running openpilot.
 
 ```bash
-# Log in via browser to have access to non-public routes
+# Log in via browser to have access to routes from your comma account
 python tools/lib/auth.py
 
 # Start a replay
 tools/replay/replay <route-name>
 
 # Example:
-# tools/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+tools/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
 # or use --demo to replay the default demo route:
-# tools/replay/replay --demo
+tools/replay/replay --demo
 
 # watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
@@ -64,12 +64,24 @@ cd selfdrive/ui && ./watch3
 
 Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices. Check out the [jungle repo](https://github.com/commaai/panda_jungle) for more info.
 
-`can_replay.py` is a convenient script for when any CAN data will do.
+In order to run your device as if it was in a car:
+* connect a panda jungle to your PC
+* connect a comma device or panda to the jungle via OBD-C
+* run `can_replay.py`
 
-In order to replay specific route:
-```bash
-MOCK=1 selfdrive/boardd/tests/boardd_old.py
+``` bash
+batman:replay$ ./can_replay.py -h
+usage: can_replay.py [-h] [route_or_segment_name]
 
-# In another terminal:
-tools/replay/replay <route-name>
+Replay CAN messages from a route to all connected pandas and jungles
+in a loop.
+
+positional arguments:
+  route_or_segment_name
+                        The route or segment name to replay. If not
+                        specified, a default public route will be
+                        used. (default: None)
+
+optional arguments:
+  -h, --help            show this help message and exit
 ```

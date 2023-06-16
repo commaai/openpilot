@@ -114,6 +114,16 @@ CameraWidget::~CameraWidget() {
   doneCurrent();
 }
 
+// Qt uses device-independent pixels, depending on platform this may be
+// different to what OpenGL uses
+int CameraWidget::glWidth() {
+    return width() * devicePixelRatio();
+}
+
+int CameraWidget::glHeight() {
+  return height() * devicePixelRatio();
+}
+
 void CameraWidget::initializeGL() {
   initializeOpenGLFunctions();
 
@@ -188,7 +198,7 @@ void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
 }
 
 void CameraWidget::updateFrameMat() {
-  int w = width(), h = height();
+  int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
@@ -266,7 +276,7 @@ void CameraWidget::paintGL() {
 
   updateFrameMat();
 
-  glViewport(0, 0, width(), height());
+  glViewport(0, 0, glWidth(), glHeight());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

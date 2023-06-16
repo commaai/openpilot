@@ -55,6 +55,10 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
+          if not len(msg.dat):
+            cloudlog.warning("ECU addr scan: skipping empty remote frame")
+            continue
+
           subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
           if (msg.address, subaddr, msg.src) in responses and is_tester_present_response(msg, subaddr):
             if debug:

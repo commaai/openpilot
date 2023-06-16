@@ -54,6 +54,9 @@ protected:
   void vipcThread();
   void clearFrames();
 
+  int glWidth();
+  int glHeight();
+
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];
