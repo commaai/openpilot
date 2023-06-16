@@ -194,9 +194,9 @@ def main(sm=None, pm=None):
       roll_std = float(P[States.ROAD_ROLL])
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
-      avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, threshold=OFFSET_MAX, lowered_threshold=OFFSET_LOWERED_MAX)
-      total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, threshold=OFFSET_MAX, lowered_threshold=OFFSET_LOWERED_MAX)
-      roll_valid = check_valid_with_hysteresis(roll_valid, roll, threshold=ROLL_MAX, lowered_threshold=ROLL_LOWERED_MAX)
+      avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
+      total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
+      roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
 
       msg = messaging.new_message('liveParameters')
 
