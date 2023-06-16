@@ -26,7 +26,6 @@ from selfdrive.test.process_replay.migration import migrate_all
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
-MAX_FRAMES_PER_SEGMENT = 1200
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
@@ -96,9 +95,9 @@ class ProcessConfig:
   pubs: List[str]
   subs: List[str]
   ignore: List[str]
-  config_callback: Optional[Callable]
-  init_callback: Optional[Callable]
-  should_recv_callback: Optional[Callable]
+  config_callback: Optional[Callable] = None
+  init_callback: Optional[Callable] = None
+  should_recv_callback: Optional[Callable] = None
   tolerance: Optional[float] = None
   environ: Dict[str, str] = field(default_factory=dict)
   subtest_name: str = ""
@@ -188,7 +187,8 @@ def torqued_rcv_callback(msg, cfg, frame):
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
-  return msg.which() == "driverCameraState" and msg.driverCameraState.frameId < MAX_FRAMES_PER_SEGMENT
+  assert msg.driverCameraState.frameId < 1200
+  return msg.which() == "driverCameraState"
 
 
 class ModeldCameraSyncRcvCallback:
@@ -196,7 +196,6 @@ class ModeldCameraSyncRcvCallback:
     self.road_present = False
     self.wide_road_present = False
     self.is_dual_camera = True
-    self.min_frame_id = None
 
   def __call__(self, msg, cfg, frame):
     if msg.which() == "initData":
@@ -205,12 +204,7 @@ class ModeldCameraSyncRcvCallback:
     elif msg.which() not in ["roadCameraState", "wideRoadCameraState"]:
       return False
     
-    camera_state = getattr(msg, msg.which())
-    if self.min_frame_id is None:
-      self.min_frame_id = camera_state.frameId
-    if (camera_state.frameId - self.min_frame_id) >= MAX_FRAMES_PER_SEGMENT:
-      return False
-    
+    assert getattr(msg, msg.which()).frameId < 1200
     if not self.is_dual_camera:
       return True
 
@@ -276,7 +270,6 @@ CONFIGS = [
     ],
     subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
-    config_callback=None,
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -288,7 +281,6 @@ CONFIGS = [
     pubs=["can", "carState", "modelV2"],
     subs=["radarState", "liveTracks"],
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
-    config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("can"),
     main_pub="can",
@@ -298,7 +290,6 @@ CONFIGS = [
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
     subs=["lateralPlan", "longitudinalPlan", "uiPlan"],
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime", "lateralPlan.solverExecutionTime"],
-    config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
@@ -308,8 +299,6 @@ CONFIGS = [
     pubs=["carState", "cameraOdometry", "carParams"],
     subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
-    config_callback=None,
-    init_callback=None,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -317,8 +306,6 @@ CONFIGS = [
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "controlsState"],
     subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
-    config_callback=None,
-    init_callback=None,
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -331,8 +318,6 @@ CONFIGS = [
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
     config_callback=locationd_config_pubsub_callback,
-    init_callback=None,
-    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -340,7 +325,6 @@ CONFIGS = [
     pubs=["liveLocationKalman", "carState"],
     subs=["liveParameters"],
     ignore=["logMonoTime", "valid"],
-    config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
@@ -350,9 +334,6 @@ CONFIGS = [
     pubs=["ubloxRaw"],
     subs=["ubloxGnss", "gpsLocationExternal"],
     ignore=["logMonoTime"],
-    config_callback=None,
-    init_callback=None,
-    should_recv_callback=None,
   ),
   ProcessConfig(
     proc_name="laikad",
@@ -360,8 +341,6 @@ CONFIGS = [
     subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
-    init_callback=None,
-    should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
     main_pub="ubloxGnss", # config_callback will switch this to qcom if needed 
@@ -371,7 +350,6 @@ CONFIGS = [
     pubs=["liveLocationKalman", "carState", "carControl"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
-    config_callback=None,
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -381,8 +359,6 @@ CONFIGS = [
     pubs=["lateralPlan", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
     subs=["modelV2", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
-    config_callback=None,
-    init_callback=None,
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
@@ -394,8 +370,6 @@ CONFIGS = [
     pubs=["liveCalibration", "driverCameraState"],
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.dspExecutionTime"],
-    config_callback=None,
-    init_callback=None,
     should_recv_callback=dmonitoringmodeld_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
