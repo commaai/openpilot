@@ -53,8 +53,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
   for (int i=0; i<3*3; i++) {
     transform.v[i] = warp_matrix(i / 3, i % 3);
   }
-  static const mat3 yuv_transform = get_model_yuv_transform();
-  return matmul3(yuv_transform, transform);
+  return transform;
 }
 
 
