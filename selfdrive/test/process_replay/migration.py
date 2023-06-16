@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from cereal import messaging
 from selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
