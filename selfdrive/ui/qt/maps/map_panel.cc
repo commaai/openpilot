@@ -5,6 +5,7 @@
 
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_settings.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
 
 MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : QFrame(parent) {
@@ -22,14 +23,15 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
       auto ui_layout = new QVBoxLayout(ui);
       ui_layout->setContentsMargins(0, 0, 0, 0);
 
-      QPushButton *settings_btn = new QPushButton("Settings", this);
+      QSize icon_size(128, 128);
+      directions_icon = loadPixmap("../assets/navigation/icon_directions.svg", icon_size);
+      QPushButton *settings_btn = new QPushButton(directions_icon, "", this);
+      settings_btn->setFixedSize(icon_size);
+      settings_btn->setIconSize({ 96, 96 });
       settings_btn->setStyleSheet(R"(
         QPushButton {
           background-color: #292929;
           border-radius: 10px;
-          color: white;
-          font-size: 36px;
-          padding: 20px;
         }
         QPushButton::pressed {
           background-color: #3B3B3B;

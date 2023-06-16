@@ -12,4 +12,5 @@ public:
   bool isShowingMap() const;
 private:
   QStackedLayout *content_stack;
+  QPixmap directions_icon;
 };
