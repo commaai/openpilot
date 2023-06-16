@@ -1,6 +1,8 @@
 Version 0.9.3 (2023-06-20)
 ========================
 * New driving model
+  * Improved height estimation and added height tracking in liveCalibration
+  * Model inputs refactor
 * New driving personality setting
   * Three settings: aggressive, standard, and relaxed
   * Standard is recommended and the default
