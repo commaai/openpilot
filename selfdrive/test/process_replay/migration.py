@@ -4,20 +4,21 @@ from cereal import messaging
 from selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
 
-def migrate_all(lr, old_logtime=False):
+def migrate_all(lr, old_logtime=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
-  msgs = migrate_cameraStates(msgs, old_logtime)
+  if camera_states:
+    msgs = migrate_cameraStates(msgs)
 
   return msgs
 
 
-def migrate_cameraStates(lr, old_logtime=False):
+def migrate_cameraStates(lr):
   all_msgs = []
   prev_frame_ids = {}
   min_frame_logtimes = {}
   sorted_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-  
+
   for cam_state in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
     min_frame_logtimes[cam_state] = next((msg.logMonoTime for msg in sorted_msgs if msg.which() == cam_state), None)
 
