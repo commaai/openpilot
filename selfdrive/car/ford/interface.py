@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
+from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
+from selfdrive.car.ford.fordcan import CanBus
 from selfdrive.car.ford.values import CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -13,7 +15,6 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.ford)]
 
     # These cars are dashcam only for lack of test coverage.
     # Once a user confirms each car works and a test route is
@@ -24,6 +25,17 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
+
+    CAN = CanBus(fingerprint=fingerprint)
+    cfgs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+    if CAN.main >= 4:
+      cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
+    ret.safetyConfigs = cfgs
+
+    ret.experimentalLongitudinalAvailable = True
+    if experimental_long:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
+      ret.openpilotLongitudinalControl = True
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67
@@ -55,7 +67,7 @@ class CarInterface(CarInterfaceBase):
 
     # Auto Transmission: 0x732 ECU or Gear_Shift_by_Wire_FD1
     found_ecus = [fw.ecu for fw in car_fw]
-    if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[0] or docs:
+    if Ecu.shiftByWire in found_ecus or 0x5A in fingerprint[CAN.main] or docs:
       ret.transmissionType = TransmissionType.automatic
     else:
       ret.transmissionType = TransmissionType.manual
@@ -63,7 +75,7 @@ class CarInterface(CarInterfaceBase):
 
     # BSM: Side_Detect_L_Stat, Side_Detect_R_Stat
     # TODO: detect bsm in car_fw?
-    ret.enableBsm = 0x3A6 in fingerprint[0] and 0x3A7 in fingerprint[0]
+    ret.enableBsm = 0x3A6 in fingerprint[CAN.main] and 0x3A7 in fingerprint[CAN.main]
 
     # LCA can steer down to zero
     ret.minSteerSpeed = 0.

@@ -37,7 +37,7 @@ uint8_t spi_endpoint;
 uint16_t spi_data_len_mosi;
 uint16_t spi_data_len_miso;
 uint16_t spi_checksum_error_count = 0;
-
+bool spi_can_tx_ready = false;
 
 #define SPI_HEADER_SIZE 7U
 
@@ -45,6 +45,10 @@ uint16_t spi_checksum_error_count = 0;
 void llspi_init(void);
 void llspi_mosi_dma(uint8_t *addr, int len);
 void llspi_miso_dma(uint8_t *addr, int len);
+
+void can_tx_comms_resume_spi(void) {
+  spi_can_tx_ready = true;
+}
 
 void spi_init(void) {
   // platform init
@@ -114,8 +118,14 @@ void spi_rx_done(void) {
         response_ack = true;
       } else if (spi_endpoint == 3U) {
         if (spi_data_len_mosi > 0U) {
-          comms_can_write(&spi_buf_rx[SPI_HEADER_SIZE], spi_data_len_mosi);
-          response_ack = true;
+          if (spi_can_tx_ready) {
+            spi_can_tx_ready = false;
+            comms_can_write(&spi_buf_rx[SPI_HEADER_SIZE], spi_data_len_mosi);
+            response_ack = true;
+          } else {
+            response_ack = false;
+            print("SPI: CAN NACK\n");
+          }
         } else {
           print("SPI: did expect data for can_write\n");
         }
@@ -126,7 +136,7 @@ void spi_rx_done(void) {
       // Checksum was incorrect
       response_ack = false;
       print("- incorrect data checksum ");
-      puth2(spi_data_len_mosi);
+      puth4(spi_data_len_mosi);
       print("\n");
       hexdump(spi_buf_rx, SPI_HEADER_SIZE);
       hexdump(&(spi_buf_rx[SPI_HEADER_SIZE]), MIN(spi_data_len_mosi, 64));

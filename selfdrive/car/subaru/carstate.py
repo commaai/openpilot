@@ -110,6 +110,7 @@ class CarState(CarStateBase):
   def get_global_es_distance_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
+      ("CHECKSUM", "ES_Distance"),
       ("Signal1", "ES_Distance"),
       ("Cruise_Fault", "ES_Distance"),
       ("Cruise_Throttle", "ES_Distance"),
@@ -251,6 +252,7 @@ class CarState(CarStateBase):
     else:
       signals = [
         ("COUNTER", "ES_DashStatus"),
+        ("CHECKSUM", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
@@ -278,6 +280,7 @@ class CarState(CarStateBase):
         ("Cruise_State", "ES_DashStatus"),
 
         ("COUNTER", "ES_LKAS_State"),
+        ("CHECKSUM", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
@@ -305,6 +308,8 @@ class CarState(CarStateBase):
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         signals += [
+          ("COUNTER", "INFOTAINMENT_STATUS"),
+          ("CHECKSUM", "INFOTAINMENT_STATUS"),
           ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
           ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
           ("Signal1", "INFOTAINMENT_STATUS"),

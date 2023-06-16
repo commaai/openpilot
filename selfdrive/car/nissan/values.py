@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness, HarnessKit, HarnessPart
+from selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -30,13 +30,10 @@ class CAR:
   ALTIMA = "NISSAN ALTIMA 2020"
 
 
-NISSAN_HARNESS_PARTS = [HarnessPart.harness_box, HarnessPart.rj45_cable, HarnessPart.long_obdc_cable, HarnessPart.usbc_coupler]
-
-
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  harness_kit: HarnessKit = HarnessKit(Harness.nissan_a, parts=NISSAN_HARNESS_PARTS)
+  car_parts: CarParts = CarParts.common([CarHarness.nissan_a])
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -44,7 +41,7 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.LEAF: NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
   CAR.LEAF_IC: None,  # same platforms
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
-  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", harness_kit=HarnessKit(Harness.nissan_b, parts=NISSAN_HARNESS_PARTS)),
+  CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b])),
 }
 
 FINGERPRINTS = {
@@ -171,9 +168,9 @@ FW_VERSIONS = {
 }
 
 DBC = {
-  CAR.XTRAIL: dbc_dict('nissan_x_trail_2017', None),
-  CAR.LEAF: dbc_dict('nissan_leaf_2018', None),
-  CAR.LEAF_IC: dbc_dict('nissan_leaf_2018', None),
-  CAR.ROGUE: dbc_dict('nissan_x_trail_2017', None),
-  CAR.ALTIMA: dbc_dict('nissan_x_trail_2017', None),
+  CAR.XTRAIL: dbc_dict('nissan_x_trail_2017_generated', None),
+  CAR.LEAF: dbc_dict('nissan_leaf_2018_generated', None),
+  CAR.LEAF_IC: dbc_dict('nissan_leaf_2018_generated', None),
+  CAR.ROGUE: dbc_dict('nissan_x_trail_2017_generated', None),
+  CAR.ALTIMA: dbc_dict('nissan_x_trail_2017_generated', None),
 }

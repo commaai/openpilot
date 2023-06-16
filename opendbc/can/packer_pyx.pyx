@@ -1,12 +1,10 @@
 # distutils: language = c++
 # cython: c_string_encoding=ascii, language_level=3
 
-from libc.stdint cimport uint8_t, uint32_t, uint64_t
+from libc.stdint cimport uint8_t
 from libcpp.vector cimport vector
 from libcpp.map cimport map
 from libcpp.string cimport string
-from libcpp cimport bool
-from posix.dlfcn cimport dlopen, dlsym, RTLD_LAZY
 
 from .common cimport CANPacker as cpp_CANPacker
 from .common cimport dbc_lookup, SignalPackValue, DBC
@@ -36,7 +34,7 @@ cdef class CANPacker:
     cdef SignalPackValue spv
 
     for name, value in values.iteritems():
-      spv.name = name.encode('utf8')
+      spv.name = name.encode("utf8")
       spv.value = value
       values_thing.push_back(spv)
 
@@ -48,7 +46,7 @@ cdef class CANPacker:
       addr = name_or_addr
       size = self.address_to_size[name_or_addr]
     else:
-      addr, size = self.name_to_address_and_size[name_or_addr.encode('utf8')]
+      addr, size = self.name_to_address_and_size[name_or_addr.encode("utf8")]
 
     cdef vector[uint8_t] val = self.pack(addr, values)
     return [addr, 0, (<char *>&val[0])[:size], bus]

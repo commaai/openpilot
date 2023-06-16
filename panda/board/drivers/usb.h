@@ -27,8 +27,7 @@ bool usb_enumerated = false;
 uint16_t usb_last_frame_num = 0U;
 
 void usb_init(void);
-void usb_cb_ep3_out_complete(void);
-void usb_outep3_resume_if_paused(void);
+void refresh_can_tx_slots_available(void);
 
 // **** supporting defines ****
 
@@ -808,7 +807,7 @@ void usb_irqhandler(void) {
       #endif
       // NAK cleared by process_can (if tx buffers have room)
       outep3_processing = false;
-      usb_cb_ep3_out_complete();
+      refresh_can_tx_slots_available();
     } else if ((USBx_OUTEP(3)->DOEPINT & 0x2000) != 0) {
       #ifdef DEBUG_USB
         print("  OUT3 PACKET WTF\n");
@@ -926,7 +925,7 @@ void usb_irqhandler(void) {
   //USBx->GINTMSK = 0xFFFFFFFF & ~(USB_OTG_GINTMSK_NPTXFEM | USB_OTG_GINTMSK_PTXFEM | USB_OTG_GINTSTS_SOF | USB_OTG_GINTSTS_EOPF);
 }
 
-void usb_outep3_resume_if_paused(void) {
+void can_tx_comms_resume_usb(void) {
   ENTER_CRITICAL();
   if (!outep3_processing && (USBx_OUTEP(3)->DOEPCTL & USB_OTG_DOEPCTL_NAKSTS) != 0) {
     USBx_OUTEP(3)->DOEPTSIZ = (32U << 19) | 0x800U;

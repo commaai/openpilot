@@ -14,6 +14,12 @@ from .visionipc cimport VisionIpcServer as cppVisionIpcServer
 from .visionipc cimport VisionIpcClient as cppVisionIpcClient
 from .visionipc cimport VisionBuf as cppVisionBuf
 from .visionipc cimport VisionIpcBufExtra
+from .visionipc cimport get_endpoint_name as cpp_get_endpoint_name
+
+
+def get_endpoint_name(string name, VisionStreamType stream):
+  return cpp_get_endpoint_name(name, stream).decode('utf-8')
+
 
 cpdef enum VisionStreamType:
   VISION_STREAM_ROAD

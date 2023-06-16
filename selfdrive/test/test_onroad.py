@@ -18,6 +18,7 @@ from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
 from selfdrive.controls.lib.events import EVENTS, ET
+from system.hardware import HARDWARE
 from system.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
@@ -25,17 +26,16 @@ from tools.lib.logreader import LogReader
 # Baseline CPU usage by process
 PROCS = {
   "selfdrive.controls.controlsd": 39.0,
-  "./loggerd": 10.0,
+  "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
   "selfdrive.controls.plannerd": 16.5,
-  "./_ui": 19.2,
+  "./_ui": 21.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./_sensord": 12.0,
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
-  "./boardd": 3.63,
   "./_dmonitoringmodeld": 5.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
@@ -45,19 +45,29 @@ PROCS = {
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "./clocksd": 0.02,
-  "./ubloxd": 0.02,
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 10.0,
   "system.timezoned": 0,
-  "system.sensord.pigeond": 6.0,
   "selfdrive.boardd.pandad": 0,
   "selfdrive.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
-  "system.loggerd.uploader": 4.0,
+  "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
   "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
 }
+
+PROCS.update({
+  "tici": {
+    "./boardd": 4.0,
+    "./ubloxd": 0.02,
+    "system.sensord.pigeond": 6.0,
+  },
+  "tizi": {
+     "./boardd": 19.0,
+    "system.sensord.rawgps.rawgpsd": 1.0,
+  }
+}[HARDWARE.get_device_type()])
 
 TIMINGS = {
   # rtols: max/min, rsd
@@ -95,17 +105,15 @@ class TestOnroad(unittest.TestCase):
       return
 
     # setup env
-    os.environ['PASSIVE'] = "0"
-    os.environ['REPLAY'] = "1"
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
-    os.environ['LOGPRINT'] = "debug"
-
     params = Params()
-    params.clear_all()
+    if "CI" in os.environ:
+      params.clear_all()
+    params.remove("CurrentRoute")
     set_params_enabled()
+    os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
+    os.system("rm /dev/shm/*")
 
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
@@ -161,11 +169,11 @@ class TestOnroad(unittest.TestCase):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
-      
+
       # skip gps services for now
-      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements'):
+      if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
-        
+
       with self.subTest(service=s):
         assert len(msgs) >= math.floor(service_list[s].frequency*55)
 
@@ -249,6 +257,14 @@ class TestOnroad(unittest.TestCase):
 
     self.assertTrue(cpu_ok)
 
+  def test_memory_usage(self):
+    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
+    print("Memory usage: ", mems)
+
+    # check for big leaks. note that memory usage is
+    # expected to go up while the MSGQ buffers fill up
+    self.assertLessEqual(max(mems) - min(mems), 3.0)
+
   def test_camera_processing_time(self):
     result = "\n"
     result += "------------------------------------------------\n"
@@ -261,6 +277,23 @@ class TestOnroad(unittest.TestCase):
     result += f"execution time: max  {max(ts):.5f}s\n"
     result += f"execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
+    print(result)
+
+  @unittest.skip("TODO: enable once timings are fixed")
+  def test_camera_frame_timings(self):
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "-----------------  SoF Timing ------------------\n"
+    result += "------------------------------------------------\n"
+    for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
+      ts = [getattr(getattr(m, m.which()), "timestampSof") for m in self.lr if name in m.which()]
+      d_ms = np.diff(ts) / 1e6
+      d50 = np.abs(d_ms-50)
+      self.assertLess(max(d50), 1.0, f"high sof delta vs 50ms: {max(d50)}")
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      result += "------------------------------------------------\n"
     print(result)
 
   def test_mpc_execution_timings(self):

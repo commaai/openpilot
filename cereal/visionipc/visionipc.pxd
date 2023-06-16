@@ -27,6 +27,8 @@ cdef extern from "cereal/visionipc/visionipc.h":
     uint64_t timestamp_eof
 
 cdef extern from "cereal/visionipc/visionipc_server.h":
+  string get_endpoint_name(string, VisionStreamType)
+
   cdef cppclass VisionIpcServer:
     VisionIpcServer(string, void*, void*)
     void create_buffers(VisionStreamType, size_t, bool, size_t, size_t)
