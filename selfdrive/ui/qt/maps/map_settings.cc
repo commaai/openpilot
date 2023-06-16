@@ -76,7 +76,6 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
 
 void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
-  qDebug() << "DestinationWidget::set" << destination->name << current;
   setProperty("current", current);
   setProperty("set", true);
 
@@ -109,7 +108,6 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
 }
 
 void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
-  qDebug() << "DestinationWidget::unset" << label << current;
   setProperty("current", current);
   setProperty("set", false);
 
@@ -129,8 +127,6 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
 
 MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   setContentsMargins(0, 0, 0, 0);
-
-  qDebug() << "MapSettings";
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 40);
@@ -244,17 +240,16 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   setStyleSheet(R"(
     MapSettings {
       background-color: #333333;
+      border: 1px solid red;
     }
   )");
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
-  qDebug() << "MapSettings::showEvent";
   updateCurrentRoute();
 }
 
 void MapSettings::updateCurrentRoute() {
-  qDebug() << "MapSettings::updateCurrentRoute";
   auto dest = QString::fromStdString(params.get("NavDestination"));
   if (dest.size()) {
     QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
@@ -281,8 +276,6 @@ void MapSettings::parseResponse(const QString &response, bool success) {
 }
 
 void MapSettings::refresh() {
-  qDebug() << "MapSettings::refresh";
-
   bool has_home = false, has_work = false;
   auto destinations = std::vector<NavDestination*>();
 
