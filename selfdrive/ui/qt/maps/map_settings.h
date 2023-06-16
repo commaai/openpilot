@@ -80,7 +80,7 @@ public:
 
 private:
   struct NavIcons {
-    QPixmap home, work, favorite, recent;
+    QPixmap home, work, favorite, recent, directions;
   };
 
   static NavIcons icons() {
@@ -89,6 +89,7 @@ private:
       loadPixmap("../assets/navigation/icon_work.svg", {96, 96}),
       loadPixmap("../assets/navigation/icon_favorite.svg", {96, 96}),
       loadPixmap("../assets/navigation/icon_recent.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_directions.svg", {96, 96}),
     };
     return nav_icons;
   }

@@ -112,10 +112,9 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   setProperty("set", false);
 
   if (label.isEmpty()) {
-    icon->setVisible(false);
+    icon->setPixmap(icons().directions);
     title->setText(tr("No destination set"));
   } else {
-    icon->setVisible(true);
     icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
     title->setText(tr("No %1 location set").arg(label));
   }
