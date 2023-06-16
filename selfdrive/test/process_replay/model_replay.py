@@ -222,7 +222,6 @@ if __name__ == "__main__":
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
 
-      print(failed, results[TEST_ROUTE]["models"])
       print(diff2)
       print('-------------\n'*5)
       print(diff1)
