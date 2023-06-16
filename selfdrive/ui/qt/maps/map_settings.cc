@@ -127,7 +127,7 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   setStyleSheet(styleSheet());
 }
 
-MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) {
+MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
   setContentsMargins(0, 0, 0, 0);
 
   qDebug() << "MapSettings";
@@ -281,9 +281,6 @@ void MapSettings::parseResponse(const QString &response, bool success) {
 }
 
 void MapSettings::refresh() {
-  if (!needs_refresh) return;
-  needs_refresh = false;
-
   qDebug() << "MapSettings::refresh";
 
   bool has_home = false, has_work = false;
