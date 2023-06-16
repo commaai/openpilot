@@ -167,6 +167,7 @@ def thermald_thread(end_event, hw_queue):
   off_ts = None
   started_ts = None
   started_seen = False
+  startup_blocked_ts = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -340,10 +341,16 @@ def thermald_thread(end_event, hw_queue):
       if started_ts is None:
         started_ts = sec_since_boot()
         started_seen = True
+        if startup_blocked_ts is not None:
+          cloudlog.event("Startup after block", block_duration=(sec_since_boot() - startup_blocked_ts),
+                         startup_conditions=startup_conditions, onroad_conditions=onroad_conditions,
+                         startup_conditions_prev=startup_conditions_prev, error=True)
+      startup_blocked_ts = None
     else:
       if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions, error=True)
         startup_conditions_prev = startup_conditions.copy()
+        startup_blocked_ts = sec_since_boot()
 
       started_ts = None
       if off_ts is None:
