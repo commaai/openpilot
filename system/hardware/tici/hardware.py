@@ -106,8 +106,10 @@ class Tici(HardwareBase):
     return model
 
   def get_sound_card_online(self):
-    return (os.path.isfile('/proc/asound/card0/state') and
-            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+    if os.path.isfile('/proc/asound/card0/state'):
+      with open('/proc/asound/card0/state') as f:
+        return f.read().strip() == 'ONLINE'
+    return False
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
@@ -452,7 +454,8 @@ class Tici(HardwareBase):
 
   def get_gpu_usage_percent(self):
     try:
-      used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
+        used, total = f.read().strip().split()
       return 100.0 * int(used) / int(total)
     except Exception:
       return 0

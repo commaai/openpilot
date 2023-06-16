@@ -255,10 +255,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   versions = VERSIONS.copy()
   params = Params()
 
-  # Each brand can define extra ECUs to query for data collection
-  for brand, config in FW_QUERY_CONFIGS.items():
-    versions[brand]["debug"] = {ecu: [] for ecu in config.extra_ecus}
-
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
 
@@ -272,8 +268,10 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
+    config = FW_QUERY_CONFIGS[brand]
     for ecu in brand_versions.values():
-      for ecu_type, addr, sub_addr in ecu.keys():
+      # Each brand can define extra ECUs to query for data collection
+      for ecu_type, addr, sub_addr in list(ecu) + config.extra_ecus:
         a = (brand, addr, sub_addr)
         if a not in ecu_types:
           ecu_types[a] = ecu_type
