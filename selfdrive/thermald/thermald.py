@@ -253,6 +253,7 @@ def thermald_thread(end_event, hw_queue):
     # this drives the thermal status while onroad
     temp_sources.append(max(msg.deviceState.pmicTempC))
     all_comp_temp = all_temp_filter.update(max(temp_sources))
+    msg.deviceState.maxTempC = all_comp_temp
 
     if fan_controller is not None:
       msg.deviceState.fanSpeedPercentDesired = fan_controller.update(all_comp_temp, onroad_conditions["ignition"])
