@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from cereal import messaging
+from selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
 
 def migrate_all(lr, old_logtime=False):
@@ -13,31 +14,39 @@ def migrate_all(lr, old_logtime=False):
 
 def migrate_cameraStates(lr, old_logtime=False):
   all_msgs = []
-  min_frames_ids = {}
-  prev_frame_ids = defaultdict(int)
+  prev_frame_ids = {}
+  min_frame_logtimes = {}
+  sorted_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  
+  for cam_state in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
+    min_frame_logtimes[cam_state] = next((msg.logMonoTime for msg in sorted_msgs if msg.which() == cam_state), None)
 
-  for msg in sorted(lr, key=lambda msg: msg.logMonoTime):
+  for msg in sorted_msgs:
     if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
       all_msgs.append(msg)
+
+    if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
       continue
 
-    new_msg = messaging.new_message(msg.which())
+    meta = meta_from_encode_index(msg.which())
+    new_msg = messaging.new_message(meta.camera_state)
+    camera_state = getattr(new_msg, meta.camera_state)
 
-    # old logs may have invalid frameIds - relative to route as a whole, not invidudual segment
-    camera_state = getattr(msg, msg.which()).as_builder()
-    assert camera_state.frameId >= prev_frame_ids[msg.which()], f"Corrupted camera state: {msg.which()}. Future camera state has lesser frameId."
-    if msg.which() not in min_frames_ids:
-      min_frames_ids[msg.which()] = camera_state.frameId
-    camera_state.frameId = camera_state.frameId - min_frames_ids[msg.which()]
-    prev_frame_ids[msg.which()] = camera_state.frameId
+    encode_index = getattr(msg, msg.which())
+    assert encode_index.segmentId < 1200, f"Encoder index segmentId greater that 1200: {msg.which()} {encode_index.segmentId}"
+    assert msg.which() not in prev_frame_ids or prev_frame_ids[msg.which()] + 1 == encode_index.segmentId, f"Corrupted encode index: {msg.which()}. FrameId is not sequential."
+    camera_state.frameId = encode_index.segmentId
+    camera_state.encodeId = encode_index.segmentId
+    camera_state.timestampSof = encode_index.timestampSof
+    camera_state.timestampEof = encode_index.timestampEof
 
-    if old_logtime:
-      new_msg.logMonoTime = msg.logMonoTime
-    new_msg.valid = msg.valid  
-    setattr(new_msg, msg.which(), camera_state)
+    prev_frame_ids[msg.which()] = encode_index.segmentId
+
+    new_msg.logMonoTime = min_frame_logtimes[meta.camera_state] + encode_index.segmentId * int(meta.dt * 1e9)
+    new_msg.valid = msg.valid
 
     all_msgs.append(new_msg.as_reader())
-  
+
   return all_msgs
 
 
