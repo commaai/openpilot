@@ -21,17 +21,16 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
-      : type(place["save_type"].toString()), label(place["label"].toString()),
-        name(place["place_name"].toString()),
+      : type(place["save_type"].toString()), label(place["label"].toString()), name(place["place_name"].toString()),
         details(place["place_details"].toString()) {}
 
   bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
   bool isRecent() const { return type == NAV_TYPE_RECENT; }
 
-  bool equals(NavDestination *other) const {
-    return other && type == other->type && label == other->label &&
-           name == other->name && details == other->details;
+  inline bool operator==(const NavDestination &other) const {
+    return type == other.type && label == other.label && name == other.name && details == other.details;
   }
+  inline bool operator!=(const NavDestination &other) const { return !(*this == other); }
 
   QJsonObject toJson() const {
     QJsonObject obj;

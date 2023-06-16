@@ -41,41 +41,42 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
 
   setFixedHeight(164);
   setStyleSheet(R"(
+    /* default styles */
     ClickableWidget {
       background-color: #292929;
       border: 1px solid #4DFFFFFF;
       border-radius: 10px;
     }
-    QLabel {
+    ClickableWidget QLabel {
       color: #FFFFFF;
       font-size: 48px;
       font-weight: 400;
     }
 
+    /* on press */
+    ClickableWidget:pressed {
+      background-color: #3B3B3B;
+    }
+    ClickableWidget:pressed #action {
+      color: #A0A0A0;
+    }
+
+    /* current destination */
     ClickableWidget[current=true] {
       background-color: #162440;
       border: 1px solid #80FFFFFF;
     }
 
-    ClickableWidget:pressed {
-      background-color: #3B3B3B;
-    }
-    ClickableWidget:disabled QLabel {
-      color: red;
-    }
-
-    #action {
-      font-size: 60px;
-    }
-    ClickableWidget:pressed #action {
-      color: #A0A0A0;
+    /* no saved destination */
+    ClickableWidget[disabled=true] QLabel {
+      color: #80FFFFFF;
     }
   )");
 }
 
 void MapSettings::DestinationWidget::set(NavDestination *destination,
                                          bool current) {
-  qDebug() << "DestinationWidget::set";
+  qDebug() << "DestinationWidget::set" << destination->name << current;
   setProperty("current", current);
   setDisabled(false);
 
@@ -104,11 +105,11 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
   action->setText(current ? "×" : "→");
   action->setVisible(true);
 
-  repaint();
+  setStyleSheet(styleSheet());
 }
 
 void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
-  qDebug() << "DestinationWidget::unset";
+  qDebug() << "DestinationWidget::unset" << label << current;
   setProperty("current", current);
   setDisabled(true);
 
@@ -123,7 +124,7 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   subtitle->setVisible(false);
   action->setVisible(false);
 
-  repaint();
+  setStyleSheet(styleSheet());
 }
 
 MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) {
@@ -168,20 +169,18 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
   current_layout->setContentsMargins(0, 0, 0, 0);
   current_layout->setSpacing(0);
 
-  auto *current_title = new QLabel(tr("current destination"), this);
-  current_title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
-  current_layout->addWidget(current_title);
+//  auto *current_title = new QLabel(tr("current destination"), this);
+//  current_title->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
+//  current_layout->addWidget(current_title);
 
   current_layout->addSpacing(16);
 
   current_widget = new DestinationWidget(this);
-  current_widget->setDisabled(true);
   current_layout->addWidget(current_widget);
 
   QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
     params.remove("NavDestination");
     updateCurrentRoute();
-    refresh();
   });
 
   current_layout->addSpacing(32);
@@ -262,18 +261,20 @@ void MapSettings::showEvent(QShowEvent *event) {
 void MapSettings::updateCurrentRoute() {
   qDebug() << "MapSettings::updateCurrentRoute";
   auto dest = QString::fromStdString(params.get("NavDestination"));
-  QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
-  if (dest.size() && !doc.isNull()) {
-    auto new_destination = new NavDestination(doc.object());
-    if (new_destination->equals(current_destination)) return;
-    current_destination = new_destination;
-  }
-  if (current_destination) {
+  if (dest.size()) {
+    QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
+    if (doc.isNull()) {
+      qDebug() << "JSON Parse failed on NavDestination" << dest;
+      return;
+    }
+    auto destination = new NavDestination(doc.object());
+    if (current_destination && *destination == *current_destination) return;
+    current_destination = destination;
     current_widget->set(current_destination, true);
   } else {
+    current_destination = nullptr;
     current_widget->unset("", true);
   }
-  needs_refresh = true;
   if (isVisible()) refresh();
 }
 
@@ -300,7 +301,7 @@ void MapSettings::refresh() {
       qDebug() << "JSON Parse failed on navigation locations" << cur_destinations;
       return;
     }
-  
+
     for (auto el : doc.array()) {
       auto destination = new NavDestination(el.toObject());
 
@@ -311,7 +312,7 @@ void MapSettings::refresh() {
       }
 
       // skip current destination
-      if (destination->equals(current_destination)) continue;
+      if (current_destination && *destination == *current_destination) continue;
 
       destinations.push_back(destination);
     }
