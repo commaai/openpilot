@@ -104,6 +104,14 @@ class ParamsLearner:
       self.kf.filter.reset_rewind()
 
 
+def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: float = AVG_OFFSET_MAX, lowered_threshold: float = AVG_OFFSET_LOWERED_MAX):
+  if current_valid:
+    current_valid = abs(val) < threshold
+  else:
+    current_valid = abs(val) < lowered_threshold
+  return current_valid
+
+
 def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
 
@@ -160,6 +168,8 @@ def main(sm=None, pm=None):
   angle_offset = angle_offset_average
   roll = 0.0
   avg_offset_valid = True
+  total_offset_valid = True
+  roll_valid = True
 
   while True:
     sm.update()
@@ -183,10 +193,9 @@ def main(sm=None, pm=None):
       roll_std = float(P[States.ROAD_ROLL])
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
-      if avg_offset_valid:
-        avg_offset_valid = abs(angle_offset_average) < AVG_OFFSET_MAX
-      else:
-        avg_offset_valid = abs(angle_offset_average) < AVG_OFFSET_LOWERED_MAX
+      avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average)
+      total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset)
+      roll_valid = check_valid_with_hysteresis(roll_valid, roll)
 
       msg = messaging.new_message('liveParameters')
 
@@ -200,8 +209,8 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((
         avg_offset_valid,
-        abs(liveParameters.angleOffsetDeg) < 10.0,
-        abs(liveParameters.roll) < ROLL_MAX,
+        total_offset_valid,
+        roll_valid,
         roll_std < ROLL_STD_MAX,
         0.2 <= liveParameters.stiffnessFactor <= 5.0,
         min_sr <= liveParameters.steerRatio <= max_sr,
