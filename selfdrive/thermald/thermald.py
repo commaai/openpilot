@@ -167,7 +167,7 @@ def thermald_thread(end_event, hw_queue):
   off_ts = None
   started_ts = None
   started_seen = False
-  thermal_status = ThermalStatus.green
+  thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -179,8 +179,8 @@ def thermald_thread(end_event, hw_queue):
     modem_temps=[],
   )
 
-  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
-  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
+  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
+  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
   should_start_prev = False
   in_car = False
   engaged_prev = False
@@ -242,7 +242,7 @@ def thermald_thread(end_event, hw_queue):
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
-    # this one is only used for offroad
+    # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
       max(msg.deviceState.cpuTempC),
