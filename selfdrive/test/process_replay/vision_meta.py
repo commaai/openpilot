@@ -3,33 +3,30 @@ from cereal.visionipc import VisionStreamType
 from common.realtime import DT_MDL, DT_DMON
 from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size, eon_f_frame_size, eon_d_frame_size
 
-class CameraFrameSizes:
-  def __init__(self, eon_size, tici_size):
-    self.eon = eon_size
-    self.tici = tici_size
-  
-  def __getitem__(self, key):
-    if key in ["tici", "tizi"]:
-      return self.tici
-    else:
-      return self.eon
-
-VideoStreamMeta = namedtuple("VideoStreamMeta", ["camera_state", "stream", "dt", "frame_sizes"])
+VideoStreamMeta = namedtuple("VideoStreamMeta", ["camera_state", "encode_index", "stream", "dt", "frame_sizes"])
+ROAD_CAMERA_FRAME_SIZES = {"tici": tici_f_frame_size, "tizi": tici_f_frame_size, "eon": eon_f_frame_size}
+WIDE_ROAD_CAMERA_FRAME_SIZES = {"tici": tici_e_frame_size, "tizi": tici_e_frame_size}
+DRIVER_FRAME_SIZES = {"tici": tici_d_frame_size, "tizi": tici_d_frame_size, "eon": eon_d_frame_size}
 VIPC_STREAM_METADATA = [
-  # metadata: (state_msg_type, stream_type, dt)
-  ("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, DT_MDL, CameraFrameSizes(eon_f_frame_size, tici_f_frame_size)),
-  ("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, DT_MDL, CameraFrameSizes(None, tici_e_frame_size)),
-  ("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, DT_DMON, CameraFrameSizes(eon_d_frame_size, tici_d_frame_size)),
+  # metadata: (state_msg_type, encode_msg_type, stream_type, dt, frame_sizes)
+  ("roadCameraState", "roadEncodeIdx", VisionStreamType.VISION_STREAM_ROAD, DT_MDL, ROAD_CAMERA_FRAME_SIZES),
+  ("wideRoadCameraState", "wideRoadEncodeIdx", VisionStreamType.VISION_STREAM_WIDE_ROAD, DT_MDL, WIDE_ROAD_CAMERA_FRAME_SIZES),
+  ("driverCameraState", "driverEncodeIdx", VisionStreamType.VISION_STREAM_DRIVER, DT_DMON, DRIVER_FRAME_SIZES),
 ]
 
 
 def meta_from_camera_state(state):
   meta = next((VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA if meta[0] == state), None)
-  return meta 
+  return meta
+
+
+def meta_from_encode_index(encode_index):
+  meta = next((VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA if meta[1] == encode_index), None)
+  return meta
 
 
 def meta_from_stream_type(stream_type):
-  meta = next((VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA if meta[1] == stream_type), None)
+  meta = next((VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA if meta[2] == stream_type), None)
   return meta
 
 
