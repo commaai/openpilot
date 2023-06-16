@@ -107,6 +107,7 @@ class ProcessConfig:
   main_pub: Optional[str] = None
   main_pub_drained: bool = True
   vision_pubs: List[str] = field(default_factory=list)
+  ignore_alive_pubs: List[str] = field(default_factory=list)
 
 
 class DummySocket:
@@ -187,7 +188,6 @@ def torqued_rcv_callback(msg, cfg, frame):
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
-  assert msg.driverCameraState.frameId < 1200
   return msg.which() == "driverCameraState"
 
 
@@ -364,6 +364,7 @@ CONFIGS = [
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
+    ignore_alive_pubs=["wideRoadCameraState"],
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
@@ -375,6 +376,7 @@ CONFIGS = [
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["driverCameraState"],
+    ignore_alive_pubs=["driverCameraState"],
   ),
 ]
 
@@ -457,8 +459,7 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
       try:
         # Wait for process to startup
         with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-          # TODO this should be all(), but it's not working with modeld
-          while not any(pm.all_readers_updated(s) for s in cfg.pubs):
+          while not all(pm.all_readers_updated(s) for s in cfg.pubs if s not in cfg.ignore_alive_pubs):
             time.sleep(0)
 
         # Do the replay
