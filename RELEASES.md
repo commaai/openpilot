@@ -1,4 +1,4 @@
-Version 0.9.3 (2023-06-XX)
+Version 0.9.3 (2023-06-20)
 ========================
 * New driving model
 * New driving personality setting
@@ -6,6 +6,8 @@ Version 0.9.3 (2023-06-XX)
   * Standard is recommended and the default
   * In aggressive mode lead follow distance is shorter and quicker gas/brake response
   * In relaxed mode lead follow distance is longer
+* Improved fuzzy fingerprinting for Hyundai, Kia, and Genesis
+* Improved thermal management logic
 
 Version 0.9.2 (2023-05-22)
 ========================
