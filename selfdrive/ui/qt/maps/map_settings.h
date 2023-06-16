@@ -27,10 +27,12 @@ public:
   bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
   bool isRecent() const { return type == NAV_TYPE_RECENT; }
 
-  inline bool operator==(const NavDestination &other) const {
-    return type == other.type && label == other.label && name == other.name && details == other.details;
+  friend bool operator==(const NavDestination& lhs, const NavDestination& rhs) {
+    return lhs.type == rhs.type &&
+           lhs.label == rhs.label &&
+           lhs.name == rhs.name &&
+           lhs.details == rhs.details;
   }
-  inline bool operator!=(const NavDestination &other) const { return !(*this == other); }
 
   QJsonObject toJson() const {
     QJsonObject obj;

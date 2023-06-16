@@ -125,7 +125,8 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
   setStyleSheet(styleSheet());
 }
 
-MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
+MapSettings::MapSettings(QWidget *parent)
+    : QFrame(parent), current_destination(nullptr) {
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QVBoxLayout(this);
