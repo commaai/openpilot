@@ -140,7 +140,9 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     // Enable/disable nav features
     double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
-    bool nav_valid = sm["navInstruction"].getValid() && tsm < 1000;
+    bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
+    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
+    bool nav_valid = route_valid && render_valid;
     if (!nav_enabled && nav_valid) {
       nav_enabled = true;
     } else if (nav_enabled && !nav_valid) {

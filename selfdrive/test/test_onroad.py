@@ -30,7 +30,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./map_renderer": 1.0,
+  "./mapsd": 2.0,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 21.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -87,6 +87,7 @@ TIMINGS = {
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
   "navModel": [2.5, 0.35],
+  "mapRenderState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
