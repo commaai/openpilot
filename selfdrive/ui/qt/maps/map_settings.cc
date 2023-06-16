@@ -19,7 +19,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   frame->setSpacing(40);
 
   icon = new QLabel(this);
-  icon->setFixedSize(100, 100);
+  icon->setFixedSize(96, 96);
   frame->addWidget(icon);
 
   auto *inner_frame = new QVBoxLayout;
@@ -39,7 +39,7 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
   action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
   frame->addWidget(action);
 
-  setFixedHeight(144);
+  setFixedHeight(164);
   setStyleSheet(R"(
     ClickableWidget {
       background-color: #292929;
@@ -52,15 +52,16 @@ MapSettings::DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWi
       font-weight: 400;
     }
 
-    ClickableWidget[current="true"] {
+    ClickableWidget[current=true] {
+      background-color: #162440;
       border: 1px solid #80FFFFFF;
     }
 
     ClickableWidget:pressed {
       background-color: #3B3B3B;
     }
-    ClickableWidget:disabled > QVBoxLayout > QLabel {
-      color: #808080;
+    ClickableWidget:disabled QLabel {
+      color: red;
     }
 
     #action {
@@ -93,14 +94,16 @@ void MapSettings::DestinationWidget::set(NavDestination *destination,
     }
   }
 
-  title->setText(shorten(title_text, 32));
-  subtitle->setText(shorten(subtitle_text, 32));
+  title->setText(shorten(title_text, 26));
+  subtitle->setText(shorten(subtitle_text, 26));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
 
   // TODO: use pixmap
   action->setText(current ? "×" : "→");
   action->setVisible(true);
+
+  repaint();
 }
 
 void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
@@ -117,6 +120,8 @@ void MapSettings::DestinationWidget::unset(const QString &label, bool current) {
 
   subtitle->setVisible(false);
   action->setVisible(false);
+
+  repaint();
 }
 
 MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) {
@@ -190,31 +195,29 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent), needs_refresh(true) 
 
 
   // TODO: remove this
-  // cur_destinations = R"([
-  //   {
-  //     "save_type": "favorite",
-  //     "label": "home",
-  //     "place_name": "Home",
-  //     "place_details": "123 Main St, San Francisco, CA 94103, USA"
-  //   },
-  //   {
-  //     "save_type": "favorite",
-  //     "place_name": "Target",
-  //     "place_details": "456 Market St, San Francisco, CA 94103, USA"
-  //   },
-  //   {
-  //     "save_type": "recent",
-  //     "place_name": "Whole Foods",
-  //     "place_details": "789 Mission St, San Francisco, CA 94103, USA"
-  //   },
-  //   {
-  //     "save_type": "recent",
-  //     "place_name": "Safeway",
-  //     "place_details": "101 4th St, San Francisco, CA 94103, USA"
-  //   }
-  // ])";
-
-  // refresh();  // TODO: remove this
+  cur_destinations = R"([
+    {
+      "save_type": "favorite",
+      "label": "home",
+      "place_name": "Home",
+      "place_details": "123 Main St, San Francisco, CA 94103, USA"
+    },
+    {
+      "save_type": "favorite",
+      "place_name": "Target",
+      "place_details": "456 Market St, San Francisco, CA 94103, USA"
+    },
+    {
+      "save_type": "recent",
+      "place_name": "Whole Foods",
+      "place_details": "789 Mission St, San Francisco, CA 94103, USA"
+    },
+    {
+      "save_type": "recent",
+      "place_name": "Safeway",
+      "place_details": "101 4th St, San Francisco, CA 94103, USA"
+    }
+  ])";
 
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
