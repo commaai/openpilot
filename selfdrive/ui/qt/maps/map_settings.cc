@@ -130,40 +130,40 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 40);
-  frame->setSpacing(32);
-
+  frame->setSpacing(0);
 
   auto *heading = new QHBoxLayout;
   heading->setContentsMargins(0, 0, 0, 0);
   heading->setSpacing(32);
+  {
+    auto *title = new QLabel(tr("comma navigation"), this);
+    title->setStyleSheet("color: #FFFFFF; font-size: 56px; font-weight: 500;");
+    heading->addWidget(title, 1);
 
-  auto *title = new QLabel(tr("comma navigation"), this);
-  title->setStyleSheet("color: #FFFFFF; font-size: 56px; font-weight: 500;");
-  heading->addWidget(title, 1);
-
-  auto *close_button = new QPushButton("×", this);
-  close_button->setStyleSheet(R"(
-    QPushButton {
-      color: #FFFFFF;
-      font-size: 60px;
-      font-weight: 600;
-      border: none;
-    }
-    QPushButton:pressed {
-      color: #A0A0A0;
-    }
-  )");
-  QObject::connect(close_button, &QPushButton::clicked, [=]() {
-    emit closeSettings();
-  });
-  heading->addWidget(close_button);
+    auto *close_button = new QPushButton("×", this);
+    close_button->setStyleSheet(R"(
+      QPushButton {
+        color: #FFFFFF;
+        font-size: 60px;
+        font-weight: 600;
+        border: none;
+      }
+      QPushButton:pressed {
+        color: #A0A0A0;
+      }
+    )");
+    QObject::connect(close_button, &QPushButton::clicked, [=]() {
+      emit closeSettings();
+    });
+    heading->addWidget(close_button);
+  }
   frame->addLayout(heading);
-
+  frame->addSpacing(16);
 
   auto *subheading = new QLabel(tr("manage at connect.comma.ai"), this);
   subheading->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
   frame->addWidget(subheading);
-
+  frame->addSpacing(32);
 
   current_widget = new DestinationWidget(this);
   QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
@@ -171,8 +171,9 @@ MapSettings::MapSettings(QWidget *parent) : QFrame(parent) {
     updateCurrentRoute();
   });
   frame->addWidget(current_widget);
+  frame->addSpacing(32);
   frame->addWidget(horizontal_line());
-
+  frame->addSpacing(32);
 
   QWidget *destinations_container = new QWidget(this);
   destinations_layout = new QVBoxLayout(destinations_container);
