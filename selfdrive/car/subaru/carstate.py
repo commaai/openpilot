@@ -30,6 +30,7 @@ def cruise_buttons_conversion_preglobal(cruise_button):
     return Buttons.RES_INC
   if cruise_button == 5:
     return Buttons.RES_INC_DEEP
+  return Buttons.NONE
 
 
 class CarState(CarStateBase):
