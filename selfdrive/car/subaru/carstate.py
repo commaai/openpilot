@@ -79,7 +79,7 @@ class CarState(CarStateBase):
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
       ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
                      (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
-      # 8 is known AEB, but there are a few other values related to AEB we ignore
+      # 8 is known AEB, there are a few other values related to AEB we ignore
       ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
                      (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
