@@ -119,6 +119,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7E0, None): [
       b'M1PA-14C204-GF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'N1PA-14C204-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'N1PA-14C204-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.ESCAPE_MK4: {
