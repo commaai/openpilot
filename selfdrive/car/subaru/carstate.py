@@ -1,3 +1,4 @@
+from collections import deque
 import copy
 from cereal import car
 from opendbc.can.can_define import CANDefine
@@ -17,12 +18,27 @@ def cruise_buttons_conversion(cruise_buttons):
     return Buttons.SET_DEC
   return Buttons.NONE
 
+def cruise_buttons_conversion_preglobal(cruise_button):
+  # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
+  if cruise_button == 1:
+    return Buttons.ACC_TOGGLE
+  if cruise_button == 2:
+    return Buttons.SET_DEC
+  if cruise_button == 3:
+    return Buttons.SET_DEC_DEEP
+  if cruise_button == 4:
+    return Buttons.RES_INC
+  if cruise_button == 5:
+    return Buttons.RES_INC_DEEP
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
+
+    self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -105,7 +121,9 @@ class CarState(CarStateBase):
 
     cp_buttons = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     
-    if self.CP.carFingerprint not in PREGLOBAL_CARS:
+    if self.CP.carFingerprint in PREGLOBAL_CARS:
+      self.cruise_buttons.append(cruise_buttons_conversion_preglobal(cp_cam.vl["ES_Distance"]["Cruise_Button"]))
+    else:
       self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
 
     return ret

@@ -8,6 +8,7 @@ from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, Button
 ButtonType = car.CarState.ButtonEvent.Type
 
 BUTTONS_DICT = {Buttons.RES_INC: ButtonType.accelCruise, Buttons.SET_DEC: ButtonType.decelCruise,
+                Buttons.RES_INC_DEEP: ButtonType.accelCruise, Buttons.SET_DEC_DEEP: ButtonType.decelCruise,
                 Buttons.GAP_DIST_INC: ButtonType.gapAdjustCruise, Buttons.GAP_DIST_DEC: ButtonType.gapAdjustCruise,
                 Buttons.LKAS_TOGGLE: ButtonType.cancel, Buttons.ACC_TOGGLE: ButtonType.cancel}
 

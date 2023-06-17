@@ -34,14 +34,19 @@ class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 
 
-class Buttons(IntEnum):
+class Buttons(IntFlag):
   NONE = 0
   RES_INC = 1 # resume / increase speed
   SET_DEC = 2 # set / decrease speed
-  GAP_DIST_INC = 3 # increase gap distance
-  GAP_DIST_DEC = 4 # decrease gap distance
-  LKAS_TOGGLE = 5 # steering wheel icon, which toggles LKAS on stock
-  ACC_TOGGLE = 6 # button that toggles ACC on
+  GAP_DIST_INC = 4 # increase gap distance
+  GAP_DIST_DEC = 8 # decrease gap distance
+  LKAS_TOGGLE = 16 # steering wheel icon, which toggles LKAS on stock
+  ACC_TOGGLE = 32 # button that toggles ACC on
+
+  DEEP = 64
+  # deep, for preglobal
+  RES_INC_DEEP = RES_INC | DEEP
+  SET_DEC_DEEP = SET_DEC | DEEP
 
 
 class CAR:
