@@ -1,18 +1,17 @@
 #pragma once
 #include "common/clutil.h"
+
+struct ModelInput {
+  const char* name;
+  int size;
+  float *buffer;
+
+  ModelInput(const char *_name, int _size, float *_buffer) : name(_name), size(_size), buffer(_buffer) {}
+};
+
 class RunModel {
 public:
   virtual ~RunModel() {}
-  virtual void addRecurrent(float *state, int state_size) {}
-  virtual void addDesire(float *state, int state_size) {}
-  virtual void addNavFeatures(float *state, int state_size) {}
-  virtual void addDrivingStyle(float *state, int state_size) {}
-  virtual void addTrafficConvention(float *state, int state_size) {}
-  virtual void addCalib(float *state, int state_size) {}
-  virtual void addImage(float *image_buf, int buf_size) {}
-  virtual void addExtra(float *image_buf, int buf_size) {}
+  virtual void addInput(const char *name, int size, float *buffer) {}
   virtual void execute() {}
-  virtual void* getInputBuf() { return nullptr; }
-  virtual void* getExtraBuf() { return nullptr; }
 };
-

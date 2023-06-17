@@ -1,6 +1,7 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+#include <vector>
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
 #include <DlSystem/ITensor.hpp>
@@ -21,17 +22,19 @@
 #include "selfdrive/modeld/thneed/thneed.h"
 #endif
 
+struct SNPEModelInput {
+  const char* name;
+  int size;
+  float *buffer;
+  zdl::DlSystem::IUserBuffer *snpe_buffer;
+
+  SNPEModelInput(const char *_name, int _size, float *_buffer, zdl::DlSystem::IUserBuffer *_snpe_buffer) : name(_name), size(_size), buffer(_buffer), snpe_buffer(_snpe_buffer) {}
+};
+
 class SNPEModel : public RunModel {
 public:
   SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false, cl_context context = NULL);
-  void addRecurrent(float *state, int state_size);
-  void addTrafficConvention(float *state, int state_size);
-  void addCalib(float *state, int state_size);
-  void addDesire(float *state, int state_size);
-  void addDrivingStyle(float *state, int state_size);
-  void addNavFeatures(float *state, int state_size);
-  void addImage(float *image_buf, int buf_size);
-  void addExtra(float *image_buf, int buf_size);
+  void addInput(const char *name, int size, float *buffer);
   void execute();
 
 #ifdef USE_THNEED
@@ -43,44 +46,18 @@ private:
   std::string model_data;
 
 #ifdef QCOM2
-  zdl::DlSystem::Runtime_t Runtime;
+  zdl::DlSystem::Runtime_t snpe_runtime;
 #endif
 
   // snpe model stuff
   std::unique_ptr<zdl::SNPE::SNPE> snpe;
+  zdl::DlSystem::UserBufferMap input_map;
+  zdl::DlSystem::UserBufferMap output_map;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> output_buffer;
 
-  // snpe input stuff
-  zdl::DlSystem::UserBufferMap inputMap;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> inputBuffer;
-  float *input;
-  size_t input_size;
+  std::vector<SNPEModelInput> inputs;
+
   bool use_tf8;
-
-  // snpe output stuff
-  zdl::DlSystem::UserBufferMap outputMap;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> outputBuffer;
   float *output;
   size_t output_size;
-
-  // extra input stuff
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> extraBuffer;
-  float *extra;
-  size_t extra_size;
-  bool use_extra;
-
-  // recurrent and desire
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> addExtra(float *state, int state_size, int idx);
-  float *recurrent;
-  size_t recurrent_size;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> recurrentBuffer;
-  float *trafficConvention;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> trafficConventionBuffer;
-  float *desire;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> desireBuffer;
-  float *navFeatures;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> navFeaturesBuffer;
-  float *drivingStyle;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> drivingStyleBuffer;
-  float *calib;
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> calibBuffer;
 };
