@@ -76,7 +76,7 @@ QString cabana::Msg::newSignalName() {
 }
 
 void cabana::Msg::update() {
-  mask = QVector<uint8_t>(size, 0x00).toList();
+  mask.assign(size, 0x00);
   multiplexor = nullptr;
 
   // sort signals
