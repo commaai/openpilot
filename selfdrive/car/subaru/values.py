@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from enum import IntFlag
+from enum import IntEnum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
@@ -32,6 +32,16 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+
+
+class Buttons(IntEnum):
+  NONE = 0
+  RES_INC = 1 # resume / increase speed
+  SET_DEC = 2 # set / decrease speed
+  GAP_DIST_INC = 3 # increase gap distance
+  GAP_DIST_DEC = 4 # decrease gap distance
+  LKAS_TOGGLE = 5 # steering wheel icon, which toggles LKAS on stock
+  ACC_TOGGLE = 6 # button that toggles ACC on
 
 
 class CAR:

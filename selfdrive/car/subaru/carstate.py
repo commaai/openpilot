@@ -4,7 +4,18 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, Buttons, SubaruFlags
+
+PREV_BUTTON_SAMPLES = 8
+
+def cruise_buttons_conversion(cruise_buttons):
+  if cruise_buttons["Main"]:
+    return Buttons.ACC_TOGGLE
+  if cruise_buttons["Resume"]:
+    return Buttons.RES_INC
+  if cruise_buttons["Set"]:
+    return Buttons.SET_DEC
+  return Buttons.NONE
 
 
 class CarState(CarStateBase):
@@ -84,6 +95,14 @@ class CarState(CarStateBase):
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+    
+    # Buttons
+    self.prev_cruise_buttons = self.cruise_buttons[-1]
+
+    cp_buttons = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
+    
+    if self.CP.carFingerprint not in PREGLOBAL_CARS:
+      self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
 
     return ret
 
@@ -92,6 +111,9 @@ class CarState(CarStateBase):
     signals = [
       ("Cruise_On", "CruiseControl"),
       ("Cruise_Activated", "CruiseControl"),
+      ("Main", "Cruise_Buttons"),
+      ("Set", "Cruise_Buttons"),
+      ("Resume", "Cruise_Buttons"),
       ("FL", "Wheel_Speeds"),
       ("FR", "Wheel_Speeds"),
       ("RL", "Wheel_Speeds"),
@@ -100,6 +122,7 @@ class CarState(CarStateBase):
     ]
     checks = [
       ("CruiseControl", 20),
+      ("Cruise_Buttons", 50),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
     ]

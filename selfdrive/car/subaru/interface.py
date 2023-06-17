@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, get_safety_config
+from selfdrive.car import STD_CARGO_KG, create_button_event, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, Buttons, SubaruFlags
 
+ButtonType = car.CarState.ButtonEvent.Type
+
+BUTTONS_DICT = {Buttons.RES_INC: ButtonType.accelCruise, Buttons.SET_DEC: ButtonType.decelCruise,
+                Buttons.GAP_DIST_INC: ButtonType.gapAdjustCruise, Buttons.GAP_DIST_DEC: ButtonType.gapAdjustCruise,
+                Buttons.LKAS_TOGGLE: ButtonType.cancel, Buttons.ACC_TOGGLE: ButtonType.cancel}
 
 class CarInterface(CarInterfaceBase):
 
@@ -111,6 +116,13 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
+
+    ret.buttonEvents = []
+    if self.CS.cruise_buttons[-1] != self.CS.prev_cruise_buttons:
+      buttonEvents = [create_button_event(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)]
+      ret.buttonEvents = buttonEvents
+
+    self.CS.buttonEvents = ret.buttonEvents
 
     ret.events = self.create_common_events(ret).to_msg()
 
