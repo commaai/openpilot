@@ -61,7 +61,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "mapRenderState", "navInstruction", "navModel"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -72,6 +72,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
+  bool nav_enabled = false;
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
@@ -135,6 +136,25 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     float vec_desire[DESIRE_LEN] = {0};
     if (desire >= 0 && desire < DESIRE_LEN) {
       vec_desire[desire] = 1.0;
+    }
+
+    // Enable/disable nav features
+    double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
+    bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
+    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
+    bool nav_valid = route_valid && render_valid;
+    if (!nav_enabled && nav_valid) {
+      nav_enabled = true;
+    } else if (nav_enabled && !nav_valid) {
+      memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      nav_enabled = false;
+    }
+
+    if (nav_enabled && sm.updated("navModel")) {
+      auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
+      for (int i=0; i<NAV_FEATURE_LEN; i++) {
+        nav_features[i] = nav_model_features[i];
+      }
     }
 
     // tracked dropped frames
