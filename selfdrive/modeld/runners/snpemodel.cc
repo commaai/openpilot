@@ -81,13 +81,14 @@ SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int 
 #endif
 }
 
-void SNPEModel::addInput(const char *name, int size, float *buffer) {
+void SNPEModel::addInput(const char *name, float *buffer, int size) {
   zdl::DlSystem::UserBufferEncodingFloat ub_encoding_float;
   zdl::DlSystem::UserBufferEncodingTf8 ub_encoding_tf8(0, 1./255); // network takes 0-1
   zdl::DlSystem::IUserBufferFactory& ub_factory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
   zdl::DlSystem::UserBufferEncoding *input_encoding = use_tf8 ? (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_tf8 : (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_float;
   size_t size_of_input = use_tf8 ? sizeof(uint8_t) : sizeof(float);
 
+  const int idx = 0; // TODO: Fix this
   const auto &input_tensor_names_opt = snpe->getInputTensorNames();
   if (!input_tensor_names_opt) throw std::runtime_error("Error obtaining input tensor names");
   const auto &input_tensor_names = *input_tensor_names_opt;
@@ -108,18 +109,14 @@ void SNPEModel::addInput(const char *name, int size, float *buffer) {
   }
 
   // TODO: Can we pass in the input buffer directly here instead of assigning it later?
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> input_buffer = ub_factory.createUserBuffer(inputs, product*size_of_input, strides, input_encoding);
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> input_buffer = ub_factory.createUserBuffer(NULL, product*size_of_input, strides, input_encoding);
   input_map.add(input_tensor_name, input_buffer.get());
-  inputs.push_back(SNPEModelInput(name, size, buffer, input_buffer));
+  inputs.push_back(SNPEModelInput(name, buffer, size));
 }
 
+void SNPEModel::updateInput(const char *name, float *buffer, int size) {}
+
 void SNPEModel::execute() {
-  // bool ret = inputBuffer->setBufferAddress(input);
-  // assert(ret == true);
-  // if (use_extra) {
-  //   bool extra_ret = extraBuffer->setBufferAddress(extra);
-  //   assert(extra_ret == true);
-  // }
   if (!snpe->execute(input_map, output_map)) {
     PrintErrorStringAndExit();
   }

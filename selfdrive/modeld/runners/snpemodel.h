@@ -24,17 +24,18 @@
 
 struct SNPEModelInput {
   const char* name;
-  int size;
   float *buffer;
-  zdl::DlSystem::IUserBuffer *snpe_buffer;
+  int size;
+  std::unique_ptr<zdl::DlSystem::IUserBuffer> snpe_buffer;
 
-  SNPEModelInput(const char *_name, int _size, float *_buffer, zdl::DlSystem::IUserBuffer *_snpe_buffer) : name(_name), size(_size), buffer(_buffer), snpe_buffer(_snpe_buffer) {}
+  SNPEModelInput(const char *_name, float *_buffer, int _size) : name(_name), buffer(_buffer), size(_size) {}
 };
 
 class SNPEModel : public RunModel {
 public:
   SNPEModel(const char *path, float *loutput, size_t loutput_size, int runtime, bool luse_extra = false, bool use_tf8 = false, cl_context context = NULL);
-  void addInput(const char *name, int size, float *buffer);
+  void addInput(const char *name, float *buffer, int size);
+  void updateInput(const char *name, float *buffer, int size);
   void execute();
 
 #ifdef USE_THNEED

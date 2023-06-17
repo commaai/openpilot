@@ -86,9 +86,11 @@ void ONNXModel::pread(float *buf, int size) {
   LOGD("host read done");
 }
 
-void ONNXModel::addInput(const char *name, int size, float *buffer) {
-  inputs.push_back(ModelInput(name, size, buffer));
+void ONNXModel::addInput(const char *name, float *buffer, int size) {
+  inputs.push_back(ModelInput(name, buffer, size));
 }
+
+void ONNXModel::updateInput(const char *name, float *buffer, int size) {}
 
 void ONNXModel::execute() {
   for (int i=0; i<inputs.size(); i++) {
