@@ -204,22 +204,16 @@ class ModeldCameraSyncRcvCallback:
   def __call__(self, msg, cfg, frame):
     if msg.which() == "initData":
       self.is_dual_camera = msg.initData.deviceType in ["tici", "tizi"]
-      return False
-    elif msg.which() not in ["roadCameraState", "wideRoadCameraState"]:
-      return False
-    
-    assert getattr(msg, msg.which()).frameId < 1200
-    if not self.is_dual_camera:
-      return True
-
-    if msg.which() == "roadCameraState":
+    elif msg.which() == "roadCameraState":
       self.road_present = True
-    else:
+    elif msg.which() == "wideRoadCameraState":
       self.wide_road_present = True
 
     if self.road_present and self.wide_road_present:
+      self.road_present, self.wide_road_present = False, False
+      return True
+    elif self.road_present and not self.is_dual_camera:
       self.road_present = False
-      self.wide_road_present = False
       return True
     else:
       return False
