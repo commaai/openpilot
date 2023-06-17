@@ -43,7 +43,7 @@ procs = [
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
-  NativeProcess("mapsd", "selfdrive/navd", ["./map_renderer"], enabled=False),
+  NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], enabled=False),
   NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"], enabled=False),
   NativeProcess("sensord", "system/sensord", ["./sensord"], enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], offroad=True, watchdog_max_dt=(5 if not PC else None)),

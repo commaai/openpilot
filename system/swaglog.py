@@ -72,6 +72,15 @@ class UnixDomainSocketHandler(logging.Handler):
     self.setFormatter(formatter)
     self.pid = None
 
+    self.zctx = None
+    self.sock = None
+
+  def __del__(self):
+    if self.sock is not None:
+      self.sock.close()
+    if self.zctx is not None:
+      self.zctx.term()
+
   def connect(self):
     self.zctx = zmq.Context()
     self.sock = self.zctx.socket(zmq.PUSH)
