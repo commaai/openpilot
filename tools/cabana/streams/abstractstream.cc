@@ -47,7 +47,8 @@ void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t 
 
 bool AbstractStream::postEvents() {
   // delay posting CAN message if UI thread is busy
-  if (processing.exchange(true) == false) {
+  if (processing == false) {
+    processing = true;
     for (auto it = new_msgs->begin(); it != new_msgs->end(); ++it) {
       it.value() = all_msgs[it.key()];
     }
@@ -93,7 +94,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       m.freq = m.count / std::max(1.0, ts);
     }
   }
+
+  // deep copy all_msgs to last_msgs to avoid multi-threading issue.
   last_msgs = all_msgs;
+  last_msgs.detach();
   // use a timer to prevent recursive calls
   QTimer::singleShot(0, [this]() {
     emit updated();
