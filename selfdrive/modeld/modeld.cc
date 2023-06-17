@@ -61,7 +61,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "mapRenderState", "navInstruction", "navModel"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -72,6 +72,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
+  bool nav_enabled = false;
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
@@ -137,6 +138,25 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
+    // Enable/disable nav features
+    double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
+    bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
+    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
+    bool nav_valid = route_valid && render_valid;
+    if (!nav_enabled && nav_valid) {
+      nav_enabled = true;
+    } else if (nav_enabled && !nav_valid) {
+      memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      nav_enabled = false;
+    }
+
+    if (nav_enabled && sm.updated("navModel")) {
+      auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
+      for (int i=0; i<NAV_FEATURE_LEN; i++) {
+        nav_features[i] = nav_model_features[i];
+      }
+    }
+
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
@@ -179,9 +199,6 @@ int main(int argc, char **argv) {
     assert(ret == 0);
   }
 
-  bool main_wide_camera = Params().getBool("WideCameraOnly");
-  bool use_extra_client = !main_wide_camera;  // set for single camera mode
-
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -191,8 +208,22 @@ int main(int argc, char **argv) {
   model_init(&model, device_id, context);
   LOGW("models loaded, modeld starting");
 
+  bool main_wide_camera = false;
+  bool use_extra_client = true; // set to false to use single camera
+  while (!do_exit) {
+    auto streams = VisionIpcClient::getAvailableStreams("camerad", false);
+    if (!streams.empty()) {
+      use_extra_client = streams.count(VISION_STREAM_WIDE_ROAD) > 0 && streams.count(VISION_STREAM_ROAD) > 0;
+      main_wide_camera = streams.count(VISION_STREAM_ROAD) == 0;
+      break;
+    }
+
+    util::sleep_for(100);
+  }
+
   VisionIpcClient vipc_client_main = VisionIpcClient("camerad", main_wide_camera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD, true, device_id, context);
   VisionIpcClient vipc_client_extra = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, false, device_id, context);
+  LOGW("vision stream set up, main_wide_camera: %d, use_extra_client: %d", main_wide_camera, use_extra_client);
 
   while (!do_exit && !vipc_client_main.connect(false)) {
     util::sleep_for(100);

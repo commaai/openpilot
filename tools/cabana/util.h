@@ -136,3 +136,4 @@ private:
 };
 
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);

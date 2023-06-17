@@ -36,9 +36,9 @@ class CarController:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 
       self.apply_steer_last = apply_steer
 
@@ -76,7 +76,7 @@ class CarController:
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-                                                        
+
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
 

@@ -42,7 +42,12 @@ int main(int argc, char *argv[]) {
     if (cmd_parser.isSet("panda-serial")) {
       config.serial = cmd_parser.value("panda-serial");
     }
-    stream = new PandaStream(&app, config);
+    try {
+      stream = new PandaStream(&app, config);
+    } catch (std::exception &e) {
+      qWarning() << e.what();
+      return 0;
+    }
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {

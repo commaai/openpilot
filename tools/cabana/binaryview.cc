@@ -127,15 +127,6 @@ void BinaryView::highlight(const cabana::Signal *sig) {
       }
     }
 
-    if (sig && underMouse()) {
-      QString tooltip = tr(R"(%1<br /><span style="color:gray;font-size:small">
-        Size:%2 LE:%3 SGD:%4</span>
-      )").arg(sig->name).arg(sig->size).arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
-      QToolTip::showText(QCursor::pos(), tooltip, this, rect());
-    } else {
-      QToolTip::showText(QCursor::pos(), "", this, rect());
-    }
-
     hovered_sig = sig;
     emit signalHovered(hovered_sig);
   }
@@ -228,9 +219,12 @@ void BinaryView::refresh() {
 
 QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
   QSet<const cabana::Signal *> overlapping;
-  for (auto &item : model->items) {
-    if (item.sigs.size() > 1)
-      for (auto s : item.sigs) overlapping += s;
+  for (const auto &item : model->items) {
+    if (item.sigs.size() > 1) {
+      for (auto s : item.sigs) {
+        if (s->type == cabana::Signal::Type::Normal) overlapping += s;
+      }
+    }
   }
   return overlapping;
 }
@@ -344,6 +338,16 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
       case Qt::DisplayRole: return section;
       case Qt::SizeHintRole: return QSize(VERTICAL_HEADER_WIDTH, 0);
       case Qt::TextAlignmentRole: return Qt::AlignCenter;
+    }
+  }
+  return {};
+}
+
+QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
+  if (role == Qt::ToolTipRole) {
+    auto item = (const BinaryViewModel::Item *)index.internalPointer();
+    if (item && !item->sigs.empty()) {
+      return signalToolTip(item->sigs.back());
     }
   }
   return {};

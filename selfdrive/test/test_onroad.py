@@ -30,6 +30,7 @@ PROCS = {
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
+  "./mapsd": 2.0,
   "selfdrive.controls.plannerd": 16.5,
   "./_ui": 21.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -37,6 +38,7 @@ PROCS = {
   "selfdrive.controls.radard": 4.5,
   "./_modeld": 4.48,
   "./_dmonitoringmodeld": 5.0,
+  "./_navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
@@ -84,6 +86,8 @@ TIMINGS = {
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
+  "navModel": [2.5, 0.35],
+  "mapRenderState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -113,6 +117,7 @@ class TestOnroad(unittest.TestCase):
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(ROOT):
       shutil.rmtree(ROOT)
+    os.system("rm /dev/shm/*")
 
     # Make sure athena isn't running
     os.system("pkill -9 -f athena")
@@ -255,6 +260,14 @@ class TestOnroad(unittest.TestCase):
     print(result)
 
     self.assertTrue(cpu_ok)
+
+  def test_memory_usage(self):
+    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
+    print("Memory usage: ", mems)
+
+    # check for big leaks. note that memory usage is
+    # expected to go up while the MSGQ buffers fill up
+    self.assertLessEqual(max(mems) - min(mems), 3.0)
 
   def test_camera_processing_time(self):
     result = "\n"

@@ -35,7 +35,7 @@ bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
 
 
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
-  util::set_thread_name(cam_info.filename);
+  util::set_thread_name(cam_info.thread_name);
 
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
@@ -50,20 +50,15 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGW("encoder %s init %dx%d", cam_info.filename, buf_info.width, buf_info.height);
+      LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
 
       if (buf_info.width > 0 && buf_info.height > 0) {
-        // main encoder
-        encoders.push_back(new Encoder(cam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                      cam_info.fps, cam_info.bitrate,
-                                      cam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                      buf_info.width, buf_info.height, false));
-        // qcamera encoder
-        if (cam_info.has_qcamera) {
-          encoders.push_back(new Encoder(qcam_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                        qcam_info.fps, qcam_info.bitrate,
-                                        qcam_info.is_h265 ? cereal::EncodeIndex::Type::FULL_H_E_V_C : cereal::EncodeIndex::Type::QCAMERA_H264,
-                                        qcam_info.frame_width, qcam_info.frame_height, false));
+        for (const auto &encoder_info: cam_info.encoder_infos){
+          encoders.push_back(new Encoder(encoder_info.filename, cam_info.type, buf_info.width, buf_info.height,
+                                        encoder_info.fps, encoder_info.bitrate,
+                                        encoder_info.encode_type,
+                                        encoder_info.frame_width, encoder_info.frame_height,
+                                        encoder_info.publish_name));
         }
       } else {
         LOGE("not initting empty encoder");
@@ -85,7 +80,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.filename, buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;

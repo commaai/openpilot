@@ -28,7 +28,7 @@ public:
   void updateState();
   void updateItem(int row, int col, const QString &val, const QColor &color);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
   inline QModelIndex bitIndex(int bit, bool is_lb) const { return index(bit / 8, is_lb ? (7 - bit % 8) : bit % 8); }
