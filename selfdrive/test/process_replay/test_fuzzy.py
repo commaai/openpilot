@@ -6,7 +6,7 @@ import unittest
 
 from cereal import log
 from selfdrive.car.toyota.values import CAR as TOYOTA
-from selfdrive.test.fuzzy_generation import get_random_event_msg
+from selfdrive.test.fuzzy_generation import FuzzyGenerator
 import selfdrive.test.process_replay.process_replay as pr
 
 NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'laikad']
@@ -17,7 +17,7 @@ class TestFuzzProcesses(unittest.TestCase):
   @given(st.data())
   @settings(phases=[Phase.generate, Phase.target], deadline=1000, suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
   def test_fuzz_process(self, proc_name, cfg, data):
-    msgs = data.draw(get_random_event_msg(required=cfg.pubs, real_floats=True))
+    msgs = data.draw(FuzzyGenerator.get_random_event_msg(required=cfg.pubs, real_floats=True))
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
     pr.replay_process(cfg, lr, TOYOTA.COROLLA_TSS2, disable_progress=True)

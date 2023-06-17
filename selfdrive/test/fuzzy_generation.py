@@ -67,9 +67,11 @@ class FuzzyGenerator:
     single_fill = [required] if required else [random.choice(schema.union_fields)] if schema.union_fields else []
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
-def get_random_msg(struct, real_floats=False):
-  return FuzzyGenerator(real_floats=real_floats).generate_struct(struct.schema)
+  @classmethod
+  def get_random_msg(cls, struct, real_floats=False):
+    return cls(real_floats=real_floats).generate_struct(struct.schema)
 
-def get_random_event_msg(required, real_floats=False):
-  fg = FuzzyGenerator(real_floats=real_floats)
-  return st.tuples(*[fg.generate_struct(log.Event.schema, r) for r in required])
+  @classmethod
+  def get_random_event_msg(cls, required, real_floats=False):
+    fg = cls(real_floats=real_floats)
+    return st.tuples(*[fg.generate_struct(log.Event.schema, r) for r in required])
