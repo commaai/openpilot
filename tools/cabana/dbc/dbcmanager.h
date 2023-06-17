@@ -15,7 +15,7 @@ class DBCManager : public QObject {
   Q_OBJECT
 
 public:
-  DBCManager(QObject *parent) {}
+  DBCManager(QObject *parent) : QObject(parent) {}
   ~DBCManager() {}
   bool open(const SourceSet &sources, const QString &dbc_file_name, QString *error = nullptr);
   bool open(const SourceSet &sources, const QString &name, const QString &content, QString *error = nullptr);

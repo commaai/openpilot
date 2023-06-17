@@ -125,7 +125,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
   for (; first != last && (*first)->mono_time > min_time; ++first) {
     const CanEvent *e = *first;
     for (int i = 0; i < sigs.size(); ++i) {
-      values[i] = get_raw_value(e->dat, e->size, *sigs[i]);
+      sigs[i]->getValue(e->dat, e->size, &values[i]);
     }
     if (!filter_cmp || filter_cmp(values[filter_sig_idx], filter_value)) {
       auto &m = msgs.emplace_back();

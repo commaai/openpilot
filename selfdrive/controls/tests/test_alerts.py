@@ -76,9 +76,10 @@ class TestAlerts(unittest.TestCase):
           break
 
         font = fonts[alert.alert_size][i]
-        w, _ = draw.textsize(txt, font)
+        left, _, right, _ = draw.textbbox((0, 0), txt, font)
+        width = right - left
         msg = f"type: {alert.alert_type} msg: {txt}"
-        self.assertLessEqual(w, max_text_width, msg=msg)
+        self.assertLessEqual(width, max_text_width, msg=msg)
 
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():

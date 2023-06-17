@@ -373,7 +373,8 @@ void MainWindow::eventsMerged() {
     if (!dbc()->msgCount() && !car_fingerprint.isEmpty()) {
       auto dbc_name = fingerprint_to_dbc[car_fingerprint];
       if (dbc_name != QJsonValue::Undefined) {
-        loadDBCFromOpendbc(dbc_name.toString());
+        // Prevent dialog that load autosaved file from blocking replay->start().
+        QTimer::singleShot(0, [dbc_name, this]() { loadDBCFromOpendbc(dbc_name.toString()); });
       }
     }
   }
@@ -482,7 +483,7 @@ void MainWindow::updateLoadSaveMenus() {
   manage_dbcs_menu->clear();
   manage_dbcs_menu->setEnabled(dynamic_cast<DummyStream *>(can) == nullptr);
 
-  for (uint8_t source : can->sources) {
+  for (int source : can->sources) {
     if (source >= 64) continue; // Sent and blocked buses are handled implicitly
 
     SourceSet ss = {source, uint8_t(source + 128), uint8_t(source + 192)};

@@ -52,8 +52,18 @@ public:
   Signal() = default;
   Signal(const Signal &other) = default;
   void update();
+  bool getValue(const uint8_t *data, size_t data_size, double *val) const;
   QString formatValue(double value) const;
+  bool operator==(const cabana::Signal &other) const;
+  inline bool operator!=(const cabana::Signal &other) const { return !(*this == other); }
 
+  enum class Type {
+    Normal = 0,
+    Multiplexed,
+    Multiplexor
+  };
+
+  Type type = Type::Normal;
   QString name;
   int start_bit, msb, lsb, size;
   double factor, offset;
@@ -65,6 +75,10 @@ public:
   ValueDescription val_desc;
   int precision = 0;
   QColor color;
+
+  // Multiplexed
+  int multiplex_value = 0;
+  Signal *multiplexor = nullptr;
 };
 
 class Msg {
@@ -79,6 +93,7 @@ public:
   int indexOf(const cabana::Signal *sig) const;
   cabana::Signal *sig(const QString &sig_name) const;
   QString newSignalName();
+  void update();
   inline const std::vector<cabana::Signal *> &getSignals() const { return sigs; }
 
   uint32_t address;
@@ -88,11 +103,8 @@ public:
   std::vector<cabana::Signal *> sigs;
 
   QList<uint8_t> mask;
-  void update();
+  cabana::Signal *multiplexor = nullptr;
 };
-
-bool operator==(const cabana::Signal &l, const cabana::Signal &r);
-inline bool operator!=(const cabana::Signal &l, const cabana::Signal &r) { return !(l == r); }
 
 }  // namespace cabana
 

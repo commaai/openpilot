@@ -255,7 +255,6 @@ void V4LEncoder::encoder_init() {
 
 void V4LEncoder::encoder_open(const char* path) {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
-  writer_open(path);
   this->is_open = true;
   this->counter = 0;
 }
@@ -288,7 +287,6 @@ void V4LEncoder::encoder_close() {
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
     assert(extras.empty());
-    writer_close();
   }
   this->is_open = false;
 }
