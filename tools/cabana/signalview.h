@@ -116,6 +116,7 @@ private:
   void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
   void setSparklineRange(int value);
+  void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
   void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
 

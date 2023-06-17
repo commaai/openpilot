@@ -528,7 +528,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
   QObject::connect(tree, &QTreeView::entered, [this](const QModelIndex &index) { emit highlight(model->getItem(index)->sig); });
   QObject::connect(model, &QAbstractItemModel::modelReset, this, &SignalView::rowsChanged);
   QObject::connect(model, &QAbstractItemModel::rowsRemoved, this, &SignalView::rowsChanged);
-  QObject::connect(dbc(), &DBCManager::signalAdded, [this](MessageId id, const cabana::Signal *sig) { selectSignal(sig); });
+  QObject::connect(dbc(), &DBCManager::signalAdded, this, &SignalView::handleSignalAdded);
   QObject::connect(dbc(), &DBCManager::signalUpdated, this, &SignalView::handleSignalUpdated);
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::valueChanged, [this]() { updateState(); });
   QObject::connect(tree->verticalScrollBar(), &QScrollBar::rangeChanged, [this]() { updateState(); });
@@ -630,6 +630,12 @@ void SignalView::setSparklineRange(int value) {
   settings.sparkline_range = value;
   updateToolBar();
   updateState();
+}
+
+void SignalView::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
+  if (id.address == model->msg_id.address) {
+    selectSignal(sig);
+  }
 }
 
 void SignalView::handleSignalUpdated(const cabana::Signal *sig) {
