@@ -34,7 +34,7 @@ class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 
 
-class Buttons(IntFlag):
+class Buttons(IntEnum):
   NONE = 0
   RES_INC = 1 # resume / increase speed
   SET_DEC = 2 # set / decrease speed
