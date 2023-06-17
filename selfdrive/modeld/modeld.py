@@ -47,17 +47,15 @@ def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClien
   live_calib_seen = False
   driving_style = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32)
   nav_features = np.zeros(NAV_FEATURE_LEN, dtype=np.float32)
-
   buf_main = None
   buf_extra = None
-  meta_main = VisionIpcBufExtra()
-  meta_extra = VisionIpcBufExtra()
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
-      buf_main = vipc_client_main.recv(meta_main)
-      if buf_main is None: break
+    while vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000:
+      buf_main = vipc_client_main.recv()
+      if buf_main is None:
+        break
 
     if buf_main is None:
       logging.error("vipc_client_main no frame")
@@ -66,20 +64,21 @@ def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClien
     if use_extra_client:
       # Keep receiving extra frames until frame id matches main camera
       while True:
-        buf_extra = vipc_client_extra.recv(meta_extra)
-        if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000: break
+        buf_extra = vipc_client_extra.recv()
+        if buf_extra is None or vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000: break
 
       if buf_extra is None:
         logging.error("vipc_client_extra no frame")
         continue
 
-      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        logging.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}), extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
+      if abs(vipc_client_main.timestamp_sof - vipc_client_main.timestamp_sof) > 10000000:
+        logging.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
+          vipc_client_main.frame_id, vipc_client_main.timestamp_sof / 1e9,
+          vipc_client_extra.frame_id, vipc_client_extra.timestamp_sof / 1e9))
 
     else:
       # Use single camera
       buf_extra = buf_main
-      meta_extra = meta_main
 
     # TODO: path planner timeout?
     sm.update(0)
@@ -97,7 +96,7 @@ def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClien
       vec_desire[desire] = 1
 
     # tracked dropped frames
-    vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1
+    vipc_dropped_frames = vipc_client_main.frame_id - last_vipc_frame_id - 1
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       frame_dropped_filter.reset(0)
@@ -118,14 +117,14 @@ def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClien
 
     """
     if model_output:
-      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+      model_publish(pm, vipc_client_main.frame_id, vipc_client_extra.frame_id, frame_id, frame_drop_ratio, *model_output, vipc_client_main.timestamp_eof, model_execution_time,
                     kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen)
-      posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen)
+      posenet_publish(pm, vipc_client_main.frame_id, vipc_dropped_frames, *model_output, vipc_client_main.timestamp_eof, live_calib_seen)
     """
 
     # print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n" % (mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio))
     last = mt1
-    last_vipc_frame_id = meta_main.frame_id
+    last_vipc_frame_id = vipc_client_main.frame_id
 
 
 if __name__ == '__main__':
