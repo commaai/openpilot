@@ -56,7 +56,11 @@ class CarState(CarStateBase):
     cp_cruise = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     ret.cruiseState.enabled = cp_cruise.vl["CruiseControl"]["Cruise_Activated"] != 0
     ret.cruiseState.available = cp_cruise.vl["CruiseControl"]["Cruise_On"] != 0
-    ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+
+    if self.car_fingerprint in PREGLOBAL_CARS:
+      ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
+    else:
+      ret.cruiseState.speed = cp_cruise.vl["Cruise_Status"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
        (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
@@ -134,7 +138,7 @@ class CarState(CarStateBase):
       ("Cruise_Throttle", "ES_Distance"),
       ("Signal2", "ES_Distance"),
       ("Car_Follow", "ES_Distance"),
-      ("Signal3", "ES_Distance"),
+      ("Low_Speed_Follow", "ES_Distance"),
       ("Cruise_Soft_Disable", "ES_Distance"),
       ("Signal7", "ES_Distance"),
       ("Cruise_Brake_Active", "ES_Distance"),
