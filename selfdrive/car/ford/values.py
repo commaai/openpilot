@@ -61,7 +61,7 @@ DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base
 
 class Footnote(Enum):
   FOCUS = CarFootnote(
-    "Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in" +
+    "Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in " +
     "North and South America/Southeast Asia.",
     Column.MODEL,
   )
