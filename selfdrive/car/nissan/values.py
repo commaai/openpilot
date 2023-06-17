@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
@@ -79,25 +80,57 @@ FINGERPRINTS = {
   ]
 }
 
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+# NISSAN_DIAGNOSTIC_REQUEST_KWP2 = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
+# NISSAN_DIAGNOSTIC_RESPONSE_KWP2 = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
 
 NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
 NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
 
 NISSAN_RX_OFFSET = 0x20
 
-FW_QUERY_CONFIG = FwQueryConfig(
+
+@dataclass
+class NissanFwQueryConfig(FwQueryConfig):
+  pass
+  # def __post_init__(self):
+  #   super().__post_init__()
+  #   # Add debugging queries queries
+  #   for i in range(len(self.requests)):
+  #     new_request = copy.deepcopy(self.requests[i])
+  #     # new_request.request[0]
+  #     print(self.requests[i].request)
+  #     print(self.requests[i].request[0][1])
+  #     b =
+  #     self.requests[i].request[0] = bytes()
+  #     print(self.requests[i].request)
+  #     print(NISSAN_DIAGNOSTIC_REQUEST_KWP)
+  #     print(self.requests[i].request[0] == NISSAN_DIAGNOSTIC_REQUEST_KWP)
+  #     print()
+
+
+
+FW_QUERY_CONFIG = NissanFwQueryConfig(
   requests=[
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
     ),
+    # Request(
+    #   [NISSAN_DIAGNOSTIC_REQUEST_KWP2, NISSAN_VERSION_REQUEST_KWP],
+    #   [NISSAN_DIAGNOSTIC_RESPONSE_KWP2, NISSAN_VERSION_RESPONSE_KWP],
+    # ),
     Request(
       [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
       [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
       rx_offset=NISSAN_RX_OFFSET,
     ),
+    # Request(
+    #   [NISSAN_DIAGNOSTIC_REQUEST_KWP2, NISSAN_VERSION_REQUEST_KWP],
+    #   [NISSAN_DIAGNOSTIC_RESPONSE_KWP2, NISSAN_VERSION_RESPONSE_KWP],
+    #   rx_offset=NISSAN_RX_OFFSET,
+    # ),
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
