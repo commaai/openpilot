@@ -89,6 +89,7 @@ NISSAN_RX_OFFSET = 0x20
 
 # Try diagnostic sessions: default, standby, extended, Nissan-specific
 NISSAN_DIAGNOSTIC_SESSION_TYPES = (0x81, 0x89, 0x92, 0xc0)
+NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE = 0xc0
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -96,6 +97,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       Request(
         [NISSAN_DIAGNOSTIC_REQUEST_KWP + bytes([subfunction]), NISSAN_VERSION_REQUEST_KWP],
         [NISSAN_DIAGNOSTIC_RESPONSE_KWP + bytes([subfunction]), NISSAN_VERSION_RESPONSE_KWP],
+        logging=subfunction != NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE,
       ) for subfunction in NISSAN_DIAGNOSTIC_SESSION_TYPES
     ],
     *[
@@ -103,6 +105,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
         [NISSAN_DIAGNOSTIC_REQUEST_KWP + bytes([subfunction]), NISSAN_VERSION_REQUEST_KWP],
         [NISSAN_DIAGNOSTIC_RESPONSE_KWP + bytes([subfunction]), NISSAN_VERSION_RESPONSE_KWP],
         rx_offset=NISSAN_RX_OFFSET,
+        logging=subfunction != NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE,
       ) for subfunction in NISSAN_DIAGNOSTIC_SESSION_TYPES
     ],
     Request(
