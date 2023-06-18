@@ -9,5 +9,4 @@ public:
   explicit ScrollView(QWidget *w = nullptr, QWidget *parent = nullptr);
 protected:
   void hideEvent(QHideEvent *e) override;
-  void resizeEvent(QResizeEvent *e) override;
 };
