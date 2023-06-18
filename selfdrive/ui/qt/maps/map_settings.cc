@@ -184,32 +184,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
   frame->addWidget(destinations_scroller);
 
-
-  // TODO: remove this
-  cur_destinations = R"([
-    {
-      "save_type": "favorite",
-      "label": "home",
-      "place_name": "Home",
-      "place_details": "123 Main St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "favorite",
-      "place_name": "Target",
-      "place_details": "456 Market St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "recent",
-      "place_name": "Whole Foods",
-      "place_details": "789 Mission St, San Francisco, CA 94103, USA"
-    },
-    {
-      "save_type": "recent",
-      "place_name": "Safeway",
-      "place_details": "101 4th St, San Francisco, CA 94103, USA"
-    }
-  ])";
-
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
     {
@@ -305,24 +279,32 @@ void MapSettings::refresh() {
     }
   }
 
+  // TODO: should we build a new layout and swap it in?
   clearLayout(destinations_layout);
 
-  // TODO: sort: home, work, favorites, recents
-  // add favorites before recents
-  for (auto &save_type : {NAV_TYPE_FAVORITE, NAV_TYPE_RECENT}) {
-    for (auto destination : destinations) {
-      if (destination->type != save_type) continue;
+  // sort: home, work, favorites, recents
+  std::sort(destinations.begin(), destinations.end(), [](NavDestination* a, NavDestination* b) {
+    if (a->label == NAV_FAVORITE_LABEL_HOME) return true;
+    else if (b->label == NAV_FAVORITE_LABEL_HOME) return false;
+    else if (a->label == NAV_FAVORITE_LABEL_WORK) return true;
+    else if (b->label == NAV_FAVORITE_LABEL_WORK) return false;
+    else if (a->type == NAV_TYPE_FAVORITE) return true;
+    else if (b->type == NAV_TYPE_FAVORITE) return false;
+    else if (a->type == NAV_TYPE_RECENT) return true;
+    else if (b->type == NAV_TYPE_RECENT) return false;
+    return false;
+  });
 
-      auto widget = new DestinationWidget(this);
-      widget->set(destination, false);
+  for (auto destination : destinations) {
+    auto widget = new DestinationWidget(this);
+    widget->set(destination, false);
 
-      QObject::connect(widget, &ClickableWidget::clicked, [=]() {
-        navigateTo(destination->toJson());
-        emit closeSettings();
-      });
+    QObject::connect(widget, &ClickableWidget::clicked, [=]() {
+      navigateTo(destination->toJson());
+      emit closeSettings();
+    });
 
-      destinations_layout->addWidget(widget);
-    }
+    destinations_layout->addWidget(widget);
   }
 
   // add home and work if missing
