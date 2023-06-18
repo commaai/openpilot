@@ -25,13 +25,14 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   auto *inner_frame = new QVBoxLayout;
   inner_frame->setContentsMargins(0, 0, 0, 0);
   inner_frame->setSpacing(0);
+  {
+    title = new ElidedLabel(this);
+    inner_frame->addWidget(title);
 
-  title = new QLabel(this);
-  inner_frame->addWidget(title);
-
-  subtitle = new QLabel(this);
-  subtitle->setStyleSheet("color: #A0A0A0;");
-  inner_frame->addWidget(subtitle);
+    subtitle = new ElidedLabel(this);
+    subtitle->setStyleSheet("color: #A0A0A0;");
+    inner_frame->addWidget(subtitle);
+  }
   frame->addLayout(inner_frame, 1);
 
   action = new QLabel(this);
