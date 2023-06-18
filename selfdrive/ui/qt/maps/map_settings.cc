@@ -147,7 +147,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
       close_button->setStyleSheet(R"(
       QPushButton {
         color: #FFFFFF;
-        font-size: 60px;
+        font-size: 80px;
         font-weight: 600;
         border: none;
       }
