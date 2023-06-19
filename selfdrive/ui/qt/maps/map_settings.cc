@@ -146,6 +146,29 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   heading_frame->setContentsMargins(0, 0, 0, 0);
   heading_frame->setSpacing(32);
   {
+    if (closeable) {
+      auto *close_btn = new QPushButton(tr("×"));
+      close_btn->setStyleSheet(R"(
+        QPushButton {
+          color: #FFFFFF;
+          font-size: 100px;
+          padding-bottom: 14px;
+          border 1px grey solid;
+          border-radius: 70px;
+          background-color: #202020;
+          font-weight: 500;
+        }
+        QPushButton:pressed {
+          background-color: #303030;
+        }
+      )");
+      close_btn->setFixedSize(140, 140);
+      QObject::connect(close_btn, &QPushButton::clicked,
+                       [=]() { emit closeSettings(); });
+      // TODO: read map_on_left from ui state
+      heading_frame->addWidget(close_btn);
+    }
+
     auto *heading = new QVBoxLayout;
     heading->setContentsMargins(0, 0, 0, 0);
     heading->setSpacing(16);
@@ -160,28 +183,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
       heading->addWidget(subtitle);
     }
     heading_frame->addLayout(heading, 1);
-
-    if (closeable) {
-      auto *close_btn = new QPushButton(tr("×"));
-      close_btn->setStyleSheet(R"(
-        QPushButton {
-          color: #FFFFFF;
-          font-size: 120px;
-          padding-bottom: 18px;
-          border 1px grey solid;
-          border-radius: 70px;
-          background-color: #292929;
-          font-weight: 400;
-        }
-        QPushButton:pressed {
-          background-color: #3B3B3B;
-        }
-      )");
-      close_btn->setFixedSize(140, 140);
-      QObject::connect(close_btn, &QPushButton::clicked,
-                       [=]() { emit closeSettings(); });
-      heading_frame->addWidget(close_btn);
-    }
   }
   frame->addLayout(heading_frame);
   frame->addSpacing(32);
