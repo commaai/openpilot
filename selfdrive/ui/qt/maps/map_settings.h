@@ -21,30 +21,41 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
-      : type(place["save_type"].toString()), label(place["label"].toString()), name(place["place_name"].toString()),
-        details(place["place_details"].toString()) {}
+      : type_(place["save_type"].toString()), label_(place["label"].toString()),
+        name_(place["place_name"].toString()), details_(place["place_details"].toString()) {
+    // if details starts with `name, ` remove it
+    if (details_.startsWith(name_ + ", ")) {
+      details_ = details_.mid(name_.length() + 2);
+    }
+  }
 
-  bool isFavorite() const { return type == NAV_TYPE_FAVORITE; }
-  bool isRecent() const { return type == NAV_TYPE_RECENT; }
+  // getters
+  QString type() const { return type_; }
+  QString label() const { return label_; }
+  QString name() const { return name_; }
+  QString details() const { return details_; }
 
-  friend bool operator==(const NavDestination& lhs, const NavDestination& rhs) {
-    return lhs.type == rhs.type &&
-           lhs.label == rhs.label &&
-           lhs.name == rhs.name &&
-           lhs.details == rhs.details;
+  bool isFavorite() const { return type_ == NAV_TYPE_FAVORITE; }
+  bool isRecent() const { return type_ == NAV_TYPE_RECENT; }
+
+  friend bool operator==(const NavDestination &lhs, const NavDestination &rhs) {
+    return lhs.type_ == rhs.type_ &&
+           lhs.label_ == rhs.label_ &&
+           lhs.name_ == rhs.name_ &&
+           lhs.details_ == rhs.details_;
   }
 
   QJsonObject toJson() const {
     QJsonObject obj;
-    obj["save_type"] = type;
-    obj["label"] = label;
-    obj["place_name"] = name;
-    obj["place_details"] = details;
+    obj["save_type"] = type_;
+    obj["label"] = label_;
+    obj["place_name"] = name_;
+    obj["place_details"] = details_;
     return obj;
   }
 
-public:
-  const QString type, label, name, details;
+private:
+  QString type_, label_, name_, details_;
 };
 
 class DestinationWidget : public ClickableWidget {

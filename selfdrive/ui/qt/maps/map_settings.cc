@@ -80,15 +80,15 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
   setProperty("current", current);
   setProperty("set", true);
 
-  auto title_text = destination->name;
-  auto subtitle_text = destination->details;
+  auto title_text = destination->name();
+  auto subtitle_text = destination->details();
   auto icon_pixmap = icons().recent;
 
   if (destination->isFavorite()) {
-    if (destination->label == NAV_FAVORITE_LABEL_HOME) {
+    if (destination->label() == NAV_FAVORITE_LABEL_HOME) {
       title_text = tr("Home");
       icon_pixmap = icons().home;
-    } else if (destination->label == NAV_FAVORITE_LABEL_WORK) {
+    } else if (destination->label() == NAV_FAVORITE_LABEL_WORK) {
       title_text = tr("Work");
       icon_pixmap = icons().work;
     } else {
@@ -273,8 +273,8 @@ void MapSettings::refresh() {
 
       // add home and work later if they are missing
       if (destination->isFavorite()) {
-        if (destination->label == NAV_FAVORITE_LABEL_HOME) has_home = true;
-        else if (destination->label == NAV_FAVORITE_LABEL_WORK) has_work = true;
+        if (destination->label() == NAV_FAVORITE_LABEL_HOME) has_home = true;
+        else if (destination->label() == NAV_FAVORITE_LABEL_WORK) has_work = true;
       }
 
       // skip current destination
@@ -288,15 +288,15 @@ void MapSettings::refresh() {
   clearLayout(destinations_layout);
 
   // sort: home, work, favorites, recents
-  std::sort(destinations.begin(), destinations.end(), [](NavDestination* a, NavDestination* b) {
-    if (a->label == NAV_FAVORITE_LABEL_HOME) return true;
-    else if (b->label == NAV_FAVORITE_LABEL_HOME) return false;
-    else if (a->label == NAV_FAVORITE_LABEL_WORK) return true;
-    else if (b->label == NAV_FAVORITE_LABEL_WORK) return false;
-    else if (a->type == NAV_TYPE_FAVORITE) return true;
-    else if (b->type == NAV_TYPE_FAVORITE) return false;
-    else if (a->type == NAV_TYPE_RECENT) return true;
-    else if (b->type == NAV_TYPE_RECENT) return false;
+  std::sort(destinations.begin(), destinations.end(), [](NavDestination *a, NavDestination *b) {
+    if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
+    else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
+    else if (a->label() == NAV_FAVORITE_LABEL_WORK) return true;
+    else if (b->label() == NAV_FAVORITE_LABEL_WORK) return false;
+    else if (a->type() == NAV_TYPE_FAVORITE) return true;
+    else if (b->type() == NAV_TYPE_FAVORITE) return false;
+    else if (a->type() == NAV_TYPE_RECENT) return true;
+    else if (b->type() == NAV_TYPE_RECENT) return false;
     return false;
   });
 
