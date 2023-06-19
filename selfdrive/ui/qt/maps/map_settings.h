@@ -44,6 +44,8 @@ public:
   }
 
   bool operator<(const NavDestination &rhs) const {
+    qDebug() << "operator<" << label_ << rhs.label_;
+
     if (isFavorite() && rhs.isFavorite()) {
       if (label_ == NAV_FAVORITE_LABEL_HOME) return true;
       else if (rhs.label_ == NAV_FAVORITE_LABEL_HOME) return false;
