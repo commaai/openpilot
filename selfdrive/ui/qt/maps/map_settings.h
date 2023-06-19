@@ -105,6 +105,8 @@ private:
   NavDestination *current_destination;
   DestinationWidget *current_widget;
 
+  QPixmap close_icon;
+
 signals:
   void closeSettings();
 };

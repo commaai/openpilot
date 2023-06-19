@@ -133,44 +133,57 @@ void DestinationWidget::unset(const QString &label, bool current) {
 
 MapSettings::MapSettings(bool closeable, QWidget *parent)
     : QFrame(parent), current_destination(nullptr) {
+  QSize icon_size(100, 100);
+  close_icon = loadPixmap("../assets/icons/close.svg", icon_size);
+
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QVBoxLayout(this);
   frame->setContentsMargins(40, 40, 40, 0);
   frame->setSpacing(0);
 
-  auto *heading = new QHBoxLayout;
-  heading->setContentsMargins(0, 0, 0, 0);
-  heading->setSpacing(32);
+  auto *heading_frame = new QHBoxLayout;
+  heading_frame->setContentsMargins(0, 0, 0, 0);
+  heading_frame->setSpacing(32);
   {
-    auto *title = new QLabel(tr("comma navigation"), this);
-    title->setStyleSheet("color: #FFFFFF; font-size: 56px; font-weight: 500;");
-    heading->addWidget(title, 1);
+    auto *heading = new QVBoxLayout;
+    heading->setContentsMargins(0, 0, 0, 0);
+    heading->setSpacing(16);
+    {
+      auto *title = new QLabel(tr("comma navigation"), this);
+      title->setStyleSheet(
+          "color: #FFFFFF; font-size: 56px; font-weight: 500;");
+      heading->addWidget(title);
+
+      auto *subtitle = new QLabel(tr("manage at connect.comma.ai"), this);
+      subtitle->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
+      heading->addWidget(subtitle);
+    }
+    heading_frame->addLayout(heading, 1);
 
     if (closeable) {
-      auto *close_button = new QPushButton("×", this);
-      close_button->setStyleSheet(R"(
-      QPushButton {
-        color: #FFFFFF;
-        font-size: 100px;
-        font-weight: 900;
-        border: none;
-      }
-      QPushButton:pressed {
-        color: #A0A0A0;
-      }
-    )");
-      QObject::connect(close_button, &QPushButton::clicked,
+      auto *close_btn = new QPushButton(tr("×"));
+      close_btn->setStyleSheet(R"(
+        QPushButton {
+          color: #FFFFFF;
+          font-size: 120px;
+          padding-bottom: 18px;
+          border 1px grey solid;
+          border-radius: 70px;
+          background-color: #292929;
+          font-weight: 400;
+        }
+        QPushButton:pressed {
+          background-color: #3B3B3B;
+        }
+      )");
+      close_btn->setFixedSize(140, 140);
+      QObject::connect(close_btn, &QPushButton::clicked,
                        [=]() { emit closeSettings(); });
-      heading->addWidget(close_button);
+      heading_frame->addWidget(close_btn);
     }
   }
-  frame->addLayout(heading);
-  frame->addSpacing(16);
-
-  auto *subheading = new QLabel(tr("manage at connect.comma.ai"), this);
-  subheading->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
-  frame->addWidget(subheading);
+  frame->addLayout(heading_frame);
   frame->addSpacing(32);
 
   current_widget = new DestinationWidget(this);

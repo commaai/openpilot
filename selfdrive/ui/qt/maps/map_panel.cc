@@ -30,12 +30,12 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
       settings_btn->setIconSize(icon_size);
       settings_btn->setStyleSheet(R"(
         QPushButton {
-          background-color: #77000000;
+          background-color: #70000000;
           border-radius: 30px;
           padding: 30px;
         }
         QPushButton:pressed {
-          background-color: #AA000000;
+          background-color: #A0000000;
         }
       )");
       QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
