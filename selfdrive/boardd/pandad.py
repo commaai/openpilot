@@ -128,8 +128,8 @@ def main() -> NoReturn:
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
 
       try:
-        log_state = json.loads(params.get("PandaLogState", "{}"))
-      except json.JSONDecodeError:
+        log_state = json.loads(params.get("PandaLogState"))
+      except (TypeError, json.JSONDecodeError):
         log_state = {}
 
       for panda in pandas:
