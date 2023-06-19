@@ -13,7 +13,7 @@
 #include "tools/replay/replay.h"
 
 struct CanData {
-  void compute(const char *dat, const int size, double current_sec, double playback_speed, const QList<uint8_t> &mask, uint32_t in_freq = 0);
+  void compute(const char *dat, const int size, double current_sec, double playback_speed, const std::vector<uint8_t> *mask, uint32_t in_freq = 0);
 
   double ts = 0.;
   uint32_t count = 0;
@@ -79,6 +79,7 @@ protected:
   uint64_t lastEventMonoTime() const { return lastest_event_ts; }
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
   void updateMessages(QHash<MessageId, CanData> *);
+  void updateMasks();
   void updateLastMsgsTo(double sec);
 
   uint64_t lastest_event_ts = 0;
@@ -88,6 +89,8 @@ protected:
   std::unordered_map<MessageId, std::vector<const CanEvent *>> events_;
   std::vector<const CanEvent *> all_events_;
   std::deque<std::unique_ptr<char[]>> memory_blocks;
+  std::mutex mutex;
+  std::unordered_map<MessageId, std::vector<uint8_t>> masks;
 };
 
 class AbstractOpenStreamWidget : public QWidget {
