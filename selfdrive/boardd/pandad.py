@@ -127,15 +127,10 @@ def main() -> NoReturn:
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
 
-      # store last panda logs
-      LOG_AMOUNT = 100
-      logs = {}
-      for panda in pandas:
-        try:
-          logs[panda.get_usb_serial()] = panda.get_logs(True)[-LOG_AMOUNT:]
-        except Exception:
-          cloudlog.exception(f"Error getting logs for {panda.get_usb_serial()}")
-      params.put("PandaLogs", json.dumps(logs, default=str))
+      try:
+        log_state = json.loads(params.get("PandaLogState", "{}"))
+      except json.JSONDecodeError:
+        log_state = {}
 
       for panda in pandas:
         # check health for lost heartbeat
@@ -144,17 +139,38 @@ def main() -> NoReturn:
           params.put_bool("PandaHeartbeatLost", True)
           cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
+        # panda logs
+        serial = panda.get_usb_serial()
+        try:
+          logs = panda.get_logs(True)
+
+          # remove old logs
+          if serial in log_state:
+            last_index = next((i for i, log in enumerate(logs) if log["id"] == log_state[serial]), -1)
+            logs = logs[last_index + 1:]
+
+          # update log state
+          if len(logs) > 0:
+            log_state[serial] = logs[-1]["id"]
+
+          for log in logs:
+            cloudlog.event("panda_log", **log, serial=serial)
+        except Exception:
+          cloudlog.exception(f"Error getting logs for panda {serial}")
+
         if first_run:
           if panda.is_internal():
             # update time from RTC
             set_time(cloudlog)
 
           # reset panda to ensure we're in a good state
-          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
+          cloudlog.info(f"Resetting panda {serial}")
           if panda.is_internal():
             HARDWARE.reset_internal_panda()
           else:
             panda.reset(reconnect=False)
+
+      params.put("PandaLogState", json.dumps(logs, default=str))
 
       for p in pandas:
         p.close()
