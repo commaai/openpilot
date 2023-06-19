@@ -47,6 +47,9 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
     auto map = new MapWindow(mapboxSettings);
     QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
+    QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
+      setVisible(visible);
+    });
     map_stack->addWidget(map);
   }
   content_stack->addWidget(map_container);

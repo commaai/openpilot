@@ -128,7 +128,7 @@ void MapWindow::updateState(const UIState &s) {
 
     // Only open the map on setting destination the first time
     if (allow_open) {
-      setVisible(true); // Show map on destination set/change
+      emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
   }
@@ -321,7 +321,7 @@ void MapWindow::offroadTransition(bool offroad) {
     clearRoute();
   } else {
     auto dest = coordinate_from_param("NavDestination");
-    setVisible(dest.has_value());
+    emit requestVisible(dest.has_value());
   }
   last_bearing = {};
 }
