@@ -9,7 +9,7 @@
 #include "selfdrive/ui/ui.h"
 
 MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : QFrame(parent) {
-  QSize icon_size(110, 110);
+  QSize icon_size(120, 120);
   directions_icon = loadPixmap("../assets/navigation/icon_directions.svg", icon_size);
 
   content_stack = new QStackedLayout(this);
@@ -30,12 +30,12 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
       settings_btn->setIconSize(icon_size);
       settings_btn->setStyleSheet(R"(
         QPushButton {
-          background-color: #66000000;
+          background-color: #77000000;
           border-radius: 30px;
-          padding: 25px;
+          padding: 30px;
         }
         QPushButton:pressed {
-          background-color: #99000000;
+          background-color: #AA000000;
         }
       )");
       QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
