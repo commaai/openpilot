@@ -15,7 +15,7 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8, cl_context context) {
+SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
   output = _output;
   output_size = _output_size;
   use_tf8 = _use_tf8;
@@ -39,19 +39,19 @@ SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int 
   printf("loaded model with size: %lu\n", model_data.size());
 
   // create model runner
-  zdl::SNPE::SNPEBuilder snpeBuilder(container.get());
+  zdl::SNPE::SNPEBuilder snpe_builder(container.get());
   while (!snpe) {
 #ifdef QCOM2
-    snpe = snpeBuilder.setOutputLayers({})
-                      .setRuntimeProcessor(Runtime)
-                      .setUseUserSuppliedBuffers(true)
-                      .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
-                      .build();
+    snpe = snpe_builder.setOutputLayers({})
+                       .setRuntimeProcessor(snpe_runtime)
+                       .setUseUserSuppliedBuffers(true)
+                       .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
+                       .build();
 #else
-    snpe = snpeBuilder.setOutputLayers({})
-                      .setUseUserSuppliedBuffers(true)
-                      .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
-                      .build();
+    snpe = snpe_builder.setOutputLayers({})
+                       .setUseUserSuppliedBuffers(true)
+                       .setPerformanceProfile(zdl::DlSystem::PerformanceProfile_t::HIGH_PERFORMANCE)
+                       .build();
 #endif
     if (!snpe) std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
   }
@@ -83,20 +83,21 @@ SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int 
 }
 
 void SNPEModel::addInput(const char *name, float *buffer, int size) {
-  zdl::DlSystem::UserBufferEncodingFloat ub_encoding_float;
-  zdl::DlSystem::UserBufferEncodingTf8 ub_encoding_tf8(0, 1./255); // network takes 0-1
-  zdl::DlSystem::IUserBufferFactory& ub_factory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
-  zdl::DlSystem::UserBufferEncoding *input_encoding = use_tf8 ? (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_tf8 : (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_float;
-
   const int idx = inputs.size();
   const auto &input_tensor_names_opt = snpe->getInputTensorNames();
   if (!input_tensor_names_opt) throw std::runtime_error("Error obtaining input tensor names");
   const auto &input_tensor_names = *input_tensor_names_opt;
   const char *input_tensor_name = input_tensor_names.at(idx);
+  const bool input_tf8 = use_tf8 && strcmp(input_tensor_name, "input_img") == 0;  // TODO: This is a terrible hack, get rid of this name check both here and in onnx_runner.py
   printf("adding index %d: %s\n", idx, input_tensor_name);
 
+  zdl::DlSystem::UserBufferEncodingFloat ub_encoding_float;
+  zdl::DlSystem::UserBufferEncodingTf8 ub_encoding_tf8(0, 1./255); // network takes 0-1
+  zdl::DlSystem::IUserBufferFactory& ub_factory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
+  zdl::DlSystem::UserBufferEncoding *input_encoding = input_tf8 ? (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_tf8 : (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_float;
+
   const zdl::DlSystem::TensorShape& buffer_shape = *snpe->getInputDimensions(input_tensor_name);
-  size_t size_of_input = use_tf8 ? sizeof(uint8_t) : sizeof(float);
+  size_t size_of_input = input_tf8 ? sizeof(uint8_t) : sizeof(float);
   std::vector<size_t> strides(buffer_shape.rank());
   strides[strides.size() - 1] = size_of_input;
   size_t product = 1;
