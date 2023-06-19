@@ -90,11 +90,20 @@ void ONNXModel::addInput(const char *name, float *buffer, int size) {
   inputs.push_back(ModelInput(name, buffer, size));
 }
 
-void ONNXModel::updateInput(const char *name, float *buffer, int size) {}
+void ONNXModel::updateInput(const char *name, float *buffer, int size) {
+  for (auto &input : inputs) {
+    if (strcmp(name, input.name) == 0) {
+      input.buffer = buffer;
+      input.size = size;
+      return;
+    }
+  }
+  LOGE("Tried to update input `%s` but no input with this name exists", name);
+}
 
 void ONNXModel::execute() {
-  for (int i=0; i<inputs.size(); i++) {
-    pwrite(inputs[i].buffer, inputs[i].size);
+  for (auto &input : inputs) {
+    pwrite(input.buffer, input.size);
   }
   pread(output, output_size);
 }

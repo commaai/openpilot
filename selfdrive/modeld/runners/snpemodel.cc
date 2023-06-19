@@ -8,6 +8,7 @@
 
 #include "common/util.h"
 #include "common/timing.h"
+#include "common/swaglog.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
@@ -86,18 +87,16 @@ void SNPEModel::addInput(const char *name, float *buffer, int size) {
   zdl::DlSystem::UserBufferEncodingTf8 ub_encoding_tf8(0, 1./255); // network takes 0-1
   zdl::DlSystem::IUserBufferFactory& ub_factory = zdl::SNPE::SNPEFactory::getUserBufferFactory();
   zdl::DlSystem::UserBufferEncoding *input_encoding = use_tf8 ? (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_tf8 : (zdl::DlSystem::UserBufferEncoding*)&ub_encoding_float;
-  size_t size_of_input = use_tf8 ? sizeof(uint8_t) : sizeof(float);
 
-  const int idx = 0; // TODO: Fix this
+  const int idx = inputs.size();
   const auto &input_tensor_names_opt = snpe->getInputTensorNames();
   if (!input_tensor_names_opt) throw std::runtime_error("Error obtaining input tensor names");
   const auto &input_tensor_names = *input_tensor_names_opt;
   const char *input_tensor_name = input_tensor_names.at(idx);
   printf("adding index %d: %s\n", idx, input_tensor_name);
 
-  const auto &inputDims = snpe->getInputDimensions(input_tensor_name);
-  const zdl::DlSystem::TensorShape& buffer_shape = *inputDims;
-
+  const zdl::DlSystem::TensorShape& buffer_shape = *snpe->getInputDimensions(input_tensor_name);
+  size_t size_of_input = use_tf8 ? sizeof(uint8_t) : sizeof(float);
   std::vector<size_t> strides(buffer_shape.rank());
   strides[strides.size() - 1] = size_of_input;
   size_t product = 1;
@@ -108,13 +107,22 @@ void SNPEModel::addInput(const char *name, float *buffer, int size) {
     strides[i-1] = stride;
   }
 
-  // TODO: Can we pass in the input buffer directly here instead of assigning it later?
-  std::unique_ptr<zdl::DlSystem::IUserBuffer> input_buffer = ub_factory.createUserBuffer(NULL, product*size_of_input, strides, input_encoding);
+  auto input_buffer = ub_factory.createUserBuffer(buffer, product*size_of_input, strides, input_encoding);
   input_map.add(input_tensor_name, input_buffer.get());
-  inputs.push_back(SNPEModelInput(name, buffer, size));
+  inputs.push_back(SNPEModelInput(name, buffer, size, std::move(input_buffer)));
 }
 
-void SNPEModel::updateInput(const char *name, float *buffer, int size) {}
+void SNPEModel::updateInput(const char *name, float *buffer, int size) {
+  for (auto &input : inputs) {
+    if (strcmp(name, input.name) == 0) {
+      input.buffer = buffer;
+      input.size = size;
+      input.snpe_buffer->setBufferAddress(buffer);
+      return;
+    }
+  }
+  LOGE("Tried to update input `%s` but no input with this name exists", name);
+}
 
 void SNPEModel::execute() {
   if (!snpe->execute(input_map, output_map)) {

@@ -28,7 +28,7 @@ struct SNPEModelInput {
   int size;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> snpe_buffer;
 
-  SNPEModelInput(const char *_name, float *_buffer, int _size) : name(_name), buffer(_buffer), size(_size) {}
+  SNPEModelInput(const char *_name, float *_buffer, int _size, std::unique_ptr<zdl::DlSystem::IUserBuffer> _snpe_buffer) : name(_name), buffer(_buffer), size(_size), snpe_buffer(std::move(_snpe_buffer)) {}
 };
 
 class SNPEModel : public RunModel {
