@@ -1,6 +1,5 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
@@ -58,12 +57,7 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-
-    pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,
-                         CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
-
-    if not CC.longActive:
-      pcm_accel_cmd = 0.
+    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
