@@ -149,6 +149,12 @@ def main() -> NoReturn:
             last_index = next((i for i, log in enumerate(logs) if log["id"] == log_state[serial]), -1)
             logs = logs[last_index + 1:]
 
+          # truncate logs to 100 entries if needed
+          MAX_LOGS = 100
+          if len(logs) > MAX_LOGS:
+            cloudlog.warning(f"Panda {serial} has {len(logs)} logs, truncating to {MAX_LOGS}")
+            logs = logs[-MAX_LOGS:]
+
           # update log state
           if len(logs) > 0:
             log_state[serial] = logs[-1]["id"]
