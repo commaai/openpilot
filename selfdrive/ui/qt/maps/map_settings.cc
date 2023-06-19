@@ -301,18 +301,7 @@ void MapSettings::refresh() {
   // TODO: should we build a new layout and swap it in?
   clearLayout(destinations_layout);
 
-  // sort: home, work, favorites, recents
-  std::sort(destinations.begin(), destinations.end(), [](NavDestination *a, NavDestination *b) {
-    if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
-    else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
-    else if (a->label() == NAV_FAVORITE_LABEL_WORK) return true;
-    else if (b->label() == NAV_FAVORITE_LABEL_WORK) return false;
-    else if (a->type() == NAV_TYPE_FAVORITE) return true;
-    else if (b->type() == NAV_TYPE_FAVORITE) return false;
-    else if (a->type() == NAV_TYPE_RECENT) return true;
-    else if (b->type() == NAV_TYPE_RECENT) return false;
-    return false;
-  });
+  std::sort(destinations.begin(), destinations.end());
 
   for (auto destination : destinations) {
     auto widget = new DestinationWidget(this);

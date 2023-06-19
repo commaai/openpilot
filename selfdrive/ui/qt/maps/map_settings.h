@@ -38,11 +38,37 @@ public:
   bool isFavorite() const { return type_ == NAV_TYPE_FAVORITE; }
   bool isRecent() const { return type_ == NAV_TYPE_RECENT; }
 
-  friend bool operator==(const NavDestination &lhs, const NavDestination &rhs) {
-    return lhs.type_ == rhs.type_ &&
-           lhs.label_ == rhs.label_ &&
-           lhs.name_ == rhs.name_ &&
-           lhs.details_ == rhs.details_;
+  bool operator==(const NavDestination &rhs) {
+    return type_ == rhs.type_ && label_ == rhs.label_ && name_ == rhs.name_ &&
+           details_ == rhs.details_;
+  }
+
+  bool operator<(const NavDestination &rhs) const {
+    if (isFavorite() && rhs.isFavorite()) {
+      if (label_ == NAV_FAVORITE_LABEL_HOME) {
+        return true;
+      } else if (rhs.label_ == NAV_FAVORITE_LABEL_HOME) {
+        return false;
+      } else if (label_ == NAV_FAVORITE_LABEL_WORK) {
+        return true;
+      } else if (rhs.label_ == NAV_FAVORITE_LABEL_WORK) {
+        return false;
+      } else {
+        return name_ < rhs.name_;
+      }
+    } else if (isFavorite()) {
+      return true;
+    } else if (rhs.isFavorite()) {
+      return false;
+    } else if (isRecent() && rhs.isRecent()) {
+      return name_ < rhs.name_;
+    } else if (isRecent()) {
+      return true;
+    } else if (rhs.isRecent()) {
+      return false;
+    } else {
+      return name_ < rhs.name_;
+    }
   }
 
   QJsonObject toJson() const {
