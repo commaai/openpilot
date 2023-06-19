@@ -160,6 +160,7 @@ def main() -> NoReturn:
             log_state[serial] = logs[-1]["id"]
 
           for log in logs:
+            log['timestamp'] = log['timestamp'].isoformat()
             cloudlog.event("panda_log", **log, serial=serial)
         except Exception:
           cloudlog.exception(f"Error getting logs for panda {serial}")
