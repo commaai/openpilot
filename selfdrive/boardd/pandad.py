@@ -177,7 +177,7 @@ def main() -> NoReturn:
           else:
             panda.reset(reconnect=False)
 
-      params.put("PandaLogState", json.dumps(logs, default=str))
+      params.put("PandaLogState", json.dumps(log_state))
 
       for p in pandas:
         p.close()
