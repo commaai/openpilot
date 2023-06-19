@@ -1,6 +1,4 @@
 from cereal import car
-import math
-from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
@@ -10,7 +8,6 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
                                         UNSUPPORTED_DSU_CAR
-from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -33,8 +30,6 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
-    self.pitch_compensation = 0.0  # not sure if needed
-    self.pcm_accel_compensation = FirstOrderFilter(0.0, 0.1, DT_CTRL)  # avoids minor oscillations
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -57,24 +52,13 @@ class CarController:
       else:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
       # offset for creep and windbrake
-      pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
-      pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
+      # pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
+      pedal_offset = CS.pcm_neutral_force / self.CP.mass
+      pedal_command = PEDAL_SCALE * (actuators.accel - pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
 
-    # # account for pitch, anything we can do feedforward reduces work for controller
-    # # and improves response and smoothness
-    # if len(CC.orientationNED) and CS.out.vEgo > 1:
-    #   self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
-
-    # force applied when not actuating anything converted to acceleration
-    # (engine propulsion at low speed, engine braking at high speed)
-    coasting_accel = CS.pcm_neutral_force / self.CP.mass
-    # the PCM should be outputting this
-    desired_pcm_accel = actuators.accel - coasting_accel + self.pitch_compensation
-    # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
-    self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
     pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,
                          CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
