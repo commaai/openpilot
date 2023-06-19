@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDebug>
 #include <QFrame>
 #include <QJsonArray>
 #include <QJsonDocument>
