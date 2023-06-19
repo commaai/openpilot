@@ -129,6 +129,8 @@ def main() -> NoReturn:
 
       try:
         log_state = json.loads(params.get("PandaLogState"))
+        if log_state is not dict:
+          log_state = {}
       except (TypeError, json.JSONDecodeError):
         log_state = {}
 
@@ -160,7 +162,8 @@ def main() -> NoReturn:
             log_state[serial] = logs[-1]["id"]
 
           for log in logs:
-            log['timestamp'] = log['timestamp'].isoformat()
+            if log['timestamp'] is not None:
+              log['timestamp'] = log['timestamp'].isoformat()
             cloudlog.event("panda_log", **log, serial=serial)
         except Exception:
           cloudlog.exception(f"Error getting logs for panda {serial}")
