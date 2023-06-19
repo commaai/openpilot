@@ -167,7 +167,8 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, msgName(msg_id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(), dlg.size_spin->value(), dlg.comment_edit->toPlainText().trimmed()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(),
+                                       dlg.size_spin->value(), dlg.comment_edit->toPlainText().trimmed()));
   }
 }
 

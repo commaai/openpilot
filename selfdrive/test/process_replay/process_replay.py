@@ -6,6 +6,7 @@ import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable
+from tqdm import tqdm
 
 import cereal.messaging as messaging
 from cereal import car
@@ -17,6 +18,7 @@ from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from selfdrive.test.process_replay.migration import migrate_all
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -77,9 +79,9 @@ class ReplayContext:
   def wait_for_recv_called(self):
     messaging.wait_for_one_event(self.all_recv_called_events)
 
-  def wait_for_next_recv(self, end_of_cycle):
+  def wait_for_next_recv(self, trigger_empty_recv):
     index = messaging.wait_for_one_event(self.all_recv_called_events)
-    if self.drained_pub is not None and end_of_cycle:
+    if self.drained_pub is not None and trigger_empty_recv:
       self.all_recv_called_events[index].clear()
       self.all_recv_ready_events[index].set()
       self.all_recv_called_events[index].wait()
@@ -147,6 +149,8 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
+    assert len(canmsgs) != 0, "CAN messages are required for carParams initialization"
+
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
@@ -256,7 +260,7 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -265,7 +269,7 @@ CONFIGS = [
     subs=["driverMonitoringState"],
     ignore=["logMonoTime", "valid"],
     config_callback=None,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -278,7 +282,7 @@ CONFIGS = [
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
     config_callback=locationd_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -307,7 +311,7 @@ CONFIGS = [
     subs=["gnssMeasurements"],
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
-    init_callback=get_car_params_callback,
+    init_callback=None,
     should_recv_callback=None,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
@@ -338,9 +342,9 @@ def replay_process_with_name(name, lr, *args, **kwargs):
   return replay_process(cfg, lr, *args, **kwargs)
 
 
-def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
-  all_msgs = list(lr)
-  process_logs = _replay_single_process(cfg, all_msgs, fingerprint)
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, disable_progress=False):
+  all_msgs = migrate_all(lr, old_logtime=True)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint, disable_progress)
 
   if return_all_logs:
     keys = set(cfg.subs)
@@ -354,7 +358,7 @@ def replay_process(cfg, lr, fingerprint=None, return_all_logs=False):
   return log_msgs
 
 
-def _replay_single_process(cfg, lr, fingerprint):
+def _replay_single_process(cfg, lr, fingerprint, disable_progress):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -402,7 +406,7 @@ def _replay_single_process(cfg, lr, fingerprint):
 
         # Do the replay
         cnt = 0
-        for msg in pub_msgs:
+        for msg in tqdm(pub_msgs, disable=disable_progress):
           with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
             resp_sockets, end_of_cycle = cfg.subs, True
             if cfg.should_recv_callback is not None:
@@ -417,12 +421,17 @@ def _replay_single_process(cfg, lr, fingerprint):
                 for s in sockets.values():
                   messaging.recv_one_or_none(s)
 
+              # empty recv on drained pub indicates the end of messages, only do that if there're any
+              trigger_empty_recv = False
+              if cfg.drained_pub:
+                trigger_empty_recv = next((True for m in msg_queue if m.which() == cfg.drained_pub), False)
+
               for m in msg_queue:
                 pm.send(m.which(), m.as_builder())
               msg_queue = []
 
               rc.unlock_sockets()
-              rc.wait_for_next_recv(True)
+              rc.wait_for_next_recv(trigger_empty_recv)
 
               for s in resp_sockets:
                 ms = messaging.drain_sock(sockets[s])  
@@ -450,7 +459,6 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, 
   params.put_bool("OpenpilotEnabledToggle", True)
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
-  params.put_bool("WideCameraOnly", False)
   params.put_bool("DisableLogging", False)
 
   os.environ["NO_RADAR_SLEEP"] = "1"

@@ -38,6 +38,7 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
+common/time.py
 
 common/kalman/.gitignore
 common/kalman/*
@@ -292,6 +293,7 @@ selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
+selfdrive/test/fuzzy_generation.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py

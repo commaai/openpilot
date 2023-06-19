@@ -1031,10 +1031,6 @@ This may take up to a minute.</source>
         <translation>未來可能會推出openpilot縱向控制</translation>
     </message>
     <message>
-        <source>An experimental version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>在非發行分支中 可找到包含實驗模式的openpilot縱向控制測試版本</translation>
-    </message>
-    <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
@@ -1069,6 +1065,10 @@ This may take up to a minute.</source>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
         <translation>推薦使用標準模式。在積極模式中，openpilot 會更靠近前車並在加速和剎車方面更積極。在舒適模式中，openpilot 會與前車保持較遠的距離。</translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

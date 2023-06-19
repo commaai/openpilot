@@ -1,5 +1,6 @@
 #include "tools/cabana/util.h"
 
+#include <QColor>
 #include <QFontDatabase>
 #include <QHelpEvent>
 #include <QLocale>
@@ -95,7 +96,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   if (option.state & QStyle::State_Selected) {
-    painter->fillRect(option.rect, option.palette.highlight());
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
@@ -142,17 +143,6 @@ void TabBar::closeTabClicked() {
       break;
     }
   }
-}
-
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
-
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
-
-  return QColor::fromHsvF(h, s, v);
 }
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
@@ -237,10 +227,16 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
+}
+
+QString signalToolTip(const cabana::Signal *sig) {
+  return QObject::tr(R"(
+    %1<br /><span font-size:small">
+    Start Bit: %2 Size: %3<br />
+    MSB: %4 LSB: %5<br />
+    Little Endian: %6 Signed: %7</span>
+  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
+     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }

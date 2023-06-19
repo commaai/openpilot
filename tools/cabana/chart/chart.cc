@@ -38,7 +38,6 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   setChart(chart);
 
   createToolButtons();
-  // TODO: enable zoomIn/seekTo in live streaming mode.
   setRubberBand(QChartView::HorizontalRubberBand);
   setMouseTracking(true);
   setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
@@ -107,14 +106,14 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
     chart()->legend()->setLabelColor(palette().color(QPalette::Text));
   }
   for (auto &s : sigs) {
-    s.series->setColor(getColor(s.sig));
+    s.series->setColor(s.sig->color);
   }
 }
 
 void ChartView::addSignal(const MessageId &msg_id, const cabana::Signal *sig) {
   if (hasSignal(msg_id, sig)) return;
 
-  QXYSeries *series = createSeries(series_type, getColor(sig));
+  QXYSeries *series = createSeries(series_type, sig->color);
   sigs.push_back({.msg_id = msg_id, .sig = sig, .series = series});
   updateSeries(sig);
   updateSeriesPoints();
@@ -154,8 +153,9 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
 }
 
 void ChartView::msgUpdated(MessageId id) {
-  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id == id; }))
+  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id.address == id.address; })) {
     updateTitle();
+  }
 }
 
 void ChartView::manageSignals() {
@@ -277,7 +277,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
         s.step_vals.clear();
         s.last_value_mono_time = 0;
       }
-      s.series->setColor(getColor(s.sig));
+      s.series->setColor(s.sig->color);
 
       const auto &msgs = can->events(s.msg_id);
       s.vals.reserve(msgs.capacity());
@@ -289,14 +289,16 @@ void ChartView::updateSeries(const cabana::Signal *sig, bool clear) {
       const double route_start_time = can->routeStartTime();
       for (auto end = msgs.cend(); first != end; ++first) {
         const CanEvent *e = *first;
-        double value = get_raw_value(e->dat, e->size, *s.sig);
-        double ts = e->mono_time / 1e9 - route_start_time;  // seconds
-        s.vals.append({ts, value});
-        if (!s.step_vals.empty()) {
-          s.step_vals.append({ts, s.step_vals.back().y()});
+        double value = 0;
+        if (s.sig->getValue(e->dat, e->size, &value)) {
+          double ts = e->mono_time / 1e9 - route_start_time;  // seconds
+          s.vals.append({ts, value});
+          if (!s.step_vals.empty()) {
+            s.step_vals.append({ts, s.step_vals.back().y()});
+          }
+          s.step_vals.append({ts, value});
+          s.last_value_mono_time = e->mono_time;
         }
-        s.step_vals.append({ts, value});
-        s.last_value_mono_time = e->mono_time;
       }
       if (!can->liveStreaming()) {
         s.segment_tree.build(s.vals);
@@ -799,7 +801,7 @@ void ChartView::setSeriesType(SeriesType type) {
       s.series->deleteLater();
     }
     for (auto &s : sigs) {
-      auto series = createSeries(series_type, getColor(s.sig));
+      auto series = createSeries(series_type, s.sig->color);
       series->replace(series_type == SeriesType::StepLine ? s.step_vals : s.vals);
       s.series = series;
     }
