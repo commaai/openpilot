@@ -45,30 +45,21 @@ public:
 
   bool operator<(const NavDestination &rhs) const {
     if (isFavorite() && rhs.isFavorite()) {
-      if (label_ == NAV_FAVORITE_LABEL_HOME) {
-        return true;
-      } else if (rhs.label_ == NAV_FAVORITE_LABEL_HOME) {
-        return false;
-      } else if (label_ == NAV_FAVORITE_LABEL_WORK) {
-        return true;
-      } else if (rhs.label_ == NAV_FAVORITE_LABEL_WORK) {
-        return false;
-      } else {
-        return name_ < rhs.name_;
-      }
+      if (label_ == NAV_FAVORITE_LABEL_HOME) return true;
+      else if (rhs.label_ == NAV_FAVORITE_LABEL_HOME) return false;
+      else if (label_ == NAV_FAVORITE_LABEL_WORK) return true;
+      else if (rhs.label_ == NAV_FAVORITE_LABEL_WORK) return false;
+      else return name_ < rhs.name_;
     } else if (isFavorite()) {
       return true;
     } else if (rhs.isFavorite()) {
       return false;
-    } else if (isRecent() && rhs.isRecent()) {
-      return name_ < rhs.name_;
-    } else if (isRecent()) {
-      return true;
-    } else if (rhs.isRecent()) {
-      return false;
-    } else {
-      return name_ < rhs.name_;
     }
+
+    if (isRecent() && !rhs.isRecent()) return true;
+    else if (!isRecent() && rhs.isRecent()) return false;
+
+    return name_ < rhs.name_;
   }
 
   QJsonObject toJson() const {
