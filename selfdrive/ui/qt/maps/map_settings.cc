@@ -100,6 +100,7 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
     icon_pixmap = icons().directions;
   }
 
+  // TODO: onroad and offroad have different dimensions
   title->setText(shorten(title_text, 25));
   subtitle->setText(shorten(subtitle_text, 25));
   subtitle->setVisible(true);
@@ -151,8 +152,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
       close_button->setStyleSheet(R"(
       QPushButton {
         color: #FFFFFF;
-        font-size: 80px;
-        font-weight: 600;
+        font-size: 100px;
+        font-weight: 900;
         border: none;
       }
       QPushButton:pressed {
