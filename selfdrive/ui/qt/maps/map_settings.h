@@ -62,11 +62,11 @@ private:
 
   static NavIcons icons() {
     static NavIcons nav_icons {
-        loadPixmap("../assets/navigation/icon_home.svg", {96, 96}),
-        loadPixmap("../assets/navigation/icon_work.svg", {96, 96}),
-        loadPixmap("../assets/navigation/icon_favorite.svg", {96, 96}),
-        loadPixmap("../assets/navigation/icon_recent.svg", {96, 96}),
-        loadPixmap("../assets/navigation/icon_directions.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_home.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_work.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_favorite.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_recent.svg", {96, 96}),
+      loadPixmap("../assets/navigation/icon_directions.svg", {96, 96}),
     };
     return nav_icons;
   }

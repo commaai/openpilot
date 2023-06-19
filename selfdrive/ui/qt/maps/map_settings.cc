@@ -96,6 +96,10 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
     }
   }
 
+  if (current) {
+    icon_pixmap = icons().directions;
+  }
+
   title->setText(shorten(title_text, 25));
   subtitle->setText(shorten(subtitle_text, 25));
   subtitle->setVisible(true);
