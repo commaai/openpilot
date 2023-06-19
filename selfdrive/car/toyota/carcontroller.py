@@ -63,10 +63,10 @@ class CarController:
     else:
       interceptor_gas_cmd = 0.
 
-    # account for pitch, anything we can do feedforward reduces work for controller
-    # and improves response and smoothness
-    if len(CC.orientationNED) and CS.out.vEgo > 1:
-      self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
+    # # account for pitch, anything we can do feedforward reduces work for controller
+    # # and improves response and smoothness
+    # if len(CC.orientationNED) and CS.out.vEgo > 1:
+    #   self.pitch_compensation = ACCELERATION_DUE_TO_GRAVITY * math.sin(CC.orientationNED[1])
 
     # force applied when not actuating anything converted to acceleration
     # (engine propulsion at low speed, engine braking at high speed)
