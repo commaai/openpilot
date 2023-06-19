@@ -23,14 +23,14 @@ class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
       : type_(place["save_type"].toString()), label_(place["label"].toString()),
-        name_(place["place_name"].toString()), details_(place["place_details"].toString()) {
+        name_(place["place_name"].toString()), details_(place["place_details"].toString()),
+        latitude_(place["latitude"].toString()), longitude_(place["longitude"].toString()) {
     // if details starts with `name, ` remove it
     if (details_.startsWith(name_ + ", ")) {
       details_ = details_.mid(name_.length() + 2);
     }
   }
 
-  // getters
   QString type() const { return type_; }
   QString label() const { return label_; }
   QString name() const { return name_; }
@@ -41,7 +41,7 @@ public:
 
   bool operator==(const NavDestination &rhs) {
     return type_ == rhs.type_ && label_ == rhs.label_ && name_ == rhs.name_ &&
-           details_ == rhs.details_;
+           details_ == rhs.details_ && latitude_ == rhs.latitude_ && longitude_ == rhs.longitude_;
   }
 
   bool operator<(const NavDestination &rhs) const {
@@ -71,11 +71,13 @@ public:
     obj["label"] = label_;
     obj["place_name"] = name_;
     obj["place_details"] = details_;
+    obj["latitude"] = latitude_;
+    obj["longitude"] = longitude_;
     return obj;
   }
 
 private:
-  QString type_, label_, name_, details_;
+  QString type_, label_, name_, details_, latitude_, longitude_;
 };
 
 class DestinationWidget : public ClickableWidget {
