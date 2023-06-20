@@ -100,8 +100,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
       m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s);
       split->insertWidget(0, m);
 
-      // TODO: Make map visible after adding to split
-      // m->offroadTransition(offroad);
+      // map is hidden by default, made visible navRoute is ready
+      m->setVisible(false);
     }
   }
 #endif
