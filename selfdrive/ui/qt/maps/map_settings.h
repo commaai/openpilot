@@ -18,6 +18,9 @@ const QString NAV_TYPE_RECENT = "recent";
 const QString NAV_FAVORITE_LABEL_HOME = "home";
 const QString NAV_FAVORITE_LABEL_WORK = "work";
 
+class NavDestination;
+class DestinationWidget;
+
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
