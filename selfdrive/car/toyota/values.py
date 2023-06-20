@@ -1,7 +1,8 @@
+impor re
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
@@ -215,8 +216,40 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+
+def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+  # Returns unique, platform-specific identification codes for a set of versions
+  codes = set()  # (code-Optional[part], date)
+  for fw in fw_versions:
+    code_match = PLATFORM_CODE_FW_PATTERN.search(fw)
+    part_match = PART_NUMBER_FW_PATTERN.search(fw)
+    date_match = DATE_FW_PATTERN.search(fw)
+    if code_match is not None:
+      code: bytes = code_match.group()
+      part = part_match.group() if part_match else None
+      date = date_match.group() if date_match else None
+      if part is not None:
+        # part number starts with generic ECU part type, add what is specific to platform
+        code += b"-" + part[-5:]
+
+      codes.add((code, date))
+  return codes
+
+
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
+
+# # Regex patterns for parsing platform code, FW date, and part number from FW versions
+# PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+#                                       b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+# DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
+# PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+# TODO: use abs, it has the platform code and part number on many platforms
+PLATFORM_CODE_ECUS = [Ecu.abs, Ecu.engine]
+# So far we've only seen dates in fwdCamera
+DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
