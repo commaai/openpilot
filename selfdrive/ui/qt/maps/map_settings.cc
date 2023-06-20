@@ -305,7 +305,6 @@ void MapSettings::refresh() {
 
   // Sort in order: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
   std::sort(destinations.begin(), destinations.end(), [](const NavDestination *a, const NavDestination *b) {
-    qDebug() << "sort" << a->name() << b->name();
     if (a->isFavorite() && b->isFavorite()) {
       if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
