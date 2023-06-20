@@ -760,7 +760,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>NO</source>
-        <translation>NON</translation>
+        <translation>AUCUN</translation>
     </message>
     <message>
         <source>PANDA</source>
