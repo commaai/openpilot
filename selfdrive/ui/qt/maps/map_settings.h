@@ -24,7 +24,7 @@ public:
   explicit NavDestination(const QJsonObject &place)
       : type_(place["save_type"].toString()), label_(place["label"].toString()),
         name_(place["place_name"].toString()), details_(place["place_details"].toString()),
-        latitude_(place["latitude"].toString()), longitude_(place["longitude"].toString()) {
+        latitude_(place["latitude"].toDouble()), longitude_(place["longitude"].toDouble()) {
     // if details starts with `name, ` remove it
     if (details_.startsWith(name_ + ", ")) {
       details_ = details_.mid(name_.length() + 2);
@@ -56,7 +56,8 @@ public:
   }
 
 private:
-  QString type_, label_, name_, details_, latitude_, longitude_;
+  QString type_, label_, name_, details_;
+  double latitude_, longitude_;
 };
 
 class DestinationWidget : public ClickableWidget {
