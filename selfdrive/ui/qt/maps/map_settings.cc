@@ -121,8 +121,9 @@ void DestinationWidget::unset(const QString &label, bool current) {
     icon->setPixmap(icons().directions);
     title->setText(tr("No destination set"));
   } else {
+    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("Home") : tr("Work");
     icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
-    title->setText(tr("No %1 location set").arg(label));
+    title->setText(tr("No %1 location set").arg(title_text));
   }
 
   subtitle->setVisible(false);
@@ -147,7 +148,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   heading_frame->setSpacing(32);
   {
     if (closeable) {
-      auto *close_btn = new QPushButton(tr("×"));
+      auto *close_btn = new QPushButton("×");
       close_btn->setStyleSheet(R"(
         QPushButton {
           color: #FFFFFF;

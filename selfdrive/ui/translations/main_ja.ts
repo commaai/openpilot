@@ -117,6 +117,25 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -330,32 +349,12 @@
 <context>
     <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>現在の目的地</translation>
+        <source>comma navigation</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>削除</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>最近の目的地</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>自宅の住所はまだ
-設定されていません</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>職場の住所はまだ
-設定されていません</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>最近の目的地履歴がありません</translation>
+        <source>manage at connect.comma.ai</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
