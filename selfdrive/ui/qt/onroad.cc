@@ -538,17 +538,10 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
       i += (i + 2) < max_len ? 1 : 0;
     }
   } else {
-    // bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-    // bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
-    // bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
+    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
+    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
   }
-
-  float score = (scene.scores_buf[0+4] + scene.scores_buf[5+3] + scene.scores_buf[10+2] + scene.scores_buf[15+1] + scene.scores_buf[20+0]) / 5.0;
-  float dhue = score < RYG_GREEN ? 90 : (score < RYG_YELLOW ? 45 : 10);
-  dhue = dhue * 0.1 + dhue_last * 0.9;
-  bg.setColorAt(0.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
-  bg.setColorAt(1.0, QColor::fromHslF(dhue / 360., 1.0, 0.6, 0.35));
-  dhue_last = dhue;
 
   painter.setBrush(bg);
   painter.drawPolygon(scene.track_vertices);

@@ -115,28 +115,6 @@ void update_model(UIState *s,
   }
   max_idx = get_path_length_idx(plan_position, max_distance);
   update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
-
-  // update disengagement predictions
-  if (model.getFrameId() % 40 == 1) {
-    auto dbps = model.getMeta().getDisengagePredictions().getBrakeDisengageProbs();
-    auto dgps = model.getMeta().getDisengagePredictions().getGasDisengageProbs();
-    auto dsps = model.getMeta().getDisengagePredictions().getSteerOverrideProbs();
-
-    float any_dp[5];
-    float dp_ind[5];
-
-    for (int i = 0; i < 5; i++) {
-      any_dp[i] = 1 - ((1-dbps[i])*(1-dgps[i])*(1-dsps[i]));
-    }
-
-    dp_ind[0] = any_dp[0];
-    for (int i = 0; i < 4; i++) {
-      dp_ind[i+1] = (any_dp[i+1] - any_dp[i]) / (1 - any_dp[i]);
-    }
-
-    std::memmove(&scene.scores_buf[0], &scene.scores_buf[5], sizeof(float) * 20);
-    std::memcpy(&scene.scores_buf[20], &dp_ind[0], sizeof(float) * 5);
-  }
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {

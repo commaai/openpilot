@@ -10,6 +10,9 @@ const int LON_MPC_N = 32;
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
 
+const float RYG_GREEN = 0.01165;
+const float RYG_YELLOW = 0.06157;
+
 template <typename T, size_t size>
 constexpr std::array<T, size> build_idxs(float max_val) {
   std::array<T, size> result{};
