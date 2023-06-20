@@ -13,7 +13,7 @@ class RunModel {
 public:
   virtual ~RunModel() {}
   virtual void addInput(const char *name, float *buffer, int size) {}
-  virtual void updateInput(const char *name, float *buffer, int size) {}
+  virtual void setInputBuffer(const char *name, float *buffer, int size) {}
   virtual void* getCLBuffer(const char *name) { return nullptr; }
   virtual void execute() {}
 };

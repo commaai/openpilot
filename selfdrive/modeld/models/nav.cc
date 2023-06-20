@@ -22,7 +22,7 @@ NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf) {
   memcpy(s->net_input_buf, buf->addr, NAV_INPUT_SIZE);
 
   double t1 = millis_since_boot();
-  s->m->updateInput("map", (float*)s->net_input_buf, NAV_INPUT_SIZE/sizeof(float));
+  s->m->setInputBuffer("map", (float*)s->net_input_buf, NAV_INPUT_SIZE/sizeof(float));
   s->m->execute();
   double t2 = millis_since_boot();
 

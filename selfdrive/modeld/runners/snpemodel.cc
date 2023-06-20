@@ -113,12 +113,13 @@ void SNPEModel::addInput(const char *name, float *buffer, int size) {
   inputs.push_back(SNPEModelInput(name, buffer, size, std::move(input_buffer)));
 }
 
-void SNPEModel::updateInput(const char *name, float *buffer, int size) {
+void SNPEModel::setInputBuffer(const char *name, float *buffer, int size) {
   for (auto &input : inputs) {
     if (strcmp(name, input.name) == 0) {
+      assert(input.size == size || input.size == 0);
+      assert(input.snpe_buffer->setBufferAddress(buffer) == 0);
       input.buffer = buffer;
       input.size = size;
-      input.snpe_buffer->setBufferAddress(buffer);
       return;
     }
   }

@@ -18,9 +18,10 @@ void ThneedModel::addInput(const char *name, float *buffer, int size) {
   inputs.push_back(ModelInput(name, buffer, size));
 }
 
-void ThneedModel::updateInput(const char *name, float *buffer, int size) {
+void ThneedModel::setInputBuffer(const char *name, float *buffer, int size) {
   for (auto &input : inputs) {
     if (strcmp(name, input.name) == 0) {
+      assert(input.size == size || input.size == 0);
       input.buffer = buffer;
       input.size = size;
       return;

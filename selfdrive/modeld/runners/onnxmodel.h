@@ -10,7 +10,7 @@ public:
   ONNXModel(const char *path, float *output, size_t output_size, int runtime, bool _use_tf8 = false, cl_context context = NULL);
 	~ONNXModel();
   void addInput(const char *name, float *buffer, int size);
-  void updateInput(const char *name, float *buffer, int size);
+  void setInputBuffer(const char *name, float *buffer, int size);
   void execute();
 private:
   int proc_pid;
