@@ -147,17 +147,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       left_widget->setCurrentIndex(prime_type ? 0 : 1);
     });
 
-    left_widget->setStyleSheet(R"(
-      QFrame {
-        background-color: #333333;
-        border-radius: 10px;
-      }
-      QPushButton {
-        background-color: #333333;
-        border: none;
-      }
-    )");
-
     home_layout->addWidget(left_widget, 1);
 
     // right: ExperimentalModeButton, SetupWidget
