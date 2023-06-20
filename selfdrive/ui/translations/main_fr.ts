@@ -36,7 +36,7 @@
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>Entrez le nouveau mot de passe du partage de connexion</translation>
+        <translation>Entrez le nouveau mot de passe</translation>
     </message>
     <message>
         <source>IP Address</source>
@@ -180,7 +180,7 @@
     </message>
     <message>
         <source>Regulatory</source>
-        <translation>Réglementaire</translation>
+        <translation>Réglementation</translation>
     </message>
     <message>
         <source>VIEW</source>
@@ -382,12 +382,12 @@ prime. Inscrivez-vous maintenant : https://connect.comma.ai</translation>
     <message>
         <source>No home
 location set</source>
-        <translation>Aucun domicile défini</translation>
+        <translation>Aucun domicile</translation>
     </message>
     <message>
         <source>No work
 location set</source>
-        <translation>Aucun lieu de travail défini</translation>
+        <translation>Aucun lieu de travail</translation>
     </message>
     <message>
         <source>no recent destinations</source>
@@ -484,7 +484,7 @@ location set</source>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>Mettre à niveau maintenant</translation>
+        <translation>Mettre à niveau</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
@@ -504,7 +504,7 @@ location set</source>
     </message>
     <message>
         <source>Developer perks</source>
-        <translation>Avantages pour les développeurs</translation>
+        <translation>Avantages développeurs</translation>
     </message>
 </context>
 <context>
@@ -724,15 +724,15 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECTER</translation>
+        <translation>RÉSEAU</translation>
     </message>
     <message>
         <source>OFFLINE</source>
-        <translation>HORS LIGNE</translation>
+        <translation>INDISPO</translation>
     </message>
     <message>
         <source>ONLINE</source>
-        <translation>EN LIGNE</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>ERROR</source>
@@ -748,7 +748,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>GOOD</source>
-        <translation>BON</translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>OK</source>
@@ -807,11 +807,11 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>Les mises à jour sont téléchargées uniquement lorsque la voiture est éteinte.</translation>
+        <translation>Les MAJ sont téléchargées quand la voiture est éteinte.</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation>Version actuelle</translation>
+        <translation>Version</translation>
     </message>
     <message>
         <source>Download</source>
@@ -831,7 +831,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation>Branche cible</translation>
+        <translation>Branche</translation>
     </message>
     <message>
         <source>SELECT</source>
@@ -843,7 +843,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation>Désinstaller %1</translation>
+        <translation>Enlever %1</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
@@ -987,7 +987,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
-        <translation>Enregistrer et télécharger la caméra conducteur</translation>
+        <translation>Enregistrer et uploader la caméra conducteur</translation>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
@@ -1027,15 +1027,15 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation>Détendu</translation>
+        <translation>Relax</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation>Personnalité de conduite</translation>
+        <translation>Mode de conduite</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>Le mode standard est recommandé. En mode agressif, openpilot suivra de plus près les voitures de tête et sera plus agressif avec l&apos;accélérateur et le frein. En mode détendu, openpilot restera plus éloigné des voitures de tête.</translation>
+        <translation>Le mode standard est recommandé. En mode agressif, openpilot suivra de plus près les voitures de tête et sera plus agressif avec l&apos;accélérateur et le frein. En mode relax, openpilot restera plus éloigné des voitures de tête.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1125,7 +1125,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation>Téléchargement des données d&apos;entraînement</translation>
+        <translation>Envoi des données d&apos;entraînement</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
