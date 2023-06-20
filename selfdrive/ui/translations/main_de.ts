@@ -134,6 +134,14 @@
         <source>No %1 location set</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>

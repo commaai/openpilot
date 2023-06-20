@@ -121,7 +121,7 @@ void DestinationWidget::unset(const QString &label, bool current) {
     icon->setPixmap(icons().directions);
     title->setText(tr("No destination set"));
   } else {
-    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("Home") : tr("Work");
+    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("home") : tr("work");
     icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
     title->setText(tr("No %1 location set").arg(title_text));
   }
