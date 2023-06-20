@@ -233,7 +233,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
     if ret.steerControlType == car.CarParams.SteerControlType.angle:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
-      ret.steerActuatorDelay = 0.08  # + 0.2
+      ret.steerActuatorDelay = 0.2  # + 0.2
 
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
