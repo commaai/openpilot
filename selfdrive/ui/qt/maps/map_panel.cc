@@ -9,50 +9,18 @@
 #include "selfdrive/ui/ui.h"
 
 MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : QFrame(parent) {
-  QSize icon_size(120, 120);
-  directions_icon = loadPixmap("../assets/navigation/icon_directions.svg", icon_size);
-
   content_stack = new QStackedLayout(this);
   content_stack->setContentsMargins(0, 0, 0, 0);
 
-  auto map_container = new QWidget(this);
-  {
-    auto map_stack = new QStackedLayout(map_container);
-    map_stack->setContentsMargins(0, 0, 0, 0);
-    map_stack->setStackingMode(QStackedLayout::StackAll);
-
-    auto ui = new QWidget(this);
-    {
-      auto ui_layout = new QVBoxLayout(ui);
-      ui_layout->setContentsMargins(0, 0, 32, 32);
-
-      QPushButton *settings_btn = new QPushButton(directions_icon, "", this);
-      settings_btn->setIconSize(icon_size);
-      settings_btn->setStyleSheet(R"(
-        QPushButton {
-          background-color: #96000000;
-          border-radius: 30px;
-          padding: 30px;
-        }
-        QPushButton:pressed {
-          background-color: #A0000000;
-        }
-      )");
-      QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
-        content_stack->setCurrentIndex(1);
-      });
-      ui_layout->addWidget(settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-    }
-    map_stack->addWidget(ui);
-
-    auto map = new MapWindow(mapboxSettings);
-    QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
-    QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
-      setVisible(visible);
-    });
-    map_stack->addWidget(map);
-  }
-  content_stack->addWidget(map_container);
+  auto map = new MapWindow(mapboxSettings);
+  QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
+  QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
+    setVisible(visible);
+  });
+  QObject::connect(map, &MapWindow::openSettings, [=]() {
+    content_stack->setCurrentIndex(1);
+  });
+  content_stack->addWidget(map);
 
   auto settings = new MapSettings(true, parent);
   QObject::connect(settings, &MapSettings::closeSettings, [=]() {
