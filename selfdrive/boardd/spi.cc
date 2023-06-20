@@ -22,6 +22,7 @@
 #define SPI_NACK 0x1FU
 #define SPI_CHECKSUM_START 0xABU
 
+ExitHandler do_exit;
 
 enum SpiError {
   NACK = -2,
@@ -231,7 +232,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
       count += ret == SpiError::ACK_TIMEOUT;
       std::this_thread::yield();
     }
-  } while (ret < 0 && connected && !timed_out);
+  } while (ret < 0 && connected && !timed_out && !do_exit);
 
   if (ret < 0) {
     LOGE("transfer failed, after %d tries, %.2fms", count, millis_since_boot() - start_time);
@@ -255,7 +256,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout) 
   };
   tx_buf[0] = tx;
 
-  while (true) {
+  while (!do_exit) {
     int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
     if (ret < 0) {
       LOGE("SPI: failed to send ACK request");
