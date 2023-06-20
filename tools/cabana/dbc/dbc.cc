@@ -119,6 +119,8 @@ void cabana::Msg::update() {
 // cabana::Signal
 
 void cabana::Signal::update() {
+  updateMsbLsb(*this);
+
   float h = 19 * (float)lsb / 64.0;
   h = fmod(h, 1.0);
   size_t hash = qHash(name);
@@ -165,14 +167,6 @@ bool cabana::Signal::operator==(const cabana::Signal &other) const {
 
 // helper functions
 
-static QVector<int> BIG_ENDIAN_START_BITS = []() {
-  QVector<int> ret;
-  for (int i = 0; i < 64; i++)
-    for (int j = 7; j >= 0; j--)
-      ret.push_back(j + i * 8);
-  return ret;
-}();
-
 double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig) {
   int64_t val = 0;
 
@@ -195,23 +189,12 @@ double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal
   return val * sig.factor + sig.offset;
 }
 
-int bigEndianStartBitsIndex(int start_bit) { return BIG_ENDIAN_START_BITS[start_bit]; }
-int bigEndianBitIndex(int index) { return BIG_ENDIAN_START_BITS.indexOf(index); }
-
-void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size) {
-  s.start_bit = s.is_little_endian ? start_bit : bigEndianBitIndex(start_bit);
-  s.size = size;
+void updateMsbLsb(cabana::Signal &s) {
   if (s.is_little_endian) {
     s.lsb = s.start_bit;
     s.msb = s.start_bit + s.size - 1;
   } else {
-    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
+    s.lsb = flipBitPos(flipBitPos(s.start_bit) + s.size - 1);
     s.msb = s.start_bit;
   }
-}
-
-std::pair<int, int> getSignalRange(const cabana::Signal *s) {
-  int from = s->is_little_endian ? s->start_bit : bigEndianBitIndex(s->start_bit);
-  int to = from + s->size - 1;
-  return {from, to};
 }
