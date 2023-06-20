@@ -15,6 +15,7 @@ def create_steer_command(packer, steer, steer_req):
 def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_params, frame):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
+  lt_val = op_params.get('LT_VAL')
   values = {
     "STEER_REQUEST": steer_req,  # STEER_REQUEST seems to be the real bit
     "STEER_REQUEST_2": steer_req,
@@ -36,7 +37,7 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # TODO: figure out why 99 is so much less torque than 100
     # "SETME_X64": 99 if limit_torque else 100,
     # "SETME_X64": op_params.get("SETME_X64"),
-    "SETME_X64": 99 if limit_torque else (99 if frame % op_params.get('TLD_V2') == 0 else 100),
+    "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V2') == 0 else 100),
 
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
