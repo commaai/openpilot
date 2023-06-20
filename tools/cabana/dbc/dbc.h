@@ -102,7 +102,7 @@ public:
   QString comment;
   std::vector<cabana::Signal *> sigs;
 
-  QList<uint8_t> mask;
+  std::vector<uint8_t> mask;
   cabana::Signal *multiplexor = nullptr;
 };
 
