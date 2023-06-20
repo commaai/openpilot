@@ -41,10 +41,7 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   void setMessage(const MessageId &id);
   void setFilter(const QString &txt);
-  void addSignal(int start_bit, int size, bool little_endian);
   bool saveSignal(const cabana::Signal *origin_s, cabana::Signal &s);
-  void resizeSignal(const cabana::Signal *sig, int start_bit, int size);
-  void removeSignal(const cabana::Signal *sig);
   Item *getItem(const QModelIndex &index) const;
   int signalRow(const cabana::Signal *sig) const;
   void showExtraInfo(const QModelIndex &index);

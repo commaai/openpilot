@@ -56,8 +56,20 @@ AddSigCommand::AddSigCommand(const MessageId &id, const cabana::Signal &sig, QUn
   setText(QObject::tr("add signal %1 to %2:%3").arg(sig.name).arg(msgName(id)).arg(id.address));
 }
 
-void AddSigCommand::undo() { dbc()->removeSignal(id, signal.name); }
-void AddSigCommand::redo() { dbc()->addSignal(id, signal); }
+void AddSigCommand::undo() {
+  dbc()->removeSignal(id, signal.name);
+  if (msg_created) dbc()->removeMsg(id);
+}
+
+void AddSigCommand::redo() {
+  if (auto msg = dbc()->msg(id); !msg) {
+    msg_created = true;
+    dbc()->updateMsg(id, dbc()->newMsgName(id), can->lastMessage(id).dat.size(), "");
+  }
+  signal.name = dbc()->newSignalName(id);
+  signal.max = std::pow(2, signal.size) - 1;
+  dbc()->addSignal(id, signal);
+}
 
 // RemoveSigCommand
 
