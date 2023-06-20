@@ -4,7 +4,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
-from selfdrive.car import dbc_dict
+from selfdrive.car import CanBusBase, dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -32,6 +32,23 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
+
+
+class CanBus(CanBusBase):
+  def __init__(self, CP=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+  @property
+  def main(self) -> int:
+    return self.offset
+
+  @property
+  def alt(self):
+    return self.offset + 1
+
+  @property
+  def camera(self):
+    return self.offset + 2
 
 
 class CAR:
