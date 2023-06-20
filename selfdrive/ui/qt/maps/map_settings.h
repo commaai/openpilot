@@ -44,27 +44,6 @@ public:
            details_ == rhs.details_ && latitude_ == rhs.latitude_ && longitude_ == rhs.longitude_;
   }
 
-  bool operator<(const NavDestination &rhs) const {
-    qDebug() << "operator<" << label_ << rhs.label_;
-
-    if (isFavorite() && rhs.isFavorite()) {
-      if (label_ == NAV_FAVORITE_LABEL_HOME) return true;
-      else if (rhs.label_ == NAV_FAVORITE_LABEL_HOME) return false;
-      else if (label_ == NAV_FAVORITE_LABEL_WORK) return true;
-      else if (rhs.label_ == NAV_FAVORITE_LABEL_WORK) return false;
-      else return name_ < rhs.name_;
-    } else if (isFavorite()) {
-      return true;
-    } else if (rhs.isFavorite()) {
-      return false;
-    }
-
-    if (isRecent() && !rhs.isRecent()) return true;
-    else if (!isRecent() && rhs.isRecent()) return false;
-
-    return name_ < rhs.name_;
-  }
-
   QJsonObject toJson() const {
     QJsonObject obj;
     obj["save_type"] = type_;

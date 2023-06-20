@@ -189,6 +189,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
 
   current_widget = new DestinationWidget(this);
   QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
+    if (!current_destination) return;
     params.remove("NavDestination");
     updateCurrentRoute();
   });
@@ -302,7 +303,20 @@ void MapSettings::refresh() {
   // TODO: should we build a new layout and swap it in?
   clearLayout(destinations_layout);
 
-  std::sort(destinations.begin(), destinations.end());
+  // Sort in order: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
+  std::sort(destinations.begin(), destinations.end(), [](const NavDestination *a, const NavDestination *b) {
+    qDebug() << "sort" << a->name() << b->name();
+    if (a->isFavorite() && b->isFavorite()) {
+      if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
+      else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
+      else if (a->label() == NAV_FAVORITE_LABEL_WORK) return true;
+      else if (b->label() == NAV_FAVORITE_LABEL_WORK) return false;
+      else if (a->label() != b->label()) return a->label() < b->label();
+    }
+    else if (a->isFavorite()) return true;
+    else if (b->isFavorite()) return false;
+    return a->name() < b->name();
+  });
 
   for (auto destination : destinations) {
     auto widget = new DestinationWidget(this);
@@ -325,7 +339,9 @@ void MapSettings::refresh() {
   if (!has_work) {
     auto widget = new DestinationWidget(this);
     widget->unset(NAV_FAVORITE_LABEL_WORK);
-    destinations_layout->insertWidget(1, widget);
+    // TODO: refactor to remove this hack
+    int index = !has_home || (current_destination && current_destination->isFavorite() && current_destination->label() == NAV_FAVORITE_LABEL_HOME) ? 0 : 1;
+    destinations_layout->insertWidget(index, widget);
   }
 
   destinations_layout->addStretch();
