@@ -18,6 +18,31 @@ const QString NAV_TYPE_RECENT = "recent";
 const QString NAV_FAVORITE_LABEL_HOME = "home";
 const QString NAV_FAVORITE_LABEL_WORK = "work";
 
+class MapSettings : public QFrame {
+  Q_OBJECT
+public:
+  explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
+
+  void navigateTo(const QJsonObject &place);
+  void parseResponse(const QString &response, bool success);
+  void updateCurrentRoute();
+
+private:
+  void showEvent(QShowEvent *event) override;
+  void refresh();
+
+  Params params;
+  QString cur_destinations;
+  QVBoxLayout *destinations_layout;
+  NavDestination *current_destination;
+  DestinationWidget *current_widget;
+
+  QPixmap close_icon;
+
+signals:
+  void closeSettings();
+};
+
 class NavDestination {
 public:
   explicit NavDestination(const QJsonObject &place)
@@ -85,29 +110,4 @@ private:
 
 private:
   QLabel *icon, *title, *subtitle, *action;
-};
-
-class MapSettings : public QFrame {
-  Q_OBJECT
-public:
-  explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
-
-  void navigateTo(const QJsonObject &place);
-  void parseResponse(const QString &response, bool success);
-  void updateCurrentRoute();
-
-private:
-  void showEvent(QShowEvent *event) override;
-  void refresh();
-
-  Params params;
-  QString cur_destinations;
-  QVBoxLayout *destinations_layout;
-  NavDestination *current_destination;
-  DestinationWidget *current_widget;
-
-  QPixmap close_icon;
-
-signals:
-  void closeSettings();
 };
