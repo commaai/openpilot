@@ -48,6 +48,23 @@ class Buttons(IntEnum):
   SET_DEC_DEEP = 8
 
 
+PREGLOBAL_BUTTONS = {
+  0: Buttons.NONE,
+  1: Buttons.ACC_TOGGLE,
+  2: Buttons.SET_DEC,
+  3: Buttons.SET_DEC_DEEP,
+  4: Buttons.RES_INC,
+  5: Buttons.RES_INC_DEEP
+}
+
+GLOBAL_BUTTONS = {
+  0: Buttons.NONE,
+  1: Buttons.ACC_TOGGLE,
+  2: Buttons.SET_DEC,
+  4: Buttons.RES_INC
+}
+
+
 class CAR:
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"

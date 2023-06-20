@@ -47,22 +47,7 @@ class CarController:
 
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
-        # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
-        # disengage ACC when OP is disengaged
-        if pcm_cancel_cmd:
-          cruise_button = 1
-        # turn main on if off and past start-up state
-        elif not CS.out.cruiseState.available and CS.ready:
-          cruise_button = 1
-        else:
-          cruise_button = CS.cruise_button
-
-        # unstick previous mocked button press
-        if cruise_button == 1 and self.cruise_button_prev == 1:
-          cruise_button = 0
-        self.cruise_button_prev = cruise_button
-
-        can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
+        can_sends.append(subarucan.create_preglobal_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
 
     else:
       if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:

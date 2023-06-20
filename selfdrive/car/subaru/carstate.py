@@ -5,32 +5,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, Buttons, SubaruFlags
-
-PREV_BUTTON_SAMPLES = 8
-
-def cruise_buttons_conversion(cruise_buttons):
-  if cruise_buttons["Main"]:
-    return Buttons.ACC_TOGGLE
-  if cruise_buttons["Resume"]:
-    return Buttons.RES_INC
-  if cruise_buttons["Set"]:
-    return Buttons.SET_DEC
-  return Buttons.NONE
-
-def cruise_buttons_conversion_preglobal(cruise_button):
-  # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
-  if cruise_button == 1:
-    return Buttons.ACC_TOGGLE
-  if cruise_button == 2:
-    return Buttons.SET_DEC
-  if cruise_button == 3:
-    return Buttons.SET_DEC_DEEP
-  if cruise_button == 4:
-    return Buttons.RES_INC
-  if cruise_button == 5:
-    return Buttons.RES_INC_DEEP
-  return Buttons.NONE
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_BUTTONS, GLOBAL_GEN2, PREGLOBAL_BUTTONS, PREGLOBAL_CARS, Buttons, SubaruFlags
 
 
 class CarState(CarStateBase):
@@ -39,7 +14,8 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
-    self.cruise_buttons = deque([Buttons.NONE] * PREV_BUTTON_SAMPLES, maxlen=PREV_BUTTON_SAMPLES)
+    self.prev_cruise_buttons = Buttons.NONE
+    self.cruise_buttons = Buttons.NONE
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -99,7 +75,6 @@ class CarState(CarStateBase):
 
     cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     if self.car_fingerprint in PREGLOBAL_CARS:
-      self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
     else:
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
@@ -118,14 +93,14 @@ class CarState(CarStateBase):
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
     
     # Buttons
-    self.prev_cruise_buttons = self.cruise_buttons[-1]
+    self.prev_cruise_buttons = self.cruise_buttons
 
     cp_buttons = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
     
     if self.CP.carFingerprint in PREGLOBAL_CARS:
-      self.cruise_buttons.append(cruise_buttons_conversion_preglobal(cp_cam.vl["ES_Distance"]["Cruise_Button"]))
+      self.cruise_buttons = PREGLOBAL_BUTTONS[cp_cam.vl["ES_Distance"]["Cruise_Button"]]
     else:
-      self.cruise_buttons.append(cruise_buttons_conversion(cp_buttons.vl["Cruise_Buttons"]))
+      self.cruise_buttons = GLOBAL_BUTTONS[cp_buttons.vl["Cruise_Buttons"]["Cruise_Button"]]
 
     return ret
 
@@ -134,9 +109,7 @@ class CarState(CarStateBase):
     signals = [
       ("Cruise_On", "CruiseControl"),
       ("Cruise_Activated", "CruiseControl"),
-      ("Main", "Cruise_Buttons"),
-      ("Set", "Cruise_Buttons"),
-      ("Resume", "Cruise_Buttons"),
+      ("Cruise_Button", "Cruise_Buttons"),
       ("FL", "Wheel_Speeds"),
       ("FR", "Wheel_Speeds"),
       ("RL", "Wheel_Speeds"),

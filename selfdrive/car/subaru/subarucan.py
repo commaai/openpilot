@@ -34,14 +34,12 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd):
     "Signal4",
     "Close_Distance",
     "Signal5",
-    "Cruise_Cancel",
-    "Cruise_Set",
-    "Cruise_Resume",
+    "Cruise_Button",
     "Signal6",
   ]}
   values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
   if pcm_cancel_cmd:
-    values["Cruise_Cancel"] = 1
+    values["Cruise_Button"] = 1
   return packer.make_can_msg("ES_Distance", bus, values)
 
 
@@ -184,7 +182,7 @@ def create_preglobal_steering_control(packer, apply_steer, steer_req):
   return packer.make_can_msg("ES_LKAS", 0, values)
 
 
-def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
+def create_preglobal_es_distance(packer, es_distance_msg, pcm_cancel_cmd):
   values = {s: es_distance_msg[s] for s in [
     "Cruise_Throttle",
     "Signal1",
@@ -205,7 +203,9 @@ def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
     "Signal7",
   ]}
 
-  values["Cruise_Button"] = cruise_button
+  if pcm_cancel_cmd:
+    values["Cruise_Button"] = 1
+
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
 
   return packer.make_can_msg("ES_Distance", 0, values)
