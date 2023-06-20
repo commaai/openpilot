@@ -44,7 +44,6 @@ class CarController:
 
 
     # *** alerts and pcm cancel ***
-
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
