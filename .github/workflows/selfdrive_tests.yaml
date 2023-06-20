@@ -121,7 +121,7 @@ jobs:
     - name: Brew link restored dependencies
       run: |
         if [ -f ~/github_brew_cache_entries.txt ]; then
-          brew link --force $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
+          brew link --force --overwrite $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
           if [ -d /Applications/ArmGNUToolchain ]; then # link gcc-arm-embedded manually
             GCC_TOOLCHAIN="$(echo /Applications/ArmGNUToolchain/**/**/bin)"
             echo "$GCC_TOOLCHAIN" >> $GITHUB_PATH
@@ -136,13 +136,13 @@ jobs:
       run: |
         source tools/openpilot_env.sh
         poetry run scons -j$(nproc)
-    - name: Cleanup scons cache
+    - name: Pre Cache - Cleanup scons cache
       if: github.ref == 'refs/heads/master'
       run: |
         source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
         poetry run scons -j$(nproc) --cache-populate
-    - name: Remove pre-existing Homebrew packages for caching
+    - name: Pre Cache - Remove pre-existing Homebrew packages
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
         new_cellar=$(brew list --formula -1)
