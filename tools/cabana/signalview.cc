@@ -1,11 +1,9 @@
 #include "tools/cabana/signalview.h"
 
-#include <QApplication>
 #include <QCompleter>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
-#include <QHelpEvent>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPainterPath>
@@ -214,51 +212,10 @@ bool SignalModel::saveSignal(const cabana::Signal *origin_s, cabana::Signal &s) 
   }
 
   if (s.is_little_endian != origin_s->is_little_endian) {
-    int start = std::floor(s.start_bit / 8);
-    if (s.is_little_endian) {
-      int end = std::floor((s.start_bit - s.size + 1) / 8);
-      s.start_bit = start == end ? s.start_bit - s.size + 1 : bigEndianStartBitsIndex(s.start_bit);
-    } else {
-      int end = std::floor((s.start_bit + s.size - 1) / 8);
-      s.start_bit = start == end ? s.start_bit + s.size - 1 : bigEndianBitIndex(s.start_bit);
-    }
+    s.start_bit = flipBitPos(s.start_bit);
   }
-  if (s.is_little_endian) {
-    s.lsb = s.start_bit;
-    s.msb = s.start_bit + s.size - 1;
-  } else {
-    s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-    s.msb = s.start_bit;
-  }
-
   UndoStack::push(new EditSignalCommand(msg_id, origin_s, s));
   return true;
-}
-
-void SignalModel::addSignal(int start_bit, int size, bool little_endian) {
-  auto msg = dbc()->msg(msg_id);
-  if (!msg) {
-    QString name = dbc()->newMsgName(msg_id);
-    UndoStack::push(new EditMsgCommand(msg_id, name, can->lastMessage(msg_id).dat.size(), ""));
-    msg = dbc()->msg(msg_id);
-  }
-
-  cabana::Signal sig = {.name = dbc()->newSignalName(msg_id), .is_little_endian = little_endian, .factor = 1, .min = 0, .max = std::pow(2, size) - 1};
-  updateSigSizeParamsFromRange(sig, start_bit, size);
-  UndoStack::push(new AddSigCommand(msg_id, sig));
-}
-
-void SignalModel::resizeSignal(const cabana::Signal *sig, int start_bit, int size) {
-  cabana::Signal s = *sig;
-  updateSigSizeParamsFromRange(s, start_bit, size);
-  saveSignal(sig, s);
-}
-
-void SignalModel::removeSignal(const cabana::Signal *sig) {
-  UndoStack::push(new RemoveSigCommand(msg_id, sig));
-  if (dbc()->signalCount(msg_id) == 0) {
-    UndoStack::push(new RemoveMsgCommand(msg_id));
-  }
 }
 
 void SignalModel::handleMsgChanged(MessageId id) {
@@ -324,7 +281,7 @@ QSize SignalItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
     }
     width = std::min<int>(option.widget->size().width() / 3.0, it.value() + spacing);
   }
-  return {width, QApplication::fontMetrics().height()};
+  return {width, option.fontMetrics.height()};
 }
 
 void SignalItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -565,7 +522,7 @@ void SignalView::rowsChanged() {
 
       tree->setIndexWidget(index, w);
       auto sig = model->getItem(index)->sig;
-      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { model->removeSignal(sig); });
+      QObject::connect(remove_btn, &QToolButton::clicked, [=]() { UndoStack::push(new RemoveSigCommand(model->msg_id, sig)); });
       QObject::connect(plot_btn, &QToolButton::clicked, [=](bool checked) {
         emit showChart(model->msg_id, sig, checked, QGuiApplication::keyboardModifiers() & Qt::ShiftModifier);
       });
