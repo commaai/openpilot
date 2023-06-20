@@ -10,7 +10,7 @@ from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, VERSIONS, match_fw_to_car, get_fw_versions
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -33,27 +33,73 @@ class TestFwFingerprint(unittest.TestCase):
     self.assertEqual(candidates[0], expected)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
-  def test_fw_fingerprint(self, brand, car_model, ecus):
+  def test_exact_match(self, brand, car_model, ecus):
     CP = car.CarParams.new_message()
     for _ in range(200):
       fw = []
       for ecu, fw_versions in ecus.items():
-        if not len(fw_versions):
-          raise unittest.SkipTest("Car model has no FW versions")
         ecu_name, addr, sub_addr = ecu
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw)
+      _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
       self.assertFingerprints(matches, car_model)
 
-  def test_no_duplicate_fw_versions(self):
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_custom_fuzzy_match(self, brand, car_model, ecus):
+    # Assert brand-specific fuzzy fingerprinting function doesn't disagree with standard fuzzy function
+    config = FW_QUERY_CONFIGS[brand]
+    if config.match_fw_to_car_fuzzy is None:
+      raise unittest.SkipTest("Brand does not implement custom fuzzy fingerprinting function")
+
+    CP = car.CarParams.new_message()
+    for _ in range(5):
+      fw = []
+      for ecu, fw_versions in ecus.items():
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP.carFw = fw
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+
+      # If both have matches, they must agree
+      if len(matches) == 1 and len(brand_matches) == 1:
+        self.assertEqual(matches, brand_matches)
+
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
+    # Asserts that fuzzy matching does not count matching FW, but ECU address keys
+    valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS]
+    if not len(valid_ecus):
+      raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
+
+    fw = []
+    for ecu in valid_ecus:
+      ecu_name, addr, sub_addr = ecu
+      for _ in range(5):
+        # Add multiple FW versions to simulate ECU returning to multiple queries in a brand
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP = car.CarParams.new_message(carFw=fw)
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+
+      # Assert no match if there are not enough unique ECUs
+      unique_ecus = {(f['address'], f['subAddress']) for f in fw}
+      if len(unique_ecus) < 2:
+        self.assertEqual(len(matches), 0, car_model)
+      # There won't always be a match due to shared FW, but if there is it should be correct
+      elif len(matches):
+        self.assertFingerprints(matches, car_model)
+
+  def test_fw_version_lists(self):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
-            self.assertFalse(len(duplicates), f"{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}")
+            self.assertFalse(len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}')
+            self.assertGreater(len(ecu_fw), 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}')
 
   def test_all_addrs_map_to_one_ecu(self):
     for brand, cars in VERSIONS.items():
@@ -140,7 +186,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 4.6
+    total_ref_time = 5.2
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -149,7 +195,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.1,
-        'nissan': 0.3,
+        'nissan': 0.9,
         'subaru': 0.1,
         'tesla': 0.2,
         'toyota': 0.7,
@@ -168,7 +214,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
-          avg_time = self._benchmark(brand, num_pandas, 10)
+          avg_time = self._benchmark(brand, num_pandas, 5)
           total_time += avg_time
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')

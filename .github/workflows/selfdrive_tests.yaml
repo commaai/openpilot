@@ -235,6 +235,7 @@ jobs:
                         $UNIT_TEST system/loggerd && \
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST system/tests && \
                         $UNIT_TEST system/ubloxd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
                         ./system/ubloxd/tests/test_glonass_runner && \
@@ -253,6 +254,7 @@ jobs:
                         ./tools/replay/tests/test_replay && \
                         ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
+                        ./selfdrive/test/process_replay/test_fuzzy.py && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2

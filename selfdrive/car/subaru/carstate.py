@@ -69,6 +69,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
+    cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -76,10 +77,13 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
+      ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
+                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
+      # 8 is known AEB, there are a few other values related to AEB we ignore
+      ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
+                     (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
-    cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
@@ -107,9 +111,22 @@ class CarState(CarStateBase):
     return signals, checks
 
   @staticmethod
+  def get_global_es_brake_signals():
+    signals = [
+      ("AEB_Status", "ES_Brake"),
+      ("Brake_Pressure", "ES_Brake"),
+    ]
+    checks = [
+      ("ES_Brake", 20),
+    ]
+
+    return signals, checks
+
+  @staticmethod
   def get_global_es_distance_signals():
     signals = [
       ("COUNTER", "ES_Distance"),
+      ("CHECKSUM", "ES_Distance"),
       ("Signal1", "ES_Distance"),
       ("Cruise_Fault", "ES_Distance"),
       ("Cruise_Throttle", "ES_Distance"),
@@ -251,6 +268,7 @@ class CarState(CarStateBase):
     else:
       signals = [
         ("COUNTER", "ES_DashStatus"),
+        ("CHECKSUM", "ES_DashStatus"),
         ("PCB_Off", "ES_DashStatus"),
         ("LDW_Off", "ES_DashStatus"),
         ("Signal1", "ES_DashStatus"),
@@ -278,6 +296,7 @@ class CarState(CarStateBase):
         ("Cruise_State", "ES_DashStatus"),
 
         ("COUNTER", "ES_LKAS_State"),
+        ("CHECKSUM", "ES_LKAS_State"),
         ("LKAS_Alert_Msg", "ES_LKAS_State"),
         ("Signal1", "ES_LKAS_State"),
         ("LKAS_ACTIVE", "ES_LKAS_State"),
@@ -301,10 +320,14 @@ class CarState(CarStateBase):
 
       if CP.carFingerprint not in GLOBAL_GEN2:
         signals += CarState.get_global_es_distance_signals()[0]
+        signals += CarState.get_global_es_brake_signals()[0]
         checks += CarState.get_global_es_distance_signals()[1]
+        checks += CarState.get_global_es_brake_signals()[1]
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
         signals += [
+          ("COUNTER", "INFOTAINMENT_STATUS"),
+          ("CHECKSUM", "INFOTAINMENT_STATUS"),
           ("LKAS_State_Infotainment", "INFOTAINMENT_STATUS"),
           ("LKAS_Blue_Lines", "INFOTAINMENT_STATUS"),
           ("Signal1", "INFOTAINMENT_STATUS"),
@@ -319,7 +342,9 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GLOBAL_GEN2:
       signals, checks = CarState.get_common_global_signals()
       signals += CarState.get_global_es_distance_signals()[0]
+      signals += CarState.get_global_es_brake_signals()[0]
       checks += CarState.get_global_es_distance_signals()[1]
+      checks += CarState.get_global_es_brake_signals()[1]
       return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     return None
