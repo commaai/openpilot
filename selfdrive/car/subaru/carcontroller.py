@@ -11,7 +11,6 @@ class CarController:
     self.frame = 0
 
     self.cruise_button_prev = 0
-    self.last_cancel_frame = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -50,10 +49,9 @@ class CarController:
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, CS.es_distance_msg, pcm_cancel_cmd))
 
     else:
-      if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
+      if pcm_cancel_cmd:
         bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
-        self.last_cancel_frame = self.frame
 
       if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))

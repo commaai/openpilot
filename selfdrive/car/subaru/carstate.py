@@ -1,4 +1,3 @@
-from collections import deque
 import copy
 from cereal import car
 from opendbc.can.can_define import CANDefine
@@ -156,9 +155,7 @@ class CarState(CarStateBase):
       ("Signal4", "ES_Distance"),
       ("Close_Distance", "ES_Distance"),
       ("Signal5", "ES_Distance"),
-      ("Cruise_Cancel", "ES_Distance"),
-      ("Cruise_Set", "ES_Distance"),
-      ("Cruise_Resume", "ES_Distance"),
+      ("Cruise_Button", "ES_Distance"),
       ("Signal6", "ES_Distance"),
     ]
     checks = [
