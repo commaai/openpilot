@@ -251,7 +251,7 @@ void MapSettings::updateCurrentRoute() {
   if (dest.size()) {
     QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
     if (doc.isNull()) {
-      qDebug() << "JSON Parse failed on NavDestination" << dest;
+      qWarning() << "JSON Parse failed on NavDestination" << dest;
       return;
     }
     auto destination = new NavDestination(doc.object());
@@ -280,7 +280,7 @@ void MapSettings::refresh() {
   if (!destinations_str.isEmpty()) {
     QJsonDocument doc = QJsonDocument::fromJson(destinations_str.toUtf8());
     if (doc.isNull()) {
-      qDebug() << "JSON Parse failed on navigation locations" << cur_destinations;
+      qWarning() << "JSON Parse failed on navigation locations" << cur_destinations;
       return;
     }
 
