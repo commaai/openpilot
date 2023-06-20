@@ -387,7 +387,7 @@ location set</source>
     <message>
         <source>No work
 location set</source>
-        <translation>Aucun lieu de travail</translation>
+        <translation>Aucun travail</translation>
     </message>
     <message>
         <source>no recent destinations</source>
@@ -539,8 +539,8 @@ location set</source>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>il y a %n minute</numerusform>
-            <numerusform>il y a %n minutes</numerusform>
+            <numerusform>il y a %n min.</numerusform>
+            <numerusform>il y a %n min.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -835,7 +835,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation>SÉLECTIONNER</translation>
+        <translation>CHOISIR</translation>
     </message>
     <message>
         <source>Select a branch</source>
@@ -1113,7 +1113,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation>Configurer le Wi-Fi</translation>
+        <translation>Activez le Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
@@ -1125,11 +1125,11 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation>Envoi des données d&apos;entraînement</translation>
+        <translation>Envoi des données</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>Vos données sont utilisées pour former des modèles de conduite et aider à améliorer openpilot</translation>
+        <translation>Vos données sont utilisées pour entrainer des modèles de conduite et aider à améliorer openpilot</translation>
     </message>
 </context>
 <context>
