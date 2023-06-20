@@ -64,7 +64,12 @@ void update_can_health_pkt(uint8_t can_number, bool error_irq) {
     if ((CANx->IR & (FDCAN_IR_TEFL)) != 0) {
       can_health[can_number].total_tx_lost_cnt += 1U;
     }
-    llcan_clear_send(CANx);
+    // Actually reset can core only on arbitration or data phase errors and when CEL couter reaches at least 100 errors
+    if (((CANx->IR & (FDCAN_IR_PED | FDCAN_IR_PEA)) != 0) && (((ecr_reg & FDCAN_ECR_CEL) >> FDCAN_ECR_CEL_Pos) == 100U)) {
+      llcan_clear_send(CANx);
+    }
+    // Clear error interrupts
+    CANx->IR |= (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EP | FDCAN_IR_BO | FDCAN_IR_RF0L);
   }
   EXIT_CRITICAL();
 }
@@ -119,7 +124,7 @@ void process_can(uint8_t can_number) {
           can_health[can_number].total_tx_checksum_error_cnt += 1U;
         }
 
-        usb_cb_ep3_out_complete();
+        refresh_can_tx_slots_available();
       }
     }
 
@@ -134,87 +139,85 @@ void can_rx(uint8_t can_number) {
   FDCAN_GlobalTypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
-  // Rx FIFO 0 new message
-  if((CANx->IR & FDCAN_IR_RF0N) != 0) {
-    CANx->IR |= FDCAN_IR_RF0N;
-    while((CANx->RXF0S & FDCAN_RXF0S_F0FL) != 0) {
-      can_health[can_number].total_rx_cnt += 1U;
+  // Clear all new messages from Rx FIFO 0
+  CANx->IR |= FDCAN_IR_RF0N;
+  while((CANx->RXF0S & FDCAN_RXF0S_F0FL) != 0) {
+    can_health[can_number].total_rx_cnt += 1U;
 
-      // can is live
-      pending_can_live = 1;
+    // can is live
+    pending_can_live = 1;
 
-      // get the index of the next RX FIFO element (0 to FDCAN_RX_FIFO_0_EL_CNT - 1)
-      uint8_t rx_fifo_idx = (uint8_t)((CANx->RXF0S >> FDCAN_RXF0S_F0GI_Pos) & 0x3F);
+    // get the index of the next RX FIFO element (0 to FDCAN_RX_FIFO_0_EL_CNT - 1)
+    uint8_t rx_fifo_idx = (uint8_t)((CANx->RXF0S >> FDCAN_RXF0S_F0GI_Pos) & 0x3F);
 
-      // Recommended to offset get index by at least +1 if RX FIFO is in overwrite mode and full (datasheet)
-      if((CANx->RXF0S & FDCAN_RXF0S_F0F) == FDCAN_RXF0S_F0F) {
-        rx_fifo_idx = ((rx_fifo_idx + 1U) >= FDCAN_RX_FIFO_0_EL_CNT) ? 0U : (rx_fifo_idx + 1U);
-        can_health[can_number].total_rx_lost_cnt += 1U; // At least one message was lost
-      }
-
-      uint32_t RxFIFO0SA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET);
-      CANPacket_t to_push;
-      canfd_fifo *fifo;
-
-      // getting address
-      fifo = (canfd_fifo *)(RxFIFO0SA + (rx_fifo_idx * FDCAN_RX_FIFO_0_EL_SIZE));
-
-      to_push.returned = 0U;
-      to_push.rejected = 0U;
-      to_push.extended = (fifo->header[0] >> 30) & 0x1U;
-      to_push.addr = ((to_push.extended != 0U) ? (fifo->header[0] & 0x1FFFFFFFU) : ((fifo->header[0] >> 18) & 0x7FFU));
-      to_push.bus = bus_number;
-      to_push.data_len_code = ((fifo->header[1] >> 16) & 0xFU);
-
-      bool canfd_frame = ((fifo->header[1] >> 21) & 0x1U);
-      bool brs_frame = ((fifo->header[1] >> 20) & 0x1U);
-
-      uint8_t data_len_w = (dlc_to_len[to_push.data_len_code] / 4U);
-      data_len_w += ((dlc_to_len[to_push.data_len_code] % 4U) > 0U) ? 1U : 0U;
-      for (unsigned int i = 0; i < data_len_w; i++) {
-        WORD_TO_BYTE_ARRAY(&to_push.data[i*4U], fifo->data_word[i]);
-      }
-      can_set_checksum(&to_push);
-
-      // forwarding (panda only)
-      int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
-      if (bus_fwd_num != -1) {
-        CANPacket_t to_send;
-
-        to_send.returned = 0U;
-        to_send.rejected = 0U;
-        to_send.extended = to_push.extended;
-        to_send.addr = to_push.addr;
-        to_send.bus = to_push.bus;
-        to_send.data_len_code = to_push.data_len_code;
-        (void)memcpy(to_send.data, to_push.data, dlc_to_len[to_push.data_len_code]);
-        can_set_checksum(&to_send);
-
-        can_send(&to_send, bus_fwd_num, true);
-        can_health[can_number].total_fwd_cnt += 1U;
-      }
-
-      safety_rx_invalid += safety_rx_hook(&to_push) ? 0U : 1U;
-      ignition_can_hook(&to_push);
-
-      current_board->set_led(LED_BLUE, true);
-      rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
-
-      // Enable CAN FD and BRS if CAN FD message was received
-      if (!(bus_config[can_number].canfd_enabled) && (canfd_frame)) {
-        bus_config[can_number].canfd_enabled = true;
-      }
-      if (!(bus_config[can_number].brs_enabled) && (brs_frame)) {
-        bus_config[can_number].brs_enabled = true;
-      }
-
-      // update read index
-      CANx->RXF0A = rx_fifo_idx;
+    // Recommended to offset get index by at least +1 if RX FIFO is in overwrite mode and full (datasheet)
+    if((CANx->RXF0S & FDCAN_RXF0S_F0F) == FDCAN_RXF0S_F0F) {
+      rx_fifo_idx = ((rx_fifo_idx + 1U) >= FDCAN_RX_FIFO_0_EL_CNT) ? 0U : (rx_fifo_idx + 1U);
+      can_health[can_number].total_rx_lost_cnt += 1U; // At least one message was lost
     }
 
+    uint32_t RxFIFO0SA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET);
+    CANPacket_t to_push;
+    canfd_fifo *fifo;
+
+    // getting address
+    fifo = (canfd_fifo *)(RxFIFO0SA + (rx_fifo_idx * FDCAN_RX_FIFO_0_EL_SIZE));
+
+    to_push.returned = 0U;
+    to_push.rejected = 0U;
+    to_push.extended = (fifo->header[0] >> 30) & 0x1U;
+    to_push.addr = ((to_push.extended != 0U) ? (fifo->header[0] & 0x1FFFFFFFU) : ((fifo->header[0] >> 18) & 0x7FFU));
+    to_push.bus = bus_number;
+    to_push.data_len_code = ((fifo->header[1] >> 16) & 0xFU);
+
+    bool canfd_frame = ((fifo->header[1] >> 21) & 0x1U);
+    bool brs_frame = ((fifo->header[1] >> 20) & 0x1U);
+
+    uint8_t data_len_w = (dlc_to_len[to_push.data_len_code] / 4U);
+    data_len_w += ((dlc_to_len[to_push.data_len_code] % 4U) > 0U) ? 1U : 0U;
+    for (unsigned int i = 0; i < data_len_w; i++) {
+      WORD_TO_BYTE_ARRAY(&to_push.data[i*4U], fifo->data_word[i]);
+    }
+    can_set_checksum(&to_push);
+
+    // forwarding (panda only)
+    int bus_fwd_num = safety_fwd_hook(bus_number, to_push.addr);
+    if (bus_fwd_num != -1) {
+      CANPacket_t to_send;
+
+      to_send.returned = 0U;
+      to_send.rejected = 0U;
+      to_send.extended = to_push.extended;
+      to_send.addr = to_push.addr;
+      to_send.bus = to_push.bus;
+      to_send.data_len_code = to_push.data_len_code;
+      (void)memcpy(to_send.data, to_push.data, dlc_to_len[to_push.data_len_code]);
+      can_set_checksum(&to_send);
+
+      can_send(&to_send, bus_fwd_num, true);
+      can_health[can_number].total_fwd_cnt += 1U;
+    }
+
+    safety_rx_invalid += safety_rx_hook(&to_push) ? 0U : 1U;
+    ignition_can_hook(&to_push);
+
+    current_board->set_led(LED_BLUE, true);
+    rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
+
+    // Enable CAN FD and BRS if CAN FD message was received
+    if (!(bus_config[can_number].canfd_enabled) && (canfd_frame)) {
+      bus_config[can_number].canfd_enabled = true;
+    }
+    if (!(bus_config[can_number].brs_enabled) && (brs_frame)) {
+      bus_config[can_number].brs_enabled = true;
+    }
+
+    // update read index
+    CANx->RXF0A = rx_fifo_idx;
   }
+
   // Error handling
-  bool error_irq = ((CANx->IR & (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EW | FDCAN_IR_EP | FDCAN_IR_ELO | FDCAN_IR_BO | FDCAN_IR_TEFL | FDCAN_IR_RF0L)) != 0);
+  bool error_irq = ((CANx->IR & (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EP | FDCAN_IR_BO | FDCAN_IR_RF0L)) != 0);
   update_can_health_pkt(can_number, error_irq);
 }
 

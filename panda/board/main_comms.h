@@ -478,6 +478,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         UNUSED(ret);
       }
       break;
+    // *** 0xfd: read logs
+    case 0xfd:
+      if (req->param1 == 1U) {
+        logging_find_read_index();
+      }
+      resp_len = logging_read(resp);
+      break;
     default:
       print("NO HANDLER ");
       puth(req->request);

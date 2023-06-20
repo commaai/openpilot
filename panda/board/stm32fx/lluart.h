@@ -29,6 +29,12 @@ void uart_rx_ring(uart_ring *q){
     uint8_t c = q->uart->DR;  // This read after reading SR clears a bunch of interrupts
 
     uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
+
+    if ((next_w_ptr == q->r_ptr_rx) && q->overwrite) {
+      // overwrite mode: drop oldest byte
+      q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
+    }
+
     // Do not overwrite buffer data
     if (next_w_ptr != q->r_ptr_rx) {
       q->elems_rx[q->w_ptr_rx] = c;

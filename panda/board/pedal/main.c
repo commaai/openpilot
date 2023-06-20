@@ -54,7 +54,7 @@ void comms_endpoint2_write(uint8_t *data, uint32_t len) {
   UNUSED(data);
   UNUSED(len);
 }
-void usb_cb_ep3_out_complete(void) {}
+void refresh_can_tx_slots_available(void) {}
 
 int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
   unsigned int resp_len = 0;

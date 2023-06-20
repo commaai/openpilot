@@ -74,7 +74,6 @@ void update_can_health_pkt(uint8_t can_number, bool error_irq) {
 
   if (error_irq) {
     can_health[can_number].total_error_cnt += 1U;
-    CAN->MSR = CAN_MSR_ERRI;
     llcan_clear_send(CAN);
   }
 
@@ -151,7 +150,7 @@ void process_can(uint8_t can_number) {
           can_health[can_number].total_tx_checksum_error_cnt += 1U;
         }
 
-        usb_cb_ep3_out_complete();
+        refresh_can_tx_slots_available();
       }
     }
 

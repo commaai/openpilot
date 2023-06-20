@@ -16,9 +16,10 @@ typedef struct uart_ring {
   USART_TypeDef *uart;
   void (*callback)(struct uart_ring*);
   bool dma_rx;
+  bool overwrite;
 } uart_ring;
 
-#define UART_BUFFER(x, size_rx, size_tx, uart_ptr, callback_ptr, rx_dma) \
+#define UART_BUFFER(x, size_rx, size_tx, uart_ptr, callback_ptr, rx_dma, overwrite_mode) \
   uint8_t elems_rx_##x[size_rx]; \
   uint8_t elems_tx_##x[size_tx]; \
   uart_ring uart_ring_##x = {  \
@@ -32,7 +33,8 @@ typedef struct uart_ring {
     .rx_fifo_size = (size_rx), \
     .uart = (uart_ptr), \
     .callback = (callback_ptr), \
-    .dma_rx = (rx_dma) \
+    .dma_rx = (rx_dma), \
+    .overwrite = (overwrite_mode) \
   };
 
 // ***************************** Function prototypes *****************************
@@ -43,22 +45,22 @@ void uart_send_break(uart_ring *u);
 // ******************************** UART buffers ********************************
 
 // gps = USART1
-UART_BUFFER(gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true)
+UART_BUFFER(gps, FIFO_SIZE_DMA, FIFO_SIZE_INT, USART1, NULL, true, false)
 
 // lin1, K-LINE = UART5
 // lin2, L-LINE = USART3
-UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false)
-UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false)
+UART_BUFFER(lin1, FIFO_SIZE_INT, FIFO_SIZE_INT, UART5, NULL, false, false)
+UART_BUFFER(lin2, FIFO_SIZE_INT, FIFO_SIZE_INT, USART3, NULL, false, false)
 
 // debug = USART2
-UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, false)
+UART_BUFFER(debug, FIFO_SIZE_INT, FIFO_SIZE_INT, USART2, debug_ring_callback, false, true)
 
 // SOM debug = UART7
 #ifdef STM32H7
-  UART_BUFFER(som_debug, FIFO_SIZE_INT, FIFO_SIZE_INT, UART7, NULL, false)
+  UART_BUFFER(som_debug, FIFO_SIZE_INT, FIFO_SIZE_INT, UART7, NULL, false, true)
 #else
   // UART7 is not available on F4
-  UART_BUFFER(som_debug, 1U, 1U, NULL, NULL, false)
+  UART_BUFFER(som_debug, 1U, 1U, NULL, NULL, false, true)
 #endif
 
 uart_ring *get_ring_by_number(int a) {
@@ -106,7 +108,13 @@ bool injectc(uart_ring *q, char elem) {
   uint16_t next_w_ptr;
 
   ENTER_CRITICAL();
-  next_w_ptr = (q->w_ptr_rx + 1U) % q->tx_fifo_size;
+  next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
+
+  if ((next_w_ptr == q->r_ptr_rx) && q->overwrite) {
+    // overwrite mode: drop oldest byte
+    q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
+  }
+
   if (next_w_ptr != q->r_ptr_rx) {
     q->elems_rx[q->w_ptr_rx] = elem;
     q->w_ptr_rx = next_w_ptr;
@@ -123,6 +131,12 @@ bool putc(uart_ring *q, char elem) {
 
   ENTER_CRITICAL();
   next_w_ptr = (q->w_ptr_tx + 1U) % q->tx_fifo_size;
+
+  if ((next_w_ptr == q->r_ptr_tx) && q->overwrite) {
+    // overwrite mode: drop oldest byte
+    q->r_ptr_tx = (q->r_ptr_tx + 1U) % q->tx_fifo_size;
+  }
+
   if (next_w_ptr != q->r_ptr_tx) {
     q->elems_tx[q->w_ptr_tx] = elem;
     q->w_ptr_tx = next_w_ptr;

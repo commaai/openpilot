@@ -126,7 +126,7 @@ static bool ford_get_quality_flag_valid(CANPacket_t *to_push) {
   } else if (addr == MSG_EngVehicleSpThrottle2) {
     valid = ((GET_BYTE(to_push, 4) >> 5) & 0x3U) == 0x3U;  // VehVActlEng_D_Qf
   } else if (addr == MSG_Yaw_Data_FD1) {
-    valid = (GET_BYTE(to_push, 6) >> 4) == 0xFU;           // VehRolWActl_D_Qf & VehYawWActl_D_Qf
+    valid = ((GET_BYTE(to_push, 6) >> 4) & 0x3U) == 0x3U;  // VehYawWActl_D_Qf
   } else {
   }
   return valid;

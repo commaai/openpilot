@@ -438,6 +438,12 @@ BO_ 401 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
 
+BO_ 419 GEARBOX_ALT: 8 PCM
+ SG_ GEAR : 7|8@0+ (1,0) [0|255] "" EON
+ SG_ GEAR_SHIFTER : 29|6@0+ (1,0) [0|63] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
 BO_ 432 STANDSTILL: 7 VSA
  SG_ WHEELS_MOVING : 12|1@0+ (1,0) [0|1] "" EON
  SG_ BRAKE_ERROR_1 : 11|1@0+ (1,0) [0|1] "" EON
@@ -513,3 +519,4 @@ CM_ SG_ 456 STANDSTILL "set to 1 when camera requests -4.0 m/s^2";
 
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P";
 VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P";
+VAL_ 419 GEAR_SHIFTER  32 "D" 16 "N" 8 "R" 4 "P" 0 "B" ;

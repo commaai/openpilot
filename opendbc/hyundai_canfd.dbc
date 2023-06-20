@@ -76,7 +76,7 @@ BO_ 81 ADRV_0x51: 32 ADRV
 BO_ 96 ESP_STATUS: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ ESP_DISABLED : 42|3@1+ (1,0) [0|63] "" XXX
+ SG_ TRACTION_AND_STABILITY_CONTROL : 42|3@1+ (1,0) [0|63] "" XXX
  SG_ BRAKE_PRESSURE : 128|10@1+ (1,0) [0|65535] "" XXX
  SG_ BRAKE_PRESSED : 148|1@1+ (1,0) [0|3] "" XXX
 
@@ -94,6 +94,10 @@ BO_ 112 GEAR_ALT_2: 32 XXX
 BO_ 160 WHEEL_SPEEDS: 24 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ MOVING_FORWARD : 56|1@0+ (1,0) [0|1] "" XXX
+ SG_ MOVING_BACKWARD : 57|1@0+ (1,0) [0|1] "" XXX
+ SG_ MOVING_FORWARD2 : 58|1@0+ (1,0) [0|1] "" XXX
+ SG_ MOVING_BACKWARD2 : 59|1@0+ (1,0) [0|1] "" XXX
  SG_ WHEEL_SPEED_1 : 64|16@1+ (0.03125,0) [0|65535] "m/s" XXX
  SG_ WHEEL_SPEED_2 : 80|16@1+ (0.03125,0) [0|65535] "m/s" XXX
  SG_ WHEEL_SPEED_3 : 96|16@1+ (0.03125,0) [0|65535] "m/s" XXX
@@ -301,6 +305,8 @@ BO_ 463 CRUISE_BUTTONS: 8 XXX
  SG_ NORMAL_CRUISE_MAIN_BTN : 21|1@1+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 12|4@1+ (1,0) [0|255] "" XXX
  SG_ CRUISE_BUTTONS : 16|3@1+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_PADDLE : 25|1@1+ (1,0) [0|1] "" XXX
+ SG_ LEFT_PADDLE : 27|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 474 ADRV_0x1da: 32 ADRV
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -498,8 +504,12 @@ BO_ 961 BLINKER_STALKS: 8 XXX
 BO_ 1041 DOORS_SEATBELTS: 8 XXX
  SG_ CHECKSUM_MAYBE : 7|8@0+ (1,0) [0|65535] "" XXX
  SG_ COUNTER_ALT : 15|4@0+ (1,0) [0|15] "" XXX
- SG_ DRIVER_SEATBELT_LATCHED : 42|1@0+ (1,0) [0|1] "" XXX
- SG_ DRIVER_DOOR_OPEN : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_DOOR : 24|1@1+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_DOOR : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_REAR_DOOR : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_REAR_DOOR : 56|1@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_SEATBELT : 42|1@0+ (1,0) [0|1] "" XXX
+ SG_ PASSENGER_SEATBELT : 36|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1043 BLINKERS: 8 XXX
  SG_ COUNTER_ALT : 15|4@0+ (1,0) [0|15] "" XXX
@@ -551,6 +561,33 @@ BO_ 506 CLUSTER_SPEED_LIMIT: 32 XXX
  SG_ SECONDARY_LIMIT_2 : 103|8@0+ (1,0) [0|127] "" XXX
  SG_ SCHOOL_ZONE : 155|1@0+ (1,0) [0|1] "" XXX
 
+BO_ 1144 DRIVE_MODE: 8 XXX
+ SG_ DRIVE_MODE : 0|16@1+ (1,-61611) [0|61611] "" XXX
+ SG_ DRIVE_MODE2 : 28|3@1+ (1,0) [1|3] "" XXX
+
+BO_ 1151 HVAC_TOUCH_BUTTONS: 8 XXX
+ SG_ AUTO_BUTTON : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ SYNC_BUTTON : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ FR_DEFROST_BUTTON : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ RR_DEFROST_BUTTON : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ FAN_SPEED_UP_BUTTON : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ FAN_SPEED_DOWN_BUTTON : 26|1@0+ (1,0) [0|1] "" XXX
+ SG_ AIR_DIRECTION_BUTTON : 28|1@0+ (1,0) [0|1] "" XXX
+ SG_ AC_BUTTON : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVER_ONLY_BUTTON : 44|1@0+ (1,0) [0|1] "" XXX
+ SG_ RECIRC_BUTTON : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ HEAT_BUTTON : 52|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1259 LOCAL_TIME2: 8 XXX
+ SG_ HOURS : 15|5@0+ (1,0) [0|31] "" XXX
+ SG_ MINUTES : 21|6@0+ (1,0) [0|63] "" XXX
+ SG_ SECONDS : 24|6@1+ (1,0) [0|63] "" XXX
+ SG_ NEW_SIGNAL_3 : 39|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1264 LOCAL_TIME: 8 XXX
+ SG_ HOURS : 12|5@0+ (1,0) [0|31] "" XXX
+ SG_ MINUTES : 21|6@0+ (1,0) [0|63] "" XXX
+ SG_ SECONDS : 31|8@0+ (1,0) [0|59] "" XXX
 
 
 CM_ SG_ 96 BRAKE_PRESSURE "User applied brake pedal pressure. Ramps from computer applied pressure on falling edge of cruise. Cruise cancels if !=0";
@@ -570,9 +607,12 @@ VAL_ 69 GEAR 0 "P" 5 "D" 6 "N" 7 "R" ;
 VAL_ 112 GEAR 0 "P" 5 "D" 6 "N" 7 "R" ;
 VAL_ 80 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
 VAL_ 80 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
+VAL_ 96 TRACTION_AND_STABILITY_CONTROL 0 "On" 5 "Limited" 1 "Off";
 VAL_ 234 LKA_FAULT 0 "ok" 1 "lka fault" ;
 VAL_ 298 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green" ;
 VAL_ 298 LKA_MODE 1 "warning only" 2 "assist" 6 "off" ;
+VAL_ 304 PARK_BUTTON 1 "Pressed" 2 "Not Pressed";
+VAL_ 304 KNOB_POSITION 1 "R" 2 "N (on R side)" 3 "Centered" 4 "N (on D side)" 5 "D";
 VAL_ 304 GEAR 1 "P" 2 "R" 3 "N" 4 "D" ;
 VAL_ 352 AEB_SETTING 1 "off" 2 "warning only" 3 "active assist" ;
 VAL_ 362 BLINKER_CONTROL 1 "hazards" 2 "hazards button backlight" 3 "left blinkers" 4 "right blinkers";
@@ -580,3 +620,13 @@ VAL_ 373 ACCEnable 0 "SCC ready" 1 "SCC temp fault" 2 "SCC permanent fault" 3 "S
 VAL_ 416 ACCMode 0 "off" 1 "enabled" 2 "driver_override" 3 "off_maybe_fault" 4 "cancelled" ;
 VAL_ 426 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume" ;
 VAL_ 463 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume" ;
+VAL_ 463 RIGHT_PADDLE 0 "Not Pulled" 1 "Pulled";
+VAL_ 463 LEFT_PADDLE 0 "Not Pulled" 1 "Pulled";
+VAL_ 1041 DRIVER_DOOR 0 "Closed" 1 "Opened";
+VAL_ 1041 PASSENGER_DOOR 0 "Closed" 1 "Opened";
+VAL_ 1041 DRIVER_REAR_DOOR 0 "Closed" 1 "Opened";
+VAL_ 1041 PASSENGER_REAR_DOOR 0 "Closed" 1 "Opened";
+VAL_ 1041 DRIVER_SEATBELT 0 "Unlatched" 1 "Latched";
+VAL_ 1041 PASSENGER_SEATBELT 0 "Unlatched" 1 "Latched";
+VAL_ 1144 DRIVE_MODE2 3 "Set Sport" 1 "Set Normal" 2 "Set Eco";
+VAL_ 1240 DISTANCE_UNIT 1 "Miles" 0 "Kilometers";

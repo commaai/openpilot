@@ -8,7 +8,7 @@ messaging_dir = Dir('messaging')
 
 # Build cereal
 
-schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp']
+schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp', 'custom.capnp']
 env.Command(["gen/c/include/c++.capnp.h"], [], "mkdir -p " + gen_dir.path + "/c/include && touch $TARGETS")
 env.Command([f'gen/cpp/{s}.c++' for s in schema_files] + [f'gen/cpp/{s}.h' for s in schema_files],
             schema_files,
@@ -26,8 +26,10 @@ services_h = env.Command(['services.h'], ['services.py'], 'python3 ' + cereal_di
 
 messaging_objects = env.SharedObject([
   'messaging/messaging.cc',
+  'messaging/event.cc',
   'messaging/impl_zmq.cc',
   'messaging/impl_msgq.cc',
+  'messaging/impl_fake.cc',
   'messaging/msgq.cc',
   'messaging/socketmaster.cc',
 ])

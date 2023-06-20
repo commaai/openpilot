@@ -14,7 +14,7 @@ from typing import Optional
 from itertools import accumulate
 
 from .base import BaseHandle
-from .constants import McuType
+from .constants import FW_PATH, McuType
 from .dfu import PandaDFU
 from .isotp import isotp_send, isotp_recv
 from .spi import PandaSpiHandle, PandaSpiException
@@ -121,6 +121,24 @@ def ensure_can_health_packet_version(fn):
       raise RuntimeError("Panda python library has outdated CAN health packet definition. Update panda python library.")
     return fn(self, *args, **kwargs)
   return wrapper
+
+def parse_timestamp(dat):
+  a = struct.unpack("HBBBBBB", dat)
+  if a[0] == 0:
+    return None
+
+  try:
+    return datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
+  except ValueError:
+    return None
+
+def unpack_log(dat):
+  return {
+    'id': struct.unpack("H", dat[:2])[0],
+    'timestamp': parse_timestamp(dat[2:10]),
+    'uptime': struct.unpack("I", dat[10:14])[0],
+    'msg': bytes(dat[14:]).decode('utf-8', 'ignore').strip('\x00'),
+  }
 
 class ALTERNATIVE_EXPERIENCE:
   DEFAULT = 0
@@ -265,10 +283,14 @@ class Panda:
   def connect(self, claim=True, wait=False):
     self.close()
 
-    # try USB first, then SPI
-    self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim, wait=wait)
-    if self._handle is None:
-      self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
+    self._handle = None
+    while self._handle is None:
+      # try USB first, then SPI
+      self._handle, serial, self.bootstub, bcd = self.usb_connect(self._connect_serial, claim=claim)
+      if self._handle is None:
+        self._handle, serial, self.bootstub, bcd = self.spi_connect(self._connect_serial)
+      if not wait:
+        break
 
     if self._handle is None:
       raise Exception("failed to connect to panda")
@@ -325,46 +347,44 @@ class Panda:
     return handle, spi_serial, bootstub, None
 
   @staticmethod
-  def usb_connect(serial, claim=True, wait=False):
+  def usb_connect(serial, claim=True):
     handle, usb_serial, bootstub, bcd = None, None, None, None
-    while 1:
-      context = usb1.USBContext()
-      context.open()
-      try:
-        for device in context.getDeviceList(skip_on_error=True):
-          if device.getVendorID() == 0xbbaa and device.getProductID() in (0xddcc, 0xddee):
-            try:
-              this_serial = device.getSerialNumber()
-            except Exception:
-              continue
+    context = usb1.USBContext()
+    context.open()
+    try:
+      for device in context.getDeviceList(skip_on_error=True):
+        if device.getVendorID() == 0xbbaa and device.getProductID() in (0xddcc, 0xddee):
+          try:
+            this_serial = device.getSerialNumber()
+          except Exception:
+            continue
 
-            if serial is None or this_serial == serial:
-              logging.debug("opening device %s %s", this_serial, hex(device.getProductID()))
+          if serial is None or this_serial == serial:
+            logging.debug("opening device %s %s", this_serial, hex(device.getProductID()))
 
-              usb_serial = this_serial
-              bootstub = device.getProductID() == 0xddee
-              handle = device.open()
-              if sys.platform not in ("win32", "cygwin", "msys", "darwin"):
-                handle.setAutoDetachKernelDriver(True)
-              if claim:
-                handle.claimInterface(0)
-                # handle.setInterfaceAltSetting(0, 0)  # Issue in USB stack
+            usb_serial = this_serial
+            bootstub = device.getProductID() == 0xddee
+            handle = device.open()
+            if sys.platform not in ("win32", "cygwin", "msys", "darwin"):
+              handle.setAutoDetachKernelDriver(True)
+            if claim:
+              handle.claimInterface(0)
+              # handle.setInterfaceAltSetting(0, 0)  # Issue in USB stack
 
-              # bcdDevice wasn't always set to the hw type, ignore if it's the old constant
-              this_bcd = device.getbcdDevice()
-              if this_bcd is not None and this_bcd != 0x2300:
-                bcd = bytearray([this_bcd >> 8, ])
+            # bcdDevice wasn't always set to the hw type, ignore if it's the old constant
+            this_bcd = device.getbcdDevice()
+            if this_bcd is not None and this_bcd != 0x2300:
+              bcd = bytearray([this_bcd >> 8, ])
 
-              break
-      except Exception:
-        logging.exception("USB connect error")
-      if not wait or handle is not None:
-        break
-      context.close()
+            break
+    except Exception:
+      logging.exception("USB connect error")
 
     usb_handle = None
     if handle is not None:
       usb_handle = PandaUsbHandle(handle)
+    else:
+      context.close()
 
     return usb_handle, usb_serial, bootstub, bcd
 
@@ -401,14 +421,16 @@ class Panda:
     return []
 
   def reset(self, enter_bootstub=False, enter_bootloader=False, reconnect=True):
+    # no response is expected since it resets right away
+    timeout = 5000 if isinstance(self._handle, PandaSpiHandle) else 15000
     try:
       if enter_bootloader:
-        self._handle.controlWrite(Panda.REQUEST_IN, 0xd1, 0, 0, b'')
+        self._handle.controlWrite(Panda.REQUEST_IN, 0xd1, 0, 0, b'', timeout=timeout, expect_disconnect=True)
       else:
         if enter_bootstub:
-          self._handle.controlWrite(Panda.REQUEST_IN, 0xd1, 1, 0, b'')
+          self._handle.controlWrite(Panda.REQUEST_IN, 0xd1, 1, 0, b'', timeout=timeout, expect_disconnect=True)
         else:
-          self._handle.controlWrite(Panda.REQUEST_IN, 0xd8, 0, 0, b'')
+          self._handle.controlWrite(Panda.REQUEST_IN, 0xd8, 0, 0, b'', timeout=timeout, expect_disconnect=True)
     except Exception:
       pass
     if not enter_bootloader and reconnect:
@@ -477,13 +499,13 @@ class Panda:
     # reset
     logging.warning("flash: resetting")
     try:
-      handle.controlWrite(Panda.REQUEST_IN, 0xd8, 0, 0, b'')
+      handle.controlWrite(Panda.REQUEST_IN, 0xd8, 0, 0, b'', expect_disconnect=True)
     except Exception:
       pass
 
   def flash(self, fn=None, code=None, reconnect=True):
     if not fn:
-      fn = self._mcu_type.config.app_path
+      fn = os.path.join(FW_PATH, self._mcu_type.config.app_fn)
     assert os.path.isfile(fn)
     logging.debug("flash: main version is %s", self.get_version())
     if not self.bootstub:
@@ -523,18 +545,33 @@ class Panda:
     return True
 
   @staticmethod
-  def wait_for_dfu(dfu_serial: str, timeout: Optional[int] = None) -> bool:
+  def wait_for_dfu(dfu_serial: Optional[str], timeout: Optional[int] = None) -> bool:
     t_start = time.monotonic()
-    while dfu_serial not in PandaDFU.list():
+    dfu_list = PandaDFU.list()
+    while (dfu_serial is None and len(dfu_list) == 0) or (dfu_serial is not None and dfu_serial not in dfu_list):
       logging.debug("waiting for DFU...")
       time.sleep(0.1)
       if timeout is not None and (time.monotonic() - t_start) > timeout:
         return False
+      dfu_list = PandaDFU.list()
+    return True
+
+  @staticmethod
+  def wait_for_panda(serial: Optional[str], timeout: int) -> bool:
+    t_start = time.monotonic()
+    serials = Panda.list()
+    while (serial is None and len(serials) == 0) or (serial is not None and serial not in serials):
+      logging.debug("waiting for panda...")
+      time.sleep(0.1)
+      if timeout is not None and (time.monotonic() - t_start) > timeout:
+        return False
+      serials = Panda.list()
     return True
 
   def up_to_date(self) -> bool:
     current = self.get_signature()
-    expected = Panda.get_signature_from_firmware(self.get_mcu_type().config.app_path)
+    fn = os.path.join(FW_PATH, self.get_mcu_type().config.app_fn)
+    expected = Panda.get_signature_from_firmware(fn)
     return (current == expected)
 
   def call_control_api(self, msg):
@@ -616,12 +653,6 @@ class Panda:
     }
 
   # ******************* control *******************
-
-  def enter_bootloader(self):
-    try:
-      self._handle.controlWrite(Panda.REQUEST_OUT, 0xd1, 0, 0, b'')
-    except Exception:
-      logging.exception("exception while entering bootloader")
 
   def get_version(self):
     return self._handle.controlRead(Panda.REQUEST_IN, 0xd6, 0, 0, 0x40).decode('utf8')
@@ -928,8 +959,7 @@ class Panda:
 
   def get_datetime(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xa0, 0, 0, 8)
-    a = struct.unpack("HBBBBBB", dat)
-    return datetime.datetime(a[0], a[1], a[2], a[4], a[5], a[6])
+    return parse_timestamp(dat)
 
   # ****************** Timer *****************
   def get_microsecond_timer(self):
@@ -960,3 +990,13 @@ class Panda:
   # ****************** Debug *****************
   def set_green_led(self, enabled):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf7, int(enabled), 0, b'')
+
+  # ****************** Logging *****************
+  def get_logs(self, get_all=False):
+    logs = []
+    dat = self._handle.controlRead(Panda.REQUEST_IN, 0xfd, 1 if get_all else 0, 0, 0x40)
+    while len(dat) > 0:
+      if len(dat) == 0x40:
+        logs.append(unpack_log(dat))
+      dat = self._handle.controlRead(Panda.REQUEST_IN, 0xfd, 0, 0, 0x40)
+    return logs

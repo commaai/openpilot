@@ -154,6 +154,7 @@ void VisionIpcServer::listener(){
 
   std::cout << "Stopping listener for: " << name << std::endl;
   close(sock);
+  unlink(path.c_str());
 }
 
 
