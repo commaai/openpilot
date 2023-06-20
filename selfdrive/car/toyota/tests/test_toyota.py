@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import unittest
+from collections import defaultdict
 
 from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
@@ -42,25 +43,57 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
-  def test_fw_debugging(self):
+  # def test_fw_debugging(self):
+  #   for car_model, ecus in FW_VERSIONS.items():
+  #     print()
+  #     print(car_model)
+  #     cam_len_code = False
+  #     eng_len_code = False
+  #
+  #     for ecu, fws in ecus.items():
+  #       if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
+  #         cam_len_code |= all(f[0] < 4 for f in fws)
+  #       if ecu[0] in (Ecu.engine, Ecu.abs):
+  #         eng_len_code |= all(1 < f[0] < 4 for f in fws)
+  #         print(ecu, eng_len_code)
+  #
+  #     if (car_model in TSS2_CAR) != cam_len_code:
+  #       print(car_model, car_model in TSS2_CAR, cam_len_code)
+  #
+  #     if (car_model in EV_HYBRID_CAR) != eng_len_code:
+  #       print('MISMATCH', car_model, car_model in EV_HYBRID_CAR, eng_len_code)
+
+  def test_shared_fw(self):
+    all_fw = defaultdict(set)
     for car_model, ecus in FW_VERSIONS.items():
       print()
       print(car_model)
-      cam_len_code = False
-      eng_len_code = False
 
       for ecu, fws in ecus.items():
-        if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
-          cam_len_code |= all(f[0] < 4 for f in fws)
-        if ecu[0] in (Ecu.engine, Ecu.abs):
-          eng_len_code |= all(1 < f[0] < 4 for f in fws)
-          print(ecu, eng_len_code)
+        for fw in fws:
+          all_fw[(ecu[1], fw)].add(car_model)
 
-      if (car_model in TSS2_CAR) != cam_len_code:
-        print(car_model, car_model in TSS2_CAR, cam_len_code)
+    print(all_fw)
 
-      if (car_model in EV_HYBRID_CAR) != eng_len_code:
-        print('MISMATCH', car_model, car_model in EV_HYBRID_CAR, eng_len_code)
+    # shared abs (or whatever is in the continue statement)
+    shared = defaultdict(set)
+
+    for car_model, ecus in FW_VERSIONS.items():
+      print()
+      print(car_model)
+
+      for ecu, fws in ecus.items():
+        if ecu[0] != Ecu.abs:
+          continue
+        for fw in fws:
+          if len(all_fw[ecu[1], fw]) > 1:
+            shared[car_model] |= all_fw[ecu[1], fw]
+          # print(car_model, all_fw[ecu[1], fw])
+          # # all_fw[(ecu[1], fw)].add(car_model)
+
+    print(shared)
+    print(len(shared))
+
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
