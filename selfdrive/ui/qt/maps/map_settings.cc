@@ -99,7 +99,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
       HttpRequest* deleter = new HttpRequest(this);
 
       QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
-        qDebug() << "/next" << success << resp;
         if (success && resp != "null") {
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
