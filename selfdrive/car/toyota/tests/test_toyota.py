@@ -6,7 +6,7 @@ from selfdrive.car.fw_versions import build_fw_dict
 # from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
 #                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
 #                                          PLATFORM_CODE_ECUS, get_platform_codes
-from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR
+from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -42,6 +42,26 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
+  def test_fw_debugging(self):
+    for car_model, ecus in FW_VERSIONS.items():
+      print()
+      print(car_model)
+      cam_len_code = False
+      eng_len_code = False
+
+      for ecu, fws in ecus.items():
+        if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
+          cam_len_code |= all(f[0] < 4 for f in fws)
+        if ecu[0] in (Ecu.engine, Ecu.abs):
+          eng_len_code |= all(1 < f[0] < 4 for f in fws)
+          print(ecu, eng_len_code)
+
+      if (car_model in TSS2_CAR) != cam_len_code:
+        print(car_model, car_model in TSS2_CAR, cam_len_code)
+
+      if (car_model in EV_HYBRID_CAR) != eng_len_code:
+        print('MISMATCH', car_model, car_model in EV_HYBRID_CAR, eng_len_code)
+
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
   # def test_platform_code_ecus_available(self):
