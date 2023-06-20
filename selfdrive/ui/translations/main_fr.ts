@@ -140,7 +140,7 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>Aperçu de la caméra orientée vers le conducteur pour assurer une bonne visibilité de la surveillance du conducteur. (véhicule doit être éteint)</translation>
+        <translation>Aperçu de la caméra orientée vers le conducteur pour assurer une bonne visibilité de la surveillance du conducteur. (le véhicule doit être éteint)</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
@@ -168,7 +168,7 @@
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Revoir les règles, fonctionnalités et limitations d&apos;openpilot</translation>
+        <translation>Revoir les règles, les fonctionnalités et les limitations d&apos;openpilot</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
@@ -208,7 +208,7 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot nécessite que l&apos;appareil soit monté à 4° à gauche ou à droite et à 5° vers le haut ou 8° vers le bas. openpilot se calibre en continu, la réinitialisation est rarement nécessaire.</translation>
+        <translation>openpilot nécessite que l&apos;appareil soit installé à 4° à gauche ou à droite et à 5° vers le haut ou 8° vers le bas. openpilot se calibre en continu, la réinitialisation est rarement nécessaire.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -1035,7 +1035,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>Le mode standard est recommandé. En mode agressif, openpilot suivra de plus près les voitures de tête et sera plus agressif avec l&apos;accélérateur et le frein. En mode relax, openpilot restera plus éloigné des voitures de tête.</translation>
+        <translation>Le mode standard est recommandé. En mode agressif, openpilot suivra de plus près les voitures à l'avant et sera plus agressif avec l&apos;accélérateur et le frein. En mode relax, openpilot restera plus éloigné des véhicules à l'avant.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
@@ -1047,7 +1047,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>Laissez le modèle de conduite contrôler l&apos;accélérateur et les freins. openpilot conduira comme il pense qu&apos;un humain le ferait, y compris s&apos;arrêter aux feux rouges et aux panneaux stop. Comme le modèle de conduite décide de la vitesse à adopter, la vitesse définie ne servira que de limite supérieure. Cette fonctionnalité est en version alpha, des erreurs sont à prévoir.</translation>
+        <translation>Laisse le modèle de conduite contrôler l&apos;accélérateur et les freins. openpilot conduira comme il pense qu&apos;un humain le ferait, y compris s&apos;arrêter aux feux rouges et aux panneaux stop. Comme le modèle de conduite décide de la vitesse à adopter, la vitesse définie ne servira que de limite supérieure. Cette fonctionnalité est en version alpha, des erreurs sont à prévoir.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
