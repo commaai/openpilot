@@ -155,11 +155,11 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
           padding-bottom: 14px;
           border 1px grey solid;
           border-radius: 70px;
-          background-color: #202020;
+          background-color: #292929;
           font-weight: 500;
         }
         QPushButton:pressed {
-          background-color: #303030;
+          background-color: #3B3B3B;
         }
       )");
       close_btn->setFixedSize(140, 140);
