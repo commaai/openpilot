@@ -11,127 +11,6 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
-  setContentsMargins(0, 0, 0, 0);
-
-  auto *frame = new QHBoxLayout(this);
-  frame->setContentsMargins(32, 24, 32, 24);
-  frame->setSpacing(32);
-
-  icon = new QLabel(this);
-  icon->setFixedSize(96, 96);
-  frame->addWidget(icon);
-
-  auto *inner_frame = new QVBoxLayout;
-  inner_frame->setContentsMargins(0, 0, 0, 0);
-  inner_frame->setSpacing(0);
-  {
-    title = new ElidedLabel(this);
-    inner_frame->addWidget(title);
-
-    subtitle = new ElidedLabel(this);
-    subtitle->setStyleSheet("color: #A0A0A0;");
-    inner_frame->addWidget(subtitle);
-  }
-  frame->addLayout(inner_frame, 1);
-
-  action = new QLabel(this);
-  action->setObjectName("action");
-  action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
-  frame->addWidget(action);
-
-  setFixedHeight(164);
-  setStyleSheet(R"(
-    /* default styles */
-    DestinationWidget {
-      background-color: #292929;
-      border: 1px solid #4DFFFFFF;
-      border-radius: 10px;
-    }
-    DestinationWidget QLabel {
-      background-color: transparent;
-      color: #FFFFFF;
-      font-size: 48px;
-      font-weight: 400;
-    }
-
-    /* on press */
-    DestinationWidget:pressed {
-      background-color: #3B3B3B;
-    }
-    DestinationWidget:pressed #action {
-      color: #A0A0A0;
-    }
-
-    /* current destination */
-    DestinationWidget[current=true] {
-      background-color: #162440;
-      border: 1px solid #80FFFFFF;
-    }
-
-    /* no saved destination */
-    DestinationWidget[set=false] QLabel {
-      color: #80FFFFFF;
-    }
-  )");
-}
-
-void DestinationWidget::set(NavDestination *destination, bool current) {
-  setProperty("current", current);
-  setProperty("set", true);
-
-  auto title_text = destination->name();
-  auto subtitle_text = destination->details();
-  auto icon_pixmap = icons().recent;
-
-  if (destination->isFavorite()) {
-    if (destination->label() == NAV_FAVORITE_LABEL_HOME) {
-      title_text = tr("Home");
-      icon_pixmap = icons().home;
-    } else if (destination->label() == NAV_FAVORITE_LABEL_WORK) {
-      title_text = tr("Work");
-      icon_pixmap = icons().work;
-    } else {
-      icon_pixmap = icons().favorite;
-    }
-  }
-
-  if (current) {
-    icon_pixmap = icons().directions;
-  }
-
-  // TODO: onroad and offroad have different dimensions
-  title->setText(shorten(title_text, 25));
-  subtitle->setText(shorten(subtitle_text, 25));
-  subtitle->setVisible(true);
-  icon->setPixmap(icon_pixmap);
-
-  // TODO: use pixmap
-  action->setText(current ? "×" : "→");
-  action->setVisible(true);
-
-  setStyleSheet(styleSheet());
-}
-
-void DestinationWidget::unset(const QString &label, bool current) {
-  setProperty("current", current);
-  setProperty("set", false);
-
-  if (label.isEmpty()) {
-    icon->setPixmap(icons().directions);
-    title->setText(tr("No destination set"));
-  } else {
-    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("home") : tr("work");
-    icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
-    title->setText(tr("No %1 location set").arg(title_text));
-  }
-
-  subtitle->setVisible(false);
-  action->setVisible(false);
-
-  setStyleSheet(styleSheet());
-}
-
 MapSettings::MapSettings(bool closeable, QWidget *parent)
     : QFrame(parent), current_destination(nullptr) {
   QSize icon_size(100, 100);
@@ -352,4 +231,125 @@ void MapSettings::navigateTo(const QJsonObject &place) {
   QJsonDocument doc(place);
   params.put("NavDestination", doc.toJson().toStdString());
   updateCurrentRoute();
+}
+
+DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
+  setContentsMargins(0, 0, 0, 0);
+
+  auto *frame = new QHBoxLayout(this);
+  frame->setContentsMargins(32, 24, 32, 24);
+  frame->setSpacing(32);
+
+  icon = new QLabel(this);
+  icon->setFixedSize(96, 96);
+  frame->addWidget(icon);
+
+  auto *inner_frame = new QVBoxLayout;
+  inner_frame->setContentsMargins(0, 0, 0, 0);
+  inner_frame->setSpacing(0);
+  {
+    title = new ElidedLabel(this);
+    inner_frame->addWidget(title);
+
+    subtitle = new ElidedLabel(this);
+    subtitle->setStyleSheet("color: #A0A0A0;");
+    inner_frame->addWidget(subtitle);
+  }
+  frame->addLayout(inner_frame, 1);
+
+  action = new QLabel(this);
+  action->setObjectName("action");
+  action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
+  frame->addWidget(action);
+
+  setFixedHeight(164);
+  setStyleSheet(R"(
+    /* default styles */
+    DestinationWidget {
+      background-color: #292929;
+      border: 1px solid #4DFFFFFF;
+      border-radius: 10px;
+    }
+    DestinationWidget QLabel {
+      background-color: transparent;
+      color: #FFFFFF;
+      font-size: 48px;
+      font-weight: 400;
+    }
+
+    /* on press */
+    DestinationWidget:pressed {
+      background-color: #3B3B3B;
+    }
+    DestinationWidget:pressed #action {
+      color: #A0A0A0;
+    }
+
+    /* current destination */
+    DestinationWidget[current=true] {
+      background-color: #162440;
+      border: 1px solid #80FFFFFF;
+    }
+
+    /* no saved destination */
+    DestinationWidget[set=false] QLabel {
+      color: #80FFFFFF;
+    }
+  )");
+}
+
+void DestinationWidget::set(NavDestination *destination, bool current) {
+  setProperty("current", current);
+  setProperty("set", true);
+
+  auto title_text = destination->name();
+  auto subtitle_text = destination->details();
+  auto icon_pixmap = icons().recent;
+
+  if (destination->isFavorite()) {
+    if (destination->label() == NAV_FAVORITE_LABEL_HOME) {
+      title_text = tr("Home");
+      icon_pixmap = icons().home;
+    } else if (destination->label() == NAV_FAVORITE_LABEL_WORK) {
+      title_text = tr("Work");
+      icon_pixmap = icons().work;
+    } else {
+      icon_pixmap = icons().favorite;
+    }
+  }
+
+  if (current) {
+    icon_pixmap = icons().directions;
+  }
+
+  // TODO: onroad and offroad have different dimensions
+  title->setText(shorten(title_text, 25));
+  subtitle->setText(shorten(subtitle_text, 25));
+  subtitle->setVisible(true);
+  icon->setPixmap(icon_pixmap);
+
+  // TODO: use pixmap
+  action->setText(current ? "×" : "→");
+  action->setVisible(true);
+
+  setStyleSheet(styleSheet());
+}
+
+void DestinationWidget::unset(const QString &label, bool current) {
+  setProperty("current", current);
+  setProperty("set", false);
+
+  if (label.isEmpty()) {
+    icon->setPixmap(icons().directions);
+    title->setText(tr("No destination set"));
+  } else {
+    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("home") : tr("work");
+    icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
+    title->setText(tr("No %1 location set").arg(title_text));
+  }
+
+  subtitle->setVisible(false);
+  action->setVisible(false);
+
+  setStyleSheet(styleSheet());
 }
