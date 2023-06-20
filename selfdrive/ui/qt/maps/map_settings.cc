@@ -1,7 +1,7 @@
 #include "map_settings.h"
 
-#include <vector>
 #include <QDebug>
+#include <vector>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
