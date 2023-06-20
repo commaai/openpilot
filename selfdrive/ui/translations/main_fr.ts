@@ -839,7 +839,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation>Sélectionner une branche</translation>
+        <translation>Choisir une branche</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
@@ -987,7 +987,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
-        <translation>Enregistrer et uploader la caméra conducteur</translation>
+        <translation>Enregistrer et uploader la vidéo conducteur</translation>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
@@ -1047,7 +1047,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>Laissez le modèle de conduite contrôler l&apos;accélérateur et les freins. openpilot conduira comme il pense qu&apos;un humain le ferait, y compris s&apos;arrêter aux feux rouges et aux panneaux stop. Comme le modèle de conduite décide de la vitesse à adopter, la vitesse définie ne servira que de limite supérieure. Cette fonctionnalité est de qualité alpha ; des erreurs sont à prévoir.</translation>
+        <translation>Laissez le modèle de conduite contrôler l&apos;accélérateur et les freins. openpilot conduira comme il pense qu&apos;un humain le ferait, y compris s&apos;arrêter aux feux rouges et aux panneaux stop. Comme le modèle de conduite décide de la vitesse à adopter, la vitesse définie ne servira que de limite supérieure. Cette fonctionnalité est en version alpha, des erreurs sont à prévoir.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
