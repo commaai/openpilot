@@ -256,10 +256,11 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   }
   frame->addLayout(inner_frame, 1);
 
-  action = new QLabel(this);
+  action = new QPushButton(this);
   action->setObjectName("action");
   action->setStyleSheet("font-size: 65px; font-weight: 600;");
-  QObject::connect(action, &ClickableWidget::clicked, [=]() { emit actionClicked(); });
+  QObject::connect(action, &QPushButton::clicked, [=]() { emit clicked(); });
+  QObject::connect(action, &QPushButton::clicked, [=]() { emit actionClicked(); });
   frame->addWidget(action);
 
   setFixedHeight(164);
@@ -272,6 +273,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
     #icon { background-color: #3B4356; border-radius: 48px; }
     #subtitle { color: #9BA0A5; }
+    #action { background-color: transparent; border: none; }
 
     /* current destination */
     [current="true"] { background-color: #E8E8E8; }

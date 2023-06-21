@@ -115,5 +115,6 @@ private:
   }
 
 private:
-  QLabel *icon, *title, *subtitle, *action;
+  QLabel *icon, *title, *subtitle;
+  QPushButton *action;
 };
