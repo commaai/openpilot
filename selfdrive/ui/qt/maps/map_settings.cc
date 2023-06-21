@@ -257,7 +257,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   frame->addLayout(inner_frame, 1);
 
   action = new QPushButton(this);
-  action->setFixedSize(72, 72);
+  action->setFixedSize(96, 96);
   action->setObjectName("action");
   action->setStyleSheet("font-size: 65px; font-weight: 600;");
   QObject::connect(action, &QPushButton::clicked, [=]() { emit clicked(); });
@@ -270,7 +270,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
     #icon { background-color: #3B4356; border-radius: 48px; }
     #subtitle { color: #9BA0A5; }
-    #action { border: none; border-radius: 36px; padding-bottom: 4px; }
+    #action { border: none; border-radius: 48px; padding-bottom: 4px; }
 
     /* current destination */
     [current="true"] { background-color: #E8E8E8; }
@@ -286,7 +286,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
 
     /* pressed */
     [current="false"]:pressed { background-color: #18191B; }
-    [current="true"] #action:pressed { background-color: #D9D9D9; }
+    [current="true"] #action:pressed { background-color: #D6D6D6; }
   )");
 }
 
