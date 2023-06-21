@@ -291,7 +291,7 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
 
   auto title_text = destination->name();
   auto subtitle_text = destination->details();
-  auto icon_pixmap = icons().recent;
+  auto icon_pixmap = current ? icons().directions : icons().recent;
 
   if (destination->isFavorite()) {
     if (destination->label() == NAV_FAVORITE_LABEL_HOME) {
@@ -305,10 +305,6 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
     } else {
       icon_pixmap = icons().favorite;
     }
-  }
-
-  if (current) {
-    icon_pixmap = icons().directions;
   }
 
   // TODO: onroad and offroad have different dimensions
