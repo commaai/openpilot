@@ -357,11 +357,11 @@
 <context>
     <name>MapSettings</name>
     <message>
-        <source>comma navigation</source>
+        <source>NAVIGATION</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>manage at connect.comma.ai</source>
+        <source>Manage at connect.comma.ai</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

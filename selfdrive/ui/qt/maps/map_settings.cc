@@ -53,13 +53,12 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
     heading->setContentsMargins(0, 0, 0, 0);
     heading->setSpacing(16);
     {
-      auto *title = new QLabel(tr("comma navigation"), this);
-      title->setStyleSheet(
-          "color: #FFFFFF; font-size: 56px; font-weight: 500;");
+      auto *title = new QLabel(tr("NAVIGATION"), this);
+      title->setStyleSheet("color: #FFFFFF; font-size: 54px; font-weight: 600;");
       heading->addWidget(title);
 
-      auto *subtitle = new QLabel(tr("manage at connect.comma.ai"), this);
-      subtitle->setStyleSheet("color: #A0A0A0; font-size: 48px; font-weight: 500;");
+      auto *subtitle = new QLabel(tr("Manage at connect.comma.ai"), this);
+      subtitle->setStyleSheet("color: #A0A0A0; font-size: 40px; font-weight: 300;");
       heading->addWidget(subtitle);
     }
     heading_frame->addLayout(heading, 1);
@@ -240,7 +239,9 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   frame->setSpacing(32);
 
   icon = new QLabel(this);
+  icon->setAlignment(Qt::AlignCenter);
   icon->setFixedSize(96, 96);
+  icon->setObjectName("icon");
   frame->addWidget(icon);
 
   auto *inner_frame = new QVBoxLayout;
@@ -251,49 +252,38 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
     inner_frame->addWidget(title);
 
     subtitle = new ElidedLabel(this);
-    subtitle->setStyleSheet("color: #A0A0A0;");
+    subtitle->setObjectName("subtitle");
     inner_frame->addWidget(subtitle);
   }
   frame->addLayout(inner_frame, 1);
 
   action = new QLabel(this);
   action->setObjectName("action");
-  action->setStyleSheet("font-size: 60px; font-weight: 600; border: none;");
+  action->setStyleSheet("font-size: 65px; font-weight: 600;");
   frame->addWidget(action);
 
   setFixedHeight(164);
   setStyleSheet(R"(
-    /* default styles */
     DestinationWidget {
-      background-color: #292929;
-      border: 1px solid #4DFFFFFF;
+      background-color: #202123;
+      border: none;
       border-radius: 10px;
     }
-    DestinationWidget QLabel {
-      background-color: transparent;
-      color: #FFFFFF;
-      font-size: 48px;
-      font-weight: 400;
-    }
-
-    /* on press */
-    DestinationWidget:pressed {
-      background-color: #3B3B3B;
-    }
-    DestinationWidget:pressed #action {
-      color: #A0A0A0;
-    }
+    QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
+    #icon { background-color: #3B4356; border-radius: 48px; }
+    #subtitle { color: #9BA0A5; }
 
     /* current destination */
-    DestinationWidget[current=true] {
-      background-color: #162440;
-      border: 1px solid #80FFFFFF;
-    }
+    [current="true"] { background-color: #E8E8E8; }
+    [current="true"] QLabel { color: #000000; }
+    [current="true"] #icon { background-color: #42906B; }
+    [current="true"] #subtitle { color: #333333; }
+    [current="true"] #action { color: #202123; }
 
     /* no saved destination */
-    DestinationWidget[set=false] QLabel {
-      color: #80FFFFFF;
-    }
+    [set="false"] QLabel { color: #9BA0A5; }
+    [current="true"][set="false"] QLabel { color: #80000000; }
+    [current="true"][set="false"] #action { color: #333333; }
   )");
 }
 
@@ -322,8 +312,8 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
   }
 
   // TODO: onroad and offroad have different dimensions
-  title->setText(shorten(title_text, 25));
-  subtitle->setText(shorten(subtitle_text, 25));
+  title->setText(shorten(title_text, 26));
+  subtitle->setText(shorten(subtitle_text, 26));
   subtitle->setVisible(true);
   icon->setPixmap(icon_pixmap);
 
