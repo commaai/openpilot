@@ -98,7 +98,7 @@ class opParams:
     """
 
     self.fork_params = {
-      'TLD_V2': Param(4, int, live=True),
+      'TLD_V3': Param(3, int, live=True),
       'LT_VAL': Param(99, int, live=True),
       'SETME_X1': Param(1, NUMBER, 'Always 1', live=True),
       'SETME_X3': Param(1, NUMBER, 'Sometimes 3, mostly 1?', live=True),
@@ -111,7 +111,7 @@ class opParams:
       'USE_ALT_ANGLE_CMD': Param(False, bool, 'True for alt angle command (not steering wheel, path angle?)', live=True),
     }
 
-    self._to_delete = []  # a list of unused params you want to delete from users' params file
+    self._to_delete = ['TLD_V2']  # a list of unused params you want to delete from users' params file
     self._to_reset = []  # a list of params you want reset to their default values
     self._run_init()  # restores, reads, and updates params
 
