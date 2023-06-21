@@ -88,6 +88,8 @@ class CarState(CarStateBase):
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+    
+    self.throttle_msg = copy.copy(cp_cam.vl["Throttle"])
 
     return ret
 
@@ -311,11 +313,23 @@ class CarState(CarStateBase):
         ("LKAS_Right_Line_Visible", "ES_LKAS_State"),
         ("LKAS_Alert", "ES_LKAS_State"),
         ("Signal3", "ES_LKAS_State"),
+
+        ("CHECKSUM", "Throttle"),
+        ("COUNTER", "Throttle"),
+        ("Signal1", "Throttle"),
+        ("Engine_RPM", "Throttle"),
+        ("Signal2", "Throttle"),
+        ("Throttle_Pedal", "Throttle"),
+        ("Throttle_Cruise", "Throttle"),
+        ("Throttle_Combo", "Throttle"),
+        ("Signal3", "Throttle"),
+        ("Off_Accel", "Throttle")
       ]
 
       checks = [
         ("ES_DashStatus", 10),
         ("ES_LKAS_State", 10),
+        ("Throttle", 100)
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:

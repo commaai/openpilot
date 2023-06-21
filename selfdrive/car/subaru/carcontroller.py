@@ -79,6 +79,10 @@ class CarController:
 
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
+    
+    if self.CP.carFingerprint in GLOBAL_GEN2:
+      if CC.cruiseControl.resume:
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, True))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
