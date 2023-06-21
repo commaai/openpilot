@@ -75,14 +75,18 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   main_layout->addWidget(tabbar);
 
   // charts
+  splitter = new QSplitter(Qt::Vertical, this);
   charts_container = new ChartsContainer(this);
 
   charts_scroll = new QScrollArea(this);
-  charts_scroll->setFrameStyle(QFrame::NoFrame);
+  charts_scroll->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   charts_scroll->setWidgetResizable(true);
   charts_scroll->setWidget(charts_container);
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  main_layout->addWidget(charts_scroll);
+  splitter->addWidget(charts_scroll);
+  splitter->addWidget(log_view = new MultipleSignalsLogView(this));
+  splitter->setStretchFactor(0, 1);
+  main_layout->addWidget(splitter);
 
   // init settings
   current_theme = settings.theme;
@@ -105,9 +109,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   QObject::connect(&settings, &Settings::changed, this, &ChartsWidget::settingChanged);
   QObject::connect(new_tab_btn, &QToolButton::clicked, this, &ChartsWidget::newTab);
   QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateTabBar);
+  QObject::connect(this, &ChartsWidget::seriesChanged, this, &ChartsWidget::updateLogViewSignals);
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
-    if (index != -1) updateLayout(true);
+    if (index != -1) {
+      updateLayout(true);
+      updateLogViewSignals();
+    }
   });
   QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
     emit dock(!docking);
@@ -120,6 +128,16 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
     <b>Chart view</b><br />
     <!-- TODO: add descprition here -->
   )"));
+}
+
+void ChartsWidget::updateLogViewSignals() {
+  std::vector<MultipleSignalsLogModel::Signal> sigs;
+  for (auto c : currentCharts()) {
+    for (auto &s : c->sigs) {
+      sigs.push_back({.msg_id = s.msg_id, .sig = s.sig});
+    }
+  }
+  log_view->setSignals(sigs);
 }
 
 void ChartsWidget::newTab() {

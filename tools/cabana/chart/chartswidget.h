@@ -2,11 +2,13 @@
 
 #include <QGridLayout>
 #include <QLabel>
+#include <QSplitter>
 #include <QScrollArea>
 #include <QTimer>
 #include <QUndoCommand>
 #include <QUndoStack>
 
+#include "tools/cabana/chart/logsview.h"
 #include "tools/cabana/chart/signalselector.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -74,6 +76,7 @@ private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void newTab();
   void removeTab(int index);
+  void updateLogViewSignals();
   inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
@@ -108,6 +111,8 @@ private:
   QTimer auto_scroll_timer;
   QTimer align_timer;
   int current_theme = 0;
+  QSplitter *splitter;
+  MultipleSignalsLogView *log_view;
   friend class ZoomCommand;
   friend class ChartView;
   friend class ChartsContainer;
