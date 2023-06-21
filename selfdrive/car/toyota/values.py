@@ -246,7 +246,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
   },
   extra_ecus=[
-    (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
+    (Ecu.telematics, 0x750, 0xc7),
   ],
 )
 
