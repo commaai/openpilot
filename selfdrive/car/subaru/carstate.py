@@ -89,7 +89,7 @@ class CarState(CarStateBase):
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
     
-    self.throttle_msg = copy.copy(cp_cam.vl["Throttle"])
+    self.throttle_msg = copy.copy(cp.vl["Throttle"])
 
     return ret
 
@@ -162,15 +162,29 @@ class CarState(CarStateBase):
       ("Steer_Torque_Output", "Steering_Torque"),
       ("Steering_Angle", "Steering_Torque"),
       ("Steer_Error_1", "Steering_Torque"),
+
       ("Brake_Pedal", "Brake_Pedal"),
+
+      ("CHECKSUM", "Throttle"),
+      ("COUNTER", "Throttle"),
+      ("Signal1", "Throttle"),
+      ("Engine_RPM", "Throttle"),
+      ("Signal2", "Throttle"),
       ("Throttle_Pedal", "Throttle"),
+      ("Throttle_Cruise", "Throttle"),
+      ("Throttle_Combo", "Throttle"),
+      ("Signal3", "Throttle"),
+      ("Off_Accel", "Throttle"),
+
       ("LEFT_BLINKER", "Dashlights"),
       ("RIGHT_BLINKER", "Dashlights"),
       ("SEATBELT_FL", "Dashlights"),
+
       ("DOOR_OPEN_FR", "BodyInfo"),
       ("DOOR_OPEN_FL", "BodyInfo"),
       ("DOOR_OPEN_RR", "BodyInfo"),
       ("DOOR_OPEN_RL", "BodyInfo"),
+
       ("Gear", "Transmission"),
     ]
 
@@ -312,24 +326,12 @@ class CarState(CarStateBase):
         ("LKAS_Left_Line_Visible", "ES_LKAS_State"),
         ("LKAS_Right_Line_Visible", "ES_LKAS_State"),
         ("LKAS_Alert", "ES_LKAS_State"),
-        ("Signal3", "ES_LKAS_State"),
-
-        ("CHECKSUM", "Throttle"),
-        ("COUNTER", "Throttle"),
-        ("Signal1", "Throttle"),
-        ("Engine_RPM", "Throttle"),
-        ("Signal2", "Throttle"),
-        ("Throttle_Pedal", "Throttle"),
-        ("Throttle_Cruise", "Throttle"),
-        ("Throttle_Combo", "Throttle"),
-        ("Signal3", "Throttle"),
-        ("Off_Accel", "Throttle")
+        ("Signal3", "ES_LKAS_State")
       ]
 
       checks = [
         ("ES_DashStatus", 10),
-        ("ES_LKAS_State", 10),
-        ("Throttle", 100)
+        ("ES_LKAS_State", 10)
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:
