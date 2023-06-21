@@ -269,6 +269,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
     #icon { background-color: #3B4356; border-radius: 48px; }
     #subtitle { color: #9BA0A5; }
+    #action { border: none; }
 
     /* current destination */
     [current="true"] { background-color: #E8E8E8; }

@@ -27,12 +27,6 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     content_stack->setCurrentIndex(0);
   });
   content_stack->addWidget(settings);
-
-  // TODO: is this required?
-  setStyleSheet(R"(
-    QLabel { color: white; }
-    QPushButton { border: none; }
-  )");
 }
 
 bool MapPanel::isShowingMap() const {
