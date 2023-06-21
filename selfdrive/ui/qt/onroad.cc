@@ -79,6 +79,7 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+#ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
     if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
@@ -86,6 +87,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     }
     map->setVisible(!sidebarVisible && !map->isVisible());
   }
+#endif
   // propagation event to parent(HomeWindow)
   QWidget::mousePressEvent(e);
 }
