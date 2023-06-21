@@ -41,7 +41,17 @@ void MultipleSignalsLogModel::updateState() {
   if (sigs_.empty()) return;
 
   uint64_t current_ts = (can->currentSec() + can->routeStartTime()) * 1e9;
+  // delete data older than 30 seconds
   size_t prev_row_count = values_.size();
+  for (auto it = values_.begin(); it != values_.end(); /**/) {
+    it = (it->first < current_ts - 30 * 1e9) ? values_.erase(it) : ++it;
+  }
+  if (values_.size() < prev_row_count) {
+    beginRemoveRows({}, values_.size(), prev_row_count - 1);
+    endRemoveRows();
+  }
+
+  prev_row_count = values_.size();
   for (int i = 0; i < sigs_.size(); ++i) {
     const auto &s = sigs_[i];
     const auto &msgs = can->events(s.msg_id);
@@ -64,16 +74,6 @@ void MultipleSignalsLogModel::updateState() {
   if (values_.size() > prev_row_count) {
     beginInsertRows({}, 0, values_.size() - prev_row_count - 1);
     endInsertRows();
-  }
-
-  // delete data older than 30 seconds
-  prev_row_count = values_.size();
-  for (auto it = values_.begin(); it != values_.end(); /**/) {
-    it = (it->first < current_ts - 30 * 1e9) ? values_.erase(it) : ++it;
-  }
-  if (values_.size() < prev_row_count) {
-    beginRemoveRows({}, values_.size(), prev_row_count - 1);
-    endRemoveRows();
   }
 }
 

@@ -20,6 +20,7 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return values_.size(); }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return sigs_.size() + 1; }
+  Qt::ItemFlags flags(const QModelIndex &index) const override { return Qt::ItemIsEnabled; }
   void refresh() { setSignals(sigs_); }
   void setSignals(const std::vector<MultipleSignalsLogModel::Signal> &sigs);
   void updateState();
