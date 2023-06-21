@@ -305,7 +305,7 @@ void BinaryViewModel::updateState() {
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
-      QString val = ((binary[i] >> (7 - j)) & 1) != 0 ? "1" : "0";
+      QString val = ((binary[i] >> (7 - j)) & 1) != 0 ? QStringLiteral("1") : QStringLiteral("0");
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
       auto n = last_msg.bit_change_counts[i][7 - j];

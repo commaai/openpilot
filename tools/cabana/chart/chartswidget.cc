@@ -74,19 +74,21 @@ ChartsWidget::ChartsWidget(QWidget *parent) : align_timer(this), auto_scroll_tim
   tabbar->setUsesScrollButtons(true);
   main_layout->addWidget(tabbar);
 
-  // charts
+  // charts & logs
   splitter = new QSplitter(Qt::Vertical, this);
-  charts_container = new ChartsContainer(this);
-
   charts_scroll = new QScrollArea(this);
-  charts_scroll->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   charts_scroll->setWidgetResizable(true);
-  charts_scroll->setWidget(charts_container);
+  charts_scroll->setWidget(charts_container = new ChartsContainer(this));
   charts_scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   splitter->addWidget(charts_scroll);
   splitter->addWidget(log_view = new MultipleSignalsLogView(this));
   splitter->setStretchFactor(0, 1);
   main_layout->addWidget(splitter);
+  // border
+  charts_scroll->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
+  charts_scroll->setStyleSheet("QScrollArea{margin:-1px -1px 0 -1px;}");
+  log_view->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
+  log_view->setStyleSheet("QTableView{margin:0px -1px -1px -1px;}");
 
   // init settings
   current_theme = settings.theme;

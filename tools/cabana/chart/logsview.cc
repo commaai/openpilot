@@ -66,6 +66,16 @@ void MultipleSignalsLogModel::updateState() {
     beginInsertRows({}, 0, values_.size() - prev_row_count - 1);
     endInsertRows();
   }
+
+  // delete data older than 30 seconds
+  prev_row_count = values_.size();
+  for (auto it = values_.begin(); it != values_.end(); /**/) {
+    it = (it->first < current_ts - 30 * 1e9) ? values_.erase(it) : ++it;
+  }
+  if (values_.size() < prev_row_count) {
+    beginRemoveRows({}, values_.size(), prev_row_count - 1);
+    endRemoveRows();
+  }
 }
 
 void MultipleSignalsLogModel::setSignals(const std::vector<MultipleSignalsLogModel::Signal> &sigs) {
