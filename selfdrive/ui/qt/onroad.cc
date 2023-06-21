@@ -135,6 +135,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   int h = alert_heights[alert.size];
 
   const int margin = 40;
+  const int radius = 30;
   QRect r = QRect(0 + margin, height() - h - margin, width() - margin*2, h);
 
   QPainter p(this);
@@ -143,7 +144,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
 
   p.setBrush(QBrush(bg));
-  p.drawRoundedRect(r, 30, 30);
+  p.drawRoundedRect(r, radius, radius);
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
@@ -153,7 +154,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
-  p.fillRect(r, g);
+  p.drawRoundedRect(r, radius, radius);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // text
