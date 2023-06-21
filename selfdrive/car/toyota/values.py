@@ -219,23 +219,24 @@ TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
 FW_QUERY_CONFIG = FwQueryConfig(
+  # TODO: look at data to whitelist epb effectively
   requests=[
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine],
+      whitelist_ecus=[Ecu.engine, Ecu.epb],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps],
+      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb],
       bus=0,
     ),
   ],
@@ -244,7 +245,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
-  }
+  },
+  extra_ecus=[
+    (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
+  ],
 )
 
 FW_VERSIONS = {
