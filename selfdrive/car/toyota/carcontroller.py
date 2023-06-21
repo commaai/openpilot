@@ -71,8 +71,9 @@ class CarController:
     # force applied when not actuating anything converted to acceleration
     # (engine propulsion at low speed, engine braking at high speed)
     coasting_accel = CS.pcm_neutral_force / self.CP.mass
+    grade_accel = CS.GVC - CS.GL1X  # this is very noisy, good thing we have smoothing
     # the PCM should be outputting this
-    desired_pcm_accel = actuators.accel - coasting_accel + self.pitch_compensation
+    desired_pcm_accel = actuators.accel - coasting_accel - grade_accel  # + self.pitch_compensation
     # if not, we compensate (PCM is dumb and cares too much about our rate of change or other unknown factors)
     self.pcm_accel_compensation.update(CS.pcm_accel_net - desired_pcm_accel)
     pcm_accel_cmd = clip(actuators.accel - self.pcm_accel_compensation.x,

@@ -137,6 +137,8 @@ class CarState(CarStateBase):
     self.pcm_acc_braking = cp.vl["PCM_CRUISE"]["ACC_BRAKING"]
     self.pcm_accel_net = cp.vl["PCM_CRUISE"]["ACCEL_NET"]
     self.pcm_neutral_force = cp.vl["PCM_CRUISE"]["NEUTRAL_FORCE"]
+    self.GVC = cp.vl["VSC1S07"]["GVC"]
+    self.GL1X = cp.vl["KINEMATICS"]["ACCEL_X"]
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
@@ -189,6 +191,8 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
+      ("GVC", "VSC1S07"),
+      ("ACCEL_X", "KINEMATICS"),
     ]
 
     checks = [
@@ -205,6 +209,8 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("PCM_CRUISE_SM", 1),
       ("STEER_TORQUE_SENSOR", 50),
+      ("VSC1S07", 20),
+      ("KINEMATICS", 80),
     ]
 
     if CP.flags & ToyotaFlags.HYBRID:
