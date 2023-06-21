@@ -142,6 +142,13 @@ jobs:
         source tools/openpilot_env.sh
         rm -rf /tmp/scons_cache/*
         poetry run scons -j$(nproc) --cache-populate
+    - name: Save scons cache
+      id: scons-save-cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: macos_scons-${{ github.sha }}
     - name: Pre Cache - Remove pre-existing Homebrew packages
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
@@ -155,13 +162,6 @@ jobs:
         # .fseventsd directory causes permission errors in dep caching step
         # its used by the system to observe changes within the directory - toolchain works without it, just remove it
         sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
-    - name: Save scons cache
-      id: scons-save-cache
-      uses: actions/cache/save@v3
-      if: github.ref == 'refs/heads/master'
-      with:
-        path: /tmp/scons_cache
-        key: macos_scons-${{ github.sha }}
 
   docker_push:
     name: docker push
