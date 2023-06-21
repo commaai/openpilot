@@ -46,7 +46,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   // Settings button
   QSize icon_size(120, 120);
-  directions_icon = loadPixmap("../assets/navigation/icon_directions.svg", icon_size);
+  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
   settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
 
   settings_btn = new QPushButton(directions_icon, "", this);
