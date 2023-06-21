@@ -81,61 +81,87 @@ jobs:
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
 
-  #build_mac:
-  #  name: build macos
-  #  runs-on: macos-latest
-  #  steps:
-  #  - uses: actions/checkout@v3
-  #    with:
-  #      submodules: true
-  #  - name: Determine pre-existing Homebrew packages
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-  #      ls -1 /usr/local/Cellar >> $GITHUB_ENV
-  #      echo 'EOF' >> $GITHUB_ENV
-  #  - name: Cache dependencies
-  #    id: dependency-cache
-  #    uses: actions/cache@v2
-  #    with:
-  #      path: |
-  #        ~/.pyenv
-  #        ~/.local/share/virtualenvs/
-  #        /usr/local/Cellar
-  #        ~/github_brew_cache_entries.txt
-  #        /tmp/scons_cache
-  #      key: macos-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
-  #      restore-keys: macos-
-  #  - name: Brew link restored dependencies
-  #    run: |
-  #      if [ -f ~/github_brew_cache_entries.txt ]; then
-  #        while read pkg; do
-  #          brew link --force "$pkg" # `--force` for keg-only packages
-  #        done < ~/github_brew_cache_entries.txt
-  #      else
-  #        echo "Cache entries not found"
-  #      fi
-  #  - name: Install dependencies
-  #    run: ./tools/mac_setup.sh
-  #  - name: Build openpilot
-  #    run: |
-  #      source tools/openpilot_env.sh
-  #      poetry run selfdrive/manager/build.py
-  #
-  #      # cleanup scons cache
-  #      rm -rf /tmp/scons_cache/
-  #      poetry run scons -j$(nproc) --cache-populate
-  #  - name: Remove pre-existing Homebrew packages for caching
-  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
-  #    run: |
-  #      cd /usr/local/Cellar
-  #      new_cellar=$(ls -1)
-  #      comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-  #        if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-  #          rm -rf "$pkg"
-  #        fi
-  #      done
-  #      comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+  build_mac:
+    name: build macos
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Determine pre-existing Homebrew packages
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+        brew list --formula -1 >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+    - name: Restore scons cache
+      id: scons-restore-cache
+      uses: actions/cache/restore@v3
+      with:
+        path: /tmp/scons_cache
+        key: macos_scons-${{ github.sha }}
+        restore-keys: macos_scons-
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/github_brew_cache_entries.txt
+          ~/.pyenv
+          ~/Library/Caches/pypoetry
+          /usr/local/Cellar
+          /usr/local/opt
+          /usr/local/Caskroom/gcc-arm-*
+          /opt/homebrew/Cellar
+          /opt/homebrew/opt
+          /opt/homebrew/Caskroom/gcc-arm-*
+          /Applications/ArmGNUToolchain/*/*/*
+        key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
+        restore-keys: macos_deps-
+    - name: Brew link restored dependencies
+      run: |
+        if [ -f ~/github_brew_cache_entries.txt ]; then
+          brew link --force --overwrite $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
+          if [ -d /Applications/ArmGNUToolchain ]; then # link gcc-arm-embedded manually
+            GCC_TOOLCHAIN="$(echo /Applications/ArmGNUToolchain/**/**/bin)"
+            echo "$GCC_TOOLCHAIN" >> $GITHUB_PATH
+          fi
+        else
+          echo "Cache entries not found"
+        fi
+    - name: Install dependencies
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: ./tools/mac_setup.sh
+    - name: Build openpilot
+      run: |
+        source tools/openpilot_env.sh
+        poetry run scons -j$(nproc)
+    - name: Pre Cache - Cleanup scons cache
+      if: github.ref == 'refs/heads/master'
+      run: |
+        source tools/openpilot_env.sh
+        rm -rf /tmp/scons_cache/*
+        poetry run scons -j$(nproc) --cache-populate
+    - name: Pre Cache - Remove pre-existing Homebrew packages
+      if: steps.dependency-cache.outputs.cache-hit != 'true'
+      run: |
+        new_cellar=$(brew list --formula -1)
+        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
+          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+            rm -rf "$(brew --cellar)/$pkg"
+          fi
+        done
+        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+        # .fseventsd directory causes permission errors in dep caching step
+        # its used by the system to observe changes within the directory - toolchain works without it, just remove it
+        sudo rm -rf /Applications/ArmGNUToolchain/*/*/.fseventsd
+    - name: Save scons cache
+      id: scons-save-cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: macos_scons-${{ github.sha }}
 
   docker_push:
     name: docker push
