@@ -1,12 +1,12 @@
 #include "tools/cabana/util.h"
 
+#include <array>
+
 #include <QColor>
 #include <QFontDatabase>
-#include <QHelpEvent>
 #include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QToolTip>
 
 #include "selfdrive/ui/qt/util.h"
 

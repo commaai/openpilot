@@ -248,6 +248,9 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-bottom: 16px;
       padding-top: 16px;
     }
+    #forgetBtn:pressed {
+      background-color: #828282;
+    }
     #connecting {
       font-size: 32px;
       font-weight: 600;
