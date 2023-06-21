@@ -28,13 +28,10 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   });
   content_stack->addWidget(settings);
 
+  // TODO: is this required?
   setStyleSheet(R"(
-    QLabel {
-      color: white;
-    }
-    QPushButton {
-      border: none;
-    }
+    QLabel { color: white; }
+    QPushButton { border: none; }
   )");
 }
 
