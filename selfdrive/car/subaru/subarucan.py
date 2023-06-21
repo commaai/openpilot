@@ -12,7 +12,7 @@ def create_steering_control(packer, apply_steer, steer_req):
   return packer.make_can_msg("ES_LKAS", 0, values)
 
 
-def create_throttle(packer, throttle_msg, throttle_cmd):
+def create_throttle(packer, throttle_msg, throttle_cmd, bus):
   values = {s: throttle_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -31,7 +31,7 @@ def create_throttle(packer, throttle_msg, throttle_cmd):
   if throttle_cmd:
     values["Throttle_Pedal"] = 5
 
-  return packer.make_can_msg("Throttle", 2, values)
+  return packer.make_can_msg("Throttle", bus, values)
 
 
 def create_steering_status(packer):

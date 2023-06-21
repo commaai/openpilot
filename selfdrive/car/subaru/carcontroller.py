@@ -82,7 +82,7 @@ class CarController:
     
     if self.CP.carFingerprint in GLOBAL_GEN2:
       if CC.cruiseControl.resume:
-        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, True))
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, True, 2))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
