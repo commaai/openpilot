@@ -101,6 +101,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
             params.put("NavDestination", resp.toStdString());
+            if (isVisible()) updateCurrentRoute();
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
