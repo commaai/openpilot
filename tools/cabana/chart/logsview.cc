@@ -22,15 +22,13 @@ QVariant MultipleSignalsLogModel::headerData(int section, Qt::Orientation orient
 
 QVariant MultipleSignalsLogModel::data(const QModelIndex &index, int role) const {
   if (role == Qt::DisplayRole) {
-    auto it = values_.crbegin();
-    std::advance(it, index.row());
-
+    auto it = std::next(values_.crbegin(), index.row());
     int column = index.column();
     if (column == 0) {
       return QString::number((it->first / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
+
     auto v = it->second[column - 1];
-    qDebug() << sigs_[column - 1].sig->precision;
     return v ? QString::number(*v, 'f', sigs_[column - 1].sig->precision) : QStringLiteral("--");
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
