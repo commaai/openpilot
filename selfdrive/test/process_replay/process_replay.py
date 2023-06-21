@@ -344,9 +344,9 @@ def replay_process_with_name(name, lr, *args, **kwargs):
   return replay_process(cfg, lr, *args, **kwargs)
 
 
-def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, custom_params={}, disable_progress=False):
+def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, custom_params=None, disable_progress=False):
   all_msgs = migrate_all(lr, old_logtime=True)
-  process_logs = _replay_single_process(cfg, all_msgs, fingerprint, custom_params, disable_progress)
+  process_logs = _replay_single_process(cfg, all_msgs, fingerprint, custom_params or {}, disable_progress)
 
   if return_all_logs:
     keys = set(cfg.subs)
@@ -362,7 +362,7 @@ def replay_process(cfg, lr, fingerprint=None, return_all_logs=False, custom_para
 
 def _replay_single_process(
   cfg: ProcessConfig, lr: Union[LogReader, List[capnp._DynamicStructReader]], 
-  fingerprint: Optional[str], custom_params: Dict[str, Any], disable_progress: bool
+  fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
 ):
   with OpenpilotPrefix():
     controlsState = None
@@ -453,7 +453,7 @@ def _replay_single_process(
       return log_msgs
 
 
-def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, custom_params={}, log_dir=None):
+def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, custom_params=None, log_dir=None):
   if platform.system() != "Darwin":
     os.environ["PARAMS_ROOT"] = "/dev/shm/params"
   if log_dir is not None:
@@ -465,11 +465,12 @@ def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, 
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("DisableLogging", False)
-  for k, v in custom_params.items():
-    if type(v) == bool:
-      params.put_bool(k, v)
-    else:
-      params.put(k, v)
+  if custom_params is not None:
+    for k, v in custom_params.items():
+      if type(v) == bool:
+        params.put_bool(k, v)
+      else:
+        params.put(k, v)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
