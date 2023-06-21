@@ -244,7 +244,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
-  }
+  },
+  extra_ecus=[
+    (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
+  ],
 )
 
 FW_VERSIONS = {
