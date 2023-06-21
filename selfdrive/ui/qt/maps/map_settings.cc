@@ -103,7 +103,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;
             params.put("NavDestination", resp.toStdString());
-            updateCurrentRoute();
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
@@ -111,6 +110,9 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
           // Send DELETE to clear destination server side
           deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
+
+        // Update UI (athena can set destination at any time)
+        updateCurrentRoute();
       });
     }
   }
