@@ -66,7 +66,8 @@ public:
   Type type = Type::Normal;
   QString name;
   int start_bit, msb, lsb, size;
-  double factor, offset;
+  double factor = 1.0;
+  double offset = 0;
   bool is_signed;
   bool is_little_endian;
   double min, max;
@@ -110,9 +111,7 @@ public:
 
 // Helper functions
 double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
-int bigEndianStartBitsIndex(int start_bit);
-int bigEndianBitIndex(int index);
-void updateSigSizeParamsFromRange(cabana::Signal &s, int start_bit, int size);
-std::pair<int, int> getSignalRange(const cabana::Signal *s);
+void updateMsbLsb(cabana::Signal &s);
+inline int flipBitPos(int start_bit) { return 8 * (start_bit / 8) + 7 - start_bit % 8; }
 inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
 inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }

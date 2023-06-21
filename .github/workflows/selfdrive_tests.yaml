@@ -228,6 +228,7 @@ jobs:
                         ./tools/replay/tests/test_replay && \
                         ./tools/cabana/tests/test_cabana && \
                         ./system/camerad/test/ae_gray_test && \
+                        ./selfdrive/test/process_replay/test_fuzzy.py && \
                         coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v2
