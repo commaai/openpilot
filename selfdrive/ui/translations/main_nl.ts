@@ -349,7 +349,7 @@
     </message>
 </context>
 <context>
-    <name>MapSettings</name>
+    <name>MapPanel</name>
     <message>
         <source>Current Destination</source>
         <translation>Huidige Bestemming</translation>
