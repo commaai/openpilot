@@ -280,7 +280,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
 
     /* no saved destination */
     [set="false"] QLabel { color: #9BA0A5; }
-    [current="true"][set="false"] QLabel { color: #80000000; }
+    [current="true"][set="false"] QLabel { color: #A0000000; }
     [current="true"][set="false"] #action { color: #333333; }
   )");
 }
