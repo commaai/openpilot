@@ -82,6 +82,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
   frame->addWidget(destinations_scroller);
 
+  setStyleSheet("MapSettings { background-color: #333333; }");
+
   if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
     {
@@ -112,12 +114,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
       });
     }
   }
-
-  setStyleSheet(R"(
-    MapSettings {
-      background-color: #333333;
-    }
-  )");
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
