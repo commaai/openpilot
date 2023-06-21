@@ -445,7 +445,8 @@ def _replay_single_process(
                   m.logMonoTime = msg.logMonoTime
                   log_msgs.append(m.as_reader())
               cnt += 1
-          assert(managed_processes[cfg.proc_name].proc.is_alive())
+          proc = managed_processes[cfg.proc_name].proc
+          assert(proc and proc.is_alive())
       finally:
         managed_processes[cfg.proc_name].signal(signal.SIGKILL)
         managed_processes[cfg.proc_name].stop()
