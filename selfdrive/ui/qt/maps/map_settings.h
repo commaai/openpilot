@@ -87,7 +87,7 @@ private:
   double latitude_, longitude_;
 };
 
-class DestinationWidget : public ClickableWidget {
+class DestinationWidget : public QPushButton {
   Q_OBJECT
 public:
   explicit DestinationWidget(QWidget *parent = nullptr);

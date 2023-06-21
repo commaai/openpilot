@@ -196,7 +196,7 @@ void MapSettings::refresh() {
     auto widget = new DestinationWidget(this);
     widget->set(destination, false);
 
-    QObject::connect(widget, &ClickableWidget::clicked, [=]() {
+    QObject::connect(widget, &QPushButton::clicked, [=]() {
       navigateTo(destination->toJson());
       emit closeSettings();
     });
@@ -228,7 +228,7 @@ void MapSettings::navigateTo(const QJsonObject &place) {
   updateCurrentRoute();
 }
 
-DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) {
+DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QHBoxLayout(this);
@@ -257,6 +257,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   frame->addLayout(inner_frame, 1);
 
   action = new QPushButton(this);
+  action->setFixedSize(72, 72);
   action->setObjectName("action");
   action->setStyleSheet("font-size: 65px; font-weight: 600;");
   QObject::connect(action, &QPushButton::clicked, [=]() { emit clicked(); });
@@ -269,7 +270,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
     #icon { background-color: #3B4356; border-radius: 48px; }
     #subtitle { color: #9BA0A5; }
-    #action { border: none; }
+    #action { border: none; border-radius: 36px; padding-bottom: 4px; }
 
     /* current destination */
     [current="true"] { background-color: #E8E8E8; }
@@ -282,6 +283,10 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
     [set="false"] QLabel { color: #9BA0A5; }
     [current="true"][set="false"] QLabel { color: #A0000000; }
     [current="true"][set="false"] #action { color: #333333; }
+
+    /* pressed */
+    [current="false"]:pressed { background-color: #18191B; }
+    [current="true"] #action:pressed { background-color: #D9D9D9; }
   )");
 }
 
@@ -289,31 +294,33 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
   setProperty("current", current);
   setProperty("set", true);
 
+  auto icon_pixmap = current ? icons().directions : icons().recent;
   auto title_text = destination->name();
   auto subtitle_text = destination->details();
-  auto icon_pixmap = current ? icons().directions : icons().recent;
 
   if (destination->isFavorite()) {
     if (destination->label() == NAV_FAVORITE_LABEL_HOME) {
+      icon_pixmap = icons().home;
       title_text = tr("Home");
       subtitle_text = destination->name() + ", " + destination->details();
-      icon_pixmap = icons().home;
     } else if (destination->label() == NAV_FAVORITE_LABEL_WORK) {
+      icon_pixmap = icons().work;
       title_text = tr("Work");
       subtitle_text = destination->name() + ", " + destination->details();
-      icon_pixmap = icons().work;
     } else {
       icon_pixmap = icons().favorite;
     }
   }
 
+  icon->setPixmap(icon_pixmap);
+
   // TODO: onroad and offroad have different dimensions
   title->setText(shorten(title_text, 26));
   subtitle->setText(shorten(subtitle_text, 26));
   subtitle->setVisible(true);
-  icon->setPixmap(icon_pixmap);
 
   // TODO: use pixmap
+  action->setAttribute(Qt::WA_TransparentForMouseEvents, !current);
   action->setText(current ? "×" : "→");
   action->setVisible(true);
 
