@@ -115,6 +115,12 @@ void update_model(UIState *s,
   }
   max_idx = get_path_length_idx(plan_position, max_distance);
   update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+
+  const auto model_conf = model.getConfidence();
+  if (model_conf == cereal::ModelDataV2::ConfidenceClass::RED) {scene.conf_color = bg_colors[STATUS_ALERT];}
+  else if (model_conf == cereal::ModelDataV2::ConfidenceClass::YELLOW) {scene.conf_color = bg_colors[STATUS_WARNING];}
+  else if (model_conf == cereal::ModelDataV2::ConfidenceClass::GREEN) {scene.conf_color = bg_colors[STATUS_ENGAGED];}
+  else {assert(false);}
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {

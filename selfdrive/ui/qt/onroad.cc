@@ -70,6 +70,7 @@ void OnroadWindow::updateState(const UIState &s) {
 
   nvg->updateState(s);
 
+  bgColor = s.scene.conf_color;
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
