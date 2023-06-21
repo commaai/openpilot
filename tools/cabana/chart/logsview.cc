@@ -94,6 +94,7 @@ void MultipleSignalsLogModel::msgUpdated(MessageId id) {
 MultipleSignalsLogView::MultipleSignalsLogView(QWidget *parent) : QTableView(parent) {
   setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   setModel(model = new MultipleSignalsLogModel(this));
+  setSelectionMode(QAbstractItemView::NoSelection);
   horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   verticalHeader()->setVisible(false);

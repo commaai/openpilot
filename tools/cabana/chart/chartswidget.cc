@@ -511,6 +511,7 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
       charts_widget->updateTabBar();
       event->acceptProposedAction();
       chart->startAnimation();
+      charts_widget->updateLogViewSignals();
     }
     drawDropIndicator({});
   }
