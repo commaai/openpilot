@@ -43,8 +43,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
         }
       )");
       close_btn->setFixedSize(140, 140);
-      QObject::connect(close_btn, &QPushButton::clicked,
-                       [=]() { emit closeSettings(); });
+      QObject::connect(close_btn, &QPushButton::clicked, [=]() { emit closeSettings(); });
       // TODO: read map_on_left from ui state
       heading_frame->addWidget(close_btn);
     }
@@ -144,8 +143,7 @@ void MapSettings::updateCurrentRoute() {
 }
 
 void MapSettings::parseResponse(const QString &response, bool success) {
-  if (!success) return;
-  if (response == cur_destinations) return;
+  if (!success || response == cur_destinations) return;
   cur_destinations = response;
   refresh();
 }
@@ -173,7 +171,6 @@ void MapSettings::refresh() {
 
       // skip current destination
       if (current_destination && *destination == *current_destination) continue;
-
       destinations.push_back(destination);
     }
   }
