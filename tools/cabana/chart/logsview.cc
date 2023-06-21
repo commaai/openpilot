@@ -30,7 +30,8 @@ QVariant MultipleSignalsLogModel::data(const QModelIndex &index, int role) const
       return QString::number((it->first / (double)1e9) - can->routeStartTime(), 'f', 2);
     }
     auto v = it->second[column - 1];
-    return v ? QString::number(*v) : QStringLiteral("--");
+    qDebug() << sigs_[column - 1].sig->precision;
+    return v ? QString::number(*v, 'f', sigs_[column - 1].sig->precision) : QStringLiteral("--");
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
   }
@@ -41,9 +42,9 @@ void MultipleSignalsLogModel::updateState() {
   if (sigs_.empty()) return;
 
   uint64_t current_ts = (can->currentSec() + can->routeStartTime()) * 1e9;
-  int index = 0;
   size_t prev_row_count = values_.size();
-  for (auto &s : sigs_) {
+  for (int i = 0; i < sigs_.size(); ++i) {
+    const auto &s = sigs_[i];
     const auto &msgs = can->events(s.msg_id);
     auto first = std::lower_bound(msgs.crbegin(), msgs.crend(), last_ts_, [](auto e, uint64_t ts) { return e->mono_time > ts; });
     if (first != msgs.crend()) {
@@ -54,11 +55,10 @@ void MultipleSignalsLogModel::updateState() {
         if (s.sig->getValue((*it)->dat, (*it)->size, &value)) {
           auto &v = values_[(*it)->mono_time];
           if (v.size() == 0) v.resize(sigs_.size());
-          v[index] = value;
+          v[i] = value;
         }
       }
     }
-    ++index;
   }
   last_ts_ = current_ts;
 
