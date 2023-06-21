@@ -141,6 +141,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QStackedWidget *left_widget = new QStackedWidget(this);
     left_widget->addWidget(new MapSettings);
     left_widget->addWidget(new PrimeAdWidget);
+    left_widget->setStyleSheet("border-radius: 10px;");
 
     left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
     connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
