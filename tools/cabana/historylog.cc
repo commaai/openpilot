@@ -54,7 +54,7 @@ QVariant HistoryLogModel::headerData(int section, Qt::Orientation orientation, i
         return "Time";
       }
       if (show_signals) {
-        QString name = sigs[section - 1]->name;
+        QString name = sigs[section - 1]->name.replace(QChar('_'), ' ');
         if (!sigs[section - 1]->unit.isEmpty()) {
           name += QString(" (%1)").arg(sigs[section - 1]->unit);
         }
@@ -183,7 +183,7 @@ QSize HeaderView::sectionSizeFromContents(int logicalIndex) const {
   } else {
     int default_size = qMax(100, (rect().width() - time_col_size.width()) / (model()->columnCount() - 1));
     QString text = model()->headerData(logicalIndex, this->orientation(), Qt::DisplayRole).toString();
-    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text.replace(QChar('_'), ' '));
+    const QRect rect = fontMetrics().boundingRect({0, 0, default_size, 2000}, defaultAlignment(), text);
     QSize size = rect.size() + QSize{10, 6};
     return QSize{qMax(size.width(), default_size), size.height()};
   }
@@ -196,7 +196,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
   painter->setPen(palette().color(settings.theme == DARK_THEME ? QPalette::BrightText : QPalette::Text));
-  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
+  painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text);
 }
 
 // LogsWidget
