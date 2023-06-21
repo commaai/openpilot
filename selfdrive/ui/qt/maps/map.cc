@@ -210,13 +210,17 @@ void MapWindow::updateState(const UIState &s) {
       clearRoute();
     }
 
-    auto pos = 1080 - bdr_s*2 - settings_btn->height() - bdr_s;
-    if (map_eta->isVisible()) {
-      settings_btn->move(bdr_s, pos - map_eta->height());
-      settings_btn->setIcon(settings_icon);
-    } else {
-      settings_btn->move(bdr_s, pos);
-      settings_btn->setIcon(directions_icon);
+    // TODO: only move if position should change
+    // don't move while map isn't visible
+    if (isVisible()) {
+      auto pos = 1080 - bdr_s*2 - settings_btn->height() - bdr_s;
+      if (map_eta->isVisible()) {
+        settings_btn->move(bdr_s, pos - map_eta->height());
+        settings_btn->setIcon(settings_icon);
+      } else {
+        settings_btn->move(bdr_s, pos);
+        settings_btn->setIcon(directions_icon);
+      }
     }
   }
 
