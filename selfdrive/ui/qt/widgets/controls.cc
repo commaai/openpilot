@@ -105,7 +105,6 @@ ElidedLabel::ElidedLabel(QWidget *parent) : ElidedLabel({}, parent) {}
 ElidedLabel::ElidedLabel(const QString &text, QWidget *parent) : QLabel(text.trimmed(), parent) {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   setMinimumWidth(1);
-  setAttribute(Qt::WA_TransparentForMouseEvents);
 }
 
 void ElidedLabel::resizeEvent(QResizeEvent* event) {

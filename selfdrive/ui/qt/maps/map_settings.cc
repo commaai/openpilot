@@ -249,9 +249,11 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   inner_frame->setSpacing(0);
   {
     title = new ElidedLabel(this);
+    title->setAttribute(Qt::WA_TransparentForMouseEvents);
     inner_frame->addWidget(title);
 
     subtitle = new ElidedLabel(this);
+    subtitle->setAttribute(Qt::WA_TransparentForMouseEvents);
     subtitle->setObjectName("subtitle");
     inner_frame->addWidget(subtitle);
   }
