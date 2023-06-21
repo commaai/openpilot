@@ -67,7 +67,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   frame->addSpacing(32);
 
   current_widget = new DestinationWidget(this);
-  QObject::connect(current_widget, &ClickableWidget::clicked, [=]() {
+  QObject::connect(current_widget, &DestinationWidget::actionClicked, [=]() {
     if (!current_destination) return;
     params.remove("NavDestination");
     updateCurrentRoute();
@@ -262,6 +262,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : ClickableWidget(parent) 
   action = new QLabel(this);
   action->setObjectName("action");
   action->setStyleSheet("font-size: 65px; font-weight: 600;");
+  QObject::connect(action, &ClickableWidget::clicked, [=]() { emit actionClicked(); });
   frame->addWidget(action);
 
   setFixedHeight(164);

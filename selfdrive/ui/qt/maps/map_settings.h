@@ -95,6 +95,9 @@ public:
   void set(NavDestination *, bool current = false);
   void unset(const QString &label, bool current = false);
 
+signals:
+  void actionClicked();
+
 private:
   struct NavIcons {
     QPixmap home, work, favorite, recent, directions;
