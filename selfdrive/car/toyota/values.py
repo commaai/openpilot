@@ -215,27 +215,28 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
-TOYOTA_VERSION_REQUEST = b'\x1a\x88\x01'
-TOYOTA_VERSION_RESPONSE = b'\x5a\x88\x01'
+TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
+TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
 FW_QUERY_CONFIG = FwQueryConfig(
+  # TODO: look at data to whitelist epb effectively
   requests=[
     Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine],
+      whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps],
+      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics],
       bus=0,
     ),
   ],
@@ -244,7 +245,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
     # On some models, the engine can show on two different addresses
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
-  }
+  },
+  extra_ecus=[
+    (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
+    (Ecu.telematics, 0x750, 0xc7),
+  ],
 )
 
 FW_VERSIONS = {
@@ -875,7 +880,6 @@ FW_VERSIONS = {
       b'\x01F152612B81\x00\x00\x00\x00\x00\x00',
       b'\x01F152612B90\x00\x00\x00\x00\x00\x00',
       b'\x01F152612C00\x00\x00\x00\x00\x00\x00',
-      b'F152602191\x00\x00\x00\x00\x00\x00',
       b'\x01F152612862\x00\x00\x00\x00\x00\x00',
       b'\x01F152612B91\x00\x00\x00\x00\x00\x00',
       b'\x01F15260A070\x00\x00\x00\x00\x00\x00',
@@ -1491,6 +1495,7 @@ FW_VERSIONS = {
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
+      b'\x01896634A88100\x00\x00\x00\x00',
       b'\x01896634AJ2000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
