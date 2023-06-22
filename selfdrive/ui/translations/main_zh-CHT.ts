@@ -1017,7 +1017,7 @@ Gear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ui_multilang_alerts</source>
+        <source>%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
