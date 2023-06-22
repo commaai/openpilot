@@ -248,6 +248,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     # These have been seen responding to UDS query
+    # TODO: if these hybrid ECUs always exist together, remove one
     (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
     (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
