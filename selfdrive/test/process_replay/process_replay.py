@@ -395,7 +395,7 @@ def replay_process_with_name(name, lr, *args, **kwargs):
 
 
 def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, custom_params=None, disable_progress=False):
-  all_msgs = migrate_all(lr, old_logtime=True, camera_states=True)
+  all_msgs = migrate_all(lr, old_logtime=True, camera_states=len(cfg.vision_pubs) != 0)
   process_logs = _replay_single_process(cfg, all_msgs, frs, fingerprint, custom_params, disable_progress)
 
   if return_all_logs:
