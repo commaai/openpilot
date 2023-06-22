@@ -31,7 +31,7 @@ def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
 
-def trim_logs_to_max_frames(logs, max_frames, frs_types):
+def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
   cam_state_counts = defaultdict(int)
   # keep adding messages until cam states are equal to MAX_FRAMES
@@ -42,6 +42,10 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types):
 
     if all(cam_state_counts[state] == max_frames for state in frs_types):
       break
+
+  if len(include_all_types) != 0:
+    other_msgs = [m for m in logs if m.which() in include_all_types]
+    all_msgs.extend(other_msgs)
 
   return all_msgs
 
@@ -108,11 +112,16 @@ def model_replay(lr, frs):
   log_msgs = []
 
   # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES + 1, {"roadEncodeIdx", "wideRoadEncodeIdx"})
-  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverEncodeIdx"})
+  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx"})
+  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx"})
   if not SEND_EXTRA_INPUTS:
     modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
     dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration", "lateralPlan"]]
+  # initial calibration
+  cal_msg = next(msg for msg in lr if msg.which() == "liveCalibration").as_builder()
+  cal_msg.logMonoTime = lr[0].logMonoTime
+  modeld_logs.insert(0, cal_msg.as_reader())
+  dmodeld_logs.insert(0, cal_msg.as_reader())
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
