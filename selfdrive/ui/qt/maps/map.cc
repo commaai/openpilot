@@ -256,7 +256,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
+  m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
