@@ -247,20 +247,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
   },
   extra_ecus=[
-    # All known ECUs on a late-model Toyota vehicle not queried here:
-    # Responds to UDS:
-    # - Hybrid Control (0x7d2, 0x712)
-    # - Combination Meter (0x7c0)
-    # - HV Battery (0x713, 0x747)
-    # - Motor Generator (0x716, 0x724)
-    # Responds to KWP:
-    # - Air Conditioner (0x7c4)
-    # - Steering Angle Sensor (0x7b3)
-    # - EPS/EMPS (0x7a0, 0x7a1)
-    # - SRS Airbag (0x780, 0x784)
     # These have been seen responding to UDS query
-    (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Module
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Module 2
+    (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
+    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
     (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
     (Ecu.telematics, 0x750, 0xc7),
   ],
