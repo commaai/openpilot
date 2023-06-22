@@ -24,7 +24,7 @@ QVariant MultipleSignalsLogModel::data(const QModelIndex &index, int role) const
   if (role == Qt::DisplayRole && index.isValid() && index.row() < values_.size()) {
     auto it = values_.crbegin();
     std::advance(it, index.row());
-    
+
     int column = index.column();
     if (column == 0) {
       return QString::number((it->first / (double)1e9) - can->routeStartTime(), 'f', 2);
