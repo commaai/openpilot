@@ -126,8 +126,12 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   };
   int h = alert_heights[alert.size];
 
-  const int margin = 40;
-  const int radius = 30;
+  int margin = 40;
+  int radius = 30;
+  if (alert.size == cereal::ControlsState::AlertSize::FULL) {
+    margin = 0;
+    radius = 0;
+  }
   QRect r = QRect(0 + margin, height() - h - margin, width() - margin*2, h);
 
   QPainter p(this);
