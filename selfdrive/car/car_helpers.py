@@ -79,7 +79,7 @@ interfaces = load_interfaces(interface_names)
 def fingerprint(logcan, sendcan, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
-  no_cached_fingerprint = os.environ.get('NO_FINGERPRINT_CACHE', False)
+  disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
   ecu_rx_addrs = set()
   params = Params()
 
@@ -87,7 +87,7 @@ def fingerprint(logcan, sendcan, num_pandas):
     # Vin query only reliably works through OBDII
     bus = 1
 
-    cached_params = params.get("CarParamsCache") if not no_cached_fingerprint else None
+    cached_params = params.get("CarParamsCache") if not disable_fw_cache else None
     if cached_params is not None:
       cached_params = car.CarParams.from_bytes(cached_params)
       if cached_params.carName == "mock":
