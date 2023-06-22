@@ -218,7 +218,7 @@ pipeline {
         stage('replay') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
-            phone_steps("tici-common", [
+            phone_steps("tici-replay", [
               ["build", "cd selfdrive/manager && ./build.py"],
               ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
             ])
