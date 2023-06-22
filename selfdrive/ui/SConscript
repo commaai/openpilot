@@ -9,7 +9,7 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'x86_64']
+maps = arch in ['larch64', 'x86_64', 'Darwin']
 
 if maps and arch == 'x86_64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
