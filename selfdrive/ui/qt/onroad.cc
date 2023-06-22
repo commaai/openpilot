@@ -127,7 +127,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   int h = alert_heights[alert.size];
 
   int margin = 40;
-  int radius = 30;
+  int radius = 40;
   if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     margin = 0;
     radius = 0;
