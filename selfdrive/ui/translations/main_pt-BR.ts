@@ -1002,19 +1002,11 @@ Gear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>deviceState, pandaStates, peripheralState, modelV2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>openpilot Canceled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>roadCamera, driverCamera, wideRoadCamera</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
