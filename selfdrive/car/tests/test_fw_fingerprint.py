@@ -186,7 +186,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 5.8
+    total_ref_time = 4.6
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -195,7 +195,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.1,
-        'nissan': 0.9,
+        'nissan': 0.3,
         'subaru': 0.1,
         'tesla': 0.2,
         'toyota': 1.3,
