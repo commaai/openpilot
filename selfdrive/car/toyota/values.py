@@ -259,6 +259,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - EPS/EMPS (0x7a0, 0x7a1)
     # - SRS Airbag (0x780, 0x784)
     # These have been seen responding to UDS query
+    (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Module
+    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Module 2
     (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
     (Ecu.telematics, 0x750, 0xc7),
   ],
