@@ -24,6 +24,7 @@ QVariant MultipleSignalsLogModel::data(const QModelIndex &index, int role) const
   if (role == Qt::DisplayRole && index.isValid() && index.row() < values_.size()) {
     auto it = values_.crbegin();
     std::advance(it, index.row());
+    
     int column = index.column();
     if (column == 0) {
       return QString::number((it->first / (double)1e9) - can->routeStartTime(), 'f', 2);
@@ -41,17 +42,7 @@ void MultipleSignalsLogModel::updateState() {
   if (sigs_.empty()) return;
 
   uint64_t current_ts = (can->currentSec() + can->routeStartTime()) * 1e9;
-  // delete data older than 30 seconds
-  size_t prev_row_count = values_.size();
-  for (auto it = values_.begin(); it != values_.end(); /**/) {
-    it = (it->first < current_ts - 30 * 1e9) ? values_.erase(it) : ++it;
-  }
-  if (values_.size() < prev_row_count) {
-    beginRemoveRows({}, values_.size(), prev_row_count - 1);
-    endRemoveRows();
-  }
-
-  prev_row_count = values_.size();
+  int prev_row_count = values_.size();
   for (int i = 0; i < sigs_.size(); ++i) {
     const auto &s = sigs_[i];
     const auto &msgs = can->events(s.msg_id);
@@ -63,7 +54,6 @@ void MultipleSignalsLogModel::updateState() {
         double value = 0;
         if (s.sig->getValue((*it)->dat, (*it)->size, &value)) {
           auto &v = values_[(*it)->mono_time];
-          if (v.size() == 0) v.resize(sigs_.size());
           v[i] = value;
         }
       }

@@ -33,7 +33,7 @@ public slots:
 private:
   uint64_t last_ts_ = 0;
   std::vector<Signal> sigs_;
-  std::map<uint64_t, std::vector<std::optional<double>>> values_;
+  std::map<uint64_t, std::array<std::optional<double>, 20>> values_;
   friend class MultipleSignalsLogView;
 };
 
