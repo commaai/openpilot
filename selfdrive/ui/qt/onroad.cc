@@ -132,14 +132,14 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     margin = 0;
     radius = 0;
   }
-  QRect r = QRect(0 + margin, height() - h - margin, width() - margin*2, h);
+  QRect r = QRect(0 + margin, height() - h + margin, width() - margin*2, h - margin*2);
 
   QPainter p(this);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
 
-  p.setBrush(QBrush(alert_colors2[alert.status]));
+  p.setBrush(QBrush(alert_colors[alert.status]));
   p.drawRoundedRect(r, radius, radius);
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
