@@ -31,7 +31,6 @@ def generate_onroad_alert_translations():
   content = '\n// onroad alerts\n'
   for text in sorted(translated):
     content += f'QT_TRANSLATE_NOOP("OnroadAlerts", R"({text})");\n'
-
   return content
 
 def generate_offroad_alerts_translations():
