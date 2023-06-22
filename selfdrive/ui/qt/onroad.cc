@@ -127,7 +127,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   int h = alert_heights[alert.size];
 
   int margin = 40;
-  int radius = 40;
+  int radius = 30;
   if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     margin = 0;
     radius = 0;
@@ -144,13 +144,13 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-  QLinearGradient g(0, r.y(), 0, r.bottom());
-  g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
-  g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+  //QLinearGradient g(0, r.y(), 0, r.bottom());
+  //g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
+  //g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
 
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
-  p.setBrush(QBrush(g));
-  p.drawRoundedRect(r, radius, radius);
+  //p.setBrush(QBrush(g));
+  //p.drawRoundedRect(r, radius, radius);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // text
