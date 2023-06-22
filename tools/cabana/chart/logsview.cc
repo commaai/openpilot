@@ -106,6 +106,7 @@ MultipleSignalsLogView::MultipleSignalsLogView(QWidget *parent) : QTableView(par
   setSelectionMode(QAbstractItemView::NoSelection);
   horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   verticalHeader()->setVisible(false);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   setVisible(false);
