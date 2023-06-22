@@ -256,7 +256,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Responds to KWP:
     # - Air Conditioner (0x7c4)
     # - Steering Angle Sensor (0x7b3)
-    # - EPS/EMPS (0x7A0, 0x7a1)
+    # - EPS/EMPS (0x7a0, 0x7a1)
     # - SRS Airbag (0x780, 0x784)
     # These have been seen responding to UDS query
     (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
