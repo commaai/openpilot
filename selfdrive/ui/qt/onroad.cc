@@ -51,16 +51,10 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  printf("print s.status: %i \n", s.status);
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
-  if (s.sm->updated("controlsState") || !alert.equal({})) {
-    if (alert.type == "controlsUnresponsive") {
-      bgColor = bg_colors[STATUS_ALERT];
-    } else if (alert.type == "controlsUnresponsivePermanent") {
-      bgColor = bg_colors[STATUS_DISENGAGED];
-    }
-    alerts->updateAlert(alert, bgColor);
-  }
+  alerts->updateAlert(alert);
 
   if (s.scene.map_on_left) {
     split->setDirection(QBoxLayout::LeftToRight);
@@ -72,7 +66,7 @@ void OnroadWindow::updateState(const UIState &s) {
 
   if (bg != bgColor) {
     // repaint border
-    bg = bg_colors[STATUS_ENGAGED];
+    bg = bgColor;
     update();
   }
 }
@@ -104,7 +98,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   }
 #endif
 
-  alerts->updateAlert({}, bg);
+  alerts->updateAlert({});
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -115,10 +109,9 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 // ***** onroad widgets *****
 
 // OnroadAlerts
-void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
-  if (!alert.equal(a) || color != bg) {
+void OnroadAlerts::updateAlert(const Alert &a) {
+  if (!alert.equal(a)) {
     alert = a;
-    bg = color;
     update();
   }
 }
@@ -143,7 +136,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   // draw background + gradient
   p.setPen(Qt::NoPen);
 
-  p.setBrush(QBrush(bg));
+  p.setBrush(QBrush(alert_colors2[alert.status]));
   p.drawRoundedRect(r, radius, radius);
 
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
