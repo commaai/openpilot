@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -355,44 +382,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>當前目的地</translation>
+        <source>NAVIGATION</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>清除</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>最近目的地</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>試用導航功能</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>成為 comma 高級會員來使用導航功能
-立即註冊：https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>未設定
-住家位置</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>未設定
-工作位置</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>沒有最近的導航記錄</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -673,10 +670,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>軟體</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>導航</translation>
     </message>
 </context>
 <context>

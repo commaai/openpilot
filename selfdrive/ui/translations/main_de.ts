@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -356,42 +383,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>Aktuelles Ziel</translation>
+        <source>NAVIGATION</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>LÖSCHEN</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>Letzte Ziele</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>Beta Navigation ausprobieren</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Erhalte echtzeit Wegführung und mehr mit dem comma prime
-Abonnement. Melde dich jetzt an: https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>Keine Heimadresse gesetzt</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>Keine Arbeitsadresse gesetzt</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>Keine kürzlich gewählten Ziele</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -675,10 +674,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>Software</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>Navigation</translation>
     </message>
 </context>
 <context>
