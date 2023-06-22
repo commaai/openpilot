@@ -5,15 +5,15 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/ui/qt/maps/map_settings.h"
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
+
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #else
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #endif
-#include "selfdrive/ui/qt/widgets/prime.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
