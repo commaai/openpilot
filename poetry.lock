@@ -4815,7 +4815,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "15f51cce43698998497c179525f7a804f6e16b668d8d8b531aae07b0b0ee79d6"
+content-hash = "08d4fdc2579454f8df4b7edc5b537e8b1e3216506ac5baf1f80ca0b0d4254493"
 
 [metadata.files]
 adal = [
