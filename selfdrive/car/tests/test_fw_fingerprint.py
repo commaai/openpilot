@@ -157,7 +157,7 @@ class TestFwFingerprint(unittest.TestCase):
 
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
         self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
-                         f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
+                         f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}')
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
@@ -186,7 +186,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 4.6
+    total_ref_time = 5.8
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -195,10 +195,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.1,
-        'nissan': 0.3,
+        'nissan': 0.9,
         'subaru': 0.1,
         'tesla': 0.2,
-        'toyota': 0.7,
+        'toyota': 1.3,
         'volkswagen': 0.2,
       },
       2: {

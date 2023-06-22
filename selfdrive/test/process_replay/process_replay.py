@@ -5,8 +5,9 @@ import signal
 import platform
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Callable
+from typing import Dict, List, Optional, Callable, Union, Any
 from tqdm import tqdm
+import capnp
 
 import cereal.messaging as messaging
 from cereal import car
@@ -21,6 +22,8 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix
 from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from selfdrive.test.process_replay.migration import migrate_all
+from tools.lib.logreader import LogReader
+from tools.lib.framereader import FrameReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -391,9 +394,9 @@ def replay_process_with_name(name, lr, *args, **kwargs):
   return replay_process(cfg, lr, *args, **kwargs)
 
 
-def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, disable_progress=False):
+def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, custom_params=None, disable_progress=False):
   all_msgs = migrate_all(lr, old_logtime=True, camera_states=True)
-  process_logs = _replay_single_process(cfg, all_msgs, frs, fingerprint, disable_progress)
+  process_logs = _replay_single_process(cfg, all_msgs, frs, fingerprint, custom_params, disable_progress)
 
   if return_all_logs:
     keys = set(cfg.subs)
@@ -407,7 +410,10 @@ def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, d
   return log_msgs
 
 
-def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
+def _replay_single_process(
+  cfg: ProcessConfig, lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, FrameReader]],
+  fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
+):
   with OpenpilotPrefix():
     controlsState = None
     initialized = False
@@ -423,11 +429,11 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
       assert controlsState is not None and initialized, "controlsState never initialized"
 
     if fingerprint is not None:
-      setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint)
+      setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint, custom_params=custom_params)
     else:
       CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
       assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
-      setup_env(CP=CP, cfg=cfg, controlsState=controlsState, lr=lr)
+      setup_env(cfg=cfg, CP=CP, controlsState=controlsState, lr=lr, custom_params=custom_params)
 
     if cfg.config_callback is not None:
       params = Params()
@@ -503,7 +509,8 @@ def _replay_single_process(cfg, lr, frs, fingerprint, disable_progress):
                   m.logMonoTime = msg.logMonoTime
                   log_msgs.append(m.as_reader())
               cnt += 1
-          assert(managed_processes[cfg.proc_name].proc.is_alive())
+          proc = managed_processes[cfg.proc_name].proc
+          assert(proc and proc.is_alive())
       finally:
         managed_processes[cfg.proc_name].signal(signal.SIGKILL)
         managed_processes[cfg.proc_name].stop()
@@ -526,7 +533,7 @@ def setup_vision_ipc(cfg, lr):
   return vipc_server
 
 
-def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, log_dir=None):
+def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, custom_params=None, log_dir=None):
   if platform.system() != "Darwin":
     os.environ["PARAMS_ROOT"] = "/dev/shm/params"
   if log_dir is not None:
@@ -538,6 +545,12 @@ def setup_env(CP=None, cfg=None, controlsState=None, lr=None, fingerprint=None, 
   params.put_bool("Passive", False)
   params.put_bool("DisengageOnAccelerator", True)
   params.put_bool("DisableLogging", False)
+  if custom_params is not None:
+    for k, v in custom_params.items():
+      if type(v) == bool:
+        params.put_bool(k, v)
+      else:
+        params.put(k, v)
 
   os.environ["NO_RADAR_SLEEP"] = "1"
   os.environ["REPLAY"] = "1"
