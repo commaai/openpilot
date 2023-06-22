@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from cereal import messaging
 from selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 
@@ -13,35 +15,36 @@ def migrate_all(lr, old_logtime=False, camera_states=False):
 
 def migrate_cameraStates(lr):
   all_msgs = []
-  prev_frame_ids = {}
-  min_frame_logtimes = {}
-  sorted_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  frame_to_encode_id = defaultdict(dict)
 
-  for cam_state in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
-    min_frame_logtimes[cam_state] = next((msg.logMonoTime for msg in sorted_msgs if msg.which() == cam_state), None)
-
-  for msg in sorted_msgs:
-    if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
-      all_msgs.append(msg)
-
+  for msg in lr:
     if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
       continue
-
-    meta = meta_from_encode_index(msg.which())
-    new_msg = messaging.new_message(meta.camera_state)
-    camera_state = getattr(new_msg, meta.camera_state)
-
+    
     encode_index = getattr(msg, msg.which())
+    meta = meta_from_encode_index(msg.which())
+
     assert encode_index.segmentId < 1200, f"Encoder index segmentId greater that 1200: {msg.which()} {encode_index.segmentId}"
-    assert msg.which() not in prev_frame_ids or prev_frame_ids[msg.which()] + 1 == encode_index.segmentId, f"Corrupted encode index: {msg.which()}. FrameId is not sequential."
-    camera_state.frameId = encode_index.segmentId
-    camera_state.encodeId = encode_index.segmentId
-    camera_state.timestampSof = encode_index.timestampSof
-    camera_state.timestampEof = encode_index.timestampEof
+    frame_to_encode_id[meta.camera_state][encode_index.frameId] = encode_index.segmentId
+  
+  for msg in lr:
+    if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
+      all_msgs.append(msg)
+      continue
 
-    prev_frame_ids[msg.which()] = encode_index.segmentId
+    camera_state = getattr(msg, msg.which())
+    encode_id = frame_to_encode_id[msg.which()].get(camera_state.frameId)
+    if encode_id is None:
+      print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}")
+      continue
 
-    new_msg.logMonoTime = min_frame_logtimes[meta.camera_state] + encode_index.segmentId * int(meta.dt * 1e9)
+    new_msg = messaging.new_message(msg.which())
+    new_camera_state = getattr(new_msg, new_msg.which())
+    new_camera_state.frameId = encode_id
+    new_camera_state.encodeId = encode_id
+    new_camera_state.timestampSof = camera_state.timestampSof
+    new_camera_state.timestampEof = camera_state.timestampEof
+    new_msg.logMonoTime = msg.logMonoTime
     new_msg.valid = msg.valid
 
     all_msgs.append(new_msg.as_reader())
