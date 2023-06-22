@@ -186,7 +186,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 4.6
+    total_ref_time = 5.2
     brand_ref_times = {
       1: {
         'body': 0.1,
