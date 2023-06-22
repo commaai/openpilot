@@ -247,6 +247,17 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
   },
   extra_ecus=[
+    # All known ECUs on a late-model Toyota vehicle not queried here:
+    # Responds to UDS:
+    # - Combination Meter (0x7c0)
+    # - HV Battery (0x713, 0x747)
+    # - Motor Generator (0x716, 0x724)
+    # Responds to KWP:
+    # - Air Conditioner (0x7c4)
+    # - Steering Angle Sensor (0x7b3)
+    # - EPS/EMPS (0x7a0, 0x7a1)
+    # - SRS Airbag (0x780, 0x784)
+
     # These have been seen responding to UDS query
     # TODO: if these hybrid ECUs always exist together, remove one
     (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
