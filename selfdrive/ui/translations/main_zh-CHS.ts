@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -355,42 +382,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>当前目的地</translation>
+        <source>NAVIGATION</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>清空</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>最近目的地</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>试用导航测试版</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>订阅comma prime以获取导航。
-立即注册：https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>家：未设定</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>工作：未设定</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>无最近目的地</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -671,10 +670,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>软件</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>导航</translation>
     </message>
 </context>
 <context>
