@@ -269,7 +269,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
     #icon { background-color: #3B4356; border-radius: 48px; }
     #subtitle { color: #9BA0A5; }
-    #action { border: none; border-radius: 48px; padding-bottom: 4px; }
+    #action { border: none; border-radius: 48px; color: #FFFFFF; padding-bottom: 4px; }
 
     /* current destination */
     [current="true"] { background-color: #E8E8E8; }
@@ -281,7 +281,6 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
     /* no saved destination */
     [set="false"] QLabel { color: #9BA0A5; }
     [current="true"][set="false"] QLabel { color: #A0000000; }
-    [current="true"][set="false"] #action { color: #333333; }
 
     /* pressed */
     [current="false"]:pressed { background-color: #18191B; }
