@@ -27,12 +27,12 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   heading_frame->setSpacing(32);
   {
     if (closeable) {
-      auto *close_btn = new QPushButton("×");
+      auto *close_btn = new QPushButton("←");
       close_btn->setStyleSheet(R"(
         QPushButton {
           color: #FFFFFF;
           font-size: 100px;
-          padding-bottom: 14px;
+          padding-bottom: 8px;
           border 1px grey solid;
           border-radius: 70px;
           background-color: #292929;
