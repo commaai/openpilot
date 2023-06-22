@@ -218,7 +218,6 @@ void MapSettings::refresh() {
   }
 
   destinations_layout->addStretch();
-  repaint();
 }
 
 void MapSettings::navigateTo(const QJsonObject &place) {
