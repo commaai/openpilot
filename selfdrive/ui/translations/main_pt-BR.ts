@@ -509,7 +509,7 @@
 <context>
     <name>OnroadAlerts</name>
     <message>
-        <source>%1 in Progress: %2%</source>
+        <source>%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -582,6 +582,10 @@
     </message>
     <message>
         <source>Calibration in Progress</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Calibration in Progress: %1%</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1007,10 +1011,6 @@ Gear</source>
     </message>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
