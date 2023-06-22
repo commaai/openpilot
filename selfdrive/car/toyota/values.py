@@ -250,7 +250,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # These have been seen responding to UDS query
     (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
     (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
-    (Ecu.epb, 0x750, 0x2c),  # Electronic Parking Brake
+    (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     (Ecu.telematics, 0x750, 0xc7),
   ],
 )
