@@ -118,7 +118,7 @@ void SNPEModel::setInputBuffer(const char *name, float *buffer, int size) {
   for (auto &input : inputs) {
     if (strcmp(name, input.name) == 0) {
       assert(input.size == size || input.size == 0);
-      assert(input.snpe_buffer->setBufferAddress(buffer) == 0);
+      assert(input.snpe_buffer->setBufferAddress(buffer) == true);
       input.buffer = buffer;
       input.size = size;
       return;
