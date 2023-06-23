@@ -12,7 +12,7 @@ import selfdrive.test.process_replay.process_replay as pr
 # These processes currently fail because of unrealistic data breaking assumptions
 # that openpilot makes causing error with NaN, inf, int size, array indexing ...
 # TODO: Make each one testable
-NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'laikad', 'dmonitoringmodeld', 'modeld', 'torqued', 'radard']
+NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'laikad', 'dmonitoringmodeld', 'modeld']
 TEST_CASES = [(cfg.proc_name, cfg) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 
 class TestFuzzProcesses(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestFuzzProcesses(unittest.TestCase):
     msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
-    pr.replay_process(cfg, lr, TOYOTA.COROLLA_TSS2, disable_progress=True)
+    pr.replay_process(cfg, lr, TOYOTA.COROLLA_TSS2, TOYOTA.COROLLA_TSS2, disable_progress=True)
 
 if __name__ == "__main__":
   unittest.main()
