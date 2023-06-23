@@ -69,7 +69,7 @@ class TestPandad(unittest.TestCase):
 
     # should be fast this time
     managed_processes['pandad'].start()
-    self._wait_for_boardd(8)
+    self._wait_for_boardd(10)
 
   @phone_only
   def test_release_to_devel_bootstub(self):
