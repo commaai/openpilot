@@ -1,5 +1,7 @@
 #include "tools/cabana/util.h"
 
+#include <array>
+
 #include <QColor>
 #include <QFontDatabase>
 #include <QLocale>
