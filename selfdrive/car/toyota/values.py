@@ -260,8 +260,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
     # TODO: if these duplicate ECUs always exist together, remove one
     # On some cars, EPB is controlled by the ABS module
-    (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
+    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
