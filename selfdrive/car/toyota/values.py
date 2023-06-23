@@ -257,6 +257,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - Air Conditioner (0x7c4)
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # - Central Gateway ((0x750, 0x5f))
 
     # TODO: if these duplicate ECUs always exist together, remove one
     # On some cars, EPB is controlled by the ABS module
