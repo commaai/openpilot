@@ -258,8 +258,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
 
-    # These have been seen responding to UDS query
     # TODO: if these duplicate ECUs always exist together, remove one
+    # On some cars, EPB is controlled by the ABS module
     (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
     (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
     (Ecu.srs, 0x780, None),     # SRS Airbag
