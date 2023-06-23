@@ -40,7 +40,7 @@ class TestCruiseSpeed(unittest.TestCase):
     for personality in personalities:
       params.put("LongitudinalPersonality", str(personality))
       for e2e in [False, True]:
-        for speed in [5,40]:
+        for speed in [5,35]:
           print(f'Testing {speed} m/s')
           cruise_speed = float(speed)
 

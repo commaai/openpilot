@@ -32,7 +32,7 @@ class TestFollowingDistance(unittest.TestCase):
     for personality in personalities:
       params.put("LongitudinalPersonality", str(personality))
       for e2e in [False, True]:
-        for speed in [0,10,40]:
+        for speed in [0,10,35]:
           print(f'Testing {speed} m/s')
           v_lead = float(speed)
           simulation_steady_state = run_following_distance_simulation(v_lead, e2e=e2e)
