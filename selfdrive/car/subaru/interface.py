@@ -13,7 +13,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "subaru"
     ret.radarUnavailable = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
-    ret.autoResumeSng = candidate in GLOBAL_GEN2
+    ret.autoResumeSng = candidate not in PREGLOBAL_CARS
 
     # Detect infotainment message sent from the camera
     if candidate not in PREGLOBAL_CARS and 0x323 in fingerprint[2]:

@@ -11,7 +11,6 @@ class CarController:
     self.frame = 0
 
     self.cruise_button_prev = 0
-    self.last_cancel_frame = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -20,6 +19,7 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
+    pcm_resume_cmd = CC.cruiseControl.resume
 
     can_sends = []
 
@@ -63,12 +63,14 @@ class CarController:
         self.cruise_button_prev = cruise_button
 
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
-
     else:
-      if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
+      if pcm_cancel_cmd:
         bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
-        self.last_cancel_frame = self.frame
+      
+      if pcm_resume_cmd:
+        bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 2
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, pcm_resume_cmd, bus))
 
       if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
@@ -80,10 +82,6 @@ class CarController:
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
     
-    if self.CP.carFingerprint in GLOBAL_GEN2:
-      if CC.cruiseControl.resume:
-        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, True, 2))
-
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
