@@ -179,7 +179,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     if (model_output != nullptr) {
       model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
-                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
+                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), nav_enabled, live_calib_seen);
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
 

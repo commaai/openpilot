@@ -285,6 +285,6 @@ ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide
 void model_free(ModelState* s);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid);
+                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool nav_enabled, const bool valid);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid);
