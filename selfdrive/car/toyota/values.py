@@ -265,6 +265,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
+    (Ecu.transmission, 0x701, None),
     (Ecu.telematics, 0x750, 0xc7),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
