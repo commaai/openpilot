@@ -69,8 +69,9 @@ class CarController:
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
       
       if pcm_resume_cmd:
-        bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 2
-        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, pcm_resume_cmd, bus))
+        if self.CP.carFingerprint in GLOBAL_GEN2:
+          can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, pcm_resume_cmd, 1))
+        can_sends.append(subarucan.create_throttle(self.packer, CS.throttle_msg, pcm_resume_cmd, 2))
 
       if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg))
