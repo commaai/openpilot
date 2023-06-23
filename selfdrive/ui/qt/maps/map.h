@@ -11,6 +11,7 @@
 #include <QMouseEvent>
 #include <QOpenGLWidget>
 #include <QPixmap>
+#include <QPushButton>
 #include <QScopedPointer>
 #include <QString>
 #include <QVBoxLayout>
@@ -110,6 +111,8 @@ private:
 
   MapInstructions* map_instructions;
   MapETA* map_eta;
+  QPushButton *settings_btn;
+  QPixmap directions_icon, settings_icon;
 
   void clearRoute();
   void updateDestinationMarker();
@@ -125,5 +128,7 @@ signals:
   void distanceChanged(float distance);
   void instructionsChanged(cereal::NavInstruction::Reader instruction);
   void ETAChanged(float seconds, float seconds_typical, float distance);
-};
 
+  void requestVisible(bool visible);
+  void openSettings();
+};

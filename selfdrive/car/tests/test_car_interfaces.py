@@ -9,14 +9,14 @@ from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
-from selfdrive.test.fuzzy_generation import FuzzyGenerator
+from selfdrive.test.fuzzy_generation import get_random_msg
 
 
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
   @settings(max_examples=5)
-  @given(cc_msg=FuzzyGenerator.get_random_msg(car.CarControl, real_floats=True))
+  @given(cc_msg=get_random_msg(car.CarControl, real_floats=True))
   def test_car_interfaces(self, car_name, cc_msg):
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]

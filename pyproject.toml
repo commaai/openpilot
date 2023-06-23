@@ -178,6 +178,7 @@ omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
 tritonclient = {version = "2.28.0", extras = ["http"]}
 tensorrt = "^8.6.0"
+transformers = "^4.29.2"
 
 
 [build-system]

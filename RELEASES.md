@@ -1,8 +1,11 @@
 Version 0.9.4 (2023-XX-XX)
 ========================
+* Navigate on openpilot
+* UI updates
+  * navigation settings moved to home screen and map
 * Ford Focus 2018 support
 
-Version 0.9.3 (2023-06-20)
+Version 0.9.3 (2023-06-29)
 ========================
 * New driving model
   * Improved height estimation and added height tracking in liveCalibration
