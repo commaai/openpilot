@@ -16,7 +16,11 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
 
-    ret.gas = cp.vl["Throttle"]["Throttle_Pedal"] / 255.
+    cp_throttle = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp
+
+    self.throttle_msg = copy.copy(cp_throttle.vl["Throttle"])
+
+    ret.gas = cp_throttle.vl["Throttle"]["Throttle_Pedal"] / 255.
     ret.gasPressed = ret.gas > 1e-5
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
@@ -88,8 +92,6 @@ class CarState(CarStateBase):
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
       self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
-    
-    self.throttle_msg = copy.copy(cp.vl["Throttle"])
 
     return ret
 
@@ -103,8 +105,19 @@ class CarState(CarStateBase):
       ("RL", "Wheel_Speeds"),
       ("RR", "Wheel_Speeds"),
       ("Brake", "Brake_Status"),
+      ("CHECKSUM", "Throttle"),
+      ("COUNTER", "Throttle"),
+      ("Signal1", "Throttle"),
+      ("Engine_RPM", "Throttle"),
+      ("Signal2", "Throttle"),
+      ("Throttle_Pedal", "Throttle"),
+      ("Throttle_Cruise", "Throttle"),
+      ("Throttle_Combo", "Throttle"),
+      ("Signal3", "Throttle"),
+      ("Off_Accel", "Throttle"),
     ]
     checks = [
+      ("Throttle", 100),
       ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
@@ -164,18 +177,6 @@ class CarState(CarStateBase):
       ("Steer_Error_1", "Steering_Torque"),
 
       ("Brake_Pedal", "Brake_Pedal"),
-
-      ("CHECKSUM", "Throttle"),
-      ("COUNTER", "Throttle"),
-      ("Signal1", "Throttle"),
-      ("Engine_RPM", "Throttle"),
-      ("Signal2", "Throttle"),
-      ("Throttle_Pedal", "Throttle"),
-      ("Throttle_Cruise", "Throttle"),
-      ("Throttle_Combo", "Throttle"),
-      ("Signal3", "Throttle"),
-      ("Off_Accel", "Throttle"),
-
       ("LEFT_BLINKER", "Dashlights"),
       ("RIGHT_BLINKER", "Dashlights"),
       ("SEATBELT_FL", "Dashlights"),
@@ -190,7 +191,6 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("Throttle", 100),
       ("Dashlights", 10),
       ("Brake_Pedal", 50),
       ("Transmission", 100),
