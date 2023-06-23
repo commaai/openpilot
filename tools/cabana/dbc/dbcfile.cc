@@ -136,7 +136,6 @@ void DBCFile::parse(const QString &content) {
           dbc_assert(++multiplexor_cnt < 2, "Multiple multiplexor");
           s.type = cabana::Signal::Type::Multiplexor;
         } else {
-          dbc_assert(multiplexor_cnt == 1, "No multiplexor");
           s.type = cabana::Signal::Type::Multiplexed;
           s.multiplex_value = indicator.mid(1).toInt();
         }
