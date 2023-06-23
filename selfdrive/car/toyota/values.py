@@ -225,20 +225,20 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter],
+                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter],
+      whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter],
+                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission],
       bus=0,
     ),
   ],
@@ -258,13 +258,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
 
-    # These have been seen responding to UDS query
     # TODO: if these duplicate ECUs always exist together, remove one
+    # On some cars, EPB is controlled by the ABS module
     (Ecu.hybrid, 0x712, None),  # Hybrid Control Assembly & Computer
     (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer 2
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
+    (Ecu.transmission, 0x701, None),
     (Ecu.telematics, 0x750, 0xc7),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
