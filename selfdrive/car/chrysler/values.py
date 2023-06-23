@@ -167,7 +167,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      whitelist_ecus=[Ecu.abs, Ecu.hybrid, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
     Request(
@@ -178,8 +178,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
   ],
 )
 
@@ -224,6 +224,7 @@ FW_VERSIONS = {
       b'68453511AC',
       b'68453513AD',
       b'68453514AD',
+      b'68510280AG',
       b'68510283AG',
       b'68527346AE',
       b'68527375AD',
@@ -236,6 +237,7 @@ FW_VERSIONS = {
       b'68490898AA',
       b'68500728AA',
       b'68615033AA',
+      b'68615034AA',
     ],
     (Ecu.abs, 0x747, None): [
       b'68292406AH',
@@ -281,11 +283,13 @@ FW_VERSIONS = {
       b'68552788AA',
       b'68552789AA',
       b'68552790AA',
+      b'68585109AB',
       b'68585112AB',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05036065AE ',
       b'05036066AE ',
+      b'05149591AD ',
       b'05149846AA ',
       b'05149848AA ',
       b'68378701AI ',
@@ -298,6 +302,7 @@ FW_VERSIONS = {
       b'68539650AD',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'05149536AC',
       b'68360078AL',
       b'68360080AM',
       b'68360081AM',

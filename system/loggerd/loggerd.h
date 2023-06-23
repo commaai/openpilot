@@ -35,69 +35,87 @@
 
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = 10000000;
-const int DCAM_BITRATE = MAIN_BITRATE;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
-struct LogCameraInfo {
-  CameraType type;
+class EncoderInfo {
+public:
+  const char *publish_name;
   const char *filename;
-  VisionStreamType stream_type;
-  int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool has_qcamera;
-  bool record;
+  bool record = true;
+  int frame_width = 1928;
+  int frame_height = 1208;
+  int fps = MAIN_FPS;
+  int bitrate = MAIN_BITRATE;
+  cereal::EncodeIndex::Type encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C;
+  ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
+  void (cereal::Event::Builder::*set_encode_idx_func)(::cereal::EncodeIndex::Reader);
 };
 
-const LogCameraInfo cameras_logged[] = {
-  {
-    .type = RoadCam,
-    .stream_type = VISION_STREAM_ROAD,
-    .filename = "fcamera.hevc",
-    .fps = MAIN_FPS,
-    .bitrate = MAIN_BITRATE,
-    .is_h265 = true,
-    .has_qcamera = true,
-    .record = true,
-    .frame_width = 1928,
-    .frame_height = 1208,
-  },
-  {
-    .type = DriverCam,
-    .stream_type = VISION_STREAM_DRIVER,
-    .filename = "dcamera.hevc",
-    .fps = MAIN_FPS,
-    .bitrate = DCAM_BITRATE,
-    .is_h265 = true,
-    .has_qcamera = false,
-    .record = Params().getBool("RecordFront"),
-    .frame_width = 1928,
-    .frame_height = 1208,
-  },
-  {
-    .type = WideRoadCam,
-    .stream_type = VISION_STREAM_WIDE_ROAD,
-    .filename = "ecamera.hevc",
-    .fps = MAIN_FPS,
-    .bitrate = MAIN_BITRATE,
-    .is_h265 = true,
-    .has_qcamera = false,
-    .record = true,
-    .frame_width = 1928,
-    .frame_height = 1208,
-  },
+class LogCameraInfo {
+public:
+  const char *thread_name;
+  int fps = MAIN_FPS;
+  CameraType type;
+  VisionStreamType stream_type;
+  std::vector<EncoderInfo> encoder_infos;
 };
-const LogCameraInfo qcam_info = {
+
+const EncoderInfo main_road_encoder_info = {
+  .publish_name = "roadEncodeData",
+  .filename = "fcamera.hevc",
+  .get_encode_data_func = &cereal::Event::Reader::getRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setRoadEncodeIdx,
+};
+const EncoderInfo main_wide_road_encoder_info = {
+  .publish_name = "wideRoadEncodeData",
+  .filename = "ecamera.hevc",
+  .get_encode_data_func = &cereal::Event::Reader::getWideRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setWideRoadEncodeIdx,
+};
+const EncoderInfo main_driver_encoder_info = {
+   .publish_name = "driverEncodeData",
+  .filename = "dcamera.hevc",
+  .record = Params().getBool("RecordFront"),
+  .get_encode_data_func = &cereal::Event::Reader::getDriverEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setDriverEncodeIdx,
+};
+
+const EncoderInfo qcam_encoder_info = {
+  .publish_name = "qRoadEncodeData",
   .filename = "qcamera.ts",
-  .fps = MAIN_FPS,
   .bitrate = 256000,
-  .is_h265 = false,
-  .record = true,
+  .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .frame_width = 526,
   .frame_height = 330,
+  .get_encode_data_func = &cereal::Event::Reader::getQRoadEncodeData,
+  .set_encode_idx_func = &cereal::Event::Builder::setQRoadEncodeIdx,
 };
+
+
+const LogCameraInfo road_camera_info{
+    .thread_name = "road_cam_encoder",
+    .type = RoadCam,
+    .stream_type = VISION_STREAM_ROAD,
+    .encoder_infos = {main_road_encoder_info, qcam_encoder_info}
+    };
+
+const LogCameraInfo wide_road_camera_info{
+    .thread_name = "wide_road_cam_encoder",
+    .type = WideRoadCam,
+    .stream_type = VISION_STREAM_WIDE_ROAD,
+   .encoder_infos = {main_wide_road_encoder_info}
+    };
+  
+const LogCameraInfo driver_camera_info{
+    .thread_name = "driver_cam_encoder",
+    .type = DriverCam,
+    .stream_type = VISION_STREAM_DRIVER,
+    .encoder_infos = {main_driver_encoder_info}
+    };
+
+const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
+

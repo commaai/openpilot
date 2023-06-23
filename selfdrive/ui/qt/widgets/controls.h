@@ -298,17 +298,3 @@ public:
     setLayout(l);
   }
 };
-
-class ClickableWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  ClickableWidget(QWidget *parent = nullptr);
-
-protected:
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void paintEvent(QPaintEvent *) override;
-
-signals:
-  void clicked();
-};

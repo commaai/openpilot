@@ -1,10 +1,7 @@
 import re
-from datetime import datetime
-from dateutil import rrule
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, IntFlag
-from typing import DefaultDict, Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from cereal import car
 from panda.python import uds
@@ -12,7 +9,6 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
-from system.swaglog import cloudlog
 
 Ecu = car.CarParams.Ecu
 
@@ -348,33 +344,73 @@ FINGERPRINTS = {
 }
 
 
-def get_platform_codes(fw_versions: List[bytes]) -> Set[bytes]:
-  codes: DefaultDict[bytes, Set[bytes]] = defaultdict(set)
+def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
+  # Returns unique, platform-specific identification codes for a set of versions
+  codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
-    match = PLATFORM_CODE_PATTERN.search(fw)
-    if match is not None:
-      code, date = match.groups()
-      codes[code].add(date)
+    code_match = PLATFORM_CODE_FW_PATTERN.search(fw)
+    part_match = PART_NUMBER_FW_PATTERN.search(fw)
+    date_match = DATE_FW_PATTERN.search(fw)
+    if code_match is not None:
+      code: bytes = code_match.group()
+      part = part_match.group() if part_match else None
+      date = date_match.group() if date_match else None
+      if part is not None:
+        # part number starts with generic ECU part type, add what is specific to platform
+        code += b"-" + part[-5:]
 
-  # Create platform codes for all dates inclusive if ECU has FW dates
-  final_codes = set()
-  for code, dates in codes.items():
-    # Radar and some cameras don't have FW dates
-    if None in dates:
-      final_codes.add(code)
-      continue
+      codes.add((code, date))
+  return codes
 
-    try:
-      parsed = {datetime.strptime(date.decode()[:4], '%y%m') for date in dates}
-    except ValueError:
-      cloudlog.exception(f'Error parsing date in FW versions: {code!r}, {dates}')
-      final_codes.add(code)
-      continue
 
-    for date in rrule.rrule(rrule.MONTHLY, dtstart=min(parsed), until=max(parsed)):
-      final_codes.add(code + b'-' + date.strftime('%y%m').encode())
+def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
+  # Non-electric CAN FD platforms often do not have platform code specifiers needed
+  # to distinguish between hybrid and ICE. All EVs so far are either exclusively
+  # electric or specify electric in the platform code.
+  fuzzy_platform_blacklist = set(CANFD_CAR - EV_CAR)
+  candidates = set()
 
-  return final_codes
+  for candidate, fws in FW_VERSIONS.items():
+    # Keep track of ECUs which pass all checks (platform codes, within date range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
+        continue
+
+      # Expected platform codes & dates
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_dates = {date for _, date in codes if date is not None}
+
+      # Found platform codes & dates
+      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_dates = {date for _, date in codes if date is not None}
+
+      # Check platform code + part number matches for any found versions
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      if ecu[0] in DATE_FW_ECUS:
+        # If ECU can have a FW date, require it to exist
+        # (this excludes candidates in the database without dates)
+        if not len(expected_dates) or not len(found_dates):
+          break
+
+        # Check any date within range in the database, format is %y%m%d
+        if not any(min(expected_dates) <= found_date <= max(expected_dates) for found_date in found_dates):
+          break
+
+      valid_found_ecus.add(addr)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return candidates - fuzzy_platform_blacklist
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -390,8 +426,17 @@ HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]
 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
-PLATFORM_CODE_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
-                                   b')[A-Z]{2}[A-Za-z0-9]{0,2})(?:.*([0-9]{6}))?')
+# Regex patterns for parsing platform code, FW date, and part number from FW versions
+PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
+PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+# TODO: use abs, it has the platform code and part number on many platforms
+PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
+# So far we've only seen dates in fwdCamera
+DATE_FW_ECUS = [Ecu.fwdCamera]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -449,9 +494,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
     (Ecu.cornerRadar, 0x7b7, None),
   ],
-  fuzzy_get_platform_codes=get_platform_codes,
-  # Camera and radar should exist on all cars
-  platform_code_ecus=[Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps],
+  # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 FW_VERSIONS = {
@@ -628,11 +672,9 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0210\x00 4DNAC102',
       b'\xf1\x8756310L0010\x00\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',  # modified firmware
-      b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS R 1.00 1.00 57700-L0000 4DNAP100',
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x8756310-L0010\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x8756310-L0210\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC101',
       b'\xf1\x8756310-L1010\xf1\x00DN8 MDPS C 1.00 1.03 56310-L1010 4DNDC103',
@@ -1534,10 +1576,8 @@ FW_VERSIONS = {
       b'\xf1\x8799110AA000\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106',
-      b'\xf1\x8756310/AA070\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
-      b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106\xf1\xa01.06',
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106',
+      b'\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',

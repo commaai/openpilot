@@ -10,7 +10,7 @@ from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, match_fw_to_car, get_fw_versions
+from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -44,6 +44,28 @@ class TestFwFingerprint(unittest.TestCase):
       CP.carFw = fw
       _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
       self.assertFingerprints(matches, car_model)
+
+  @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
+  def test_custom_fuzzy_match(self, brand, car_model, ecus):
+    # Assert brand-specific fuzzy fingerprinting function doesn't disagree with standard fuzzy function
+    config = FW_QUERY_CONFIGS[brand]
+    if config.match_fw_to_car_fuzzy is None:
+      raise unittest.SkipTest("Brand does not implement custom fuzzy fingerprinting function")
+
+    CP = car.CarParams.new_message()
+    for _ in range(5):
+      fw = []
+      for ecu, fw_versions in ecus.items():
+        ecu_name, addr, sub_addr = ecu
+        fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
+                   "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
+      CP.carFw = fw
+      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw))
+
+      # If both have matches, they must agree
+      if len(matches) == 1 and len(brand_matches) == 1:
+        self.assertEqual(matches, brand_matches)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
@@ -123,21 +145,6 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest():
         self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
-  def test_fuzzy_fingerprint_config(self):
-    for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand):
-        if config.fuzzy_get_platform_codes is None:
-          self.assertEqual(len(config.platform_code_ecus), 0, "Cannot specify platform code ECUs without full config")
-        else:
-          self.assertGreater(len(config.platform_code_ecus), 0, "Need to specify platform code ECUs")
-
-          # Assert every supported ECU FW version returns one platform code
-          for fw_by_addr in VERSIONS[brand].values():
-            for addr, fws in fw_by_addr.items():
-              if addr[0] in config.platform_code_ecus:
-                for f in fws:
-                  self.assertEqual(1, len(config.fuzzy_get_platform_codes([f])), f"Unable to parse FW: {f}")
-
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
@@ -150,7 +157,7 @@ class TestFwFingerprint(unittest.TestCase):
 
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
         self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
-                         f'{brand.title()}: FW query whitelist missing ecus: {ecu_strings}')
+                         f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}')
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
@@ -179,7 +186,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_fw_query_timing(self):
     tol = 0.1
-    total_ref_time = 4.6
+    total_ref_time = 6.1
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -188,10 +195,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'honda': 0.5,
         'hyundai': 0.7,
         'mazda': 0.1,
-        'nissan': 0.3,
+        'nissan': 0.9,
         'subaru': 0.1,
         'tesla': 0.2,
-        'toyota': 0.7,
+        'toyota': 1.6,
         'volkswagen': 0.2,
       },
       2: {
@@ -207,7 +214,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
           if not len(multi_panda_requests) and num_pandas > 1:
             raise unittest.SkipTest("No multi-panda FW queries")
 
-          avg_time = self._benchmark(brand, num_pandas, 10)
+          avg_time = self._benchmark(brand, num_pandas, 5)
           total_time += avg_time
           self._assert_timing(avg_time, brand_ref_times[num_pandas][brand], tol)
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')

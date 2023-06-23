@@ -15,8 +15,6 @@ public:
   DBCFile(const QString &name, const QString &content, QObject *parent=nullptr);
   ~DBCFile() {}
 
-  void open(const QString &content);
-
   bool save();
   bool saveAs(const QString &new_filename);
   bool autoSave();
@@ -40,7 +38,7 @@ public:
   QString filename;
 
 private:
-  void parseExtraInfo(const QString &content);
+  void parse(const QString &content);
   std::map<uint32_t, cabana::Msg> msgs;
   QString name_;
 };
