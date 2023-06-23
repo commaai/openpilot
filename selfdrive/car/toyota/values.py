@@ -257,7 +257,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - Air Conditioner (0x7c4)
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
-    # - Central Gateway ((0x750, 0x5f))
 
     # TODO: if these duplicate ECUs always exist together, remove one
     # On some cars, EPB is controlled by the ABS module
@@ -265,8 +264,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
-    (Ecu.transmission, 0x701, None),
+    (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
+    (Ecu.transmission, 0x701, None),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
 )
