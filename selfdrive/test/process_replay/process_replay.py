@@ -493,6 +493,7 @@ def _replay_single_process(
                 if vipc_server is not None and m.which() in cfg.vision_pubs:
                   camera_state = getattr(m, m.which())
                   camera_meta = meta_from_camera_state(m.which())
+                  assert frs is not None
                   img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
                   vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
