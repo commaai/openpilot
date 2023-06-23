@@ -129,7 +129,7 @@ def main() -> NoReturn:
 
       try:
         log_state = json.loads(params.get("PandaLogState"))
-        if log_state is not dict:
+        if log_state.__class__ is not dict:
           log_state = {}
       except (TypeError, json.JSONDecodeError):
         log_state = {}
