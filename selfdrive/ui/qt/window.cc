@@ -79,16 +79,19 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+  bool ignore = false;
   switch (event->type()) {
     case QEvent::TouchBegin:
     case QEvent::TouchUpdate:
     case QEvent::TouchEnd:
     case QEvent::MouseButtonPress:
-    case QEvent::MouseMove:
+    case QEvent::MouseMove: {
+      ignore = !uiState()->awake;
       device.resetInteractiveTimout();
       break;
+    }
     default:
       break;
   }
-  return false;
+  return ignore;
 }
