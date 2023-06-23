@@ -34,6 +34,12 @@ class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 
 
+class CanBus:
+  main = 0
+  alt = 1
+  camera = 2
+
+
 class CAR:
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
