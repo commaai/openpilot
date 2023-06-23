@@ -26,7 +26,7 @@ def create_throttle(packer, throttle_msg, throttle_cmd, bus):
     "Off_Accel"
   ]}
 
-  values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
+  values["COUNTER"] = (values["COUNTER"] + 2) % 0x10
   
   if throttle_cmd:
     values["Throttle_Pedal"] = 5
