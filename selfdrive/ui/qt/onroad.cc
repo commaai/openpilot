@@ -3,12 +3,13 @@
 #include <cmath>
 
 #include <QDebug>
+#include <QMouseEvent>
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
 #ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/maps/map_panel.h"
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
@@ -78,10 +79,15 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+#ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
+    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
+      return;
+    }
     map->setVisible(!sidebarVisible && !map->isVisible());
   }
+#endif
   // propagation event to parent(HomeWindow)
   QWidget::mousePressEvent(e);
 }
@@ -90,16 +96,14 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     if (map == nullptr && (uiState()->primeType() || !MAPBOX_TOKEN.isEmpty())) {
-      MapWindow * m = new MapWindow(get_mapbox_settings());
+      auto m = new MapPanel(get_mapbox_settings());
       map = m;
-
-      QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s);
       split->insertWidget(0, m);
 
-      // Make map visible after adding to split
-      m->offroadTransition(offroad);
+      // hidden by default, made visible when navRoute is published
+      m->setVisible(false);
     }
   }
 #endif
@@ -556,8 +560,9 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   painter.save();
 
   // base icon
-  int x = rightHandDM ? rect().right() -  (btn_size - 24) / 2 - (bdr_s * 2) : (btn_size - 24) / 2 + (bdr_s * 2);
-  int y = rect().bottom() - footer_h / 2;
+  int offset = bdr_s + btn_size / 2;
+  int x = rightHandDM ? width() - offset : offset;
+  int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;
   drawIcon(painter, x, y, dm_img, blackColor(70), opacity);
 
