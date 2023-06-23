@@ -82,8 +82,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   rgb_width = ci->frame_width;
   rgb_height = ci->frame_height;
 
-  yuv_transform = get_model_yuv_transform();
-
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
   assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, rgb_width));

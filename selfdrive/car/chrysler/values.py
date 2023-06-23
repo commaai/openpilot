@@ -167,7 +167,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      whitelist_ecus=[Ecu.abs, Ecu.hybrid, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
     Request(
@@ -178,8 +178,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
   ],
 )
 
