@@ -264,7 +264,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
     # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
-    # If it is, EPB should be controlled by the ABS module
+    # If it is standard, EPB control is likely managed by the ABS module
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
