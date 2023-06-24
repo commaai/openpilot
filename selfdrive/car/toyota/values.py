@@ -268,6 +268,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
     (Ecu.transmission, 0x701, None),
+    # A few platforms have a tester present response on this address, add to log
+    (Ecu.transmission, 0x7e1, None),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
 )
