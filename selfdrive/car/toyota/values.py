@@ -268,12 +268,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
     # On some cars, EPB is controlled by the ABS module
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
+    # This isn't accessible on all cars
     (Ecu.gateway, 0x750, 0x5f),
+    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
     (Ecu.telematics, 0x750, 0xc7),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
     (Ecu.transmission, 0x7e1, None),
+    # On some cars, this only responds to b'\x1a\x88\x80'
     (Ecu.combinationMeter, 0x7c0, None),
     (Ecu.hvac, 0x7c4, None),
   ],
