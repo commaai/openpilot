@@ -193,11 +193,10 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    present_ecu_ref_time = 0.8
     vin_ref_time = 1.0
+    present_ecu_ref_time = 0.8
 
     fake_socket = FakeSocket()
-
     present_ecu_time = 0.0
     for _ in range(self.N):
       thread = threading.Thread(target=get_present_ecus, args=(fake_socket, fake_socket),
