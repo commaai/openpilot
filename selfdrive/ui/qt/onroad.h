@@ -123,6 +123,7 @@ private:
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
+  bool navEnabled = false;
 
 private slots:
   void offroadTransition(bool offroad);

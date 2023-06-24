@@ -24,7 +24,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
-  split->setSpacing(0);
+  split->setSpacing(bdr_s*2);
   split->addWidget(nvg);
 
   if (getenv("DUAL_CAMERA_VIEW")) {
@@ -52,6 +52,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  bool navEnabledNow = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   alerts->updateAlert(alert);
@@ -64,11 +65,18 @@ void OnroadWindow::updateState(const UIState &s) {
 
   nvg->updateState(s);
 
-  if (bg != bgColor) {
-    // repaint border
-    bg = bgColor;
-    update();
+  // update spacing
+  if (navEnabled != navEnabledNow) {
+    split->setSpacing(navEnabledNow ? 0 : bdr_s*2);
+    if (map) {
+      map->setFixedWidth(width() / 2 - bdr_s * (navEnabledNow ? 1 : 2));
+    }
   }
+
+  // repaint border
+  bg = bgColor;
+  navEnabled = navEnabledNow;
+  update();
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
@@ -79,6 +87,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
       return;
     }
     map->setVisible(!sidebarVisible && !map->isVisible());
+    update();
   }
 #endif
   // propagation event to parent(HomeWindow)
@@ -92,7 +101,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
-      m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s);
+      m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s*2);
       split->insertWidget(0, m);
 
       // hidden by default, made visible when navRoute is published
@@ -106,7 +115,21 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
+  QRect cam_r = QRect(0, 0, width() / 2, height());
+  QRect map_r = QRect(width() / 2, 0, width() / 2, height());
+
+  if (uiState()->scene.map_on_left) {
+    QRect tmp = cam_r;
+    cam_r = map_r;
+    map_r = tmp;
+  }
+
+  p.fillRect(cam_r, QColor(bg.red(), bg.green(), bg.blue(), 255));
+  if (isMapVisible() && !navEnabled) {
+    p.fillRect(map_r, bg_colors[STATUS_DISENGAGED]);
+  } else {
+    p.fillRect(map_r, QColor(bg.red(), bg.green(), bg.blue(), 255));
+  }
 }
 
 // ***** onroad widgets *****
