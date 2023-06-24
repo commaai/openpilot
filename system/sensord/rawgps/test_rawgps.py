@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import json
 import time
 import unittest
@@ -15,20 +16,34 @@ class TestRawgpsd(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
+    cls.sm = messaging.SubMaster(['qcomGnss'])
+
   def tearDown(self):
     managed_processes['rawgpsd'].stop()
+    os.system("sudo systemctl restart ModemManager")
+
+  def _wait_for_output(self, t=10):
+    self.sm.update(0)
+    for __ in range(t):
+      self.sm.update(1 * 1000)
+      if self.sm.updated['qcomGnss']:
+        break
+    return self.sm.updated['qcomGnss']
+
+  def test_wait_for_modem(self):
+    os.system("sudo systemctl stop ModemManager")
+    managed_processes['rawgpsd'].start()
+    assert not self._wait_for_output(5)
+
+    os.system("sudo systemctl restart ModemManager")
+    assert self._wait_for_output()
 
   def test_startup_time(self):
     for _ in range(5):
-      sm = messaging.SubMaster(['qcomGnss'])
       managed_processes['rawgpsd'].start()
 
       start_time = time.monotonic()
-      for __ in range(10):
-        sm.update(1 * 1000)
-        if sm.updated['qcomGnss']:
-          break
-      assert sm.rcv_frame['qcomGnss'] > 0, "rawgpsd didn't start outputting messages in time"
+      assert self._wait_for_output(), "rawgpsd didn't start outputting messages in time"
 
       et = time.monotonic() - start_time
       assert et < 5, f"rawgpsd took {et:.1f}s to start"
