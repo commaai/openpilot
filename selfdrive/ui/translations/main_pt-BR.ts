@@ -523,10 +523,6 @@ trabalho definido</translation>
         <source>CONNECT.COMMA.AI</source>
         <translation>CONNECT.COMMA.AI</translation>
     </message>
-    <message>
-        <source>COMMA POINTS</source>
-        <translation>PONTOS COMMA</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>

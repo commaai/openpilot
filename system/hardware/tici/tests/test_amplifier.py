@@ -38,7 +38,7 @@ class TestAmplifier(unittest.TestCase):
 
   def test_init(self):
     amp = Amplifier(debug=True)
-    r = amp.initialize_configuration(Tici().model)
+    r = amp.initialize_configuration(Tici().get_device_type())
     assert r
     self._check_for_i2c_errors(False)
 
@@ -59,7 +59,7 @@ class TestAmplifier(unittest.TestCase):
       time.sleep(random.randint(0, 5))
 
       amp = Amplifier(debug=True)
-      r = amp.initialize_configuration(Tici().model)
+      r = amp.initialize_configuration(Tici().get_device_type())
       assert r
 
     # make sure we're a good test

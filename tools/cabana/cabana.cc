@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-#include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/streamselector.h"
@@ -35,17 +34,15 @@ int main(int argc, char *argv[]) {
 
   QString dbc_file = cmd_parser.isSet("dbc") ? cmd_parser.value("dbc") : "";
 
-  std::unique_ptr<OpenpilotPrefix> op_prefix;
-  std::unique_ptr<AbstractStream> stream;
-
+  AbstractStream *stream = nullptr;
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new DeviceStream(&app, cmd_parser.value("zmq")));
+    stream = new DeviceStream(&app, cmd_parser.value("zmq"));
   } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
     PandaStreamConfig config = {};
     if (cmd_parser.isSet("panda-serial")) {
       config.serial = cmd_parser.value("panda-serial");
     }
-    stream.reset(new PandaStream(&app, config));
+    stream = new PandaStream(&app, config);
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
@@ -65,36 +62,26 @@ int main(int argc, char *argv[]) {
     }
 
     if (route.isEmpty()) {
-      AbstractStream *out_stream = nullptr;
-      StreamSelector dlg;
-      dlg.addStreamWidget(ReplayStream::widget(&out_stream));
-      dlg.addStreamWidget(PandaStream::widget(&out_stream));
-      dlg.addStreamWidget(DeviceStream::widget(&out_stream));
-      if (!dlg.exec()) {
-        return 0;
-      }
+      StreamSelector dlg(&stream);
+      dlg.exec();
       dbc_file = dlg.dbcFile();
-      stream.reset(out_stream);
     } else {
-      // TODO: Remove when OpenpilotPrefix supports ZMQ
-#ifndef __APPLE__
-      op_prefix.reset(new OpenpilotPrefix());
-#endif
       auto replay_stream = new ReplayStream(&app);
-      stream.reset(replay_stream);
       if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
         return 0;
       }
+      stream = replay_stream;
     }
   }
 
   MainWindow w;
-
-  // Load DBC
+  if (!stream) {
+    stream = new DummyStream(&app);
+  }
+  stream->start();
   if (!dbc_file.isEmpty()) {
     w.loadFile(dbc_file);
   }
-
   w.show();
   return app.exec();
 }

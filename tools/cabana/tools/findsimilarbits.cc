@@ -20,12 +20,8 @@ FindSimilarBitsDlg::FindSimilarBitsDlg(QWidget *parent) : QDialog(parent, Qt::Wi
   QHBoxLayout *src_layout = new QHBoxLayout();
   src_bus_combo = new QComboBox(this);
   find_bus_combo = new QComboBox(this);
-  SourceSet bus_set;
-  for (auto it = can->last_msgs.begin(); it != can->last_msgs.end(); ++it) {
-    bus_set << it.key().source;
-  }
   for (auto cb : {src_bus_combo, find_bus_combo}) {
-    for (uint8_t bus : bus_set) {
+    for (uint8_t bus : can->sources) {
       cb->addItem(QString::number(bus), bus);
     }
     cb->model()->sort(0);

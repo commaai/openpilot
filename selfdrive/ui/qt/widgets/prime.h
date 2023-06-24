@@ -15,6 +15,7 @@ enum PrimeType {
   MAGENTA_NEW = 4,
 };
 
+
 // pairing QR code
 class PairingQRWidget : public QWidget {
   Q_OBJECT
@@ -34,6 +35,7 @@ private slots:
   void refresh();
 };
 
+
 // pairing popup widget
 class PairingPopup : public QDialogBase {
   Q_OBJECT
@@ -42,18 +44,13 @@ public:
   explicit PairingPopup(QWidget* parent);
 };
 
+
 // widget for paired users with prime
-class PrimeUserWidget : public QWidget {
+class PrimeUserWidget : public QFrame {
   Q_OBJECT
+
 public:
   explicit PrimeUserWidget(QWidget* parent = 0);
-
-private:
-  QVBoxLayout* mainLayout;
-  QLabel* points;
-
-private slots:
-  void replyFinished(const QString &response);
 };
 
 
@@ -63,6 +60,7 @@ class PrimeAdWidget : public QFrame {
 public:
   explicit PrimeAdWidget(QWidget* parent = 0);
 };
+
 
 // container widget
 class SetupWidget : public QFrame {

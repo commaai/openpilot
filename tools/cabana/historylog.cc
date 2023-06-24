@@ -138,6 +138,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(InputIt first, I
 }
 
 std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_time, uint64_t min_time) {
+  const QList<uint8_t> mask;
   const auto &events = can->events(msg_id);
   const auto freq = can->lastMessage(msg_id).freq;
   const bool update_colors = !display_signals_mode || sigs.empty();
@@ -150,7 +151,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.rend(), min_time);
     if (update_colors && (min_time > 0 || messages.empty())) {
       for (auto it = msgs.rbegin(); it != msgs.rend(); ++it) {
-        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, freq);
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -163,7 +164,7 @@ std::deque<HistoryLogModel::Message> HistoryLogModel::fetchData(uint64_t from_ti
     auto msgs = fetchData(first, events.cend(), 0);
     if (update_colors) {
       for (auto it = msgs.begin(); it != msgs.end(); ++it) {
-        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, freq);
+        hex_colors.compute(it->data.data(), it->data.size(), it->mono_time / (double)1e9, speed, mask, freq);
         it->colors = hex_colors.colors;
       }
     }
@@ -223,7 +224,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   display_type_cb->setToolTip(tr("Display signal value or raw hex value"));
   comp_box->addItems({">", "=", "!=", "<"});
   value_edit->setClearButtonEnabled(true);
-  value_edit->setValidator(new QDoubleValidator(-500000, 500000, 6, this));
+  value_edit->setValidator(new DoubleValidator(this));
   dynamic_mode->setChecked(true);
   dynamic_mode->setEnabled(!can->liveStreaming());
 

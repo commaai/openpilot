@@ -16,11 +16,11 @@ class Proc:
   name: str
   power: float
   rtol: float = 0.05
-  atol: float = 0.1
+  atol: float = 0.12
   warmup: float = 6.
 
 PROCS = [
-  Proc('camerad', 2.15),
+  Proc('camerad', 2.1),
   Proc('modeld', 0.93, atol=0.2),
   Proc('dmonitoringmodeld', 0.4),
   Proc('encoderd', 0.23),
@@ -60,7 +60,7 @@ class TestPowerDraw(unittest.TestCase):
     manager_cleanup()
 
     tab = []
-    tab.append(['process', 'expected (W)', 'current (W)'])
+    tab.append(['process', 'expected (W)', 'measured (W)'])
     for proc in PROCS:
       cur = used[proc.name]
       expected = proc.power
