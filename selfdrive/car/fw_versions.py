@@ -180,11 +180,13 @@ def get_present_ecus(logcan, sendcan, num_pandas=1) -> Set[EcuAddrBusType]:
         if len(r.whitelist_ecus) == 0 or ecu_type in r.whitelist_ecus:
           a = (addr, sub_addr, r.bus)
           # Build set of queries
-          if sub_addr is None:
+          # Add first sub-address to parallel queries since there will be no conflicts
+          sub_addr_in_parallel_addrs = any(p[1] is not None for p in parallel_queries[r.obd_multiplexing])
+          if sub_addr is None or not sub_addr_in_parallel_addrs:
             if a not in parallel_queries[r.obd_multiplexing]:
               parallel_queries[r.obd_multiplexing].append(a)
           else:  # subaddresses must be queried one by one
-            if [a] not in queries[r.obd_multiplexing]:
+            if [a] not in queries[r.obd_multiplexing] and a not in parallel_queries[r.obd_multiplexing]:
               queries[r.obd_multiplexing].append([a])
 
           # Build set of expected responses to filter
