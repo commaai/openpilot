@@ -180,9 +180,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
     fake_socket = FakeSocket()
     brand_time = 0
     for _ in range(self.N):
-      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                                kwargs=dict(num_pandas=num_pandas))
-      brand_time += self._run_thread(thread)
+      brand_time += self._run_thread(threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+                                                      kwargs=dict(num_pandas=num_pandas)))
 
     return round(brand_time / self.N, 2)
 
