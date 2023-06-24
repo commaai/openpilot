@@ -270,6 +270,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.telematics, 0x750, 0xc7),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
+    # A few platforms have a tester present response on this address, add to log
+    (Ecu.transmission, 0x7e1, None),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
 )
