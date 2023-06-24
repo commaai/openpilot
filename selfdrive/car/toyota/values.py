@@ -270,7 +270,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     # This doesn't respond on all cars
     (Ecu.gateway, 0x750, 0x5f),
-    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected in the b'\x1a\x88\x00' query
+    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
     (Ecu.telematics, 0x750, 0xc7),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
