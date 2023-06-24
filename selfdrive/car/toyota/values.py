@@ -221,8 +221,8 @@ TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 # FW versions can extend to 0x02, 0x03, etc. which we don't query
 TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x81'
 TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x81'
-TOYOTA_VERSION_REQUEST_KWP3 = b'\x1a\x88\x81'
-TOYOTA_VERSION_RESPONSE_KWP3 = b'\x5a\x88\x81'
+TOYOTA_VERSION_REQUEST_KWP3 = b'\x1a\x88\x80'
+TOYOTA_VERSION_RESPONSE_KWP3 = b'\x5a\x88\x80'
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
