@@ -436,10 +436,6 @@
 <context>
     <name>OffroadAlert</name>
     <message>
-        <source>Device temperature too high. System won&apos;t start.</source>
-        <translation>設備溫度過高，系統無法啟動。</translation>
-    </message>
-    <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation>請立即連接網路檢查更新。如果不連接網路，openpilot 將在 %1 後便無法使用。</translation>
     </message>
@@ -488,6 +484,10 @@
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot偵測到設備的安裝位置發生變化。請確保設備完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
+    </message>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

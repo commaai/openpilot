@@ -436,10 +436,6 @@
 <context>
     <name>OffroadAlert</name>
     <message>
-        <source>Device temperature too high. System won&apos;t start.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation type="unfinished"></translation>
     </message>
@@ -486,6 +482,10 @@
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
