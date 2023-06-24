@@ -48,7 +48,7 @@ THERMAL_BANDS = OrderedDict({
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 77
+OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
