@@ -3,6 +3,7 @@ Version 0.9.4 (2023-XX-XX)
 * Navigate on openpilot
 * UI updates
   * navigation settings moved to home screen and map
+* Kia Carnival (U.S. and China) 2023 support thanks to sunnyhaibin!
 * Ford Focus 2018 support
 
 Version 0.9.3 (2023-06-29)
@@ -39,7 +40,6 @@ Version 0.9.2 (2023-05-22)
 * Ford Maverick 2022-23 support
 * Genesis GV80 2023 support thanks to JWingate80!
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
-* Kia Carnival (China only) 2023 support thanks to sunnyhaibin!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
 * Lincoln Aviator 2021 support
