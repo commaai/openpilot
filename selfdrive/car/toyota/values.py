@@ -280,6 +280,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
   }
 )
 
+FW_PATTERN = re.compile(b'[0-9]{4}[0-9A-Z][0-9A-Z]')
+FW_PATTERN2 = re.compile(br'(?<=\\x[0-9]{2})[0-9A-Z]{5}|^[0-9A-Z]{5}')
+FW_LEN_CODE = re.compile(b'^[\x00-\x0F]')
+FW_PATTERN_V3 = re.compile(b'(?P<length>^[\x00-\x0F])?(?P<part>[0-9A-Z]{4})')
+
 FW_VERSIONS = {
   CAR.AVALON: {
     (Ecu.abs, 0x7b0, None): [

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import unittest
 from collections import defaultdict
 
@@ -7,34 +8,11 @@ from selfdrive.car.fw_versions import build_fw_dict
 # from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
 #                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
 #                                          PLATFORM_CODE_ECUS, get_platform_codes
-from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR
+from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
+                                        FW_PATTERN, FW_LEN_CODE, FW_PATTERN_V3
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
-
-# # Some platforms have date codes in a different format we don't yet parse (or are missing).
-# # For now, assert list of expected missing date cars
-# NO_DATES_PLATFORMS = {
-#   # CAN FD
-#   CAR.KIA_SPORTAGE_5TH_GEN,
-#   CAR.KIA_SPORTAGE_HYBRID_5TH_GEN,
-#   CAR.SANTA_CRUZ_1ST_GEN,
-#   CAR.TUCSON_4TH_GEN,
-#   CAR.TUCSON_HYBRID_4TH_GEN,
-#   # CAN
-#   CAR.ELANTRA,
-#   CAR.KIA_CEED,
-#   CAR.KIA_FORTE,
-#   CAR.KIA_OPTIMA_G4,
-#   CAR.KIA_OPTIMA_G4_FL,
-#   CAR.KIA_SORENTO,
-#   CAR.KONA,
-#   CAR.KONA_EV,
-#   CAR.KONA_EV_2022,
-#   CAR.KONA_HEV,
-#   CAR.SONATA_LF,
-#   CAR.VELOSTER,
-# }
 
 
 class TestToyotaInterfaces(unittest.TestCase):
@@ -43,6 +21,22 @@ class TestToyotaInterfaces(unittest.TestCase):
 
 
 class TestToyotaFingerprint(unittest.TestCase):
+  def test_fw_pattern(self):
+    for car_model, ecus in FW_VERSIONS.items():
+      # print()
+      # print(car_model)
+
+      for ecu, fws in ecus.items():
+        for fw in fws:
+          match = FW_PATTERN.search(fw)
+          length = FW_LEN_CODE.search(fw)
+          if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
+            assert (length is None) == (car_model not in TSS2_CAR), (car_model, ecu, fw)
+          if ecu[0] in (Ecu.engine,):
+            assert length is not None
+          # assert match is not None, (ecu, fw, match)
+          # print(fw, match)
+
   # def test_fw_debugging(self):
   #   for car_model, ecus in FW_VERSIONS.items():
   #     print()
@@ -66,21 +60,27 @@ class TestToyotaFingerprint(unittest.TestCase):
   def test_shared_fw(self):
     all_fw = defaultdict(set)
     for car_model, ecus in FW_VERSIONS.items():
-      print()
-      print(car_model)
+      # print()
+      # print(car_model)
 
       for ecu, fws in ecus.items():
+        parts = set()
         for fw in fws:
-          all_fw[(ecu[1], fw)].add(car_model)
+          length, part = FW_PATTERN_V3.search(fw).groups()
+          parts.add(part)
 
-    print(all_fw)
+          all_fw[(ecu[1], fw)].add(car_model)
+        if len(parts) > 1:
+          print('uoh' ,car_model, ecu, parts)
+
+    # print(all_fw)
 
     # shared abs (or whatever is in the continue statement)
     shared = defaultdict(set)
 
     for car_model, ecus in FW_VERSIONS.items():
-      print()
-      print(car_model)
+      # print()
+      # print(car_model)
 
       for ecu, fws in ecus.items():
         if ecu[0] != Ecu.abs:
