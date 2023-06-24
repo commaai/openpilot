@@ -285,7 +285,6 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
             addrs.append([a])
 
   addrs.insert(0, parallel_addrs)
-  print(addrs)
 
   # Get versions and build capnp list to put into CarParams
   car_fw = []
