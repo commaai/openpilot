@@ -217,29 +217,53 @@ STATIC_DSU_MSGS = [
 
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
+# 0x01 and 0x81 are the two most common data identifiers, though
+# FW versions can extend to 0x02, 0x03, etc. which we don't query
+TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x81'
+TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x81'
+TOYOTA_VERSION_REQUEST_KWP3 = b'\x1a\x88\x81'
+TOYOTA_VERSION_RESPONSE_KWP3 = b'\x5a\x88\x81'
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
   requests=[
+    # Supported KWP2000 identifiers and UDS vs. KWP usage for ECUs vary widely across platforms,
+    # so we add ECUs to all for now
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
+                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac, Ecu.body],
+      bus=0,
+    ),
+    # So far, body exclusively responds to KWP2
+    Request(
+      [TOYOTA_VERSION_REQUEST_KWP2],
+      [TOYOTA_VERSION_REQUEST_KWP2],
+      whitelist_ecus=[Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter,
+                      Ecu.transmission, Ecu.gateway, Ecu.hvac, Ecu.body],
+      bus=0,
+    ),
+    # Combination meter can only respond to KWP3
+    Request(
+      [TOYOTA_VERSION_REQUEST_KWP3],
+      [TOYOTA_VERSION_REQUEST_KWP3],
+      whitelist_ecus=[Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter,
+                      Ecu.transmission, Ecu.gateway, Ecu.hvac, Ecu.body],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission,
-                      Ecu.gateway, Ecu.hvac],
+                      Ecu.gateway, Ecu.hvac, Ecu.body],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
+                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac, Ecu.body],
       bus=0,
     ),
   ],
@@ -270,6 +294,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
+    (Ecu.body, 0x750, 0x40),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
