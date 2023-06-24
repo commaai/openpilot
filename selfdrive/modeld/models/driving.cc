@@ -199,6 +199,44 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
+void fill_confidence(ModelState* s, cereal::ModelDataV2::Builder &framed) {
+  if (framed.getFrameId() % (2*MODEL_FREQ) == 0) {
+    // update every 2s to match predictions interval
+    auto dbps = framed.getMeta().getDisengagePredictions().getBrakeDisengageProbs();
+    auto dgps = framed.getMeta().getDisengagePredictions().getGasDisengageProbs();
+    auto dsps = framed.getMeta().getDisengagePredictions().getSteerOverrideProbs();
+
+    float any_dp[DISENGAGE_LEN];
+    float dp_ind[DISENGAGE_LEN];
+
+    for (int i = 0; i < DISENGAGE_LEN; i++) {
+      any_dp[i] = 1 - ((1-dbps[i])*(1-dgps[i])*(1-dsps[i])); // any disengage prob
+    }
+
+    dp_ind[0] = any_dp[0];
+    for (int i = 0; i < DISENGAGE_LEN-1; i++) {
+      dp_ind[i+1] = (any_dp[i+1] - any_dp[i]) / (1 - any_dp[i]); // independent disengage prob for each 2s slice
+    }
+
+    // rolling buf for 2, 4, 6, 8, 10s
+    std::memmove(&s->disengage_buffer[0], &s->disengage_buffer[DISENGAGE_LEN], sizeof(float) * DISENGAGE_LEN * (DISENGAGE_LEN-1));
+    std::memcpy(&s->disengage_buffer[DISENGAGE_LEN * (DISENGAGE_LEN-1)], &dp_ind[0], sizeof(float) * DISENGAGE_LEN);
+  }
+
+  float score = 0;
+  for (int i = 0; i < DISENGAGE_LEN; i++) {
+    score += s->disengage_buffer[i*DISENGAGE_LEN+DISENGAGE_LEN-1-i] / DISENGAGE_LEN;
+  }
+
+  if (score < RYG_GREEN) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::GREEN);
+  } else if (score < RYG_YELLOW) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::YELLOW);
+  } else {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::RED);
+  }
+}
+
 template<size_t size>
 void fill_xyzt(cereal::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z) {
@@ -313,7 +351,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
+void fill_model(ModelState* s, cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
   const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
@@ -343,6 +381,9 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
 
+  // confidence
+  fill_confidence(s, framed);
+
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
@@ -362,9 +403,9 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   temporal_pose.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 }
 
-void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+void model_publish(ModelState* s, PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
+                   float model_execution_time, const bool nav_enabled, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
@@ -374,10 +415,11 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
+  framed.setNavEnabled(nav_enabled);
   if (send_raw_pred) {
-    framed.setRawPredictions(raw_pred.asBytes());
+    framed.setRawPredictions((kj::ArrayPtr<const float>(s->output.data(), s->output.size())).asBytes());
   }
-  fill_model(framed, net_outputs);
+  fill_model(s, framed, net_outputs);
   pm.send("modelV2", msg);
 }
 

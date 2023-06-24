@@ -7,23 +7,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart):
-  values = {s: lkas11[s] for s in [
-    "CF_Lkas_LdwsActivemode",
-    "CF_Lkas_LdwsSysState",
-    "CF_Lkas_SysWarning",
-    "CF_Lkas_LdwsLHWarning",
-    "CF_Lkas_LdwsRHWarning",
-    "CF_Lkas_HbaLamp",
-    "CF_Lkas_FcwBasReq",
-    "CF_Lkas_HbaSysState",
-    "CF_Lkas_FcwOpt",
-    "CF_Lkas_HbaOpt",
-    "CF_Lkas_FcwSysState",
-    "CF_Lkas_FcwCollisionWarning",
-    "CF_Lkas_FusionState",
-    "CF_Lkas_FcwOpt_USM",
-    "CF_Lkas_LdwsOpt_USM",
-  ]}
+  values = lkas11
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
@@ -95,20 +79,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
 
 def create_clu11(packer, frame, clu11, button, car_fingerprint):
-  values = {s: clu11[s] for s in [
-    "CF_Clu_CruiseSwState",
-    "CF_Clu_CruiseSwMain",
-    "CF_Clu_SldMainSW",
-    "CF_Clu_ParityBit1",
-    "CF_Clu_VanzDecimal",
-    "CF_Clu_Vanz",
-    "CF_Clu_SPEED_UNIT",
-    "CF_Clu_DetentOut",
-    "CF_Clu_RheostatLevel",
-    "CF_Clu_CluInfo",
-    "CF_Clu_AmpInfo",
-    "CF_Clu_AliveCnt1",
-  ]}
+  values = clu11
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars

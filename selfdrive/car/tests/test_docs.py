@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 from collections import defaultdict
+import os
 import re
 import unittest
 
+from common.basedir import BASEDIR
 from selfdrive.car.car_helpers import interfaces, get_interface_attr
 from selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_info
 from selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.debug.dump_car_info import dump_car_info
+from selfdrive.debug.print_docs_diff import print_car_info_diff
 
 
 class TestCarDocs(unittest.TestCase):
@@ -21,6 +25,12 @@ class TestCarDocs(unittest.TestCase):
 
     self.assertEqual(generated_cars_md, current_cars_md,
                      "Run selfdrive/car/docs.py to update the compatibility documentation")
+
+  def test_docs_diff(self):
+    dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+    dump_car_info(dump_path)
+    print_car_info_diff(dump_path)
+    os.remove(dump_path)
 
   def test_duplicate_years(self):
     make_model_years = defaultdict(list)

@@ -220,21 +220,31 @@ bool check_checksum(uint8_t *data, int data_len) {
 
 int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
   int ret;
-  int count = 0;
+  int nack_count = 0;
+  int timeout_count = 0;
   bool timed_out = false;
   double start_time = millis_since_boot();
+
   do {
     ret = spi_transfer(endpoint, tx_data, tx_len, rx_data, max_rx_len, timeout);
 
     if (ret < 0) {
-      timed_out = (timeout != 0) && (count > 5);
-      count += ret == SpiError::ACK_TIMEOUT;
+      timed_out = (timeout != 0) && (timeout_count > 5);
+      timeout_count += ret == SpiError::ACK_TIMEOUT;
+
+      // give other threads a chance to run
       std::this_thread::yield();
+
+      if (ret == SpiError::NACK) {
+        // prevent busy wait while the panda is NACK'ing
+        nack_count += 1;
+        usleep(std::clamp(nack_count*10, 200, 2000));
+      }
     }
   } while (ret < 0 && connected && !timed_out);
 
   if (ret < 0) {
-    LOGE("transfer failed, after %d tries, %.2fms", count, millis_since_boot() - start_time);
+    LOGE("transfer failed, after %d tries, %.2fms", timeout_count, millis_since_boot() - start_time);
   }
 
   return ret;
@@ -250,7 +260,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout) 
   spi_ioc_transfer transfer = {
     .tx_buf = (uint64_t)tx_buf,
     .rx_buf = (uint64_t)rx_buf,
-    .delay_usecs = 5,
+    .delay_usecs = 10,
     .len = 1
   };
   tx_buf[0] = tx;
@@ -274,6 +284,9 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout) 
       LOGD("SPI: timed out waiting for ACK");
       return SpiError::ACK_TIMEOUT;
     }
+
+    // backoff
+    transfer.delay_usecs = std::clamp(transfer.delay_usecs*2, 10, 250);
   }
 
   return 0;
