@@ -137,8 +137,18 @@ void Replay::seekToFlag(FindFlag flag) {
 
 void Replay::buildTimeline() {
   uint64_t engaged_begin = 0;
+  bool engaged = false;
+
+  auto alert_status = cereal::ControlsState::AlertStatus::NORMAL;
+  auto alert_size = cereal::ControlsState::AlertSize::NONE;
   uint64_t alert_begin = 0;
-  TimelineType alert_type = TimelineType::None;
+  std::string alert_type;
+
+  const TimelineType timeline_types[] = {
+    [(int)cereal::ControlsState::AlertStatus::NORMAL] = TimelineType::AlertInfo,
+    [(int)cereal::ControlsState::AlertStatus::USER_PROMPT] = TimelineType::AlertWarning,
+    [(int)cereal::ControlsState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
+  };
 
   for (auto it = segments_.cbegin(); it != segments_.cend() && !exit_; ++it) {
     LogReader log;
@@ -150,26 +160,24 @@ void Replay::buildTimeline() {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
         auto cs = e->event.getControlsState();
 
-        if (!engaged_begin && cs.getEnabled()) {
+        if (engaged != cs.getEnabled()) {
+          if (engaged) {
+            std::lock_guard lk(timeline_lock);
+            timeline.push_back({toSeconds(engaged_begin), toSeconds(e->mono_time), TimelineType::Engaged});
+          }
           engaged_begin = e->mono_time;
-        } else if (engaged_begin && !cs.getEnabled()) {
-          std::lock_guard lk(timeline_lock);
-          timeline.push_back({toSeconds(engaged_begin), toSeconds(e->mono_time), TimelineType::Engaged});
-          engaged_begin = 0;
+          engaged = cs.getEnabled();
         }
 
-        if (!alert_begin && cs.getAlertType().size() > 0) {
-          alert_begin = e->mono_time;
-          alert_type = TimelineType::AlertInfo;
-          if (cs.getAlertStatus() != cereal::ControlsState::AlertStatus::NORMAL) {
-            alert_type = cs.getAlertStatus() == cereal::ControlsState::AlertStatus::USER_PROMPT
-                             ? TimelineType::AlertWarning
-                             : TimelineType::AlertCritical;
+        if (alert_type != cs.getAlertType().cStr() || alert_status != cs.getAlertStatus()) {
+          if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+            std::lock_guard lk(timeline_lock);
+            timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), timeline_types[(int)alert_status]});
           }
-        } else if (alert_begin && cs.getAlertType().size() == 0) {
-          std::lock_guard lk(timeline_lock);
-          timeline.push_back({toSeconds(alert_begin), toSeconds(e->mono_time), alert_type});
-          alert_begin = 0;
+          alert_begin = e->mono_time;
+          alert_type = cs.getAlertType().cStr();
+          alert_size = cs.getAlertSize();
+          alert_status = cs.getAlertStatus();
         }
       } else if (e->which == cereal::Event::Which::USER_FLAG) {
         std::lock_guard lk(timeline_lock);
