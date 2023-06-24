@@ -201,15 +201,17 @@ class TestFwFingerprintTiming(unittest.TestCase):
     present_ecu_time = 0.0
     for _ in range(self.N):
       thread = threading.Thread(target=get_present_ecus, args=(fake_socket, fake_socket),
-                                kwargs=dict(num_pandas=1))
+                                kwargs=dict(num_pandas=2))
       present_ecu_time += self._run_thread(thread)
     self._assert_timing(present_ecu_time / self.N, present_ecu_ref_time)
+    print(f'get_present_ecus, query time={present_ecu_time / self.N} seconds')
 
     vin_time = 0.0
     for _ in range(self.N):
       thread = threading.Thread(target=get_vin, args=(fake_socket, fake_socket, 1))
       vin_time += self._run_thread(thread)
     self._assert_timing(vin_time / self.N, vin_ref_time)
+    print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
     total_ref_time = 6.1
