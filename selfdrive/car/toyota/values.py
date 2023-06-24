@@ -267,8 +267,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
+    # Transmission is combined with engine on some platforms
     (Ecu.transmission, 0x701, None),
-    # A few cars have a tester present response on this address
+    # A few platforms have a tester present response on this address
     (Ecu.transmission, 0x7e1, None),
     (Ecu.combinationMeter, 0x7c0, None),
   ],
