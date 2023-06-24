@@ -193,6 +193,7 @@ class CarState(CarStateBase):
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
       ("GVC", "VSC1S07"),
       ("ACCEL_X", "KINEMATICS"),
+      ("RPM", "ENGINE_RPM"),
     ]
 
     checks = [
@@ -211,6 +212,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
       ("VSC1S07", 20),
       ("KINEMATICS", 80),
+      ("ENGINE_RPM", 50),
     ]
 
     if CP.flags & ToyotaFlags.HYBRID:

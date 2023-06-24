@@ -70,6 +70,7 @@ class CarController:
 
     # force applied when not actuating anything converted to acceleration
     # (engine propulsion at low speed, engine braking at high speed)
+    # TODO: PCM only applies coasting accel if engine is on!
     coasting_accel = CS.pcm_neutral_force / self.CP.mass
     grade_accel = CS.GVC - CS.GL1X  # this is very noisy, good thing we have smoothing
     # the PCM should be outputting this
