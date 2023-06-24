@@ -276,6 +276,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
         if a not in ecu_types:
           ecu_types[a] = ecu_type
 
+        # Add first sub-address to parallel queries since there will be no conflicts
         sub_addr_in_parallel_addrs = any(p[2] is not None for p in parallel_addrs)
         if sub_addr is None or not sub_addr_in_parallel_addrs:
           if a not in parallel_addrs:
