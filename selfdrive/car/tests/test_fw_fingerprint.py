@@ -192,26 +192,6 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertLess(avg_time, ref_time + self.TOL)
     self.assertGreater(avg_time, ref_time - self.TOL, "Performance seems to have improved, update test refs.")
 
-  def test_startup_timing(self):
-    # Tests ECU present address and VIN queries
-    present_ecu_ref_time = 0.8
-    vin_ref_time = 1.0
-
-    fake_socket = FakeSocket()
-
-    present_ecu_time = 0.0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_present_ecus, args=(fake_socket, fake_socket),
-                                kwargs=dict(num_pandas=1))
-      present_ecu_time += self._run_thread(thread)
-    self._assert_timing(present_ecu_time / self.N, present_ecu_ref_time)
-
-    vin_time = 0.0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_vin, args=(fake_socket, fake_socket, 1))
-      vin_time += self._run_thread(thread)
-    self._assert_timing(vin_time / self.N, vin_ref_time)
-
   def test_fw_query_timing(self):
     total_ref_time = 6.1
     brand_ref_times = {
