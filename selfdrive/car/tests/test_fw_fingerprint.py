@@ -192,7 +192,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     self.assertGreater(avg_time, ref_time - self.TOL, "Performance seems to have improved, update test refs.")
 
   def test_startup_timing(self):
-    # Tests present ECU and VIN queries
+    # Tests worse-case VIN query time and typical present ECU query time
     present_ecu_ref_time = 0.8
     vin_ref_time = 1.0
 
