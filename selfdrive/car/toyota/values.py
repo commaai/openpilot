@@ -219,7 +219,7 @@ TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
 FW_QUERY_CONFIG = FwQueryConfig(
-  # TODO: look at data to whitelist epb effectively
+  # TODO: look at data to whitelist new ECUs effectively
   requests=[
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
@@ -260,13 +260,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - EPS/EMPS (0x7a0, 0x7a1)
 
     # TODO: if these duplicate ECUs always exist together, remove one
-    # On some cars, EPB is controlled by the ABS module
     (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
+    # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
+    # On some cars, EPB is controlled by the ABS module
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
     (Ecu.gateway, 0x750, 0x5f),
     (Ecu.telematics, 0x750, 0xc7),
+    # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
     (Ecu.transmission, 0x7e1, None),
