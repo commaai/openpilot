@@ -35,6 +35,7 @@ jobs:
         release/build_devel.sh
     - name: Run tests
       run: |
+        export PYTHONPATH=$TARGET_DIR
         cd $TARGET_DIR
         pwd
         ls -la
