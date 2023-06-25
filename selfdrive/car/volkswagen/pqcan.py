@@ -36,14 +36,6 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, cancel=False, resu
     "GRA_Hauptschalt",      # ACC button, on/off
     "GRA_Typ_Hauptschalt",  # ACC button, momentary vs latching
     "GRA_Kodierinfo",       # ACC button, configuration
-    "GRA_Abbrechen",        # ACC button, cancel
-    "GRA_Neu_Setzen",       # ACC button, set
-    "GRA_Up_lang",          # ACC button, increase or accel, long press
-    "GRA_Down_lang",        # ACC button, decrease or decel, long press
-    "GRA_Up_kurz",          # ACC button, increase or accel, short press
-    "GRA_Down_kurz",        # ACC button, decrease or decel, short press
-    "GRA_Recall",           # ACC button, resume
-    "GRA_Zeitluecke",       # ACC button, time gap adj
     "GRA_Sender",           # ACC button, CAN message originator
   ]}
 

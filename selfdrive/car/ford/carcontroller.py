@@ -2,9 +2,9 @@ from cereal import car
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
-from selfdrive.car.ford.fordcan import create_acc_msg, create_acc_ui_msg, create_button_msg, create_lat_ctl_msg, \
-  create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
-from selfdrive.car.ford.values import CANBUS, CANFD_CARS, CarControllerParams
+from selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \
+                                       create_lat_ctl_msg, create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
+from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -27,6 +27,7 @@ class CarController:
     self.CP = CP
     self.VM = VM
     self.packer = CANPacker(dbc_name)
+    self.CAN = CanBus(CP)
     self.frame = 0
 
     self.apply_curvature_last = 0
@@ -45,15 +46,15 @@ class CarController:
 
     ### acc buttons ###
     if CC.cruiseControl.cancel:
-      can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, cancel=True))
-      can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, cancel=True, bus=CANBUS.main))
+      can_sends.append(create_button_msg(self.packer, self.CAN.camera, CS.buttons_stock_values, cancel=True))
+      can_sends.append(create_button_msg(self.packer, self.CAN.main, CS.buttons_stock_values, cancel=True))
     elif CC.cruiseControl.resume and (self.frame % CarControllerParams.BUTTONS_STEP) == 0:
-      can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, resume=True))
-      can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, resume=True, bus=CANBUS.main))
+      can_sends.append(create_button_msg(self.packer, self.CAN.camera, CS.buttons_stock_values, resume=True))
+      can_sends.append(create_button_msg(self.packer, self.CAN.main, CS.buttons_stock_values, resume=True))
     # if stock lane centering isn't off, send a button press to toggle it off
     # the stock system checks for steering pressed, and eventually disengages cruise control
     elif CS.acc_tja_status_stock_values["Tja_D_Stat"] != 0 and (self.frame % CarControllerParams.ACC_UI_STEP) == 0:
-      can_sends.append(create_button_msg(self.packer, CS.buttons_stock_values, tja_toggle=True))
+      can_sends.append(create_button_msg(self.packer, self.CAN.camera, CS.buttons_stock_values, tja_toggle=True))
 
     ### lateral control ###
     # send steer msg at 20Hz
@@ -70,14 +71,14 @@ class CarController:
       if self.CP.carFingerprint in CANFD_CARS:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
-        counter = self.frame // CarControllerParams.STEER_STEP
-        can_sends.append(create_lat_ctl2_msg(self.packer, mode, 0., 0., -apply_curvature, 0., counter))
+        counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
+        can_sends.append(create_lat_ctl2_msg(self.packer, self.CAN, mode, 0., 0., -apply_curvature, 0., counter))
       else:
-        can_sends.append(create_lat_ctl_msg(self.packer, CC.latActive, 0., 0., -apply_curvature, 0.))
+        can_sends.append(create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 0., 0., -apply_curvature, 0.))
 
     # send lka msg at 33Hz
     if (self.frame % CarControllerParams.LKA_STEP) == 0:
-      can_sends.append(create_lka_msg(self.packer))
+      can_sends.append(create_lka_msg(self.packer, self.CAN))
 
     ### longitudinal control ###
     # send acc msg at 50Hz
@@ -89,16 +90,16 @@ class CarController:
         gas = CarControllerParams.INACTIVE_GAS
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(create_acc_msg(self.packer, CC.longActive, gas, accel, stopping))
+      can_sends.append(create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
     # send lkas ui msg at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_lkas_ui_msg(self.packer, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
+      can_sends.append(create_lkas_ui_msg(self.packer, self.CAN, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
     # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
-      can_sends.append(create_acc_ui_msg(self.packer, self.CP, main_on, CC.latActive,
+      can_sends.append(create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
                                          CS.out.cruiseState.standstill, hud_control,
                                          CS.acc_tja_status_stock_values))
 

@@ -1,6 +1,5 @@
 #include "tools/cabana/tools/findsignal.h"
 
-#include <QDoubleValidator>
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -138,8 +137,7 @@ FindSignalDlg::FindSignalDlg(QWidget *parent) : QDialog(parent, Qt::WindowFlags(
   undo_btn->setEnabled(false);
   reset_btn->setEnabled(false);
 
-  auto double_validator = new QDoubleValidator(this);
-  double_validator->setLocale(QLocale::C);
+  auto double_validator = new DoubleValidator(this);
   for (auto edit : {value1, value2, factor_edit, offset_edit, first_time_edit, last_time_edit}) {
     edit->setValidator(double_validator);
   }
@@ -233,7 +231,9 @@ void FindSignalDlg::setInitialSignals() {
         for (int size = min_size->value(); size <= max_size->value(); ++size) {
           for (int start = 0; start <= total_size - size; ++start) {
             FindSignalModel::SearchSignal s{.id = it.key(), .mono_time = first_time, .sig = sig};
-            updateSigSizeParamsFromRange(s.sig, start, size);
+            s.sig.start_bit = start;
+            s.sig.size = size;
+            updateMsbLsb(s.sig);
             s.value = get_raw_value((*e)->dat, (*e)->size, s.sig);
             model->initial_signals.push_back(s);
           }
@@ -260,12 +260,6 @@ void FindSignalDlg::customMenuRequested(const QPoint &pos) {
     menu.addAction(tr("Create Signal"));
     if (menu.exec(view->mapToGlobal(pos))) {
       auto &s = model->filtered_signals[index.row()];
-      auto msg = dbc()->msg(s.id);
-      if (!msg) {
-        UndoStack::push(new EditMsgCommand(s.id, dbc()->newMsgName(s.id), can->lastMessage(s.id).dat.size()));
-        msg = dbc()->msg(s.id);
-      }
-      s.sig.name = dbc()->newSignalName(s.id);
       UndoStack::push(new AddSigCommand(s.id, s.sig));
       emit openMessage(s.id);
     }

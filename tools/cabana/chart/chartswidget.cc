@@ -398,10 +398,11 @@ void ChartsWidget::removeAll() {
     tabbar->removeTab(1);
   }
   tab_charts.clear();
+  zoomReset();
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
-      c->deleteLater();
+      delete c;
     }
     charts.clear();
     updateToolBar();
