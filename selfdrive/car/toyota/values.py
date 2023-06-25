@@ -216,11 +216,48 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+SHORT_FW_PATTERN = re.compile(b'(?P<platform>[A-Z0-9]{4})(?P<version>[A-Z0-9]{4})')
+MED_PATTERN = re.compile(b'TODO')
+FW_PATTERN = re.compile(b'(?P<part>[0-9A-Z]{4})[0-9A-Z](?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
+    has_length = fw[0] < 0xf
+    length = 1
+    if has_length:
+      length = fw[0]
+      fw = fw[1:]
+      assert length * 16 == len(fw)
+
+    chunks = [fw[16 * i:16 * i + 16] for i in range(length)]
+    print(fw, chunks)
+    # only first is considered for now since second is commonly shared (TODO: understand that)
+
+    first_chunk = chunks[0]
+    # doesn't have a part encoded in version (OBD query?)
+    short_version = sum(b > 0xf for b in first_chunk) == 8
+
+
+    continue
+
+    sections = [s for s in fw.split(b'\x00') if len(s)]
+    print('sections', sections, 'fw', fw)
+    assert len(sections) > 0
+    assert len(sections[0]) > 0
+
+    has_length = sections[0][0] < 0xf
+    if has_length:
+      assert len(sections) == sections[0][0]
+      sections[0] = sections[0][1:]
+
+    print(sections)
+    continue
+
+
+
+
     code_match = PLATFORM_CODE_FW_PATTERN.search(fw)
     part_match = PART_NUMBER_FW_PATTERN.search(fw)
     date_match = DATE_FW_PATTERN.search(fw)

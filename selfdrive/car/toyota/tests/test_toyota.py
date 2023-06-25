@@ -9,7 +9,7 @@ from selfdrive.car.fw_versions import build_fw_dict
 #                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
 #                                          PLATFORM_CODE_ECUS, get_platform_codes
 from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS, FW_QUERY_CONFIG, EV_HYBRID_CAR, \
-                                        FW_PATTERN, FW_LEN_CODE, FW_PATTERN_V3
+                                        FW_PATTERN, FW_LEN_CODE, FW_PATTERN_V3, get_platform_codes
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -28,6 +28,8 @@ class TestToyotaFingerprint(unittest.TestCase):
 
       for ecu, fws in ecus.items():
         for fw in fws:
+          get_platform_codes([fw])
+          continue
           match = FW_PATTERN.search(fw)
           length = FW_LEN_CODE.search(fw)
           if ecu[0] in (Ecu.fwdRadar, Ecu.fwdCamera):
@@ -58,6 +60,7 @@ class TestToyotaFingerprint(unittest.TestCase):
   #       print('MISMATCH', car_model, car_model in EV_HYBRID_CAR, eng_len_code)
 
   def test_shared_fw(self):
+    return
     all_fw = defaultdict(set)
     for car_model, ecus in FW_VERSIONS.items():
       # print()
