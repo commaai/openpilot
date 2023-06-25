@@ -1,3 +1,4 @@
+import copy
 from cereal import car
 from selfdrive.car.subaru.values import CanBus
 
@@ -114,7 +115,7 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
 
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, values)
 
-def create_es_dashstatus(packer, es_dashstatus_msg, enabled, long_active, lead_visible):
+def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, lead_visible):
   values = {s: dashstatus_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
