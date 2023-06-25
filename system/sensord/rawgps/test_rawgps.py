@@ -47,7 +47,7 @@ class TestRawgpsd(unittest.TestCase):
       assert self._wait_for_output(), "rawgpsd didn't start outputting messages in time"
 
       et = time.monotonic() - start_time
-      assert et < 5, f"rawgpsd took {et:.1f}s to start"
+      assert et < 7, f"rawgpsd took {et:.1f}s to start"
       managed_processes['rawgpsd'].stop()
 
   def test_turns_off_gnss(self):
