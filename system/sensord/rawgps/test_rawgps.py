@@ -74,7 +74,19 @@ class TestRawgpsd(unittest.TestCase):
     out = out.split("+QGPSXTRADATA:")[1].split("'")[0].strip()
     valid_duration, injected_date = out.split(",", 1)
     assert valid_duration == "10080"  # should be max time
+
+    # TODO: time doesn't match up
     assert injected_date[1:].startswith(datetime.datetime.now().strftime("%Y/%m/%d"))
+
+  def test_output_frequency(self):
+    managed_processes['rawgpsd'].start()
+    assert self._wait_for_output(10)
+
+    warmup = 5
+    for i in range(10 + warmup):
+      self.sm.update()
+      if i > warmup:
+        assert self.sm.all_checks()
 
 
 if __name__ == "__main__":
