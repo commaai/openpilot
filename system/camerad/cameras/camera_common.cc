@@ -149,7 +149,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
-  framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
   framed.setGain(frame_data.gain);
   framed.setHighConversionGain(frame_data.high_conversion_gain);
