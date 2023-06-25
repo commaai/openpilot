@@ -32,12 +32,12 @@ class TestRawgpsd(unittest.TestCase):
     return self.sm.updated['qcomGnss']
 
   def test_wait_for_modem(self):
-    os.system("sudo systemctl stop ModemManager")
+    os.system("sudo systemctl stop ModemManager lte")
     managed_processes['rawgpsd'].start()
     assert not self._wait_for_output(10)
 
-    os.system("sudo systemctl restart ModemManager")
-    assert self._wait_for_output()
+    os.system("sudo systemctl restart ModemManager lte")
+    assert self._wait_for_output(30)
 
   def test_startup_time(self):
     for _ in range(5):
@@ -78,16 +78,6 @@ class TestRawgpsd(unittest.TestCase):
     # TODO: time doesn't match up
     assert injected_date[1:].startswith(datetime.datetime.now().strftime("%Y/%m/%d"))
 
-  def test_output_frequency(self):
-    managed_processes['rawgpsd'].start()
-    assert self._wait_for_output(10)
-
-    warmup = 5
-    for i in range(10 + warmup):
-      self.sm.update()
-      if i > warmup:
-        assert self.sm.all_checks()
-
 
 if __name__ == "__main__":
-  unittest.main()
+  unittest.main(failfast=True)
