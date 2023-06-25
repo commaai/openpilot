@@ -58,8 +58,9 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
+int handle_encoder_msg(LoggerdState *s, Message *msg_ptr, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
   int bytes_count = 0;
+  std::unique_ptr<Message> msg(msg_ptr);
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
@@ -118,7 +119,6 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       } else {
         // this is a sad case when we aren't recording, but don't have an iframe
         // nothing we can do but drop the frame
-        delete msg;
         ++re.dropped_frames;
         return bytes_count;
       }
@@ -141,9 +141,6 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
-
-    // free the message, we used it
-    delete msg;
   } else if (offset_segment_num > s->rotate_segment) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
     if (!re.marked_ready_to_rotate) {
@@ -154,14 +151,13 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
-    re.q.push_back(msg);
+    re.q.push_back(msg.release());
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d re.encoderd_segment_offset:%d",
       name.c_str(), idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
     re.encoderd_segment_offset = -s->rotate_segment.load();
-    delete msg;
   }
 
   return bytes_count;
