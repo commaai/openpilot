@@ -139,6 +139,7 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
               ["test amp", "python system/hardware/tici/tests/test_amplifier.py"],
+              ["test rawgpsd", "python system/sensord/rawgps/test_rawgps.py"],
             ])
           }
         }
