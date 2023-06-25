@@ -8,6 +8,7 @@
 #include <QDoubleValidator>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QSocketNotifier>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -133,6 +134,22 @@ public:
 
 private:
   void closeTabClicked();
+};
+
+class UnixSignalHandler : public QObject {
+  Q_OBJECT
+
+public:
+  UnixSignalHandler(QObject *parent = nullptr);
+  ~UnixSignalHandler();
+  static void signalHandler(int s);
+
+public slots:
+  void handleSigTerm();
+
+private:
+  inline static int sig_fd[2] = {};
+  QSocketNotifier *sn;
 };
 
 int num_decimals(double num);

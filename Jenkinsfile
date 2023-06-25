@@ -139,6 +139,7 @@ pipeline {
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
               ["test amp", "python system/hardware/tici/tests/test_amplifier.py"],
+              ["test rawgpsd", "python system/sensord/rawgps/test_rawgps.py"],
             ])
           }
         }
@@ -155,7 +156,6 @@ pipeline {
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
               ["time to onroad", "cd selfdrive/test/ && pytest test_time_to_onroad.py"],
-              ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
             ])
           }
         }
