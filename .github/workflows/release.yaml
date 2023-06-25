@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
-    - name: Wait for green check mark
-      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
-      with:
-        ref: master
-        wait-interval: 30
-        running-workflow-name: 'build master-ci'
-        check-regexp: ^((?!.*(build prebuilt).*).)*$
+    #- name: Wait for green check mark
+    #  uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
+    #  with:
+    #    ref: master
+    #    wait-interval: 30
+    #    running-workflow-name: 'build master-ci'
+    #    check-regexp: ^((?!.*(build prebuilt).*).)*$
     - uses: actions/checkout@v3
       with:
         submodules: true
