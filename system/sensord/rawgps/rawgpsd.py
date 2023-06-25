@@ -97,9 +97,7 @@ def at_cmd(cmd: str) -> Optional[str]:
       return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
-  else:
-    raise Exception(f"failed to execute mmcli command {cmd=}")
-  return None
+  raise Exception(f"failed to execute mmcli command {cmd=}")
 
 
 def gps_enabled() -> bool:
