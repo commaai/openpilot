@@ -124,4 +124,3 @@ public:
   ChartsWidget *charts;
   std::pair<double, double> prev_range, range;
 };
-

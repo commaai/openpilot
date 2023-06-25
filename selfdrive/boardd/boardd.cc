@@ -94,11 +94,12 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
       }
     }
   } else if (dir == SyncTimeDir::FROM_PANDA) {
+    LOGW("System time: %s, RTC time: %s", get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
-      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
-           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+      LOGE("System time wrong, setting from RTC.");
     }
   }
 }
@@ -472,6 +473,11 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   bool is_onroad_last = false;
   std::future<bool> safety_future;
 
+  std::vector<std::string> connected_serials;
+  for (Panda *p : pandas) {
+    connected_serials.push_back(p->hw_serial());
+  }
+
   LOGD("start panda state thread");
 
   // run at 2hz
@@ -499,10 +505,15 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
         LOGE("Reconnecting, communication to pandas not healthy");
         do_exit = true;
 
-      // TODO: list is slow, takes 16ms
-      } else if (pandas.size() != Panda::list().size()) {
-        LOGW("Reconnecting to changed amount of pandas!");
-        do_exit = true;
+      } else {
+        // check for new pandas
+        for (std::string &s : Panda::list(true)) {
+          if (!std::count(connected_serials.begin(), connected_serials.end(), s)) {
+            LOGW("Reconnecting to new panda: %s", s.c_str());
+            do_exit = true;
+            break;
+          }
+        }
       }
 
       if (do_exit) {

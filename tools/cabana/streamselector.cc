@@ -6,13 +6,19 @@
 #include <QLabel>
 #include <QPushButton>
 
-StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
+#include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/pandastream.h"
+#include "tools/cabana/streams/replaystream.h"
+
+StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Open stream"));
   QVBoxLayout *main_layout = new QVBoxLayout(this);
 
+  QWidget *w = new QWidget(this);
+  QVBoxLayout *layout = new QVBoxLayout(w);
   tab = new QTabWidget(this);
   tab->setTabBarAutoHide(true);
-  main_layout->addWidget(tab);
+  layout->addWidget(tab);
 
   QHBoxLayout *dbc_layout = new QHBoxLayout();
   dbc_file = new QLineEdit(this);
@@ -22,20 +28,29 @@ StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
   dbc_layout->addWidget(new QLabel(tr("dbc File")));
   dbc_layout->addWidget(dbc_file);
   dbc_layout->addWidget(file_btn);
-  main_layout->addLayout(dbc_layout);
+  layout->addLayout(dbc_layout);
 
   QFrame *line = new QFrame(this);
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
-  main_layout->addWidget(line);
+  layout->addWidget(line);
 
+  main_layout->addWidget(w);
   auto btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   main_layout->addWidget(btn_box);
 
+  addStreamWidget(ReplayStream::widget(stream));
+  addStreamWidget(PandaStream::widget(stream));
+  addStreamWidget(DeviceStream::widget(stream));
+
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(btn_box, &QDialogButtonBox::accepted, [=]() {
-    success = ((AbstractOpenStreamWidget *)tab->currentWidget())->open();
-    if (success) {
+    btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
+    w->setEnabled(false);
+    if (((AbstractOpenStreamWidget *)tab->currentWidget())->open()) {
       accept();
+    } else {
+      btn_box->button(QDialogButtonBox::Open)->setEnabled(true);
+      w->setEnabled(true);
     }
   });
   QObject::connect(file_btn, &QPushButton::clicked, [this]() {

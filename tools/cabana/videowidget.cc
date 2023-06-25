@@ -1,10 +1,12 @@
 #include "tools/cabana/videowidget.h"
 
 #include <QButtonGroup>
+#include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStackedLayout>
 #include <QStyleOptionSlider>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
@@ -19,18 +21,6 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
-
-bool sortTimelineBasedOnEventPriority(const std::tuple<int, int, TimelineType> &left, const std::tuple<int, int, TimelineType> &right){
-  const static std::map<TimelineType, int> timelinePriority = {
-    {  TimelineType::None, 0 },
-    {  TimelineType::Engaged, 10 },
-    {  TimelineType::AlertInfo, 20 },
-    {  TimelineType::AlertWarning, 30 },
-    {  TimelineType::AlertCritical, 40 },
-    {  TimelineType::UserFlag, 35 }
-  };
-  return timelinePriority.at(std::get<2>(left)) < timelinePriority.at(std::get<2>(right));
-}
 
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -100,7 +90,7 @@ QWidget *VideoWidget::createCameraWidget() {
   l->addLayout(stacked);
 
   // slider controls
-  slider_layout = new QHBoxLayout();
+  auto slider_layout = new QHBoxLayout();
   time_label = new QLabel("00:00");
   slider_layout->addWidget(time_label);
 
@@ -111,12 +101,13 @@ QWidget *VideoWidget::createCameraWidget() {
   end_time_label = new QLabel(this);
   slider_layout->addWidget(end_time_label);
   l->addLayout(slider_layout);
+
+  setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::streamStarted, [this]() { setMaximumTime(can->totalSeconds()); });
   return w;
 }
 
@@ -157,43 +148,40 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
-  timer.callOnTimeout([this]() {
+Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
+  setMouseTracking(true);
+  auto timer = new QTimer(this);
+  timer->callOnTimeout([this]() {
     timeline = can->getTimeline();
-    std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
+    std::sort(timeline.begin(), timeline.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
     update();
   });
-  setMouseTracking(true);
-  QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
+  timer->start(2000);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
+    if (!qlog_future) {
+      qlog_future = std::make_unique<QFuture<void>>(QtConcurrent::run(this, &Slider::parseQLog));
+    }
+  });
 }
 
 Slider::~Slider() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
+  abort_parse_qlog = true;
+  if (qlog_future) {
+    qlog_future->waitForFinished();
+  }
 }
 
-void Slider::streamStarted() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
-  abort_load_thumbnail = false;
-  thumbnails.clear();
-  timeline.clear();
-  timer.start(2000);
-  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
-}
-
-void Slider::loadThumbnails() {
+void Slider::parseQLog() {
   const auto &segments = can->route()->segments();
-  double max_time = 0;
-  for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
+  for (auto it = segments.rbegin(); it != segments.rend() && !abort_parse_qlog; ++it) {
     LogReader log;
     std::string qlog = it->second.qlog.toStdString();
-    if (!qlog.empty() && log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
-      if (max_time == 0 && !log.events.empty()) {
-        max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
+    if (!qlog.empty() && log.load(qlog, &abort_parse_qlog, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
+      if (it == segments.rbegin() && !log.events.empty()) {
+        double max_time = (*(log.events.rbegin()))->mono_time / 1e9 - can->routeStartTime();
         emit updateMaximumTime(max_time);
       }
-      for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
+      for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_parse_qlog; ++ev) {
         if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
           auto thumb = (*ev)->event.getThumbnail();
           auto data = thumb.getThumbnail();
@@ -318,9 +306,7 @@ void InfoLabel::showAlert(const AlertInfo &alert) {
   alert_info = alert;
   pixmap = {};
   setVisible(!alert_info.text1.isEmpty());
-  if (isVisible()) {
-    update();
-  }
+  update();
 }
 
 void InfoLabel::paintEvent(QPaintEvent *event) {
