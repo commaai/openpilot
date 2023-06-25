@@ -3,7 +3,6 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
-  push:
 
 jobs:
   build_masterci:
@@ -15,13 +14,13 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
-    #- name: Wait for green check mark
-    #  uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
-    #  with:
-    #    ref: master
-    #    wait-interval: 30
-    #    running-workflow-name: 'build master-ci'
-    #    check-regexp: ^((?!.*(build prebuilt).*).)*$
+    - name: Wait for green check mark
+      uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
+      with:
+        ref: master
+        wait-interval: 30
+        running-workflow-name: 'build master-ci'
+        check-regexp: ^((?!.*(build prebuilt).*).)*$
     - uses: actions/checkout@v3
       with:
         submodules: true
@@ -37,9 +36,6 @@ jobs:
       run: |
         export PYTHONPATH=$TARGET_DIR
         cd $TARGET_DIR
-        pwd
-        ls -la
-        ls -la *
         scons -j$(nproc)
         selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
