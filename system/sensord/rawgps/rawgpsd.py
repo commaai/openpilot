@@ -8,7 +8,7 @@ import time
 import pycurl
 import subprocess
 from datetime import datetime
-from typing import NoReturn
+from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
 from cereal import log
@@ -91,15 +91,13 @@ def try_setup_logs(diag, log_types):
   else:
     raise Exception(f"setup logs failed, {log_types=}")
 
-def at_cmd(cmd: str) -> None:
+def at_cmd(cmd: str) -> Optional[str]:
   for _ in range(5):
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True)
-      break
+      return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
-  else:
-    raise Exception(f"failed to execute mmcli command {cmd=}")
+  raise Exception(f"failed to execute mmcli command {cmd=}")
 
 
 def gps_enabled() -> bool:
@@ -117,11 +115,11 @@ def download_and_inject_assistance():
     # download assistance
     try:
       c = pycurl.Curl()
-      c.setopt(c.URL, assistance_url)
-      c.setopt(c.NOBODY, 1)
+      c.setopt(pycurl.URL, assistance_url)
+      c.setopt(pycurl.NOBODY, 1)
       c.setopt(pycurl.CONNECTTIMEOUT, 2)
       c.perform()
-      bytes_n = c.getinfo(c.CONTENT_LENGTH_DOWNLOAD)
+      bytes_n = c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
       c.close()
       if bytes_n > 1e5:
         cloudlog.error("Qcom assistance data larger than expected")
@@ -183,7 +181,7 @@ def setup_quectel(diag: ModemDiag):
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
-  
+
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
 

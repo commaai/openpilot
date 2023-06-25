@@ -1,10 +1,27 @@
 from cereal import car
-from selfdrive.car.ford.values import CANBUS
+from selfdrive.car import CanBusBase
 
 HUDControl = car.CarControl.HUDControl
 
 
-def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
+class CanBus(CanBusBase):
+  def __init__(self, CP=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+  @property
+  def main(self) -> int:
+    return self.offset
+
+  @property
+  def radar(self) -> int:
+    return self.offset + 1
+
+  @property
+  def camera(self) -> int:
+    return self.offset + 2
+
+
+def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray) -> int:
   curvature = (dat[2] << 3) | ((dat[3]) >> 5)
   curvature_rate = (dat[6] << 3) | ((dat[7]) >> 5)
   path_angle = ((dat[3] & 0x1F) << 6) | ((dat[4]) >> 2)
@@ -17,7 +34,7 @@ def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
   return 0xFF - (checksum & 0xFF)
 
 
-def create_lka_msg(packer):
+def create_lka_msg(packer, CAN: CanBus):
   """
   Creates an empty CAN message for the Ford LKA Command.
 
@@ -26,10 +43,10 @@ def create_lka_msg(packer):
   Frequency is 33Hz.
   """
 
-  return packer.make_can_msg("Lane_Assist_Data1", CANBUS.main, {})
+  return packer.make_can_msg("Lane_Assist_Data1", CAN.main, {})
 
 
-def create_lat_ctl_msg(packer, lat_active: bool, path_offset: float, path_angle: float, curvature: float,
+def create_lat_ctl_msg(packer, CAN: CanBus, lat_active: bool, path_offset: float, path_angle: float, curvature: float,
                        curvature_rate: float):
   """
   Creates a CAN message for the Ford TJA/LCA Command.
@@ -66,10 +83,10 @@ def create_lat_ctl_msg(packer, lat_active: bool, path_offset: float, path_angle:
     "LatCtlCurv_NoRate_Actl": curvature_rate,   # Curvature rate [-0.001024|0.00102375] 1/meter^2
     "LatCtlCurv_No_Actl": curvature,            # Curvature [-0.02|0.02094] 1/meter
   }
-  return packer.make_can_msg("LateralMotionControl", CANBUS.main, values)
+  return packer.make_can_msg("LateralMotionControl", CAN.main, values)
 
 
-def create_lat_ctl2_msg(packer, mode: int, path_offset: float, path_angle: float, curvature: float,
+def create_lat_ctl2_msg(packer, CAN: CanBus, mode: int, path_offset: float, path_angle: float, curvature: float,
                         curvature_rate: float, counter: int):
   """
   Create a CAN message for the new Ford Lane Centering command.
@@ -95,13 +112,13 @@ def create_lat_ctl2_msg(packer, mode: int, path_offset: float, path_angle: float
   }
 
   # calculate checksum
-  dat = packer.make_can_msg("LateralMotionControl2", CANBUS.main, values)[2]
+  dat = packer.make_can_msg("LateralMotionControl2", 0, values)[2]
   values["LatCtlPath_No_Cs"] = calculate_lat_ctl2_checksum(mode, counter, dat)
 
-  return packer.make_can_msg("LateralMotionControl2", CANBUS.main, values)
+  return packer.make_can_msg("LateralMotionControl2", CAN.main, values)
 
 
-def create_acc_msg(packer, long_active: bool, gas: float, accel: float, stopping: bool):
+def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: float, stopping: bool):
   """
   Creates a CAN message for the Ford ACC Command.
 
@@ -122,10 +139,10 @@ def create_acc_msg(packer, long_active: bool, gas: float, accel: float, stopping
     "AccBrkDecel_B_Rq": 1 if decel else 0,            # Deceleration request: 0=Inactive, 1=Active
     "AccStopStat_B_Rq": 1 if stopping else 0,
   }
-  return packer.make_can_msg("ACCDATA", CANBUS.main, values)
+  return packer.make_can_msg("ACCDATA", CAN.main, values)
 
 
-def create_acc_ui_msg(packer, CP, main_on: bool, enabled: bool, standstill: bool, hud_control,
+def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, standstill: bool, hud_control,
                       stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
@@ -197,10 +214,11 @@ def create_acc_ui_msg(packer, CP, main_on: bool, enabled: bool, standstill: bool
       "AccTGap_D_Dsply": 4,                                       # Fixed time gap in UI
     })
 
-  return packer.make_can_msg("ACCDATA_3", CANBUS.main, values)
+  return packer.make_can_msg("ACCDATA_3", CAN.main, values)
 
 
-def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, hud_control, stock_values: dict):
+def create_lkas_ui_msg(packer, CAN: CanBus, main_on: bool, enabled: bool, steer_alert: bool, hud_control,
+                       stock_values: dict):
   """
   Creates a CAN message for the Ford IPC IPMA/LKAS status.
 
@@ -263,11 +281,10 @@ def create_lkas_ui_msg(packer, main_on: bool, enabled: bool, steer_alert: bool, 
     "LaActvStats_D_Dsply": lines,                 # LKAS status (lines) [0|31]
     "LaHandsOff_D_Dsply": hands_on_wheel_dsply,   # 0=HandsOn, 1=Level1 (w/o chime), 2=Level2 (w/ chime), 3=Suppressed
   })
-  return packer.make_can_msg("IPMA_Data", CANBUS.main, values)
+  return packer.make_can_msg("IPMA_Data", CAN.main, values)
 
 
-def create_button_msg(packer, stock_values: dict, cancel=False, resume=False, tja_toggle=False,
-                      bus: int = CANBUS.camera):
+def create_button_msg(packer, bus: int, stock_values: dict, cancel=False, resume=False, tja_toggle=False):
   """
   Creates a CAN message for the Ford SCCM buttons/switches.
 
