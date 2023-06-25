@@ -27,7 +27,9 @@ jobs:
         submodules: true
         fetch-depth: 0
     - name: Pull LFS
-      run: git lfs pull
+      run: |
+        git config --global --add safe.directory '*'
+        git lfs pull
     - name: Build master-ci
       run: |
         release/build_devel.sh
