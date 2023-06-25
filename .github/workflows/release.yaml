@@ -36,7 +36,12 @@ jobs:
     - name: Run tests
       run: |
         cd $TARGET_DIR
+        pwd
+        ls -la
+        ls -la *
+        scons -j$(nproc)
         selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
       run: |
+        unset TARGET_DIR
         BRANCH=master-ci release/build_devel.sh
