@@ -219,7 +219,15 @@ class CarInterface(CarInterfaceBase):
     # cars w/ smart-DSU installed.
     # cars w/ DSU disconnected.
     # tss2 cars but ACC CMD is not coming from radar.
+    ret.openpilotLongitudinalControl = ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    if candidate in RADAR_ACC_CAR:
+      # On TSS2 radar-based ACC cars, the SDSU is a filter on the ACC_CONTROL message from the radar
+      ret.openpilotLongitudinalControl = ret.experimentalLongitudinalAvailable and experimental_long
+    else:
+      # On these cars, the SDSU filters the ACC_CONTROL message from the DSU
+      ret.openpilotLongitudinalControl = ret.openpilotLongitudinalControl or bool(ret.flags & ToyotaFlags.SMART_DSU)
     ret.openpilotLongitudinalControl = (experimental_long and ret.experimentalLongitudinalAvailable) or bool(ret.flags & ToyotaFlags.SMART_DSU) or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    ret.openpilotLongitudinalControl = bool(ret.flags & ToyotaFlags.SMART_DSU) or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
 
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
