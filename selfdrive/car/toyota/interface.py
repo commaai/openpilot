@@ -212,14 +212,20 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
-    ret.radarUnavailable = DBC[candidate]['radar'] is None  # candidate in RADAR_ACC_CAR
-    ret.experimentalLongitudinalAvailable = ret.radarUnavailable and bool(ret.flags & ToyotaFlags.SMART_DSU)
+    # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
+    use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
+    if candidate in RADAR_ACC_CAR:
+      ret.experimentalLongitudinalAvailable = use_sdsu
+      use_sdsu = use_sdsu and experimental_long
+
+    # Enable openpilot longitudinal by default if we need to emulate the DSU (it's unplugged), or the camera sends ACC_CONTROL
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
 
     # radar ACC cars w/ smart-DSU installed and experimental_long is enabled.
     # cars w/ smart-DSU installed.
     # cars w/ DSU disconnected.
     # tss2 cars but ACC CMD is not coming from radar.
-    ret.openpilotLongitudinalControl = ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+
     if ret.radarUnavailable:
       # On TSS2 radar-based ACC cars, the SDSU is a filter on the ACC_CONTROL message from the radar
       ret.openpilotLongitudinalControl = ret.experimentalLongitudinalAvailable and experimental_long
