@@ -49,7 +49,7 @@ if __name__ == "__main__":
     sw_pn = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER).decode("utf-8")
     sw_ver = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_VERSION_NUMBER).decode("utf-8")
     component = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.SYSTEM_NAME_OR_ENGINE_TYPE).decode("utf-8")
-    odx_file = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.ODX_FILE).decode("utf-8")
+    odx_file = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.ODX_FILE).decode("utf-8").rstrip('\x00')
     current_coding = uds_client.read_data_by_identifier(VOLKSWAGEN_DATA_IDENTIFIER_TYPE.CODING)  # type: ignore
     coding_text = current_coding.hex()
 
@@ -70,14 +70,14 @@ if __name__ == "__main__":
   coding_variant, current_coding_array, coding_byte, coding_bit = None, None, 0, 0
   coding_length = len(current_coding)
 
-  # EV_SteerAssisMQB/MNB cover the majority of MQB racks (EPS_MQB_ZFLS)
-  if odx_file in ("EV_SteerAssisMQB\x00", "EV_SteerAssisMNB\x00"):
-    coding_variant = "ZF"
+  # EPS_MQB_ZFLS
+  if odx_file in ("EV_SteerAssisMQB", "EV_SteerAssisMNB"):
+    coding_variant = "ZFLS"
     coding_byte = 0
     coding_bit = 4
 
-  # APA racks (MQB_PP_APA) have a different coding layout
-  elif odx_file == "EV_SteerAssisVWBSMQBA\x00\x00\x00\x00":
+  # MQB_PP_APA, MQB_VWBS_GEN2
+  elif odx_file in ("EV_SteerAssisVWBSMQBA", "EV_SteerAssisVWBSMQBGen2"):
     coding_variant = "APA"
     coding_byte = 3
     coding_bit = 0
@@ -111,8 +111,8 @@ if __name__ == "__main__":
   if args.action in ["enable", "disable"]:
     print("\nAttempting configuration update")
 
-    assert(coding_variant in ("ZF", "APA"))
-    # ZF EPS config coding length can be anywhere from 1 to 4 bytes, but the
+    assert(coding_variant in ("ZFLS", "APA"))
+    # ZFLS EPS config coding length can be anywhere from 1 to 4 bytes, but the
     # bit we care about is always in the same place in the first byte
     if args.action == "enable":
       new_byte = current_coding_array[coding_byte] | (1 << coding_bit)

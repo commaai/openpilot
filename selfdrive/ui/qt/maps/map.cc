@@ -24,8 +24,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const float VALID_POS_STD = 50.0; // m
-
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
@@ -45,6 +43,29 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setFixedHeight(h);
   map_eta->move(25, 1080 - h - bdr_s*2);
   map_eta->setVisible(false);
+
+  // Settings button
+  QSize icon_size(120, 120);
+  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
+  settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
+
+  settings_btn = new QPushButton(directions_icon, "", this);
+  settings_btn->setIconSize(icon_size);
+  settings_btn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #96000000;
+      border-radius: 50px;
+      padding: 24px;
+    }
+    QPushButton:pressed {
+      background-color: #D9000000;
+    }
+  )");
+  settings_btn->show();  // force update
+  settings_btn->move(bdr_s, 1080 - bdr_s*3 - settings_btn->height());
+  QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
+    emit openSettings();
+  });
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
@@ -125,48 +146,12 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  // TODO should check a valid/status flag
-  if (sm.updated("gnssMeasurements") && sm["gnssMeasurements"].getGnssMeasurements().getGpsWeek() > 0){
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos = laikad_location.getPositionECEF();
-    auto laikad_pos_ecef = laikad_pos.getValue();
-    auto laikad_pos_std = laikad_pos.getStd();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
-
-    if (laikad_valid && !locationd_valid) {
-      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
-
-      // Compute NED velocity
-      LocalCoord converter(ecef);
-      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
-      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
-
-      float velocity = ned_vel.norm();
-      velocity_filter.update(velocity);
-
-      // Convert NED velocity to angle
-      if (velocity > 1.0) {
-        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        if (last_bearing) {
-          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
-        } else {
-          last_bearing = new_bearing;
-        }
-      }
-    }
-  }
-
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
     if (allow_open) {
-      setVisible(true); // Show map on destination set/change
+      emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
   }
@@ -224,6 +209,19 @@ void MapWindow::updateState(const UIState &s) {
     } else {
       clearRoute();
     }
+
+    // TODO: only move if position should change
+    // don't move while map isn't visible
+    if (isVisible()) {
+      auto pos = 1080 - bdr_s*2 - settings_btn->height() - bdr_s;
+      if (map_eta->isVisible()) {
+        settings_btn->move(bdr_s, pos - map_eta->height());
+        settings_btn->setIcon(settings_icon);
+      } else {
+        settings_btn->move(bdr_s, pos);
+        settings_btn->setIcon(directions_icon);
+      }
+    }
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
@@ -258,7 +256,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
+  m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
@@ -359,7 +357,7 @@ void MapWindow::offroadTransition(bool offroad) {
     clearRoute();
   } else {
     auto dest = coordinate_from_param("NavDestination");
-    setVisible(dest.has_value());
+    emit requestVisible(dest.has_value());
   }
   last_bearing = {};
 }

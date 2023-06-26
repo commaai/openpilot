@@ -53,6 +53,8 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libncurses5-dev \
+    libncursesw5-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
