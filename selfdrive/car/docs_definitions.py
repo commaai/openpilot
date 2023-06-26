@@ -1,5 +1,6 @@
 import re
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -145,7 +146,7 @@ class CarParts:
   parts: List[EnumBase] = field(default_factory=list)
 
   def __call__(self):
-    return self
+    return copy.deepcopy(self)
 
   @classmethod
   def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
