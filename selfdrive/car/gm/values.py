@@ -64,7 +64,7 @@ class CarControllerParams:
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
   def compute_gas_brake(self, desired_accel, v_ego):
-    # The regen/engine braking force changes with speed, this ensures we brake at lower
+    # The regen/engine braking force changes with speed, this ensures we brake earlier at lower
     # speed where we lose this force + ensures we don't apply any gas while stopping
     max_regen_acceleration = interp(v_ego, self.MAX_REGEN_ACCEL_BP, self.MAX_REGEN_ACCEL_V)
     gas_lookup_bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
