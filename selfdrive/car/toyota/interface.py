@@ -207,6 +207,10 @@ class CarInterface(CarInterfaceBase):
     if 0x2FF in fingerprint[0]:
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
+    # No radar dbc for cars without DSU which are not TSS 2.0
+    # TODO: make an adas dbc file for dsu-less models
+    ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
+
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
