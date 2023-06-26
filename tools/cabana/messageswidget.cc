@@ -83,6 +83,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [=](int state) {
     settings.suppress_defined_signals = (state == Qt::Checked);
+    emit settings.changed();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);

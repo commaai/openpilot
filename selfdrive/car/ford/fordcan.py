@@ -13,15 +13,15 @@ class CanBus(CanBusBase):
     return self.offset
 
   @property
-  def radar(self):
+  def radar(self) -> int:
     return self.offset + 1
 
   @property
-  def camera(self):
+  def camera(self) -> int:
     return self.offset + 2
 
 
-def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
+def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray) -> int:
   curvature = (dat[2] << 3) | ((dat[3]) >> 5)
   curvature_rate = (dat[6] << 3) | ((dat[7]) >> 5)
   path_angle = ((dat[3] & 0x1F) << 6) | ((dat[4]) >> 2)

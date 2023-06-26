@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
 from cereal import car
-from selfdrive.car.toyota.values import NO_DSU_CAR, DBC, TSS2_CAR
+from selfdrive.car.toyota.values import DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 
@@ -43,12 +43,8 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = self.RADAR_B_MSGS[-1]
     self.updated_messages = set()
 
-    # No radar dbc for cars without DSU which are not TSS 2.0
-    # TODO: make a adas dbc file for dsu-less models
-    self.no_radar = CP.carFingerprint in NO_DSU_CAR and CP.carFingerprint not in TSS2_CAR
-
   def update(self, can_strings):
-    if self.no_radar or self.rcp is None:
+    if self.rcp is None:
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)

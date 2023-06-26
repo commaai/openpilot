@@ -290,6 +290,7 @@ selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
+selfdrive/test/fuzzy_generation.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_onroad.py
@@ -438,6 +439,7 @@ third_party/libyuv/larch64/**
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
+third_party/acados/.gitignore
 third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**
