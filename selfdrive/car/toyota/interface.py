@@ -220,7 +220,7 @@ class CarInterface(CarInterfaceBase):
     # cars w/ DSU disconnected.
     # tss2 cars but ACC CMD is not coming from radar.
     ret.openpilotLongitudinalControl = ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
-    if candidate in RADAR_ACC_CAR:
+    if ret.radarUnavailable:
       # On TSS2 radar-based ACC cars, the SDSU is a filter on the ACC_CONTROL message from the radar
       ret.openpilotLongitudinalControl = ret.experimentalLongitudinalAvailable and experimental_long
     else:
