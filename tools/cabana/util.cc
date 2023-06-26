@@ -157,7 +157,7 @@ UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
   }
 
   sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
-  connect(sn, SIGNAL(activated(QSocketDescriptor)), this, SLOT(handleSigTerm()));
+  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
   std::signal(SIGINT, signalHandler);
   std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
