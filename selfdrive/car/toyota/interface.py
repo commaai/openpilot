@@ -224,11 +224,11 @@ class CarInterface(CarInterfaceBase):
       use_sdsu = use_sdsu and experimental_long
 
     # openpilot longitudinal enabled by default:
-    #  - non-(TSS2 radar ACC cars) w/ smart-DSU installed
+    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
     #  - cars w/ DSU disconnected
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal enabled when experimental long is toggled:
-    #  - TSS2 radar ACC cars w/ smart-DSU installed
+    #  - TSS2 radar ACC cars w/ smartDSU installed
     ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
