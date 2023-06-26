@@ -148,7 +148,7 @@ class CarController:
 
     angle_control = self.CP.steerControlType == SteerControlType.angle
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req and not angle_control))
-    if TSS2_CAR and self.frame % self.params.STEER_STEP == 0:
+    if self.CP.carFingerprint in TSS2_CAR and self.frame % self.params.STEER_STEP == 0:
       limit_torque = CS.out.steeringPressed
       can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque, self.op_params,
                                                 self.frame // self.params.STEER_STEP))
