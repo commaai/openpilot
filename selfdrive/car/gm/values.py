@@ -38,41 +38,42 @@ class CarControllerParams:
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    # The max amount of deceleration possible using ASCMGasRegenCmd alone. May vary by speed on some cars
-    self.MAX_REGEN_ACCEL_BP = [0.]  # m/s
-    self.MAX_REGEN_ACCEL_V = [0.]  # m/s^2
-
     if CP.carFingerprint in CAMERA_ACC_CAR:
-      # Camera ACC vehicles have no regen while enabled.
-      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
       self.MAX_GAS = 3400
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
+      # Camera ACC vehicles have no regen while enabled.
+      # Camera transitions to MAX_ACC_REGEN from ZERO_GAS and uses friction brakes instantly
+      max_regen_acceleration = 0.
 
     else:
       self.MAX_GAS = 3072  # Safety limit, not ACC max. Stock ACC >4096 from standstill.
       self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
       self.INACTIVE_REGEN = 1404
+      # ICE has much less engine braking force compared to regen in EVs,
+      # lower threshold removes some braking deadzone
+      max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
 
-      if CP.carFingerprint in EV_CAR:
-        # determined by letting Volt regen to a stop in L gear from 89mph,
-        # and by letting off gas and allowing car to creep, for determining
-        # the positive threshold values at very low speed
-        self.MAX_REGEN_ACCEL_BP = [0, 2.0, 10.]
-        self.MAX_REGEN_ACCEL_V = [0.5, 0.0, 1.0]
-      else:
-        # ICE has much less engine braking force compared to regen in EVs,
-        # lower threshold removes some braking deadzone
-        self.MAX_REGEN_ACCEL_V = [-0.1]
+    # The max amount of deceleration possible using ASCMGasRegenCmd alone.
+    # It is assumed no regen/engine braking is available at low speeds
+    self.MAX_REGEN_ACCEL_BP = [2., 10.]  # m/s
+    self.MAX_REGEN_ACCEL_V = [0., max_regen_acceleration]  # m/s^2
 
     self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
+
     self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
 
-  def get_gas_brake_lookup_bp(self, v_ego):
+  def compute_gas_brake(self, desired_accel, v_ego):
+    # The regen/engine braking force changes with speed, this ensures we brake at lower
+    # speed where we lose this force + ensures we don't apply any gas while stopping
     max_regen_acceleration = interp(v_ego, self.MAX_REGEN_ACCEL_BP, self.MAX_REGEN_ACCEL_V)
     gas_lookup_bp = [max_regen_acceleration, 0., self.ACCEL_MAX]
     brake_lookup_bp = [self.ACCEL_MIN, max_regen_acceleration]
-    return gas_lookup_bp, brake_lookup_bp
+
+    # Compute gas and brake with dynamic breakpoints
+    apply_gas = int(round(interp(desired_accel, gas_lookup_bp, self.GAS_LOOKUP_V)))
+    apply_brake = int(round(interp(desired_accel, brake_lookup_bp, self.BRAKE_LOOKUP_V)))
+    return apply_gas, apply_brake
 
 
 class CAR:
