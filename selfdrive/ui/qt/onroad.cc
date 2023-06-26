@@ -327,24 +327,23 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
   // Draw MAX
-  QColor max_color = QColor(0xa6, 0xa6, 0xa6, 0xff);
-  QColor set_speed_color = QColor(0x72, 0x72, 0x72, 0xff);
+  QColor max_color = QColor(0x80, 0xd8, 0xa6, 0xff);
+  QColor set_speed_color = whiteColor();
   if (is_cruise_set) {
     if (status == STATUS_DISENGAGED) {
       max_color = whiteColor();
-      set_speed_color = whiteColor();
     } else if (status == STATUS_OVERRIDE) {
       max_color = QColor(0x91, 0x9b, 0x95, 0xff);
-      set_speed_color = whiteColor();
-    } else {
+    } else if (speedLimit > 0) {
       auto interp_color = [=](QColor c1, QColor c2, QColor c3) {
         return speedLimit > 0 ? interpColor(setSpeed, {speedLimit + 5, speedLimit + 15, speedLimit + 25}, {c1, c2, c3}) : c1;
       };
-      max_color = interp_color(QColor(0x80, 0xd8, 0xa6), QColor(0xff, 0xe4, 0xbf), QColor(0xff, 0xbf, 0xbf));
-      if (speedLimit > 0) {
-        set_speed_color = interp_color(whiteColor(), QColor(0xff, 0x95, 0x00), QColor(0xff, 0x00, 0x00));
-      }
+      max_color = interp_color(max_color, QColor(0xff, 0xe4, 0xbf), QColor(0xff, 0xbf, 0xbf));
+      set_speed_color = interp_color(set_speed_color, QColor(0xff, 0x95, 0x00), QColor(0xff, 0x00, 0x00));
     }
+  } else {
+    max_color = QColor(0xa6, 0xa6, 0xa6, 0xff);
+    set_speed_color = QColor(0x72, 0x72, 0x72, 0xff);
   }
   configFont(p, "Inter", 40, "SemiBold");
   p.setPen(max_color);
