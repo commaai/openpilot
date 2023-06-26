@@ -19,20 +19,25 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  STEER_STEP = 2                          # HCA_01/HCA_1 message frequency 50Hz
-  ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
+  STEER_STEP = 2                           # HCA_01/HCA_1 message frequency 50Hz
+  ACC_CONTROL_STEP = 2                     # ACC_06/ACC_07/ACC_System frequency 50Hz
 
-  ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
-  ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
+  # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
+  # MQB vs PQ maximums are shared, but rate-of-change limited differently
+  # based on safety requirements driven by lateral accel testing.
+
+  STEER_MAX = 300                          # Max heading control assist torque 3.00 Nm
+  STEER_DRIVER_MULTIPLIER = 3              # weight driver torque heavily
+  STEER_DRIVER_FACTOR = 1                  # from dbc
+
+  STEER_TIME_MAX = 360                     # Max time that EPS allows uninterrupted HCA steering control
+  STEER_TIME_ALERT = STEER_TIME_MAX - 10   # If mitigation fails, time to soft disengage before EPS timer expires
+  STEER_TIME_STUCK_TORQUE = 1.9            # EPS limits same torque to 6 seconds, reset timer 3x within that period
+
+  ACCEL_MAX = 2.0                          # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
 
   def __init__(self, CP):
-    # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
-    # MQB vs PQ maximums are shared, but rate-of-change limited differently
-    # based on safety requirements driven by lateral accel testing.
-    self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
-    self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
-    self.STEER_DRIVER_FACTOR = 1          # from dbc
-
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     if CP.carFingerprint in PQ_CARS:
