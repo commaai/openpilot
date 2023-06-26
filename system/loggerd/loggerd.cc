@@ -58,7 +58,7 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg_ptr, std::string &name, struct RemoteEncoder &re, EncoderInfo encoder_info) {
+int handle_encoder_msg(LoggerdState *s, Message *msg_ptr, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
   int bytes_count = 0;
   std::unique_ptr<Message> msg(msg_ptr);
 

@@ -223,6 +223,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 }
 
 
+// Window that shows camera view and variety of info drawn on top
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
@@ -305,131 +306,79 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
 
   // Draw outer box + border to contain set speed and speed limit
-  int default_rect_width = 172;
-  int rect_width = default_rect_width;
-  if (is_metric || has_eu_speed_limit) rect_width = 200;
-  if (has_us_speed_limit && speedLimitStr.size() >= 3) rect_width = 223;
+  const int sign_margin = 12;
+  const int us_sign_height = 186;
+  const int eu_sign_size = 176;
 
-  int rect_height = 204;
-  if (has_us_speed_limit) rect_height = 402;
-  else if (has_eu_speed_limit) rect_height = 392;
+  const QSize default_size = {172, 204};
+  QSize set_speed_size = default_size;
+  if (is_metric || has_eu_speed_limit) set_speed_size.rwidth() = 200;
+  if (has_us_speed_limit && speedLimitStr.size() >= 3) set_speed_size.rwidth() = 223;
+
+  if (has_us_speed_limit) set_speed_size.rheight() += us_sign_height + sign_margin;
+  else if (has_eu_speed_limit) set_speed_size.rheight() += eu_sign_size + sign_margin;
 
   int top_radius = 32;
   int bottom_radius = has_eu_speed_limit ? 100 : 32;
 
-  QRect set_speed_rect(60 + default_rect_width / 2 - rect_width / 2, 45, rect_width, rect_height);
+  QRect set_speed_rect(QPoint(60 + (default_size.width() - set_speed_size.width()) / 2, 45), set_speed_size);
   p.setPen(QPen(whiteColor(75), 6));
   p.setBrush(blackColor(166));
   drawRoundedRect(p, set_speed_rect, top_radius, top_radius, bottom_radius, bottom_radius);
 
   // Draw MAX
+  QColor max_color = QColor(0x80, 0xd8, 0xa6, 0xff);
+  QColor set_speed_color = whiteColor();
   if (is_cruise_set) {
     if (status == STATUS_DISENGAGED) {
-      p.setPen(whiteColor());
+      max_color = whiteColor();
     } else if (status == STATUS_OVERRIDE) {
-      p.setPen(QColor(0x91, 0x9b, 0x95, 0xff));
+      max_color = QColor(0x91, 0x9b, 0x95, 0xff);
     } else if (speedLimit > 0) {
-      p.setPen(interpColor(
-        setSpeed,
-        {speedLimit + 5, speedLimit + 15, speedLimit + 25},
-        {QColor(0x80, 0xd8, 0xa6, 0xff), QColor(0xff, 0xe4, 0xbf, 0xff), QColor(0xff, 0xbf, 0xbf, 0xff)}
-      ));
-    } else {
-      p.setPen(QColor(0x80, 0xd8, 0xa6, 0xff));
+      auto interp_color = [=](QColor c1, QColor c2, QColor c3) {
+        return speedLimit > 0 ? interpColor(setSpeed, {speedLimit + 5, speedLimit + 15, speedLimit + 25}, {c1, c2, c3}) : c1;
+      };
+      max_color = interp_color(max_color, QColor(0xff, 0xe4, 0xbf), QColor(0xff, 0xbf, 0xbf));
+      set_speed_color = interp_color(set_speed_color, QColor(0xff, 0x95, 0x00), QColor(0xff, 0x00, 0x00));
     }
   } else {
-    p.setPen(QColor(0xa6, 0xa6, 0xa6, 0xff));
+    max_color = QColor(0xa6, 0xa6, 0xa6, 0xff);
+    set_speed_color = QColor(0x72, 0x72, 0x72, 0xff);
   }
   configFont(p, "Inter", 40, "SemiBold");
-  QRect max_rect = getTextRect(p, Qt::AlignCenter, tr("MAX"));
-  max_rect.moveCenter({set_speed_rect.center().x(), 0});
-  max_rect.moveTop(set_speed_rect.top() + 27);
-  p.drawText(max_rect, Qt::AlignCenter, tr("MAX"));
-
-  // Draw set speed
-  if (is_cruise_set) {
-    if (speedLimit > 0 && status != STATUS_DISENGAGED && status != STATUS_OVERRIDE) {
-      p.setPen(interpColor(
-        setSpeed,
-        {speedLimit + 5, speedLimit + 15, speedLimit + 25},
-        {whiteColor(), QColor(0xff, 0x95, 0x00, 0xff), QColor(0xff, 0x00, 0x00, 0xff)}
-      ));
-    } else {
-      p.setPen(whiteColor());
-    }
-  } else {
-    p.setPen(QColor(0x72, 0x72, 0x72, 0xff));
-  }
+  p.setPen(max_color);
+  p.drawText(set_speed_rect.adjusted(0, 27, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("MAX"));
   configFont(p, "Inter", 90, "Bold");
-  QRect speed_rect = getTextRect(p, Qt::AlignCenter, setSpeedStr);
-  speed_rect.moveCenter({set_speed_rect.center().x(), 0});
-  speed_rect.moveTop(set_speed_rect.top() + 77);
-  p.drawText(speed_rect, Qt::AlignCenter, setSpeedStr);
+  p.setPen(set_speed_color);
+  p.drawText(set_speed_rect.adjusted(0, 77, 0, 0), Qt::AlignTop | Qt::AlignHCenter, setSpeedStr);
 
-
-
+  const QRect sign_rect = set_speed_rect.adjusted(sign_margin, default_size.height(), -sign_margin, -sign_margin);
   // US/Canada (MUTCD style) sign
   if (has_us_speed_limit) {
-    const int border_width = 6;
-    const int sign_width = rect_width - 24;
-    const int sign_height = 186;
-
-    // White outer square
-    QRect sign_rect_outer(set_speed_rect.left() + 12, set_speed_rect.bottom() - 11 - sign_height, sign_width, sign_height);
     p.setPen(Qt::NoPen);
     p.setBrush(whiteColor());
-    p.drawRoundedRect(sign_rect_outer, 24, 24);
+    p.drawRoundedRect(sign_rect, 24, 24);
+    p.setPen(QPen(blackColor(), 6));
+    p.drawRoundedRect(sign_rect.adjusted(9, 9, -9, -9), 16, 16);
 
-    // Smaller white square with black border
-    QRect sign_rect(sign_rect_outer.left() + 1.5 * border_width, sign_rect_outer.top() + 1.5 * border_width, sign_width - 3 * border_width, sign_height - 3 * border_width);
-    p.setPen(QPen(blackColor(), border_width));
-    p.setBrush(whiteColor());
-    p.drawRoundedRect(sign_rect, 16, 16);
-
-    // "SPEED"
     configFont(p, "Inter", 28, "SemiBold");
-    QRect text_speed_rect = getTextRect(p, Qt::AlignCenter, tr("SPEED"));
-    text_speed_rect.moveCenter({sign_rect.center().x(), 0});
-    text_speed_rect.moveTop(sign_rect_outer.top() + 22);
-    p.drawText(text_speed_rect, Qt::AlignCenter, tr("SPEED"));
-
-    // "LIMIT"
-    QRect text_limit_rect = getTextRect(p, Qt::AlignCenter, tr("LIMIT"));
-    text_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    text_limit_rect.moveTop(sign_rect_outer.top() + 51);
-    p.drawText(text_limit_rect, Qt::AlignCenter, tr("LIMIT"));
-
-    // Speed limit value
+    p.drawText(sign_rect.adjusted(0, 22, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("SPEED"));
+    p.drawText(sign_rect.adjusted(0, 51, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("LIMIT"));
     configFont(p, "Inter", 70, "Bold");
-    QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
-    speed_limit_rect.moveCenter({sign_rect.center().x(), 0});
-    speed_limit_rect.moveTop(sign_rect_outer.top() + 85);
-    p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
+    p.drawText(sign_rect.adjusted(0, 85, 0, 0), Qt::AlignTop | Qt::AlignHCenter, speedLimitStr);
   }
 
   // EU (Vienna style) sign
   if (has_eu_speed_limit) {
-    int outer_radius = 176 / 2;
-    int inner_radius_1 = outer_radius - 6; // White outer border
-    int inner_radius_2 = inner_radius_1 - 20; // Red circle
-
-    // Draw white circle with red border
-    QPoint center(set_speed_rect.center().x() + 1, set_speed_rect.top() + 204 + outer_radius);
     p.setPen(Qt::NoPen);
     p.setBrush(whiteColor());
-    p.drawEllipse(center, outer_radius, outer_radius);
-    p.setBrush(QColor(255, 0, 0, 255));
-    p.drawEllipse(center, inner_radius_1, inner_radius_1);
-    p.setBrush(whiteColor());
-    p.drawEllipse(center, inner_radius_2, inner_radius_2);
+    p.drawEllipse(sign_rect);
+    p.setPen(QPen(Qt::red, 20));
+    p.drawEllipse(sign_rect.adjusted(16, 16, -16, -16));
 
-    // Speed limit value
-    int font_size = (speedLimitStr.size() >= 3) ? 60 : 70;
-    configFont(p, "Inter", font_size, "Bold");
-    QRect speed_limit_rect = getTextRect(p, Qt::AlignCenter, speedLimitStr);
-    speed_limit_rect.moveCenter(center);
+    configFont(p, "Inter", (speedLimitStr.size() >= 3) ? 60 : 70, "Bold");
     p.setPen(blackColor());
-    p.drawText(speed_limit_rect, Qt::AlignCenter, speedLimitStr);
+    p.drawText(sign_rect, Qt::AlignCenter, speedLimitStr);
   }
 
   // current speed
@@ -440,10 +389,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
 
   p.restore();
 }
-
-
-// Window that shows camera view and variety of
-// info drawn on top
 
 void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QRect real_rect = getTextRect(p, 0, text);
@@ -462,7 +407,6 @@ void AnnotatedCameraWidget::drawIcon(QPainter &p, int x, int y, QPixmap &img, QB
   p.drawPixmap(x - img.size().width() / 2, y - img.size().height() / 2, img);
   p.setOpacity(1.0);
 }
-
 
 void AnnotatedCameraWidget::initializeGL() {
   CameraWidget::initializeGL();
