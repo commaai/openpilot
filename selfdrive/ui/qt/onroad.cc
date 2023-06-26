@@ -24,7 +24,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
-  split->setSpacing(bdr_s*2);
+  split->setSpacing(0);
   split->addWidget(nvg);
 
   if (getenv("DUAL_CAMERA_VIEW")) {
@@ -52,6 +52,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  bool enabledNow = (*s.sm)["controlsState"].getControlsState().getEnabled();
   bool navEnabledNow = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
@@ -66,15 +67,16 @@ void OnroadWindow::updateState(const UIState &s) {
   nvg->updateState(s);
 
   // update spacing
-  if (navEnabled != navEnabledNow) {
-    split->setSpacing(navEnabledNow ? 0 : bdr_s*2);
+  if ((enabled != enabledNow) || (navEnabled != navEnabledNow)) {
+    split->setSpacing(enabledNow && !navEnabledNow ? bdr_s*2 : 0);
     if (map) {
-      map->setFixedWidth(width() / 2 - bdr_s * (navEnabledNow ? 1 : 2));
+      map->setFixedWidth(width() / 2 - bdr_s * (enabledNow && !navEnabledNow ? 2 : 1));
     }
   }
 
   // repaint border
   bg = bgColor;
+  enabled = enabledNow;
   navEnabled = navEnabledNow;
   update();
 }
@@ -101,7 +103,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
-      m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s*2);
+      m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s);
       split->insertWidget(0, m);
 
       // hidden by default, made visible when navRoute is published
