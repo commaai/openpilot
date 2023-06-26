@@ -212,7 +212,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
-    ret.radarUnavailable = candidate in RADAR_ACC_CAR
+    ret.radarUnavailable = DBC[candidate]['radar'] is None  # candidate in RADAR_ACC_CAR
     ret.experimentalLongitudinalAvailable = ret.radarUnavailable and bool(ret.flags & ToyotaFlags.SMART_DSU)
 
     # radar ACC cars w/ smart-DSU installed and experimental_long is enabled.
