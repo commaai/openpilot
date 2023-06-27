@@ -7,6 +7,10 @@ on:
 jobs:
   build_masterci:
     name: build master-ci
+    env:
+      TARGET_DIR: /tmp/openpilot
+    container:
+      image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
@@ -22,7 +26,19 @@ jobs:
         submodules: true
         fetch-depth: 0
     - name: Pull LFS
-      run: git lfs pull
+      run: |
+        git config --global --add safe.directory '*'
+        git lfs pull
     - name: Build master-ci
       run: |
+        release/build_devel.sh
+    - name: Run tests
+      run: |
+        export PYTHONPATH=$TARGET_DIR
+        cd $TARGET_DIR
+        scons -j$(nproc)
+        selfdrive/car/tests/test_car_interfaces.py
+    - name: Push master-ci
+      run: |
+        unset TARGET_DIR
         BRANCH=master-ci release/build_devel.sh

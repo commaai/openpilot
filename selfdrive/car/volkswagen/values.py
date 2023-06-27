@@ -19,20 +19,25 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
 class CarControllerParams:
-  STEER_STEP = 2                          # HCA_01/HCA_1 message frequency 50Hz
-  ACC_CONTROL_STEP = 2                    # ACC_06/ACC_07/ACC_System frequency 50Hz
+  STEER_STEP = 2                           # HCA_01/HCA_1 message frequency 50Hz
+  ACC_CONTROL_STEP = 2                     # ACC_06/ACC_07/ACC_System frequency 50Hz
 
-  ACCEL_MAX = 2.0                         # 2.0 m/s max acceleration
-  ACCEL_MIN = -3.5                        # 3.5 m/s max deceleration
+  # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
+  # MQB vs PQ maximums are shared, but rate-of-change limited differently
+  # based on safety requirements driven by lateral accel testing.
+
+  STEER_MAX = 300                          # Max heading control assist torque 3.00 Nm
+  STEER_DRIVER_MULTIPLIER = 3              # weight driver torque heavily
+  STEER_DRIVER_FACTOR = 1                  # from dbc
+
+  STEER_TIME_MAX = 360                     # Max time that EPS allows uninterrupted HCA steering control
+  STEER_TIME_ALERT = STEER_TIME_MAX - 10   # If mitigation fails, time to soft disengage before EPS timer expires
+  STEER_TIME_STUCK_TORQUE = 1.9            # EPS limits same torque to 6 seconds, reset timer 3x within that period
+
+  ACCEL_MAX = 2.0                          # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
 
   def __init__(self, CP):
-    # Documented lateral limits: 3.00 Nm max, rate of change 5.00 Nm/sec.
-    # MQB vs PQ maximums are shared, but rate-of-change limited differently
-    # based on safety requirements driven by lateral accel testing.
-    self.STEER_MAX = 300                  # Max heading control assist torque 3.00 Nm
-    self.STEER_DRIVER_MULTIPLIER = 3      # weight driver torque heavily
-    self.STEER_DRIVER_FACTOR = 1          # from dbc
-
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     if CP.carFingerprint in PQ_CARS:
@@ -231,7 +236,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
     VWCarInfo("Volkswagen Sharan 2018-22"),
     VWCarInfo("SEAT Alhambra 2018-20"),
   ],
-  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022"),
+  CAR.TAOS_MK1: VWCarInfo("Volkswagen Taos 2022-23"),
   CAR.TCROSS_MK1: VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0]),
   CAR.TIGUAN_MK2: [
     VWCarInfo("Volkswagen Tiguan 2018-23"),
@@ -746,9 +751,11 @@ FW_VERSIONS = {
   CAR.TAOS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027NJ\xf1\x891445',
+      b'\xf1\x8704E906027NP\xf1\x891286',
       b'\xf1\x8705E906013E \xf1\x891624',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158EM\xf1\x893812',
       b'\xf1\x8709S927158BL\xf1\x893791',
       b'\xf1\x8709S927158FF\xf1\x893876',
     ],
@@ -757,10 +764,12 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655CE\xf1\x890421\xf1\x82\x1311110011333300314240021350139333613100',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875QM907144D \xf1\x891063\xf1\x82\x001O06081OOM',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060405A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060605A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },

@@ -33,6 +33,10 @@ class CarControllerParams:
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 
+class CanBus:
+  main = 0
+  alt = 1
+  camera = 2
 
 class Buttons(IntEnum):
   NONE = 0
@@ -63,7 +67,6 @@ GLOBAL_BUTTONS = {
   2: Buttons.SET_DEC,
   4: Buttons.RES_INC
 }
-
 
 class CAR:
   # Global platform

@@ -26,8 +26,8 @@ class TestPigeond(unittest.TestCase):
     sm = messaging.SubMaster(['ubloxRaw'])
 
     # setup time
-    time.sleep(2)
-    sm.update()
+    for _ in range(int(5 * service_list['ubloxRaw'].frequency)):
+      sm.update()
 
     for _ in range(int(10 * service_list['ubloxRaw'].frequency)):
       sm.update()
