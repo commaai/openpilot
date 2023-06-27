@@ -10,6 +10,12 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
+# Steering fault definitions:
+# - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
+# - lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3
+# - initializing: catch-all
+TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -88,11 +94,11 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
-    # steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
-    # lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds
-    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in (0, 9, 11, 21, 25)
-    # 17 is a fault from a prolonged high torque delta between cmd and user
-    # 3 is a fault from the lka command message not being received by the EPS
+
+    # Check EPS LKA fault status
+    ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in TEMP_STEER_FAULTS
+    # 3 is a fault from the lka command message not being received by the EPS (recoverable)
+    # 17 is a fault from a prolonged high torque delta between cmd and user (permanent)
     ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
