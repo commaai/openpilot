@@ -1,5 +1,5 @@
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Union
 
@@ -176,7 +176,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = CarParts.common([CarHarness.j533])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.j533]))
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
