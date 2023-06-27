@@ -99,8 +99,7 @@ class CarState(CarStateBase):
 
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       # 3 is a fault from the lta command message not being received by the EPS
-      # TODO: set actual codes. 1 is inactive, 5 is active
-      ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] not in (1, 3, 5)
+      ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in (0, 9, 25)
       ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in (3,)
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
@@ -189,6 +188,7 @@ class CarState(CarStateBase):
       ("STEER_ANGLE_INITIALIZING", "STEER_TORQUE_SENSOR"),
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
+      ("LTA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
     ]
 
