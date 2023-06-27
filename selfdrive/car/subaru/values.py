@@ -69,8 +69,7 @@ class CAR:
 
 class Footnote(Enum):
   GEN2 = CarFootnote(
-    "Long control requires disabling eyesight, which will currently deactivate stock AEB and other eyesight features, like High Beam Assist.",
-    Column.LONGITUDINAL, shop_footnote=True)
+    "Long control requires disabling eyesight, which will currently deactivate stock AEB and other eyesight features, like High Beam Assist.", Column.LONGITUDINAL)
 
 @dataclass
 class SubaruCarInfo(CarInfo):
