@@ -98,6 +98,7 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      # may also report 0 until the EPS calibrates the STEER_TORQUE_SENSOR angle
       # 3 is a fault from the lta command message not being received by the EPS
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in (0, 9, 25)
       ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in (3,)
