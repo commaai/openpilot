@@ -1,6 +1,9 @@
 Version 0.9.4 (2023-XX-XX)
 ========================
 * Navigate on openpilot
+  * When navigation has a destination openpilot will input the map information into the model, generally improving behavior
+  * When navigating on openpilot, openpilot will keep left or right appropriately at forks/exits and take turns
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver 
 * UI updates
   * navigation settings moved to home screen and map
 * Ford Focus 2018 support
