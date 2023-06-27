@@ -14,9 +14,10 @@ SteerControlType = car.CarParams.SteerControlType
 
 # These definitions seem to be common across LKA (torque) and LTA (angle)
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
-# - lka/lta msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3
-#   - if using the other control command, goes to 3 after 1.5 seconds
-# - initializing: LTA can report 0 as long as STEER_TORQUE_SENSOR->STEER_ANGLE_INITIALIZING is 1
+# - lka/lta msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3.
+#     if using the other control command, goes to 3 after 1.5 seconds
+# - initializing: LTA can report 0 as long as STEER_TORQUE_SENSOR->STEER_ANGLE_INITIALIZING is 1,
+#     and is a catch-all for LKA
 TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 
 
