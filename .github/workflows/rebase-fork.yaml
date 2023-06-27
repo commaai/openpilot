@@ -2,7 +2,7 @@
 name: Rebase Upstream
 on:
   schedule:
-  - cron: "0 0 0 ? * * *"  # run daily
+  - cron: "0 0 * * *"  # run daily
   workflow_dispatch:   # run manually
 
 jobs:
