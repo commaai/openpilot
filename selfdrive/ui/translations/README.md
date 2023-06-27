@@ -61,12 +61,12 @@ selfdrive/ui/tests/create_test_translations.sh && selfdrive/ui/tests/test_transl
 
 ### Pre-viewing alerts
 
-Latin-based languages often use more space to convey the same message. Then you may want to predict alerts to make sure nothing is overlapping:
-  OffRoad alerts (clear OffRoad params later):
-   ```shell
-   selfdrive/ui/tests/cycle_offroad_alerts.py
-   ```
-   Onroad alerts (hardcode with the alerts you need to see):
-   ```shell
-   selfdrive/debug/cycle_alerts.py
-   ```
+Latin-based languages often use more space to convey the same message. Then you may want to predict alerts to make sure nothing is overlapping:<br>
+OffRoad alerts (clear OffRoad params later):
+```shell
+selfdrive/ui/tests/cycle_offroad_alerts.py
+```
+Onroad alerts (hardcode with the alerts you need to see):
+```shell
+selfdrive/debug/cycle_alerts.py
+```
