@@ -9,11 +9,16 @@ jobs:
     name: build master-ci
     env:
       TARGET_DIR: /tmp/openpilot
+      ImageOS: ubuntu20
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
+    - name: Install wait-on-check-action dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
       uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
