@@ -12,7 +12,7 @@ from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, 
 
 # Steering fault definitions:
 # - high steer rate fault: goes to 21 or 25 for 1 frame, then 9 for 2 seconds
-# - lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3.
+# - lka msg drop out: goes to 9 then 11 for a combined total of 2 seconds, then 3
 TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 
 
