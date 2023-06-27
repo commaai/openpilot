@@ -8,26 +8,25 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
-from common.op_params import opParams
-import math
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# EPS faults if you request steer while the steering rate is above 100 deg/s for too long
+# LKA limits
+# EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
-MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before steer can be cut
+MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
 
+# LTA limits
 # EPS ignores commands above this angle and causes PCS faults
 MAX_STEER_ANGLE = 94.9461  # deg
 
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
-    self.op_params = opParams()
     self.CP = CP
     self.params = CarControllerParams(self.CP)
     self.frame = 0
@@ -81,22 +80,10 @@ class CarController:
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
         torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        # This might be better now with the apply bit modulation
-        # # limit max angle error between cmd and actual to reduce EPS integral windup
-        # # TODO: can we configure this with a signal?
-        # apply_angle = clip(apply_angle,
-        #                    -abs(torque_sensor_angle) - self.params.ANGLE_DELTA_MAX,
-        #                    abs(torque_sensor_angle) + self.params.ANGLE_DELTA_MAX)
-
-        # Clip max angle to acceptable lateral accel limits
-        # v_ego = max(CS.out.vEgo, 5.)
         apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
-
-        # Clip to max angle limits
-        # apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
         if not lat_active:
           apply_angle = clip(torque_sensor_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
@@ -146,7 +133,7 @@ class CarController:
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req and not angle_control))
     if self.CP.carFingerprint in TSS2_CAR and self.frame % self.params.STEER_STEP == 0:
       limit_torque = CS.out.steeringPressed
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque, self.op_params,
+      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque,
                                                 self.frame // self.params.STEER_STEP))
 
     self.last_steer = apply_steer
