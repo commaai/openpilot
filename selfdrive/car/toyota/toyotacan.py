@@ -12,7 +12,7 @@ def create_steer_command(packer, steer, steer_req):
 def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, frame):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
-  setme_x64 = 99 if limit_torque else (99 if frame % 3 == 0 else 100),
+  setme_x64 = 99 if limit_torque else (99 if frame % 3 == 0 else 100)
 
   values = {
     "COUNTER": frame + 128,
