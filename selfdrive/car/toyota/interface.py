@@ -8,22 +8,13 @@ from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType.angle
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
-
-  @staticmethod
-  def get_angle_feedforward(desired_angle, v_ego):
-    return desired_angle
-
-  def get_steer_feedforward_function(self):
-    if self.CP.steerControlType == car.CarParams.SteerControlType.torque:
-      return CarInterfaceBase.get_steer_feedforward_default
-    else:
-      return self.get_angle_feedforward
 
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
@@ -37,7 +28,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in ANGLE_CONTROL_CAR:
       # ret.dashcamOnly = True
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
@@ -102,7 +93,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
       if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-        ret.steerControlType = car.CarParams.SteerControlType.angle
+        ret.steerControlType = SteerControlType.angle
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -149,7 +140,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.steerControlType = SteerControlType.angle
 
     elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
@@ -235,9 +226,10 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-    if ret.steerControlType == car.CarParams.SteerControlType.angle:
+    if ret.steerControlType == SteerControlType.angle:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
       ret.steerActuatorDelay = 0.25
+      ret.steerLimitTimer = 1.0
 
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
