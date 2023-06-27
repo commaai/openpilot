@@ -94,7 +94,7 @@ class CarState(CarStateBase):
     # we could use the override bit from dbc, but it's triggered at too high torque values
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
 
-    # Check EPS LKA/LTA fault status
+    # Check EPS LKA fault status
     ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in TEMP_STEER_FAULTS
     # 3 is a fault from the lka command message not being received by the EPS (recoverable)
     # 17 is a fault from a prolonged high torque delta between cmd and user (permanent)
