@@ -36,7 +36,7 @@ class CarControllerParams:
 
   def __init__(self, CP):
     if CP.steerControlType == 'angle':
-      self.STEER_STEP = 2
+      self.STEER_STEP = 1
     else:
       self.STEER_STEP = 1
 
