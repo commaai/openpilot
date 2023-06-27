@@ -10,6 +10,8 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
+SteerControlType = car.CarParams.SteerControlType
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -97,7 +99,7 @@ class CarState(CarStateBase):
     # 3 is a fault from the lka command message not being received by the EPS
     ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
 
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType == SteerControlType.angle:
       # may also report 0 until the EPS calibrates the STEER_TORQUE_SENSOR angle
       # 3 is a fault from the lta command message not being received by the EPS
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in (0, 9, 25)
@@ -189,9 +191,12 @@ class CarState(CarStateBase):
       ("STEER_ANGLE_INITIALIZING", "STEER_TORQUE_SENSOR"),
       ("TURN_SIGNALS", "BLINKERS_STATE"),
       ("LKA_STATE", "EPS_STATUS"),
-      ("LTA_STATE", "EPS_STATUS"),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK"),
     ]
+
+    # Check LTA state if using LTA angle control
+    if CP.steerControlType == SteerControlType.angle:
+      signals.append(("LTA_STATE", "EPS_STATUS"))
 
     checks = [
       ("GEAR_PACKET", 1),
