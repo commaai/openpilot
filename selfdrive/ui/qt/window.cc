@@ -44,9 +44,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   });
 
-  // disable input events if device is not woken up.
-  QObject::connect(&device, &Device::displayPowerChanged, this, &QWidget::setEnabled);
-
   // load fonts
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Black.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Bold.ttf");
