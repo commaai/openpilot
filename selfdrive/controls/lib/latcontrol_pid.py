@@ -1,23 +1,16 @@
 import math
 
-from cereal import car, log
+from cereal import log
 from selfdrive.controls.lib.latcontrol import LatControl
 from selfdrive.controls.lib.pid import PIDController
-
-SteerControlType = car.CarParams.SteerControlType
-STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlPID(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    kargs = {}
-    if self.CP.steerControlType == SteerControlType.torque:
-      kargs.update({"pos_limit": self.steer_max, "neg_limit": -self.steer_max})
-
     self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                              (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
-                             k_f=CP.lateralTuning.pid.kf, **kargs)
+                             k_f=CP.lateralTuning.pid.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
@@ -41,7 +34,7 @@ class LatControlPID(LatControl):
       self.pid.reset()
     else:
       # offset does not contribute to resistive torque
-      steer_feedforward = self.get_steer_feedforward(angle_steers_des, CS.vEgo)
+      steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
       output_steer = self.pid.update(error, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo)
@@ -50,15 +43,6 @@ class LatControlPID(LatControl):
       pid_log.i = self.pid.i
       pid_log.f = self.pid.f
       pid_log.output = output_steer
-
-      if self.CP.steerControlType != SteerControlType.torque:
-        angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
-        pid_log.saturated = self._check_saturation(angle_control_saturated, CS, False)
-      else:
-        pid_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS, steer_limited)
-
-    if self.CP.steerControlType != SteerControlType.torque:
-      angle_steers_des = output_steer
-      output_steer = 0
+      pid_log.saturated = self._check_saturation(self.steer_max - abs(output_steer) < 1e-3, CS, steer_limited)
 
     return output_steer, angle_steers_des, pid_log
