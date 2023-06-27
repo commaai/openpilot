@@ -1012,6 +1012,18 @@ Gear</source>
         <source>openpilot Unavailable</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PairingPopup</name>
