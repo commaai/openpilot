@@ -69,7 +69,7 @@ class CAR:
 
 class Footnote(Enum):
   GEN2 = CarFootnote(
-    "Long control requires disabling eyesight, which will currently deactivate stock AEB.",
+    "Long control requires disabling eyesight, which will currently deactivate stock AEB and other eyesight features, like High Beam Assist.",
     Column.LONGITUDINAL, shop_footnote=True)
 
 @dataclass
@@ -84,7 +84,6 @@ class SubaruCarInfo(CarInfo):
 
 GEN2_ES_BUTTONS_MEMORY_ADDRESS = b'\x11\x30\x01\x01' # from ssm4
 GEN2_ES_BUTTONS_DID = b'\xf3\x00' # from ssm4, appears to be arbitrary
-GEN2_ES_BUTTONS_RES = b'\x04' # resume button
 
 GEN2_ES_SECRET_KEY = b'\x33\xe6\x3c\xa0\x43\x11\x53\x46\x0c\x18\xf1\x06\x4c\x70\xfe\x41' # TODO: is this for all gen2 cars?
 
