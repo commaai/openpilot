@@ -31,14 +31,6 @@ openpilot provides a few tools to help contributors manage their translations an
    ```shell
    scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
-5. Trigger offRoad alerts (clear OffRoad params later):
-   ```shell
-   selfdrive/ui/tests/cycle_offroad_alerts.py
-   ```
-6. Trigger onRoad alerts (hardcode with the alerts you need to see):
-   ```shell
-   selfdrive/debug/cycle_alerts.py
-   ```
 
 ### Improving an Existing Language
 
@@ -66,3 +58,15 @@ selfdrive/ui/tests/create_test_translations.sh && selfdrive/ui/tests/test_transl
 
 ---
 ![multilanguage_onroad](https://user-images.githubusercontent.com/25857203/178912800-2c798af8-78e3-498e-9e19-35906e0bafff.png)
+
+### Pre-viewing alerts
+
+Latin-based languages often use more space to convey the same message. Then you may want to predict alerts to make sure nothing is overlapping:
+OffRoad alerts (clear OffRoad params later):
+```shell
+selfdrive/ui/tests/cycle_offroad_alerts.py
+```
+Onroad alerts (hardcode with the alerts you need to see):
+```shell
+selfdrive/debug/cycle_alerts.py
+```
