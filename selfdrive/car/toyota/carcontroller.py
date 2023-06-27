@@ -76,6 +76,11 @@ class CarController:
       apply_steer_req = 0
       self.steer_rate_counter = 0
 
+    # Never actuate with LKA on cars that only support LTA
+    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+      apply_steer = 0
+      apply_steer_req = 0
+
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not CC.enabled and CS.pcm_acc_status:

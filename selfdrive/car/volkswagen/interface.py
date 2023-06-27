@@ -20,19 +20,19 @@ class CarInterface(CarInterfaceBase):
       self.ext_bus = CANBUS.cam
       self.cp_ext = self.cp_cam
 
+    self.eps_timer_soft_disable_alert = False
+
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
-
-    use_off_car_defaults = len(fingerprint[0]) == 0  # Pick sensible carParams during offline doc generation/CI jobs
 
     if candidate in PQ_CARS:
       # Set global PQ35/PQ46/NMS parameters
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
-      if 0x440 in fingerprint[0] or use_off_car_defaults:  # Getriebe_1
+      if 0x440 in fingerprint[0] or docs:  # Getriebe_1
         ret.transmissionType = TransmissionType.automatic
       else:
         ret.transmissionType = TransmissionType.manual
@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      if 0xAD in fingerprint[0] or use_off_car_defaults:  # Getriebe_11
+      if 0xAD in fingerprint[0] or docs:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
@@ -80,7 +80,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or use_off_car_defaults
+    ret.experimentalLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
     if experimental_long:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
@@ -92,6 +92,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.startAccel = 1.0
+    ret.stopAccel = -0.55
     ret.vEgoStarting = 1.0
     ret.vEgoStopping = 1.0
     ret.longitudinalTuning.kpV = [0.1]
@@ -244,9 +245,13 @@ class CarInterface(CarInterfaceBase):
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
 
+    if self.eps_timer_soft_disable_alert:
+      events.add(EventName.steerTimeLimit)
+
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    new_actuators, can_sends, self.eps_timer_soft_disable_alert = self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    return new_actuators, can_sends

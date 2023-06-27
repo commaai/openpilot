@@ -17,10 +17,16 @@ def logging(started, params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
+def ublox_available() -> bool:
+  return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
+
 def ublox(started, params, CP: car.CarParams) -> bool:
-  use_ublox = os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
+  use_ublox = ublox_available()
   params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
+
+def qcomgps(started, params, CP: car.CarParams) -> bool:
+  return started and not ublox_available()
 
 procs = [
   # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
@@ -37,11 +43,11 @@ procs = [
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
-  NativeProcess("mapsd", "selfdrive/navd", ["./map_renderer"], enabled=False),
-  NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"], enabled=False),
+  NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"]),
+  NativeProcess("navmodeld", "selfdrive/modeld", ["./navmodeld"]),
   NativeProcess("sensord", "system/sensord", ["./sensord"], enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], offroad=True, watchdog_max_dt=(5 if not PC else None)),
-  NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"], offroad=True),
+  NativeProcess("soundd", "selfdrive/ui/soundd", ["./soundd"]),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"]),
   NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
@@ -50,7 +56,7 @@ procs = [
   PythonProcess("deleter", "system.loggerd.deleter", offroad=True),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", enabled=(not PC or WEBCAM), callback=driverview),
   PythonProcess("laikad", "selfdrive.locationd.laikad"),
-  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI),
+  PythonProcess("rawgpsd", "system.sensord.rawgps.rawgpsd", enabled=TICI, onroad=False, callback=qcomgps),
   PythonProcess("navd", "selfdrive.navd.navd"),
   PythonProcess("pandad", "selfdrive.boardd.pandad", offroad=True),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),

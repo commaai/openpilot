@@ -16,6 +16,7 @@ class ubx_t : public kaitai::kstruct {
 public:
     class rxm_rawx_t;
     class rxm_sfrbx_t;
+    class nav_sat_t;
     class nav_pvt_t;
     class mon_hw2_t;
     class mon_hw_t;
@@ -42,7 +43,7 @@ public:
     class rxm_rawx_t : public kaitai::kstruct {
 
     public:
-        class meas_t;
+        class measurement_t;
 
         rxm_rawx_t(kaitai::kstream* p__io, ubx_t* p__parent = 0, ubx_t* p__root = 0);
 
@@ -53,18 +54,18 @@ public:
     public:
         ~rxm_rawx_t();
 
-        class meas_t : public kaitai::kstruct {
+        class measurement_t : public kaitai::kstruct {
 
         public:
 
-            meas_t(kaitai::kstream* p__io, ubx_t::rxm_rawx_t* p__parent = 0, ubx_t* p__root = 0);
+            measurement_t(kaitai::kstream* p__io, ubx_t::rxm_rawx_t* p__parent = 0, ubx_t* p__root = 0);
 
         private:
             void _read();
             void _clean_up();
 
         public:
-            ~meas_t();
+            ~measurement_t();
 
         private:
             double m_pr_mes;
@@ -110,11 +111,11 @@ public:
         uint8_t m_num_meas;
         uint8_t m_rec_stat;
         std::string m_reserved1;
-        std::vector<meas_t*>* m_measurements;
+        std::vector<measurement_t*>* m_meas;
         ubx_t* m__root;
         ubx_t* m__parent;
-        std::vector<std::string>* m__raw_measurements;
-        std::vector<kaitai::kstream*>* m__io__raw_measurements;
+        std::vector<std::string>* m__raw_meas;
+        std::vector<kaitai::kstream*>* m__io__raw_meas;
 
     public:
         double rcv_tow() const { return m_rcv_tow; }
@@ -123,11 +124,11 @@ public:
         uint8_t num_meas() const { return m_num_meas; }
         uint8_t rec_stat() const { return m_rec_stat; }
         std::string reserved1() const { return m_reserved1; }
-        std::vector<meas_t*>* measurements() const { return m_measurements; }
+        std::vector<measurement_t*>* meas() const { return m_meas; }
         ubx_t* _root() const { return m__root; }
         ubx_t* _parent() const { return m__parent; }
-        std::vector<std::string>* _raw_measurements() const { return m__raw_measurements; }
-        std::vector<kaitai::kstream*>* _io__raw_measurements() const { return m__io__raw_measurements; }
+        std::vector<std::string>* _raw_meas() const { return m__raw_meas; }
+        std::vector<kaitai::kstream*>* _io__raw_meas() const { return m__io__raw_meas; }
     };
 
     class rxm_sfrbx_t : public kaitai::kstruct {
@@ -168,6 +169,79 @@ public:
         std::vector<uint32_t>* body() const { return m_body; }
         ubx_t* _root() const { return m__root; }
         ubx_t* _parent() const { return m__parent; }
+    };
+
+    class nav_sat_t : public kaitai::kstruct {
+
+    public:
+        class nav_t;
+
+        nav_sat_t(kaitai::kstream* p__io, ubx_t* p__parent = 0, ubx_t* p__root = 0);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~nav_sat_t();
+
+        class nav_t : public kaitai::kstruct {
+
+        public:
+
+            nav_t(kaitai::kstream* p__io, ubx_t::nav_sat_t* p__parent = 0, ubx_t* p__root = 0);
+
+        private:
+            void _read();
+            void _clean_up();
+
+        public:
+            ~nav_t();
+
+        private:
+            gnss_type_t m_gnss_id;
+            uint8_t m_sv_id;
+            uint8_t m_cno;
+            int8_t m_elev;
+            int16_t m_azim;
+            int16_t m_pr_res;
+            uint32_t m_flags;
+            ubx_t* m__root;
+            ubx_t::nav_sat_t* m__parent;
+
+        public:
+            gnss_type_t gnss_id() const { return m_gnss_id; }
+            uint8_t sv_id() const { return m_sv_id; }
+            uint8_t cno() const { return m_cno; }
+            int8_t elev() const { return m_elev; }
+            int16_t azim() const { return m_azim; }
+            int16_t pr_res() const { return m_pr_res; }
+            uint32_t flags() const { return m_flags; }
+            ubx_t* _root() const { return m__root; }
+            ubx_t::nav_sat_t* _parent() const { return m__parent; }
+        };
+
+    private:
+        uint32_t m_itow;
+        uint8_t m_version;
+        uint8_t m_num_svs;
+        std::string m_reserved;
+        std::vector<nav_t*>* m_svs;
+        ubx_t* m__root;
+        ubx_t* m__parent;
+        std::vector<std::string>* m__raw_svs;
+        std::vector<kaitai::kstream*>* m__io__raw_svs;
+
+    public:
+        uint32_t itow() const { return m_itow; }
+        uint8_t version() const { return m_version; }
+        uint8_t num_svs() const { return m_num_svs; }
+        std::string reserved() const { return m_reserved; }
+        std::vector<nav_t*>* svs() const { return m_svs; }
+        ubx_t* _root() const { return m__root; }
+        ubx_t* _parent() const { return m__parent; }
+        std::vector<std::string>* _raw_svs() const { return m__raw_svs; }
+        std::vector<kaitai::kstream*>* _io__raw_svs() const { return m__io__raw_svs; }
     };
 
     class nav_pvt_t : public kaitai::kstruct {

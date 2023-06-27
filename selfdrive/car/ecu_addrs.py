@@ -9,6 +9,8 @@ from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from system.swaglog import cloudlog
 
+EcuAddrBusType = Tuple[int, Optional[int], int]
+
 
 def make_tester_present_msg(addr, bus, subaddr=None):
   dat = [0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0]
@@ -33,16 +35,16 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
   return False
 
 
-def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[Tuple[int, Optional[int], int]]:
+def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[EcuAddrBusType]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
-  queries: Set[Tuple[int, Optional[int], int]] = {(addr, None, bus) for addr in addr_list}
+  queries: Set[EcuAddrBusType] = {(addr, None, bus) for addr in addr_list}
   responses = queries
   return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: Set[Tuple[int, Optional[int], int]],
-                  responses: Set[Tuple[int, Optional[int], int]], timeout: float = 1, debug: bool = False) -> Set[Tuple[int, Optional[int], int]]:
-  ecu_responses: Set[Tuple[int, Optional[int], int]] = set()  # set((addr, subaddr, bus),)
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: Set[EcuAddrBusType],
+                  responses: Set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> Set[EcuAddrBusType]:
+  ecu_responses: Set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
   try:
     msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
@@ -53,6 +55,10 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       can_packets = messaging.drain_sock(logcan, wait_for_one=True)
       for packet in can_packets:
         for msg in packet.can:
+          if not len(msg.dat):
+            cloudlog.warning("ECU addr scan: skipping empty remote frame")
+            continue
+
           subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
           if (msg.address, subaddr, msg.src) in responses and is_tester_present_response(msg, subaddr):
             if debug:

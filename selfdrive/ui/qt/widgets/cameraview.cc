@@ -96,8 +96,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
                           stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
+  QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
 }
 
 CameraWidget::~CameraWidget() {
@@ -110,6 +112,16 @@ CameraWidget::~CameraWidget() {
     glDeleteBuffers(2, textures);
   }
   doneCurrent();
+}
+
+// Qt uses device-independent pixels, depending on platform this may be
+// different to what OpenGL uses
+int CameraWidget::glWidth() {
+    return width() * devicePixelRatio();
+}
+
+int CameraWidget::glHeight() {
+  return height() * devicePixelRatio();
 }
 
 void CameraWidget::initializeGL() {
@@ -181,8 +193,12 @@ void CameraWidget::stopVipcThread() {
   }
 }
 
+void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
+  available_streams = streams;
+}
+
 void CameraWidget::updateFrameMat() {
-  int w = width(), h = height();
+  int w = glWidth(), h = glHeight();
 
   if (zoomed_view) {
     if (active_stream_type == VISION_STREAM_DRIVER) {
@@ -260,7 +276,7 @@ void CameraWidget::paintGL() {
 
   updateFrameMat();
 
-  glViewport(0, 0, width(), height());
+  glViewport(0, 0, glWidth(), glHeight());
   glBindVertexArray(frame_vao);
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -366,6 +382,13 @@ void CameraWidget::vipcThread() {
 
     if (!vipc_client->connected) {
       clearFrames();
+      auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
+      if (streams.empty()) {
+        QThread::msleep(100);
+        continue;
+      }
+      emit vipcAvailableStreamsUpdated(streams);
+
       if (!vipc_client->connect(false)) {
         QThread::msleep(100);
         continue;
@@ -400,4 +423,5 @@ void CameraWidget::vipcThread() {
 void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   frames.clear();
+  available_streams.clear();
 }

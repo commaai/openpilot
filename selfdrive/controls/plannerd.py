@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 from cereal import car
 from common.params import Params
@@ -19,6 +20,7 @@ def publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner):
   ui_send = messaging.new_message('uiPlan')
   ui_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
   uiPlan = ui_send.uiPlan
+  uiPlan.frameId = sm['modelV2'].frameId
   uiPlan.position.x = np.interp(plan_odo, model_odo, lateral_planner.lat_mpc.x_sol[:,0]).tolist()
   uiPlan.position.y = np.interp(plan_odo, model_odo, lateral_planner.lat_mpc.x_sol[:,1]).tolist()
   uiPlan.position.z = np.interp(plan_odo, model_odo, lateral_planner.path_xyz[:,2]).tolist()
@@ -33,8 +35,10 @@ def plannerd_thread(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
+  debug_mode = bool(int(os.getenv("DEBUG", "0")))
+
   longitudinal_planner = LongitudinalPlanner(CP)
-  lateral_planner = LateralPlanner(CP)
+  lateral_planner = LateralPlanner(CP, debug=debug_mode)
 
   if sm is None:
     sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2'],

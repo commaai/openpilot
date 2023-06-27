@@ -35,6 +35,7 @@ int main() {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
+    float log_time = 1e-9 * event.getLogMonoTime();
 
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
@@ -42,7 +43,7 @@ int main() {
 
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
-      if(parser.add_data(data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
+      if(parser.add_data(log_time, data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
 
         try {
           auto ublox_msg = parser.gen_msg();
