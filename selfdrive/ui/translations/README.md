@@ -31,6 +31,14 @@ openpilot provides a few tools to help contributors manage their translations an
    ```shell
    scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
+5. Trigger offRoad alerts (clear OffRoad params later):
+   ```shell
+   selfdrive/ui/tests/cycle_offroad_alerts.py
+   ```
+6. Trigger onRoad alerts (hardcode with the alerts you need to see):
+   ```shell
+   selfdrive/debug/cycle_alerts.py
+   ```
 
 ### Improving an Existing Language
 
