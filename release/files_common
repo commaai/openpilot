@@ -17,9 +17,6 @@ site_scons/site_tools/cython.py
 
 common/.gitignore
 common/__init__.py
-common/op_params.py
-common/colors.py
-op_edit.py
 common/conversions.py
 common/gpio.py
 common/realtime.py
