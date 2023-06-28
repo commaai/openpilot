@@ -75,10 +75,14 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 
   // repaint border
-  bg = bgColor;
-  enabled = enabledNow;
-  navEnabled = navEnabledNow;
-  update();
+  bool navDisabled = enabled && !navEnabled;
+  bool navDisabledNow = enabledNow && !navEnabledNow;
+  if (bg != bgColor || navDisabled != navDisabledNow) {
+    bg = bgColor;
+    enabled = enabledNow;
+    navEnabled = navEnabledNow;
+    update();
+  }
 }
 
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
