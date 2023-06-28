@@ -228,10 +228,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-    if ret.steerControlType == SteerControlType.angle:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
-      ret.steerActuatorDelay = 0.25
-      ret.steerLimitTimer = 1.0
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
