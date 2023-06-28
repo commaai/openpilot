@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from typing import List, Optional
 from tqdm import tqdm
 from panda import Panda
 from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE, DATA_IDENTIFIER_TYPE
@@ -11,6 +12,7 @@ if __name__ == "__main__":
   parser.add_argument("--no-obd", action="store_true", help="Bus 1 will not be multiplexed to the OBD-II port")
   parser.add_argument("--debug", action="store_true")
   parser.add_argument("--addr")
+  parser.add_argument("--sub_addr", "--subaddr", help="A hex sub-address or `scan` to scan the full sub-address range")
   parser.add_argument("--bus")
   parser.add_argument('-s', '--serial', help="Serial number of panda to use")
   args = parser.parse_args()
@@ -21,6 +23,17 @@ if __name__ == "__main__":
     addrs = [0x700 + i for i in range(256)]
     addrs += [0x18da0000 + (i << 8) + 0xf1 for i in range(256)]
   results = {}
+
+  sub_addrs: List[Optional[int]] = [None]
+  if args.sub_addr:
+    if args.sub_addr == "scan":
+      sub_addrs = list(range(0xff + 1))
+    else:
+      sub_addrs = [int(args.sub_addr, base=16)]
+      if sub_addrs[0] > 0xff:  # type: ignore
+        print(f"Invalid sub-address: 0x{sub_addrs[0]:X}, needs to be in range 0x0 to 0xff")
+        parser.print_help()
+        exit()
 
   uds_data_ids = {}
   for std_id in DATA_IDENTIFIER_TYPE:
@@ -51,42 +64,47 @@ if __name__ == "__main__":
       # skip functional broadcast addrs
       if addr == 0x7df or addr == 0x18db33f1:
         continue
-      t.set_description(hex(addr))
 
       if args.bus:
         bus = int(args.bus)
       else:
         bus = 1 if panda.has_obd() else 0
       rx_addr = addr + int(args.rxoffset, base=16) if args.rxoffset else None
-      uds_client = UdsClient(panda, addr, rx_addr, bus, timeout=0.2, debug=args.debug)
-      # Check for anything alive at this address, and switch to the highest
-      # available diagnostic session without security access
-      try:
-        uds_client.tester_present()
-        uds_client.diagnostic_session_control(SESSION_TYPE.DEFAULT)
-        uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
-      except NegativeResponseError:
-        pass
-      except MessageTimeoutError:
-        continue
 
-      # Run queries against all standard UDS data identifiers, plus selected
-      # non-standardized identifier ranges if requested
-      resp = {}
-      for uds_data_id in sorted(uds_data_ids):
+      # Try all sub-addresses for addr. By default, this is None
+      for sub_addr in sub_addrs:
+        sub_addr_str = hex(sub_addr) if sub_addr is not None else None
+        t.set_description(f"{hex(addr)}, {sub_addr_str}")
+        uds_client = UdsClient(panda, addr, rx_addr, bus, sub_addr=sub_addr, timeout=0.2, debug=args.debug)
+        # Check for anything alive at this address, and switch to the highest
+        # available diagnostic session without security access
         try:
-          data = uds_client.read_data_by_identifier(uds_data_id)  # type: ignore
-          if data:
-            resp[uds_data_id] = data
-        except (NegativeResponseError, MessageTimeoutError):
+          uds_client.tester_present()
+          uds_client.diagnostic_session_control(SESSION_TYPE.DEFAULT)
+          uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
+        except NegativeResponseError:
           pass
+        except MessageTimeoutError:
+          continue
 
-      if resp.keys():
-        results[addr] = resp
+        # Run queries against all standard UDS data identifiers, plus selected
+        # non-standardized identifier ranges if requested
+        resp = {}
+        for uds_data_id in sorted(uds_data_ids):
+          try:
+            data = uds_client.read_data_by_identifier(uds_data_id)  # type: ignore
+            if data:
+              resp[uds_data_id] = data
+          except (NegativeResponseError, MessageTimeoutError):
+            pass
+
+        if resp.keys():
+          results[(addr, sub_addr)] = resp
 
     if len(results.items()):
-      for addr, resp in results.items():
-        print(f"\n\n*** Results for address 0x{addr:X} ***\n\n")
+      for (addr, sub_addr), resp in results.items():
+        sub_addr_str = f", sub-address 0x{sub_addr:X}" if sub_addr is not None else ""
+        print(f"\n\n*** Results for address 0x{addr:X}{sub_addr_str} ***\n\n")
         for rid, dat in resp.items():
           print(f"0x{rid:02X} {uds_data_ids[rid]}: {dat}")
     else:

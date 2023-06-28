@@ -51,12 +51,9 @@ void llspi_miso_dma(uint8_t *addr, int len) {
 // master -> panda DMA finished
 void DMA2_Stream2_IRQ_Handler(void) {
   // Clear interrupt flag
-  ENTER_CRITICAL();
   DMA2->LIFCR = DMA_LIFCR_CTCIF2;
 
   spi_rx_done();
-
-  EXIT_CRITICAL();
 }
 
 // panda -> master DMA finished
@@ -71,8 +68,6 @@ void DMA2_Stream3_IRQ_Handler(void) {
 
 // panda TX finished
 void SPI4_IRQ_Handler(void) {
-  ENTER_CRITICAL();
-
   // clear flag
   SPI4->IFCR |= (0x1FFU << 3U);
 
@@ -80,13 +75,11 @@ void SPI4_IRQ_Handler(void) {
     spi_tx_dma_done = false;
     spi_tx_done(false);
   }
-
-  EXIT_CRITICAL();
 }
 
 
 void llspi_init(void) {
-  REGISTER_INTERRUPT(SPI4_IRQn, SPI4_IRQ_Handler, SPI_IRQ_RATE, FAULT_INTERRUPT_RATE_SPI_DMA)
+  REGISTER_INTERRUPT(SPI4_IRQn, SPI4_IRQ_Handler, (SPI_IRQ_RATE * 2U), FAULT_INTERRUPT_RATE_SPI)
   REGISTER_INTERRUPT(DMA2_Stream2_IRQn, DMA2_Stream2_IRQ_Handler, SPI_IRQ_RATE, FAULT_INTERRUPT_RATE_SPI_DMA)
   REGISTER_INTERRUPT(DMA2_Stream3_IRQn, DMA2_Stream3_IRQ_Handler, SPI_IRQ_RATE, FAULT_INTERRUPT_RATE_SPI_DMA)
 

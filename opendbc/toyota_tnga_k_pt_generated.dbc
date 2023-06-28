@@ -83,7 +83,7 @@ BU_: XXX DSU HCU EPS IPAS CGW BGM
 BO_ 36 KINEMATICS: 8 XXX
  SG_ ACCEL_Y : 33|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
  SG_ YAW_RATE : 1|10@0+ (0.244,-125) [0|65535] "deg/s" XXX
- SG_ STEERING_TORQUE : 17|10@0+ (1,-512) [0|65535] "" XXX
+ SG_ ACCEL_X : 17|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
 
 BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
  SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
@@ -120,8 +120,9 @@ BO_ 452 ENGINE_RPM: 8 CGW
 BO_ 466 PCM_CRUISE: 8 XXX
  SG_ GAS_RELEASED : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ CRUISE_ACTIVE : 5|1@0+ (1,0) [0|1] "" XXX
- SG_ STANDSTILL_ON : 12|1@0+ (1,0) [0|1] "" XXX
- SG_ ACCEL_NET : 23|16@0- (0.001,0) [-20|20] "m/s^2" XXX
+ SG_ ACC_BRAKING : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_NET : 23|16@0- (0.0009765625,0) [-20|20] "m/s^2" XXX
+ SG_ NEUTRAL_FORCE : 39|16@0- (2,0) [-65536|65534] "N" XXX
  SG_ CRUISE_STATE : 55|4@0+ (1,0) [0|15] "" XXX
  SG_ CANCEL_REQ : 49|1@1+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
@@ -262,8 +263,13 @@ BO_ 1041 ACC_HUD: 8 DSU
  SG_ PCS_INDICATOR : 7|2@0+ (1,0) [0|3] "" XXX
  SG_ FCW : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X20 : 15|8@0+ (1,0) [0|1] "" XXX
+ SG_ PCS_DUST : 34|1@0+ (1,0) [0|0] "" XXX
+ SG_ PCS_TEMP : 35|1@0+ (1,0) [0|0] "" XXX
+ SG_ PCS_DUST2 : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ PCS_TEMP2 : 42|1@0+ (1,0) [0|0] "" XXX
  SG_ SET_ME_X10 : 39|8@0+ (1,0) [0|1] "" XXX
  SG_ PCS_OFF : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ FRD_ADJ : 53|3@0+ (1,0) [0|0] "" XXX
  SG_ PCS_SENSITIVITY : 55|8@0+ (1,0) [0|1] "" XXX
 
 BO_ 1042 LKAS_HUD: 8 DSU
@@ -417,6 +423,8 @@ CM_ SG_ 36 YAW_RATE "verify";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
 CM_ SG_ 37 STEER_FRACTION "1/15th of the signal STEER_ANGLE, which is 1.5 deg; note that 0x8 is never set";
 CM_ SG_ 37 STEER_RATE "factor is tbd";
+CM_ SG_ 466 NEUTRAL_FORCE "force in newtons the engine/electric motors are applying without any acceleration commands or user input";
+CM_ SG_ 466 ACC_BRAKING "whether brakes are being actuated from ACC command";
 CM_ SG_ 466 ACCEL_NET "net acceleration produced by the system, given ACCEL_CMD, road grade and other factors";
 CM_ SG_ 466 CRUISE_STATE "Active state is 8, if standstill is requested will switch to state 11(3 sec timer), after timer is elapsed will switch into state 7(standstill). If plus button was pressed - status 9, minus button pressed - status 10";
 CM_ SG_ 467 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement";
@@ -441,7 +449,7 @@ CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
 CM_ SG_ 865 GAS_PEDAL_ALT "copy of main GAS_PEDAL. Both use 8 bits. Might indicate that this message is for pedals.";
 CM_ SG_ 865 CLUTCH_RELEASED "boolean of clutch for 6MT.";
-CM_ SG_ 865 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement";
+CM_ SG_ 865 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement. Also describes a lockout when the ACC_CONTROL->ACC_MALFUNCTION bit is set.";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
 CM_ SG_ 921 TEMP_ACC_FAULTED "1 when the UI is displaying or playing fault-related alerts or sounds. Also 1 when pressing main on.";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
@@ -449,6 +457,11 @@ CM_ SG_ 956 GEAR "on 6MT, only R shows.";
 CM_ SG_ 1009 UI_SET_SPEED "units seem to be whatever the car is set to";
 CM_ SG_ 1041 PCS_INDICATOR "Pre-Collision System Indicator";
 CM_ SG_ 1041 PCS_SENSITIVITY "Pre-Collision System Sensitivity";
+CM_ SG_ 1041 PCS_DUST "alert: Front Camera Low Visibility Unavailable See Owner's Manual";
+CM_ SG_ 1041 PCS_DUST2 "alert: Pre-Collision System Radar Sensor Blocked Unavailable Clean Radar Sensor";
+CM_ SG_ 1041 PCS_TEMP "alert: Front Camera Out of Temperature Range Unavailable Wait until Normal Temperature";
+CM_ SG_ 1041 PCS_TEMP2 "alert: Pre-Collision System Out of Temperature Range Unavailable See Owner's Manual";
+CM_ SG_ 1041 FRD_ADJ "alert: ERROR ADJUSTING FRONT RADAR BEAM";
 CM_ SG_ 1042 LDA_SA_TOGGLE "LDA Steering Assist Toggle";
 CM_ SG_ 1042 LDW_EXIST "Unclear what this is, it's usually set to 0";
 CM_ SG_ 1042 LDA_SENSITIVITY "LDA Sensitivity";

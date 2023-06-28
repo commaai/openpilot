@@ -1,6 +1,5 @@
 // flasher state variables
 uint32_t *prog_ptr = NULL;
-bool unlocked = false;
 
 void spi_init(void);
 
@@ -33,13 +32,12 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         resp[1] = 0xff;
       }
       current_board->set_led(LED_GREEN, 1);
-      unlocked = true;
       prog_ptr = (uint32_t *)APP_START_ADDRESS;
       break;
     // **** 0xb2: erase sector
     case 0xb2:
       sec = req->param1;
-      if (flash_erase_sector(sec, unlocked)) {
+      if (flash_erase_sector(sec)) {
         resp[1] = 0xff;
       }
       break;
@@ -110,7 +108,7 @@ int comms_can_read(uint8_t *data, uint32_t max_len) {
   return 0;
 }
 
-void usb_cb_ep3_out_complete(void) {}
+void refresh_can_tx_slots_available(void) {}
 
 void comms_endpoint2_write(uint8_t *data, uint32_t len) {
   current_board->set_led(LED_RED, 0);

@@ -11,7 +11,7 @@ class PandaUsbHandle(BaseHandle):
   def close(self):
     self._libusb_handle.close()
 
-  def controlWrite(self, request_type: int, request: int, value: int, index: int, data, timeout: int = TIMEOUT):
+  def controlWrite(self, request_type: int, request: int, value: int, index: int, data, timeout: int = TIMEOUT, expect_disconnect: bool = False):
     return self._libusb_handle.controlWrite(request_type, request, value, index, data, timeout)
 
   def controlRead(self, request_type: int, request: int, value: int, index: int, length: int, timeout: int = TIMEOUT):
@@ -77,7 +77,7 @@ class STBootloaderUSBHandle(BaseSTBootloaderHandle):
     self._status()
 
     # Program
-    bs = self._mcu_type.config.block_size
+    bs = min(len(dat), self._mcu_type.config.block_size)
     dat += b"\xFF" * ((bs - len(dat)) % bs)
     for i in range(0, len(dat) // bs):
       ldat = dat[i * bs:(i + 1) * bs]

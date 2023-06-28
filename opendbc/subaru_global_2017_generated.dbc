@@ -136,7 +136,7 @@ BO_ 544 ES_Brake: 8 XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ Signal1 : 12|4@1+ (1,0) [0|15] "" XXX
  SG_ Brake_Pressure : 16|16@1+ (1,0) [0|65535] "" XXX
- SG_ Signal2 : 32|4@1+ (1,0) [0|15] "" XXX
+ SG_ AEB_Status : 32|4@1+ (1,0) [0|15] "" XXX
  SG_ Cruise_Brake_Lights : 36|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Brake_Fault : 37|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Brake_Active : 38|1@1+ (1,0) [0|1] "" XXX
@@ -244,6 +244,9 @@ BO_ 1677 Dash_State: 8 XXX
 CM_ SG_ 64 Throttle_Combo "Throttle Cruise + Pedal";
 CM_ SG_ 313 Brake_Lights "Driver or Cruise Brake on";
 CM_ SG_ 544 Cruise_Brake_Lights "1 = switch on brake lights";
+CM_ SG_ 544 Brake_Pressure "Winds down after cruise disabled. Also can be non-zero when likely preparing for AEB";
+CM_ SG_ 544 Signal3 "Usually goes to 2 if AEB_Status is 4";
+CM_ SG_ 544 AEB_Status "Occasionally is 4 instead of 8 while Brake_Pressure is non-zero, unsure why";
 CM_ SG_ 801 PCB_Off "Pre-Collision Braking off";
 CM_ SG_ 801 Brake_Lights "Driver or Cruise brake on";
 CM_ SG_ 801 Cruise_State "0 = Normal, 1 = Hold+User Brake, 2 = Ready, 3 = Hold";
@@ -260,6 +263,7 @@ CM_ SG_ 802 LKAS_Dash_State "0 = Off, 1 = Ready, 2 = Active";
 CM_ SG_ 802 LKAS_Right_Line_Visible "0 = Off, 1 = White, 2 = Green, 3 = Orange";
 CM_ SG_ 912 UNITS "0 = Metric, 1 = Imperial";
 CM_ SG_ 912 ICY_ROAD "1 = DASHLIGHT ON, 2 = WARNING, 3 = OFF";
+VAL_ 544 AEB_Status 12 "AEB related" 8 "AEB actuation" 4 "AEB related" 0 "No AEB actuation";
 
 CM_ "subaru_global_2017.dbc starts here";
 
@@ -316,7 +320,7 @@ BO_ 576 CruiseControl: 8 XXX
  SG_ Cruise_Activated : 41|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 42|22@1+ (1,0) [0|4194303] "" XXX
 
-BO_ 803 INFOTAINMENT_STATUS: 8 XXX
+BO_ 803 ES_Infotainment: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
  SG_ LKAS_Blue_Lines : 15|4@0+ (1,0) [0|15] "" XXX

@@ -5,7 +5,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.set cimport set
 from libc.stdint cimport uint32_t, uint64_t
-from libcpp cimport bool
+from libcpp cimport bool, int
 
 cdef extern from "cereal/visionipc/visionbuf.h":
   cdef enum VisionStreamType:
@@ -13,6 +13,7 @@ cdef extern from "cereal/visionipc/visionbuf.h":
 
   cdef cppclass VisionBuf:
     void * addr
+    bool rgb
     size_t len
     size_t width
     size_t height
@@ -27,6 +28,8 @@ cdef extern from "cereal/visionipc/visionipc.h":
     uint64_t timestamp_eof
 
 cdef extern from "cereal/visionipc/visionipc_server.h":
+  string get_endpoint_name(string, VisionStreamType)
+
   cdef cppclass VisionIpcServer:
     VisionIpcServer(string, void*, void*)
     void create_buffers(VisionStreamType, size_t, bool, size_t, size_t)
@@ -37,6 +40,8 @@ cdef extern from "cereal/visionipc/visionipc_server.h":
 
 cdef extern from "cereal/visionipc/visionipc_client.h":
   cdef cppclass VisionIpcClient:
+    int num_buffers
+    VisionBuf buffers[1]
     VisionIpcClient(string, VisionStreamType, bool, void*, void*)
     VisionBuf * recv(VisionIpcBufExtra *, int)
     bool connect(bool)

@@ -1,17 +1,15 @@
-import math
-
 from common.numpy_fast import clip
+from selfdrive.car import CanBusBase
 from selfdrive.car.hyundai.values import HyundaiFlags
 
 
-class CanBus:
-  def __init__(self, CP, hda2=None, fingerprint=None):
-    if CP is None:
-      assert None not in (hda2, fingerprint)
-      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
-    else:
+class CanBus(CanBusBase):
+  def __init__(self, CP, hda2=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+    if hda2 is None:
+      assert CP is not None
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
-      num = len(CP.safetyConfigs)
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -20,10 +18,9 @@ class CanBus:
     if hda2:
       self._a, self._e = 0, 1
 
-    offset = 4*(num - 1)
-    self._a += offset
-    self._e += offset
-    self._cam = 2 + offset
+    self._a += self.offset
+    self._e += self.offset
+    self._cam = 2 + self.offset
 
   @property
   def ECAN(self):

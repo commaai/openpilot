@@ -229,7 +229,7 @@ class NegativeResponseError(Exception):
 class InvalidServiceIdError(Exception):
   pass
 
-class InvalidSubFunctioneError(Exception):
+class InvalidSubFunctionError(Exception):
   pass
 
 _negative_response_codes = {
@@ -630,7 +630,7 @@ class UdsClient():
         resp_sfn = resp[1] if len(resp) > 1 else None
         if subfunction != resp_sfn:
           resp_sfn_hex = hex(resp_sfn) if resp_sfn is not None else None
-          raise InvalidSubFunctioneError(f'invalid response subfunction: {resp_sfn_hex:x}')
+          raise InvalidSubFunctionError(f'invalid response subfunction: {resp_sfn_hex}')
 
       # return data (exclude service id and sub-function id)
       return resp[(1 if subfunction is None else 2):]

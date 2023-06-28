@@ -68,13 +68,12 @@ void can_set_gmlan(uint8_t bus) {
   }
 }
 
-void update_can_health_pkt(uint8_t can_number, bool error_irq) {
+void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg) {
   CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
   uint32_t esr_reg = CAN->ESR;
 
-  if (error_irq) {
+  if (ir_reg != 0U) {
     can_health[can_number].total_error_cnt += 1U;
-    CAN->MSR = CAN_MSR_ERRI;
     llcan_clear_send(CAN);
   }
 
@@ -92,14 +91,15 @@ void update_can_health_pkt(uint8_t can_number, bool error_irq) {
   can_health[can_number].transmit_error_cnt = ((esr_reg & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos);
 }
 
-// CAN error
+// ***************************** CAN *****************************
+// CANx_SCE IRQ Handler
 void can_sce(uint8_t can_number) {
   ENTER_CRITICAL();
-  update_can_health_pkt(can_number, true);
+  update_can_health_pkt(can_number, 1U);
   EXIT_CRITICAL();
 }
 
-// ***************************** CAN *****************************
+// CANx_TX IRQ Handler
 void process_can(uint8_t can_number) {
   if (can_number != 0xffU) {
 
@@ -151,16 +151,15 @@ void process_can(uint8_t can_number) {
           can_health[can_number].total_tx_checksum_error_cnt += 1U;
         }
 
-        usb_cb_ep3_out_complete();
+        refresh_can_tx_slots_available();
       }
     }
 
-    update_can_health_pkt(can_number, false);
     EXIT_CRITICAL();
   }
 }
 
-// CAN receive handlers
+// CANx_RX0 IRQ Handler
 // blink blue when we are receiving CAN messages
 void can_rx(uint8_t can_number) {
   CAN_TypeDef *CAN = CANIF_FROM_CAN_NUM(can_number);
@@ -215,7 +214,6 @@ void can_rx(uint8_t can_number) {
     rx_buffer_overflow += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
     // next
-    update_can_health_pkt(can_number, false);
     CAN->RF0R |= CAN_RF0R_RFOM0;
   }
 }

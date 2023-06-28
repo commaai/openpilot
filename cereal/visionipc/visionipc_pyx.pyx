@@ -14,6 +14,12 @@ from .visionipc cimport VisionIpcServer as cppVisionIpcServer
 from .visionipc cimport VisionIpcClient as cppVisionIpcClient
 from .visionipc cimport VisionBuf as cppVisionBuf
 from .visionipc cimport VisionIpcBufExtra
+from .visionipc cimport get_endpoint_name as cpp_get_endpoint_name
+
+
+def get_endpoint_name(string name, VisionStreamType stream):
+  return cpp_get_endpoint_name(name, stream).decode('utf-8')
+
 
 cpdef enum VisionStreamType:
   VISION_STREAM_ROAD
@@ -57,40 +63,60 @@ cdef class VisionIpcServer:
 
 
 cdef class VisionIpcClient:
-  cdef cppVisionBuf * buf
   cdef cppVisionIpcClient * client
+  cdef VisionIpcBufExtra extra
 
   def __cinit__(self, string name, VisionStreamType stream, bool conflate):
     self.client = new cppVisionIpcClient(name, stream, conflate, NULL, NULL)
-    self.buf = NULL
 
   def __dealloc__(self):
     del self.client
 
   @property
   def width(self):
-    return None if not self.buf else self.buf.width
+    return self.client.buffers[0].width if self.client.num_buffers else None
 
   @property
   def height(self):
-    return None if not self.buf else self.buf.height
+    return self.client.buffers[0].height if self.client.num_buffers else None
 
   @property
   def stride(self):
-    return None if not self.buf else self.buf.stride
+    return self.client.buffers[0].stride if self.client.num_buffers else None
 
   @property
   def uv_offset(self):
-    return None if not self.buf else self.buf.uv_offset
+    return self.client.buffers[0].uv_offset if self.client.num_buffers else None
+
+  @property
+  def rgb(self):
+    return self.client.buffers[0].rgb if self.client.num_buffers else None
+
+  @property
+  def buffer_len(self):
+    return self.client.buffers[0].len if self.client.num_buffers else None
+
+  @property
+  def num_buffers(self):
+    return self.client.num_buffers
+
+  @property
+  def frame_id(self):
+    return self.extra.frame_id
+
+  @property
+  def timestamp_sof(self):
+    return self.extra.timestamp_sof
+
+  @property
+  def timestamp_eof(self):
+    return self.extra.timestamp_eof
 
   def recv(self, int timeout_ms=100):
-    self.buf = self.client.recv(NULL, timeout_ms)
-    if not self.buf:
+    buf = self.client.recv(&self.extra, timeout_ms)
+    if not buf:
       return None
-    cdef cnp.ndarray dat = np.empty(self.buf.len, dtype=np.uint8)
-    cdef char[:] dat_view = dat
-    memcpy(&dat_view[0], self.buf.addr, self.buf.len)
-    return dat
+    return np.asarray(<cnp.uint8_t[:buf.len]> buf.addr)
 
   def connect(self, bool blocking):
     return self.client.connect(blocking)

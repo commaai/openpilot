@@ -1,10 +1,10 @@
 # must be build with scons
-from .messaging_pyx import Context, Poller, SubSocket, PubSocket  # pylint: disable=no-name-in-module, import-error
+from .messaging_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event  # pylint: disable=no-name-in-module, import-error
 from .messaging_pyx import MultiplePublishersError, MessagingError  # pylint: disable=no-name-in-module, import-error
 import os
 import capnp
 
-from typing import Optional, List, Union
+from typing import Optional, List, Union, Dict, Deque
 from collections import deque
 
 from cereal import log
@@ -12,6 +12,11 @@ from cereal.services import service_list
 
 assert MultiplePublishersError
 assert MessagingError
+assert toggle_fake_events
+assert set_fake_prefix
+assert get_fake_prefix
+assert delete_fake_prefix
+assert wait_for_one_event
 
 NO_TRAVERSAL_LIMIT = 2**64-1
 AVG_FREQ_HISTORY = 100
@@ -27,8 +32,19 @@ except ImportError:
 
 context = Context()
 
+
+def fake_event_handle(endpoint: str, identifier: Optional[str] = None, override: bool = True, enable: bool = False) -> SocketEventHandle:
+  identifier = identifier or get_fake_prefix()
+  handle = SocketEventHandle(endpoint, identifier, override)
+  if override:
+    handle.enabled = enable
+
+  return handle
+
+
 def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
   return log.Event.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT)
+
 
 def new_message(service: Optional[str] = None, size: Optional[int] = None) -> capnp.lib.capnp._DynamicStructBuilder:
   dat = log.Event.new_message()
@@ -41,10 +57,12 @@ def new_message(service: Optional[str] = None, size: Optional[int] = None) -> ca
       dat.init(service, size)
   return dat
 
+
 def pub_sock(endpoint: str) -> PubSocket:
   sock = PubSocket()
   sock.connect(context, endpoint)
   return sock
+
 
 def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
              conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
@@ -74,6 +92,7 @@ def drain_sock_raw(sock: SubSocket, wait_for_one: bool = False) -> List[bytes]:
     ret.append(dat)
 
   return ret
+
 
 def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> List[capnp.lib.capnp._DynamicStructReader]:
   """Receive all message currently available on the queue"""
@@ -114,11 +133,13 @@ def recv_sock(sock: SubSocket, wait: bool = False) -> Optional[capnp.lib.capnp._
 
   return dat
 
+
 def recv_one(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
   dat = sock.receive()
   if dat is not None:
     dat = log_from_bytes(dat)
   return dat
+
 
 def recv_one_or_none(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStructReader]:
   dat = sock.receive(non_blocking=True)
@@ -126,12 +147,14 @@ def recv_one_or_none(sock: SubSocket) -> Optional[capnp.lib.capnp._DynamicStruct
     dat = log_from_bytes(dat)
   return dat
 
+
 def recv_one_retry(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader:
   """Keep receiving until we get a message"""
   while True:
     dat = sock.receive()
     if dat is not None:
       return log_from_bytes(dat)
+
 
 class SubMaster:
   def __init__(self, services: List[str], poll: Optional[List[str]] = None,
@@ -143,7 +166,7 @@ class SubMaster:
     self.rcv_frame = {s: 0 for s in services}
     self.alive = {s: False for s in services}
     self.freq_ok = {s: False for s in services}
-    self.recv_dts = {s: deque([0.0] * AVG_FREQ_HISTORY, maxlen=AVG_FREQ_HISTORY) for s in services}
+    self.recv_dts: Dict[str, Deque[float]] = {s: deque(maxlen=AVG_FREQ_HISTORY) for s in services}
     self.sock = {}
     self.freq = {}
     self.data = {}
@@ -175,6 +198,10 @@ class SubMaster:
   def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
     return self.data[s]
 
+  def _check_avg_freq(self, s):
+    return self.rcv_time[s] > 1e-5 and self.freq[s] > 1e-5 and (s not in self.non_polled_services) \
+            and (s not in self.ignore_average_freq)
+
   def update(self, timeout: int = 1000) -> None:
     msgs = []
     for sock in self.poller.poll(timeout):
@@ -195,8 +222,7 @@ class SubMaster:
       s = msg.which()
       self.updated[s] = True
 
-      if self.rcv_time[s] > 1e-5 and self.freq[s] > 1e-5 and (s not in self.non_polled_services) \
-        and (s not in self.ignore_average_freq):
+      if self._check_avg_freq(s):
         self.recv_dts[s].append(cur_time - self.rcv_time[s])
 
       self.rcv_time[s] = cur_time
@@ -218,9 +244,15 @@ class SubMaster:
 
           # TODO: check if update frequency is high enough to not drop messages
           # freq_ok if average frequency is higher than 90% of expected frequency
-          avg_dt = sum(self.recv_dts[s]) / AVG_FREQ_HISTORY
-          expected_dt = 1 / (self.freq[s] * 0.90)
-          self.freq_ok[s] = (avg_dt < expected_dt)
+          if self._check_avg_freq(s):
+            if len(self.recv_dts[s]) > 0:
+              avg_dt = sum(self.recv_dts[s]) / len(self.recv_dts[s])
+              expected_dt = 1 / (self.freq[s] * 0.90)
+              self.freq_ok[s] = (avg_dt < expected_dt)
+            else:
+              self.freq_ok[s] = False
+          else:
+            self.freq_ok[s] = True
         else:
           self.freq_ok[s] = True
           self.alive[s] = True
@@ -246,6 +278,7 @@ class SubMaster:
     return self.all_alive(service_list=service_list) \
            and self.all_freq_ok(service_list=service_list) \
            and self.all_valid(service_list=service_list)
+
 
 class PubMaster:
   def __init__(self, services: List[str]):
