@@ -385,9 +385,10 @@ FW_VERSIONS = {
     ],
   },
   CAR.CRAFTER_MK2: {
-    #(Ecu.engine, 0x7e0, None): [
-    #  b'\xf1\x8704L906056EK\xf1\x896391',
-    #],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906056EK\xf1\x896391',
+      b'\xf1\x8705L906023BC\xf1\x892688',
+    ],
     # Only current upstreamed vehicle has a manual transmission
     #(Ecu.transmission, 0x7e1, None): [
     #],
