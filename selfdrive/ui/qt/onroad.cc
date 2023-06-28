@@ -52,8 +52,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  bool enabledNow = (*s.sm)["controlsState"].getControlsState().getEnabled();
-  bool navEnabledNow = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
   alerts->updateAlert(alert);
@@ -67,8 +65,8 @@ void OnroadWindow::updateState(const UIState &s) {
   nvg->updateState(s);
 
   // update spacing
-  bool navDisabled = enabled && !navEnabled;
-  bool navDisabledNow = enabledNow && !navEnabledNow;
+  bool navDisabledNow = (*s.sm)["controlsState"].getControlsState().getEnabled() &&
+                        !(*s.sm)["modelV2"].getModelV2().getNavEnabled();
   if (navDisabled != navDisabledNow) {
     split->setSpacing(navDisabledNow ? bdr_s * 2 : 0);
     if (map) {
@@ -79,8 +77,7 @@ void OnroadWindow::updateState(const UIState &s) {
   // repaint border
   if (bg != bgColor || navDisabled != navDisabledNow) {
     bg = bgColor;
-    enabled = enabledNow;
-    navEnabled = navEnabledNow;
+    navDisabled = navDisabledNow;
     update();
   }
 }
@@ -123,7 +120,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
 
-  if (isMapVisible() && !navEnabled) {
+  if (isMapVisible() && navDisabled) {
     QRect map_r = uiState()->scene.map_on_left
                     ? QRect(width() / 2, 0, width() / 2, height())
                     : QRect(0, 0, width() / 2, height());
