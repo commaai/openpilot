@@ -31,9 +31,6 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.18])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
-  # needs to be within +-3 degrees of current angle to avoid windup
-  ANGLE_DELTA_MAX = 5
-
   def __init__(self, CP):
     if CP.steerControlType == 'angle':
       self.STEER_STEP = 1
