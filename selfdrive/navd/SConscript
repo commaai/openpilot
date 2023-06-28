@@ -17,4 +17,4 @@ if arch in ['larch64', 'x86_64']:
   map_env["RPATH"].append(Dir('.').abspath)
   map_env["LIBPATH"].append(Dir('.').abspath)
   maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
-  map_env.Program("map_renderer", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
+  map_env.Program("mapsd", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)

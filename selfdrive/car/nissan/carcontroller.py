@@ -63,6 +63,7 @@ class CarController:
     can_sends.append(nissancan.create_steering_control(
       self.packer, apply_angle, self.frame, CC.latActive, self.lkas_max_torque))
 
+    # Below are the HUD messages. We copy the stock message and modify
     if self.CP.carFingerprint != CAR.ALTIMA:
       if self.frame % 2 == 0:
         can_sends.append(nissancan.create_lkas_hud_msg(

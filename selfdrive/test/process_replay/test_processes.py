@@ -9,11 +9,12 @@ from typing import Any, DefaultDict, Dict
 
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.test.openpilotci import get_url, upload_file
-from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
-from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_enabled, replay_process
+from selfdrive.test.process_replay.compare_logs import compare_logs
+from selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
 from system.version import get_commit
 from tools.lib.filereader import FileReader
 from tools.lib.logreader import LogReader
+from tools.lib.helpers import save_log
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.BODY
@@ -64,6 +65,7 @@ excluded_interfaces = ["mock", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
+EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 
 def run_test_process(data):
@@ -98,13 +100,13 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   ref_log_msgs = list(LogReader(ref_log_path))
 
   try:
-    log_msgs = replay_process(cfg, lr)
+    log_msgs = replay_process(cfg, lr, disable_progress=True)
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
-    if not check_enabled(log_msgs):
+    if not check_openpilot_enabled(log_msgs):
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
   try:
@@ -154,7 +156,7 @@ def format_diff(results, log_paths, ref_commit):
 
 if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
-  all_procs = {cfg.proc_name for cfg in CONFIGS}
+  all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
 
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
