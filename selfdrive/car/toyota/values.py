@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
@@ -119,7 +119,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarHarness.toyota])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota]))
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -443,6 +443,7 @@ FW_VERSIONS = {
       b'\x018966333Q6000\x00\x00\x00\x00',
       b'\x018966333Q6200\x00\x00\x00\x00',
       b'\x018966333Q6300\x00\x00\x00\x00',
+      b'\x018966333Q6500\x00\x00\x00\x00',
       b'\x018966333W6000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [

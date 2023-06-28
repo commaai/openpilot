@@ -1,5 +1,5 @@
 from enum import IntFlag
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -60,7 +60,7 @@ RAM_CARS = RAM_DT | RAM_HD
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
-  car_parts: CarParts = CarParts.common([CarHarness.fca])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
