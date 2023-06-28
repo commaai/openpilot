@@ -100,6 +100,8 @@ class opParams:
     self.fork_params = {
       'TLD_V3': Param(3, int, live=True),
       'LT_VAL': Param(99, int, live=True),
+      'BYTE3_BIT0': Param(1, int, live=True),
+      'BYTE3_BIT0_2': Param(1, int, live=True),
       'SETME_X1': Param(1, NUMBER, 'Always 1', live=True),
       'SETME_X3': Param(1, NUMBER, 'Sometimes 3, mostly 1?', live=True),
       'PERCENTAGE': Param(100, NUMBER, '100 when not touching wheel, 0 when touching wheel', live=True),

@@ -37,8 +37,12 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # TODO: figure out why 99 is so much less torque than 100
     # "SETME_X64": 99 if limit_torque else 100,
     # "SETME_X64": op_params.get("SETME_X64"),
-    # "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
-    "SETME_X64": (99 if frame % 3 == 0 else 100),
+    "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
+    # "SETME_X64": (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
+    # "SETME_X64": (99 if frame % 3 == 0 else 100),
+
+    "BYTE3_BIT0": op_params.get('BYTE3_BIT0'),
+    "BYTE3_BIT0_2": op_params.get('BYTE3_BIT0_2'),
 
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
