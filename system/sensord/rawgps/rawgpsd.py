@@ -11,7 +11,6 @@ from datetime import datetime
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
-
 from concurrent.futures import ProcessPoolExecutor
 from cereal import log
 import cereal.messaging as messaging
