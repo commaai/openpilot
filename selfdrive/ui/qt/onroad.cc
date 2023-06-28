@@ -121,20 +121,14 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  QRect cam_r = QRect(0, 0, width() / 2, height());
-  QRect map_r = QRect(width() / 2, 0, width() / 2, height());
+  p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
 
-  if (uiState()->scene.map_on_left) {
-    QRect tmp = cam_r;
-    cam_r = map_r;
-    map_r = tmp;
-  }
-
-  p.fillRect(cam_r, QColor(bg.red(), bg.green(), bg.blue(), 255));
   if (isMapVisible() && !navEnabled) {
+    QRect map_r = uiState()->scene.map_on_left
+                    ? QRect(width() / 2, 0, width() / 2, height())
+                    : QRect(0, 0, width() / 2, height());
+
     p.fillRect(map_r, bg_colors[STATUS_DISENGAGED]);
-  } else {
-    p.fillRect(map_r, QColor(bg.red(), bg.green(), bg.blue(), 255));
   }
 }
 
