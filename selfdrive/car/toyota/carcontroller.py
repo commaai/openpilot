@@ -1,6 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
+from selfdrive.car import apply_std_steer_angle_limits, apply_meas_steer_torque_limits, \
+                          create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -9,8 +10,10 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
+SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
 MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
@@ -18,13 +21,18 @@ MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
 
+# LTA limits
+# EPS ignores commands above this angle and causes PCS to fault
+MAX_STEER_ANGLE = 94.9461  # deg
+
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.torque_rate_limits = CarControllerParams(self.CP)
+    self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
+    self.last_angle = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -39,6 +47,8 @@ class CarController:
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
+
+    can_sends = []
 
     # gas and brake
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -56,30 +66,47 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
-    # steer torque
-    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
-
-    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-      self.steer_rate_counter += 1
-    else:
-      self.steer_rate_counter = 0
-
-    apply_steer_req = 1
-    if not lat_active:
-      apply_steer = 0
-      apply_steer_req = 0
-    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-      apply_steer_req = 0
-      self.steer_rate_counter = 0
-
-    # Never actuate with LKA on cars that only support LTA
+    # Steering - LKA (torque): 100Hz, LTA (angle): 50Hz
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      apply_steer = 0
-      apply_steer_req = 0
+      if self.frame % self.params.STEER_STEP == 0:
+        # - steer angle
+        # angle command is in terms of the torque sensor angle (may or may not have an offset)
+        apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+        torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+        apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+
+        # Angular rate limit based on speed
+        apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
+
+        if not lat_active:
+          apply_angle = clip(torque_sensor_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+        self.last_angle = apply_angle
+    else:
+      # steer torque
+      new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+      apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
+
+      # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
+      if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+        self.steer_rate_counter += 1
+      else:
+        self.steer_rate_counter = 0
+
+      apply_steer_req = 1
+      if not lat_active:
+        apply_steer = 0
+        apply_steer_req = 0
+      elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+        apply_steer_req = 0
+        self.steer_rate_counter = 0
+
+      # Never actuate with LKA on cars that only support LTA
+      if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+        apply_steer = 0
+        apply_steer_req = 0
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -95,8 +122,6 @@ class CarController:
 
     self.last_steer = apply_steer
     self.last_standstill = CS.out.standstill
-
-    can_sends = []
 
     # *** control msgs ***
     # print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
@@ -162,7 +187,7 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
