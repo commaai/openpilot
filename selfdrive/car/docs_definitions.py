@@ -1,5 +1,6 @@
 import re
 from collections import namedtuple
+import copy
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional, Tuple, Union
@@ -144,6 +145,9 @@ DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
 class CarParts:
   parts: List[EnumBase] = field(default_factory=list)
 
+  def __call__(self):
+    return copy.deepcopy(self)
+
   @classmethod
   def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
@@ -225,7 +229,7 @@ class CarInfo:
   auto_resume: Optional[bool] = None
 
   # all the parts needed for the supported car
-  car_parts: CarParts = CarParts()
+  car_parts: CarParts = field(default_factory=CarParts)
 
   def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
     self.car_name = CP.carName
