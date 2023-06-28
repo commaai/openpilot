@@ -40,6 +40,7 @@ class CarController:
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
 
+    # *** control msgs ***
     can_sends = []
 
     # steer torque
@@ -110,9 +111,6 @@ class CarController:
       self.standstill_req = False
 
     self.last_standstill = CS.out.standstill
-
-    # *** control msgs ***
-    # print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
 
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
