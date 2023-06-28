@@ -8,7 +8,7 @@
 #include "selfdrive/modeld/runners/run.h"
 
 constexpr int NAV_INPUT_SIZE = 256*256;
-constexpr int NAV_FEATURE_LEN = 64;
+constexpr int NAV_FEATURE_LEN = 256;
 constexpr int NAV_DESIRE_LEN = 32;
 
 struct NavModelOutputXY {
