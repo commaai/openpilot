@@ -67,16 +67,16 @@ void OnroadWindow::updateState(const UIState &s) {
   nvg->updateState(s);
 
   // update spacing
-  if ((enabled != enabledNow) || (navEnabled != navEnabledNow)) {
-    split->setSpacing(enabledNow && !navEnabledNow ? bdr_s*2 : 0);
+  bool navDisabled = enabled && !navEnabled;
+  bool navDisabledNow = enabledNow && !navEnabledNow;
+  if (navDisabled != navDisabledNow) {
+    split->setSpacing(navDisabledNow ? bdr_s * 2 : 0);
     if (map) {
-      map->setFixedWidth(width() / 2 - bdr_s * (enabledNow && !navEnabledNow ? 2 : 1));
+      map->setFixedWidth(width() / 2 - bdr_s * (navDisabledNow ? 2 : 1));
     }
   }
 
   // repaint border
-  bool navDisabled = enabled && !navEnabled;
-  bool navDisabledNow = enabledNow && !navEnabledNow;
   if (bg != bgColor || navDisabled != navDisabledNow) {
     bg = bgColor;
     enabled = enabledNow;
