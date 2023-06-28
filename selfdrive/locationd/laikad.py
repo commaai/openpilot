@@ -332,8 +332,8 @@ class Laikad:
                                         std=np.sqrt(P_diag[GStates.ECEF_VELOCITY]).tolist(),
                                         valid=kf_valid)
 
-    msg_dict['gpsWeek'] = self.last_report_time.week
-    msg_dict['gpsTimeOfWeek'] = self.last_report_time.tow
+    msg_dict['gpsWeek'] = self.last_report_time.epoch.week
+    msg_dict['gpsTimeOfWeek'] = self.last_report_time.epoch.tow
     msg_dict['timeToFirstFix'] = self.ttff
     msg_dict['ephemerisStatuses'] = self.create_ephem_statuses()
     out_msg.gnssMeasurements = msg_dict
