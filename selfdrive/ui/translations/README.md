@@ -43,7 +43,7 @@ Different languages use varying space to convey the same message, so you should 
 
 #### To view offroad alerts:
 
-With the UI started, you can preview the offroad alerts to check spacing with:
+With the UI started, you can view the offroad alerts with:
 ```shell
 selfdrive/ui/tests/cycle_offroad_alerts.py
 ```
