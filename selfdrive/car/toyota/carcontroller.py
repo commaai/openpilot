@@ -22,7 +22,7 @@ MAX_USER_TORQUE = 500
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.torque_rate_limits = CarControllerParams(self.CP)
+    self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
     self.alert_active = False
@@ -56,11 +56,11 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
     # steer torque
-    new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
-    apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.torque_rate_limits)
+    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+    apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
@@ -162,7 +162,7 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
