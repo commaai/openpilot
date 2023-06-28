@@ -32,9 +32,21 @@ openpilot provides a few tools to help contributors manage their translations an
    scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
 
+   Tip! Read [Checking the UI](#checking-the-ui) below to double-check your translations fit in the UI.
+
 ### Improving an Existing Language
 
 Follow step 3. above, you can review existing translations and add missing ones. Once you're done, just open a pull request to openpilot.
+
+### Checking the UI
+Different languages use varying space to convey the same message, so you should double-check that your translations do not overlap and fit into each widget. Start the UI (step 4 above) and view each page.
+
+#### To view offroad alerts:
+
+With the UI started, you can preview the offroad alerts to check spacing with:
+```shell
+selfdrive/ui/tests/cycle_offroad_alerts.py
+```
 
 ### Updating the UI
 
@@ -58,15 +70,3 @@ selfdrive/ui/tests/create_test_translations.sh && selfdrive/ui/tests/test_transl
 
 ---
 ![multilanguage_onroad](https://user-images.githubusercontent.com/25857203/178912800-2c798af8-78e3-498e-9e19-35906e0bafff.png)
-
-### Pre-viewing alerts
-
-Latin-based languages often use more space to convey the same message. Then you may want to predict alerts to make sure nothing is overlapping:<br>
-OffRoad alerts (clear OffRoad params later):
-```shell
-selfdrive/ui/tests/cycle_offroad_alerts.py
-```
-Onroad alerts (hardcode with the alerts you need to see):
-```shell
-selfdrive/debug/cycle_alerts.py
-```
