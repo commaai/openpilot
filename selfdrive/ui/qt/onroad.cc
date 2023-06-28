@@ -70,7 +70,7 @@ void OnroadWindow::updateState(const UIState &s) {
   if (navDisabled != navDisabledNow) {
     split->setSpacing(navDisabledNow ? bdr_s * 2 : 0);
     if (map) {
-      map->setFixedWidth(width() / 2 - bdr_s * (navDisabledNow ? 2 : 1));
+      map->setFixedWidth(topWidget(this)->width() / 2 - bdr_s * (navDisabledNow ? 2 : 1));
     }
   }
 
@@ -122,9 +122,8 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
   if (isMapVisible() && navDisabled) {
     QRect map_r = uiState()->scene.map_on_left
-                    ? QRect(width() / 2, 0, width() / 2, height())
-                    : QRect(0, 0, width() / 2, height());
-
+                    ? QRect(0, 0, width() / 2, height())
+                    : QRect(width() / 2, 0, width() / 2, height());
     p.fillRect(map_r, bg_colors[STATUS_DISENGAGED]);
   }
 }
