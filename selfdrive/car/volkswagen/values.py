@@ -409,7 +409,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x872Q0907572R \xf1\x890372',
-      b'\xf1\x872Q0907572AA \xf1\x890396',
+      b'\xf1\x872Q0907572AA\xf1\x890396',
     ],
   },
   CAR.GOLF_MK7: {
