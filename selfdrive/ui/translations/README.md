@@ -31,8 +31,7 @@ openpilot provides a few tools to help contributors manage their translations an
    ```shell
    scons -j$(nproc) selfdrive/ui && selfdrive/ui/ui
    ```
-
-   Tip! Read [Checking the UI](#checking-the-ui) below to double-check your translations fit in the UI.
+5. Read [Checking the UI](#checking-the-ui) to double-check your translations fit in the UI.
 
 ### Improving an Existing Language
 
