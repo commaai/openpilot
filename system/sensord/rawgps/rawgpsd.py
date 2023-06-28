@@ -153,9 +153,6 @@ def inject_assistance():
       output=e.output,
       returncode=e.returncode
     )
-  finally:
-    if os.path.exists(ASSIST_DATA_FILE):
-      os.remove(ASSIST_DATA_FILE)
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
