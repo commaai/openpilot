@@ -25,6 +25,8 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, frame
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
     "BIT": 0,
+    "BYTE3_BIT0": 1,
+    "BYTE3_BIT0_2": 1,
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
