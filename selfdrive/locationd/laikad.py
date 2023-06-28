@@ -141,8 +141,8 @@ class Laikad:
 
   def create_ephem_statuses(self):
     ephemeris_statuses = []
-    nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
-    for eph in nav_list:
+    eph_list: List = sum([v for k,v in self.astro_dog.navs.items()], []) + sum([v for k,v in self.astro_dog.qcom_polys.items()], [])
+    for eph in eph_list:
       status = log.GnssMeasurements.EphemerisStatus.new_message()
       status.constellationId = ConstellationId.from_rinex_char(eph.prn[0]).value
       status.svId = get_sv_id(eph.prn)
