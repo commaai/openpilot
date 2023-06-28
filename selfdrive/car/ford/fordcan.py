@@ -192,6 +192,7 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw
     "FcwMemSens_D_Actl",         # FCW sensitivity setting
     "FcwMsgTxt_D_Rq",            # FCW text
     "AccWarn_D_Dsply",           # ACC warning
+    "FcwVisblWarn_B_Rq",         # FCW visible alert
     "FcwAudioWarn_B_Rq",         # FCW audio alert
     "AccTGap_D_Dsply",           # ACC time gap
     "AccMemEnbl_B_RqDrv",        # ACC adaptive/normal setting
@@ -199,8 +200,7 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw
   ]}
 
   values.update({
-    "Tja_D_Stat": status,                        # TJA status
-    "FcwVisblWarn_B_Rq": 1 if fcw_alert else 0,  # FCW visible alert
+    "Tja_D_Stat": status,        # TJA status
   })
 
   if CP.openpilotLongitudinalControl:
@@ -213,6 +213,10 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw
       "AccWarn_D_Dsply": 0,                                       # ACC warning
       "AccTGap_D_Dsply": 4,                                       # Fixed time gap in UI
     })
+
+  # Forwards FCW alert from IPMA
+  if fcw_alert:
+    values["FcwVisblWarn_B_Rq"] = 1  # FCW visible alert
 
   return packer.make_can_msg("ACCDATA_3", CAN.main, values)
 
