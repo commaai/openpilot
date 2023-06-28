@@ -39,7 +39,7 @@ openpilot provides a few tools to help contributors manage their translations an
 Follow step 3. above, you can review existing translations and add missing ones. Once you're done, just open a pull request to openpilot.
 
 ### Checking the UI
-Different languages use varying space to convey the same message, so it's a good idea to double-check that your translations do not overlap and fit into each widget. Start the UI (step 4. above) and view each page, making adjustments to translations as-needed.
+Different languages use varying space to convey the same message, so it's a good idea to double-check that your translations do not overlap and fit into each widget. Start the UI (step 4. above) and view each page, making adjustments to translations as needed.
 
 #### To view offroad alerts:
 
