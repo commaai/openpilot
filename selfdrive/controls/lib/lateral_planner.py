@@ -119,18 +119,25 @@ class LateralPlanner:
     else:
       self.solution_invalid_cnt = 0
 
-  def publish(self, sm, pm):
+  def publish(self, sm, pm, longitudinal_planner):
     plan_solution_valid = self.solution_invalid_cnt < 2
+    if len(longitudinal_planner.v_desired_trajectory) < CONTROL_N:
+      return
+
     plan_send = messaging.new_message('lateralPlan')
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
+
+    velocities = np.maximum(0.01, np.array(longitudinal_planner.v_desired_trajectory[0:CONTROL_N]))
+    curvatures_rates = np.array(self.lat_mpc.x_sol[0:CONTROL_N, 3])
 
     lateralPlan = plan_send.lateralPlan
     lateralPlan.modelMonoTime = sm.logMonoTime['modelV2']
     lateralPlan.dPathPoints = self.y_pts.tolist()
     lateralPlan.psis = self.lat_mpc.x_sol[0:CONTROL_N, 2].tolist()
 
-    lateralPlan.curvatures = (self.lat_mpc.x_sol[0:CONTROL_N, 3]/self.v_ego).tolist()
-    lateralPlan.curvatureRates = [float(x/self.v_ego) for x in self.lat_mpc.u_sol[0:CONTROL_N - 1]] + [0.0]
+    lateralPlan.curvatures = (curvatures_rates/velocities).tolist()
+    x_mpc = self.lat_mpc.u_sol[0:CONTROL_N - 1]
+    lateralPlan.curvatureRates = [float(x_mpc[i]/velocities[i]) for i in range(0,len(x_mpc)) ] + [0.0]
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
