@@ -180,7 +180,8 @@ def setup_quectel(diag: ModemDiag):
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
   at_cmd("AT+QGPSSUPLURL=\"NULL\"")
-  inject_assistance()
+  if os.path.exists(ASSIST_DATA_FILE):
+    inject_assistance()
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
