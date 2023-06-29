@@ -124,14 +124,12 @@ class IsoTpParallelQuery:
 
         if response_valid:
           if counter + 1 < len(self.request):
-            response_timeouts[tx_addr] = time.monotonic() + timeout
-            next_request = self.request[counter + 1]
-            if callable(next_request):  # and self.response[counter + 1]:
-              new_requests = next_request(dat[len(expected_response):])
-              new_responses = self.response[counter + 1](dat[len(expected_response):])
-              self.request[counter + 1:] = new_requests
-              self.response[counter + 1:] = new_responses
+            # If request callback defined, replace it with its results
+            if callable(self.request[counter + 1]):  # and self.response[counter + 1]:
+              self.request[counter + 1:] = self.request[counter + 1](dat[len(expected_response):])
+              self.response[counter + 1:] = self.response[counter + 1](dat[len(expected_response):])
 
+            response_timeouts[tx_addr] = time.monotonic() + timeout
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
           else:
