@@ -278,10 +278,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP (0x8801):
+    # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
-    # Responds to KWP (0x8881):
+    # Responds to KWP (0x1a8881):
     # - Body Control Module ((0x750, 0x40))
 
     # Hybrid control computer can be on one of two addresses
