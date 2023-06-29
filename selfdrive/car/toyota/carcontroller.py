@@ -1,6 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_std_steer_angle_limits, apply_meas_steer_torque_limits, \
+from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
                           create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
