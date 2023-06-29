@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QQmlContext>
 #include <QQuickWidget>
+#include <QTransform>
 #include <QVBoxLayout>
 
 #include "common/util.h"
@@ -21,28 +22,45 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   }
   click_timer.restart();
 
-  if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+  auto contains = [this](QRect r, const QPoint &pt) {
+    if (image.size() != image_raw_size) {
+      QTransform transform;
+      transform.translate((width()- image.width()) / 2.0, (height()- image.height()) / 2.0);
+      transform.scale(image.width() / (float)image_raw_size.width(), image.height() / (float)image_raw_size.height());
+      r= transform.mapRect(r);
+    }
+    return r.contains(pt);
+  };
+
+  if (contains(boundingRect[currentIndex], e->pos())) {
     if (currentIndex == 9) {
       const QRect yes = QRect(707, 804, 531, 164);
-      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
+      Params().putBool("RecordFront", contains(yes, e->pos()));
     }
     currentIndex += 1;
-  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
+  } else if (currentIndex == (boundingRect.size() - 2) && contains(boundingRect.last(), e->pos())) {
     currentIndex = 0;
   }
 
   if (currentIndex >= (boundingRect.size() - 1)) {
     emit completedTraining();
   } else {
-    image.load(img_path + "step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load(img_path + "step0.png");
   click_timer.start();
+}
+
+QImage TrainingGuide::loadImage(int id) {
+  QImage img(img_path + QString("step%1.png").arg(id));
+  image_raw_size = img.size();
+  if (image_raw_size != rect().size()) {
+    img = img.scaled(width(), height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  }
+  return img;
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
@@ -51,6 +69,7 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect bg(0, 0, painter.device()->width(), painter.device()->height());
   painter.fillRect(bg, QColor("#000000"));
 
+  image = loadImage(currentIndex);
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
@@ -110,6 +129,9 @@ void TermsPage::showEvent(QShowEvent *event) {
   accept_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #465BEA;
+    }
+    QPushButton:pressed {
+      background-color: #3049F4;
     }
     QPushButton:disabled {
       background-color: #4F4F4F;

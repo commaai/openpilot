@@ -3,7 +3,8 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
+from selfdrive.car.ford.fordcan import CanBus
+from selfdrive.car.ford.values import DBC, CarControllerParams
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -17,9 +18,15 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
     self.vehicle_sensors_valid = False
+    self.hybrid_platform = False
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
+
+    # Hybrid variants experience a bug where a message from the PCM sends invalid checksums,
+    # we do not support these cars at this time.
+    # TrnAin_Tq_Actl and its quality flag are only set on ICE platform variants
+    self.hybrid_platform = cp.vl["VehicleOperatingModes"]["TrnAinTq_D_Qf"] == 0
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
@@ -71,7 +78,7 @@ class CarState(CarStateBase):
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
-    ret.stockAeb = ret.stockFcw and ret.cruiseState.enabled
+    ret.stockAeb = bool(cp_cam.vl["ACCDATA_2"]["CmbbBrkDecel_B_Rq"])
 
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
@@ -101,6 +108,8 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
+
       ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
       ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
       ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
@@ -162,6 +171,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
       ("Yaw_Data_FD1", 100),
       ("DesiredTorqBrk", 50),
@@ -204,13 +214,15 @@ class CarState(CarStateBase):
         ("Side_Detect_R_Stat", 5),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.main)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).main)
 
   @staticmethod
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
       ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC unavailable/lockout
+
+      ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
 
       ("HaDsply_No_Cs", "ACCDATA_3"),
       ("HaDsply_No_Cnt", "ACCDATA_3"),
@@ -226,7 +238,7 @@ class CarState(CarStateBase):
       ("FcwMemStat_B_Actl", "ACCDATA_3"),           # FCW enabled setting
       ("AccTGap_B_Dsply", "ACCDATA_3"),             # ACC time gap display setting
       ("CadsAlignIncplt_B_Actl", "ACCDATA_3"),
-      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC follow mode display setting
+      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC lead indicator
       ("CadsRadrBlck_B_Actl", "ACCDATA_3"),
       ("CmbbPostEvnt_B_Dsply", "ACCDATA_3"),        # AEB event status
       ("AccStopMde_B_Dsply", "ACCDATA_3"),          # ACC stop mode display setting
@@ -257,8 +269,9 @@ class CarState(CarStateBase):
     checks = [
       # sig_address, frequency
       ("ACCDATA", 50),
+      ("ACCDATA_2", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.camera)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).camera)

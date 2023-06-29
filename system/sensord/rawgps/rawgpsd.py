@@ -5,8 +5,10 @@ import signal
 import itertools
 import math
 import time
+import pycurl
 import subprocess
-from typing import NoReturn
+from datetime import datetime
+from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
 from cereal import log
@@ -89,15 +91,13 @@ def try_setup_logs(diag, log_types):
   else:
     raise Exception(f"setup logs failed, {log_types=}")
 
-def at_cmd(cmd: str) -> None:
+def at_cmd(cmd: str) -> Optional[str]:
   for _ in range(5):
     try:
-      subprocess.check_call(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True)
-      break
+      return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
-  else:
-    raise Exception(f"failed to execute mmcli command {cmd=}")
+  raise Exception(f"failed to execute mmcli command {cmd=}")
 
 
 def gps_enabled() -> bool:
@@ -106,6 +106,54 @@ def gps_enabled() -> bool:
     return b"QGPS: 1" in p
   except subprocess.CalledProcessError as exc:
     raise Exception("failed to execute QGPS mmcli command") from exc
+
+def download_and_inject_assistance():
+  assist_data_file = '/tmp/xtra3grc.bin'
+  assistance_url = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
+
+  try:
+    # download assistance
+    try:
+      c = pycurl.Curl()
+      c.setopt(pycurl.URL, assistance_url)
+      c.setopt(pycurl.NOBODY, 1)
+      c.setopt(pycurl.CONNECTTIMEOUT, 2)
+      c.perform()
+      bytes_n = c.getinfo(pycurl.CONTENT_LENGTH_DOWNLOAD)
+      c.close()
+      if bytes_n > 1e5:
+        cloudlog.error("Qcom assistance data larger than expected")
+        return
+
+      with open(assist_data_file, 'wb') as fp:
+        c = pycurl.Curl()
+        c.setopt(pycurl.URL, assistance_url)
+        c.setopt(pycurl.CONNECTTIMEOUT, 5)
+
+        c.setopt(pycurl.WRITEDATA, fp)
+        c.perform()
+        c.close()
+    except pycurl.error:
+      cloudlog.exception("Failed to download assistance file")
+      return
+
+    # inject into module
+    try:
+      cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={assist_data_file}"
+      subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
+      cloudlog.info("successfully loaded assistance data")
+    except subprocess.CalledProcessError as e:
+      cloudlog.event(
+        "rawgps.assistance_loading_failed",
+        error=True,
+        cmd=e.cmd,
+        output=e.output,
+        returncode=e.returncode
+      )
+  finally:
+    if os.path.exists(assist_data_file):
+      os.remove(assist_data_file)
+
 
 def setup_quectel(diag: ModemDiag):
   # enable OEMDRE in the NV
@@ -120,13 +168,20 @@ def setup_quectel(diag: ModemDiag):
 
   if gps_enabled():
     at_cmd("AT+QGPSEND")
+  #at_cmd("AT+QGPSDEL=0")
 
   # disable DPO power savings for more accuracy
   at_cmd("AT+QGPSCFG=\"dpoenable\",0")
   # don't automatically turn on GNSS on powerup
   at_cmd("AT+QGPSCFG=\"autogps\",0")
 
-  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
+  # Do internet assistance
+  at_cmd("AT+QGPSXTRA=1")
+  download_and_inject_assistance()
+  #at_cmd("AT+QGPSXTRADATA?")
+  time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
+  at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
+
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
 

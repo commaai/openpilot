@@ -67,7 +67,7 @@ Documentation related to openpilot development can be found on [docs.comma.ai](h
 
 You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions).
 
 And [follow us on Twitter](https://twitter.com/comma_ai).
 

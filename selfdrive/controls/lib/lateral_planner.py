@@ -25,7 +25,7 @@ STEERING_RATE_COST = 700.0
 
 
 class LateralPlanner:
-  def __init__(self, CP):
+  def __init__(self, CP, debug=False):
     self.DH = DesireHelper()
 
     # Vehicle model parameters used to calculate lateral movement of car
@@ -39,7 +39,13 @@ class LateralPlanner:
     self.plan_yaw = np.zeros((TRAJECTORY_SIZE,))
     self.plan_yaw_rate = np.zeros((TRAJECTORY_SIZE,))
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
-    self.y_pts = np.zeros(TRAJECTORY_SIZE)
+    self.y_pts = np.zeros((TRAJECTORY_SIZE,))
+    self.v_plan = np.zeros((TRAJECTORY_SIZE,))
+    self.v_ego = 0.0
+    self.l_lane_change_prob = 0.0
+    self.r_lane_change_prob = 0.0
+
+    self.debug_mode = debug
 
     self.lat_mpc = LateralMpc()
     self.reset_mpc(np.zeros(4))
@@ -108,7 +114,7 @@ class LateralPlanner:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    if self.lat_mpc.cost > 20000. or mpc_nans:
+    if self.lat_mpc.cost > 1e6 or mpc_nans:
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
@@ -128,6 +134,11 @@ class LateralPlanner:
 
     lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
     lateralPlan.solverExecutionTime = self.lat_mpc.solve_time
+    if self.debug_mode:
+      lateralPlan.solverCost = self.lat_mpc.cost
+      lateralPlan.solverState = log.LateralPlan.SolverState.new_message()
+      lateralPlan.solverState.x = self.lat_mpc.x_sol.tolist()
+      lateralPlan.solverState.u = self.lat_mpc.u_sol.flatten().tolist()
 
     lateralPlan.desire = self.DH.desire
     lateralPlan.useLaneLines = False

@@ -138,14 +138,14 @@ void ONNXModel::execute() {
   if (desire_input_buf != NULL) {
     pwrite(desire_input_buf, desire_state_size);
   }
-  if (nav_features_input_buf != NULL) {
-    pwrite(nav_features_input_buf, nav_features_size);
+  if (traffic_convention_input_buf != NULL) {
+    pwrite(traffic_convention_input_buf, traffic_convention_size);
   }
   if (driving_style_input_buf != NULL) {
     pwrite(driving_style_input_buf, driving_style_size);
   }
-   if (traffic_convention_input_buf != NULL) {
-    pwrite(traffic_convention_input_buf, traffic_convention_size);
+  if (nav_features_input_buf != NULL) {
+    pwrite(nav_features_input_buf, nav_features_size);
   }
   if (calib_input_buf != NULL) {
     pwrite(calib_input_buf, calib_size);

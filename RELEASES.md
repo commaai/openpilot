@@ -1,26 +1,53 @@
-Version 0.9.2 (2023-05-XX)
+Version 0.9.4 (2023-XX-XX)
+========================
+* Navigate on openpilot
+  * When navigation has a destination openpilot will input the map information into the model, generally improving behavior
+  * When navigating on openpilot, openpilot will keep left or right appropriately at forks/exits and take turns
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver 
+* UI updates
+  * Navigation settings moved to home screen and map
+* UI alerts rework
+  * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
+  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
+* Ford Focus 2018 support
+
+Version 0.9.3 (2023-06-29)
 ========================
 * New driving model
-  * fixes turn diving
-  * trained on a new dataset
-* Draw MPC path instead of model predicted path, this is a more accurate representation of what the car will do.
+  * Improved height estimation and added height tracking in liveCalibration
+  * Model inputs refactor
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode, lead follow distance is shorter and acceleration response is quicker
+  * In relaxed mode, lead follow distance is longer
+* Improved fuzzy fingerprinting for Hyundai, Kia, and Genesis
+* Improved thermal management logic
+
+Version 0.9.2 (2023-05-22)
+========================
+* New driving model
+  * Reduced turn diving
+  * Trained on a new dataset
+* UI updates
+  * New experimental mode visualization
+  * Draw MPC path instead of model-predicted path
+* AGNOS 7
+  * Faster boot time
+  * Fixes rare no sounds bug
+  * Fixes bootsplash bug at extreme temperatures
 * Buick LaCrosse 2017-19 support thanks to koch-cf!
 * Chevrolet Trailblazer 2021-22 support thanks to TurboCE!
 * Ford Bronco Sport 2021-22 support
 * Ford Escape 2020-22 support
-* Ford Escape Hybrid 2020-22 support
-* Ford Escape Plug-in Hybrid 2021-22 support
 * Ford Explorer 2020-22 support
-* Ford Explorer Hybrid 2020-22 support
 * Ford Kuga 2020-22 support
-* Ford Kuga Hybrid 2020-22 support
-* Ford Kuga Plug-in Hybrid 2020-22 support
+* Ford Maverick 2022-23 support
 * Genesis GV80 2023 support thanks to JWingate80!
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
 * Lincoln Aviator 2021 support
-* Lincoln Aviator Plug-in Hybrid 2021 support
 * Škoda Fabia 2022-23 support thanks to jyoung8607!
 
 
