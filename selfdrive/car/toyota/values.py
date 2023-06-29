@@ -229,12 +229,32 @@ STATIC_DSU_MSGS = [
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
+
+def get_toyota_version_requests_kwp(responses: List[bytes]) -> List[bytes]:
+  prev_response = responses[1]  # tester present, supported ids, ...
+  supported_data_ids = [bytes([b]) for b in prev_response]
+  return [b'\x1a\x88' + b for b in supported_data_ids]
+
+
+def get_toyota_version_responses_kwp(responses: List[bytes]) -> List[bytes]:
+  prev_response = responses[1]  # tester present, supported ids, ...
+  supported_data_ids = [bytes([b]) for b in prev_response]
+  return [b'\x5a\x88' + b for b in supported_data_ids]
+
+
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
   requests=[
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
+                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
+      bus=0,
+    ),
+    Request(
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, get_toyota_version_requests_kwp],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, get_toyota_version_responses_kwp],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
                       Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
       bus=0,
