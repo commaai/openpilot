@@ -502,11 +502,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 }
 
 void AnnotatedCameraWidget::drawLaneChangeIndicator(QPainter &painter, const UIState *s) {
-  auto draw_indicator_lambda = [this](QPainter &painter, cereal::LateralPlan::LaneChangeDirection direction, QColor color) {
-    QPixmap img = direction == cereal::LateralPlan::LaneChangeDirection::LEFT ? lane_change_left_img : lane_change_right_img;
+  typedef cereal::LateralPlan::LaneChangeDirection Direction;
+  typedef cereal::LateralPlan::LaneChangeState State;
+
+  auto draw_indicator_lambda = [this](QPainter &painter, Direction direction, QColor color) {
+    QPixmap img = direction == Direction::LEFT ? lane_change_left_img : lane_change_right_img;
     QRect img_rc{0, (rect().height() - img.height()) / 2, img.width(), img.height()};
     QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 20, img_rc.height() / 2);
-    if (direction == cereal::LateralPlan::LaneChangeDirection::RIGHT) {
+    if (direction == Direction::RIGHT) {
       img_rc.moveLeft(rect().width() - img_rc.width());
       ellipse_rc.moveLeft(rect().width() - ellipse_rc.width() / 2 - 20);
     }
@@ -520,13 +523,13 @@ void AnnotatedCameraWidget::drawLaneChangeIndicator(QPainter &painter, const UIS
   auto laneChangeState = lateralPlan.getLaneChangeState();
   auto direction = lateralPlan.getLaneChangeDirection();
 
-  if (laneChangeState == cereal::LateralPlan::LaneChangeState::PRE_LANE_CHANGE) {
+  if (laneChangeState == State::PRE_LANE_CHANGE) {
     auto carState = (*(s->sm))["carState"].getCarState();
-    bool blocked = (direction == cereal::LateralPlan::LaneChangeDirection::LEFT && carState.getLeftBlindspot());
-    blocked |= (direction == cereal::LateralPlan::LaneChangeDirection::RIGHT && carState.getRightBlindspot());
+    bool blocked = (direction == Direction::LEFT && carState.getLeftBlindspot()) ||
+                   (direction == Direction::RIGHT && carState.getRightBlindspot());
     draw_indicator_lambda(painter, direction, blocked ? redColor(200) : blackColor(200));
-  } else if (laneChangeState == cereal::LateralPlan::LaneChangeState::LANE_CHANGE_STARTING ||
-             laneChangeState == cereal::LateralPlan::LaneChangeState::LANE_CHANGE_FINISHING) {
+  } else if (laneChangeState == State::LANE_CHANGE_STARTING ||
+             laneChangeState == State::LANE_CHANGE_FINISHING) {
     draw_indicator_lambda(painter, direction, bg_colors[s->status]);
   }
 }
