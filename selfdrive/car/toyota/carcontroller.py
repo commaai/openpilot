@@ -25,6 +25,7 @@ class CarController:
     self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
+    self.last_angle = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -65,6 +66,9 @@ class CarController:
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       apply_steer = 0
       apply_steer_req = 0
+      if self.frame % 2 == 0:
+        apply_angle = actuators.steeringAngleDeg
+        self.last_angle = actuators.steeringAngleDeg
 
     self.last_steer = apply_steer
 
@@ -73,7 +77,7 @@ class CarController:
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
+      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, CC.latActive, self.frame // 2))
 
     # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
     # if self.frame % 2 == 0:
@@ -164,6 +168,7 @@ class CarController:
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
+    new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 
