@@ -120,6 +120,17 @@ class TestFwFingerprint(unittest.TestCase):
         with self.subTest(car_model=car_model):
           self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
 
+  def test_fw_query_config_requests(self):
+    # Asserts equal length request and response lists, types match between request and response pairs,
+    # and if a callable exists, it must be at the end
+    for brand, config in FW_QUERY_CONFIGS.items():
+      for request_obj in config.requests:
+        self.assertEqual(len(request_obj.request), len(request_obj.response))
+        for idx, (request, response) in enumerate(zip(request_obj.request, request_obj.response)):
+          self.assertEqual(type(request), type(response))
+          if idx < len(request_obj.request) - 1:
+            self.assertTrue(isinstance(request, bytes))
+
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
