@@ -124,12 +124,13 @@ class TestFwFingerprint(unittest.TestCase):
     # Asserts equal length request and response lists, types match between request and response pairs,
     # and if a callable exists, it must be at the end
     for brand, config in FW_QUERY_CONFIGS.items():
-      for request_obj in config.requests:
-        self.assertEqual(len(request_obj.request), len(request_obj.response))
-        for idx, (request, response) in enumerate(zip(request_obj.request, request_obj.response)):
-          self.assertEqual(type(request), type(response))
-          if idx < len(request_obj.request) - 1:
-            self.assertTrue(isinstance(request, bytes))
+      with self.subTest(brand=brand):
+        for request_obj in config.requests:
+          self.assertEqual(len(request_obj.request), len(request_obj.response))
+          for idx, (request, response) in enumerate(zip(request_obj.request, request_obj.response)):
+            self.assertEqual(type(request), type(response))
+            if idx < len(request_obj.request) - 1:
+              self.assertTrue(isinstance(request, bytes))
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
