@@ -1,6 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_meas_steer_torque_limits, create_gas_interceptor_command, make_can_msg
+from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
+                          create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -9,14 +10,20 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
+SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
 MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
+
+# LTA limits
+# EPS ignores commands above this angle and causes PCS to fault
+MAX_STEER_ANGLE = 94.9461  # deg
 
 
 class CarController:
@@ -25,6 +32,7 @@ class CarController:
     self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
+    self.last_angle = 0
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
@@ -61,10 +69,22 @@ class CarController:
       apply_steer_req = 0
       self.steer_rate_counter = 0
 
-    # Never actuate with LKA on cars that only support LTA
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    # *** steer angle ***
+    if self.CP.steerControlType == SteerControlType.angle:
+      # If using LTA control, disable LKA and set steering angle command
       apply_steer = 0
       apply_steer_req = 0
+      if self.frame % 2 == 0:
+        # EPS uses the torque sensor angle to control with, offset to compensate
+        apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+        # Angular rate limit based on speed
+        apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
+
+        if not CC.latActive:
+          apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+        self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
     self.last_steer = apply_steer
 
@@ -73,12 +93,8 @@ class CarController:
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
-      can_sends.append(create_lta_steer_command(self.packer, 0, 0, self.frame // 2))
-
-    # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-    # if self.frame % 2 == 0:
-    #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
-    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, self.frame // 2))
+      lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
+      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -164,6 +180,7 @@ class CarController:
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
+    new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 
