@@ -71,6 +71,7 @@ private:
 
   ExperimentalButton *experimental_btn;
   QPixmap dm_img;
+  QPixmap lane_change_left_img, lane_change_right_img;
   float speed;
   QString speedUnit;
   float setSpeed;
@@ -96,6 +97,7 @@ protected:
   void showEvent(QShowEvent *event) override;
   void updateFrameMat() override;
   void drawLaneLines(QPainter &painter, const UIState *s);
+  void drawLaneChangeIndicator(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);
   void drawDriverState(QPainter &painter, const UIState *s);
