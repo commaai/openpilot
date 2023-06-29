@@ -130,26 +130,27 @@ class Laikad:
 
     if self.save_ephemeris and (self.last_report_time - self.last_cached_t > SECS_IN_MIN):
       nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
-      ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in nav_list if e.prn[0]=='R'],
-                                                        'gpsEphemerides': [e.data for e in nav_list if e.prn[0]=='G']})
-
-      put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
-      cloudlog.debug("Cache saved")
+      #TODO this only saves currently valid ephems, when we download future ephems we should save them too
+      valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
+      if len(valid_navs) > 0:
+        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
+                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
+        cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
 
   def create_ephem_statuses(self):
     ephemeris_statuses = []
-    prns_to_check = list(self.astro_dog.get_all_ephem_prns())
-    prns_to_check.sort()
-    for prn in prns_to_check:
-      eph = self.astro_dog.get_eph(prn, self.last_report_time)
-      if eph is not None:
-        status = log.GnssMeasurements.EphemerisStatus.new_message()
-        status.constellationId = ConstellationId.from_rinex_char(prn[0]).value
-        status.svId = get_sv_id(prn)
-        status.type = get_log_eph_type(eph).value
-        status.source = get_log_eph_source(eph).value
-        ephemeris_statuses.append(status)
+    eph_list: List = sum([v for k,v in self.astro_dog.navs.items()], []) + sum([v for k,v in self.astro_dog.qcom_polys.items()], [])
+    for eph in eph_list:
+      status = log.GnssMeasurements.EphemerisStatus.new_message()
+      status.constellationId = ConstellationId.from_rinex_char(eph.prn[0]).value
+      status.svId = get_sv_id(eph.prn)
+      status.type = get_log_eph_type(eph).value
+      status.source = get_log_eph_source(eph).value
+      status.tow = eph.epoch.tow
+      status.gpsWeek = eph.epoch.week
+      ephemeris_statuses.append(status)
     return ephemeris_statuses
 
 
