@@ -439,6 +439,7 @@ third_party/libyuv/larch64/**
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
+third_party/acados/.gitignore
 third_party/acados/x86_64/**
 third_party/acados/larch64/**
 third_party/acados/include/**

@@ -136,7 +136,6 @@ void DBCFile::parse(const QString &content) {
           dbc_assert(++multiplexor_cnt < 2, "Multiple multiplexor");
           s.type = cabana::Signal::Type::Multiplexor;
         } else {
-          dbc_assert(multiplexor_cnt == 1, "No multiplexor");
           s.type = cabana::Signal::Type::Multiplexed;
           s.multiplex_value = indicator.mid(1).toInt();
         }
@@ -148,16 +147,10 @@ void DBCFile::parse(const QString &content) {
       s.is_signed = match.captured(offset + 5) == "-";
       s.factor = match.captured(offset + 6).toDouble();
       s.offset = match.captured(offset + 7).toDouble();
-      if (s.is_little_endian) {
-        s.lsb = s.start_bit;
-        s.msb = s.start_bit + s.size - 1;
-      } else {
-        s.lsb = bigEndianStartBitsIndex(bigEndianBitIndex(s.start_bit) + s.size - 1);
-        s.msb = s.start_bit;
-      }
       s.min = match.captured(8 + offset).toDouble();
       s.max = match.captured(9 + offset).toDouble();
       s.unit = match.captured(10 + offset);
+
       current_msg->sigs.push_back(new cabana::Signal(s));
     } else if (line.startsWith("VAL_ ")) {
       auto match = val_regexp.match(line);

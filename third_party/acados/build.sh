@@ -13,13 +13,8 @@ fi
 ACADOS_FLAGS="-DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  if [[  $(uname -m) == "x86_64" ]]; then
-    ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=x86_64"
-    ARCHNAME="Darwin_x86_64"
-  else
-    ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-    ARCHNAME="Darwin"
-  fi
+  ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -DCMAKE_MACOSX_RPATH=1"
+  ARCHNAME="Darwin"
 fi
 
 if [ ! -d acados_repo/ ]; then
@@ -51,5 +46,11 @@ cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/
 
 # build tera
 cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
-cargo build --verbose --release
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  cargo build --verbose --release --target aarch64-apple-darwin
+  cargo build --verbose --release --target x86_64-apple-darwin
+  lipo -create -output target/release/t_renderer target/x86_64-apple-darwin/release/t_renderer target/aarch64-apple-darwin/release/t_renderer
+else 
+  cargo build --verbose --release
+fi
 cp target/release/t_renderer $INSTALL_DIR/

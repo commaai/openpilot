@@ -19,7 +19,7 @@ class OnroadAlerts : public QWidget {
 
 public:
   OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
-  void updateAlert(const Alert &a, const QColor &color);
+  void updateAlert(const Alert &a);
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -114,6 +114,9 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
   bool isMapVisible() const { return map && map->isVisible(); }
+
+signals:
+  void mapWindowShown();
 
 private:
   void paintEvent(QPaintEvent *event);

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Union
 
 from cereal import car
@@ -37,7 +37,7 @@ class CAR:
 @dataclass
 class MazdaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarHarness.mazda])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.mazda]))
 
 
 CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {

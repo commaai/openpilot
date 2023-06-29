@@ -1,5 +1,5 @@
 from enum import IntFlag
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -60,7 +60,7 @@ RAM_CARS = RAM_DT | RAM_HD
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
-  car_parts: CarParts = CarParts.common([CarHarness.fca])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -167,7 +167,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      whitelist_ecus=[Ecu.abs, Ecu.hybrid, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
     Request(
@@ -178,8 +178,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
   ],
 )
 

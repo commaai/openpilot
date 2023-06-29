@@ -13,15 +13,15 @@ class CanBus(CanBusBase):
     return self.offset
 
   @property
-  def radar(self):
+  def radar(self) -> int:
     return self.offset + 1
 
   @property
-  def camera(self):
+  def camera(self) -> int:
     return self.offset + 2
 
 
-def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray):
+def calculate_lat_ctl2_checksum(mode: int, counter: int, dat: bytearray) -> int:
   curvature = (dat[2] << 3) | ((dat[3]) >> 5)
   curvature_rate = (dat[6] << 3) | ((dat[7]) >> 5)
   path_angle = ((dat[3] & 0x1F) << 6) | ((dat[4]) >> 2)
@@ -142,8 +142,8 @@ def create_acc_msg(packer, CAN: CanBus, long_active: bool, gas: float, accel: fl
   return packer.make_can_msg("ACCDATA", CAN.main, values)
 
 
-def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, standstill: bool, hud_control,
-                      stock_values: dict):
+def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw_alert: bool, standstill: bool,
+                      hud_control, stock_values: dict):
   """
   Creates a CAN message for the Ford IPC adaptive cruise, forward collision warning and traffic jam
   assist status.
@@ -213,6 +213,10 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, sta
       "AccWarn_D_Dsply": 0,                                       # ACC warning
       "AccTGap_D_Dsply": 4,                                       # Fixed time gap in UI
     })
+
+  # Forwards FCW alert from IPMA
+  if fcw_alert:
+    values["FcwVisblWarn_B_Rq"] = 1  # FCW visible alert
 
   return packer.make_can_msg("ACCDATA_3", CAN.main, values)
 

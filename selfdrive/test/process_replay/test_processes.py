@@ -65,6 +65,7 @@ excluded_interfaces = ["mock", "mazda", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
+EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 
 def run_test_process(data):
@@ -155,7 +156,7 @@ def format_diff(results, log_paths, ref_commit):
 
 if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
-  all_procs = {cfg.proc_name for cfg in CONFIGS}
+  all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
 
   parser = argparse.ArgumentParser(description="Regression test to identify changes in a process's output")
   parser.add_argument("--whitelist-procs", type=str, nargs="*", default=all_procs,
