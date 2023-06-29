@@ -43,7 +43,7 @@ class CarController:
     # *** control msgs ***
     can_sends = []
 
-    # steer torque
+    # *** steer torque ***
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
@@ -80,7 +80,7 @@ class CarController:
     #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
     #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, self.frame // 2))
 
-    # gas and brake
+    # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive gas pedal
@@ -131,6 +131,7 @@ class CarController:
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))
       self.gas = interceptor_gas_cmd
 
+    # *** hud ui ***
     if self.CP.carFingerprint != CAR.PRIUS_V:
       # ui mesg is at 1Hz but we send asap if:
       # - there is something to display
