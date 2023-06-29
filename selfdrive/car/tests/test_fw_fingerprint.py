@@ -169,6 +169,7 @@ class TestFwFingerprint(unittest.TestCase):
           self.assertEqual(len(request_obj.request), len(request_obj.response))
           for idx, (request, response) in enumerate(zip(request_obj.request, request_obj.response)):
             self.assertEqual(type(request), type(response))
+            # Last item can be non-bytes (callable)
             if idx < len(request_obj.request) - 1:
               self.assertTrue(isinstance(request, bytes))
 
