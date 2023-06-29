@@ -68,6 +68,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   # *** cam bus ***
   msg.append(packer.make_can_msg("STEERING_CONTROL", 2, {}))
   msg.append(packer.make_can_msg("ACC_HUD", 2, {}))
+  msg.append(packer.make_can_msg("LKAS_HUD", 2, {}))
   msg.append(packer.make_can_msg("BRAKE_COMMAND", 2, {}))
 
   # *** radar bus ***

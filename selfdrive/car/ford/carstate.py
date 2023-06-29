@@ -3,7 +3,8 @@ from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.ford.values import CANBUS, DBC, CarControllerParams
+from selfdrive.car.ford.fordcan import CanBus
+from selfdrive.car.ford.values import DBC, CarControllerParams
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -61,6 +62,8 @@ class CarState(CarStateBase):
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
     ret.cruiseState.standstill = cp.vl["EngBrakeData"]["AccStopMde_D_Rq"] == 3
     ret.accFaulted = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (1, 2)
+    if not self.CP.openpilotLongitudinalControl:
+      ret.accFaulted = ret.accFaulted or cp_cam.vl["ACCDATA"]["CmbbDeny_B_Actl"] == 1
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -75,7 +78,7 @@ class CarState(CarStateBase):
 
     # safety
     ret.stockFcw = bool(cp_cam.vl["ACCDATA_3"]["FcwVisblWarn_B_Rq"])
-    ret.stockAeb = ret.stockFcw and ret.cruiseState.enabled
+    ret.stockAeb = bool(cp_cam.vl["ACCDATA_2"]["CmbbBrkDecel_B_Rq"])
 
     # button presses
     ret.leftBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 1
@@ -211,12 +214,16 @@ class CarState(CarStateBase):
         ("Side_Detect_R_Stat", 5),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.main)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).main)
 
   @staticmethod
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
+      ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC/AEB unavailable/lockout
+
+      ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
+
       ("HaDsply_No_Cs", "ACCDATA_3"),
       ("HaDsply_No_Cnt", "ACCDATA_3"),
       ("AccStopStat_D_Dsply", "ACCDATA_3"),         # ACC stopped status message
@@ -261,8 +268,10 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
+      ("ACCDATA", 50),
+      ("ACCDATA_2", 50),
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.camera)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).camera)

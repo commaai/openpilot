@@ -40,7 +40,7 @@ class CarController:
     torque_l = 0
     torque_r = 0
 
-    llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
+    llk_valid = len(CC.orientationNED) > 1 and len(CC.angularVelocity) > 1
     if CC.enabled and llk_valid:
       # Read these from the joystick
       # TODO: this isn't acceleration, okay?

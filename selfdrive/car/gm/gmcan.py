@@ -20,10 +20,20 @@ def create_buttons(packer, bus, idx, button):
 
 
 def create_pscm_status(packer, bus, pscm_status):
-  checksum_mod = int(1 - pscm_status["HandsOffSWlDetectionStatus"]) << 5
-  pscm_status["HandsOffSWlDetectionStatus"] = 1
-  pscm_status["PSCMStatusChecksum"] += checksum_mod
-  return packer.make_can_msg("PSCMStatus", bus, pscm_status)
+  values = {s: pscm_status[s] for s in [
+    "HandsOffSWDetectionMode",
+    "HandsOffSWlDetectionStatus",
+    "LKATorqueDeliveredStatus",
+    "LKADriverAppldTrq",
+    "LKATorqueDelivered",
+    "LKATotalTorqueDelivered",
+    "RollingCounter",
+    "PSCMStatusChecksum",
+  ]}
+  checksum_mod = int(1 - values["HandsOffSWlDetectionStatus"]) << 5
+  values["HandsOffSWlDetectionStatus"] = 1
+  values["PSCMStatusChecksum"] += checksum_mod
+  return packer.make_can_msg("PSCMStatus", bus, values)
 
 
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):

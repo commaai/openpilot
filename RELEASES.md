@@ -1,3 +1,29 @@
+Version 0.9.4 (2023-XX-XX)
+========================
+* Navigate on openpilot
+  * When navigation has a destination openpilot will input the map information into the model, generally improving behavior
+  * When navigating on openpilot, openpilot will keep left or right appropriately at forks/exits and take turns
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver 
+* UI updates
+  * Navigation settings moved to home screen and map
+* UI alerts rework
+  * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
+  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
+* Ford Focus 2018 support
+
+Version 0.9.3 (2023-06-29)
+========================
+* New driving model
+  * Improved height estimation and added height tracking in liveCalibration
+  * Model inputs refactor
+* New driving personality setting
+  * Three settings: aggressive, standard, and relaxed
+  * Standard is recommended and the default
+  * In aggressive mode, lead follow distance is shorter and acceleration response is quicker
+  * In relaxed mode, lead follow distance is longer
+* Improved fuzzy fingerprinting for Hyundai, Kia, and Genesis
+* Improved thermal management logic
+
 Version 0.9.2 (2023-05-22)
 ========================
 * New driving model

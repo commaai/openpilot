@@ -58,18 +58,13 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
-    ((name == "wideRoadEncodeData") ? cameras_logged[2] :
-    ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
   int bytes_count = 0;
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
-    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  auto edata = (event.*(encoder_info.get_encode_data_func))();
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
@@ -95,7 +90,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg: re.q) {
-          bytes_count += handle_encoder_msg(s, qmsg, name, re);
+          bytes_count += handle_encoder_msg(s, qmsg, name, re, encoder_info);
         }
         re.q.clear();
       }
@@ -111,10 +106,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (cam_info.record) {
+        if (encoder_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+            encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -142,10 +137,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
-    if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
-    if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
-    if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
-    if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+    (evt.*(encoder_info.set_encode_idx_func))(idx);
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
@@ -211,11 +203,12 @@ void loggerd_thread() {
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
-  // init encoders
-  s.last_camera_seen_tms = millis_since_boot();
+  std::map<std::string, EncoderInfo> encoder_infos_dict;
   for (const auto &cam : cameras_logged) {
-    s.max_waiting++;
-    if (cam.has_qcamera) { s.max_waiting++; }
+    for (const auto &encoder_info: cam.encoder_infos) {
+      encoder_infos_dict[encoder_info.publish_name] = encoder_info;
+      s.max_waiting++;
+    }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
@@ -234,7 +227,7 @@ void loggerd_thread() {
 
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock], encoder_infos_dict[qs.name]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();

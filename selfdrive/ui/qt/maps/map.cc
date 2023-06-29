@@ -44,6 +44,29 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->move(25, 1080 - h - bdr_s*2);
   map_eta->setVisible(false);
 
+  // Settings button
+  QSize icon_size(120, 120);
+  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
+  settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
+
+  settings_btn = new QPushButton(directions_icon, "", this);
+  settings_btn->setIconSize(icon_size);
+  settings_btn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #96000000;
+      border-radius: 50px;
+      padding: 24px;
+    }
+    QPushButton:pressed {
+      background-color: #D9000000;
+    }
+  )");
+  settings_btn->show();  // force update
+  settings_btn->move(bdr_s, 1080 - bdr_s*3 - settings_btn->height());
+  QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
+    emit openSettings();
+  });
+
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
     last_position = *last_gps_position;
@@ -113,8 +136,11 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
-      locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
+    // Check std norm
+    auto pos_ecef_std = locationd_location.getPositionECEF().getStd();
+    bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
+
+    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
 
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
@@ -128,7 +154,7 @@ void MapWindow::updateState(const UIState &s) {
 
     // Only open the map on setting destination the first time
     if (allow_open) {
-      setVisible(true); // Show map on destination set/change
+      emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
   }
@@ -145,7 +171,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (locationd_valid || laikad_valid) {
+  if (locationd_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -178,13 +204,26 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (locationd_valid || laikad_valid) {
+      if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
       }
     } else {
       clearRoute();
+    }
+
+    // TODO: only move if position should change
+    // don't move while map isn't visible
+    if (isVisible()) {
+      auto pos = 1080 - bdr_s*2 - settings_btn->height() - bdr_s;
+      if (map_eta->isVisible()) {
+        settings_btn->move(bdr_s, pos - map_eta->height());
+        settings_btn->setIcon(settings_icon);
+      } else {
+        settings_btn->move(bdr_s, pos);
+        settings_btn->setIcon(directions_icon);
+      }
     }
   }
 
@@ -220,7 +259,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
+  m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
@@ -321,7 +360,7 @@ void MapWindow::offroadTransition(bool offroad) {
     clearRoute();
   } else {
     auto dest = coordinate_from_param("NavDestination");
-    setVisible(dest.has_value());
+    emit requestVisible(dest.has_value());
   }
   last_bearing = {};
 }
