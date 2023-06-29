@@ -136,8 +136,11 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
-      locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
+    // Check std norm
+    auto pos_ecef_std = locationd_location.getPositionECEF().getStd();
+    bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
+
+    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
 
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
@@ -168,7 +171,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (locationd_valid || laikad_valid) {
+  if (locationd_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -201,7 +204,7 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (locationd_valid || laikad_valid) {
+      if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
