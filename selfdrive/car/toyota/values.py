@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -21,6 +21,14 @@ class CarControllerParams:
   STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  # Lane Tracing Assist (LTA) control limits
+  # Assuming a steering ratio of 13.7:
+  # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
+  # however the EPS has its own internal limits at all speeds which are less than that
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.18])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
