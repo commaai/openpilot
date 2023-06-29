@@ -26,7 +26,7 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # On a RAV4 2023, it seems to be always 1
     # But other cars it can change randomly?
     # TODO: figure that out
-    "SETME_X3": op_params.get("SETME_X3"),
+    "SETME_X3": 1,  # op_params.get("SETME_X3"),
 
     # 100 when driver not touching wheel, 0 when driver touching wheel. ramps smoothly between
     # TODO: find actual breakpoints and determine how this affects the control
@@ -39,7 +39,7 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # "SETME_X64": op_params.get("SETME_X64"),
     # "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
     # "SETME_X64": (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
-    "SETME_X64": (99 if frame % 2 == 0 else 100),
+    "SETME_X64": (98 if frame % 2 == 0 else 100),
 
     "BYTE3_BIT0": op_params.get('BYTE3_BIT0'),
     "BYTE3_BIT0_2": op_params.get('BYTE3_BIT0_2'),
