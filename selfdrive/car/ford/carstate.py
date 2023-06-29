@@ -220,7 +220,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address
-      ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC unavailable/lockout
+      ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC/AEB unavailable/lockout
 
       ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
 
