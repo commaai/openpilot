@@ -230,16 +230,12 @@ TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
 
-def get_toyota_version_requests_kwp(responses: List[bytes]) -> List[bytes]:
-  prev_response = responses[1]  # tester present, supported ids, ...
-  supported_data_ids = [bytes([b]) for b in prev_response]
-  return [b'\x1a\x88' + b for b in supported_data_ids]
+def get_toyota_version_requests_kwp(prev_response: bytes) -> List[bytes]:
+  return [b'\x1a\x88' + bytes([b]) for b in prev_response]
 
 
-def get_toyota_version_responses_kwp(responses: List[bytes]) -> List[bytes]:
-  prev_response = responses[1]  # tester present, supported ids, ...
-  supported_data_ids = [bytes([b]) for b in prev_response]
-  return [b'\x5a\x88' + b for b in supported_data_ids]
+def get_toyota_version_responses_kwp(prev_response: bytes) -> List[bytes]:
+  return [b'\x5a\x88' + bytes([b]) for b in prev_response]
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -253,8 +249,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=0,
     ),
     Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, get_toyota_version_requests_kwp],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, get_toyota_version_responses_kwp],
+      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, b'\x1a\x88\x00', get_toyota_version_requests_kwp],
+      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, b'\x5a\x88\x00', get_toyota_version_responses_kwp],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
                       Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
       bus=0,
