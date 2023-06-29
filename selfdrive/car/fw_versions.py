@@ -312,7 +312,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
               f.fwVersion = version
               f.address = tx_addr
               f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
-              f.request = query.request
+              f.request = r.request
               f.brand = brand
               f.bus = r.bus
               f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in config.extra_ecus
