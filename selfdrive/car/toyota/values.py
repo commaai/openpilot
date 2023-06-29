@@ -228,27 +228,15 @@ STATIC_DSU_MSGS = [
 # For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
-TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x80'
-TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x80'
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
   requests=[
-    # Supported KWP2000 identifiers and UDS vs. KWP usage for ECUs vary widely across platforms,
-    # so we add ECUs to all for now
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
       whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
                       Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
-      bus=0,
-    ),
-    # Combination meter can respond to KWP2 on some cars
-    Request(
-      [TOYOTA_VERSION_REQUEST_KWP2],
-      [TOYOTA_VERSION_REQUEST_KWP2],
-      whitelist_ecus=[Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter,
-                      Ecu.transmission, Ecu.gateway, Ecu.hvac],
       bus=0,
     ),
     Request(
