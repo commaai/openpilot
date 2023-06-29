@@ -250,7 +250,7 @@ def main() -> NoReturn:
   signal.signal(signal.SIGTERM, cleanup)
 
   setup_quectel(diag)
-  current_gps_time = GPSTime.from_datetime(utc_to_gpst(datetime.utcnow()))
+  current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
   gpio_set(GPIO.UBLOX_PWR_EN, True)
