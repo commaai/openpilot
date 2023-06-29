@@ -266,7 +266,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
   # Extract ECU addresses to query from fingerprints
   # ECUs using a subaddress need be queried one by one, the rest can be done in parallel
   addrs = []
-  parallel_addrs = []
+  parallel_addrs: List[Tuple[str, int, Optional[int]]] = []
   ecu_types = {}
 
   for brand, brand_versions in versions.items():
