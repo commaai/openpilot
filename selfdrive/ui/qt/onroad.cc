@@ -178,35 +178,33 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   }
 }
 
-
-ExperimentalButton::ExperimentalButton(QWidget *parent) : QPushButton(parent) {
+// ExperimentalButton
+ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), QPushButton(parent) {
   setVisible(false);
   setFixedSize(btn_size, btn_size);
-  setCheckable(true);
 
   params = Params();
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+  QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);
+}
 
-  QObject::connect(this, &QPushButton::toggled, [=](bool checked) {
-    params.putBool("ExperimentalMode", checked);
-  });
+void ExperimentalButton::changeMode() {
+  const auto cp = (*uiState()->sm)["carParams"].getCarParams();
+  const bool experimental_mode_available = cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl();
+  bool can_change = experimental_mode_available && params.getBool("ExperimentalModeConfirmed");
+  if (can_change) {
+    params.putBool("ExperimentalMode", !experimental_mode);
+  }
 }
 
 void ExperimentalButton::updateState(const UIState &s) {
-  const SubMaster &sm = *(s.sm);
-
   // button is "visible" if engageable or enabled
-  const auto cs = sm["controlsState"].getControlsState();
+  const auto cs = (*s.sm)["controlsState"].getControlsState();
   setVisible(cs.getEngageable() || cs.getEnabled());
-
-  // button is "checked" if experimental mode is enabled
-  setChecked(sm["controlsState"].getControlsState().getExperimentalMode());
-
-  // disable button when experimental mode is not available, or has not been confirmed for the first time
-  const auto cp = sm["carParams"].getCarParams();
-  const bool experimental_mode_available = cp.getExperimentalLongitudinalAvailable() ? params.getBool("ExperimentalLongitudinalEnabled") : cp.getOpenpilotLongitudinalControl();
-  setEnabled(params.getBool("ExperimentalModeConfirmed") && experimental_mode_available);
+  if (std::exchange(experimental_mode, cs.getExperimentalMode()) != experimental_mode) {
+    update();
+  }
 }
 
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
@@ -214,7 +212,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   p.setRenderHint(QPainter::Antialiasing);
 
   QPoint center(btn_size / 2, btn_size / 2);
-  QPixmap img = isChecked() ? experimental_img : engage_img;
+  QPixmap img = experimental_mode ? experimental_img : engage_img;
 
   p.setOpacity(1.0);
   p.setPen(Qt::NoPen);
