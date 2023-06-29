@@ -224,7 +224,7 @@ STATIC_DSU_MSGS = [
 ]
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
-# Toyota diagnostic software first queries to get the supported data ids, then queries them.
+# Toyota diagnostic software first gets the supported data ids, then queries them one by one.
 # For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
