@@ -125,7 +125,7 @@ class IsoTpParallelQuery:
         if response_valid:
           if counter + 1 < len(self.request):
             # If request callback defined, replace it with its results
-            if callable(self.request[counter + 1]):  # and self.response[counter + 1]:
+            if callable(self.request[counter + 1]):
               response = dat[len(expected_response):]
               self.request[counter + 1:] = self.request[counter + 1](response)
               self.response[counter + 1:] = self.response[counter + 1](response)
