@@ -160,6 +160,13 @@ class TestFwFingerprint(unittest.TestCase):
         self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
                          f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}')
 
+  def test_fw_requests(self):
+    # Asserts equal length request and response lists
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand=brand):
+        for request_obj in config.requests:
+          self.assertEqual(len(request_obj.request), len(request_obj.response))
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
