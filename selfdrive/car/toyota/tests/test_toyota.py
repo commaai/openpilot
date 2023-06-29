@@ -30,8 +30,10 @@ class TestToyotaInterfaces(unittest.TestCase):
         # Some exceptions for other common ECUs
         if car_model not in (CAR.ALPHARD_TSS2,):
           self.assertIn(Ecu.abs, present_ecus)
+
         if car_model not in (CAR.MIRAI,):
           self.assertIn(Ecu.engine, present_ecus)
+
         if car_model not in (CAR.PRIUS_V, CAR.LEXUS_CTH):
           self.assertIn(Ecu.eps, present_ecus)
 
