@@ -25,7 +25,7 @@ class TestToyotaInterfaces(unittest.TestCase):
       with self.subTest(car_model=car_model):
         present_ecus = {ecu[0] for ecu in ecus}
         missing_ecus = common_ecus - present_ecus
-        self.assertEqual(missing_ecus, set())
+        self.assertEqual(len(missing_ecus), 0)
 
         # Some exceptions for other common ECUs
         if car_model not in (CAR.ALPHARD_TSS2,):
