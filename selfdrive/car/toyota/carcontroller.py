@@ -70,7 +70,7 @@ class CarController:
       self.steer_rate_counter = 0
 
     # *** steer angle ***
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType == SteerControlType.angle:
       # If using LTA control, disable LKA and set steering angle command
       apply_steer = 0
       apply_steer_req = 0
@@ -95,11 +95,6 @@ class CarController:
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
-
-    # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-    # if self.frame % 2 == 0:
-    #   can_sends.append(create_steer_command(self.packer, 0, 0, self.frame // 2))
-    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, self.frame // 2))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
