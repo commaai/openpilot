@@ -24,6 +24,7 @@ class CarControllerParams:
   # stock LTA is 0 to 0.05 going straight
   # and 0.1 to 0.4 when turning (max seen is 0.6303)
 
+  # Lane Tracing Assist (LTA) control limits
   # Assuming a steering ratio of 13.7:
   # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
   # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
