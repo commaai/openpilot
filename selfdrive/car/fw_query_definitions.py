@@ -3,7 +3,7 @@ import capnp
 import copy
 from dataclasses import dataclass, field
 import struct
-from typing import Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import panda.python.uds as uds
 
@@ -53,8 +53,8 @@ class StdQueries:
 
 @dataclass
 class Request:
-  request: List[Union[bytes, Callable]]
-  response: List[Union[bytes, Callable]]
+  request: List[bytes]
+  response: List[bytes]
   whitelist_ecus: List[int] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
