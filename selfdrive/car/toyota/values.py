@@ -277,9 +277,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP:
+    # Responds to KWP (0x8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # Responds to KWP (0x8881):
+    # - Body Control Module ((0x750, 0x40))
 
     # Hybrid control computer can be on one of two addresses
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
@@ -294,7 +296,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.gateway, 0x750, 0x5f),
     # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
     (Ecu.telematics, 0x750, 0xc7),
-    (Ecu.body, 0x750, 0x40),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
