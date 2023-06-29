@@ -14,8 +14,8 @@ class TestToyotaInterfaces(unittest.TestCase):
   def test_tss2_dbc(self):
     # We make some assumptions about TSS2 platforms,
     # like looking up certain signals only in this DBC
-    for car, dbc in DBC.items():
-      if car in TSS2_CAR:
+    for car_model, dbc in DBC.items():
+      if car_model in TSS2_CAR:
         self.assertEqual(dbc["pt"], "toyota_nodsu_pt_generated")
 
   def test_essential_ecus(self):
