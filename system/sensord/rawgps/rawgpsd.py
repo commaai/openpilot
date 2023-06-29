@@ -366,7 +366,6 @@ def main() -> NoReturn:
 
       prn = get_prn_from_nmea_id(poly.svId)
       if prn[0] == 'R':
-      # TODO should handle leap seconds better
         epoch = GPSTime(current_gps_time.week, (poly.t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + get_leap_seconds(current_gps_time))
       else:
         epoch = GPSTime(current_gps_time.week, poly.t0)
