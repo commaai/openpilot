@@ -8,6 +8,7 @@ from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
@@ -27,13 +28,18 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.dashcamOnly = True
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+
+      # LTA control can be more delayed and winds up more often
+      ret.steerActuatorDelay = 0.25
+      ret.steerLimitTimer = 0.8
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    ret.steerLimitTimer = 0.4
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
+
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
@@ -270,6 +276,11 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret)
+
+    # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
+    # the more accurate angle sensor signal is initialized
+    if self.CP.steerControlType == SteerControlType.angle and not self.CS.accurate_steer_angle_seen:
+      events.add(EventName.vehicleSensorsInvalid)
 
     if self.CP.openpilotLongitudinalControl:
       if ret.cruiseState.standstill and not ret.brakePressed and not self.CP.enableGasInterceptor:
