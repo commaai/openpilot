@@ -510,8 +510,8 @@ void AnnotatedCameraWidget::drawLaneChangeIndicator(QPainter &painter, const UIS
     QRect img_rc{0, (rect().height() - img.height()) / 2, img.width(), img.height()};
     QRect ellipse_rc = img_rc.adjusted(-img_rc.width(), -img_rc.height() / 2, 20, img_rc.height() / 2);
     if (direction == Direction::RIGHT) {
-      img_rc.moveLeft(rect().width() - img_rc.width());
-      ellipse_rc.moveLeft(rect().width() - ellipse_rc.width() / 2 - 20);
+      img_rc.moveRight(rect().right());
+      ellipse_rc.moveRight(rect().right() + img_rc.width());
     }
     painter.setPen(Qt::NoPen);
     painter.setBrush(color);
