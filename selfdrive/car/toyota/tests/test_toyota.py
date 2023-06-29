@@ -19,7 +19,7 @@ class TestToyotaInterfaces(unittest.TestCase):
         self.assertEqual(dbc["pt"], "toyota_nodsu_pt_generated")
 
   def test_essential_ecus(self):
-    # Asserts standard ECUs are in the database for each platform
+    # Asserts standard ECUs exist for each platform
     common_ecus = {Ecu.fwdRadar, Ecu.fwdCamera}
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
