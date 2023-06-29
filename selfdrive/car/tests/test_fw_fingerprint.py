@@ -163,8 +163,9 @@ class TestFwFingerprint(unittest.TestCase):
   def test_fw_requests(self):
     # Asserts equal length request and response lists
     for brand, config in FW_QUERY_CONFIGS.items():
-      for request_obj in config.requests:
-        self.assertEqual(len(request_obj.request), len(request_obj.response))
+      with self.subTest(brand=brand):
+        for request_obj in config.requests:
+          self.assertEqual(len(request_obj.request), len(request_obj.response))
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
