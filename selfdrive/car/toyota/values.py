@@ -228,8 +228,7 @@ STATIC_DSU_MSGS = [
 # For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
-# 0x01 and 0x81 are the two most common data identifiers, though
-# FW versions can extend to 0x02, 0x03, etc. which we don't query
+# Used by instrument cluster on some cars
 TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x80'
 TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x80'
 
