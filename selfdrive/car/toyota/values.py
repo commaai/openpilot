@@ -227,10 +227,8 @@ TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 # 0x01 and 0x81 are the two most common data identifiers, though
 # FW versions can extend to 0x02, 0x03, etc. which we don't query
-TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x81'
-TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x81'
-TOYOTA_VERSION_REQUEST_KWP3 = b'\x1a\x88\x80'
-TOYOTA_VERSION_RESPONSE_KWP3 = b'\x5a\x88\x80'
+TOYOTA_VERSION_REQUEST_KWP2 = b'\x1a\x88\x80'
+TOYOTA_VERSION_RESPONSE_KWP2 = b'\x5a\x88\x80'
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: look at data to whitelist new ECUs effectively
@@ -244,18 +242,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
                       Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
       bus=0,
     ),
-    # So far, body exclusively responds to KWP2
+    # Combination meter can respond to KWP2 on some cars
     Request(
       [TOYOTA_VERSION_REQUEST_KWP2],
       [TOYOTA_VERSION_REQUEST_KWP2],
-      whitelist_ecus=[Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter,
-                      Ecu.transmission, Ecu.gateway, Ecu.hvac],
-      bus=0,
-    ),
-    # Combination meter can only respond to KWP3
-    Request(
-      [TOYOTA_VERSION_REQUEST_KWP3],
-      [TOYOTA_VERSION_REQUEST_KWP3],
       whitelist_ecus=[Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter,
                       Ecu.transmission, Ecu.gateway, Ecu.hvac],
       bus=0,
