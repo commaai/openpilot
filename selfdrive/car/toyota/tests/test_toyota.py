@@ -2,7 +2,7 @@
 from cereal import car
 import unittest
 
-from selfdrive.car.toyota.values import TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
+from selfdrive.car.toyota.values import DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
@@ -11,6 +11,13 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 class TestToyotaInterfaces(unittest.TestCase):
   def test_angle_car_set(self):
     self.assertTrue(len(ANGLE_CONTROL_CAR - TSS2_CAR) == 0)
+
+  def test_tss2_dbc(self):
+    # We make some assumptions about TSS2 platforms,
+    # like looking up certain signals only in this DBC
+    for car, dbc in DBC.items():
+      if car in TSS2_CAR:
+        self.assertEqual(dbc["pt"], "toyota_nodsu_pt_generated")
 
 
 class TestToyotaFingerprint(unittest.TestCase):

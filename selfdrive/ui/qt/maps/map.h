@@ -106,7 +106,6 @@ private:
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
-  bool laikad_valid = false;
   bool locationd_valid = false;
 
   MapInstructions* map_instructions;

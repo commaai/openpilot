@@ -1,11 +1,11 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -21,6 +21,14 @@ class CarControllerParams:
   STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  # Lane Tracing Assist (LTA) control limits
+  # Assuming a steering ratio of 13.7:
+  # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
+  # however the EPS has its own internal limits at all speeds which are less than that
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.18])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
@@ -102,7 +110,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarHarness.toyota])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota]))
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -292,13 +300,16 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
     # On some cars, EPB is controlled by the ABS module
     (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
+    # This isn't accessible on all cars
     (Ecu.gateway, 0x750, 0x5f),
+    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
     (Ecu.telematics, 0x750, 0xc7),
     (Ecu.body, 0x750, 0x40),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
     (Ecu.transmission, 0x7e1, None),
+    # On some cars, this only responds to b'\x1a\x88\x80'
     (Ecu.combinationMeter, 0x7c0, None),
     (Ecu.hvac, 0x7c4, None),
   ],
@@ -448,6 +459,7 @@ FW_VERSIONS = {
       b'\x018966333Q6000\x00\x00\x00\x00',
       b'\x018966333Q6200\x00\x00\x00\x00',
       b'\x018966333Q6300\x00\x00\x00\x00',
+      b'\x018966333Q6500\x00\x00\x00\x00',
       b'\x018966333W6000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -1893,9 +1905,11 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02378A0000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02378F4000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152678210\x00\x00\x00\x00\x00\x00',
+      b'F152678211\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B78120\x00\x00\x00\x00\x00\x00',
@@ -1906,6 +1920,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F7803100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_NXH: {
