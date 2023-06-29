@@ -222,8 +222,20 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
-    # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = bool(ret.flags & ToyotaFlags.SMART_DSU) or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
+    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
+    use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
+    if candidate in RADAR_ACC_CAR:
+      ret.experimentalLongitudinalAvailable = use_sdsu
+      use_sdsu = use_sdsu and experimental_long
+
+    # openpilot longitudinal enabled by default:
+    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
+    #  - cars w/ DSU disconnected
+    #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
+    # openpilot longitudinal behind experimental long toggle:
+    #  - TSS2 radar ACC cars w/ smartDSU installed
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
