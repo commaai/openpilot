@@ -9,6 +9,8 @@
 #include <QSurfaceFormat>
 #include <QWidget>
 
+#include "cereal/gen/cpp/car.capnp.h"
+
 QString getVersion();
 QString getBrand();
 QString getUserAgent();
@@ -27,3 +29,4 @@ QPixmap bootstrapPixmap(const QString &id);
 
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom);
 QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp);
+bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params);
