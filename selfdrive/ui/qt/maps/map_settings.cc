@@ -195,8 +195,8 @@ void MapSettings::refresh() {
     auto widget = new DestinationWidget(this);
     widget->set(destination.get(), false);
 
-    QObject::connect(widget, &QPushButton::clicked, [&]() {
-      navigateTo(destination->toJson());
+    QObject::connect(widget, &QPushButton::clicked, [this, dest = destination->toJson()]() {
+      navigateTo(dest);
       emit closeSettings();
     });
 
