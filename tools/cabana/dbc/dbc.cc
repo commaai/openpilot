@@ -111,6 +111,9 @@ void cabana::Msg::update() {
   for (auto sig : sigs) {
     sig->multiplexor = sig->type == cabana::Signal::Type::Multiplexed ? multiplexor : nullptr;
     if (!sig->multiplexor) {
+      if (sig->type == cabana::Signal::Type::Multiplexed) {
+        sig->type = cabana::Signal::Type::Normal;
+      }
       sig->multiplex_value = 0;
     }
   }

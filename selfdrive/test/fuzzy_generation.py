@@ -1,10 +1,10 @@
 import hypothesis.strategies as st
-import random
 
 from cereal import log
 
 class FuzzyGenerator:
-  def __init__(self, real_floats):
+  def __init__(self, draw, real_floats):
+    self.draw = draw
     self.real_floats=real_floats
 
   def generate_native_type(self, field):
@@ -62,16 +62,17 @@ class FuzzyGenerator:
     else:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema, required=None):
+  def generate_struct(self, schema, event=None):
     full_fill = list(schema.non_union_fields) if schema.non_union_fields else []
-    single_fill = [required] if required else [random.choice(schema.union_fields)] if schema.union_fields else []
+    single_fill = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
-  def get_random_msg(cls, struct, real_floats=False):
-    return cls(real_floats=real_floats).generate_struct(struct.schema)
+  def get_random_msg(cls, draw, struct, real_floats=False):
+    fg = cls(draw, real_floats=real_floats)
+    return draw(fg.generate_struct(struct.schema))
 
   @classmethod
-  def get_random_event_msg(cls, required, real_floats=False):
-    fg = cls(real_floats=real_floats)
-    return st.tuples(*[fg.generate_struct(log.Event.schema, r) for r in required])
+  def get_random_event_msg(cls, draw, events, real_floats=False):
+    fg = cls(draw, real_floats=real_floats)
+    return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]

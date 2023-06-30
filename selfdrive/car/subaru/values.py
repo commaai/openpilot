@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Dict, List, Union
 
@@ -34,6 +34,12 @@ class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 
 
+class CanBus:
+  main = 0
+  alt = 1
+  camera = 2
+
+
 class CAR:
   # Global platform
   ASCENT = "SUBARU ASCENT LIMITED 2019"
@@ -53,7 +59,7 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  car_parts: CarParts = CarParts.common([CarHarness.subaru_a])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.subaru_a]))
 
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
