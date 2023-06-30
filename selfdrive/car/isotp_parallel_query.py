@@ -103,6 +103,9 @@ class IsoTpParallelQuery:
       self.rx()
 
       for tx_addr, msg in msgs.items():
+        if request_done[tx_addr]:
+          continue
+
         try:
           dat, rx_in_progress = msg.recv()
         except Exception:
