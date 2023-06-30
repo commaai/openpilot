@@ -18,7 +18,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
-MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before steer can be cut
+MAX_STEER_RATE_FRAMES = 18  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
@@ -60,12 +60,26 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
-    if self.CP.steerControlType != SteerControlType.angle:
-      # - steer torque
-      new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
+    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
+    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
+      self.steer_rate_counter += 1
     else:
-      if self.frame % self.params.STEER_STEP == 0:
+      self.steer_rate_counter = 0
+
+    apply_steer_req = 1
+    if not lat_active:
+      apply_steer = 0
+      apply_steer_req = 0
+    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
+      apply_steer_req = 0
+      self.steer_rate_counter = 0
+
+    # *** steer angle ***
+    if self.CP.steerControlType == SteerControlType.angle:
+      # If using LTA control, disable LKA and set steering angle command
+      apply_steer = 0
+      apply_steer_req = 0
+      if self.frame % 2 == 0:
         # - steer angle
         # angle command is in terms of the torque sensor angle (may or may not have an offset)
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
@@ -94,37 +108,6 @@ class CarController:
         if not lat_active:
           apply_angle = clip(torque_sensor_angle, -max_steer_angle, max_steer_angle)
         self.last_angle = apply_angle
-
-    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
-    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-      self.steer_rate_counter += 1
-    else:
-      self.steer_rate_counter = 0
-
-    apply_steer_req = 1
-    if not lat_active:
-      apply_steer = 0
-      apply_steer_req = 0
-    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-      apply_steer_req = 0
-      self.steer_rate_counter = 0
-
-    # *** steer angle ***
-    if self.CP.steerControlType == SteerControlType.angle:
-      # If using LTA control, disable LKA and set steering angle command
-      apply_steer = 0
-      apply_steer_req = 0
-      if self.frame % 2 == 0:
-        # EPS uses the torque sensor angle to control with, offset to compensate
-        apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-
-        # Angular rate limit based on speed
-        apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
-
-        if not CC.latActive:
-          apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-
-        self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
     self.last_steer = apply_steer
 
