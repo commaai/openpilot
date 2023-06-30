@@ -87,7 +87,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     "LANE_SWAY_SENSITIVITY": 2,
     "LANE_SWAY_TOGGLE": 1,
     "LDA_ON_MESSAGE": 0,
-    "LDA_SPEED_TOO_LOW": 0,
+    "LDA_MESSAGES": 0,
     "LDA_SA_TOGGLE": 1,
     "LDA_SENSITIVITY": 2,
     "LDA_UNAVAILABLE": 0,
