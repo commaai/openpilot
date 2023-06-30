@@ -29,7 +29,7 @@ def create_throttle(packer, throttle_msg, throttle_cmd, bus):
   values["COUNTER"] = (values["COUNTER"] + 1) % 0x10
   
   if throttle_cmd:
-    values["Throttle_Pedal"] = 5
+    values["Throttle_Pedal"] = 10
   return packer.make_can_msg("Throttle", bus, values)
 
 
