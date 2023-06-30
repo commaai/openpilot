@@ -60,7 +60,7 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
-    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut steer request bit to avoid a steering fault
+    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
     if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
       self.steer_rate_counter += 1
     else:
@@ -95,14 +95,15 @@ class CarController:
         # v_ego = max(CS.out.vEgo, 5.)
         # max_steer_angle = abs(MAX_ANGLE_LATERAL_ACCEL / (self.VM.calc_curvature(math.radians(1), v_ego, 0) * v_ego ** 2))  # TODO: roll
         # max_steer_angle = min(max_steer_angle, MAX_STEER_ANGLE)
-        max_steer_angle = MAX_STEER_ANGLE
-        apply_angle = clip(apply_angle, -max_steer_angle, max_steer_angle)
+        # max_steer_angle = MAX_STEER_ANGLE
+        # apply_angle = clip(apply_angle, -max_steer_angle, max_steer_angle)
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
         if not CC.latActive:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
         self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
     self.last_steer = apply_steer
