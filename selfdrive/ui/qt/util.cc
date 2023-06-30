@@ -257,7 +257,7 @@ QPixmap bootstrapPixmap(const QString &id) {
   return pixmap;
 }
 
-bool hasExperimentalLongitudinal(const cereal::CarParams::Reader &car_params) {
+bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
   return car_params.getExperimentalLongitudinalAvailable()
              ? Params().getBool("ExperimentalLongitudinalEnabled")
              : car_params.getOpenpilotLongitudinalControl();
