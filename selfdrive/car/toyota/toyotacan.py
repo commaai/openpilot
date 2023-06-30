@@ -36,9 +36,9 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     # stock system sometimes uses this signal to wind down torque
     # TODO: figure out why 99 is so much less torque than 100
     # "SETME_X64": 99 if limit_torque else 100,
-    "SETME_X64": op_params.get("SETME_X64"),
+    # "SETME_X64": op_params.get("SETME_X64"),
     # "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
-    # "SETME_X64": (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
+    "SETME_X64": (lt_val if frame % max(op_params.get('TLD_V3'), 1) == 0 else 100),
     # "SETME_X64": (100 if frame % 5 == 0 else 50),
 
     "BYTE3_BIT0": op_params.get('BYTE3_BIT0'),
@@ -47,7 +47,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
     # "ANGLE": op_params.get("ANGLE"),
-    "ANGLE": steer_angle if op_params.get('USE_ALT_ANGLE_CMD') else 0,  # if abs(steer_angle) < 10 else 10 if steer_angle > 0 else -10,
+    "ANGLE": steer_angle if op_params.get('USE_ALT_ANGLE_CMD') else op_params.get("ANGLE"),  # if abs(steer_angle) < 10 else 10 if steer_angle > 0 else -10,
 
     # seems to just be desired angle cmd
     # TODO: does this have offset on cars where accurate steering angle signal has offset?

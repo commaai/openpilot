@@ -98,18 +98,18 @@ class opParams:
     """
 
     self.fork_params = {
-      'TLD_V3': Param(3, int, live=True),
+      'TLD_V3': Param(3, int, 'every TLD_V3 frames we use LT_VAL for SETME_X64. for 100, set this very high, for always LT_VAL, set to 1', live=True),
       'LT_VAL': Param(99, int, live=True),
-      'BYTE3_BIT0': Param(1, int, live=True),
-      'BYTE3_BIT0_2': Param(1, int, live=True),
-      'SETME_X1': Param(1, NUMBER, 'Always 1', live=True),
-      'SETME_X3': Param(1, NUMBER, 'Sometimes 3, mostly 1?', live=True),
-      'PERCENTAGE': Param(100, NUMBER, '100 when not touching wheel, 0 when touching wheel', live=True),
-      'SETME_X64': Param(100, NUMBER, 'Unsure', live=True),
-      'ANGLE': Param(0, NUMBER, 'Rate limit? Lower is better?', live=True),
+      'BYTE3_BIT0': Param(1, int, 'Unsure, always seen at 0', live=True),
+      'BYTE3_BIT0_2': Param(1, int, 'Unsure, always seen at 0', live=True),
+      'SETME_X1': Param(1, NUMBER, 'Always 1 (can try 0)', live=True),
+      'SETME_X3': Param(1, NUMBER, '1 on RAV4 2023, 3 on other cars?', live=True),
+      'PERCENTAGE': Param(100, NUMBER, '100 when not touching wheel, 0 when touching wheel. does not seem to do anything', live=True),
+      'SETME_X64': Param(100, NUMBER, '0-100, some max torque param', live=True),
+      'ANGLE': Param(0, NUMBER, 'Rate limit? Lower is better? Used if USE_ALT_ANGLE_CMD is False', live=True),
       # 'LKA_REQUEST': Param(1, NUMBER, '1 when using LTA for LKA', live=True),
-      'BIT': Param(0, NUMBER, 'unknown', live=True),
-      'LKA_ACTIVE': Param(0, NUMBER, 'unknown', live=True),
+      'BIT': Param(0, NUMBER, 'changes to 1 briefly when user touches wheel or when engaging', live=True),
+      'LKA_ACTIVE': Param(0, NUMBER, 'is 1 when camera is using LTA to bring car back in lane', live=True),
       'USE_ALT_ANGLE_CMD': Param(False, bool, 'True for alt angle command (not steering wheel, path angle?)', live=True),
     }
 
