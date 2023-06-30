@@ -7,6 +7,10 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css" integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA==" crossorigin="anonymous" referrerpolicy="no-referrer" /><script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.min.js" integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment@^2"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@^1"></script>
     </head>
     <body>
         <div id="main">
@@ -76,7 +80,7 @@
                 </div>
             </div>
             <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
-                <div class="row panel">
+                <div class="panel row">
                     <div class="col-sm-3" style="text-align: center;">
                         <p>Play Sounds</p>
                     </div>
@@ -88,6 +92,12 @@
                 </div>
             </div>
             <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
+                <div class="panel row">
+                    <div class="col-sm-6"><canvas id="chart-ping"></canvas></div>
+                    <div class="col-sm-6"><canvas id="chart-battery"></canvas></div>
+                </div>
+            </div>
+            <!-- <div class="row" style="padding: 0px 10px 0px 10px; width: 100%;">
                 <div class="row panel">
                     <div class="col-sm-3" style="text-align: center;">
                         <p>Yolo</p>
@@ -103,8 +113,8 @@
                         </div>                          
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
-        <script src="/static/jsmain.js"></script>
+        <script src="/static/js/jsmain.js" type="module"></script>
     </body>
 </html>

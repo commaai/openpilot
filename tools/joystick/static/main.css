@@ -161,7 +161,7 @@ video {
 .panel{
     display: flex;
     justify-content: center;
-    margin: 5px 0px 5px 0px;
+    margin: 5px 0px 5px 0px !important;
     background: #222;
     border-radius: 10px;
     width: 100%;
