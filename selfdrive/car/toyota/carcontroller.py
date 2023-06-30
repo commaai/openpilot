@@ -80,10 +80,9 @@ class CarController:
       apply_steer = 0
       apply_steer_req = 0
       if self.frame % 2 == 0:
-        # - steer angle
-        # angle command is in terms of the torque sensor angle (may or may not have an offset)
+        # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
-        torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+        # torque_sensor_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         # This might be better now with the apply bit modulation
         # # limit max angle error between cmd and actual to reduce EPS integral windup
@@ -102,12 +101,9 @@ class CarController:
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
-        # Clip to max angle limits
-        # apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
-
-        if not lat_active:
-          apply_angle = clip(torque_sensor_angle, -max_steer_angle, max_steer_angle)
-        self.last_angle = apply_angle
+        if not CC.latActive:
+          apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+        self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
     self.last_steer = apply_steer
 
