@@ -2222,7 +2222,7 @@ DBC = {
   CAR.CHR: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CHR_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
   CAR.CHRH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
-  CAR.CHRH_TSS2: dbc_dict('toyota_nodsu_pt_generated', None),
+  CAR.CHRH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.CAMRY: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRYH: dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
   CAR.CAMRY_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
