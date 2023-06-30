@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import os
 import math
 import json
 import numpy as np
 
 import cereal.messaging as messaging
 from cereal import car
+from cereal import log
 from common.params import Params, put_nonblocking
 from common.realtime import config_realtime_process, DT_MDL
 from common.numpy_fast import clip
@@ -116,6 +118,9 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
 def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
 
+  DEBUG = bool(int(os.getenv("DEBUG", "0")))
+  REPLAY = bool(int(os.getenv("REPLAY", "0")))
+
   if sm is None:
     sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
   if pm is None:
@@ -159,10 +164,16 @@ def main(sm=None, pm=None):
     }
     cloudlog.info("Parameter learner resetting to default values")
 
-  # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
-  # Without a way to detect this we have to reset the stiffness every drive
-  params['stiffnessFactor'] = 1.0
-  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
+  if not REPLAY:
+    # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
+    # Without a way to detect this we have to reset the stiffness every drive
+    params['stiffnessFactor'] = 1.0
+
+  pInitial = None
+  if DEBUG:
+    pInitial = np.array(params['filterState']['std']) if 'filterState' in params else None
+
+  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']), pInitial)
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
   roll = 0.0
@@ -218,6 +229,11 @@ def main(sm=None, pm=None):
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+      if DEBUG:
+        liveParameters.filterState = log.LiveLocationKalman.Measurement.new_message()
+        liveParameters.filterState.value = x.tolist()
+        liveParameters.filterState.std = P.tolist()
+        liveParameters.filterState.valid = True
 
       msg.valid = sm.all_checks()
 

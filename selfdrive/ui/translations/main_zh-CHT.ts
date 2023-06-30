@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation>住家</translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation>工作</translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation>尚未設定目的地</translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation>尚未設定 %1 的位置</translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation>住家</translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation>工作</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -355,44 +382,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>當前目的地</translation>
+        <source>NAVIGATION</source>
+        <translation>導航</translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>清除</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>最近目的地</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>試用導航功能</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>成為 comma 高級會員來使用導航功能
-立即註冊：https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>未設定
-住家位置</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>未設定
-工作位置</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>沒有最近的導航記錄</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation>請在 connect.comma.ai 上進行管理</translation>
     </message>
 </context>
 <context>
@@ -434,6 +431,63 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>密碼錯誤</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation>請立即連接網路檢查更新。如果不連接網路，openpilot 將在 %1 後便無法使用</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>請連接至網際網路以檢查更新。在連接至網際網路並完成更新檢查之前，openpilot 將不會自動啟動。</translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation>無法下載更新
+%1</translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation>日期和時間設定無效，系統無法啟動。請連接至網際網路以設定時間。</translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation>正在使用相機拍攝中。在完成之前，系統將無法啟動。</translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation>一個給您設備的操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>設備註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方設備，請訪問 https://comma.ai/support 。</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation>NVMe 固態硬碟未被掛載。</translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation>檢測到不支援的 NVMe 固態硬碟。您的設備因為使用了不支援的 NVMe 固態硬碟可能會消耗更多電力並更易過熱。</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>openpilot 無法識別您的車輛。您的車輛可能未被支援，或是其電控單元 (ECU) 未被識別。請提交一個 Pull Request 為您的車輛添加正確的固件版本。需要幫助嗎？請加入 discord.comma.ai 。</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>openpilot 無法識別您的車輛。請檢查線路是否正確的安裝並確保所有的連接都牢固，特別是確保 comma power 完全插入車輛的 OBD-II 接口。需要幫助嗎？請加入 discord.comma.ai 。</translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>openpilot偵測到設備的安裝位置發生變化。請確保設備完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
+    </message>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation>設備溫度過高。系統正在冷卻中，等冷卻完畢後才會啟動。目前內部組件溫度：%1</translation>
     </message>
 </context>
 <context>
@@ -584,16 +638,17 @@ location set</source>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>無法掛載資料分割區 分割區可能已經毀損 請確認是否要刪除並重新設定</translation>
+        <translation>無法掛載資料分割區。分割區可能已經毀損。請確認是否要刪除並重新設定。</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>按下確認以刪除所有內容及設定 按下取消來繼續開機</translation>
+        <translation>按下確認以刪除所有內容及設定。按下取消來繼續開機。</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation>設備重置中 此過程可能需要幾分鐘</translation>
+        <translation>設備重置中…
+這可能需要一分鐘的時間。</translation>
     </message>
 </context>
 <context>
@@ -617,10 +672,6 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>軟體</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>導航</translation>
     </message>
 </context>
 <context>
@@ -695,11 +746,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation>無法在此URL找到定制的軟體</translation>
+        <translation>在此網址找不到自訂軟體。</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation>發生了一些錯誤 請重新啟動您的設備</translation>
+        <translation>發生了一些錯誤。請重新啟動您的設備。</translation>
     </message>
 </context>
 <context>
@@ -1028,7 +1079,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>未來可能會推出openpilot縱向控制</translation>
+        <translation>openpilot 縱向控制可能會在未來的更新中提供。</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
@@ -1068,7 +1119,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本，以及實驗模式。</translation>
     </message>
 </context>
 <context>
@@ -1114,7 +1165,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>請連接至 Wi-Fi 以上傳駕駛數據，並協助改進 openpilot。</translation>
+        <translation>請連接至 Wi-Fi 以上傳駕駛數據，並協助改進 openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>

@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation>집</translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation>회사</translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation>설정된 목적지 없음</translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation>%1 위치가 설정되지 않았습니다</translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation>집</translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation>회사</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -355,44 +382,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>현재 목적지</translation>
+        <source>NAVIGATION</source>
+        <translation>내비게이션</translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>최근 목적지</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>네비게이션(베타)를 사용해보세요</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>자세한 경로안내를 원하시면 comma prime을 구독하세요.
-등록：https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>집
-설정되지않음</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>회사
-설정되지않음</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>최근 목적지 없음</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation>connect.comma.ai에서 관리</translation>
     </message>
 </context>
 <context>
@@ -434,6 +431,63 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>비밀번호가 틀렸습니다</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation>즉시 인터넷에 연결하여 업데이트를 확인하세요. 인터넷에 연결되어 있지 않으면 %1 이후에는 openpilot이 활성화되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>인터넷에 연결하여 업데이트를 확인하세요. openpilot은 업데이트를 확인하기 위해 인터넷에 연결할 때까지 자동으로 시작되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation>업데이트를 다운로드할수 없습니다
+%1</translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation>날짜 및 시간 설정이 잘못되어 시스템이 시작되지 않습니다. 날짜와 시간을 동기화하려면 인터넷에 연결하세요.</translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation>카메라 스냅샷 찍기가 완료될 때까지 시스템이 시작되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation>백그라운드에서 운영 체제에 대한 업데이트를 다운로드되고 있습니다. 설치할 준비가 되면 업데이트하라는 메시지가 표시됩니다.</translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치는 https://comma.ai/support로 방문하세요</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation>NVMe 드라이브가 마운트되지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation>지원되지 않는 NVMe 드라이브가 감지되었습니다. 지원되지 않는 NVMe 드라이브로 인해 장치가 훨씬 더 많은 전력을 소비하고 과열될 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>opepilot이 차량을 식별할수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 펌웨어 버전을 추가하려면 PR을 제출하십시오. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>openpilot이 차량을 식별할수 없었습니다. 케이블의 무결성을 점검하고 모든 연결부, 특히 comma power가 차량의 OBD-II 포트에 완전히 삽입되었는지 확인하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>openpilot이 장치의 장착 위치 변경을 감지했습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하십시오. </translation>
+    </message>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -619,10 +673,6 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>소프트웨어</translation>
     </message>
-    <message>
-        <source>Navigation</source>
-        <translation>네비게이션</translation>
-    </message>
 </context>
 <context>
     <name>Setup</name>
@@ -664,7 +714,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Waiting for internet</source>
-        <translation>네트워크 접속을 기다립니다</translation>
+        <translation>인터넷 대기중</translation>
     </message>
     <message>
         <source>Enter URL</source>
@@ -684,7 +734,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>입력된 URL이 유효하고 장치의 네트워크 연결이 잘 되어 있는지 확인하세요.</translation>
+        <translation>입력된 URL이 유효하고 장치의 인터넷 연결이 양호한지 확인하세요.</translation>
     </message>
     <message>
         <source>Reboot device</source>
@@ -1069,7 +1119,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 롱컨 제어의 알파 버전은 비 릴리스 분기에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
     </message>
 </context>
 <context>

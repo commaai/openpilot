@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation>Casa</translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation>Trabalho</translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation>Nenhum destino definido</translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation>Endereço de %1 não definido</translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation>casa</translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation>trabalho</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -356,44 +383,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>Destino Atual</translation>
+        <source>NAVIGATION</source>
+        <translation>NAVEGAÇÃO</translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>LIMPAR</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>Destinos Recentes</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>Experimente a Navegação Beta</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenha instruções passo a passo exibidas e muito mais com
-uma assinatura prime. Inscreva-se agora:  https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>Sem local
-residência definido</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>Sem local de
-trabalho definido</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>sem destinos recentes</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation>Gerencie em connect.comma.ai</translation>
     </message>
 </context>
 <context>
@@ -435,6 +432,63 @@ trabalho definido</translation>
     <message>
         <source>Wrong password</source>
         <translation>Senha incorreta</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation>Conecte-se imediatamente à internet para verificar se há atualizações. Se você não se conectar à internet em %1 não será possível acionar o openpilot.</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>Conecte-se à internet para verificar se há atualizações. O openpilot não será iniciado automaticamente até que ele se conecte à internet para verificar se há atualizações.</translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation>Não é possível baixar atualizações
+%1</translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation>Configurações de data e hora inválidas, o sistema não será iniciado. Conecte-se à internet para definir o horário.</translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation>Tirando fotos da câmera. O sistema não será iniciado até terminar.</translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation>Uma atualização para o sistema operacional do seu dispositivo está sendo baixada em segundo plano. Você será solicitado a atualizar quando estiver pronto para instalar.</translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>Falha ao registrar o dispositivo. Ele não se conectará ou fará upload para os servidores comma.ai e não receberá suporte da comma.ai. Se este for um dispositivo oficial, visite https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation>Unidade NVMe não montada.</translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation>Unidade NVMe não suportada detectada. O dispositivo pode consumir significativamente mais energia e superaquecimento devido ao NVMe não suportado.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>O openpilot não conseguiu identificar o seu carro. Seu carro não é suportado ou seus ECUs não são reconhecidos. Envie um pull request para adicionar as versões de firmware ao veículo adequado. Precisa de ajuda? Junte-se discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>O openpilot não conseguiu identificar o seu carro. Verifique a integridade dos cabos e certifique-se de que todas as conexões estejam seguras, especialmente se o comma power está totalmente inserido na porta OBD-II do veículo. Precisa de ajuda? Junte-se discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>O openpilot detectou uma mudança na posição de montagem do dispositivo. Verifique se o dispositivo está totalmente encaixado no suporte e se o suporte está firmemente preso ao para-brisa.</translation>
+    </message>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -622,10 +676,6 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Software</source>
         <translation>Software</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>Navegação</translation>
     </message>
 </context>
 <context>
@@ -1115,12 +1165,11 @@ Isso pode levar até um minuto.</translation>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation>Configurar
-Wi-Fi</translation>
+        <translation>Configurar Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>Conecte se ao Wi-Fi para upload de dados de condução e ajudar a melhorar o openpilot</translation>
+        <translation>Conecte se ao Wi-Fi para realizar upload de dados de condução e ajudar a melhorar o openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
@@ -1128,7 +1177,7 @@ Wi-Fi</translation>
     </message>
     <message>
         <source>Uploading training data</source>
-        <translation>Subindo dados para treinamento</translation>
+        <translation>Subindo dados</translation>
     </message>
     <message>
         <source>Your data is used to train driving models and help improve openpilot</source>
