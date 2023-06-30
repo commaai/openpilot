@@ -24,6 +24,7 @@ class CarControllerParams:
   # stock LTA is 0 to 0.05 going straight
   # and 0.1 to 0.4 when turning (max seen is 0.6303)
 
+  # Lane Tracing Assist (LTA) control limits
   # Assuming a steering ratio of 13.7:
   # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
   # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
@@ -232,6 +233,9 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+# Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
+# Toyota diagnostic software first gets the supported data ids, then queries them one by one.
+# For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
@@ -272,9 +276,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP:
+    # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # Responds to KWP (0x1a8881):
+    # - Body Control Module ((0x750, 0x40))
 
     # Hybrid control computer can be on one of two addresses
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer

@@ -12,7 +12,7 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_params, frame):
+def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_params, frame):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   lt_val = op_params.get('LT_VAL')
@@ -47,12 +47,12 @@ def create_lta_steer_command(packer, apply_steer, steer_req, limit_torque, op_pa
     # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
     # TODO: revisit on 2023 RAV4
     # "ANGLE": op_params.get("ANGLE"),
-    "ANGLE": apply_steer if op_params.get('USE_ALT_ANGLE_CMD') else 0,  # if abs(apply_steer) < 10 else 10 if apply_steer > 0 else -10,
+    "ANGLE": steer_angle if op_params.get('USE_ALT_ANGLE_CMD') else 0,  # if abs(steer_angle) < 10 else 10 if steer_angle > 0 else -10,
 
     # seems to just be desired angle cmd
     # TODO: does this have offset on cars where accurate steering angle signal has offset?
     # some tss2 don't have any offset on the accurate angle signal... (tss2.5)?
-    "STEER_ANGLE_CMD": apply_steer if not op_params.get('USE_ALT_ANGLE_CMD') else 0,
+    "STEER_ANGLE_CMD": steer_angle if not op_params.get('USE_ALT_ANGLE_CMD') else 0,
 
     # 1 when camera is using LTA for LKA — no noticeable difference
     # "LKA_REQUEST": op_params.get("LKA_REQUEST") if steer_req else 0,
