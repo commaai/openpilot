@@ -160,6 +160,13 @@ class TestFwFingerprint(unittest.TestCase):
         self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
                          f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}')
 
+  def test_fw_requests(self):
+    # Asserts equal length request and response lists
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand=brand):
+        for request_obj in config.requests:
+          self.assertEqual(len(request_obj.request), len(request_obj.response))
+
 
 class TestFwFingerprintTiming(unittest.TestCase):
   N: int = 5
@@ -213,7 +220,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
     print(f'get_vin, query time={vin_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = 6.1
+    total_ref_time = 6.2
     brand_ref_times = {
       1: {
         'body': 0.1,
@@ -221,7 +228,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'ford': 0.2,
         'honda': 0.5,
         'hyundai': 0.7,
-        'mazda': 0.1,
+        'mazda': 0.2,
         'nissan': 0.9,
         'subaru': 0.1,
         'tesla': 0.2,

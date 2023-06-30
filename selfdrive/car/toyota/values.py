@@ -1,11 +1,11 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -21,6 +21,14 @@ class CarControllerParams:
   STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  # Lane Tracing Assist (LTA) control limits
+  # Assuming a steering ratio of 13.7:
+  # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
+  # however the EPS has its own internal limits at all speeds which are less than that
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.18])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
@@ -102,7 +110,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarHarness.toyota])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota]))
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -215,6 +223,9 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+# Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
+# Toyota diagnostic software first gets the supported data ids, then queries them one by one.
+# For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
@@ -255,9 +266,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP:
+    # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # Responds to KWP (0x1a8881):
+    # - Body Control Module ((0x750, 0x40))
 
     # Hybrid control computer can be on one of two addresses
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
@@ -426,6 +439,7 @@ FW_VERSIONS = {
       b'\x018966333Q6000\x00\x00\x00\x00',
       b'\x018966333Q6200\x00\x00\x00\x00',
       b'\x018966333Q6300\x00\x00\x00\x00',
+      b'\x018966333Q6500\x00\x00\x00\x00',
       b'\x018966333W6000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -1871,9 +1885,11 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02378A0000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02378F4000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152678210\x00\x00\x00\x00\x00\x00',
+      b'F152678211\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B78120\x00\x00\x00\x00\x00\x00',
@@ -1884,6 +1900,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F7803100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_NXH: {
