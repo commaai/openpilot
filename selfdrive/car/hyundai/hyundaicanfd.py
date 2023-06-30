@@ -85,7 +85,6 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
       "NEW_SIGNAL_1",
       "MainMode_ACC",
       "ACCMode",
-      "CRUISE_INACTIVE",
       "ZEROS_9",
       "CRUISE_STANDSTILL",
       "ZEROS_5",
