@@ -258,14 +258,16 @@ class DaemonProcess(ManagerProcess):
     self.enabled = enabled
     self.onroad = True
     self.offroad = True
+    self.params = None
 
   def prepare(self) -> None:
     pass
 
   def start(self) -> None:
-    params = Params()
-    pid = params.get(self.param_name, encoding='utf-8')
+    if self.params is None:
+      self.params = Params()
 
+    pid = self.params.get(self.param_name, encoding='utf-8')
     if pid is not None:
       try:
         os.kill(int(pid), 0)
@@ -284,7 +286,7 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    params.put(self.param_name, str(proc.pid))
+    self.params.put(self.param_name, str(proc.pid))
 
   def stop(self, retry=True, block=True, sig=None) -> None:
     pass
