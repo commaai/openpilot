@@ -144,12 +144,10 @@ def main() -> NoReturn:
         # panda logs
         serial = panda.get_usb_serial()
         try:
-          logs = panda.get_logs(True)
-
-          # remove old logs
           if serial in log_state:
-            last_index = next((i for i, log in enumerate(logs) if log["id"] == log_state[serial]), -1)
-            logs = logs[last_index + 1:]
+            logs = panda.get_logs(last_id=log_state[serial])
+          else:
+            logs = panda.get_logs(get_all=True)
 
           # truncate logs to 100 entries if needed
           MAX_LOGS = 100
