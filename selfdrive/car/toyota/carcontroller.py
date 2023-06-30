@@ -114,9 +114,8 @@ class CarController:
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
       limit_torque = CS.out.steeringPressed
-      # can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
-      can_sends.append(create_lta_steer_command(self.packer, apply_angle, apply_steer_req and angle_control, limit_torque,
-                                 self.op_params, self.frame // self.params.STEER_STEP))
+      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, limit_torque, self.op_params,
+                                                self.frame // self.params.STEER_STEP))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
