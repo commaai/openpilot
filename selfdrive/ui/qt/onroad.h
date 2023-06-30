@@ -44,6 +44,7 @@ private:
   QPixmap engage_img;
   QPixmap experimental_img;
   bool experimental_mode;
+  bool engageable;
 };
 
 // container window for the NVG UI
