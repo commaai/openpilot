@@ -44,6 +44,14 @@ class CarInterface(CarInterfaceBase):
       # LTA control can be more delayed and winds up more often
       ret.steerActuatorDelay = 0.25
       ret.steerLimitTimer = 0.8
+
+      # TODO: remove this:
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kiBP = [0.0]
+      ret.lateralTuning.pid.kpBP = [0.0]
+      ret.lateralTuning.pid.kpV = [0.0]
+      ret.lateralTuning.pid.kiV = [0.0]  # this causes huge wind-ups after turns (70 degrees in integral!)
+      ret.lateralTuning.pid.kf = 1.0
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -107,8 +115,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      if candidate in (CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2):
-        ret.steerControlType = car.CarParams.SteerControlType.angle
 
     elif candidate in (CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2):
       stop_and_go = True
@@ -155,7 +161,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.steerControlType = car.CarParams.SteerControlType.angle
 
     elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
       if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
@@ -253,16 +258,6 @@ class CarInterface(CarInterfaceBase):
 
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
-    if ret.steerControlType == car.CarParams.SteerControlType.angle:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
-      ret.steerActuatorDelay = 0.25
-
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.0]
-      ret.lateralTuning.pid.kiV = [0.0]  # this causes huge wind-ups after turns (70 degrees in integral!)
-      ret.lateralTuning.pid.kf = 1.0
 
     # we can't use the fingerprint to detect this reliably, since
     # the EV gas pedal signal can take a couple seconds to appear
