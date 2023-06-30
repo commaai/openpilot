@@ -130,26 +130,27 @@ class Laikad:
 
     if self.save_ephemeris and (self.last_report_time - self.last_cached_t > SECS_IN_MIN):
       nav_list: List = sum([v for k,v in self.astro_dog.navs.items()], [])
-      ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in nav_list if e.prn[0]=='R'],
-                                                        'gpsEphemerides': [e.data for e in nav_list if e.prn[0]=='G']})
-
-      put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
-      cloudlog.debug("Cache saved")
+      #TODO this only saves currently valid ephems, when we download future ephems we should save them too
+      valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
+      if len(valid_navs) > 0:
+        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
+                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
+        cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
 
   def create_ephem_statuses(self):
     ephemeris_statuses = []
-    prns_to_check = list(self.astro_dog.get_all_ephem_prns())
-    prns_to_check.sort()
-    for prn in prns_to_check:
-      eph = self.astro_dog.get_eph(prn, self.last_report_time)
-      if eph is not None:
-        status = log.GnssMeasurements.EphemerisStatus.new_message()
-        status.constellationId = ConstellationId.from_rinex_char(prn[0]).value
-        status.svId = get_sv_id(prn)
-        status.type = get_log_eph_type(eph).value
-        status.source = get_log_eph_source(eph).value
-        ephemeris_statuses.append(status)
+    eph_list: List = sum([v for k,v in self.astro_dog.navs.items()], []) + sum([v for k,v in self.astro_dog.qcom_polys.items()], [])
+    for eph in eph_list:
+      status = log.GnssMeasurements.EphemerisStatus.new_message()
+      status.constellationId = ConstellationId.from_rinex_char(eph.prn[0]).value
+      status.svId = get_sv_id(eph.prn)
+      status.type = get_log_eph_type(eph).value
+      status.source = get_log_eph_source(eph).value
+      status.tow = eph.epoch.tow
+      status.gpsWeek = eph.epoch.week
+      ephemeris_statuses.append(status)
     return ephemeris_statuses
 
 
@@ -192,15 +193,15 @@ class Laikad:
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
-      constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
       # TODO: Understand and use remaining unknown constellations
       try:
+        constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
+        report_time = self.gps_time_from_qcom_report(gnss_msg)
       except NotImplementedError:
-        good_constellation = False
+        return False
       # Garbage timestamps with week > 32767 are sometimes sent by module.
       # This is an issue with gpsTime and GLONASS time.
-      report_time = self.gps_time_from_qcom_report(gnss_msg)
       good_week = report_time.week < np.iinfo(np.int16).max
       return good_constellation and good_week
     elif gnss_msg.which() == 'measurementReport' and not self.use_qcom:
@@ -457,12 +458,10 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['gnssMeasurements'])
 
   # disable until set as main gps source, to better analyze startup time
+  # TODO ensure low CPU usage before enabling
   use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
-  if replay:
-    use_internet = True
-
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
 
   while True:

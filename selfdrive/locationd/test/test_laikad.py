@@ -251,6 +251,7 @@ class TestLaikad(unittest.TestCase):
   def test_cache(self):
     use_qcom = True
     for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      Params().remove(EPHEMERIS_CACHE)
       laikad = Laikad(auto_update=True, save_ephemeris=True, use_qcom=use_qcom)
       def wait_for_cache():
         max_time = 2
@@ -263,8 +264,8 @@ class TestLaikad(unittest.TestCase):
       # Test cache with no ephemeris
       laikad.last_report_time = GPSTime(1,0)
       laikad.cache_ephemeris()
-      wait_for_cache()
-      Params().remove(EPHEMERIS_CACHE)
+      if Params().get(EPHEMERIS_CACHE) is not None:
+        self.fail("Cache should not have been written without valid ephem")
 
       #laikad.astro_dog.get_navs(self.first_gps_time)
       msg = verify_messages(logs, laikad, return_one_success=True)

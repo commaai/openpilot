@@ -2,14 +2,13 @@
 
 #include <cmath>
 
-#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
 #include <QDoubleValidator>
-#include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QSocketNotifier>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -22,7 +21,7 @@ class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);
@@ -81,7 +80,6 @@ private:
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -138,4 +136,21 @@ private:
   void closeTabClicked();
 };
 
+class UnixSignalHandler : public QObject {
+  Q_OBJECT
+
+public:
+  UnixSignalHandler(QObject *parent = nullptr);
+  ~UnixSignalHandler();
+  static void signalHandler(int s);
+
+public slots:
+  void handleSigTerm();
+
+private:
+  inline static int sig_fd[2] = {};
+  QSocketNotifier *sn;
+};
+
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);
