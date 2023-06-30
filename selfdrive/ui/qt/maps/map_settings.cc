@@ -130,12 +130,12 @@ void MapSettings::updateCurrentRoute() {
       qWarning() << "JSON Parse failed on NavDestination" << dest;
       return;
     }
-    auto destination = std::make_unique<NavDestination>(doc.object());
+    auto destination = new NavDestination(doc.object());
     if (current_destination && *destination == *current_destination) return;
-    current_destination = std::move(destination);
-    current_widget->set(current_destination.get(), true);
+    current_destination = destination;
+    current_widget->set(current_destination, true);
   } else {
-    current_destination.reset(nullptr);
+    current_destination = nullptr;
     current_widget->unset("", true);
   }
   if (isVisible()) refresh();
@@ -149,7 +149,7 @@ void MapSettings::parseResponse(const QString &response, bool success) {
 
 void MapSettings::refresh() {
   bool has_home = false, has_work = false;
-  auto destinations = std::vector<std::unique_ptr<NavDestination>>();
+  auto destinations = std::vector<NavDestination*>();
 
   auto destinations_str = cur_destinations.trimmed();
   if (!destinations_str.isEmpty()) {
@@ -160,7 +160,7 @@ void MapSettings::refresh() {
     }
 
     for (auto el : doc.array()) {
-      auto destination = std::make_unique<NavDestination>(el.toObject());
+      auto destination = new NavDestination(el.toObject());
 
       // add home and work later if they are missing
       if (destination->isFavorite()) {
@@ -170,7 +170,7 @@ void MapSettings::refresh() {
 
       // skip current destination
       if (current_destination && *destination == *current_destination) continue;
-      destinations.push_back(std::move(destination));
+      destinations.push_back(destination);
     }
   }
 
@@ -178,7 +178,7 @@ void MapSettings::refresh() {
   clearLayout(destinations_layout);
 
   // Sort: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
-  std::sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
+  std::sort(destinations.begin(), destinations.end(), [](const NavDestination *a, const NavDestination *b) {
     if (a->isFavorite() && b->isFavorite()) {
       if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
@@ -191,11 +191,11 @@ void MapSettings::refresh() {
     return a->name() < b->name();
   });
 
-  for (auto &destination : destinations) {
+  for (auto destination : destinations) {
     auto widget = new DestinationWidget(this);
-    widget->set(destination.get(), false);
+    widget->set(destination, false);
 
-    QObject::connect(widget, &QPushButton::clicked, [&]() {
+    QObject::connect(widget, &QPushButton::clicked, [=]() {
       navigateTo(destination->toJson());
       emit closeSettings();
     });
