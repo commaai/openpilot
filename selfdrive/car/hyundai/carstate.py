@@ -534,7 +534,6 @@ class CarState(CarStateBase):
         ("NEW_SIGNAL_1", "SCC_CONTROL"),
         ("MainMode_ACC", "SCC_CONTROL"),
         ("ACCMode", "SCC_CONTROL"),
-        ("CRUISE_INACTIVE", "SCC_CONTROL"),
         ("ZEROS_9", "SCC_CONTROL"),
         ("CRUISE_STANDSTILL", "SCC_CONTROL"),
         ("ZEROS_5", "SCC_CONTROL"),
