@@ -80,6 +80,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
+  destinations_scroller->setFrameShape(QFrame::NoFrame);
   frame->addWidget(destinations_scroller);
 
   setStyleSheet("MapSettings { background-color: #333333; }");
