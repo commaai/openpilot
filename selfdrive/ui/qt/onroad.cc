@@ -199,7 +199,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // ExperimentalButton
 ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), QPushButton(parent) {
-  setVisible(false);
   setFixedSize(btn_size, btn_size);
 
   params = Params();
@@ -217,10 +216,11 @@ void ExperimentalButton::changeMode() {
 }
 
 void ExperimentalButton::updateState(const UIState &s) {
-  // button is "visible" if engageable or enabled
   const auto cs = (*s.sm)["controlsState"].getControlsState();
-  setVisible(cs.getEngageable() || cs.getEnabled());
-  if (std::exchange(experimental_mode, cs.getExperimentalMode()) != experimental_mode) {
+  bool eng = cs.getEngageable() || cs.getEnabled();
+  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
+    engageable = eng;
+    experimental_mode = cs.getExperimentalMode();
     update();
   }
 }
@@ -236,7 +236,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
   p.setBrush(QColor(0, 0, 0, 166));
   p.drawEllipse(center, btn_size / 2, btn_size / 2);
-  p.setOpacity(isDown() ? 0.8 : 1.0);
+  p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
   p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, img);
 }
 
