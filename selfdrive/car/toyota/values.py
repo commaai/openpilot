@@ -99,6 +99,7 @@ class CAR:
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
   LEXUS_RXH_TSS2 = "LEXUS RX HYBRID 2020"
+  LEXUS_UXH_TSS2 = "LEXUS UX HYBRID 2023"
 
 
 class Footnote(Enum):
@@ -1785,6 +1786,9 @@ FW_VERSIONS = {
       b'\x028646F3309100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
+
+  
+  
   CAR.LEXUS_ES: {
     (Ecu.engine, 0x7e0, None): [
       b'\x02333R0000\x00\x00\x00\x00\x00\x00\x00\x00A0C01000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -2127,6 +2131,23 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+    ],
+  },
+    CAR.LEXUS_UXH_TSS2: {
+    (Ecu.engine, 0x700, None): [
+      b'\x01896637648000\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'F152676371\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B76091\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201400\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+     b'\x028646F7605100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.PRIUS_TSS2: {
