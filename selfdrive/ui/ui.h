@@ -202,7 +202,6 @@ private:
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
-  bool motionTriggered(const UIState &s);
   void setAwake(bool on);
 
 signals:

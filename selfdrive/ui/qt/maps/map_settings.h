@@ -1,7 +1,5 @@
 #pragma once
 
-#include<memory>
-
 #include <QFrame>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -39,7 +37,7 @@ private:
   Params params;
   QString cur_destinations;
   QVBoxLayout *destinations_layout;
-  std::unique_ptr<NavDestination> current_destination;
+  NavDestination *current_destination;
   DestinationWidget *current_widget;
 
   QPixmap close_icon;
