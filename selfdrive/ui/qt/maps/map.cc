@@ -476,6 +476,7 @@ void MapInstructions::noError() {
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
+  setUpdatesEnabled(false);
   // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
@@ -519,15 +520,13 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
 
   // Show lanes
-  bool has_lanes = false;
-  clearLayout(lane_layout);
-  for (auto const &lane: instruction.getLanes()) {
-    has_lanes = true;
-    bool active = lane.getActive();
+  auto lanes = instruction.getLanes();
+  for (int i = 0; i < lanes.size(); ++i) {
+    bool active = lanes[i].getActive();
 
     // TODO: only use active direction if active
     bool left = false, straight = false, right = false;
-    for (auto const &direction: lane.getDirections()) {
+    for (auto const &direction: lanes[i].getDirections()) {
       left |= direction == cereal::NavInstruction::Direction::LEFT;
       right |= direction == cereal::NavInstruction::Direction::RIGHT;
       straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
@@ -547,15 +546,22 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "_inactive";
     }
 
-    auto icon = new QLabel;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    lane_layout->addWidget(icon);
+    QLabel *label = (i < lane_labels.size()) ? lane_labels[i] : lane_labels.emplace_back(new QLabel);
+    if (!label->parentWidget()) {
+      lane_layout->addWidget(label);
+    }
+    label->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
+    label->setVisible(true);
   }
-  lane_widget->setVisible(has_lanes);
 
-  show();
+  for (int i = lanes.size(); i < lane_labels.size(); ++i) {
+    lane_labels[i]->setVisible(false);
+  }
+  lane_widget->setVisible(lanes.size() > 0);
+
+  setUpdatesEnabled(true);
   resize(sizeHint());
+  show();
 }
 
 

@@ -35,6 +35,7 @@ private:
   QHBoxLayout *lane_layout;
   bool error = false;
   bool is_rhd = false;
+  std::vector<QLabel *> lane_labels;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
