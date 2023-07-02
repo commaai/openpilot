@@ -22,7 +22,8 @@ def ublox_available() -> bool:
 
 def ublox(started, params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
-  params.put_bool("UbloxAvailable", use_ublox)
+  if use_ublox != params.get_bool("UbloxAvailable"):
+    params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
 def qcomgps(started, params, CP: car.CarParams) -> bool:
