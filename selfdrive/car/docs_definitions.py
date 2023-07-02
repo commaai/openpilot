@@ -131,7 +131,7 @@ class Kit(EnumBase):
 class Tool(EnumBase):
   __socket = lambda size, modifier = None: BasePart(f"Socket Wrench {size}" + f' ({modifier})' if modifier is not None else '')
   
-  socket_8mm_deep = __socket("8mm", "deep")
+  socket_8mm_deep = __socket("8mm or 5/16", "deep")
   pry_tool = BasePart("Pry Tool")
 
 
