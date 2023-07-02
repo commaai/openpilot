@@ -130,9 +130,11 @@ class Kit(EnumBase):
 
 
 class Tool(EnumBase):
-  __socket = lambda size, modifier = None: BasePart(f"Socket Wrench {size}" + f' ({modifier})' if modifier is not None else '')
+  @staticmethod
+  def socket(size, modifier=None):
+    return f"Socket Wrench {size}" + f' ({modifier})' if modifier is not None else ''
   
-  socket_8mm_deep = __socket("8mm or 5/16", "deep")
+  socket_8mm_deep = BasePart(socket("8mm or 5/16", "deep"))
   pry_tool = BasePart("Pry Tool")
 
 
@@ -277,7 +279,8 @@ class CarInfo:
       tools_docs = [part for part in car_parts_docs if type(part) is Tool]
       car_parts_docs = [part for part in car_parts_docs if type(part) is not Tool]
 
-      display_func = lambda parts: '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
+      def display_func(parts):
+        return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
       
       hardware_col = f'<details><summary>Parts</summary><sub>{display_func(car_parts_docs)}<br>{buy_link}</sub></details>'
       if len(tools_docs):
