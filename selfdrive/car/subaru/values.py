@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts, Tool
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -59,8 +59,12 @@ class CAR:
 @dataclass
 class SubaruCarInfo(CarInfo):
   package: str = "EyeSight Driver Assistance"
-  car_parts: CarParts = CarParts.common([CarHarness.subaru_a])
+  car_parts: CarParts = None
 
+  def init_make(self, CP: car.CarParams):
+    if self.car_parts is None:
+      self.car_parts = CarParts.common([CarHarness.subaru_a])
+    self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
