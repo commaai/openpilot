@@ -164,8 +164,6 @@ class CarState(CarStateBase):
 
       ("COUNTER", "ES_Brake"),
       ("Signal1", "ES_Brake"),
-      ("Brake_Pressure", "ES_Brake"),
-      ("Signal2", "ES_Brake"),
       ("Cruise_Brake_Lights", "ES_Brake"),
       ("Cruise_Brake_Fault", "ES_Brake"),
       ("Cruise_Brake_Active", "ES_Brake"),
@@ -178,7 +176,6 @@ class CarState(CarStateBase):
       ("ES_Brake", 20),
       ("ES_Distance", 20),
       ("ES_Status", 20),
-      ("ES_Brake", 20),
     ]
 
     return signals, checks
