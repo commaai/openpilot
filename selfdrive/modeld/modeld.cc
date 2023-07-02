@@ -43,7 +43,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
      1.0,  0.0,  0.0).finished();
 
 
-  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
+  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ECAM_INTRINSIC_MATRIX.v : FCAM_INTRINSIC_MATRIX.v);
   Eigen::Matrix<float, 3, 3, Eigen::RowMajor>  device_from_calib = euler2rot(device_from_calib_euler).cast <float> ();
   auto calib_from_model = bigmodel_frame ? calib_from_sbigmodel : calib_from_medmodel;
   auto camera_from_calib = cam_intrinsics * view_from_device * device_from_calib;

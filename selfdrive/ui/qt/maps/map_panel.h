@@ -13,5 +13,11 @@ public:
   bool isShowingMap() const;
 
 private:
+  void showEvent(QShowEvent *event) { emit mapWindowShown(); };
+
+signals:
+  void mapWindowShown();
+
+private:
   QStackedLayout *content_stack;
 };

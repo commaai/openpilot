@@ -80,6 +80,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
+  destinations_scroller->setFrameShape(QFrame::NoFrame);
   frame->addWidget(destinations_scroller);
 
   setStyleSheet("MapSettings { background-color: #333333; }");
@@ -130,12 +131,12 @@ void MapSettings::updateCurrentRoute() {
       qWarning() << "JSON Parse failed on NavDestination" << dest;
       return;
     }
-    auto destination = new NavDestination(doc.object());
+    auto destination = std::make_unique<NavDestination>(doc.object());
     if (current_destination && *destination == *current_destination) return;
-    current_destination = destination;
-    current_widget->set(current_destination, true);
+    current_destination = std::move(destination);
+    current_widget->set(current_destination.get(), true);
   } else {
-    current_destination = nullptr;
+    current_destination.reset(nullptr);
     current_widget->unset("", true);
   }
   if (isVisible()) refresh();
@@ -149,7 +150,7 @@ void MapSettings::parseResponse(const QString &response, bool success) {
 
 void MapSettings::refresh() {
   bool has_home = false, has_work = false;
-  auto destinations = std::vector<NavDestination*>();
+  auto destinations = std::vector<std::unique_ptr<NavDestination>>();
 
   auto destinations_str = cur_destinations.trimmed();
   if (!destinations_str.isEmpty()) {
@@ -160,7 +161,7 @@ void MapSettings::refresh() {
     }
 
     for (auto el : doc.array()) {
-      auto destination = new NavDestination(el.toObject());
+      auto destination = std::make_unique<NavDestination>(el.toObject());
 
       // add home and work later if they are missing
       if (destination->isFavorite()) {
@@ -170,7 +171,7 @@ void MapSettings::refresh() {
 
       // skip current destination
       if (current_destination && *destination == *current_destination) continue;
-      destinations.push_back(destination);
+      destinations.push_back(std::move(destination));
     }
   }
 
@@ -178,7 +179,7 @@ void MapSettings::refresh() {
   clearLayout(destinations_layout);
 
   // Sort: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
-  std::sort(destinations.begin(), destinations.end(), [](const NavDestination *a, const NavDestination *b) {
+  std::sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
     if (a->isFavorite() && b->isFavorite()) {
       if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
@@ -191,12 +192,12 @@ void MapSettings::refresh() {
     return a->name() < b->name();
   });
 
-  for (auto destination : destinations) {
+  for (auto &destination : destinations) {
     auto widget = new DestinationWidget(this);
-    widget->set(destination, false);
+    widget->set(destination.get(), false);
 
-    QObject::connect(widget, &QPushButton::clicked, [=]() {
-      navigateTo(destination->toJson());
+    QObject::connect(widget, &QPushButton::clicked, [this, dest = destination->toJson()]() {
+      navigateTo(dest);
       emit closeSettings();
     });
 
