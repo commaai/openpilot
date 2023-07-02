@@ -278,14 +278,10 @@ class CarInfo:
       car_parts_docs = [part for part in car_parts_docs if type(part) is not Tool]
 
       display_func = lambda parts: '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
-
-      parts = display_func(car_parts_docs)
-      tools = display_func(tools_docs)
-
-      hardware_col = f'<details><summary>Parts</summary><sub>{parts}<br>{buy_link}</sub></details>'
-
-      if len(tools):
-        hardware_col += f'<details><summary>Tools</summary><sub>{tools}</sub></details>'
+      
+      hardware_col = f'<details><summary>Parts</summary><sub>{display_func(car_parts_docs)}<br>{buy_link}</sub></details>'
+      if len(tools_docs):
+        hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
