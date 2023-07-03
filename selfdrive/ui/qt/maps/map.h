@@ -42,7 +42,7 @@ public:
   void showError(QString error);
   void noError();
   void hideIfNoError();
-  void updateDistance(float d);
+  QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };
 

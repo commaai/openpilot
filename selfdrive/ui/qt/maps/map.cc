@@ -425,33 +425,16 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
   setPalette(pal);
 }
 
-void MapInstructions::updateDistance(float d) {
+QString MapInstructions::getDistance(float d) {
   d = std::max(d, 0.0f);
-  QString distance_str;
-
   if (uiState()->scene.is_metric) {
-    if (d > 500) {
-      distance_str.setNum(d / 1000, 'f', 1);
-      distance_str += tr(" km");
-    } else {
-      distance_str.setNum(50 * int(d / 50));
-      distance_str += tr(" m");
-    }
+    return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
+                     : QString::number(50 * int(d / 50)) + tr(" m");
   } else {
-    float miles = d * METER_TO_MILE;
     float feet = d * METER_TO_FOOT;
-
-    if (feet > 500) {
-      distance_str.setNum(miles, 'f', 1);
-      distance_str += tr(" mi");
-    } else {
-      distance_str.setNum(50 * int(feet / 50));
-      distance_str += tr(" ft");
-    }
+    return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
+                        : QString::number(50 * int(feet / 50)) + tr(" ft");
   }
-
-  distance->setAlignment(Qt::AlignLeft);
-  distance->setText(distance_str);
 }
 
 void MapInstructions::showError(QString error_text) {
@@ -475,7 +458,6 @@ void MapInstructions::noError() {
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
 
-  updateDistance(instruction.getManeuverDistance());
   // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
@@ -488,6 +470,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
+  distance->setAlignment(Qt::AlignLeft);
+  distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
