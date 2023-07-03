@@ -618,9 +618,10 @@ void AnnotatedCameraWidget::paintGL() {
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
     if (has_wide_cam) {
-      if ((speed < 10) || available_streams.size() == 1) {
+      float v_ego = speed / (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
+      if ((v_ego < 10) || available_streams.size() == 1) {
         wide_cam_requested = true;
-      } else if (speed > 15) {
+      } else if (v_ego > 15) {
         wide_cam_requested = false;
       }
       wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
