@@ -31,8 +31,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   // Instructions
   map_instructions = new MapInstructions(this);
-  QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
-  QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   map_instructions->setFixedWidth(width());
   map_instructions->setVisible(false);
 
@@ -205,8 +203,7 @@ void MapWindow::updateState(const UIState &s) {
 
       if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
-        emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
-        emit instructionsChanged(i);
+        map_instructions->updateInstructions(i);
       }
     } else {
       clearRoute();
@@ -477,6 +474,8 @@ void MapInstructions::noError() {
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
+
+  updateDistance(instruction.getManeuverDistance());
   // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
