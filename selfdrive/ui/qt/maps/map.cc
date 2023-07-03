@@ -559,9 +559,10 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
   lane_widget->setVisible(lanes.size() > 0);
 
-  setUpdatesEnabled(true);
   resize(sizeHint());
-  show();
+
+  setUpdatesEnabled(true);
+  setVisible(true);
 }
 
 
