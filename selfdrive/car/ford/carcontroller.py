@@ -5,6 +5,7 @@ from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \
                                        create_lat_ctl_msg, create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
 from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams
+from selfdrive.car.interfaces import CarControllerBase
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -22,8 +23,9 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
   return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
+    super().__init__(dbc_name, CP, VM)
     self.CP = CP
     self.VM = VM
     self.packer = CANPacker(dbc_name)

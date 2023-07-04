@@ -4,6 +4,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car.body import bodycan
 from selfdrive.car.body.values import SPEED_FROM_RPM
+from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.controls.lib.pid import PIDController
 
 
@@ -14,8 +15,9 @@ MAX_POS_INTEGRATOR = 0.2   # meters
 MAX_TURN_INTEGRATOR = 0.1  # meters
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
+    super().__init__(dbc_name, CP, VM)
     self.frame = 0
     self.packer = CANPacker(dbc_name)
 

@@ -5,7 +5,7 @@ from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable, Type
 
 from cereal import car
-from cereal.car_capnp import CarParams, CarState, RadarData
+from cereal.car_capnp import CarParams, CarState, RadarData, CarControl
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -172,6 +172,14 @@ class CarStateBase(ABC):
     return None
 
 
+class CarControllerBase(ABC):
+  def __init__(self, dbc_name, CP: CarParams, VM: VehicleModel):
+    pass
+
+  def update(self, CC: CarControl, CS: CarStateBase, now_nanos) -> Tuple[CarControl.Actuators, List[bytes]]:
+    raise NotImplementedError
+
+
 class CarInterfaceBase(ABC):
   def __init__(self, CP: CarParams, CarController, CarState: Type[CarStateBase]):
     self.CP = CP
@@ -231,7 +239,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
     raise NotImplementedError
 
   @staticmethod
@@ -248,7 +256,7 @@ class CarInterfaceBase(ABC):
     return self.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)

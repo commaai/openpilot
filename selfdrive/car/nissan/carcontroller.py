@@ -7,8 +7,9 @@ from selfdrive.car.nissan.values import CAR, CarControllerParams
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
+    super().__init__(dbc_name, CP, VM)
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.frame = 0

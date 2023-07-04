@@ -104,8 +104,9 @@ def rate_limit_steer(new_steer, last_steer):
   return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
+    super().__init__(dbc_name, CP, VM)
     self.CP = CP
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)

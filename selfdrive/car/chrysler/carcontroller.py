@@ -3,10 +3,12 @@ from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from selfdrive.car.interfaces import CarControllerBase
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
+    super().__init__(dbc_name, CP, VM)
     self.CP = CP
     self.apply_steer_last = 0
     self.frame = 0
