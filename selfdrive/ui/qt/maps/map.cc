@@ -236,7 +236,7 @@ void MapWindow::updateState(const UIState &s) {
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
   map_instructions->setFixedWidth(width());
-  map_eta->setGeometry(25, 1080 - 120 - bdr_s * 2, w - 50, 120);
+  map_eta->setGeometry(25, height() - 120, w - 50, 120);
 }
 
 void MapWindow::initializeGL() {
@@ -570,7 +570,7 @@ void MapETA::paintEvent(QPaintEvent *event) {
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
     QSizeF txt_size = eta_doc.size();
-    p.drawRoundedRect((width() - txt_size.width()) / 2 - bdr_s, 0, txt_size.width() + bdr_s * 2, height(), 25, 25);
+    p.drawRoundedRect((width() - txt_size.width()) / 2 - bdr_s, 0, txt_size.width() + bdr_s * 2, height() + 25, 25, 25);
     p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
     eta_doc.drawContents(&p);
   }
