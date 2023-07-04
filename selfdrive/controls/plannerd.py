@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import numpy as np
-from cereal import car
+from cereal import car_capnp as car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
 from system.swaglog import cloudlog

@@ -1,6 +1,6 @@
 import copy
 from collections import deque
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from selfdrive.car.tesla.values import DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
 from selfdrive.car.interfaces import CarStateBase

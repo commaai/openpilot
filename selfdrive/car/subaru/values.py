@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import Dict, List, Union
 
-from cereal import car
+from cereal import car_capnp as car
 from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts

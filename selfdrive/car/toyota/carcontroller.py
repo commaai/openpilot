@@ -1,4 +1,4 @@
-from cereal import car
+from cereal import car_capnp as car
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
                           create_gas_interceptor_command, make_can_msg

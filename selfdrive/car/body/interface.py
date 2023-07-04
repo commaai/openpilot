@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import math
-from cereal import car
+from cereal import car_capnp as car
 from common.realtime import DT_CTRL
 from selfdrive.car import get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase

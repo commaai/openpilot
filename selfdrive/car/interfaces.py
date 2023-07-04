@@ -4,8 +4,7 @@ import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable, Type
 
-from cereal import car
-from cereal.car_capnp import CarParams, CarState, RadarData, CarControl
+from cereal import car_capnp as car
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -58,10 +57,10 @@ def get_torque_params(candidate):
 # generic car and radar interfaces
 
 class CarStateBase(ABC):
-  def __init__(self, CP: CarParams):
+  def __init__(self, CP: car.CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
-    self.out: CarState = car.CarState.new_message()
+    self.out = car.CarState.new_message()
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
@@ -173,15 +172,15 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name, CP: CarParams, VM: VehicleModel):
+  def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
     pass
 
-  def update(self, CC: CarControl, CS: CarStateBase, now_nanos) -> Tuple[CarControl.Actuators, List[bytes]]:
+  def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     raise NotImplementedError
 
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: CarParams, CarController, CarState: Type[CarStateBase]):
+  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type[CarStateBase]):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -209,7 +208,7 @@ class CarInterfaceBase(ABC):
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
-  def get_pid_accel_limits(CP: CarParams, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP: car.CarParams, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
@@ -239,11 +238,11 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool) -> car.CarParams:
     raise NotImplementedError
 
   @staticmethod
-  def init(CP: CarParams, logcan, sendcan):
+  def init(CP: car.CarParams, logcan, sendcan):
     pass
 
   @staticmethod
@@ -256,7 +255,7 @@ class CarInterfaceBase(ABC):
     return self.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
@@ -432,7 +431,7 @@ class CarInterfaceBase(ABC):
 
 
 class RadarInterfaceBase(ABC):
-  def __init__(self, CP: CarParams):
+  def __init__(self, CP: car.CarParams):
     self.rcp = None
     self.pts = {}
     self.delay = 0
@@ -440,7 +439,7 @@ class RadarInterfaceBase(ABC):
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret: RadarData = car.RadarData.new_message()
+    ret: car.RadarData = car.RadarData.new_message()
     if not self.no_radar_sleep:
       time.sleep(self.radar_ts)  # radard runs on RI updates
     return ret

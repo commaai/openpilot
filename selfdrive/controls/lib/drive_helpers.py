@@ -1,6 +1,6 @@
 import math
 
-from cereal import car, log
+from cereal import car_capnp as car, log
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL

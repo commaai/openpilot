@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from math import cos, sin
-from cereal import car
+from cereal import car_capnp as car
 from opendbc.can.parser import CANParser
 from common.conversions import Conversions as CV
 from selfdrive.car.ford.fordcan import CanBus

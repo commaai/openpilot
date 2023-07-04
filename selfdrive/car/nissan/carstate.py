@@ -1,6 +1,6 @@
 import copy
 from collections import deque
-from cereal import car
+from cereal import car_capnp as car
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from common.conversions import Conversions as CV

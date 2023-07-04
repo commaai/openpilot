@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 from typing import Type
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car_capnp as car
 from cereal.car_capnp import CarParams
 from common.numpy_fast import interp
 from common.params import Params

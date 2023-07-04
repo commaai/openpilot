@@ -1,7 +1,7 @@
 import os
 from typing import Dict, List
 
-from cereal import car
+from cereal import car_capnp as car
 from common.params import Params
 from common.basedir import BASEDIR
 from system.version import is_comma_remote, is_tested_branch

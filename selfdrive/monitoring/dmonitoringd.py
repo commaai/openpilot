@@ -2,7 +2,7 @@
 import gc
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car_capnp as car
 from cereal import log
 from common.params import Params, put_bool_nonblocking
 from common.realtime import set_realtime_priority

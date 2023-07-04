@@ -1,4 +1,4 @@
-from cereal import car
+from cereal import car_capnp as car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, apply_deadzone

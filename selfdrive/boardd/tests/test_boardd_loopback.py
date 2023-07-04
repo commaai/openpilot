@@ -8,7 +8,7 @@ from collections import defaultdict
 from pprint import pprint
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car_capnp as car, log
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout

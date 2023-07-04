@@ -1,5 +1,5 @@
 import numpy as np
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser

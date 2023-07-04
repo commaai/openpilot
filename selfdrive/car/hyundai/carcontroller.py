@@ -1,4 +1,4 @@
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL

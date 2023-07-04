@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import math
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from selfdrive.car.gm.values import DBC, CanBus

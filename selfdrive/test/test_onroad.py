@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import car
+from cereal import car_capnp as car
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR

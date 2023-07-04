@@ -1,6 +1,6 @@
 import copy
 
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from common.numpy_fast import mean
 from common.filter_simple import FirstOrderFilter

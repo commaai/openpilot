@@ -6,7 +6,7 @@ from collections import defaultdict
 from parameterized import parameterized
 import threading
 
-from cereal import car
+from cereal import car_capnp as car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS

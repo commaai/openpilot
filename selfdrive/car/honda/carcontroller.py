@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from cereal import car
+from cereal import car_capnp as car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker

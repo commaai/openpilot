@@ -9,7 +9,7 @@ from tqdm import tqdm
 os.environ["USE_WEBCAM"] = "1"
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car_capnp as car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params
@@ -224,7 +224,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
   fakeable_daemons = {}
   for config in CONFIGS:
     processes = [
-      multiprocessing.Process(target=replay_service, args=(msg, lr)) 
+      multiprocessing.Process(target=replay_service, args=(msg, lr))
       for msg in config.subs
     ]
     fakeable_daemons[config.proc_name] = processes
@@ -238,7 +238,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
     for d in daemons:
       if d in fake_daemons:
         raise ValueError(f"Running daemon {d} is not supported!")
-      
+
       if d in fakeable_daemons:
         del additional_fake_daemons[d]
 
@@ -255,7 +255,7 @@ def regen_segment(lr, frs=None, daemons="all", outdir=FAKEDATA, disable_tqdm=Fal
     # start procs up
     ignore = list(all_fake_daemons.keys()) \
            + ['ui', 'manage_athenad', 'uploader', 'soundd', 'micd', 'navd']
-    
+
     print("Faked daemons:", ", ".join(all_fake_daemons.keys()))
     print("Running daemons:", ", ".join([key for key in managed_processes.keys() if key not in ignore]))
 
@@ -307,7 +307,7 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
       wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     else:
       wfr = None
-  
+
   frs = {'roadCameraState': fr}
   if wfr is not None:
     frs['wideRoadCameraState'] = wfr

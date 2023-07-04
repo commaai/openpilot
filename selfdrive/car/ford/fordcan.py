@@ -1,4 +1,4 @@
-from cereal import car
+from cereal import car_capnp as car
 from selfdrive.car import CanBusBase
 
 HUDControl = car.CarControl.HUDControl

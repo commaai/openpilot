@@ -10,7 +10,7 @@ from tqdm import tqdm
 import capnp
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car_capnp as car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from common.params import Params
@@ -38,7 +38,7 @@ class ReplayContext:
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
     assert(len(self.pubs) != 0 or self.main_pub is not None)
-  
+
   def __enter__(self):
     messaging.toggle_fake_events(True)
     messaging.set_fake_prefix(self.proc_name)
@@ -61,7 +61,7 @@ class ReplayContext:
   @property
   def all_recv_called_events(self):
     return [man.recv_called_event for man in self.events.values()]
-  
+
   @property
   def all_recv_ready_events(self):
     return [man.recv_ready_event for man in self.events.values()]
@@ -171,7 +171,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
 def controlsd_rcv_callback(msg, cfg, frame):
   # no sendcan until controlsd is initialized
   if msg.which() != "can":
-    return False 
+    return False
 
   socks = [
     s for s in cfg.subs if
@@ -255,7 +255,7 @@ def laikad_config_pubsub_callback(params, cfg):
 def locationd_config_pubsub_callback(params, cfg):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
-  
+
   return set(cfg.pubs) - sub_keys, None, False
 
 
@@ -312,7 +312,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pubs=[
-      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal", 
+      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
       "liveCalibration", "carState", "carParams", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
@@ -343,7 +343,7 @@ CONFIGS = [
     config_callback=laikad_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
     timeout=60*10,  # first messages are blocked on internet assistance
-    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed 
+    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed
   ),
   ProcessConfig(
     proc_name="torqued",
@@ -431,7 +431,7 @@ def _replay_single_process(
       setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint, custom_params=custom_params)
     else:
       CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
-      assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
+      assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it"
       setup_env(cfg=cfg, CP=CP, controlsState=controlsState, lr=lr, custom_params=custom_params)
 
     if cfg.config_callback is not None:
@@ -503,7 +503,7 @@ def _replay_single_process(
               rc.wait_for_next_recv(trigger_empty_recv)
 
               for s in resp_sockets:
-                ms = messaging.drain_sock(sockets[s])  
+                ms = messaging.drain_sock(sockets[s])
                 for m in ms:
                   m = m.as_builder()
                   m.logMonoTime = msg.logMonoTime
@@ -564,7 +564,7 @@ def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, 
   if lr is not None:
     services = {m.which() for m in lr}
     params.put_bool("UbloxAvailable", "ubloxGnss" in services)
-  
+
   if cfg is not None:
     # Clear all custom processConfig environment variables
     for config in CONFIGS:

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car_capnp as car
 from math import fabs, exp
 
-from cereal.car_capnp import CarParams
 from panda import Panda
 
 from common.conversions import Conversions as CV
@@ -23,7 +22,7 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP: CarParams, current_speed, cruise_speed):
+  def get_pid_accel_limits(CP: car.CarParams, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
@@ -48,7 +47,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   @staticmethod
-  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
                                      lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 

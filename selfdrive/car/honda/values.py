@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Union
 
-from cereal import car
+from cereal import car_capnp as car
 from common.conversions import Conversions as CV
 from panda.python import uds
 from selfdrive.car import dbc_dict

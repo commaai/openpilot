@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 import capnp
 
-from cereal import car
+from cereal import car_capnp as car
 from common.numpy_fast import clip, interp
 
 

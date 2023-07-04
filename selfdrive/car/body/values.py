@@ -1,6 +1,6 @@
 from typing import Dict
 
-from cereal import car
+from cereal import car_capnp as car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries

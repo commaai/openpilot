@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 
-from cereal import car, log, messaging
+from cereal import car_capnp as car, log, messaging
 from common.params import Params
 from selfdrive.manager.process_config import managed_processes
 

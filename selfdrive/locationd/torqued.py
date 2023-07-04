@@ -6,7 +6,7 @@ import numpy as np
 from collections import deque, defaultdict
 
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import car_capnp as car, log
 from common.params import Params
 from common.realtime import config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter

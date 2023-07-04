@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car_capnp as car
 from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp

@@ -2,7 +2,7 @@
 import time
 import random
 
-from cereal import car, log
+from cereal import car_capnp as car, log
 import cereal.messaging as messaging
 from common.realtime import DT_CTRL
 from selfdrive.car.honda.interface import CarInterface

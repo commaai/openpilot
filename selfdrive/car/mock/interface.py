@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car_capnp as car
 from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import get_safety_config

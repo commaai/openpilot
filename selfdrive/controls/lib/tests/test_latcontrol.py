@@ -3,7 +3,7 @@ import unittest
 
 from parameterized import parameterized
 
-from cereal import car, log
+from cereal import car_capnp as car, log
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.toyota.values import CAR as TOYOTA

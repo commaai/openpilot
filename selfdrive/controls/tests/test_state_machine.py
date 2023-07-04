@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from cereal import car, log
+from cereal import car_capnp as car, log
 from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
