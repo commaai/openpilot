@@ -29,11 +29,16 @@ const QString ICON_SUFFIX = ".png";
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
+  map_overlay = new QWidget (this);
+  map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
+  QVBoxLayout *overlay_layout = new QVBoxLayout(map_overlay);
+  overlay_layout->setContentsMargins(0, 0, 0, bdr_s);
+  overlay_layout->setSpacing(bdr_s);
+
   // Instructions
   map_instructions = new MapInstructions(this);
   QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
   QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
-  map_instructions->setFixedWidth(width());
   map_instructions->setVisible(false);
 
   map_eta = new MapETA(this);
@@ -41,7 +46,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   const int h = 120;
   map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h - UI_BORDER_SIZE*2);
   map_eta->setVisible(false);
 
   // Settings button
@@ -51,21 +55,26 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   settings_btn = new QPushButton(directions_icon, "", this);
   settings_btn->setIconSize(icon_size);
+  settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   settings_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #96000000;
       border-radius: 50px;
       padding: 24px;
+      margin-left: 30px;
     }
     QPushButton:pressed {
       background-color: #D9000000;
     }
   )");
-  settings_btn->show();  // force update
-  settings_btn->move(UI_BORDER_SIZE, 1080 - UI_BORDER_SIZE*3 - settings_btn->height());
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
     emit openSettings();
   });
+
+  overlay_layout->addWidget(map_instructions);
+  overlay_layout->addStretch(1);
+  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
+  overlay_layout->addWidget(map_eta);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
@@ -212,17 +221,8 @@ void MapWindow::updateState(const UIState &s) {
       clearRoute();
     }
 
-    // TODO: only move if position should change
-    // don't move while map isn't visible
     if (isVisible()) {
-      auto pos = 1080 - UI_BORDER_SIZE*2 - settings_btn->height() - UI_BORDER_SIZE;
-      if (map_eta->isVisible()) {
-        settings_btn->move(UI_BORDER_SIZE, pos - map_eta->height());
-        settings_btn->setIcon(settings_icon);
-      } else {
-        settings_btn->move(UI_BORDER_SIZE, pos);
-        settings_btn->setIcon(directions_icon);
-      }
+      settings_btn->setIcon(map_eta->isVisible() ? settings_icon : directions_icon);
     }
   }
 
@@ -244,7 +244,7 @@ void MapWindow::updateState(const UIState &s) {
 
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
-  map_instructions->setFixedWidth(width());
+  map_overlay->setFixedSize(width(), height());
 }
 
 void MapWindow::initializeGL() {
@@ -415,12 +415,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     main_layout->addLayout(layout);
   }
 
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-    }
-  )");
+  setStyleSheet("color:white");
 
   QPalette pal = palette();
   pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
@@ -476,11 +471,6 @@ void MapInstructions::noError() {
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
-  // Word wrap widgets need fixed width
-  primary->setFixedWidth(width() - 250);
-  secondary->setFixedWidth(width() - 250);
-
-
   // Show instruction text
   QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
   QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
@@ -554,8 +544,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
   lane_widget->setVisible(has_lanes);
 
-  show();
-  resize(sizeHint());
+  setVisible(true);
 }
 
 
@@ -567,6 +556,7 @@ void MapInstructions::hideIfNoError() {
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
+  main_layout->addStretch(0);
   main_layout->setContentsMargins(40, 25, 40, 25);
 
   {
@@ -609,21 +599,18 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addWidget(distance_unit);
     main_layout->addLayout(layout);
   }
+  main_layout->addStretch(0);
 
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-      font-size: 70px;
-    }
-  )");
-
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
-  setAutoFillBackground(true);
-  setPalette(pal);
+  setStyleSheet("color:white; font-size:70px");
 }
 
+void MapETA::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 0, 0, 150));
+  QSize sz = sizeHint();
+  p.drawRoundedRect((width() - sz.width()) / 2, 0, sz.width(), height(), 25, 25);
+}
 
 void MapETA::updateETA(float s, float s_typical, float d) {
   if (d < MANEUVER_TRANSITION_THRESHOLD) {
@@ -677,28 +664,5 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
   distance->setText(distance_str);
-
-  show();
-  adjustSize();
-  repaint();
-  adjustSize();
-
-  // Rounded corners
-  const int radius = 25;
-  const auto r = rect();
-
-  // Top corners rounded
-  QPainterPath path;
-  path.setFillRule(Qt::WindingFill);
-  path.addRoundedRect(r, radius, radius);
-
-  // Bottom corners not rounded
-  path.addRect(r.marginsRemoved(QMargins(0, radius, 0, 0)));
-
-  // Set clipping mask
-  QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
-  setMask(mask);
-
-  // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - UI_BORDER_SIZE*2);
+  setVisible(true);
 }

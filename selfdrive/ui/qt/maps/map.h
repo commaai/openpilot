@@ -61,6 +61,7 @@ private:
 
 public:
   MapETA(QWidget * parent=nullptr);
+  void paintEvent(QPaintEvent *event) override;
 
 public slots:
   void updateETA(float seconds, float seconds_typical, float distance);
@@ -108,6 +109,7 @@ private:
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
 
+  QWidget *map_overlay;
   MapInstructions* map_instructions;
   MapETA* map_eta;
   QPushButton *settings_btn;
