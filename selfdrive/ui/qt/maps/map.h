@@ -56,10 +56,11 @@ public:
 
 private:
   void paintEvent(QPaintEvent *event) override;
-  void showEvent(QShowEvent *event) override { format_24h = Params().getBool("NavSettingTime24h"); }
+  void showEvent(QShowEvent *event) override { format_24h = param.getBool("NavSettingTime24h"); }
 
   bool format_24h = false;
   QTextDocument eta_doc;
+  Params param;
 };
 
 class MapWindow : public QOpenGLWidget {
