@@ -62,132 +62,17 @@ class CarControllerParamsBase(ABC):
     pass
 
 
-class CarStateBase(ABC):
-  def __init__(self, CP: car.CarParams):
-    self.CP = CP
-    self.car_fingerprint = CP.carFingerprint
-    self.out = car.CarState.new_message()
-
-    self.cruise_buttons = 0
-    self.left_blinker_cnt = 0
-    self.right_blinker_cnt = 0
-    self.steering_pressed_cnt = 0
-    self.left_blinker_prev = False
-    self.right_blinker_prev = False
-    self.cluster_speed_hyst_gap = 0.0
-    self.cluster_min_speed = 0.0  # min speed before dropping to 0
-
-    # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
-    # R = 0.3
-    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
-                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
-                         C=[1.0, 0.0],
-                         K=[[0.17406039], [1.65925647]])
-
-  def update_speed_kf(self, v_ego_raw):
-    if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
-      self.v_ego_kf.x = [[v_ego_raw], [0.0]]
-
-    v_ego_x = self.v_ego_kf.update(v_ego_raw)
-    return float(v_ego_x[0]), float(v_ego_x[1])
-
-  def get_wheel_speeds(self, fl, fr, rl, rr, unit=CV.KPH_TO_MS):
-    factor = unit * self.CP.wheelSpeedFactor
-
-    wheelSpeeds = car.CarState.WheelSpeeds.new_message()
-    wheelSpeeds.fl = fl * factor
-    wheelSpeeds.fr = fr * factor
-    wheelSpeeds.rl = rl * factor
-    wheelSpeeds.rr = rr * factor
-    return wheelSpeeds
-
-  def update_blinker_from_lamp(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
-    """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
-    iterations"""
-    # TODO: Handle case when switching direction. Now both blinkers can be on at the same time
-    self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
-    self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
-    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
-
-  def update_steering_pressed(self, steering_pressed, steering_pressed_min_count):
-    """Applies filtering on steering pressed for noisy driver torque signals."""
-    self.steering_pressed_cnt += 1 if steering_pressed else -1
-    self.steering_pressed_cnt = clip(self.steering_pressed_cnt, 0, steering_pressed_min_count * 2)
-    return self.steering_pressed_cnt > steering_pressed_min_count
-
-  def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
-    """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
-    or until the stalk is turned off, whichever is longer. If the opposite stalk direction is seen the blinker
-    is forced to the other side. On a rising edge of the stalk the timeout is reset."""
-
-    if left_blinker_stalk:
-      self.right_blinker_cnt = 0
-      if not self.left_blinker_prev:
-        self.left_blinker_cnt = blinker_time
-
-    if right_blinker_stalk:
-      self.left_blinker_cnt = 0
-      if not self.right_blinker_prev:
-        self.right_blinker_cnt = blinker_time
-
-    self.left_blinker_cnt = max(self.left_blinker_cnt - 1, 0)
-    self.right_blinker_cnt = max(self.right_blinker_cnt - 1, 0)
-
-    self.left_blinker_prev = left_blinker_stalk
-    self.right_blinker_prev = right_blinker_stalk
-
-    return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
-
-  @staticmethod
-  def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
-    if gear is None:
-      return GearShifter.unknown
-
-    d: Dict[str, car.CarState.GearShifter] = {
-      'P': GearShifter.park, 'PARK': GearShifter.park,
-      'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
-      'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
-      'E': GearShifter.eco, 'ECO': GearShifter.eco,
-      'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
-      'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
-      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
-      'L': GearShifter.low, 'LOW': GearShifter.low,
-      'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
-    }
-    return d.get(gear.upper(), GearShifter.unknown)
-
-  @staticmethod
-  def get_can_parser(CP: car.CarParams) -> CANParser:
-    raise NotImplementedError
-
-  @staticmethod
-  def get_cam_can_parser(CP: car.CarParams) -> CANParser:
-    return None
-
-  @staticmethod
-  def get_adas_can_parser(CP: car.CarParams) -> CANParser:
-    return None
-
-  @staticmethod
-  def get_body_can_parser(CP: car.CarParams) -> CANParser:
-    return None
-
-  @staticmethod
-  def get_loopback_can_parser(CP: car.CarParams) -> CANParser:
-    return None
-
-
 class CarControllerBase(ABC):
   def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
     pass
 
   @abstractmethod
-  def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+  def update(self, CC: car.CarControl, CS: 'CarStateBase', now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type[CarStateBase]):
+  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type['CarStateBase']):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
@@ -435,6 +320,121 @@ class CarInterfaceBase(ABC):
         events.add(EventName.pcmDisable)
 
     return events
+
+
+class CarStateBase(ABC):
+  def __init__(self, CP: car.CarParams):
+    self.CP = CP
+    self.car_fingerprint = CP.carFingerprint
+    self.out = car.CarState.new_message()
+
+    self.cruise_buttons = 0
+    self.left_blinker_cnt = 0
+    self.right_blinker_cnt = 0
+    self.steering_pressed_cnt = 0
+    self.left_blinker_prev = False
+    self.right_blinker_prev = False
+    self.cluster_speed_hyst_gap = 0.0
+    self.cluster_min_speed = 0.0  # min speed before dropping to 0
+
+    # Q = np.matrix([[0.0, 0.0], [0.0, 100.0]])
+    # R = 0.3
+    self.v_ego_kf = KF1D(x0=[[0.0], [0.0]],
+                         A=[[1.0, DT_CTRL], [0.0, 1.0]],
+                         C=[1.0, 0.0],
+                         K=[[0.17406039], [1.65925647]])
+
+  def update_speed_kf(self, v_ego_raw):
+    if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_kf.x = [[v_ego_raw], [0.0]]
+
+    v_ego_x = self.v_ego_kf.update(v_ego_raw)
+    return float(v_ego_x[0]), float(v_ego_x[1])
+
+  def get_wheel_speeds(self, fl, fr, rl, rr, unit=CV.KPH_TO_MS):
+    factor = unit * self.CP.wheelSpeedFactor
+
+    wheelSpeeds = car.CarState.WheelSpeeds.new_message()
+    wheelSpeeds.fl = fl * factor
+    wheelSpeeds.fr = fr * factor
+    wheelSpeeds.rl = rl * factor
+    wheelSpeeds.rr = rr * factor
+    return wheelSpeeds
+
+  def update_blinker_from_lamp(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
+    """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
+    iterations"""
+    # TODO: Handle case when switching direction. Now both blinkers can be on at the same time
+    self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
+    self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
+    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
+
+  def update_steering_pressed(self, steering_pressed, steering_pressed_min_count):
+    """Applies filtering on steering pressed for noisy driver torque signals."""
+    self.steering_pressed_cnt += 1 if steering_pressed else -1
+    self.steering_pressed_cnt = clip(self.steering_pressed_cnt, 0, steering_pressed_min_count * 2)
+    return self.steering_pressed_cnt > steering_pressed_min_count
+
+  def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
+    """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
+    or until the stalk is turned off, whichever is longer. If the opposite stalk direction is seen the blinker
+    is forced to the other side. On a rising edge of the stalk the timeout is reset."""
+
+    if left_blinker_stalk:
+      self.right_blinker_cnt = 0
+      if not self.left_blinker_prev:
+        self.left_blinker_cnt = blinker_time
+
+    if right_blinker_stalk:
+      self.left_blinker_cnt = 0
+      if not self.right_blinker_prev:
+        self.right_blinker_cnt = blinker_time
+
+    self.left_blinker_cnt = max(self.left_blinker_cnt - 1, 0)
+    self.right_blinker_cnt = max(self.right_blinker_cnt - 1, 0)
+
+    self.left_blinker_prev = left_blinker_stalk
+    self.right_blinker_prev = right_blinker_stalk
+
+    return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
+
+  @staticmethod
+  def parse_gear_shifter(gear: Optional[str]) -> car.CarState.GearShifter:
+    if gear is None:
+      return GearShifter.unknown
+
+    d: Dict[str, car.CarState.GearShifter] = {
+      'P': GearShifter.park, 'PARK': GearShifter.park,
+      'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
+      'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
+      'E': GearShifter.eco, 'ECO': GearShifter.eco,
+      'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
+      'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
+      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
+      'L': GearShifter.low, 'LOW': GearShifter.low,
+      'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
+    }
+    return d.get(gear.upper(), GearShifter.unknown)
+
+  @staticmethod
+  def get_can_parser(CP: car.CarParams) -> CANParser:
+    raise NotImplementedError
+
+  @staticmethod
+  def get_cam_can_parser(CP: car.CarParams) -> CANParser:
+    return None
+
+  @staticmethod
+  def get_adas_can_parser(CP: car.CarParams) -> CANParser:
+    return None
+
+  @staticmethod
+  def get_body_can_parser(CP: car.CarParams) -> CANParser:
+    return None
+
+  @staticmethod
+  def get_loopback_can_parser(CP: car.CarParams) -> CANParser:
+    return None
 
 
 class RadarInterfaceBase(ABC):
