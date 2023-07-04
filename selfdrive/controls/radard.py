@@ -2,12 +2,15 @@
 import importlib
 import math
 from collections import defaultdict, deque
+from typing import Type
 
 import cereal.messaging as messaging
 from cereal import car
+from cereal.car_capnp import CarParams
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
+from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from system.swaglog import cloudlog
 from third_party.cluster.fastcluster_py import cluster_points_centroid
@@ -185,12 +188,12 @@ def radard_thread(sm=None, pm=None, can_sock=None):
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  CP: CarParams = car.CarParams.from_bytes(Params().get("CarParams", block=True))
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
+  RadarInterface: Type[RadarInterfaceBase] = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
   if can_sock is None:
@@ -200,7 +203,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
-  RI = RadarInterface(CP)
+  RI: RadarInterfaceBase = RadarInterface(CP)
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)

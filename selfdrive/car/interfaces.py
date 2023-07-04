@@ -5,7 +5,7 @@ from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable, Type
 
 from cereal import car
-from cereal.car_capnp import CarParams, CarState
+from cereal.car_capnp import CarParams, CarState, RadarData
 from common.basedir import BASEDIR
 from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
@@ -432,7 +432,7 @@ class RadarInterfaceBase(ABC):
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret = car.RadarData.new_message()
+    ret: RadarData = car.RadarData.new_message()
     if not self.no_radar_sleep:
       time.sleep(self.radar_ts)  # radard runs on RI updates
     return ret
