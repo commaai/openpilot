@@ -32,8 +32,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_overlay = new QWidget (this);
   map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
   QVBoxLayout *overlay_layout = new QVBoxLayout(map_overlay);
-  overlay_layout->setContentsMargins(0, 0, 0, bdr_s);
-  overlay_layout->setSpacing(bdr_s);
+  overlay_layout->setContentsMargins(0, 0, 0, 0);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -62,6 +61,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
       border-radius: 50px;
       padding: 24px;
       margin-left: 30px;
+      margin-bottom:30px;
     }
     QPushButton:pressed {
       background-color: #D9000000;
@@ -609,7 +609,7 @@ void MapETA::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
   p.setBrush(QColor(0, 0, 0, 150));
   QSize sz = sizeHint();
-  p.drawRoundedRect((width() - sz.width()) / 2, 0, sz.width(), height(), 25, 25);
+  p.drawRoundedRect((width() - sz.width()) / 2, 0, sz.width(), height() + 25, 25, 25);
 }
 
 void MapETA::updateETA(float s, float s_typical, float d) {
