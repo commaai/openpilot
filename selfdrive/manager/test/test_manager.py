@@ -4,7 +4,7 @@ import signal
 import time
 import unittest
 
-from cereal import car_capnp as car
+from cereal import car
 from common.params import Params
 import selfdrive.manager.manager as manager
 from selfdrive.manager.process import ensure_running

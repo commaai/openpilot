@@ -1,4 +1,4 @@
-from cereal import car_capnp as car
+from cereal import car
 from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config

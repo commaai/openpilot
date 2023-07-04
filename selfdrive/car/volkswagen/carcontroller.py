@@ -1,4 +1,4 @@
-from cereal import car_capnp as car
+from cereal import car
 from opendbc.can.packer import CANPacker
 from common.numpy_fast import clip
 from common.conversions import Conversions as CV

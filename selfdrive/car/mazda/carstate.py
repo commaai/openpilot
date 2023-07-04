@@ -1,4 +1,4 @@
-from cereal import car_capnp as car
+from cereal import car
 from common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser

@@ -5,7 +5,7 @@ from tqdm import tqdm
 import capnp
 
 import panda.python.uds as uds
-from cereal import car_capnp as car
+from cereal import car
 from common.params import Params
 from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
 from selfdrive.car.interfaces import get_interface_attr

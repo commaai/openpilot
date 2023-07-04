@@ -1,6 +1,6 @@
 import os
 
-from cereal import car_capnp as car
+from cereal import car
 from common.params import Params
 from system.hardware import PC, TICI
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess

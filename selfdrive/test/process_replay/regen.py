@@ -9,7 +9,7 @@ from tqdm import tqdm
 os.environ["USE_WEBCAM"] = "1"
 
 import cereal.messaging as messaging
-from cereal import car_capnp as car
+from cereal import car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.params import Params

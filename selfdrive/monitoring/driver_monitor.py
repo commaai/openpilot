@@ -1,6 +1,6 @@
 from math import atan2
 
-from cereal import car_capnp as car
+from cereal import car
 from common.numpy_fast import interp
 from common.realtime import DT_DMON
 from common.filter_simple import FirstOrderFilter

@@ -1,5 +1,5 @@
 import copy
-from cereal import car_capnp as car
+from cereal import car
 from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase

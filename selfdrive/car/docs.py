@@ -7,7 +7,7 @@ from enum import Enum
 from natsort import natsorted
 from typing import Dict, List
 
-from cereal import car_capnp as car
+from cereal import car
 from common.basedir import BASEDIR
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType

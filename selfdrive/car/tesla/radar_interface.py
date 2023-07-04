@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car_capnp as car
+from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.tesla.values import DBC, CANBUS
 from selfdrive.car.interfaces import RadarInterfaceBase

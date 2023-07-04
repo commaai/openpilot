@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from cereal import car_capnp as car
+from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine

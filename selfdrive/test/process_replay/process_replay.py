@@ -10,7 +10,7 @@ from tqdm import tqdm
 import capnp
 
 import cereal.messaging as messaging
-from cereal import car_capnp as car
+from cereal import car
 from cereal.services import service_list
 from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from common.params import Params

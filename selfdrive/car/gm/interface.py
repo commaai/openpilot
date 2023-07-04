@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car_capnp as car
+from cereal import car
 from math import fabs, exp
 
 from panda import Panda

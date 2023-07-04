@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from cereal import car_capnp as car
+from cereal import car
 from selfdrive.car.toyota.values import DBC, TSS2_CAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 

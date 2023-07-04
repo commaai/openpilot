@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import unittest
 
-from cereal import car_capnp as car
+from cereal import car
 from selfdrive.car.fw_versions import build_fw_dict
 from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          EV_CAR, FW_QUERY_CONFIG, FW_VERSIONS, LEGACY_SAFETY_MODE_CAR, \
