@@ -194,8 +194,7 @@ void MapWindow::updateState(const UIState &s) {
 
   if (zoom_counter == 0) {
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
-    zoom_counter = -1;
-  } else if (zoom_counter > 0) {
+  } else {
     zoom_counter--;
   }
 
