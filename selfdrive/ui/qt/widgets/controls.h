@@ -286,3 +286,13 @@ private:
   QVBoxLayout outer_layout;
   QVBoxLayout inner_layout;
 };
+
+// convenience class for wrapping layouts
+class LayoutWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
+    setLayout(l);
+  }
+};
