@@ -5,11 +5,16 @@ import threading
 from system.swaglog import cloudlog
 from system.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from system.loggerd.uploader import listdir_by_creation
+from system.loggerd.xattr_cache import getxattr
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
 
 DELETE_LAST = ['boot', 'crash']
+
+PRESERVE_ATTR_NAME = 'user.preserve'
+PRESERVE_ATTR_VALUE = b'1'
+PRESERVE_COUNT = 5
 
 
 def deleter_thread(exit_event):
@@ -20,7 +25,14 @@ def deleter_thread(exit_event):
     if out_of_percent or out_of_bytes:
       # remove the earliest directory we can
       dirs = sorted(listdir_by_creation(ROOT), key=lambda x: x in DELETE_LAST)
-      for delete_dir in dirs:
+
+      # sort directories based on xattr presence and creation time
+      preserved_dirs = [d for d in dirs if getxattr(os.path.join(ROOT, d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE]
+
+      # exclude the last N preserved directories
+      to_delete_dirs = [d for d in dirs if d not in preserved_dirs[-PRESERVE_COUNT:]]
+
+      for delete_dir in to_delete_dirs:
         delete_path = os.path.join(ROOT, delete_dir)
 
         if any(name.endswith(".lock") for name in os.listdir(delete_path)):
