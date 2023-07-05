@@ -73,13 +73,13 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   });
   frame->addWidget(current_widget);
   frame->addSpacing(32);
-  frame->addWidget(horizontal_line());
 
   QWidget *destinations_container = new QWidget(this);
   destinations_layout = new QVBoxLayout(destinations_container);
   destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
+  destinations_scroller->setFrameShape(QFrame::NoFrame);
   frame->addWidget(destinations_scroller);
 
   setStyleSheet("MapSettings { background-color: #333333; }");
@@ -195,8 +195,8 @@ void MapSettings::refresh() {
     auto widget = new DestinationWidget(this);
     widget->set(destination.get(), false);
 
-    QObject::connect(widget, &QPushButton::clicked, [&]() {
-      navigateTo(destination->toJson());
+    QObject::connect(widget, &QPushButton::clicked, [this, dest = destination->toJson()]() {
+      navigateTo(dest);
       emit closeSettings();
     });
 
