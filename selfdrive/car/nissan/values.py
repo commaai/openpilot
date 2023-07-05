@@ -6,18 +6,16 @@ from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., .8, .15])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[5., 3.5, 0.4])
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
-
-  def __init__(self, CP):
-    pass
 
 
 class CAR:

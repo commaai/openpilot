@@ -7,6 +7,7 @@ from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
@@ -32,8 +33,9 @@ class CAR:
   RAM_HD = "RAM HD 5TH GEN"
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   def __init__(self, CP):
+    super().__init__(CP)
     self.STEER_STEP = 2  # 50 Hz
     self.STEER_ERROR_MAX = 80
     if CP.carFingerprint in RAM_HD:

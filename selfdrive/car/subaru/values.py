@@ -7,12 +7,14 @@ from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   def __init__(self, CP):
+    super().__init__(CP)
     self.STEER_STEP = 2                # how often we update the steer cmd
     self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
     self.STEER_DELTA_DOWN = 70         # torque decrease per refresh

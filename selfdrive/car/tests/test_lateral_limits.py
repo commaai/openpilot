@@ -3,13 +3,13 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
+from typing import DefaultDict, Dict, Type
 import unittest
 
 from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.interfaces import get_torque_params
+from selfdrive.car.interfaces import get_torque_params, CarControllerParamsBase
 from selfdrive.car.subaru.values import CAR as SUBARU
 
 CAR_MODELS = all_known_cars()
@@ -54,7 +54,7 @@ class TestLateralLimits(unittest.TestCase):
     if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
-    CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
+    CarControllerParams: Type[CarControllerParamsBase] = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
     cls.torque_params = get_torque_params(cls.car_model)
 

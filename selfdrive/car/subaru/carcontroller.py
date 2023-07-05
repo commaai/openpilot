@@ -1,5 +1,6 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
+from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 

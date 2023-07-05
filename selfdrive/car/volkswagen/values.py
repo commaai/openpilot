@@ -10,6 +10,7 @@ from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -18,7 +19,7 @@ GearShifter = car.CarState.GearShifter
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   STEER_STEP = 2                           # HCA_01/HCA_1 message frequency 50Hz
   ACC_CONTROL_STEP = 2                     # ACC_06/ACC_07/ACC_System frequency 50Hz
 
@@ -38,6 +39,7 @@ class CarControllerParams:
   ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
 
   def __init__(self, CP):
+    super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     if CP.carFingerprint in PQ_CARS:

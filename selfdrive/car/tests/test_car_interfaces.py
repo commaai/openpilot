@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import math
 import unittest
+from typing import Type
+
 import hypothesis.strategies as st
 from hypothesis import given, settings
 import importlib
@@ -10,6 +12,7 @@ from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
+from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 
@@ -77,7 +80,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.apply(CC, 0)
 
     # Test radar interface
-    RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
+    RadarInterface: Type[RadarInterfaceBase] = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
     radar_interface = RadarInterface(car_params)
     assert radar_interface
 

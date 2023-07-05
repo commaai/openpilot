@@ -4,21 +4,19 @@ from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   ANGLE_DELTA_BP = [0., 5., 15.]
   ANGLE_DELTA_V = [5., .8, .15]     # windup limit
   ANGLE_DELTA_VU = [5., 3.5, 0.4]   # unwind limit
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
-
-  def __init__(self, CP):
-    pass
 
 
 class CAR:

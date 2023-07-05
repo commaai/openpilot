@@ -5,13 +5,14 @@ from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 
 # Steer torque limits
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   STEER_MAX = 800                # theoretical max_steer 2047
   STEER_DELTA_UP = 10             # torque increase per refresh
   STEER_DELTA_DOWN = 25           # torque decrease per refresh
@@ -20,9 +21,6 @@ class CarControllerParams:
   STEER_DRIVER_FACTOR = 1         # from dbc
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
   STEER_STEP = 1  # 100 Hz
-
-  def __init__(self, CP):
-    pass
 
 
 class CAR:

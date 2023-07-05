@@ -5,6 +5,7 @@ from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
@@ -102,12 +103,9 @@ BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
 ]
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[10., 1.6, .3])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0., 5., 15.], angle_v=[10., 7.0, 0.8])
   JERK_LIMIT_MAX = 8
   JERK_LIMIT_MIN = -8
   ACCEL_TO_SPEED_MULTIPLIER = 3
-
-  def __init__(self, CP):
-    pass

@@ -8,11 +8,12 @@ from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   STEER_STEP = 5        # LateralMotionControl, 20Hz
   LKA_STEP = 3          # Lane_Assist_Data1, 33Hz
   ACC_CONTROL_STEP = 2  # ACCDATA, 50Hz
@@ -35,9 +36,6 @@ class CarControllerParams:
   ACCEL_MIN = -3.5              # m/s^2 max deceleration
   MIN_GAS = -0.5
   INACTIVE_GAS = -5.0
-
-  def __init__(self, CP):
-    pass
 
 
 class CAR:

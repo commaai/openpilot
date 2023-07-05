@@ -57,6 +57,10 @@ def get_torque_params(candidate):
 
 # generic car and radar interfaces
 
+class CarControllerParamsBase(ABC):
+  def __init__(self, CP: car.CarParams):
+    pass
+
 class CarStateBase(ABC):
   def __init__(self, CP: car.CarParams):
     self.CP = CP

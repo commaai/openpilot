@@ -8,12 +8,13 @@ from panda.python import uds
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
@@ -38,6 +39,7 @@ class CarControllerParams:
   BOSCH_GAS_LOOKUP_V = [0, 1600]
 
   def __init__(self, CP):
+    super().__init__(CP)
     self.STEER_MAX = CP.lateralParams.torqueBP[-1]
     # mirror of list (assuming first item is zero) for interp of signed request values
     assert(CP.lateralParams.torqueBP[0] == 0)

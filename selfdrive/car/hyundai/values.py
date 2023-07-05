@@ -9,15 +9,17 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from selfdrive.car.interfaces import CarControllerParamsBase
 
 Ecu = car.CarParams.Ecu
 
 
-class CarControllerParams:
+class CarControllerParams(CarControllerParamsBase):
   ACCEL_MIN = -3.5 # m/s
   ACCEL_MAX = 2.0 # m/s
 
   def __init__(self, CP):
+    super().__init__(CP)
     self.STEER_DELTA_UP = 3
     self.STEER_DELTA_DOWN = 7
     self.STEER_DRIVER_ALLOWANCE = 50
