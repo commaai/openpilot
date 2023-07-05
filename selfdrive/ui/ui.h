@@ -49,17 +49,22 @@ struct Alert {
 
   static Alert get(const SubMaster &sm, uint64_t started_frame) {
     const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    Alert alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-                   cs.getAlertType().cStr(), cs.getAlertSize(),
-                   cs.getAlertStatus(),
-                   cs.getAlertSound()};
+    const uint64_t controls_frame = sm.rcv_frame("controlsState");
+
+    Alert alert = {};
+    if (controls_frame >= started_frame) {  // Don't get old alert.
+      alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+               cs.getAlertType().cStr(), cs.getAlertSize(),
+               cs.getAlertStatus(),
+               cs.getAlertSound()};
+    }
 
     if (!sm.updated("controlsState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
       const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
 
       // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < started_frame) {
+      if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         alert = {"openpilot Unavailable", "Waiting for controls to start",
                  "controlsWaiting", cereal::ControlsState::AlertSize::MID,
