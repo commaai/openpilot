@@ -16,7 +16,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 
-const int bdr_s = 30;
+const int UI_BORDER_SIZE = 30;
 const int header_h = 420;
 const int footer_h = 280;
 
