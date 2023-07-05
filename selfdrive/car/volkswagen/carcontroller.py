@@ -6,6 +6,7 @@ from common.realtime import DT_CTRL
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.volkswagen import mqbcan, pqcan
+from selfdrive.car.volkswagen.carstate import CarState
 from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -27,7 +28,7 @@ class CarController(CarControllerBase):
     self.hca_frame_timer_running = 0
     self.hca_frame_same_torque = 0
 
-  def update(self, CC, CS, ext_bus, now_nanos):
+  def update(self, CC, CS: CarState, ext_bus, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     can_sends = []

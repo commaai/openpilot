@@ -5,6 +5,7 @@ from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.gm import gmcan
+from selfdrive.car.gm.carstate import CarState
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from selfdrive.car.interfaces import CarControllerBase
 
@@ -40,7 +41,7 @@ class CarController(CarControllerBase):
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[self.CP.carFingerprint]['chassis'])
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS: CarState, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     hud_alert = hud_control.visualAlert

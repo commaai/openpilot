@@ -3,6 +3,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.mazda import mazdacan
+from selfdrive.car.mazda.carstate import CarState
 from selfdrive.car.mazda.values import CarControllerParams, Buttons
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -17,7 +18,7 @@ class CarController(CarControllerBase):
     self.brake_counter = 0
     self.frame = 0
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS: CarState, now_nanos):
     can_sends = []
 
     apply_steer = 0

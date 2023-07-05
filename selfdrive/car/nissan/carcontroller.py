@@ -3,6 +3,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.nissan import nissancan
+from selfdrive.car.nissan.carstate import CarState
 from selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -20,7 +21,7 @@ class CarController(CarControllerBase):
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, CC, CS, now_nanos):
+  def update(self, CC, CS: CarState, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
