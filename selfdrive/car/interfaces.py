@@ -181,8 +181,9 @@ class CarControllerBase(ABC):
   def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
     pass
 
+  @abstractmethod
   def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
-    raise NotImplementedError
+    pass
 
 
 class CarInterfaceBase(ABC):
@@ -218,14 +219,14 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str):
+  def get_non_essential_params(cls, candidate: str) -> car.CarParams:
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool) -> car.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
@@ -272,7 +273,7 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate):
+  def get_std_params(candidate) -> car.CarParams:
     ret = car.CarParams.new_message()
     ret.carFingerprint = candidate
 
@@ -308,7 +309,7 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True) -> None:
     params = get_torque_params(candidate)
 
     tune.init('torque')
@@ -444,8 +445,8 @@ class RadarInterfaceBase(ABC):
     self.radar_ts = CP.radarTimeStep
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
-  def update(self, can_strings):
-    ret: car.RadarData = car.RadarData.new_message()
+  def update(self, can_strings) -> car.RadarData:
+    ret = car.RadarData.new_message()
     if not self.no_radar_sleep:
       time.sleep(self.radar_ts)  # radard runs on RI updates
     return ret
