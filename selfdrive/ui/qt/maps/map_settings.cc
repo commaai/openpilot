@@ -73,7 +73,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   });
   frame->addWidget(current_widget);
   frame->addSpacing(32);
-  frame->addWidget(horizontal_line());
 
   QWidget *destinations_container = new QWidget(this);
   destinations_layout = new QVBoxLayout(destinations_container);
