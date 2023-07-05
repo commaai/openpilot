@@ -79,11 +79,20 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  const static QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
-                                 QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
-
-  if (evts.contains(event->type())) {
-    device.resetInteractiveTimout();
+  bool ignore = false;
+  switch (event->type()) {
+    case QEvent::TouchBegin:
+    case QEvent::TouchUpdate:
+    case QEvent::TouchEnd:
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseMove: {
+      // ignore events when device is awakened by resetInteractiveTimout
+      ignore = !uiState()->awake;
+      device.resetInteractiveTimout();
+      break;
+    }
+    default:
+      break;
   }
-  return false;
+  return ignore;
 }

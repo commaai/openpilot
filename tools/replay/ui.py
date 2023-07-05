@@ -128,8 +128,8 @@ def ui_thread(addr):
     sm.update(0)
 
     w = sm['controlsState'].lateralControlState.which()
-    if w == 'lqrState':
-      angle_steers_k = sm['controlsState'].lateralControlState.lqrState.steeringAngleDeg
+    if w == 'lqrStateDEPRECATED':
+      angle_steers_k = sm['controlsState'].lateralControlState.lqrStateDEPRECATED.steeringAngleDeg
     elif w == 'indiState':
       angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDeg
     else:

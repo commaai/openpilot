@@ -22,11 +22,12 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
 }
 
 void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
+  cameraView->stopVipcThread();
   emit done();
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverStateV2"}), QWidget(parent) {
-  face_img = loadPixmap("../assets/img_driver_face.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
+  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::showEvent(QShowEvent* event) {
@@ -35,7 +36,6 @@ void DriverViewScene::showEvent(QShowEvent* event) {
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
-  // TODO: stop vipc thread ?
   params.putBool("IsDriverViewEnabled", false);
 }
 

@@ -9,6 +9,8 @@ public:
   void addRecurrent(float *state, int state_size);
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
+  void addNavFeatures(float *state, int state_size);
+  void addDrivingStyle(float *state, int state_size);
   void addImage(float *image_buf, int buf_size);
   void addExtra(float *image_buf, int buf_size);
   void execute();
@@ -26,6 +28,8 @@ private:
   // recurrent and desire
   float *recurrent;
   float *trafficConvention;
+  float *drivingStyle;
   float *desire;
+  float *navFeatures;
 };
 

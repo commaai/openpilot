@@ -15,7 +15,7 @@ class Plant:
   messaging_initialized = False
 
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
-               enabled=True, only_lead2=False, only_radar=False):
+               enabled=True, only_lead2=False, only_radar=False, e2e=False, force_decel=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -38,6 +38,8 @@ class Plant:
     self.enabled = enabled
     self.only_lead2 = only_lead2
     self.only_radar = only_radar
+    self.e2e = e2e
+    self.force_decel = force_decel
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
@@ -47,7 +49,7 @@ class Plant:
     from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
 
-    self.planner = LongitudinalPlanner(CarInterface.get_params(CAR.CIVIC), init_v=self.speed)
+    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
 
   @property
   def current_time(self):
@@ -97,18 +99,20 @@ class Plant:
     # Simulate model predicting slightly faster speed
     # this is to ensure lead policy is effective when model
     # does not predict slowdown in e2e mode
-    position = log.ModelDataV2.XYZTData.new_message()
+    position = log.XYZTData.new_message()
     position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
     model.modelV2.position = position
-    velocity = log.ModelDataV2.XYZTData.new_message()
+    velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
     model.modelV2.velocity = velocity
-    acceleration = log.ModelDataV2.XYZTData.new_message()
+    acceleration = log.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     control.controlsState.vCruise = float(v_cruise * 3.6)
+    control.controlsState.experimentalMode = self.e2e
+    control.controlsState.forceDecel = self.force_decel
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
 

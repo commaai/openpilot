@@ -71,10 +71,15 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   QPushButton* cancel_btn = new QPushButton(tr("Cancel"));
   cancel_btn->setFixedSize(386, 125);
   cancel_btn->setStyleSheet(R"(
-    font-size: 48px;
-    border-radius: 10px;
-    color: #E4E4E4;
-    background-color: #444444;
+    QPushButton {
+      font-size: 48px;
+      border-radius: 10px;
+      color: #E4E4E4;
+      background-color: #333333;
+    }
+    QPushButton:pressed {
+      background-color: #444444;
+    }
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
   QObject::connect(cancel_btn, &QPushButton::clicked, this, &InputDialog::reject);
@@ -296,12 +301,13 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringLi
     group->addButton(selectionLabel);
     listLayout->addWidget(selectionLabel);
   }
+  // add stretch to keep buttons spaced correctly
+  listLayout->addStretch(1);
 
   ScrollView *scroll_view = new ScrollView(listWidget, this);
   scroll_view->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   main_layout->addWidget(scroll_view);
-  main_layout->addStretch(1);
   main_layout->addSpacing(35);
 
   // cancel + confirm buttons
