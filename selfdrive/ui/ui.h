@@ -16,9 +16,8 @@
 #include "common/params.h"
 #include "common/timing.h"
 
-const int bdr_s = 30;
-const int header_h = 420;
-const int footer_h = 280;
+const int UI_BORDER_SIZE = 30;
+const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;

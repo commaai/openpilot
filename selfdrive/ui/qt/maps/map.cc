@@ -41,7 +41,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   const int h = 120;
   map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h - bdr_s*2);
+  map_eta->move(25, 1080 - h - UI_BORDER_SIZE*2);
   map_eta->setVisible(false);
 
   // Settings button
@@ -62,7 +62,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     }
   )");
   settings_btn->show();  // force update
-  settings_btn->move(bdr_s, 1080 - bdr_s*3 - settings_btn->height());
+  settings_btn->move(UI_BORDER_SIZE, 1080 - UI_BORDER_SIZE*3 - settings_btn->height());
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
     emit openSettings();
   });
@@ -216,12 +216,12 @@ void MapWindow::updateState(const UIState &s) {
     // TODO: only move if position should change
     // don't move while map isn't visible
     if (isVisible()) {
-      auto pos = 1080 - bdr_s*2 - settings_btn->height() - bdr_s;
+      auto pos = 1080 - UI_BORDER_SIZE*2 - settings_btn->height() - UI_BORDER_SIZE;
       if (map_eta->isVisible()) {
-        settings_btn->move(bdr_s, pos - map_eta->height());
+        settings_btn->move(UI_BORDER_SIZE, pos - map_eta->height());
         settings_btn->setIcon(settings_icon);
       } else {
-        settings_btn->move(bdr_s, pos);
+        settings_btn->move(UI_BORDER_SIZE, pos);
         settings_btn->setIcon(directions_icon);
       }
     }
@@ -701,5 +701,5 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   setMask(mask);
 
   // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - bdr_s*2);
+  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - UI_BORDER_SIZE*2);
 }
