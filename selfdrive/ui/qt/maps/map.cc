@@ -201,6 +201,7 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("navInstruction")) {
     if (sm.valid("navInstruction")) {
+      m_map->setLayoutProperty("navLayer", "visibility", "visible");
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
