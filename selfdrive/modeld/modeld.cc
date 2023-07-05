@@ -139,8 +139,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     // Enable/disable nav features
     double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
+    uint32_t model_fid = sm["navModel"].getNavModel().getFrameId();
+    uint32_t render_fid = sm["mapRenderState"].getMapRenderState().getFrameId();
     bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
-    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
+    bool render_valid = sm["mapRenderState"].getValid() && (std::max(model_fid, render_fid) - std::min(model_fid, render_fid) <= 1);
     bool nav_valid = route_valid && render_valid;
     if (!nav_enabled && nav_valid) {
       nav_enabled = true;
