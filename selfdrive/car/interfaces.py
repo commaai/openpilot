@@ -75,7 +75,7 @@ class CarControllerBase(ABC, Generic[CST]):
 
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type[CST]):
+  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type['CarStateBase']):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
