@@ -36,9 +36,6 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     "SETME_X64": (lt_val if frame % max(op_params.get('TLD_V3'), 1) == 0 else 100),
     # "SETME_X64": (100 if frame % 5 == 0 else 50),
 
-    "BYTE3_BIT0": op_params.get('BYTE3_BIT0'),
-    "BYTE3_BIT0_2": op_params.get('BYTE3_BIT0_2'),
-
     # "ANGLE": op_params.get("ANGLE"),
     "ANGLE": steer_angle if op_params.get('USE_ALT_ANGLE_CMD') else op_params.get("ANGLE"),  # if abs(steer_angle) < 10 else 10 if steer_angle > 0 else -10,
 
