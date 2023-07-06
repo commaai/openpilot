@@ -27,6 +27,10 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
             (hw_type == cereal::PandaState::PandaType::DOS) ||
             (hw_type == cereal::PandaState::PandaType::TRES);
 
+  if (!verify_firmware_version()) {
+    throw std::runtime_error("Panda firmware out of date, update required");
+  }
+
   can_reset_communications();
 
   return;
@@ -151,6 +155,20 @@ std::optional<std::string> Panda::get_serial() {
   char serial_buf[17] = {'\0'};
   int err = handle->control_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
   return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
+}
+
+bool Panda::verify_firmware_version() {
+  if (auto fw_sig = get_firmware_version()) {
+    typedef cereal::PandaState::PandaType Type;
+    bool panda_h7 = (hw_type == Type::RED_PANDA || hw_type == Type::RED_PANDA_V2 || hw_type == Type::TRES);
+    std::string fn = panda_h7 ? "panda_h7.bin.signed" : "panda.bin.signed";
+    auto content = util::read_file(std::string("../../panda/board/obj/") + fn);
+    if (content.size() >= fw_sig->size() &&
+        memcmp(content.data() + content.size() - fw_sig->size(), fw_sig->data(), fw_sig->size()) == 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void Panda::set_power_saving(bool power_saving) {
