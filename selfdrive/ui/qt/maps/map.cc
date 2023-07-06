@@ -566,6 +566,7 @@ MapETA::MapETA(QWidget *parent) : QWidget(parent) {
 void MapETA::paintEvent(QPaintEvent *event) {
   if (!eta_doc.isEmpty()) {
     QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
     QSizeF txt_size = eta_doc.size();
