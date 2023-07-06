@@ -26,7 +26,7 @@ MAX_USER_TORQUE = 500
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_STEER_ANGLE = 94.9461  # deg
-MAX_ANGLE_LATERAL_ACCEL = 3.5  # m/s^2
+# MAX_ANGLE_LATERAL_ACCEL = 3.5  # m/s^2
 
 
 class CarController:
@@ -41,7 +41,7 @@ class CarController:
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
-    self.VM = VM
+    # self.VM = VM
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -112,11 +112,11 @@ class CarController:
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
-    if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
+    if self.frame % self.params.LTA_STEER_STEP == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
       limit_torque = CS.out.steeringPressed
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, limit_torque, self.op_params,
-                                                self.frame // self.params.STEER_STEP))
+                                                self.frame // self.params.LTA_STEER_STEP))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:

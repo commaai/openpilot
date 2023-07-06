@@ -36,10 +36,8 @@ class CarControllerParams:
   ANGLE_DELTA_MAX = 5
 
   def __init__(self, CP):
-    if CP.steerControlType == 'angle':
-      self.STEER_STEP = 2
-    else:
-      self.STEER_STEP = 1
+    self.STEER_STEP = 1
+    self.LTA_STEER_STEP = 2
 
     if CP.lateralTuning.which == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
