@@ -112,11 +112,11 @@ class CarController:
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
-    if self.frame % self.params.LTA_STEER_STEP == 0 and self.CP.carFingerprint in TSS2_CAR:
+    if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
       limit_torque = CS.out.steeringPressed
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, limit_torque, self.op_params,
-                                                self.frame // self.params.LTA_STEER_STEP))
+                                                self.frame // 2))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
