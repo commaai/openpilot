@@ -214,7 +214,7 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+  def update(self, c: car.CarControl, can_strings: List[bytes]):
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
