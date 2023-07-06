@@ -100,7 +100,7 @@ private:
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
-  int zoom_counter = -1;
+  int zoom_counter = 0;
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
