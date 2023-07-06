@@ -23,7 +23,7 @@ public:
   inline float getSpeed() const { return replay->getSpeed(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() override { return replay->getTimeline(); }
+  inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() override { return replay->getTimeline(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 private:
