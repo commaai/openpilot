@@ -252,6 +252,8 @@ class FrequencyBasedRcvCallback:
   
 
 def controlsd_config_callback(params, cfg, lr):
+  controlsState = None
+  initialized = False
   for msg in lr:
     if msg.which() == "controlsState":
       controlsState = msg.controlsState
@@ -292,6 +294,7 @@ CONFIGS = [
     ],
     subs=["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    config_callback=controlsd_config_callback,
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
@@ -605,8 +608,8 @@ def _replay_single_process(
   assert cfg.proc_name != "modeld" and cfg.proc_name != "dmonitoringmodeld"
   return _replay_multi_process([cfg], lr, frs, fingerprint, custom_params, disable_progress)
   # with OpenpilotPrefix():
-  #   controlsState = None
-  #   initialized = False
+    # controlsState = None
+    # initialized = False
   #   if cfg.proc_name == "controlsd":
   #     for msg in lr:
   #       if msg.which() == "controlsState":
