@@ -15,7 +15,7 @@ void PrintErrorStringAndExit() {
   std::exit(EXIT_FAILURE);
 }
 
-SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
+SNPEModel::SNPEModel(const std::string path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
   output = _output;
   output_size = _output_size;
   use_tf8 = _use_tf8;
@@ -82,7 +82,7 @@ SNPEModel::SNPEModel(const char *path, float *_output, size_t _output_size, int 
 #endif
 }
 
-void SNPEModel::addInput(const char *name, float *buffer, int size) {
+void SNPEModel::addInput(const std::string name, float *buffer, int size) {
   const int idx = inputs.size();
   const auto &input_tensor_names_opt = snpe->getInputTensorNames();
   if (!input_tensor_names_opt) throw std::runtime_error("Error obtaining input tensor names");
@@ -114,9 +114,9 @@ void SNPEModel::addInput(const char *name, float *buffer, int size) {
   inputs.push_back(SNPEModelInput(name, buffer, size, std::move(input_buffer)));
 }
 
-void SNPEModel::setInputBuffer(const char *name, float *buffer, int size) {
+void SNPEModel::setInputBuffer(const std::string name, float *buffer, int size) {
   for (auto &input : inputs) {
-    if (strcmp(name, input.name) == 0) {
+    if (name == input.name) {
       assert(input.size == size || input.size == 0);
       assert(input.snpe_buffer->setBufferAddress(buffer) == true);
       input.buffer = buffer;
@@ -124,7 +124,7 @@ void SNPEModel::setInputBuffer(const char *name, float *buffer, int size) {
       return;
     }
   }
-  LOGE("Tried to update input `%s` but no input with this name exists", name);
+  LOGE("Tried to update input `%s` but no input with this name exists", name.c_str());
 }
 
 void SNPEModel::execute() {

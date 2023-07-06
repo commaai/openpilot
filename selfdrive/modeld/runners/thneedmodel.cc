@@ -5,42 +5,42 @@
 
 #include "common/swaglog.h"
 
-ThneedModel::ThneedModel(const char *path, float *_output, size_t _output_size, int runtime, bool luse_tf8, cl_context context) {
+ThneedModel::ThneedModel(const std::string path, float *_output, size_t _output_size, int runtime, bool luse_tf8, cl_context context) {
   thneed = new Thneed(true, context);
-  thneed->load(path);
+  thneed->load(path.c_str());
   thneed->clexec();
 
   recorded = false;
   output = _output;
 }
 
-void ThneedModel::addInput(const char *name, float *buffer, int size) {
+void ThneedModel::addInput(const std::string name, float *buffer, int size) {
   inputs.push_back(ModelInput(name, buffer, size));
 }
 
-void ThneedModel::setInputBuffer(const char *name, float *buffer, int size) {
+void ThneedModel::setInputBuffer(const std::string name, float *buffer, int size) {
   for (auto &input : inputs) {
-    if (strcmp(name, input.name) == 0) {
+    if (name == input.name) {
       assert(input.size == size || input.size == 0);
       input.buffer = buffer;
       input.size = size;
       return;
     }
   }
-  LOGE("Tried to update input `%s` but no input with this name exists", name);
+  LOGE("Tried to update input `%s` but no input with this name exists", name.c_str());
 }
 
-void* ThneedModel::getCLBuffer(const char *name) {
+void* ThneedModel::getCLBuffer(const std::string name) {
   int index = -1;
   for (int i = 0; i < inputs.size(); i++) {
-    if (strcmp(name, inputs[i].name) == 0) {
+    if (name == inputs[i].name) {
       index = i;
       break;
     }
   }
 
   if (index == -1) {
-    LOGE("Tried to get CL buffer for input `%s` but no input with this name exists", name);
+    LOGE("Tried to get CL buffer for input `%s` but no input with this name exists", name.c_str());
     return nullptr;
   }
 

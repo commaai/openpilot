@@ -14,8 +14,8 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
-  LOGD("loading model %s", path);
+ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
+  LOGD("loading model %s", path.c_str());
 
   output = _output;
   output_size = _output_size;
@@ -33,7 +33,7 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   proc_pid = fork();
   if (proc_pid == 0) {
     LOGD("spawning onnx process %s", onnx_runner.c_str());
-    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, (char*)tf8_arg.c_str(), nullptr};
+    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path.c_str(), (char*)tf8_arg.c_str(), nullptr};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
     close(pipein[0]);
@@ -86,20 +86,20 @@ void ONNXModel::pread(float *buf, int size) {
   LOGD("host read done");
 }
 
-void ONNXModel::addInput(const char *name, float *buffer, int size) {
+void ONNXModel::addInput(const std::string name, float *buffer, int size) {
   inputs.push_back(ModelInput(name, buffer, size));
 }
 
-void ONNXModel::setInputBuffer(const char *name, float *buffer, int size) {
+void ONNXModel::setInputBuffer(const std::string name, float *buffer, int size) {
   for (auto &input : inputs) {
-    if (strcmp(name, input.name) == 0) {
+    if (name == input.name) {
       assert(input.size == size || input.size == 0);
       input.buffer = buffer;
       input.size = size;
       return;
     }
   }
-  LOGE("Tried to update input `%s` but no input with this name exists", name);
+  LOGE("Tried to update input `%s` but no input with this name exists", name.c_str());
 }
 
 void ONNXModel::execute() {

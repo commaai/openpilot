@@ -1,6 +1,7 @@
 #pragma once
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
+#include <string>
 #include <vector>
 #include <DlContainer/IDlContainer.hpp>
 #include <DlSystem/DlError.hpp>
@@ -23,19 +24,19 @@
 #endif
 
 struct SNPEModelInput {
-  const char* name;
+  const std::string name;
   float *buffer;
   int size;
   std::unique_ptr<zdl::DlSystem::IUserBuffer> snpe_buffer;
 
-  SNPEModelInput(const char *_name, float *_buffer, int _size, std::unique_ptr<zdl::DlSystem::IUserBuffer> _snpe_buffer) : name(_name), buffer(_buffer), size(_size), snpe_buffer(std::move(_snpe_buffer)) {}
+  SNPEModelInput(const std::string _name, float *_buffer, int _size, std::unique_ptr<zdl::DlSystem::IUserBuffer> _snpe_buffer) : name(_name), buffer(_buffer), size(_size), snpe_buffer(std::move(_snpe_buffer)) {}
 };
 
 class SNPEModel : public RunModel {
 public:
-  SNPEModel(const char *path, float *_output, size_t _output_size, int runtime, bool use_tf8 = false, cl_context context = NULL);
-  void addInput(const char *name, float *buffer, int size);
-  void setInputBuffer(const char *name, float *buffer, int size);
+  SNPEModel(const std::string path, float *_output, size_t _output_size, int runtime, bool use_tf8 = false, cl_context context = NULL);
+  void addInput(const std::string name, float *buffer, int size);
+  void setInputBuffer(const std::string name, float *buffer, int size);
   void execute();
 
 #ifdef USE_THNEED
