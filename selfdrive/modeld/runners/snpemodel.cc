@@ -2,13 +2,10 @@
 
 #include "selfdrive/modeld/runners/snpemodel.h"
 
-#include <cassert>
-#include <cstdlib>
 #include <cstring>
 
 #include "common/util.h"
 #include "common/timing.h"
-#include "common/swaglog.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
@@ -111,20 +108,7 @@ void SNPEModel::addInput(const std::string name, float *buffer, int size) {
 
   auto input_buffer = ub_factory.createUserBuffer(buffer, product*size_of_input, strides, input_encoding);
   input_map.add(input_tensor_name, input_buffer.get());
-  inputs.push_back(SNPEModelInput(name, buffer, size, std::move(input_buffer)));
-}
-
-void SNPEModel::setInputBuffer(const std::string name, float *buffer, int size) {
-  for (auto &input : inputs) {
-    if (name == input.name) {
-      assert(input.size == size || input.size == 0);
-      assert(input.snpe_buffer->setBufferAddress(buffer) == true);
-      input.buffer = buffer;
-      input.size = size;
-      return;
-    }
-  }
-  LOGE("Tried to update input `%s` but no input with this name exists", name.c_str());
+  inputs.push_back(std::unique_ptr<SNPEModelInput>(new SNPEModelInput(name, buffer, size, std::move(input_buffer))));
 }
 
 void SNPEModel::execute() {

@@ -1,22 +1,14 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <cstdlib>
-
 #include "selfdrive/modeld/runners/runmodel.h"
 
 class ONNXModel : public RunModel {
 public:
   ONNXModel(const std::string path, float *output, size_t output_size, int runtime, bool _use_tf8 = false, cl_context context = NULL);
 	~ONNXModel();
-  void addInput(const std::string name, float *buffer, int size);
-  void setInputBuffer(const std::string name, float *buffer, int size);
   void execute();
 private:
   int proc_pid;
-
-  std::vector<ModelInput> inputs;
   float *output;
   size_t output_size;
   bool use_tf8;

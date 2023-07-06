@@ -1,17 +1,11 @@
 #include "selfdrive/modeld/runners/onnxmodel.h"
 
-#include <poll.h>
-#include <unistd.h>
-
-#include <cassert>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <stdexcept>
-#include <string>
+#include <poll.h>
+#include <unistd.h>
 
-#include "common/swaglog.h"
 #include "common/util.h"
 
 ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
@@ -86,25 +80,9 @@ void ONNXModel::pread(float *buf, int size) {
   LOGD("host read done");
 }
 
-void ONNXModel::addInput(const std::string name, float *buffer, int size) {
-  inputs.push_back(ModelInput(name, buffer, size));
-}
-
-void ONNXModel::setInputBuffer(const std::string name, float *buffer, int size) {
-  for (auto &input : inputs) {
-    if (name == input.name) {
-      assert(input.size == size || input.size == 0);
-      input.buffer = buffer;
-      input.size = size;
-      return;
-    }
-  }
-  LOGE("Tried to update input `%s` but no input with this name exists", name.c_str());
-}
-
 void ONNXModel::execute() {
   for (auto &input : inputs) {
-    pwrite(input.buffer, input.size);
+    pwrite(input->buffer, input->size);
   }
   pread(output, output_size);
 }
