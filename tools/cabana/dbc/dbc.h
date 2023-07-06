@@ -73,6 +73,7 @@ public:
   double min, max;
   QString unit;
   QString comment;
+  QString receiver_name;
   ValueDescription val_desc;
   int precision = 0;
   QColor color;
@@ -101,6 +102,7 @@ public:
   QString name;
   uint32_t size;
   QString comment;
+  QString transmitter;
   std::vector<cabana::Signal *> sigs;
 
   std::vector<uint8_t> mask;
