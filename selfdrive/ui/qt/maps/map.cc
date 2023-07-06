@@ -235,7 +235,7 @@ void MapWindow::updateState(const UIState &s) {
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
   map_instructions->setFixedWidth(width());
-  map_eta->setGeometry(25, height() - 120, w - 50, 120);
+  map_eta->setGeometry(0, height() - 120, w, 120);
 }
 
 void MapWindow::initializeGL() {
@@ -560,7 +560,7 @@ MapETA::MapETA(QWidget *parent) : QWidget(parent) {
   setVisible(false);
   setAttribute(Qt::WA_TranslucentBackground);
   eta_doc.setUndoRedoEnabled(false);
-  eta_doc.setDefaultStyleSheet("body {font-family:Inner;font-size:60px;color:white;} b{font-size:70px;font-weight:600}");
+  eta_doc.setDefaultStyleSheet("body {font-family:Inter;font-size:60px;color:white;} b{font-size:70px;font-weight:600}");
 }
 
 void MapETA::paintEvent(QPaintEvent *event) {
