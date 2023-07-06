@@ -328,7 +328,7 @@ class CarInterfaceBase(ABC):
 class RadarInterfaceBase(ABC):
   def __init__(self, CP: car.CarParams):
     self.rcp = None
-    self.pts = {}
+    self.pts: Dict[int, float] = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
