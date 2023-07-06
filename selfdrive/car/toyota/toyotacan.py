@@ -20,19 +20,14 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     "STEER_REQUEST": steer_req,  # STEER_REQUEST seems to be the real bit
     "STEER_REQUEST_2": steer_req,
 
-    # seems to actually be 1. Even 1 on 2023 RAV4 2023 (TODO: check from data)
+    # seems to actually be 1. Even 1 on 2023 RAV4 2023
     "SETME_X1": op_params.get("SETME_X1"),
 
-    # On a RAV4 2023, it seems to be always 1
-    # But other cars it can change randomly?
-    # TODO: figure that out
     "SETME_X3": op_params.get("SETME_X3"),
 
     # 100 when driver not touching wheel, 0 when driver touching wheel. ramps smoothly between
-    # TODO: find actual breakpoints and determine how this affects the control
     "PERCENTAGE": op_params.get("PERCENTAGE"),
 
-    # ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1
     # stock system sometimes uses this signal to wind down torque
     # TODO: figure out why 99 is so much less torque than 100
     # "SETME_X64": 99 if limit_torque else 100,
@@ -44,21 +39,16 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     "BYTE3_BIT0": op_params.get('BYTE3_BIT0'),
     "BYTE3_BIT0_2": op_params.get('BYTE3_BIT0_2'),
 
-    # TODO: need to understand this better, it's always 1.5-2x higher than angle cmd
-    # TODO: revisit on 2023 RAV4
     # "ANGLE": op_params.get("ANGLE"),
     "ANGLE": steer_angle if op_params.get('USE_ALT_ANGLE_CMD') else op_params.get("ANGLE"),  # if abs(steer_angle) < 10 else 10 if steer_angle > 0 else -10,
 
     # seems to just be desired angle cmd
-    # TODO: does this have offset on cars where accurate steering angle signal has offset?
     # some tss2 don't have any offset on the accurate angle signal... (tss2.5)?
     "STEER_ANGLE_CMD": steer_angle if not op_params.get('USE_ALT_ANGLE_CMD') else 0,
 
     # 1 when camera is using LTA for LKA — no noticeable difference
     # "LKA_REQUEST": op_params.get("LKA_REQUEST") if steer_req else 0,
 
-    # 1 when STEER_REQUEST changes state (usually)
-    # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
     "CLEAR_HOLD_STEERING_ALERT": op_params.get("BIT"),
     "LKA_ACTIVE": op_params.get("LKA_ACTIVE"),
   }
