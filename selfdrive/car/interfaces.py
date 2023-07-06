@@ -2,7 +2,7 @@ import yaml
 import os
 import time
 from abc import abstractmethod, ABC
-from typing import Any, Dict, Optional, Tuple, List, Callable, Type
+from typing import Any, Dict, Optional, Tuple, List, Callable, Type, TypeVar, Generic
 
 from cereal import car
 from common.basedir import BASEDIR
@@ -57,22 +57,25 @@ def get_torque_params(candidate):
 
 # generic car and radar interfaces
 
+CST = TypeVar('CST', bound='CarStateBase')
+
+
 class CarControllerParamsBase(ABC):
   def __init__(self, CP: car.CarParams):
     pass
 
 
-class CarControllerBase(ABC):
+class CarControllerBase(ABC, Generic[CST]):
   def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
     pass
 
   @abstractmethod
-  def update(self, CC: car.CarControl, CS: 'CarStateBase', now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+  def update(self, CC: car.CarControl, CS: CST, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass
 
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type['CarStateBase']):
+  def __init__(self, CP: car.CarParams, CarController: Type[CarControllerBase], CarState: Type[CST]):
     self.CP = CP
     self.VM = VehicleModel(CP)
 
