@@ -27,7 +27,7 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
     double t2 = millis_since_boot();
 
     // send navmodel packet
-    navmodel_publish(pm, extra.frame_id, *model_res, (t2 - t1) / 1000.0);
+    navmodel_publish(pm, extra, *model_res, (t2 - t1) / 1000.0);
 
     //printf("navmodel process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last_ts);
     last_ts = t1;
