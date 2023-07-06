@@ -22,7 +22,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, frame):
     "STEER_ANGLE_CMD": steer_angle,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
-    "BIT": 0,
+    "CLEAR_HOLD_STEERING_ALERT": 0,
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
