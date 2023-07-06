@@ -47,12 +47,12 @@ void fill_plan(cereal::NavModelData::Builder &framed, const NavModelOutputPlan &
   position.setYStd(to_kj_array_ptr(pos_y_std));
 }
 
-void navmodel_publish(PubMaster &pm, VisionIpcBufExtra &extra, const NavModelResult &model_res, float execution_time) {
+void navmodel_publish(PubMaster &pm, VisionIpcBufExtra &extra, const NavModelResult &model_res, float execution_time, bool route_valid) {
   // make msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
   auto framed = evt.initNavModel();
-  evt.setValid(extra.valid);
+  evt.setValid(extra.valid && route_valid);
   framed.setFrameId(extra.frame_id);
   framed.setLocationMonoTime(extra.timestamp_sof);
   framed.setModelExecutionTime(execution_time);

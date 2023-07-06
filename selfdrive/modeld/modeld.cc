@@ -60,7 +60,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navInstruction", "navModel"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -139,8 +139,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     // Enable/disable nav features
     uint64_t timestamp_llk = sm["navModel"].getNavModel().getLocationMonoTime();
-    double tsm = (float)(nanos_since_boot() - timestamp_llk) / 1e6;
-    bool nav_valid = sm["navInstruction"].getValid() && sm["navModel"].getValid() && (tsm < 1000);
+    bool nav_valid = sm["navModel"].getValid() && nanos_since_boot() - timestamp_llk < 1e9;
     if (!nav_enabled && nav_valid) {
       nav_enabled = true;
     } else if (nav_enabled && !nav_valid) {
