@@ -10,6 +10,7 @@ Version 0.9.4 (2023-XX-XX)
   * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
   * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
 * Ford Focus 2018 support
+* Kia Carnival 2023 support thanks to sunnyhaibin!
 
 Version 0.9.3 (2023-06-29)
 ========================
