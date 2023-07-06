@@ -313,7 +313,7 @@ class CarState(CarStateBase):
 
     return ret
 
-  def get_can_parser(self, CP):
+  def get_can_parser(self, CP):  # pylint: disable=arguments-differ
     signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_pt_bus(CP.carFingerprint))
 
