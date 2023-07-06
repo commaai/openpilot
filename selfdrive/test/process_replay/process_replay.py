@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+import copy
 import signal
 import platform
 from collections import OrderedDict
@@ -40,6 +41,14 @@ class ReplayContext:
     assert(len(self.pubs) != 0 or self.main_pub is not None)
   
   def __enter__(self):
+    self.open()
+
+    return self
+
+  def __exit__(self, exc_type, exc_obj, exc_tb):
+    self.close()
+
+  def open(self):
     messaging.toggle_fake_events(True)
     messaging.set_fake_prefix(self.proc_name)
 
@@ -50,9 +59,7 @@ class ReplayContext:
     else:
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
 
-    return self
-
-  def __exit__(self, exc_type, exc_obj, exc_tb):
+  def close(self):
     del self.events
 
     messaging.toggle_fake_events(False)
@@ -101,7 +108,7 @@ class ProcessConfig:
   init_callback: Optional[Callable] = None
   should_recv_callback: Optional[Callable] = None
   tolerance: Optional[float] = None
-  environ: Dict[str, str] = field(default_factory=dict)
+  processing_time: float = 0.001
   subtest_name: str = ""
   field_tolerances: Dict[str, float] = field(default_factory=dict)
   timeout: int = 30
@@ -242,21 +249,36 @@ class FrequencyBasedRcvCallback:
       if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
     ]
     return bool(len(resp_sockets))
+  
+
+def controlsd_config_callback(params, cfg, lr):
+  for msg in lr:
+    if msg.which() == "controlsState":
+      controlsState = msg.controlsState
+      if initialized:
+        break
+    elif msg.which() == "carEvents":
+      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+
+  assert controlsState is not None and initialized, "controlsState never initialized"
+  params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
 
-def laikad_config_pubsub_callback(params, cfg):
+def laikad_config_pubsub_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   main_key = "ubloxGnss" if ublox else "qcomGnss"
   sub_keys = ({"qcomGnss", } if ublox else {"ubloxGnss", })
 
-  return set(cfg.pubs) - sub_keys, main_key, True
+  cfg.pubs = set(cfg.pubs) - sub_keys
+  cfg.main_pub = main_key
+  cfg.main_pub_drained = True
 
 
-def locationd_config_pubsub_callback(params, cfg):
+def locationd_config_pubsub_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
   
-  return set(cfg.pubs) - sub_keys, None, False
+  cfg.pubs = set(cfg.pubs) - sub_keys
 
 
 CONFIGS = [
@@ -273,6 +295,7 @@ CONFIGS = [
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
     simulation=False,
     main_pub="can",
   ),
@@ -328,6 +351,7 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -409,113 +433,280 @@ def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, c
   return log_msgs
 
 
+class ProcessContainer:
+  def __init__(self, cfg):
+    self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
+    self.cfg = copy.copy(cfg)
+    self.process = managed_processes[cfg.proc_name]
+    self.msg_queue = []
+    self.cnt = 0
+    self.pm, self.sockets, self.rc, self.vipc_server = None, None, None, None
+
+  @property
+  def pubs(self):
+    return self.cfg.pubs
+
+  @property
+  def subs(self):
+    return self.cfg.subs
+
+  def _setup_env(self, params_config, environ_config):
+    for k, v in environ_config.items():
+      if len(v) != 0:
+        os.environ[k] = v
+      elif k in os.environ:
+        del os.environ[k]
+
+    os.environ["PROC_NAME"] = self.cfg.proc_name
+    if self.cfg.simulation:
+      os.environ["SIMULATION"] = "1"
+    elif "SIMULATION" in os.environ:
+      del os.environ["SIMULATION"]
+
+    params = Params()
+    for k, v in params_config.items():
+      if isinstance(v, bool):
+        params.put_bool(k, v)
+      else:
+        params.put(k, v)
+
+  def start(self, params_config, environ_config, all_msgs, fingerprint):
+    with self.prefix:
+      self._setup_env(params_config, environ_config)
+
+      if self.cfg.config_callback is not None:
+        params = Params()
+        self.cfg.config_callback(params, self.cfg, all_msgs)
+
+      self.rc = ReplayContext(self.cfg)
+      self.rc.open()
+
+      self.pm = messaging.PubMaster(self.cfg.pubs)
+      self.sockets = {s: messaging.sub_sock(s, timeout=100) for s in self.cfg.subs}
+
+      self.process.prepare()
+      self.process.start()
+
+      if self.cfg.init_callback is not None:
+        self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
+
+      # Wait for process to startup
+      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
+        while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
+          time.sleep(0)
+
+  def stop(self):
+    with self.prefix:
+      self.process.signal(signal.SIGKILL)
+      self.process.stop()
+      self.rc.close()
+      # TODO cleanup prefix dirs here
+      self.prefix.clean_dirs()
+
+  def run_step(self, msg):
+    output_msgs = []
+    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      end_of_cycle = True
+      if self.cfg.should_recv_callback is not None:
+        end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
+
+      self.msg_queue.append(msg)
+      if end_of_cycle:
+        self.rc.wait_for_recv_called()
+
+        # call recv to let sub-sockets reconnect, after we know the process is ready
+        if self.cnt == 0:
+          for s in self.sockets.values():
+            messaging.recv_one_or_none(s)
+
+        # empty recv on drained pub indicates the end of messages, only do that if there're any
+        trigger_empty_recv = False
+        if self.cfg.main_pub and self.cfg.main_pub_drained:
+          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+
+        for m in self.msg_queue:
+          self.pm.send(m.which(), m.as_builder())
+        self.msg_queue = []
+
+        self.rc.unlock_sockets()
+        self.rc.wait_for_next_recv(trigger_empty_recv)
+
+        for socket in self.sockets.values():
+          ms = messaging.drain_sock(socket)
+          for m in ms:
+            m = m.as_builder()
+            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
+            output_msgs.append(m.as_reader())
+        self.cnt += 1
+    assert(self.process.proc.is_alive())
+
+    return output_msgs
+
+
+def _replay_multi_process(
+  cfgs: List[ProcessConfig], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]],
+  fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
+):
+  if fingerprint is not None:
+    params_config = generate_params_config(lr=lr, fingerprint=fingerprint, custom_params=custom_params)
+    env_config = generate_environ_config(fingerprint=fingerprint)
+  else:
+    CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
+    params_config = generate_params_config(CP=CP, lr=lr, custom_params=custom_params)
+    env_config = generate_environ_config(CP=CP)
+
+  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  log_msgs = []
+  try:
+    containers = []
+    for cfg in cfgs:
+      container = ProcessContainer(cfg)
+      container.start(params_config, env_config, all_msgs, fingerprint)
+      containers.append(container)
+
+    all_pubs = set([pub for container in containers for pub in container.pubs])
+    all_subs = set([sub for container in containers for sub in container.subs])
+    lr_pubs = all_pubs - all_subs
+    pubs_to_containers = {pub: [container for container in containers if pub in container.pubs] for pub in all_pubs}
+
+    pub_msgs = [msg for msg in all_msgs if msg.which() in lr_pubs]
+    external_pub_queue = pub_msgs.copy()
+    internal_pub_queue = []
+
+    # TODO this will never end, if process keeps replying 
+    # need to adjust log mono times of output messages to, maybe according to frequency?
+    pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
+    while len(external_pub_queue) != 0:
+      if len(internal_pub_queue) == 0 or external_pub_queue[0].logMonoTime < internal_pub_queue[0].logMonoTime:
+        msg = external_pub_queue.pop(0)
+        pbar.update(1)
+      else:
+        msg = internal_pub_queue.pop(0)
+
+      target_containers = pubs_to_containers[msg.which()]
+      for container in target_containers:
+        output_msgs = container.run_step(msg)
+        for m in output_msgs:
+          if m.which() in all_pubs:
+            internal_pub_queue.append(m)
+        log_msgs.extend(output_msgs)
+  finally:
+    for container in containers:
+      container.stop()
+
+  return log_msgs
+
+
 def _replay_single_process(
   cfg: ProcessConfig, lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]],
   fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
 ):
-  with OpenpilotPrefix():
-    controlsState = None
-    initialized = False
-    if cfg.proc_name == "controlsd":
-      for msg in lr:
-        if msg.which() == "controlsState":
-          controlsState = msg.controlsState
-          if initialized:
-            break
-        elif msg.which() == "carEvents":
-          initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
+  # TODO add support for vision ipc
+  assert cfg.proc_name != "modeld" and cfg.proc_name != "dmonitoringmodeld"
+  return _replay_multi_process([cfg], lr, frs, fingerprint, custom_params, disable_progress)
+  # with OpenpilotPrefix():
+  #   controlsState = None
+  #   initialized = False
+  #   if cfg.proc_name == "controlsd":
+  #     for msg in lr:
+  #       if msg.which() == "controlsState":
+  #         controlsState = msg.controlsState
+  #         if initialized:
+  #           break
+  #       elif msg.which() == "carEvents":
+  #         initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.carEvents]
 
-      assert controlsState is not None and initialized, "controlsState never initialized"
+  #     assert controlsState is not None and initialized, "controlsState never initialized"
 
-    if fingerprint is not None:
-      setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint, custom_params=custom_params)
-    else:
-      CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
-      assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
-      setup_env(cfg=cfg, CP=CP, controlsState=controlsState, lr=lr, custom_params=custom_params)
+  #   if fingerprint is not None:
+  #     setup_env(cfg=cfg, controlsState=controlsState, lr=lr, fingerprint=fingerprint, custom_params=custom_params)
+  #   else:
+  #     CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
+  #     assert CP is not None or "carParams" not in cfg.pubs, "carParams are missing and process needs it" 
+  #     setup_env(cfg=cfg, CP=CP, controlsState=controlsState, lr=lr, custom_params=custom_params)
 
-    if cfg.config_callback is not None:
-      params = Params()
-      cfg.pubs, cfg.main_pub, cfg.main_pub_drained = cfg.config_callback(params, cfg)
+  #   if cfg.config_callback is not None:
+  #     params = Params()
+  #     cfg.pubs, cfg.main_pub, cfg.main_pub_drained = cfg.config_callback(params, cfg)
 
-    all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
-    pub_msgs = [msg for msg in all_msgs if msg.which() in set(cfg.pubs)]
+  #   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  #   pub_msgs = [msg for msg in all_msgs if msg.which() in set(cfg.pubs)]
 
-    with ReplayContext(cfg) as rc:
-      pm = messaging.PubMaster(cfg.pubs)
-      sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
+  #   with ReplayContext(cfg) as rc:
+  #     pm = messaging.PubMaster(cfg.pubs)
+  #     sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
 
-      vipc_server = None
-      if len(cfg.vision_pubs) != 0:
-        assert frs is not None, "frs must be provided when replaying process using vision streams"
-        assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
-        assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
-        vipc_server = setup_vision_ipc(cfg, lr)
+  #     vipc_server = None
+  #     if len(cfg.vision_pubs) != 0:
+  #       assert frs is not None, "frs must be provided when replaying process using vision streams"
+  #       assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
+  #       assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
+  #       vipc_server = setup_vision_ipc(cfg, lr)
 
-      managed_processes[cfg.proc_name].prepare()
-      managed_processes[cfg.proc_name].start()
+  #     managed_processes[cfg.proc_name].prepare()
+  #     managed_processes[cfg.proc_name].start()
 
-      if cfg.init_callback is not None:
-        cfg.init_callback(rc, pm, all_msgs, fingerprint)
+  #     if cfg.init_callback is not None:
+  #       cfg.init_callback(rc, pm, all_msgs, fingerprint)
 
-      log_msgs, msg_queue = [], []
-      try:
-        # Wait for process to startup
-        with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
-          while not all(pm.all_readers_updated(s) for s in cfg.pubs if s not in cfg.ignore_alive_pubs):
-            time.sleep(0)
+  #     log_msgs, msg_queue = [], []
+  #     try:
+  #       # Wait for process to startup
+  #       with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(cfg.proc_name)}"):
+  #         while not all(pm.all_readers_updated(s) for s in cfg.pubs if s not in cfg.ignore_alive_pubs):
+  #           time.sleep(0)
 
-        # Do the replay
-        cnt = 0
-        for msg in tqdm(pub_msgs, disable=disable_progress):
-          with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
-            resp_sockets, end_of_cycle = cfg.subs, True
-            if cfg.should_recv_callback is not None:
-              end_of_cycle = cfg.should_recv_callback(msg, cfg, cnt)
+  #       # Do the replay
+  #       cnt = 0
+  #       for msg in tqdm(pub_msgs, disable=disable_progress):
+  #         with Timeout(cfg.timeout, error_msg=f"timed out testing process {repr(cfg.proc_name)}, {cnt}/{len(pub_msgs)} msgs done"):
+  #           resp_sockets, end_of_cycle = cfg.subs, True
+  #           if cfg.should_recv_callback is not None:
+  #             end_of_cycle = cfg.should_recv_callback(msg, cfg, cnt)
 
-            msg_queue.append(msg)
-            if end_of_cycle:
-              rc.wait_for_recv_called()
+  #           msg_queue.append(msg)
+  #           if end_of_cycle:
+  #             rc.wait_for_recv_called()
 
-              # call recv to let sub-sockets reconnect, after we know the process is ready
-              if cnt == 0:
-                for s in sockets.values():
-                  messaging.recv_one_or_none(s)
+  #             # call recv to let sub-sockets reconnect, after we know the process is ready
+  #             if cnt == 0:
+  #               for s in sockets.values():
+  #                 messaging.recv_one_or_none(s)
 
-              # empty recv on drained pub indicates the end of messages, only do that if there're any
-              trigger_empty_recv = False
-              if cfg.main_pub and cfg.main_pub_drained:
-                trigger_empty_recv = next((True for m in msg_queue if m.which() == cfg.main_pub), False)
+  #             # empty recv on drained pub indicates the end of messages, only do that if there're any
+  #             trigger_empty_recv = False
+  #             if cfg.main_pub and cfg.main_pub_drained:
+  #               trigger_empty_recv = next((True for m in msg_queue if m.which() == cfg.main_pub), False)
 
-              for m in msg_queue:
-                pm.send(m.which(), m.as_builder())
-                # send frames if needed
-                if vipc_server is not None and m.which() in cfg.vision_pubs:
-                  camera_state = getattr(m, m.which())
-                  camera_meta = meta_from_camera_state(m.which())
-                  assert frs is not None
-                  img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
-                  vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-              msg_queue = []
+  #             for m in msg_queue:
+  #               pm.send(m.which(), m.as_builder())
+  #               # send frames if needed
+  #               if vipc_server is not None and m.which() in cfg.vision_pubs:
+  #                 camera_state = getattr(m, m.which())
+  #                 camera_meta = meta_from_camera_state(m.which())
+  #                 assert frs is not None
+  #                 img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+  #                 vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+  #                                 camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+  #             msg_queue = []
 
-              rc.unlock_sockets()
-              rc.wait_for_next_recv(trigger_empty_recv)
+  #             rc.unlock_sockets()
+  #             rc.wait_for_next_recv(trigger_empty_recv)
 
-              for s in resp_sockets:
-                ms = messaging.drain_sock(sockets[s])  
-                for m in ms:
-                  m = m.as_builder()
-                  m.logMonoTime = msg.logMonoTime
-                  log_msgs.append(m.as_reader())
-              cnt += 1
-          proc = managed_processes[cfg.proc_name].proc
-          assert(proc and proc.is_alive())
-      finally:
-        managed_processes[cfg.proc_name].signal(signal.SIGKILL)
-        managed_processes[cfg.proc_name].stop()
+  #             for s in resp_sockets:
+  #               ms = messaging.drain_sock(sockets[s])  
+  #               for m in ms:
+  #                 m = m.as_builder()
+  #                 m.logMonoTime = msg.logMonoTime
+  #                 log_msgs.append(m.as_reader())
+  #             cnt += 1
+  #         proc = managed_processes[cfg.proc_name].proc
+  #         assert(proc and proc.is_alive())
+  #     finally:
+  #       managed_processes[cfg.proc_name].signal(signal.SIGKILL)
+  #       managed_processes[cfg.proc_name].stop()
 
-      return log_msgs
+  #     return log_msgs
 
 
 def setup_vision_ipc(cfg, lr):
@@ -533,75 +724,60 @@ def setup_vision_ipc(cfg, lr):
   return vipc_server
 
 
-def setup_env(cfg=None, CP=None, controlsState=None, lr=None, fingerprint=None, custom_params=None, log_dir=None):
-  if platform.system() != "Darwin":
-    os.environ["PARAMS_ROOT"] = "/dev/shm/params"
-  if log_dir is not None:
-    os.environ["LOG_ROOT"] = log_dir
-
-  params = Params()
-  params.clear_all()
-  params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("Passive", False)
-  params.put_bool("DisengageOnAccelerator", True)
-  params.put_bool("DisableLogging", False)
-  if custom_params is not None:
-    for k, v in custom_params.items():
-      if type(v) == bool:
-        params.put_bool(k, v)
-      else:
-        params.put(k, v)
-
-  os.environ["NO_RADAR_SLEEP"] = "1"
-  os.environ["REPLAY"] = "1"
-  if fingerprint is not None:
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['FINGERPRINT'] = fingerprint
-  else:
-    os.environ["SKIP_FW_QUERY"] = ""
-    os.environ["FINGERPRINT"] = ""
-
-  if lr is not None:
-    services = {m.which() for m in lr}
-    params.put_bool("UbloxAvailable", "ubloxGnss" in services)
+def generate_params_config(CP=None, lr=None, fingerprint=None, custom_params=None):
+  params_dict = {
+    "OpenpilotEnabledToggle": True,
+    "Passive": False,
+    "DisengageOnAccelerator": True,
+    "DisableLogging": False,
+  }
   
-  if cfg is not None:
-    # Clear all custom processConfig environment variables
-    for config in CONFIGS:
-      for k, _ in config.environ.items():
-        if k in os.environ:
-          del os.environ[k]
+  if custom_params is not None:
+    params_dict.update(custom_params)
+  if lr is not None:
+    has_ublox = any(msg.which() == "ubloxGnss" for msg in lr)
+    params_dict["UbloxAvailable"] = has_ublox
 
-    os.environ.update(cfg.environ)
-    os.environ['PROC_NAME'] = cfg.proc_name
-
-  if cfg is not None and cfg.simulation:
-    os.environ["SIMULATION"] = "1"
-  elif "SIMULATION" in os.environ:
-    del os.environ["SIMULATION"]
-
-  # Initialize controlsd with a controlsState packet
-  if controlsState is not None:
-    params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
-  else:
-    params.remove("ReplayControlsState")
-
-  # Regen or python process
   if CP is not None:
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
-      params.put_bool("DisengageOnAccelerator", False)
+      params_dict["DisengageOnAccelerator"] = False
 
     if fingerprint is None:
       if CP.fingerprintSource == "fw":
-        params.put("CarParamsCache", CP.as_builder().to_bytes())
-        os.environ['SKIP_FW_QUERY'] = ""
-        os.environ['FINGERPRINT'] = ""
-      else:
-        os.environ['SKIP_FW_QUERY'] = "1"
-        os.environ['FINGERPRINT'] = CP.carFingerprint
+        params_dict["CarParamsCache"] = CP.as_builder().to_bytes()
 
     if CP.openpilotLongitudinalControl:
-      params.put_bool("ExperimentalLongitudinalEnabled", True)
+      params_dict["ExperimentalLongitudinalEnabled"] = True
+
+  return params_dict
+
+
+def generate_environ_config(CP=None, fingerprint=None, log_dir=None):
+  environ_dict = {}
+  if platform.system() != "Darwin":
+    environ_dict["PARAMS_ROOT"] = "/dev/shm/params"
+  if log_dir is not None:
+    environ_dict["LOG_ROOT"] = log_dir
+
+  environ_dict["NO_RADAR_SLEEP"] = "1"
+  environ_dict["REPLAY"] = "1"
+
+  # Regen or python process
+  if CP is not None and fingerprint is None:
+    if CP.fingerprintSource == "fw":
+      environ_dict['SKIP_FW_QUERY'] = ""
+      environ_dict['FINGERPRINT'] = ""
+    else:
+      environ_dict['SKIP_FW_QUERY'] = "1"
+      environ_dict['FINGERPRINT'] = CP.carFingerprint
+  elif fingerprint is not None:
+    environ_dict['SKIP_FW_QUERY'] = "1"
+    environ_dict['FINGERPRINT'] = fingerprint
+  else:
+    environ_dict["SKIP_FW_QUERY"] = ""
+    environ_dict["FINGERPRINT"] = ""
+  
+  return environ_dict
 
 
 def check_openpilot_enabled(msgs):
