@@ -14,7 +14,7 @@
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
-  main_layout->setMargin(bdr_s);
+  main_layout->setMargin(UI_BORDER_SIZE);
   QStackedLayout *stacked_layout = new QStackedLayout;
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
@@ -68,9 +68,9 @@ void OnroadWindow::updateState(const UIState &s) {
   bool navDisabledNow = (*s.sm)["controlsState"].getControlsState().getEnabled() &&
                         !(*s.sm)["modelV2"].getModelV2().getNavEnabled();
   if (navDisabled != navDisabledNow) {
-    split->setSpacing(navDisabledNow ? bdr_s * 2 : 0);
+    split->setSpacing(navDisabledNow ? UI_BORDER_SIZE * 2 : 0);
     if (map) {
-      map->setFixedWidth(topWidget(this)->width() / 2 - bdr_s * (navDisabledNow ? 2 : 1));
+      map->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE * (navDisabledNow ? 2 : 1));
     }
   }
 
@@ -106,7 +106,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
       QObject::connect(m, &MapPanel::mapWindowShown, this, &OnroadWindow::mapWindowShown);
 
-      m->setFixedWidth(topWidget(this)->width() / 2 - bdr_s);
+      m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
 
       // hidden by default, made visible when navRoute is published
@@ -246,7 +246,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
-  main_layout->setMargin(bdr_s);
+  main_layout->setMargin(UI_BORDER_SIZE);
   main_layout->setSpacing(0);
 
   experimental_btn = new ExperimentalButton(this);
@@ -314,10 +314,10 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
   p.save();
 
   // Header gradient
-  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  QLinearGradient bg(0, UI_HEADER_HEIGHT - (UI_HEADER_HEIGHT / 2.5), 0, UI_HEADER_HEIGHT);
   bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-  p.fillRect(0, 0, width(), header_h, bg);
+  p.fillRect(0, 0, width(), UI_HEADER_HEIGHT, bg);
 
   QString speedLimitStr = (speedLimit > 1) ? QString::number(std::nearbyint(speedLimit)) : "–";
   QString speedStr = QString::number(std::nearbyint(speed));
@@ -520,7 +520,7 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   painter.save();
 
   // base icon
-  int offset = bdr_s + btn_size / 2;
+  int offset = UI_BORDER_SIZE + btn_size / 2;
   int x = rightHandDM ? width() - offset : offset;
   int y = height() - offset;
   float opacity = dmActive ? 0.65 : 0.2;

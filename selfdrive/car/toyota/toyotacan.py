@@ -59,7 +59,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
 
     # 1 when STEER_REQUEST changes state (usually)
     # except not true on 2023 RAV4. TODO: revisit, could it be UI related?
-    "BIT": op_params.get("BIT"),
+    "CLEAR_HOLD_STEERING_ALERT": op_params.get("BIT"),
     "LKA_ACTIVE": op_params.get("LKA_ACTIVE"),
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
