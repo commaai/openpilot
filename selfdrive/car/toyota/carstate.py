@@ -20,7 +20,7 @@ SteerControlType = car.CarParams.SteerControlType
 #     and is a catch-all for LKA
 TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 # - lka/lta msg drop out: 3 (recoverable)
-# - prolonged high torque delta between cmd and user: 17 (permanent)
+# - prolonged high driver torque: 17 (permanent)
 PERM_STEER_FAULTS = (3, 17)
 
 
