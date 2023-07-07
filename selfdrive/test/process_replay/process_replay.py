@@ -499,7 +499,7 @@ class ProcessContainer:
       if self.cfg.init_callback is not None:
         self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
 
-      # Wait for process to startup
+      # wait for process to startup
       with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
         while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
           time.sleep(0)
@@ -552,6 +552,7 @@ class ProcessContainer:
           ms = messaging.drain_sock(socket)
           for m in ms:
             m = m.as_builder()
+            # TODO probe real execution times from comma device for long running processes like modeld, dmonitoringmodeld
             m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
             output_msgs.append(m.as_reader())
         self.cnt += 1
