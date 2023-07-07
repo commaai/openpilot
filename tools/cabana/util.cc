@@ -1,10 +1,16 @@
 #include "tools/cabana/util.h"
 
+#include <array>
+#include <csignal>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <QDebug>
+#include <QColor>
 #include <QFontDatabase>
-#include <QHelpEvent>
+#include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QToolTip>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -82,17 +88,6 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   return size;
 }
 
-bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (e->type() == QEvent::ToolTip && index.column() == 0) {
-    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
-      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
-      return true;
-    }
-  }
-  QToolTip::hideText();
-  return false;
-}
-
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   auto data = index.data(BytesRole);
   if (!data.isValid()) {
@@ -105,7 +100,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   if (option.state & QStyle::State_Selected) {
-    painter->fillRect(option.rect, option.palette.highlight());
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
@@ -154,22 +149,52 @@ void TabBar::closeTabClicked() {
   }
 }
 
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
+// UnixSignalHandler
 
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
+UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
+    qFatal("Couldn't create TERM socketpair");
+  }
 
-  return QColor::fromHsvF(h, s, v);
+  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
+  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, UnixSignalHandler::signalHandler);
 }
+
+UnixSignalHandler::~UnixSignalHandler() {
+  ::close(sig_fd[0]);
+  ::close(sig_fd[1]);
+}
+
+void UnixSignalHandler::signalHandler(int s) {
+  ::write(sig_fd[0], &s, sizeof(s));
+}
+
+void UnixSignalHandler::handleSigTerm() {
+  sn->setEnabled(false);
+  int tmp;
+  ::read(sig_fd[1], &tmp, sizeof(tmp));
+
+  printf("\nexiting...\n");
+  qApp->closeAllWindows();
+  qApp->exit();
+}
+
+// NameValidator
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
+}
+
+DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
+  // Match locale of QString::toDouble() instead of system
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
+  setLocale(locale);
 }
 
 namespace utils {
@@ -240,10 +265,16 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
+}
+
+QString signalToolTip(const cabana::Signal *sig) {
+  return QObject::tr(R"(
+    %1<br /><span font-size:small">
+    Start Bit: %2 Size: %3<br />
+    MSB: %4 LSB: %5<br />
+    Little Endian: %6 Signed: %7</span>
+  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
+     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }

@@ -1179,19 +1179,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
     uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
-    uint32_t min_gain = ox03c10_analog_gains_reg[0];
-    uint32_t spd_gain = 0xF00;
 
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
       {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
-      {0x35c1, vs_time>>8}, {0x35c2, vs_time&0xFF},
+      {0x35c2, vs_time&0xFF},
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-      {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
-      {0x3548, spd_gain>>8}, {0x3549, spd_gain&0xFF},
-      {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }
@@ -1247,10 +1242,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-  if (c == &s->road_cam) {
-    framed.setTransform(b->yuv_transform.v);
-    LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
-  }
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);

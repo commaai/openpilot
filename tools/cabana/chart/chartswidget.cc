@@ -149,8 +149,9 @@ void ChartsWidget::updateTabBar() {
 
 void ChartsWidget::eventsMerged() {
   QFutureSynchronizer<void> future_synchronizer;
+  bool clear = !can->liveStreaming();
   for (auto c : charts) {
-    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr));
+    future_synchronizer.addFuture(QtConcurrent::run(c, &ChartView::updateSeries, nullptr, clear));
   }
 }
 
@@ -397,10 +398,11 @@ void ChartsWidget::removeAll() {
     tabbar->removeTab(1);
   }
   tab_charts.clear();
+  zoomReset();
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
-      c->deleteLater();
+      delete c;
     }
     charts.clear();
     updateToolBar();

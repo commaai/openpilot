@@ -71,9 +71,7 @@ private:
 
   QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
-  bool isWirelessAdapter(const QDBusObjectPath &path);
   QString getIp4Address();
-  void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   void deactivateConnectionBySsid(const QString &ssid);
   void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> getActiveConnections();

@@ -7,16 +7,18 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU
+from panda import Panda, PandaDFU, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
+from selfdrive.boardd.set_time import set_time
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog
 
 
 def get_expected_signature(panda: Panda) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(panda.get_mcu_type().config.app_path)
+    fn = os.path.join(FW_PATH, panda.get_mcu_type().config.app_fn)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
@@ -81,16 +83,18 @@ def main() -> NoReturn:
   params = Params()
 
   while True:
-    count += 1
-    cloudlog.event("pandad.flash_and_connect", count=count)
     try:
+      count += 1
+      cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
 
       # Flash all Pandas in DFU mode
-      for serial in PandaDFU.list():
-        cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
-        PandaDFU(serial).recover()
-      time.sleep(1)
+      dfu_serials = PandaDFU.list()
+      if len(dfu_serials) > 0:
+        for serial in dfu_serials:
+          cloudlog.info(f"Panda in DFU mode found, flashing recovery {serial}")
+          PandaDFU(serial).recover()
+        time.sleep(1)
 
       panda_serials = Panda.list()
       if len(panda_serials) == 0:
@@ -107,17 +111,6 @@ def main() -> NoReturn:
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
-      # check health for lost heartbeat
-      for panda in pandas:
-        health = panda.health()
-        if health["heartbeat_lost"]:
-          params.put_bool("PandaHeartbeatLost", True)
-          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
-
-        if first_run:
-          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          panda.reset()
-
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
       if HARDWARE.has_internal_panda() and len(internal_pandas) == 0:
@@ -133,12 +126,34 @@ def main() -> NoReturn:
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))
 
-      # close all pandas
+      for panda in pandas:
+        # check health for lost heartbeat
+        health = panda.health()
+        if health["heartbeat_lost"]:
+          params.put_bool("PandaHeartbeatLost", True)
+          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+
+        if first_run:
+          if panda.is_internal():
+            # update time from RTC
+            set_time(cloudlog)
+
+          # reset panda to ensure we're in a good state
+          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
+          if panda.is_internal():
+            HARDWARE.reset_internal_panda()
+          else:
+            panda.reset(reconnect=False)
+
       for p in pandas:
         p.close()
+    # TODO: wrap all panda exceptions in a base panda exception
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except Exception:
+      cloudlog.exception("pandad.uncaught_exception")
       continue
 
     first_run = False

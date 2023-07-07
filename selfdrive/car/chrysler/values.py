@@ -1,12 +1,11 @@
 from enum import IntFlag
-from dataclasses import dataclass
-from enum import Enum
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarInfo, Harness
+from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -61,7 +60,7 @@ RAM_CARS = RAM_DT | RAM_HD
 @dataclass
 class ChryslerCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC)"
-  harness: Enum = Harness.fca
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
 
 CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
@@ -75,10 +74,10 @@ CAR_INFO: Dict[str, Optional[Union[ChryslerCarInfo, List[ChryslerCarInfo]]]] = {
   ],
   CAR.JEEP_CHEROKEE: ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
   CAR.JEEP_CHEROKEE_2019: ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
-  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", harness=Harness.ram),
+  CAR.RAM_1500: ChryslerCarInfo("Ram 1500 2019-23", car_parts=CarParts.common([CarHarness.ram])),
   CAR.RAM_HD: [
-    ChryslerCarInfo("Ram 2500 2020-22", harness=Harness.ram),
-    ChryslerCarInfo("Ram 3500 2019-22", harness=Harness.ram),
+    ChryslerCarInfo("Ram 2500 2020-22", car_parts=CarParts.common([CarHarness.ram])),
+    ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
   ],
 }
 
@@ -168,7 +167,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [CHRYSLER_VERSION_REQUEST],
       [CHRYSLER_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.abs, Ecu.hcp, Ecu.engine, Ecu.transmission],
+      whitelist_ecus=[Ecu.abs, Ecu.hybrid, Ecu.engine, Ecu.transmission],
       bus=0,
     ),
     Request(
@@ -179,8 +178,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ],
   extra_ecus=[
-    (Ecu.hcp, 0x7e2, None),  # manages transmission on hybrids
-    (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids
+    (Ecu.hybrid, 0x7e2, None),  # manages transmission on hybrids
+    (Ecu.abs, 0x7e4, None),     # alt address for abs on hybrids
   ],
 )
 
@@ -225,8 +224,11 @@ FW_VERSIONS = {
       b'68453511AC',
       b'68453513AD',
       b'68453514AD',
+      b'68510280AG',
       b'68510283AG',
+      b'68527346AE',
       b'68527375AD',
+      b'68527382AE',
     ],
     (Ecu.srs, 0x744, None): [
       b'68428609AB',
@@ -235,6 +237,7 @@ FW_VERSIONS = {
       b'68490898AA',
       b'68500728AA',
       b'68615033AA',
+      b'68615034AA',
     ],
     (Ecu.abs, 0x747, None): [
       b'68292406AH',
@@ -248,11 +251,14 @@ FW_VERSIONS = {
       b'68438456AF',
       b'68535469AB',
       b'68535470AC',
+      b'68548900AB',
       b'68586307AB',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672892AB',
       b'04672932AB',
+      b'04672932AC',
+      b'22DTRHD_AA',
       b'68320950AH',
       b'68320950AI',
       b'68320950AJ',
@@ -264,8 +270,10 @@ FW_VERSIONS = {
       b'68475160AG',
     ],
     (Ecu.eps, 0x75A, None): [
+      b'21590101AA',
       b'68273275AF',
       b'68273275AG',
+      b'68273275AH',
       b'68312176AE',
       b'68312176AG',
       b'68440789AC',
@@ -274,13 +282,21 @@ FW_VERSIONS = {
       b'68522583AB',
       b'68522585AB',
       b'68552788AA',
+      b'68552789AA',
       b'68552790AA',
+      b'68585106AB',
+      b'68585109AB',
       b'68585112AB',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05036065AE ',
       b'05036066AE ',
+      b'05149592AE ',
+      b'05149591AD ',
+      b'05149846AA ',
+      b'05149848AA ',
       b'68378701AI ',
+      b'68378748AL ',
       b'68378758AM ',
       b'68448163AJ',
       b'68448165AK',
@@ -289,6 +305,7 @@ FW_VERSIONS = {
       b'68539650AD',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'05149536AC',
       b'68360078AL',
       b'68360080AM',
       b'68360081AM',
@@ -298,6 +315,7 @@ FW_VERSIONS = {
       b'68445533AB',
       b'68484467AC',
       b'68502994AD',
+      b'68520867AE',
       b'68540431AB',
     ],
   },
@@ -310,6 +328,7 @@ FW_VERSIONS = {
       b'68525485AB',
       b'68525487AB',
       b'68525498AB',
+      b'68528791AF',
     ],
     (Ecu.srs, 0x744, None): [
       b'68399794AC',
@@ -325,9 +344,11 @@ FW_VERSIONS = {
       b'68504022AC',
       b'68530686AB',
       b'68530686AC',
+      b'68544596AC',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672895AB',
+      b'04672934AB',
       b'56029827AG',
       b'56029827AH',
       b'68462657AE',
@@ -337,6 +358,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x761, None): [
       b'68421036AC',
       b'68507906AB',
+      b'68534023AC',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'52370131AF',
@@ -345,6 +367,7 @@ FW_VERSIONS = {
       b'52370931CT',
       b'52401032AE',
       b'52421132AF',
+      b'52421332AF',
       b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
