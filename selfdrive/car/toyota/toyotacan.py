@@ -16,6 +16,9 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   lt_val = op_params.get('LT_VAL')
+
+  tld_v3 = op_params.get('TLD_V3')
+  setme_x64 = (lt_val if (frame % (tld_v3 * 2)) >= round(tld_v3) else 100)
   values = {
     "STEER_REQUEST": steer_req,  # STEER_REQUEST seems to be the real bit
     "STEER_REQUEST_2": steer_req,
@@ -33,7 +36,8 @@ def create_lta_steer_command(packer, steer_angle, steer_req, limit_torque, op_pa
     # "SETME_X64": 99 if limit_torque else 100,
     # "SETME_X64": op_params.get("SETME_X64"),
     # "SETME_X64": 99 if limit_torque else (lt_val if frame % op_params.get('TLD_V3') == 0 else 100),
-    "SETME_X64": (lt_val if frame % max(op_params.get('TLD_V3'), 1) == 0 else 100),
+    # "SETME_X64": (lt_val if frame % max(op_params.get('TLD_V3'), 1) == 0 else 100),
+    "SETME_X64": setme_x64,
     # "SETME_X64": (100 if frame % 5 == 0 else 50),
 
     # "ANGLE": op_params.get("ANGLE"),

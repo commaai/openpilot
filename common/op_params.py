@@ -98,12 +98,11 @@ class opParams:
     """
 
     self.fork_params = {
-      'TLD_V3': Param(3, int, 'every TLD_V3 frames we use LT_VAL for SETME_X64. for 100, set this very high, for always LT_VAL, set to 1', live=True),
-      'LT_VAL': Param(99, int, live=True),
-      'BYTE3_BIT0': Param(1, int, 'Unsure, always seen at 0', live=True),
-      'BYTE3_BIT0_2': Param(1, int, 'Unsure, always seen at 0', live=True),
+      # 'TLD_V3': Param(3, int, 'every TLD_V3 frames we use LT_VAL for SETME_X64. for 100, set this very high, for always LT_VAL, set to 1', live=True),
+      'TLD_V3': Param(10, int, 'SETME_X64 will be LT_VAL for this many frames, then switch to 100 for this many frames and so on. set to -1 to always be LT_VAL', live=True),
+      'LT_VAL': Param(99, int, 'low torque value', live=True),
       'SETME_X1': Param(1, NUMBER, 'Always 1 (can try 0)', live=True),
-      'SETME_X3': Param(1, NUMBER, '1 on RAV4 2023, 3 on other cars?', live=True),
+      'SETME_X3': Param(1, NUMBER, '1 on RAV4 2023, 3 on other cars. describes TSS 2.5', live=True),
       'PERCENTAGE': Param(100, NUMBER, '100 when not touching wheel, 0 when touching wheel. does not seem to do anything', live=True),
       'SETME_X64': Param(100, NUMBER, '0-100, some max torque param', live=True),
       'ANGLE': Param(0, NUMBER, 'Rate limit? Lower is better? Used if USE_ALT_ANGLE_CMD is False', live=True),
