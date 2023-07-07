@@ -58,7 +58,7 @@ segments = [
   ("VOLKSWAGEN", "aregen765AF3D2CB5|2023-05-10--14-54-23--0"), 
   ("MAZDA", "aregen3053762FF2E|2023-05-10--14-56-53--0"), 
   ("FORD", "aregenDDE0F89FA1E|2023-05-10--14-59-26--0"), 
-  ]
+]
 
 # dashcamOnly makes don't need to be tested until a full port is done
 excluded_interfaces = ["mock", "mazda", "tesla"]

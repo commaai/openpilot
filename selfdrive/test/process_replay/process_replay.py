@@ -437,7 +437,7 @@ def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, c
 
 
 class ProcessContainer:
-  def __init__(self, cfg):
+  def __init__(self, cfg: ProcessConfig):
     self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
     self.cfg = copy.copy(cfg)
     self.process = managed_processes[cfg.proc_name]
@@ -453,7 +453,7 @@ class ProcessContainer:
   def subs(self):
     return self.cfg.subs
 
-  def _setup_env(self, params_config, environ_config):
+  def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
     for k, v in environ_config.items():
       if len(v) != 0:
         os.environ[k] = v
@@ -473,7 +473,10 @@ class ProcessContainer:
       else:
         params.put(k, v)
 
-  def start(self, params_config, environ_config, all_msgs, fingerprint):
+  def start(
+    self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
+    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str]
+  ):
     with self.prefix:
       self._setup_env(params_config, environ_config)
 
@@ -486,6 +489,9 @@ class ProcessContainer:
 
       self.pm = messaging.PubMaster(self.cfg.pubs)
       self.sockets = {s: messaging.sub_sock(s, timeout=100) for s in self.cfg.subs}
+
+      if len(self.cfg.vision_pubs) != 0:
+        self.vipc_server = setup_vision_ipc(self.cfg, all_msgs)
 
       self.process.prepare()
       self.process.start()
@@ -506,7 +512,7 @@ class ProcessContainer:
       # TODO cleanup prefix dirs here
       self.prefix.clean_dirs()
 
-  def run_step(self, msg):
+  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]):
     output_msgs = []
     with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
       end_of_cycle = True
@@ -529,6 +535,14 @@ class ProcessContainer:
 
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
+          # send frames if needed
+          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
+            camera_state = getattr(m, m.which())
+            camera_meta = meta_from_camera_state(m.which())
+            assert frs is not None
+            img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
         self.rc.unlock_sockets()
@@ -557,6 +571,15 @@ def _replay_multi_process(
     CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
     params_config = generate_params_config(CP=CP, lr=lr, custom_params=custom_params)
     env_config = generate_environ_config(CP=CP)
+
+  # validate frs and vision pubs
+  for cfg in cfgs:
+    if len(cfg.vision_pubs) == 0:
+      continue
+    
+    assert frs is not None, "frs must be provided when replaying process using vision streams"
+    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
+    assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
@@ -588,7 +611,7 @@ def _replay_multi_process(
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
-        output_msgs = container.run_step(msg)
+        output_msgs = container.run_step(msg, frs)
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
@@ -604,8 +627,6 @@ def _replay_single_process(
   cfg: ProcessConfig, lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]],
   fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
 ):
-  # TODO add support for vision ipc
-  assert cfg.proc_name != "modeld" and cfg.proc_name != "dmonitoringmodeld"
   return _replay_multi_process([cfg], lr, frs, fingerprint, custom_params, disable_progress)
   # with OpenpilotPrefix():
     # controlsState = None
@@ -639,12 +660,12 @@ def _replay_single_process(
   #     pm = messaging.PubMaster(cfg.pubs)
   #     sockets = {s: messaging.sub_sock(s, timeout=100) for s in cfg.subs}
 
-  #     vipc_server = None
-  #     if len(cfg.vision_pubs) != 0:
-  #       assert frs is not None, "frs must be provided when replaying process using vision streams"
-  #       assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
-  #       assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
-  #       vipc_server = setup_vision_ipc(cfg, lr)
+      # vipc_server = None
+      # if len(cfg.vision_pubs) != 0:
+      #   assert frs is not None, "frs must be provided when replaying process using vision streams"
+      #   assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
+      #   assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
+      #   vipc_server = setup_vision_ipc(cfg, lr)
 
   #     managed_processes[cfg.proc_name].prepare()
   #     managed_processes[cfg.proc_name].start()
@@ -683,14 +704,14 @@ def _replay_single_process(
 
   #             for m in msg_queue:
   #               pm.send(m.which(), m.as_builder())
-  #               # send frames if needed
-  #               if vipc_server is not None and m.which() in cfg.vision_pubs:
-  #                 camera_state = getattr(m, m.which())
-  #                 camera_meta = meta_from_camera_state(m.which())
-  #                 assert frs is not None
-  #                 img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
-  #                 vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-  #                                 camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+                # # send frames if needed
+                # if vipc_server is not None and m.which() in cfg.vision_pubs:
+                #   camera_state = getattr(m, m.which())
+                #   camera_meta = meta_from_camera_state(m.which())
+                #   assert frs is not None
+                #   img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+                #   vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+                #                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
   #             msg_queue = []
 
   #             rc.unlock_sockets()
