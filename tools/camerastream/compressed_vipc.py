@@ -13,7 +13,14 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 W, H = 1928, 1208
 V4L2_BUF_FLAG_KEYFRAME = 8
 
-def decoder(addr, sock_name, vipc_server, vst, nvidia, debug=False):
+ENCODE_SOCKETS = {
+  VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
+  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
+  VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+}
+
+def decoder(addr, vipc_server, vst, nvidia, debug=False):
+  sock_name = ENCODE_SOCKETS[vst]
   if debug:
     print("start decoder for %s" % sock_name)
   if nvidia:
@@ -90,20 +97,27 @@ def decoder(addr, sock_name, vipc_server, vst, nvidia, debug=False):
       if debug:
         print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms" % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency, process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
 
-def main(addr, cams, nvidia=False, debug=False):
-  vipc_server = VisionIpcServer("camerad")
-  for vst in cams.values():
-    vipc_server.create_buffers(vst, 4, False, W, H)
-  vipc_server.start_listener()
+class CompressedVipc:
+  def __init__(self, addr, vision_streams, nvidia=False, debug=False):
+    self.vipc_server = VisionIpcServer("camerad")
+    for vst in vision_streams:
+      self.vipc_server.create_buffers(vst, 4, False, W, H)
+    self.vipc_server.start_listener()
 
-  procs = []
-  for k, v in cams.items():
-    p = multiprocessing.Process(target=decoder, args=(addr, k, vipc_server, v, nvidia, debug))
-    p.start()
-    procs.append(p)
+    self.procs = []
+    for vst in vision_streams:
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug))
+      p.start()
+      self.procs.append(p)
 
-  for p in procs:
-    p.join()
+  def join(self):
+    for p in self.procs:
+      p.join()
+
+  def kill(self):
+    for p in self.procs:
+      p.terminate()
+    self.join()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Decode video streams and broadcast on VisionIPC")
@@ -113,10 +127,12 @@ if __name__ == "__main__":
   parser.add_argument("--silent", action="store_true", help="Suppress debug output")
   args = parser.parse_args()
 
-  all_cams = [
-    ("roadEncodeData", VisionStreamType.VISION_STREAM_ROAD),
-    ("wideRoadEncodeData", VisionStreamType.VISION_STREAM_WIDE_ROAD),
-    ("driverEncodeData", VisionStreamType.VISION_STREAM_DRIVER),
+  vision_streams = [
+    VisionStreamType.VISION_STREAM_ROAD,
+    VisionStreamType.VISION_STREAM_WIDE_ROAD,
+    VisionStreamType.VISION_STREAM_DRIVER,
   ]
-  cams = dict([all_cams[int(x)] for x in args.cams.split(",")])
-  main(args.addr, cams, args.nvidia, debug=(not args.silent))
+
+  vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
+  cvipc = CompressedVipc(args.addr, vsts, args.nvidia, debug=(not args.silent))
+  cvipc.join()
