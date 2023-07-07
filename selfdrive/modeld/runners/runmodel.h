@@ -1,8 +1,10 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <memory>
 #include <cassert>
+
 #include "common/clutil.h"
 #include "common/swaglog.h"
 
