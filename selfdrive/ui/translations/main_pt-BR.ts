@@ -555,12 +555,16 @@
         <translation>Acesso remoto</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1 ano na nuvem</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>Benefícios para devs</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
