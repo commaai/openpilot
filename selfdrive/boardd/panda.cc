@@ -21,15 +21,14 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
 #endif
   }
 
-  hw_type = get_hw_type();
+  if (!up_to_date()) {
+    throw std::runtime_error("Panda firmware out of date, update required");
+  }
 
+  hw_type = get_hw_type();
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS) ||
             (hw_type == cereal::PandaState::PandaType::TRES);
-
-  if (!verify_firmware_version()) {
-    throw std::runtime_error("Panda firmware out of date, update required");
-  }
 
   can_reset_communications();
 
@@ -157,15 +156,14 @@ std::optional<std::string> Panda::get_serial() {
   return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
 }
 
-bool Panda::verify_firmware_version() {
+bool Panda::up_to_date() {
   if (auto fw_sig = get_firmware_version()) {
-    typedef cereal::PandaState::PandaType Type;
-    bool panda_h7 = (hw_type == Type::RED_PANDA || hw_type == Type::RED_PANDA_V2 || hw_type == Type::TRES);
-    std::string fn = panda_h7 ? "panda_h7.bin.signed" : "panda.bin.signed";
-    auto content = util::read_file(std::string("../../panda/board/obj/") + fn);
-    if (content.size() >= fw_sig->size() &&
-        memcmp(content.data() + content.size() - fw_sig->size(), fw_sig->data(), fw_sig->size()) == 0) {
-      return true;
+    for (auto fn : { "panda.bin.signed", "panda_h7.bin.signed" }) {
+      auto content = util::read_file(std::string("../../panda/board/obj/") + fn);
+      if (content.size() >= fw_sig->size() &&
+          memcmp(content.data() + content.size() - fw_sig->size(), fw_sig->data(), fw_sig->size()) == 0) {
+        return true;
+      }
     }
   }
   return false;
