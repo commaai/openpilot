@@ -61,7 +61,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
       border-radius: 50px;
       padding: 24px;
       margin-left: 30px;
-      margin-bottom:30px;
     }
     QPushButton:pressed {
       background-color: #D9000000;
@@ -74,6 +73,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   overlay_layout->addWidget(map_instructions);
   overlay_layout->addStretch(1);
   overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
+  overlay_layout->addSpacing(UI_BORDER_SIZE);
   overlay_layout->addWidget(map_eta);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
