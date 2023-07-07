@@ -369,8 +369,9 @@ CONFIGS = [
     ignore=["logMonoTime"],
     config_callback=laikad_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.002,
     timeout=60*10,  # first messages are blocked on internet assistance
-    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed 
+    main_pub="ubloxGnss", # config_callback will switch this to qcom if needed
   ),
   ProcessConfig(
     proc_name="torqued",
@@ -388,6 +389,7 @@ CONFIGS = [
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
@@ -400,6 +402,7 @@ CONFIGS = [
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.dspExecutionTime"],
     should_recv_callback=dmonitoringmodeld_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
     main_pub_drained=False,
     vision_pubs=["driverCameraState"],
@@ -552,7 +555,6 @@ class ProcessContainer:
           ms = messaging.drain_sock(socket)
           for m in ms:
             m = m.as_builder()
-            # TODO probe real execution times from comma device for long running processes like modeld, dmonitoringmodeld
             m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
             output_msgs.append(m.as_reader())
         self.cnt += 1
