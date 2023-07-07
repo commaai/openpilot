@@ -33,26 +33,30 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #else
   s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
 #endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, false, context);
 
-#ifdef TEMPORAL
-  s->m->addRecurrent(&s->feature_buffer[0], TEMPORAL_SIZE);
-#endif
+  s->m->addInput("input_imgs", NULL, 0);
+  s->m->addInput("big_input_imgs", NULL, 0);
 
+  // TODO: the input is important here, still need to fix this
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
+  s->m->addInput("desire_pulse", s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+  s->m->addInput("traffic_convention", s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 
 #ifdef DRIVING_STYLE
-  s->m->addDrivingStyle(s->driving_style, DRIVING_STYLE_LEN);
+  s->m->addInput("driving_style", s->driving_style, DRIVING_STYLE_LEN);
 #endif
 
 #ifdef NAV
-  s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+  s->m->addInput("nav_features", s->nav_features, NAV_FEATURE_LEN);
+#endif
+
+#ifdef TEMPORAL
+  s->m->addInput("feature_buffer", &s->feature_buffer[0], TEMPORAL_SIZE);
 #endif
 
 }
@@ -89,13 +93,13 @@ LOGT("Desire enqueued");
   s->traffic_convention[1-rhd_idx] = 0.0;
 
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
-  s->m->addImage(net_input_buf, s->frame->buf_size);
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getCLBuffer("input_imgs")));
+  s->m->setInputBuffer("input_imgs", net_input_buf, s->frame->buf_size);
   LOGT("Image added");
 
   if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
-    s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getCLBuffer("big_input_imgs")));
+    s->m->setInputBuffer("big_input_imgs", net_extra_buf, s->wide_frame->buf_size);
     LOGT("Extra image added");
   }
 
