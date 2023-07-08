@@ -2,6 +2,7 @@
 import os
 import time
 import copy
+import json
 import signal
 import platform
 from collections import OrderedDict
@@ -417,7 +418,40 @@ def get_process_config(name: str):
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
 
-def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader, List[capnp._DynamicStructReader]], *args, **kwargs):
+def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructReader]], initial_state: str = "first") -> Dict[str, Any]:
+  """
+  Use this to get custom params dict based on provided logs. 
+  Useful when replaying following processes: calibrationd, paramsd, torqued
+  The params may be based on first or last message of given type (carParams, liveCalibration, liveParameters, liveTorqueParameters) in the logs.
+  """
+
+  car_params = [m for m in lr if m.which() == "carParams"]
+  live_calibration = [m for m in lr if m.which() == "liveCalibration"]
+  live_parameters = [m for m in lr if m.which() == "liveParameters"]
+  live_torque_parameters = [m for m in lr if m.which() == "liveTorqueParameters"]
+
+  assert initial_state in ["first", "last"]
+  msg_index = 0 if initial_state == "first" else -1
+
+  assert len(car_params) > 0, "carParams required for initial state of liveParameters and liveTorqueCarParams"
+  if len(car_params) > 0:
+    car_params = car_params[msg_index].carParams
+
+  custom_params = {}
+  if len(live_calibration) > 0:
+    custom_params["CalibrationParams"] = live_calibration[msg_index].as_builder().to_bytes()
+  if len(live_parameters) > 0:
+    lp_dict = live_parameters[msg_index].to_dict()
+    lp_dict["carFingerprint"] = car_params.carFingerprint
+    custom_params["LiveParameters"] = json.dumps(lp_dict)
+  if len(live_torque_parameters) > 0:
+    custom_params["LiveTorqueCarParams"] = car_params.as_builder().to_bytes()
+    custom_params["LiveTorqueParameters"] = live_torque_parameters[msg_index].as_builder().to_bytes()
+
+  return custom_params
+
+
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader, List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
   if isinstance(name, str):
     cfgs = [get_process_config(name)]
   elif isinstance(name, Iterable):
