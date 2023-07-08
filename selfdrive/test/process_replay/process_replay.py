@@ -411,7 +411,7 @@ CONFIGS = [
 ]
 
 
-def get_process_config(name: str):
+def get_process_config(name: str) -> ProcessConfig:
   try:
     return copy.deepcopy(next(c for c in CONFIGS if c.proc_name == name))
   except StopIteration as ex:
@@ -465,7 +465,7 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 def replay_process(
   cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None, disable_progress: bool = False
-):
+) -> List[capnp._DynamicStructReader]:
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)
   else:
@@ -496,15 +496,15 @@ class ProcessContainer:
     self.pm, self.sockets, self.rc, self.vipc_server = None, None, None, None
 
   @property
-  def has_empty_queue(self):
+  def has_empty_queue(self) -> bool:
     return len(self.msg_queue) == 0
 
   @property
-  def pubs(self):
+  def pubs(self) -> List[str]:
     return self.cfg.pubs
 
   @property
-  def subs(self):
+  def subs(self) -> List[str]:
     return self.cfg.subs
 
   def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
@@ -581,7 +581,7 @@ class ProcessContainer:
       # TODO cleanup prefix dirs here
       self.prefix.clean_dirs()
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]):
+  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
     output_msgs = []
     with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
       end_of_cycle = True
@@ -632,7 +632,7 @@ class ProcessContainer:
 def _replay_multi_process(
   cfgs: List[ProcessConfig], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]],
   fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
-):
+) -> List[capnp._DynamicStructReader]:
   if fingerprint is not None:
     params_config = generate_params_config(lr=lr, fingerprint=fingerprint, custom_params=custom_params)
     env_config = generate_environ_config(fingerprint=fingerprint)
@@ -692,7 +692,7 @@ def _replay_multi_process(
   return log_msgs
 
 
-def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=None):
+def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=None) -> Dict[str, Any]:
   params_dict = {
     "OpenpilotEnabledToggle": True,
     "Passive": False,
@@ -705,6 +705,8 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
   if lr is not None:
     has_ublox = any(msg.which() == "ubloxGnss" for msg in lr)
     params_dict["UbloxAvailable"] = has_ublox
+    is_rhd = next((msg.driverMonitoringState.isRHD for msg in lr if msg.which() == "driverMonitoringState"), False)
+    params_dict["IsRhdDetected"] = is_rhd
 
   if CP is not None:
     if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
@@ -720,7 +722,7 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
   return params_dict
 
 
-def generate_environ_config(CP=None, fingerprint=None, log_dir=None):
+def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str, Any]:
   environ_dict = {}
   if platform.system() != "Darwin":
     environ_dict["PARAMS_ROOT"] = "/dev/shm/params"
@@ -748,7 +750,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None):
   return environ_dict
 
 
-def check_openpilot_enabled(msgs: Union[LogReader, List[capnp._DynamicStructReader]]):
+def check_openpilot_enabled(msgs: Union[LogReader, List[capnp._DynamicStructReader]]) -> bool:
   cur_enabled_count = 0
   max_enabled_count = 0
   for msg in msgs:
