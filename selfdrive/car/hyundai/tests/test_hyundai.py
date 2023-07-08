@@ -52,13 +52,19 @@ class TestHyundaiFingerprint(unittest.TestCase):
       self.assertEqual(len(ecus_not_in_whitelist), 0,
                        f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
-  def test_blacklisted_fws(self):
-    # TODO: make this into a part number test
-    for car_model, fws in FW_VERSIONS.items():
-      if car_model == CAR.SANTA_CRUZ_1ST_GEN:
-        continue
+  def test_blacklisted_parts(self):
+    # Asserts no ECUs known to be shared across platforms exist in the database
+    # Tucson having Santa Cruz camera and EPS for example
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model):
+        if car_model == CAR.SANTA_CRUZ_1ST_GEN:
+          raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
-      self.assertNotIn(b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X', fws[(Ecu.fwdCamera, 0x7c4, None)])
+        for code, _ in get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)]):
+          if b"-" not in code:
+            continue
+          part = code.split(b"-")[1]
+          self.assertFalse(part.startswith(b'CW'), "Car has bad part number")
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
