@@ -87,7 +87,8 @@ class CarController:
           angle_winddown = interp(abs(CS.out.steeringTorqueEps),
                                   [MAX_STEER_TORQUE, MAX_STEER_TORQUE + 100], [0, angle_down_limit])
 
-          new_max_angle = abs(self.last_angle) - angle_winddown
+          # Ensure we don't pass zero trying to wind down the angle
+          new_max_angle = max(abs(self.last_angle) - angle_winddown, 0)
           apply_angle = clip(apply_angle, -new_max_angle, new_max_angle)
 
         # Angular rate limit based on speed
