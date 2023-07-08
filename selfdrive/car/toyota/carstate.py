@@ -19,6 +19,9 @@ SteerControlType = car.CarParams.SteerControlType
 # - initializing: LTA can report 0 as long as STEER_TORQUE_SENSOR->STEER_ANGLE_INITIALIZING is 1,
 #     and is a catch-all for LKA
 TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
+# - lka/lta msg drop out: 3 (recoverable)
+# - prolonged high driver torque: 17 (permanent)
+PERM_STEER_FAULTS = (3, 17)
 
 
 class CarState(CarStateBase):
@@ -101,13 +104,11 @@ class CarState(CarStateBase):
 
     # Check EPS LKA/LTA fault status
     ret.steerFaultTemporary = cp.vl["EPS_STATUS"]["LKA_STATE"] in TEMP_STEER_FAULTS
-    # 3 is a fault from the lka command message not being received by the EPS (recoverable)
-    # 17 is a fault from a prolonged high torque delta between cmd and user (permanent)
-    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in (3, 17)
+    ret.steerFaultPermanent = cp.vl["EPS_STATUS"]["LKA_STATE"] in PERM_STEER_FAULTS
 
     if self.CP.steerControlType == SteerControlType.angle:
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in TEMP_STEER_FAULTS
-      ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in (3,)
+      ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in PERM_STEER_FAULTS
 
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH

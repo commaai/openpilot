@@ -72,11 +72,6 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-# create symlink to lib dir of current arch, so the ACADOS_SOURCE_DIR would have valid structure
-acados_lib_path = Dir(f"#third_party/acados/lib")
-if not Dir(f"#third_party/acados/lib").exists():
-  os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path.abspath)
-
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
