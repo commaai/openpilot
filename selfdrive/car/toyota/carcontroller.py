@@ -79,8 +79,8 @@ class CarController:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        # If the EPS output torque is above the limit, force the requested
-        # angle to wind down based on the previous requested angle
+        # If EPS torque is above the limit, wind down by restricting the max angle.
+        # Need to use last_angle since we can't rely on actuators.steeringAngleDeg being near the current angle
         if abs(CS.out.steeringTorqueEps) > MAX_STEER_TORQUE:
           angle_down_limit = interp(CS.out.vEgo, self.params.ANGLE_RATE_LIMIT_DOWN.speed_bp,
                                     self.params.ANGLE_RATE_LIMIT_DOWN.angle_v)
