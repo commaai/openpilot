@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Regular.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-SemiBold.ttf");
   QFontDatabase::addApplicationFont("../assets/fonts/Inter-Thin.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/JetBrainsMono-Medium.ttf");
 
   // no outline to prevent the focus rectangle
   setStyleSheet(R"(
@@ -64,8 +65,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
 }
 
-void MainWindow::openSettings() {
+void MainWindow::openSettings(int index, const QString &param) {
   main_layout->setCurrentWidget(settingsWindow);
+  settingsWindow->setCurrentPanel(index, param);
 }
 
 void MainWindow::closeSettings() {
@@ -77,11 +79,20 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  const static QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
-                                 QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
-
-  if (evts.contains(event->type())) {
-    device.resetInteractiveTimout();
+  bool ignore = false;
+  switch (event->type()) {
+    case QEvent::TouchBegin:
+    case QEvent::TouchUpdate:
+    case QEvent::TouchEnd:
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseMove: {
+      // ignore events when device is awakened by resetInteractiveTimout
+      ignore = !uiState()->awake;
+      device.resetInteractiveTimout();
+      break;
+    }
+    default:
+      break;
   }
-  return false;
+  return ignore;
 }

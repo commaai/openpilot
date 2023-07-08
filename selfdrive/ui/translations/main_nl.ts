@@ -1007,7 +1007,7 @@ ingesteld</translation>
         <translation>Upload gegevens van de bestuurders camera en help het algoritme voor het monitoren van de bestuurder te verbeteren.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>Deactiveren Met Gaspedaal</translation>
     </message>
     <message>
@@ -1043,7 +1043,7 @@ ingesteld</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

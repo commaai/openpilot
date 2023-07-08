@@ -22,12 +22,13 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
 void dmonitoring_init(DMonitoringModelState* s) {
 
 #ifdef USE_ONNX_MODEL
-  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new ONNXModel("models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, true);
 #else
-  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, false, true);
+  s->m = new SNPEModel("models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME, true);
 #endif
 
-  s->m->addCalib(s->calib, CALIB_LEN);
+  s->m->addInput("input_imgs", NULL, 0);
+  s->m->addInput("calib", s->calib, CALIB_LEN);
 }
 
 void parse_driver_data(DriverStateResult &ds_res, const DMonitoringModelState* s, int out_idx_offset) {
@@ -92,7 +93,7 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   // fclose(dump_yuv_file);
 
   double t1 = millis_since_boot();
-  s->m->addImage((float*)net_input_buf, yuv_buf_len / 4);
+  s->m->setInputBuffer("input_imgs", (float*)net_input_buf, yuv_buf_len / 4);
   for (int i = 0; i < CALIB_LEN; i++) {
     s->calib[i] = calib[i];
   }

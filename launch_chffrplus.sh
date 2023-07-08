@@ -74,7 +74,7 @@ function launch {
 
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
-  export PYTHONPATH="$PWD:$PWD/pyextra"
+  export PYTHONPATH="$PWD"
 
   # hardware specific init
   agnos_init

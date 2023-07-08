@@ -83,7 +83,7 @@ common
 sensorsd
 ^^^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_sensord_sensors
+   :project: system_sensord_sensors
 
 boardd
 ^^^^^^

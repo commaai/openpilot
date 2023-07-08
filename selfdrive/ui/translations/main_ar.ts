@@ -1023,7 +1023,7 @@ location set</source>
         <translation>قم بتحميل البيانات من الكاميرا المواجهة للسائق وساعد في تحسين خوارزمية مراقبة السائق.</translation>
     </message>
     <message>
-        <source>Disengage On Accelerator Pedal</source>
+        <source>Disengage on Accelerator Pedal</source>
         <translation>فك الارتباط على دواسة التسريع</translation>
     </message>
     <message>
@@ -1059,7 +1059,7 @@ location set</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental openpilot longitudinal control</source>
+        <source>Experimental openpilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

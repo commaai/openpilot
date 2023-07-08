@@ -24,8 +24,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const float VALID_POS_STD = 50.0; // m
-
 const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
@@ -43,11 +41,34 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   const int h = 120;
   map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h - bdr_s*2);
+  map_eta->move(25, 1080 - h - UI_BORDER_SIZE*2);
   map_eta->setVisible(false);
 
+  // Settings button
+  QSize icon_size(120, 120);
+  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
+  settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
+
+  settings_btn = new QPushButton(directions_icon, "", this);
+  settings_btn->setIconSize(icon_size);
+  settings_btn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #96000000;
+      border-radius: 50px;
+      padding: 24px;
+    }
+    QPushButton:pressed {
+      background-color: #D9000000;
+    }
+  )");
+  settings_btn->show();  // force update
+  settings_btn->move(UI_BORDER_SIZE, 1080 - UI_BORDER_SIZE*3 - settings_btn->height());
+  QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
+    emit openSettings();
+  });
+
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position) {
+  if (last_gps_position.has_value()) {
     last_position = *last_gps_position;
   }
 
@@ -82,6 +103,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
+    m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -114,8 +136,11 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
 
-    locationd_valid = (locationd_location.getStatus() == cereal::LiveLocationKalman::Status::VALID) &&
-      locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid();
+    // Check std norm
+    auto pos_ecef_std = locationd_location.getPositionECEF().getStd();
+    bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
+
+    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
 
     if (locationd_valid) {
       last_position = QMapbox::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
@@ -124,47 +149,12 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  if (sm.updated("gnssMeasurements")) {
-    auto laikad_location = sm["gnssMeasurements"].getGnssMeasurements();
-    auto laikad_pos = laikad_location.getPositionECEF();
-    auto laikad_pos_ecef = laikad_pos.getValue();
-    auto laikad_pos_std = laikad_pos.getStd();
-    auto laikad_velocity_ecef = laikad_location.getVelocityECEF().getValue();
-
-    laikad_valid = laikad_pos.getValid() && Eigen::Vector3d(laikad_pos_std[0], laikad_pos_std[1], laikad_pos_std[2]).norm() < VALID_POS_STD;
-
-    if (laikad_valid && !locationd_valid) {
-      ECEF ecef = {.x = laikad_pos_ecef[0], .y = laikad_pos_ecef[1], .z = laikad_pos_ecef[2]};
-      Geodetic laikad_pos_geodetic = ecef2geodetic(ecef);
-      last_position = QMapbox::Coordinate(laikad_pos_geodetic.lat, laikad_pos_geodetic.lon);
-
-      // Compute NED velocity
-      LocalCoord converter(ecef);
-      ECEF next_ecef = {.x = ecef.x + laikad_velocity_ecef[0], .y = ecef.y + laikad_velocity_ecef[1], .z = ecef.z + laikad_velocity_ecef[2]};
-      Eigen::VectorXd ned_vel = converter.ecef2ned(next_ecef).to_vector() - converter.ecef2ned(ecef).to_vector();
-
-      float velocity = ned_vel.norm();
-      velocity_filter.update(velocity);
-
-      // Convert NED velocity to angle
-      if (velocity > 1.0) {
-        float new_bearing = fmod(RAD2DEG(atan2(ned_vel[1], ned_vel[0])) + 360.0, 360.0);
-        if (last_bearing) {
-          float delta = 0.1 * angle_difference(*last_bearing, new_bearing); // Smooth heading
-          last_bearing = fmod(*last_bearing + delta + 360.0, 360.0);
-        } else {
-          last_bearing = new_bearing;
-        }
-      }
-    }
-  }
-
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Only open the map on setting destination the first time
     if (allow_open) {
-      setVisible(true); // Show map on destination set/change
+      emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
   }
@@ -181,7 +171,7 @@ void MapWindow::updateState(const UIState &s) {
 
   initLayers();
 
-  if (locationd_valid || laikad_valid) {
+  if (locationd_valid) {
     map_instructions->noError();
 
     // Update current location marker
@@ -204,8 +194,7 @@ void MapWindow::updateState(const UIState &s) {
 
   if (zoom_counter == 0) {
     m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
-    zoom_counter = -1;
-  } else if (zoom_counter > 0) {
+  } else {
     zoom_counter--;
   }
 
@@ -214,14 +203,26 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
-      if (locationd_valid || laikad_valid) {
+      if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
         emit instructionsChanged(i);
       }
     } else {
-      m_map->setPitch(MIN_PITCH);
       clearRoute();
+    }
+
+    // TODO: only move if position should change
+    // don't move while map isn't visible
+    if (isVisible()) {
+      auto pos = 1080 - UI_BORDER_SIZE*2 - settings_btn->height() - UI_BORDER_SIZE;
+      if (map_eta->isVisible()) {
+        settings_btn->move(UI_BORDER_SIZE, pos - map_eta->height());
+        settings_btn->setIcon(settings_icon);
+      } else {
+        settings_btn->move(UI_BORDER_SIZE, pos);
+        settings_btn->setIcon(directions_icon);
+      }
     }
   }
 
@@ -237,6 +238,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
+    updateDestinationMarker();
   }
 }
 
@@ -256,7 +258,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
+  m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
@@ -274,6 +276,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
+    updateDestinationMarker();
   }
 
   map_instructions->hideIfNoError();
@@ -356,9 +359,22 @@ void MapWindow::offroadTransition(bool offroad) {
     clearRoute();
   } else {
     auto dest = coordinate_from_param("NavDestination");
-    setVisible(dest.has_value());
+    emit requestVisible(dest.has_value());
   }
   last_bearing = {};
+}
+
+void MapWindow::updateDestinationMarker() {
+  if (marker_id != -1) {
+    m_map->removeAnnotation(marker_id);
+    marker_id = -1;
+  }
+
+  auto nav_dest = coordinate_from_param("NavDestination");
+  if (nav_dest.has_value()) {
+    auto ano = QMapbox::SymbolAnnotation {*nav_dest, "default_marker"};
+    marker_id = m_map->addAnnotation(QVariant::fromValue<QMapbox::SymbolAnnotation>(ano));
+  }
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
@@ -684,5 +700,5 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   setMask(mask);
 
   // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - bdr_s*2);
+  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - UI_BORDER_SIZE*2);
 }
