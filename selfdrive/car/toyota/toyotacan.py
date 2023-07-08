@@ -17,7 +17,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, frame):
     "SETME_X1": 1,
     "SETME_X3": 3,
     "PERCENTAGE": 100,
-    "SETME_X64": 100,
+    "SETME_X64": 0,
     "ANGLE": 0,
     "STEER_ANGLE_CMD": steer_angle,
     "STEER_REQUEST": steer_req,
