@@ -53,7 +53,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
                        f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
 
   def test_blacklisted_parts(self):
-    # Asserts no ECUs known to be shared across platforms exist in the database
+    # Asserts no ECUs known to be shared across platforms exist in the database.
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model):
