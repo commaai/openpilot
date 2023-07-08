@@ -120,19 +120,17 @@ def replay_service(s, msgs):
 
 def replay_cameras(lr, frs, disable_tqdm=False):
   eon_cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, True),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
   tici_cameras = [
-    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD, False),
-    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD, False),
-    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER, False),
+    ("roadCameraState", DT_MDL, tici_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("wideRoadCameraState", DT_MDL, tici_e_frame_size, VisionStreamType.VISION_STREAM_WIDE_ROAD),
+    ("driverCameraState", DT_DMON, tici_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
-  def replay_camera(s, stream, dt, vipc_server, frames, size, use_extra_client):
+  def replay_camera(s, stream, dt, vipc_server, frames, size):
     services = [(s, stream)]
-    if use_extra_client:
-      services.append(("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD))
     pm = messaging.PubMaster([s for s, _ in services])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
 
@@ -154,12 +152,12 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
 
   init_data = [m for m in lr if m.which() == 'initData'][0]
-  cameras = tici_cameras if (init_data.initData.deviceType == 'tici') else eon_cameras
+  cameras = tici_cameras if (init_data.initData.deviceType in ['tici', 'tizi']) else eon_cameras
 
   # init vipc server and cameras
   p = []
   vs = VisionIpcServer("camerad")
-  for (s, dt, size, stream, use_extra_client) in cameras:
+  for (s, dt, size, stream) in cameras:
     fr = frs.get(s, None)
 
     frames = None
@@ -171,10 +169,8 @@ def replay_cameras(lr, frs, disable_tqdm=False):
         frames.append(img.flatten().tobytes())
 
     vs.create_buffers(stream, 40, False, size[0], size[1])
-    if use_extra_client:
-      vs.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, size[0], size[1])
     p.append(multiprocessing.Process(target=replay_camera,
-                                     args=(s, stream, dt, vs, frames, size, use_extra_client)))
+                                     args=(s, stream, dt, vs, frames, size)))
 
   vs.start_listener()
   return vs, p
@@ -307,7 +303,7 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
     device_type = next(iter(lr)).initData.deviceType
-    if device_type == 'tici':
+    if device_type in ['tici', 'tizi']:
       wfr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
     else:
       wfr = None

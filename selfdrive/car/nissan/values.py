@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -33,7 +33,7 @@ class CAR:
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = CarParts.common([CarHarness.nissan_a])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -79,25 +79,35 @@ FINGERPRINTS = {
   ]
 }
 
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40])
 
 NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
 NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
 
 NISSAN_RX_OFFSET = 0x20
 
+# Try diagnostic sessions: default, standby, extended, Nissan-specific
+NISSAN_DIAGNOSTIC_SESSION_TYPES = (0x81, 0x89, 0x92, 0xc0)
+NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE = 0xc0
+
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-    ),
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-      rx_offset=NISSAN_RX_OFFSET,
-    ),
+    *[
+      Request(
+        [NISSAN_DIAGNOSTIC_REQUEST_KWP + bytes([subfunction]), NISSAN_VERSION_REQUEST_KWP],
+        [NISSAN_DIAGNOSTIC_RESPONSE_KWP + bytes([subfunction]), NISSAN_VERSION_RESPONSE_KWP],
+        logging=subfunction != NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE,
+      ) for subfunction in NISSAN_DIAGNOSTIC_SESSION_TYPES
+    ],
+    *[
+      Request(
+        [NISSAN_DIAGNOSTIC_REQUEST_KWP + bytes([subfunction]), NISSAN_VERSION_REQUEST_KWP],
+        [NISSAN_DIAGNOSTIC_RESPONSE_KWP + bytes([subfunction]), NISSAN_VERSION_RESPONSE_KWP],
+        rx_offset=NISSAN_RX_OFFSET,
+        logging=subfunction != NISSAN_DEFAULT_DIAGNOSTIC_SESSION_TYPE,
+      ) for subfunction in NISSAN_DIAGNOSTIC_SESSION_TYPES
+    ],
     Request(
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],

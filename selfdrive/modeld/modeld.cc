@@ -43,7 +43,7 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
      1.0,  0.0,  0.0).finished();
 
 
-  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
+  const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ECAM_INTRINSIC_MATRIX.v : FCAM_INTRINSIC_MATRIX.v);
   Eigen::Matrix<float, 3, 3, Eigen::RowMajor>  device_from_calib = euler2rot(device_from_calib_euler).cast <float> ();
   auto calib_from_model = bigmodel_frame ? calib_from_sbigmodel : calib_from_medmodel;
   auto camera_from_calib = cam_intrinsics * view_from_device * device_from_calib;
@@ -53,15 +53,14 @@ mat3 update_calibration(Eigen::Vector3d device_from_calib_euler, bool wide_camer
   for (int i=0; i<3*3; i++) {
     transform.v[i] = warp_matrix(i / 3, i % 3);
   }
-  static const mat3 yuv_transform = get_model_yuv_transform();
-  return matmul3(yuv_transform, transform);
+  return transform;
 }
 
 
 void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcClient &vipc_client_extra, bool main_wide_camera, bool use_extra_client) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
-  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"});
+  SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "mapRenderState", "navInstruction", "navModel"});
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -72,6 +71,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
   mat3 model_transform_main = {};
   mat3 model_transform_extra = {};
+  bool nav_enabled = false;
   bool live_calib_seen = false;
   float driving_style[DRIVING_STYLE_LEN] = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0};
   float nav_features[NAV_FEATURE_LEN] = {0};
@@ -137,6 +137,25 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       vec_desire[desire] = 1.0;
     }
 
+    // Enable/disable nav features
+    double tsm = (float)(nanos_since_boot() - sm["mapRenderState"].getMapRenderState().getLocationMonoTime()) / 1e6;
+    bool route_valid = sm["navInstruction"].getValid() && (tsm < 1000);
+    bool render_valid = sm["mapRenderState"].getValid() && (sm["navModel"].getNavModel().getFrameId() == sm["mapRenderState"].getMapRenderState().getFrameId());
+    bool nav_valid = route_valid && render_valid;
+    if (!nav_enabled && nav_valid) {
+      nav_enabled = true;
+    } else if (nav_enabled && !nav_valid) {
+      memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
+      nav_enabled = false;
+    }
+
+    if (nav_enabled && sm.updated("navModel")) {
+      auto nav_model_features = sm["navModel"].getNavModel().getFeatures();
+      for (int i=0; i<NAV_FEATURE_LEN; i++) {
+        nav_features[i] = nav_model_features[i];
+      }
+    }
+
     // tracked dropped frames
     uint32_t vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1;
     float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
@@ -159,8 +178,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     if (model_output != nullptr) {
-      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
-                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen);
+      model_publish(&model, pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, model_execution_time,
+                    nav_enabled, live_calib_seen);
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
 
