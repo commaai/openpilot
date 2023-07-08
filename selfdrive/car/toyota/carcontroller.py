@@ -81,12 +81,16 @@ class CarController:
 
         # If the EPS output torque is above the limit, force the requested
         # angle to lower at the max allowed rate
-        angle_down_limit = interp(CS.out.vEgo, self.params.ANGLE_RATE_LIMIT_DOWN.speed_bp,
-                                  self.params.ANGLE_RATE_LIMIT_DOWN.angle_v)
-        max_torque_angle_mod = interp(abs(CS.out.steeringTorqueEps),
-                                      [MAX_STEER_TORQUE, MAX_STEER_TORQUE + 100], [0, -angle_down_limit])
-        sign_of = 1 if apply_angle >= 0 else -1
-        apply_angle += max_torque_angle_mod * sign_of
+        if abs(CS.out.steeringTorqueEps) > MAX_STEER_TORQUE:
+          angle_down_limit = interp(CS.out.vEgo, self.params.ANGLE_RATE_LIMIT_DOWN.speed_bp,
+                                    self.params.ANGLE_RATE_LIMIT_DOWN.angle_v)
+          # max_torque_angle_mod = interp(abs(CS.out.steeringTorqueEps),
+          angle_winddown = interp(abs(CS.out.steeringTorqueEps),
+                                  [MAX_STEER_TORQUE, MAX_STEER_TORQUE + 100], [0, angle_down_limit])
+
+          sign_of = 1 if self.last_angle >= 0 else -1
+          new_max_angle = self.last_angle - angle_winddown * sign_of
+          apply_angle = clip(apply_angle, -new_max_angle, new_max_angle)
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
