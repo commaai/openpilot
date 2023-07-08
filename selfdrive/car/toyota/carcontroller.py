@@ -24,6 +24,7 @@ MAX_USER_TORQUE = 500
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_STEER_ANGLE = 94.9461  # deg
+MAX_STEER_TORQUE = 1500  # 1500 units is about 2.0 m/s^2 on RAV4 2023
 
 
 class CarController:
@@ -94,7 +95,11 @@ class CarController:
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
-      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
+      need_to_winddown = False  # abs(CS.out.steeringAngleDeg) > abs(actuators.steeringAngleDeg) and abs(CS.out.steeringAngleDeg) - abs(actuators.steeringAngleDeg) > 4
+      enable_condition = abs(CS.out.steeringTorqueEps) < 1500 and abs(CS.out.steeringTorque) < 150 and not need_to_winddown
+      setme_x64 = 100  # 100 if enable_condition else 0
+      lta_active = lta_active and enable_condition
+      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
