@@ -584,7 +584,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   // ETA
   auto eta_t = QDateTime::currentDateTime().addSecs(s).time();
   auto eta = format_24h ? std::array{eta_t.toString("HH:mm"), tr("eta")}
-                        : std::array{eta_t.toString("h:mm"), eta_t.toString("a")};
+                        : std::array{eta_t.toString("h:mm a").split(' ')[0], eta_t.toString("a")};
 
   // Remaining time
   auto time_t = QDateTime::fromTime_t(s);
