@@ -24,6 +24,7 @@ MAX_USER_TORQUE = 500
 # LTA limits
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_STEER_ANGLE = 94.9461  # deg
+MAX_STEER_TORQUE = 1500  # 1500 units is about 2.5 m/s^2 on RAV4 2023
 
 
 class CarController:
@@ -77,6 +78,15 @@ class CarController:
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
+
+        # If the EPS output torque is above the rate limit
+        # if torque is above limit, force angle to lower
+        # TODO: tune this, also won't work well near 0. multiplier instead of offset?
+        max_down_limit = max(self.params.ANGLE_RATE_LIMIT_DOWN.angle_v)
+        max_torque_angle_mod = interp(abs(CS.out.steeringTorqueEps),
+                                      [MAX_STEER_TORQUE, MAX_STEER_TORQUE + 100], [0, -max_down_limit])
+        sign_of = 1 if apply_angle >= 0 else -1
+        apply_angle += max_torque_angle_mod * sign_of
 
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
