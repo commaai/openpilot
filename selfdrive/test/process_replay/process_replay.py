@@ -28,7 +28,6 @@ from tools.lib.logreader import LogReader
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
-TIMEOUT = 15
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
@@ -413,7 +412,7 @@ CONFIGS = [
 
 def get_process_config(name):
   try:
-    return next(c for c in CONFIGS if c.proc_name == name)
+    return copy.deepcopy(next(c for c in CONFIGS if c.proc_name == name))
   except StopIteration as ex:
     raise Exception(f"Cannot find process config with name: {name}") from ex
 
@@ -442,7 +441,7 @@ def replay_process(cfg, lr, frs=None, fingerprint=None, return_all_logs=False, c
 class ProcessContainer:
   def __init__(self, cfg: ProcessConfig):
     self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
-    self.cfg = copy.copy(cfg)
+    self.cfg = copy.deepcopy(cfg)
     self.process = managed_processes[cfg.proc_name]
     self.msg_queue = []
     self.cnt = 0
