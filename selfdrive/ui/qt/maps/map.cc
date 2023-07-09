@@ -469,7 +469,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
     fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
-    bool rhd  = is_rhd && fn.contains("_left") || fn.contains("_right");
+    bool rhd = is_rhd && fn.contains("_left") || fn.contains("_right");
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
