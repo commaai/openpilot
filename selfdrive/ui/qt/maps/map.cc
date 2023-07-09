@@ -25,14 +25,20 @@ const QString ICON_SUFFIX = ".png";
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
+  map_overlay = new QWidget (this);
+  map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
+  QVBoxLayout *overlay_layout = new QVBoxLayout(map_overlay);
+  overlay_layout->setContentsMargins(0, 0, 0, 0);
+
   // Instructions
   map_instructions = new MapInstructions(this);
   QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
   QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
-  map_instructions->setFixedWidth(width());
   map_instructions->setVisible(false);
 
   map_eta = new MapETA(this);
+  map_eta->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  map_eta->setFixedHeight(120);
 
   // Settings button
   QSize icon_size(120, 120);
@@ -41,21 +47,27 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   settings_btn = new QPushButton(directions_icon, "", this);
   settings_btn->setIconSize(icon_size);
+  settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   settings_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #96000000;
       border-radius: 50px;
       padding: 24px;
+      margin-left: 30px;
     }
     QPushButton:pressed {
       background-color: #D9000000;
     }
   )");
-  settings_btn->show();  // force update
-  settings_btn->move(UI_BORDER_SIZE, 1080 - UI_BORDER_SIZE*3 - settings_btn->height());
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
     emit openSettings();
   });
+
+  overlay_layout->addWidget(map_instructions);
+  overlay_layout->addStretch(1);
+  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
+  overlay_layout->addSpacing(UI_BORDER_SIZE);
+  overlay_layout->addWidget(map_eta);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
@@ -202,17 +214,8 @@ void MapWindow::updateState(const UIState &s) {
       clearRoute();
     }
 
-    // TODO: only move if position should change
-    // don't move while map isn't visible
     if (isVisible()) {
-      auto pos = 1080 - UI_BORDER_SIZE*2 - settings_btn->height() - UI_BORDER_SIZE;
-      if (map_eta->isVisible()) {
-        settings_btn->move(UI_BORDER_SIZE, pos - map_eta->height());
-        settings_btn->setIcon(settings_icon);
-      } else {
-        settings_btn->move(UI_BORDER_SIZE, pos);
-        settings_btn->setIcon(directions_icon);
-      }
+      settings_btn->setIcon(map_eta->isVisible() ? settings_icon : directions_icon);
     }
   }
 
@@ -234,8 +237,7 @@ void MapWindow::updateState(const UIState &s) {
 
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
-  map_instructions->setFixedWidth(width());
-  map_eta->setGeometry(0, height() - 120, w, 120);
+  map_overlay->setFixedSize(width(), height());
 }
 
 void MapWindow::initializeGL() {
@@ -406,12 +408,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     main_layout->addLayout(layout);
   }
 
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-    }
-  )");
+  setStyleSheet("color:white");
 
   QPalette pal = palette();
   pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
@@ -467,11 +464,6 @@ void MapInstructions::noError() {
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
-  // Word wrap widgets need fixed width
-  primary->setFixedWidth(width() - 250);
-  secondary->setFixedWidth(width() - 250);
-
-
   // Show instruction text
   QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
   QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
@@ -545,8 +537,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
   lane_widget->setVisible(has_lanes);
 
-  show();
-  resize(sizeHint());
+  setVisible(true);
 }
 
 
