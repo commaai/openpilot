@@ -1701,8 +1701,8 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391162J012',
       b'\xf1\x87391162J013',
-      b'\xf1\x87391062J002',
       b'\xf1\x87391162J014',
+      b'\xf1\x87391062J002',
     ],
   },
   CAR.KIA_SORENTO: {
