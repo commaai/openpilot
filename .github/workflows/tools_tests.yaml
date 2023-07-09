@@ -29,7 +29,7 @@ env:
 jobs:
   plotjuggler:
     name: plotjuggler
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
@@ -46,7 +46,7 @@ jobs:
 
   simulator:
     name: simulator
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
@@ -70,7 +70,7 @@ jobs:
 
   docs:
     name: build docs
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
