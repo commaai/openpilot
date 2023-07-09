@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 import math
 import unittest
+import hypothesis.strategies as st
+from hypothesis import given, settings
 import importlib
 from parameterized import parameterized
 
 from cereal import car
 from selfdrive.car import gen_empty_fingerprint
-from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
+from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
+from selfdrive.test.fuzzy_generation import FuzzyGenerator
+
 
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in all_known_cars()])
-  def test_car_interfaces(self, car_name):
+  @settings(max_examples=5)
+  @given(data=st.data())
+  def test_car_interfaces(self, car_name, data):
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -25,14 +30,15 @@ class TestCarInterfaces(unittest.TestCase):
 
     car_fw = []
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
 
     self.assertGreater(car_params.mass, 1)
     self.assertGreater(car_params.wheelbase, 0)
-    self.assertGreater(car_params.centerToFront, 0)
+    # centerToFront is center of gravity to front wheels, assert a reasonable range
+    self.assertTrue(car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7)
     self.assertGreater(car_params.maxLateralAccel, 0)
 
     # Longitudinal sanity checks
@@ -50,24 +56,25 @@ class TestCarInterfaces(unittest.TestCase):
 
       elif tune.which() == 'torque':
         self.assertTrue(not math.isnan(tune.torque.kf) and tune.torque.kf > 0)
-        self.assertTrue(not math.isnan(tune.torque.friction))
+        self.assertTrue(not math.isnan(tune.torque.friction) and tune.torque.friction > 0)
 
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
+    cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
-    CC = car.CarControl.new_message()
+    CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
-    CC = car.CarControl.new_message()
+    CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC)
-      car_interface.apply(CC)
+      car_interface.apply(CC, 0)
+      car_interface.apply(CC, 0)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
@@ -76,7 +83,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # Run radar interface once
     radar_interface.update([])
-    if not car_params.radarOffCan and radar_interface.rcp is not None and \
+    if not car_params.radarUnavailable and radar_interface.rcp is not None and \
        hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 

@@ -141,9 +141,9 @@ void Installer::cachedFetch(const QString &cache) {
 void Installer::readProgress() {
   const QVector<QPair<QString, int>> stages = {
     // prefix, weight in percentage
-    {tr("Receiving objects: "), 91},
-    {tr("Resolving deltas: "), 2},
-    {tr("Updating files: "), 7},
+    {"Receiving objects: ", 91},
+    {"Resolving deltas: ", 2},
+    {"Updating files: ", 7},
   };
 
   auto line = QString(proc.readAllStandardError());

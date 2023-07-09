@@ -11,11 +11,12 @@
 #include <QMouseEvent>
 #include <QOpenGLWidget>
 #include <QPixmap>
+#include <QPushButton>
 #include <QScopedPointer>
 #include <QString>
+#include <QTextDocument>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <QtGlobal>
 
 #include "cereal/messaging/messaging.h"
 #include "common/params.h"
@@ -49,20 +50,17 @@ public slots:
 class MapETA : public QWidget {
   Q_OBJECT
 
-private:
-  QLabel *eta;
-  QLabel *eta_unit;
-  QLabel *time;
-  QLabel *time_unit;
-  QLabel *distance;
-  QLabel *distance_unit;
-  Params params;
-
 public:
   MapETA(QWidget * parent=nullptr);
-
-public slots:
   void updateETA(float seconds, float seconds_typical, float distance);
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+  void showEvent(QShowEvent *event) override { format_24h = param.getBool("NavSettingTime24h"); }
+
+  bool format_24h = false;
+  QTextDocument eta_doc;
+  Params param;
 };
 
 class MapWindow : public QOpenGLWidget {
@@ -99,17 +97,19 @@ private:
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
-  int zoom_counter = -1;
+  int zoom_counter = 0;
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
-  bool laikad_valid = false;
   bool locationd_valid = false;
 
+  QWidget *map_overlay;
   MapInstructions* map_instructions;
   MapETA* map_eta;
+  QPushButton *settings_btn;
+  QPixmap directions_icon, settings_icon;
 
   void clearRoute();
   void updateDestinationMarker();
@@ -124,6 +124,7 @@ public slots:
 signals:
   void distanceChanged(float distance);
   void instructionsChanged(cereal::NavInstruction::Reader instruction);
-  void ETAChanged(float seconds, float seconds_typical, float distance);
-};
 
+  void requestVisible(bool visible);
+  void openSettings();
+};

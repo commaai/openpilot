@@ -51,15 +51,9 @@ QMap<QString, QString> getSupportedLanguages() {
   return map;
 }
 
-void configFont(QPainter &p, const QString &family, int size, const QString &style) {
-  QFont f(family);
-  f.setPixelSize(size);
-  f.setStyleName(style);
-  p.setFont(f);
-}
-
 void clearLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
+  while (layout->count() > 0) {
+    QLayoutItem* item = layout->takeAt(0);
     if (QWidget* widget = item->widget()) {
       widget->deleteLater();
     }
@@ -110,7 +104,7 @@ void sigTermHandler(int s) {
   qApp->quit();
 }
 
-void initApp(int argc, char *argv[]) {
+void initApp(int argc, char *argv[], bool disable_hidpi) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
 
@@ -118,13 +112,13 @@ void initApp(int argc, char *argv[]) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
+  if (disable_hidpi) {
 #ifdef __APPLE__
-  {
     // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
     QApplication tmp(argc, argv);
     qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
-  }
 #endif
+  }
 
   setQtSurfaceFormat();
 }
@@ -159,12 +153,6 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
   } else {
     return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
   }
-}
-
-QRect getTextRect(QPainter &p, int flags, const QString &text) {
-  QFontMetrics fm(p.font());
-  QRect init_rect = fm.boundingRect(text);
-  return fm.boundingRect(init_rect, flags, text);
 }
 
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom){
@@ -254,4 +242,12 @@ QPixmap bootstrapPixmap(const QString &id) {
     pixmap.loadFromData(it.value(), "svg");
   }
   return pixmap;
+}
+
+bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
+  // Using the experimental longitudinal toggle, returns whether longitudinal control
+  // will be active without needing a restart of openpilot
+  return car_params.getExperimentalLongitudinalAvailable()
+             ? Params().getBool("ExperimentalLongitudinalEnabled")
+             : car_params.getOpenpilotLongitudinalControl();
 }
