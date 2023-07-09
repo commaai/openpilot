@@ -139,7 +139,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
 
     // Enable/disable nav features
     uint64_t timestamp_llk = sm["navModel"].getNavModel().getLocationMonoTime();
-    bool nav_valid = sm["navModel"].getValid() && nanos_since_boot() - timestamp_llk < 1e9;
+    bool nav_valid = sm["navModel"].getValid() && (nanos_since_boot() - timestamp_llk < 1e9);
     if (!nav_enabled && nav_valid) {
       nav_enabled = true;
     } else if (nav_enabled && !nav_valid) {
