@@ -205,9 +205,13 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     print(result)
 
-    #self.assertLess(max(ts), 30.)
+    self.assertLess(max(ts), 100.)
     self.assertLess(np.mean(ts), 10.)
     #self.assertLess(np.std(ts), 5.)
+
+    # some slow frames are expected since camerad/modeld can preempt ui
+    veryslow = [x for x in ts if x > 40.]
+    assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
   def test_cpu_usage(self):
     result = "\n"

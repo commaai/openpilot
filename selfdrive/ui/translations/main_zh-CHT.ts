@@ -554,12 +554,16 @@
         <translation>遠程訪問</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>一年的雲端行車記錄</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>開發者福利</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
