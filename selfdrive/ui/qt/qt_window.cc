@@ -11,6 +11,7 @@ void setMainWindow(QWidget *w) {
   } else {
     w->setFixedSize(DEVICE_SCREEN_SIZE * scale);
   }
+  w->show();
 
 #ifdef QCOM2
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
@@ -22,8 +23,6 @@ void setMainWindow(QWidget *w) {
   // ensure we have a valid eglDisplay, otherwise the ui will silently fail
   void *egl = native->nativeResourceForWindow("egldisplay", w->windowHandle());
   assert(egl != nullptr);
-#else
-  w->show();
 #endif
 }
 
