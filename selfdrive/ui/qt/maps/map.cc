@@ -20,8 +20,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-const QString ICON_SUFFIX = ".png";
-
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
@@ -420,6 +418,7 @@ void MapInstructions::buildPixmapCache() {
   QDir dir("../assets/navigation");
   for (QString fn : dir.entryList({"*.png"}, QDir::Files)) {
     QPixmap pm(dir.filePath(fn));
+    fn.chop(strlen(".png"));
     if (fn.contains("turn_")) {
       pixmap_cache[fn] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     } else {
@@ -467,7 +466,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
-    fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
     bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
@@ -506,7 +504,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!label->parentWidget()) {
       lane_layout->addWidget(label);
     }
-    label->setPixmap(pixmap_cache[fn + ICON_SUFFIX]);
+    label->setPixmap(pixmap_cache[fn]);
     label->setVisible(true);
   }
 
