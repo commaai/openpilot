@@ -32,8 +32,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
 
   // Instructions
   map_instructions = new MapInstructions(this);
-  QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
-  QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   map_instructions->setVisible(false);
 
   map_eta = new MapETA(this);
@@ -204,8 +202,7 @@ void MapWindow::updateState(const UIState &s) {
 
       if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
-        emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
-        emit instructionsChanged(i);
+        map_instructions->updateInstructions(i);
       }
     } else {
       clearRoute();
@@ -416,34 +413,21 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
   setPalette(pal);
 }
 
-void MapInstructions::updateDistance(float d) {
+QString MapInstructions::getDistance(float d) {
   d = std::max(d, 0.0f);
-  QString distance_str;
-
   if (uiState()->scene.is_metric) {
-    if (d > 500) {
-      distance_str.setNum(d / 1000, 'f', 1);
-      distance_str += tr(" km");
-    } else {
-      distance_str.setNum(50 * int(d / 50));
-      distance_str += tr(" m");
-    }
+    return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
+                     : QString::number(50 * int(d / 50)) + tr(" m");
   } else {
-    float miles = d * METER_TO_MILE;
     float feet = d * METER_TO_FOOT;
-
-    if (feet > 500) {
-      distance_str.setNum(miles, 'f', 1);
-      distance_str += tr(" mi");
-    } else {
-      distance_str.setNum(50 * int(feet / 50));
-      distance_str += tr(" ft");
-    }
+    return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
+                        : QString::number(50 * int(feet / 50)) + tr(" ft");
   }
-  distance->setText(distance_str);
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
+  setUpdatesEnabled(false);
+
   // Show instruction text
   QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
   QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
@@ -451,6 +435,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
+  distance->setAlignment(Qt::AlignLeft);
+  distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
@@ -482,15 +468,13 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
 
   // Show lanes
-  bool has_lanes = false;
-  clearLayout(lane_layout);
-  for (auto const &lane: instruction.getLanes()) {
-    has_lanes = true;
-    bool active = lane.getActive();
+  auto lanes = instruction.getLanes();
+  for (int i = 0; i < lanes.size(); ++i) {
+    bool active = lanes[i].getActive();
 
     // TODO: only use active direction if active
     bool left = false, straight = false, right = false;
-    for (auto const &direction: lane.getDirections()) {
+    for (auto const &direction: lanes[i].getDirections()) {
       left |= direction == cereal::NavInstruction::Direction::LEFT;
       right |= direction == cereal::NavInstruction::Direction::RIGHT;
       straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
@@ -510,12 +494,19 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "_inactive";
     }
 
-    auto icon = new QLabel;
-    icon->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    lane_layout->addWidget(icon);
+    QLabel *label = (i < lane_labels.size()) ? lane_labels[i] : lane_labels.emplace_back(new QLabel);
+    if (!label->parentWidget()) {
+      lane_layout->addWidget(label);
+    }
+    label->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
+    label->setVisible(true);
   }
 
+  for (int i = lanes.size(); i < lane_labels.size(); ++i) {
+    lane_labels[i]->setVisible(false);
+  }
+
+  setUpdatesEnabled(true);
   setVisible(true);
 }
 
