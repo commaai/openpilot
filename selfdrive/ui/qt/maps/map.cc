@@ -435,7 +435,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  distance->setAlignment(Qt::AlignLeft);
   distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
