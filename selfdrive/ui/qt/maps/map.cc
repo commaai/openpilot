@@ -418,17 +418,17 @@ void MapInstructions::buildPixmapCache() {
   QDir dir("../assets/navigation");
   for (QString fn : dir.entryList({"*.png"}, QDir::Files)) {
     QPixmap pm(dir.filePath(fn));
-    fn.chop(strlen(".png"));
-    if (fn.contains("turn_")) {
-      pixmap_cache[fn] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    QString key = fn.chopped(strlen(".png"));
+    if (key.contains("turn_")) {
+      pixmap_cache[key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     } else {
       pm = pm.scaledToWidth(200, Qt::SmoothTransformation);
-      pixmap_cache[fn] = pm;
+      pixmap_cache[key] = pm;
       // for rhd, reflect direction and then flip
-      if (fn.contains("_left")) {
-        pixmap_cache["rhd_" + fn.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
-      } else if (fn.contains("_right")) {
-        pixmap_cache["rhd_" + fn.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
+      if (key.contains("_left")) {
+        pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
+      } else if (key.contains("_right")) {
+        pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
       }
     }
   }
