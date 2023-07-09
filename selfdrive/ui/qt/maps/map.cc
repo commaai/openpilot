@@ -1,13 +1,9 @@
 #include "selfdrive/ui/qt/maps/map.h"
 
 #include <eigen3/Eigen/Dense>
-#include <cmath>
 
 #include <QDebug>
-#include <QFileInfo>
-#include <QPainterPath>
 
-#include "common/swaglog.h"
 #include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/request_repeater.h"
@@ -37,12 +33,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_instructions->setVisible(false);
 
   map_eta = new MapETA(this);
-  QObject::connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
-
-  const int h = 120;
-  map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h - UI_BORDER_SIZE*2);
-  map_eta->setVisible(false);
 
   // Settings button
   QSize icon_size(120, 120);
@@ -201,7 +191,7 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.updated("navInstruction")) {
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
-      emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
+      map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
@@ -245,6 +235,7 @@ void MapWindow::updateState(const UIState &s) {
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
   map_instructions->setFixedWidth(width());
+  map_eta->setGeometry(0, height() - 120, w, 120);
 }
 
 void MapWindow::initializeGL() {
@@ -565,140 +556,50 @@ void MapInstructions::hideIfNoError() {
   }
 }
 
-MapETA::MapETA(QWidget * parent) : QWidget(parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(40, 25, 40, 25);
-
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    eta = new QLabel;
-    eta->setAlignment(Qt::AlignCenter);
-    eta->setStyleSheet("font-weight:600");
-
-    eta_unit = new QLabel;
-    eta_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(eta);
-    layout->addWidget(eta_unit);
-    main_layout->addLayout(layout);
-  }
-  main_layout->addSpacing(40);
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    time = new QLabel;
-    time->setAlignment(Qt::AlignCenter);
-
-    time_unit = new QLabel;
-    time_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(time);
-    layout->addWidget(time_unit);
-    main_layout->addLayout(layout);
-  }
-  main_layout->addSpacing(40);
-  {
-    QHBoxLayout *layout = new QHBoxLayout;
-    distance = new QLabel;
-    distance->setAlignment(Qt::AlignCenter);
-    distance->setStyleSheet("font-weight:600");
-
-    distance_unit = new QLabel;
-    distance_unit->setAlignment(Qt::AlignCenter);
-
-    layout->addWidget(distance);
-    layout->addWidget(distance_unit);
-    main_layout->addLayout(layout);
-  }
-
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-family: "Inter";
-      font-size: 70px;
-    }
-  )");
-
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
-  setAutoFillBackground(true);
-  setPalette(pal);
+MapETA::MapETA(QWidget *parent) : QWidget(parent) {
+  setVisible(false);
+  setAttribute(Qt::WA_TranslucentBackground);
+  eta_doc.setUndoRedoEnabled(false);
+  eta_doc.setDefaultStyleSheet("body {font-family:Inter;font-size:60px;color:white;} b{font-size:70px;font-weight:600}");
 }
 
+void MapETA::paintEvent(QPaintEvent *event) {
+  if (!eta_doc.isEmpty()) {
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(0, 0, 0, 150));
+    QSizeF txt_size = eta_doc.size();
+    p.drawRoundedRect((width() - txt_size.width()) / 2 - UI_BORDER_SIZE, 0, txt_size.width() + UI_BORDER_SIZE * 2, height() + 25, 25, 25);
+    p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
+    eta_doc.drawContents(&p);
+  }
+}
 
 void MapETA::updateETA(float s, float s_typical, float d) {
-  if (d < MANEUVER_TRANSITION_THRESHOLD) {
-    hide();
-    return;
-  }
+  eta_doc.clear();
+  setVisible(d >= MANEUVER_TRANSITION_THRESHOLD);
+  if (!isVisible()) return;
 
   // ETA
-  auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
-  if (params.getBool("NavSettingTime24h")) {
-    eta->setText(eta_time.toString("HH:mm"));
-    eta_unit->setText(tr("eta"));
-  } else {
-    auto t = eta_time.toString("h:mm a").split(' ');
-    eta->setText(t[0]);
-    eta_unit->setText(t[1]);
-  }
+  auto eta_t = QDateTime::currentDateTime().addSecs(s).time();
+  auto eta = format_24h ? std::array{eta_t.toString("HH:mm"), tr("eta")}
+                        : std::array{eta_t.toString("h:mm a").split(' ')[0], eta_t.toString("a")};
 
   // Remaining time
-  if (s < 3600) {
-    time->setText(QString::number(int(s / 60)));
-    time_unit->setText(tr("min"));
-  } else {
-    int hours = int(s) / 3600;
-    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)).rightJustified(2, '0'));
-    time_unit->setText(tr("hr"));
-  }
-
-  QString color;
-  if (s / s_typical > 1.5) {
-    color = "#DA3025";
-  } else if (s / s_typical > 1.2) {
-    color = "#DAA725";
-  } else {
-    color = "#25DA6E";
-  }
-
-  time->setStyleSheet(QString(R"(color: %1; font-weight:600;)").arg(color));
-  time_unit->setStyleSheet(QString(R"(color: %1;)").arg(color));
+  auto time_t = QDateTime::fromTime_t(s);
+  auto remaining = s < 3600 ? std::array{time_t.toString("m"), tr("min")}
+                            : std::array{time_t.toString("h:mm"), tr("hr")};
+  QString color = "#25DA6E";
+  if (s / s_typical > 1.5) color = "#DA3025";
+  else if (s / s_typical > 1.2) color = "#DAA725";
 
   // Distance
-  QString distance_str;
-  float num = 0;
-  if (uiState()->scene.is_metric) {
-    num = d / 1000.0;
-    distance_unit->setText(tr("km"));
-  } else {
-    num = d * METER_TO_MILE;
-    distance_unit->setText(tr("mi"));
-  }
+  float num = uiState()->scene.is_metric ? (d / 1000.0) : (d * METER_TO_MILE);
+  auto distance = std::array{QString::number(num, 'f', num < 100 ? 1 : 0),
+                             uiState()->scene.is_metric ? tr("km") : tr("mi")};
 
-  distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
-  distance->setText(distance_str);
-
-  show();
-  adjustSize();
-  repaint();
-  adjustSize();
-
-  // Rounded corners
-  const int radius = 25;
-  const auto r = rect();
-
-  // Top corners rounded
-  QPainterPath path;
-  path.setFillRule(Qt::WindingFill);
-  path.addRoundedRect(r, radius, radius);
-
-  // Bottom corners not rounded
-  path.addRect(r.marginsRemoved(QMargins(0, radius, 0, 0)));
-
-  // Set clipping mask
-  QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
-  setMask(mask);
-
-  // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - UI_BORDER_SIZE*2);
+  eta_doc.setHtml(QString(R"(<body><b>%1</b>%2 <span style="color:%3"><b>%4</b>%5</span> <b>%6</b>%7</body>)")
+                      .arg(eta[0], eta[1], color, remaining[0], remaining[1], distance[0], distance[1]));
+  update();
 }
