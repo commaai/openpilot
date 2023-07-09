@@ -21,10 +21,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
 #endif
   }
 
-  if (!up_to_date()) {
-    throw std::runtime_error("Panda firmware out of date, update required");
-  }
-
   hw_type = get_hw_type();
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS) ||

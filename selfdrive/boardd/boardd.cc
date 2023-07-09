@@ -200,6 +200,11 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
+  if (!panda->up_to_date()) {
+    LOGE("Panda firmware out of date. Run pandad.py to update.");
+    return nullptr;
+  }
+
   sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
