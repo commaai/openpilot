@@ -23,6 +23,8 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
 
+    sm.update(0);
+
     double t1 = millis_since_boot();
     NavModelResult *model_res = navmodel_eval_frame(&model, buf);
     double t2 = millis_since_boot();
