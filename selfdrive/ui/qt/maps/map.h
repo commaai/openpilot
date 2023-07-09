@@ -104,6 +104,7 @@ private:
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
 
+  QWidget *map_overlay;
   MapInstructions* map_instructions;
   MapETA* map_eta;
   QPushButton *settings_btn;
