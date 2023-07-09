@@ -35,15 +35,14 @@ private:
   QHBoxLayout *lane_layout;
   bool error = false;
   bool is_rhd = false;
+  std::vector<QLabel *> lane_labels;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
   void showError(QString error);
   void noError();
   void hideIfNoError();
-
-public slots:
-  void updateDistance(float d);
+  QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };
 
@@ -122,9 +121,6 @@ public slots:
   void offroadTransition(bool offroad);
 
 signals:
-  void distanceChanged(float distance);
-  void instructionsChanged(cereal::NavInstruction::Reader instruction);
-
   void requestVisible(bool visible);
   void openSettings();
 };
