@@ -81,7 +81,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
     map->setVisible(!sidebarVisible && !map->isVisible());
   }
 #endif
-  // propagate event to parent(HomeWindow)
+  // propagate event to parent (HomeWindow)
   QWidget::mousePressEvent(e);
 }
 
