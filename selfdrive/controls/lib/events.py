@@ -966,9 +966,9 @@ if __name__ == '__main__':
 
   alerts_by_type = defaultdict(lambda: defaultdict(list))
 
-  CP = None
-  CS = None
-  sm = None
+  CP = car.CarParams.new_message()
+  CS = car.CarState.new_message()
+  sm = messaging.SubMaster(['carState', 'carParams'])
 
   for i, alerts in EVENTS.items():
     for type, alert in alerts.items():
