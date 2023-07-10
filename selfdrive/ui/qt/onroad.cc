@@ -64,6 +64,12 @@ void OnroadWindow::updateState(const UIState &s) {
 
   nvg->updateState(s);
 
+  bool nav_enabled_now = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
+  if (nav_enabled != nav_enabled_now && map != nullptr) {
+    map->show();
+  }
+  nav_enabled = nav_enabled_now;
+
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
@@ -81,7 +87,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 //    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
 //      return;
 //    }
-    bool nav_enabled = (*uiState()->sm)["modelV2"].getModelV2().getNavEnabled();
+//    bool nav_enabled = (*uiState()->sm)["modelV2"].getModelV2().getNavEnabled();
     qDebug() << "nav_enabled" << nav_enabled;
     bool show_map = nav_enabled ? sidebarVisible : !sidebarVisible;
     map->setVisible(show_map && !map->isVisible());
