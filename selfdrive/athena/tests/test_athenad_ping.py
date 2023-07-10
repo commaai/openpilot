@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import subprocess
 import threading
 import time
 import unittest
@@ -38,6 +39,15 @@ def athena_main(ws_uri: str, cookie: str, stop_condition: Callable[[], bool]) ->
         t.join()
 
 
+def connect_lte() -> None:
+  subprocess.run(["nmcli", "connection", "modify", "--temporary", "lte", "ipv4.route-metric", "1", "ipv6.route-metric", "1"], check=True)
+  subprocess.run(["nmcli", "connection", "up", "lte"], check=True)
+
+
+def restart_network_manager() -> None:
+  subprocess.run(["sudo", "systemctl", "restart", "NetworkManager"], check=True)
+
+
 class TestAthenadPing(unittest.TestCase):
   params: Params
   ws_uri: str
@@ -68,6 +78,26 @@ class TestAthenadPing(unittest.TestCase):
       athena_main(self.ws_uri, self.cookie, stop_condition=self._received_ping)
     self.assertIsNotNone(self._get_ping_time())
 
+  @unittest.skip("TODO")
+  def test_ping_after_disconnect(self) -> None:
+    with Timeout(70, "no ping received"):
+      athena_main(self.ws_uri, self.cookie, stop_condition=self._received_ping)
+    self.assertIsNotNone(self._get_ping_time())
+
+    self._clear_ping_time()
+
+    try:
+      connect_lte()
+      with Timeout(70, "no ping received"):
+        athena_main(self.ws_uri, self.cookie, stop_condition=self._received_ping)
+    finally:
+      restart_network_manager()
+
+    self.assertIsNotNone(self._get_ping_time())
+
 
 if __name__ == "__main__":
-  unittest.main()
+  try:
+    unittest.main()
+  finally:
+    restart_network_manager()
