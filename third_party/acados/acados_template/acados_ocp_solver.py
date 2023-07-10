@@ -1,9 +1,6 @@
 # -*- coding: future_fstrings -*-
 #
-# Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
-# Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
-# Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
-# Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+# Copyright (c) The acados authors.
 #
 # This file is part of acados.
 #
@@ -38,26 +35,29 @@ import json
 import numpy as np
 from datetime import datetime
 import importlib
+import shutil
+
+from subprocess import DEVNULL, call, STDOUT
+
 from ctypes import POINTER, cast, CDLL, c_void_p, c_char_p, c_double, c_int, c_int64, byref
 
 from copy import deepcopy
+from pathlib import Path
 
-from .generate_c_code_explicit_ode import generate_c_code_explicit_ode
-from .generate_c_code_implicit_ode import generate_c_code_implicit_ode
-from .generate_c_code_gnsf import generate_c_code_gnsf
-from .generate_c_code_discrete_dynamics import generate_c_code_discrete_dynamics
-from .generate_c_code_constraint import generate_c_code_constraint
-from .generate_c_code_nls_cost import generate_c_code_nls_cost
-from .generate_c_code_external_cost import generate_c_code_external_cost
+from .casadi_function_generation import generate_c_code_explicit_ode, \
+    generate_c_code_implicit_ode, generate_c_code_gnsf, generate_c_code_discrete_dynamics, \
+    generate_c_code_constraint, generate_c_code_nls_cost, generate_c_code_conl_cost, \
+    generate_c_code_external_cost
+from .gnsf.detect_gnsf_structure import detect_gnsf_structure
 from .acados_ocp import AcadosOcp
-from .acados_model import acados_model_strip_casadi_symbolics
+from .acados_model import AcadosModel
 from .utils import is_column, is_empty, casadi_length, render_template,\
-     format_class_dict, ocp_check_against_layout, np_array_to_list, make_model_consistent,\
-     set_up_imported_gnsf_model, get_ocp_nlp_layout, get_python_interface_path
+     format_class_dict, make_object_json_dumpable, make_model_consistent,\
+     set_up_imported_gnsf_model, get_ocp_nlp_layout, get_python_interface_path, get_lib_ext, check_casadi_version
 from .builders import CMakeBuilder
 
 
-def make_ocp_dims_consistent(acados_ocp):
+def make_ocp_dims_consistent(acados_ocp: AcadosOcp):
     dims = acados_ocp.dims
     cost = acados_ocp.cost
     constraints = acados_ocp.constraints
@@ -105,6 +105,9 @@ def make_ocp_dims_consistent(acados_ocp):
         model.cost_expr_ext_cost_0 = model.cost_expr_ext_cost
         model.cost_expr_ext_cost_custom_hess_0 = model.cost_expr_ext_cost_custom_hess
 
+        model.cost_psi_expr_0 = model.cost_psi_expr
+        model.cost_r_in_psi_expr_0 = model.cost_r_in_psi_expr
+
     if cost.cost_type_0 == 'LINEAR_LS':
         ny_0 = cost.W_0.shape[0]
         if cost.Vx_0.shape[0] != ny_0 or cost.Vu_0.shape[0] != ny_0:
@@ -132,6 +135,22 @@ def make_ocp_dims_consistent(acados_ocp):
             raise Exception('inconsistent dimension: regarding W_0, yref_0.' + \
                             f'\nGot W_0[{cost.W.shape}], yref_0[{cost.yref_0.shape}]\n')
         dims.ny_0 = ny_0
+
+    elif cost.cost_type_0 == 'CONVEX_OVER_NONLINEAR':
+        if is_empty(model.cost_y_expr_0):
+            raise Exception('cost_y_expr_0 and/or cost_y_expr not provided.')
+        ny_0 = casadi_length(model.cost_y_expr_0)
+        if is_empty(model.cost_r_in_psi_expr_0) or casadi_length(model.cost_r_in_psi_expr_0) != ny_0:
+            raise Exception('inconsistent dimension ny_0: regarding cost_y_expr_0 and cost_r_in_psi_0.')
+        if is_empty(model.cost_psi_expr_0) or casadi_length(model.cost_psi_expr_0) != 1:
+            raise Exception('cost_psi_expr_0 not provided or not scalar-valued.')
+        if cost.yref_0.shape[0] != ny_0:
+            raise Exception('inconsistent dimension: regarding yref_0 and cost_y_expr_0, cost_r_in_psi_0.')
+        dims.ny_0 = ny_0
+
+        if not (opts.hessian_approx=='EXACT' and opts.exact_hess_cost==False) and opts.hessian_approx != 'GAUSS_NEWTON':
+            raise Exception("\nWith CONVEX_OVER_NONLINEAR cost type, possible Hessian approximations are:\n"
+            "GAUSS_NEWTON or EXACT with 'exact_hess_cost' == False.\n")
 
     elif cost.cost_type_0 == 'EXTERNAL':
         if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess_0 is None:
@@ -171,6 +190,23 @@ def make_ocp_dims_consistent(acados_ocp):
                             f'\nGot W[{cost.W.shape}], yref[{cost.yref.shape}]\n')
         dims.ny = ny
 
+    elif cost.cost_type == 'CONVEX_OVER_NONLINEAR':
+        if is_empty(model.cost_y_expr):
+            raise Exception('cost_y_expr and/or cost_y_expr not provided.')
+        ny = casadi_length(model.cost_y_expr)
+        if is_empty(model.cost_r_in_psi_expr) or casadi_length(model.cost_r_in_psi_expr) != ny:
+            raise Exception('inconsistent dimension ny: regarding cost_y_expr and cost_r_in_psi.')
+        if is_empty(model.cost_psi_expr) or casadi_length(model.cost_psi_expr) != 1:
+            raise Exception('cost_psi_expr not provided or not scalar-valued.')
+        if cost.yref.shape[0] != ny:
+            raise Exception('inconsistent dimension: regarding yref and cost_y_expr, cost_r_in_psi.')
+        dims.ny = ny
+
+        if not (opts.hessian_approx=='EXACT' and opts.exact_hess_cost==False) and opts.hessian_approx != 'GAUSS_NEWTON':
+            raise Exception("\nWith CONVEX_OVER_NONLINEAR cost type, possible Hessian approximations are:\n"
+            "GAUSS_NEWTON or EXACT with 'exact_hess_cost' == False.\n")
+
+
     elif cost.cost_type == 'EXTERNAL':
         if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess is None:
             print("\nWARNING: Gauss-Newton Hessian approximation with EXTERNAL cost type not possible!\n"
@@ -202,6 +238,24 @@ def make_ocp_dims_consistent(acados_ocp):
             raise Exception('inconsistent dimension: regarding W_e, yref_e.')
         dims.ny_e = ny_e
 
+    elif cost.cost_type_e == 'CONVEX_OVER_NONLINEAR':
+        if is_empty(model.cost_y_expr_e):
+            raise Exception('cost_y_expr_e not provided.')
+        ny_e = casadi_length(model.cost_y_expr_e)
+        if is_empty(model.cost_r_in_psi_expr_e) or casadi_length(model.cost_r_in_psi_expr_e) != ny_e:
+            raise Exception('inconsistent dimension ny_e: regarding cost_y_expr_e and cost_r_in_psi_e.')
+        if is_empty(model.cost_psi_expr_e) or casadi_length(model.cost_psi_expr_e) != 1:
+            raise Exception('cost_psi_expr_e not provided or not scalar-valued.')
+        if cost.yref_e.shape[0] != ny_e:
+            raise Exception('inconsistent dimension: regarding yref_e and cost_y_expr_e, cost_r_in_psi_e.')
+        dims.ny_e = ny_e
+
+        if not (opts.hessian_approx=='EXACT' and opts.exact_hess_cost==False) and opts.hessian_approx != 'GAUSS_NEWTON':
+            raise Exception("\nWith CONVEX_OVER_NONLINEAR cost type, possible Hessian approximations are:\n"
+            "GAUSS_NEWTON or EXACT with 'exact_hess_cost' == False.\n")
+
+
+
     elif cost.cost_type_e == 'EXTERNAL':
         if opts.hessian_approx == 'GAUSS_NEWTON' and opts.ext_cost_num_hess == 0 and model.cost_expr_ext_cost_custom_hess_e is None:
             print("\nWARNING: Gauss-Newton Hessian approximation with EXTERNAL cost type not possible!\n"
@@ -213,16 +267,13 @@ def make_ocp_dims_consistent(acados_ocp):
 
     ## constraints
     # initial
-    if (constraints.lbx_0 == [] and constraints.ubx_0 == []):
-        dims.nbx_0 = 0
-    else:
-        this_shape = constraints.lbx_0.shape
-        other_shape = constraints.ubx_0.shape
-        if not this_shape == other_shape:
-            raise Exception('lbx_0, ubx_0 have different shapes!')
-        if not is_column(constraints.lbx_0):
-            raise Exception('lbx_0, ubx_0 must be column vectors!')
-        dims.nbx_0 = constraints.lbx_0.size
+    this_shape = constraints.lbx_0.shape
+    other_shape = constraints.ubx_0.shape
+    if not this_shape == other_shape:
+        raise Exception('lbx_0, ubx_0 have different shapes!')
+    if not is_column(constraints.lbx_0):
+        raise Exception('lbx_0, ubx_0 must be column vectors!')
+    dims.nbx_0 = constraints.lbx_0.size
 
     if all(constraints.lbx_0 == constraints.ubx_0) and dims.nbx_0 == dims.nx \
         and dims.nbxe_0 is None \
@@ -230,8 +281,10 @@ def make_ocp_dims_consistent(acados_ocp):
             and all(constraints.idxbxe_0 == constraints.idxbx_0):
         # case: x0 was set: nbx0 are all equlities.
         dims.nbxe_0 = dims.nbx_0
+    elif constraints.idxbxe_0 is not None:
+        dims.nbxe_0 = constraints.idxbxe_0.shape[0]
     elif dims.nbxe_0 is None:
-        # case: x0 was not set -> dont assume nbx0 to be equality constraints.
+        # case: x0 and idxbxe_0 were not set -> dont assume nbx0 to be equality constraints.
         dims.nbxe_0 = 0
 
     # path
@@ -309,6 +362,8 @@ def make_ocp_dims_consistent(acados_ocp):
 
     # Slack dimensions
     nsbx = constraints.idxsbx.shape[0]
+    if nsbx > nbx:
+        raise Exception(f'inconsistent dimension nsbx = {nsbx}. Is greater than nbx = {nbx}.')
     if is_empty(constraints.lsbx):
         constraints.lsbx = np.zeros((nsbx,))
     elif constraints.lsbx.shape[0] != nsbx:
@@ -320,6 +375,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsbx = nsbx
 
     nsbu = constraints.idxsbu.shape[0]
+    if nsbu > nbu:
+        raise Exception(f'inconsistent dimension nsbu = {nsbu}. Is greater than nbu = {nbu}.')
     if is_empty(constraints.lsbu):
         constraints.lsbu = np.zeros((nsbu,))
     elif constraints.lsbu.shape[0] != nsbu:
@@ -331,6 +388,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsbu = nsbu
 
     nsh = constraints.idxsh.shape[0]
+    if nsh > nh:
+        raise Exception(f'inconsistent dimension nsh = {nsh}. Is greater than nh = {nh}.')
     if is_empty(constraints.lsh):
         constraints.lsh = np.zeros((nsh,))
     elif constraints.lsh.shape[0] != nsh:
@@ -342,6 +401,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsh = nsh
 
     nsphi = constraints.idxsphi.shape[0]
+    if nsphi > dims.nphi:
+        raise Exception(f'inconsistent dimension nsphi = {nsphi}. Is greater than nphi = {dims.nphi}.')
     if is_empty(constraints.lsphi):
         constraints.lsphi = np.zeros((nsphi,))
     elif constraints.lsphi.shape[0] != nsphi:
@@ -353,6 +414,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsphi = nsphi
 
     nsg = constraints.idxsg.shape[0]
+    if nsg > ng:
+        raise Exception(f'inconsistent dimension nsg = {nsg}. Is greater than ng = {ng}.')
     if is_empty(constraints.lsg):
         constraints.lsg = np.zeros((nsg,))
     elif constraints.lsg.shape[0] != nsg:
@@ -386,6 +449,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.ns = ns
 
     nsbx_e = constraints.idxsbx_e.shape[0]
+    if nsbx_e > nbx_e:
+        raise Exception(f'inconsistent dimension nsbx_e = {nsbx_e}. Is greater than nbx_e = {nbx_e}.')
     if is_empty(constraints.lsbx_e):
         constraints.lsbx_e = np.zeros((nsbx_e,))
     elif constraints.lsbx_e.shape[0] != nsbx_e:
@@ -397,6 +462,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsbx_e = nsbx_e
 
     nsh_e = constraints.idxsh_e.shape[0]
+    if nsh_e > nh_e:
+        raise Exception(f'inconsistent dimension nsh_e = {nsh_e}. Is greater than nh_e = {nh_e}.')
     if is_empty(constraints.lsh_e):
         constraints.lsh_e = np.zeros((nsh_e,))
     elif constraints.lsh_e.shape[0] != nsh_e:
@@ -408,6 +475,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsh_e = nsh_e
 
     nsg_e = constraints.idxsg_e.shape[0]
+    if nsg_e > ng_e:
+        raise Exception(f'inconsistent dimension nsg_e = {nsg_e}. Is greater than ng_e = {ng_e}.')
     if is_empty(constraints.lsg_e):
         constraints.lsg_e = np.zeros((nsg_e,))
     elif constraints.lsg_e.shape[0] != nsg_e:
@@ -419,6 +488,8 @@ def make_ocp_dims_consistent(acados_ocp):
     dims.nsg_e = nsg_e
 
     nsphi_e = constraints.idxsphi_e.shape[0]
+    if nsphi_e > dims.nphi_e:
+        raise Exception(f'inconsistent dimension nsphi_e = {nsphi_e}. Is greater than nphi_e = {dims.nphi_e}.')
     if is_empty(constraints.lsphi_e):
         constraints.lsphi_e = np.zeros((nsphi_e,))
     elif constraints.lsphi_e.shape[0] != nsphi_e:
@@ -525,7 +596,7 @@ def get_simulink_default_opts():
     return simulink_default_opts
 
 
-def ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file='acados_ocp_nlp.json'):
+def ocp_formulation_json_dump(acados_ocp, simulink_opts=None, json_file='acados_ocp_nlp.json'):
     # Load acados_ocp_nlp structure description
     ocp_layout = get_ocp_nlp_layout()
 
@@ -543,20 +614,11 @@ def ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file='acados_ocp_n
 
     ocp_nlp_dict = format_class_dict(ocp_nlp_dict)
 
-    # strip symbolics
-    ocp_nlp_dict['model'] = acados_model_strip_casadi_symbolics(ocp_nlp_dict['model'])
-
-    # strip shooting_nodes
-    ocp_nlp_dict['solver_options'].pop('shooting_nodes', None)
-    dims_dict = format_class_dict(acados_ocp.dims.__dict__)
-
-    ocp_check_against_layout(ocp_nlp_dict, dims_dict)
-
-    # add simulink options
-    ocp_nlp_dict['simulink_opts'] = simulink_opts
+    if simulink_opts is not None:
+        ocp_nlp_dict['simulink_opts'] = simulink_opts
 
     with open(json_file, 'w') as f:
-        json.dump(ocp_nlp_dict, f, default=np_array_to_list, indent=4, sort_keys=True)
+        json.dump(ocp_nlp_dict, f, default=make_object_json_dumpable, indent=4, sort_keys=True)
 
 
 
@@ -587,7 +649,7 @@ def ocp_formulation_json_load(json_file='acados_ocp_nlp.json'):
     return acados_ocp
 
 
-def ocp_generate_external_functions(acados_ocp, model):
+def ocp_generate_external_functions(acados_ocp: AcadosOcp, model: AcadosModel):
 
     model = make_model_consistent(model)
 
@@ -595,27 +657,32 @@ def ocp_generate_external_functions(acados_ocp, model):
         opts = dict(generate_hess=1)
     else:
         opts = dict(generate_hess=0)
+
+    # create code_export_dir, model_dir
     code_export_dir = acados_ocp.code_export_directory
     opts['code_export_directory'] = code_export_dir
+    model_dir = os.path.join(code_export_dir, model.name + '_model')
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
 
-    if acados_ocp.model.dyn_ext_fun_type != 'casadi':
-        raise Exception("ocp_generate_external_functions: dyn_ext_fun_type only supports 'casadi' for now.\
-            Extending the Python interface with generic function support is welcome.")
-
-    if acados_ocp.solver_options.integrator_type == 'ERK':
-        # explicit model -- generate C code
-        generate_c_code_explicit_ode(model, opts)
-    elif acados_ocp.solver_options.integrator_type == 'IRK':
-        # implicit model -- generate C code
-        generate_c_code_implicit_ode(model, opts)
-    elif acados_ocp.solver_options.integrator_type == 'LIFTED_IRK':
-        generate_c_code_implicit_ode(model, opts)
-    elif acados_ocp.solver_options.integrator_type == 'GNSF':
-        generate_c_code_gnsf(model, opts)
-    elif acados_ocp.solver_options.integrator_type == 'DISCRETE':
-        generate_c_code_discrete_dynamics(model, opts)
+    check_casadi_version()
+    # TODO: remove dir gen from all the generate_c_* functions
+    if acados_ocp.model.dyn_ext_fun_type == 'casadi':
+        if acados_ocp.solver_options.integrator_type == 'ERK':
+            generate_c_code_explicit_ode(model, opts)
+        elif acados_ocp.solver_options.integrator_type == 'IRK':
+            generate_c_code_implicit_ode(model, opts)
+        elif acados_ocp.solver_options.integrator_type == 'LIFTED_IRK':
+            generate_c_code_implicit_ode(model, opts)
+        elif acados_ocp.solver_options.integrator_type == 'GNSF':
+            generate_c_code_gnsf(model, opts)
+        elif acados_ocp.solver_options.integrator_type == 'DISCRETE':
+            generate_c_code_discrete_dynamics(model, opts)
+        else:
+            raise Exception("ocp_generate_external_functions: unknown integrator type.")
     else:
-        raise Exception("ocp_generate_external_functions: unknown integrator type.")
+        target_location = os.path.join(code_export_dir, model_dir, model.dyn_generic_source)
+        shutil.copyfile(model.dyn_generic_source, target_location)
 
     if acados_ocp.dims.nphi > 0 or acados_ocp.dims.nh > 0:
         generate_c_code_constraint(model, model.name, False, opts)
@@ -623,28 +690,24 @@ def ocp_generate_external_functions(acados_ocp, model):
     if acados_ocp.dims.nphi_e > 0 or acados_ocp.dims.nh_e > 0:
         generate_c_code_constraint(model, model.name, True, opts)
 
-    # dummy matrices
-    if not acados_ocp.cost.cost_type_0 == 'LINEAR_LS':
-        acados_ocp.cost.Vx_0 = np.zeros((acados_ocp.dims.ny_0, acados_ocp.dims.nx))
-        acados_ocp.cost.Vu_0 = np.zeros((acados_ocp.dims.ny_0, acados_ocp.dims.nu))
-    if not acados_ocp.cost.cost_type == 'LINEAR_LS':
-        acados_ocp.cost.Vx = np.zeros((acados_ocp.dims.ny, acados_ocp.dims.nx))
-        acados_ocp.cost.Vu = np.zeros((acados_ocp.dims.ny, acados_ocp.dims.nu))
-    if not acados_ocp.cost.cost_type_e == 'LINEAR_LS':
-        acados_ocp.cost.Vx_e = np.zeros((acados_ocp.dims.ny_e, acados_ocp.dims.nx))
-
     if acados_ocp.cost.cost_type_0 == 'NONLINEAR_LS':
         generate_c_code_nls_cost(model, model.name, 'initial', opts)
+    elif acados_ocp.cost.cost_type_0 == 'CONVEX_OVER_NONLINEAR':
+        generate_c_code_conl_cost(model, model.name, 'initial', opts)
     elif acados_ocp.cost.cost_type_0 == 'EXTERNAL':
         generate_c_code_external_cost(model, 'initial', opts)
 
     if acados_ocp.cost.cost_type == 'NONLINEAR_LS':
         generate_c_code_nls_cost(model, model.name, 'path', opts)
+    elif acados_ocp.cost.cost_type == 'CONVEX_OVER_NONLINEAR':
+        generate_c_code_conl_cost(model, model.name, 'path', opts)
     elif acados_ocp.cost.cost_type == 'EXTERNAL':
         generate_c_code_external_cost(model, 'path', opts)
 
     if acados_ocp.cost.cost_type_e == 'NONLINEAR_LS':
         generate_c_code_nls_cost(model, model.name, 'terminal', opts)
+    elif acados_ocp.cost.cost_type_e == 'CONVEX_OVER_NONLINEAR':
+        generate_c_code_conl_cost(model, model.name, 'terminal', opts)
     elif acados_ocp.cost.cost_type_e == 'EXTERNAL':
         generate_c_code_external_cost(model, 'terminal', opts)
 
@@ -659,9 +722,8 @@ def ocp_get_default_cmake_builder() -> CMakeBuilder:
     return cmake_builder
 
 
-def ocp_render_templates(acados_ocp, json_file, cmake_builder=None):
 
-    name = acados_ocp.model.name
+def ocp_render_templates(acados_ocp: AcadosOcp, json_file, cmake_builder=None, simulink_opts=None):
 
     # setting up loader and environment
     json_path = os.path.abspath(json_file)
@@ -669,132 +731,69 @@ def ocp_render_templates(acados_ocp, json_file, cmake_builder=None):
     if not os.path.exists(json_path):
         raise Exception(f'Path "{json_path}" not found!')
 
-    code_export_dir = acados_ocp.code_export_directory
-    template_dir = code_export_dir
+    # Render templates
+    template_list = __ocp_get_template_list(acados_ocp, cmake_builder=cmake_builder, simulink_opts=simulink_opts)
+    for tup in template_list:
+        if len(tup) > 2:
+            output_dir = tup[2]
+        else:
+            output_dir = acados_ocp.code_export_directory
+        render_template(tup[0], tup[1], output_dir, json_path)
 
-    ## Render templates
-    in_file = 'main.in.c'
-    out_file = f'main_{name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    # Custom templates
+    acados_template_path = os.path.dirname(os.path.abspath(__file__))
+    custom_template_glob = os.path.join(acados_template_path, 'custom_update_templates', '*')
+    for tup in acados_ocp.solver_options.custom_templates:
+        render_template(tup[0], tup[1], acados_ocp.code_export_directory, json_path, template_glob=custom_template_glob)
 
-    in_file = 'acados_solver.in.c'
-    out_file = f'acados_solver_{name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    return
 
-    in_file = 'acados_solver.in.h'
-    out_file = f'acados_solver_{name}.h'
-    render_template(in_file, out_file, template_dir, json_path)
 
-    in_file = 'acados_solver.in.pxd'
-    out_file = f'acados_solver.pxd'
-    render_template(in_file, out_file, template_dir, json_path)
 
+def __ocp_get_template_list(acados_ocp: AcadosOcp, cmake_builder=None, simulink_opts=None) -> list:
+    """
+    returns a list of tuples in the form:
+    (input_filename, output_filname)
+    or
+    (input_filename, output_filname, output_directory)
+    """
+    name = acados_ocp.model.name
+    code_export_directory = acados_ocp.code_export_directory
+    template_list = []
+
+    template_list.append(('main.in.c', f'main_{name}.c'))
+    template_list.append(('acados_solver.in.c', f'acados_solver_{name}.c'))
+    template_list.append(('acados_solver.in.h', f'acados_solver_{name}.h'))
+    template_list.append(('acados_solver.in.pxd', f'acados_solver.pxd'))
     if cmake_builder is not None:
-        in_file = 'CMakeLists.in.txt'
-        out_file = 'CMakeLists.txt'
-        render_template(in_file, out_file, template_dir, json_path)
+        template_list.append(('CMakeLists.in.txt', 'CMakeLists.txt'))
     else:
-        in_file = 'Makefile.in'
-        out_file = 'Makefile'
-        render_template(in_file, out_file, template_dir, json_path)
+        template_list.append(('Makefile.in', 'Makefile'))
 
-    in_file = 'acados_solver_sfun.in.c'
-    out_file = f'acados_solver_sfunction_{name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
-
-    in_file = 'make_sfun.in.m'
-    out_file = f'make_sfun_{name}.m'
-    render_template(in_file, out_file, template_dir, json_path)
 
     # sim
-    in_file = 'acados_sim_solver.in.c'
-    out_file = f'acados_sim_solver_{name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    template_list.append(('acados_sim_solver.in.c', f'acados_sim_solver_{name}.c'))
+    template_list.append(('acados_sim_solver.in.h', f'acados_sim_solver_{name}.h'))
+    template_list.append(('main_sim.in.c', f'main_sim_{name}.c'))
 
-    in_file = 'acados_sim_solver.in.h'
-    out_file = f'acados_sim_solver_{name}.h'
-    render_template(in_file, out_file, template_dir, json_path)
+    # model
+    model_dir = os.path.join(code_export_directory, f'{name}_model')
+    template_list.append(('model.in.h', f'{name}_model.h', model_dir))
+    # constraints
+    constraints_dir = os.path.join(code_export_directory, f'{name}_constraints')
+    template_list.append(('constraints.in.h', f'{name}_constraints.h', constraints_dir))
+    # cost
+    cost_dir = os.path.join(code_export_directory, f'{name}_cost')
+    template_list.append(('cost.in.h', f'{name}_cost.h', cost_dir))
 
-    in_file = 'main_sim.in.c'
-    out_file = f'main_sim_{name}.c'
-    render_template(in_file, out_file, template_dir, json_path)
+    # Simulink
+    if simulink_opts is not None:
+        template_file = os.path.join('matlab_templates', 'acados_solver_sfun.in.c')
+        template_list.append((template_file, f'acados_solver_sfunction_{name}.c'))
+        template_file = os.path.join('matlab_templates', 'acados_solver_sfun.in.c')
+        template_list.append((template_file, f'make_sfun_{name}.m'))
 
-    ## folder model
-    template_dir = os.path.join(code_export_dir, name + '_model')
-    in_file = 'model.in.h'
-    out_file = f'{name}_model.h'
-    render_template(in_file, out_file, template_dir, json_path)
-
-    # constraints on convex over nonlinear function
-    if acados_ocp.constraints.constr_type == 'BGP' and acados_ocp.dims.nphi > 0:
-        # constraints on outer function
-        template_dir = os.path.join(code_export_dir, name + '_constraints')
-        in_file = 'phi_constraint.in.h'
-        out_file = f'{name}_phi_constraint.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # terminal constraints on convex over nonlinear function
-    if acados_ocp.constraints.constr_type_e == 'BGP' and acados_ocp.dims.nphi_e > 0:
-        # terminal constraints on outer function
-        template_dir = os.path.join(code_export_dir, name + '_constraints')
-        in_file = 'phi_e_constraint.in.h'
-        out_file = f'{name}_phi_e_constraint.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # nonlinear constraints
-    if acados_ocp.constraints.constr_type == 'BGH' and acados_ocp.dims.nh > 0:
-        template_dir = os.path.join(code_export_dir, name + '_constraints')
-        in_file = 'h_constraint.in.h'
-        out_file = f'{name}_h_constraint.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # terminal nonlinear constraints
-    if acados_ocp.constraints.constr_type_e == 'BGH' and acados_ocp.dims.nh_e > 0:
-        template_dir = os.path.join(code_export_dir, name + '_constraints')
-        in_file = 'h_e_constraint.in.h'
-        out_file = f'{name}_h_e_constraint.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # initial stage Nonlinear LS cost function
-    if acados_ocp.cost.cost_type_0 == 'NONLINEAR_LS':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'cost_y_0_fun.in.h'
-        out_file = f'{name}_cost_y_0_fun.h'
-        render_template(in_file, out_file, template_dir, json_path)
-    # external cost - terminal
-    elif acados_ocp.cost.cost_type_0 == 'EXTERNAL':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'external_cost_0.in.h'
-        out_file = f'{name}_external_cost_0.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # path Nonlinear LS cost function
-    if acados_ocp.cost.cost_type == 'NONLINEAR_LS':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'cost_y_fun.in.h'
-        out_file = f'{name}_cost_y_fun.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # terminal Nonlinear LS cost function
-    if acados_ocp.cost.cost_type_e == 'NONLINEAR_LS':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'cost_y_e_fun.in.h'
-        out_file = f'{name}_cost_y_e_fun.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # external cost
-    if acados_ocp.cost.cost_type == 'EXTERNAL':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'external_cost.in.h'
-        out_file = f'{name}_external_cost.h'
-        render_template(in_file, out_file, template_dir, json_path)
-
-    # external cost - terminal
-    if acados_ocp.cost.cost_type_e == 'EXTERNAL':
-        template_dir = os.path.join(code_export_dir, name + '_cost')
-        in_file = 'external_cost_e.in.h'
-        out_file = f'{name}_external_cost_e.h'
-        render_template(in_file, out_file, template_dir, json_path)
+    return template_list
 
 
 def remove_x0_elimination(acados_ocp):
@@ -820,7 +819,7 @@ class AcadosOcpSolver:
         dlclose.argtypes = [c_void_p]
 
     @classmethod
-    def generate(cls, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, cmake_builder: CMakeBuilder = None):
+    def generate(cls, acados_ocp: AcadosOcp, json_file='acados_ocp_nlp.json', simulink_opts=None, cmake_builder: CMakeBuilder = None):
         """
         Generates the code for an acados OCP solver, given the description in acados_ocp.
             :param acados_ocp: type AcadosOcp - description of the OCP for acados
@@ -834,15 +833,15 @@ class AcadosOcpSolver:
         model = acados_ocp.model
         acados_ocp.code_export_directory = os.path.abspath(acados_ocp.code_export_directory)
 
-        if simulink_opts is None:
-            simulink_opts = get_simulink_default_opts()
-
         # make dims consistent
         make_ocp_dims_consistent(acados_ocp)
 
         # module dependent post processing
         if acados_ocp.solver_options.integrator_type == 'GNSF':
-            set_up_imported_gnsf_model(acados_ocp)
+            if 'gnsf_model' in acados_ocp.__dict__:
+                set_up_imported_gnsf_model(acados_ocp)
+            else:
+                detect_gnsf_structure(acados_ocp)
 
         if acados_ocp.solver_options.qp_solver == 'PARTIAL_CONDENSING_QPDUNES':
             remove_x0_elimination(acados_ocp)
@@ -854,15 +853,23 @@ class AcadosOcpSolver:
         ocp_generate_external_functions(acados_ocp, model)
 
         # dump to json
-        ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file)
+        acados_ocp.json_file = json_file
+        ocp_formulation_json_dump(acados_ocp, simulink_opts=simulink_opts, json_file=json_file)
 
         # render templates
-        ocp_render_templates(acados_ocp, json_file, cmake_builder=cmake_builder)
-        acados_ocp.json_file = json_file
+        ocp_render_templates(acados_ocp, json_file, cmake_builder=cmake_builder, simulink_opts=simulink_opts)
+
+        # copy custom update function
+        if acados_ocp.solver_options.custom_update_filename != "" and acados_ocp.solver_options.custom_update_copy:
+            target_location = os.path.join(acados_ocp.code_export_directory, acados_ocp.solver_options.custom_update_filename)
+            shutil.copyfile(acados_ocp.solver_options.custom_update_filename, target_location)
+        if acados_ocp.solver_options.custom_update_header_filename != "" and acados_ocp.solver_options.custom_update_copy:
+            target_location = os.path.join(acados_ocp.code_export_directory, acados_ocp.solver_options.custom_update_header_filename)
+            shutil.copyfile(acados_ocp.solver_options.custom_update_header_filename, target_location)
 
 
     @classmethod
-    def build(cls, code_export_dir, with_cython=False, cmake_builder: CMakeBuilder = None):
+    def build(cls, code_export_dir, with_cython=False, cmake_builder: CMakeBuilder = None, verbose: bool = True):
         """
         Builds the code for an acados OCP solver, that has been generated in code_export_dir
             :param code_export_dir: directory in which acados OCP solver has been generated, see generate()
@@ -870,19 +877,36 @@ class AcadosOcpSolver:
             :param cmake_builder: type :py:class:`~acados_template.builders.CMakeBuilder` generate a `CMakeLists.txt` and use
                    the `CMake` pipeline instead of a `Makefile` (`CMake` seems to be the better option in conjunction with
                    `MS Visual Studio`); default: `None`
+            :param verbose: indicating if build command is printed
         """
         code_export_dir = os.path.abspath(code_export_dir)
-        cwd=os.getcwd()
+        cwd = os.getcwd()
         os.chdir(code_export_dir)
         if with_cython:
-            os.system('make clean_ocp_cython')
-            os.system('make ocp_cython')
+            call(
+                ['make', 'clean_all'],
+                stdout=None if verbose else DEVNULL,
+                stderr=None if verbose else STDOUT
+            )
+            call(
+                ['make', 'ocp_cython'],
+                stdout=None if verbose else DEVNULL,
+                stderr=None if verbose else STDOUT
+            )
         else:
             if cmake_builder is not None:
                 cmake_builder.exec(code_export_dir)
             else:
-                os.system('make clean_ocp_shared_lib')
-                os.system('make ocp_shared_lib')
+                call(
+                    ['make', 'clean_ocp_shared_lib'],
+                    stdout=None if verbose else DEVNULL,
+                    stderr=None if verbose else STDOUT
+                )
+                call(
+                    ['make', 'ocp_shared_lib'],
+                    stdout=None if verbose else DEVNULL,
+                    stderr=None if verbose else STDOUT
+                )
         os.chdir(cwd)
 
 
@@ -910,7 +934,7 @@ class AcadosOcpSolver:
                     acados_ocp_json['dims']['N'])
 
 
-    def __init__(self, acados_ocp, json_file='acados_ocp_nlp.json', simulink_opts=None, build=True, generate=True, cmake_builder: CMakeBuilder = None):
+    def __init__(self, acados_ocp: AcadosOcp, json_file='acados_ocp_nlp.json', simulink_opts=None, build=True, generate=True, cmake_builder: CMakeBuilder = None, verbose=True):
 
         self.solver_created = False
         if generate:
@@ -927,15 +951,13 @@ class AcadosOcpSolver:
         code_export_directory = acados_ocp_json['code_export_directory']
 
         if build:
-            self.build(code_export_directory, with_cython=False, cmake_builder=cmake_builder)
+            self.build(code_export_directory, with_cython=False, cmake_builder=cmake_builder, verbose=verbose)
 
         # prepare library loading
         lib_prefix = 'lib'
-        lib_ext = '.so'
+        lib_ext = get_lib_ext()
         if os.name == 'nt':
             lib_prefix = ''
-            lib_ext = ''
-        # ToDo: check for mac
 
         # Load acados library to avoid unloading the library.
         # This is necessary if acados was compiled with OpenMP, since the OpenMP threads can't be destroyed.
@@ -970,16 +992,23 @@ class AcadosOcpSolver:
         assert getattr(self.shared_lib, f"{self.model_name}_acados_create")(self.capsule)==0
         self.solver_created = True
 
+        self.acados_ocp = acados_ocp
+
         # get pointers solver
         self.__get_pointers_solver()
 
         self.status = 0
 
+        # gettable fields
+        self.__qp_dynamics_fields = ['A', 'B', 'b']
+        self.__qp_cost_fields = ['Q', 'R', 'S', 'q', 'r']
+        self.__qp_constraint_fields = ['C', 'D', 'lg', 'ug', 'lbx', 'ubx', 'lbu', 'ubu']
+
 
     def __get_pointers_solver(self):
-        """
-        Private function to get the pointers for solver
-        """
+        # """
+        # Private function to get the pointers for solver
+        # """
         # get pointers solver
         getattr(self.shared_lib, f"{self.model_name}_acados_get_nlp_opts").argtypes = [c_void_p]
         getattr(self.shared_lib, f"{self.model_name}_acados_get_nlp_opts").restype = c_void_p
@@ -1010,6 +1039,25 @@ class AcadosOcpSolver:
         self.nlp_solver = getattr(self.shared_lib, f"{self.model_name}_acados_get_nlp_solver")(self.capsule)
 
 
+
+    def solve_for_x0(self, x0_bar):
+        """
+        Wrapper around `solve()` which sets initial state constraint, solves the OCP, and returns u0.
+        """
+        self.set(0, "lbx", x0_bar)
+        self.set(0, "ubx", x0_bar)
+
+        status = self.solve()
+
+        if status == 2:
+            print("Warning: acados_ocp_solver reached maximum iterations.")
+        elif status != 0:
+            raise Exception(f'acados acados_ocp_solver returned status {status}')
+
+        u0 = self.get(0, "u")
+        return u0
+
+
     def solve(self):
         """
         Solve the ocp with current input.
@@ -1021,13 +1069,31 @@ class AcadosOcpSolver:
         return self.status
 
 
-    def reset(self):
+    def custom_update(self, data_: np.ndarray):
+        """
+        A custom function that can be implemented by a user to be called between solver calls.
+        By default this does nothing.
+        The idea is to have a convenient wrapper to do complex updates of parameters and numerical data efficiently in C,
+        in a function that is compiled into the solver library and can be conveniently used in the Python environment.
+        """
+        data = np.ascontiguousarray(data_, dtype=np.float64)
+        c_data = cast(data.ctypes.data, POINTER(c_double))
+        data_len = len(data)
+
+        getattr(self.shared_lib, f"{self.model_name}_acados_custom_update").argtypes = [c_void_p, POINTER(c_double), c_int]
+        getattr(self.shared_lib, f"{self.model_name}_acados_custom_update").restype = c_int
+        status = getattr(self.shared_lib, f"{self.model_name}_acados_custom_update")(self.capsule, c_data, data_len)
+
+        return status
+
+
+    def reset(self, reset_qp_solver_mem=1):
         """
         Sets current iterate to all zeros.
         """
-        getattr(self.shared_lib, f"{self.model_name}_acados_reset").argtypes = [c_void_p]
+        getattr(self.shared_lib, f"{self.model_name}_acados_reset").argtypes = [c_void_p, c_int]
         getattr(self.shared_lib, f"{self.model_name}_acados_reset").restype = c_int
-        getattr(self.shared_lib, f"{self.model_name}_acados_reset")(self.capsule)
+        getattr(self.shared_lib, f"{self.model_name}_acados_reset")(self.capsule, reset_qp_solver_mem)
 
         return
 
@@ -1175,18 +1241,17 @@ class AcadosOcpSolver:
         field = field_
 
         if (field_ not in all_fields):
-            raise Exception('AcadosOcpSolver.get(): {} is an invalid argument.\
-                    \n Possible values are {}. Exiting.'.format(field_, all_fields))
+            raise Exception(f'AcadosOcpSolver.get(stage={stage_}, field={field_}): \'{field_}\' is an invalid argument.\
+                    \n Possible values are {all_fields}.')
 
         if not isinstance(stage_, int):
-            raise Exception('AcadosOcpSolver.get(): stage index must be Integer.')
+            raise Exception(f'AcadosOcpSolver.get(stage={stage_}, field={field_}): stage index must be an integer, got type {type(stage_)}.')
 
         if stage_ < 0 or stage_ > self.N:
-            raise Exception('AcadosOcpSolver.get(): stage index must be in [0, N], got: {}.'.format(stage_))
+            raise Exception(f'AcadosOcpSolver.get(stage={stage_}, field={field_}): stage index must be in [0, {self.N}], got: {stage_}.')
 
         if stage_ == self.N and field_ == 'pi':
-            raise Exception('AcadosOcpSolver.get(): field {} does not exist at final stage {}.'\
-                .format(field_, stage_))
+            raise Exception(f'AcadosOcpSolver.get(stage={stage_}, field={field_}): field \'{field_}\' does not exist at final stage {stage_}.')
 
         if field_ in sens_fields:
             field = field_.replace('sens_', '')
@@ -1265,15 +1330,15 @@ class AcadosOcpSolver:
         return
 
 
-    def store_iterate(self, filename='', overwrite=False):
+    def store_iterate(self, filename: str = '', overwrite=False):
         """
         Stores the current iterate of the ocp solver in a json file.
 
-            :param filename: if not set, use model_name + timestamp + '.json'
+            :param filename: if not set, use f'{self.model_name}_iterate.json'
             :param overwrite: if false and filename exists add timestamp to filename
         """
         if filename == '':
-            filename += self.model_name + '_' + 'iterate' + '.json'
+            filename = f'{self.model_name}_iterate.json'
 
         if not overwrite:
             # append timestamp
@@ -1284,21 +1349,68 @@ class AcadosOcpSolver:
         # get iterate:
         solution = dict()
 
+        lN = len(str(self.N+1))
         for i in range(self.N+1):
-            solution['x_'+str(i)] = self.get(i,'x')
-            solution['u_'+str(i)] = self.get(i,'u')
-            solution['z_'+str(i)] = self.get(i,'z')
-            solution['lam_'+str(i)] = self.get(i,'lam')
-            solution['t_'+str(i)] = self.get(i, 't')
-            solution['sl_'+str(i)] = self.get(i, 'sl')
-            solution['su_'+str(i)] = self.get(i, 'su')
-        for i in range(self.N):
-            solution['pi_'+str(i)] = self.get(i,'pi')
+            i_string = f'{i:0{lN}d}'
+            solution['x_'+i_string] = self.get(i,'x')
+            solution['u_'+i_string] = self.get(i,'u')
+            solution['z_'+i_string] = self.get(i,'z')
+            solution['lam_'+i_string] = self.get(i,'lam')
+            solution['t_'+i_string] = self.get(i, 't')
+            solution['sl_'+i_string] = self.get(i, 'sl')
+            solution['su_'+i_string] = self.get(i, 'su')
+            if i < self.N:
+                solution['pi_'+i_string] = self.get(i,'pi')
+
+        for k in list(solution.keys()):
+            if len(solution[k]) == 0:
+                del solution[k]
 
         # save
         with open(filename, 'w') as f:
-            json.dump(solution, f, default=np_array_to_list, indent=4, sort_keys=True)
+            json.dump(solution, f, default=make_object_json_dumpable, indent=4, sort_keys=True)
         print("stored current iterate in ", os.path.join(os.getcwd(), filename))
+
+
+
+    def dump_last_qp_to_json(self, filename: str = '', overwrite=False):
+        """
+        Dumps the latest QP data into a json file
+
+            :param filename: if not set, use model_name + timestamp + '.json'
+            :param overwrite: if false and filename exists add timestamp to filename
+        """
+        if filename == '':
+            filename = f'{self.model_name}_QP.json'
+
+        if not overwrite:
+            # append timestamp
+            if os.path.isfile(filename):
+                filename = filename[:-5]
+                filename += datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f') + '.json'
+
+        # get QP data:
+        qp_data = dict()
+
+        lN = len(str(self.N+1))
+        for field in self.__qp_dynamics_fields:
+            for i in range(self.N):
+                qp_data[f'{field}_{i:0{lN}d}'] = self.get_from_qp_in(i,field)
+
+        for field in self.__qp_constraint_fields + self.__qp_cost_fields:
+            for i in range(self.N+1):
+                qp_data[f'{field}_{i:0{lN}d}'] = self.get_from_qp_in(i,field)
+
+        # remove empty fields
+        for k in list(qp_data.keys()):
+            if len(qp_data[k]) == 0:
+                del qp_data[k]
+
+        # save
+        with open(filename, 'w') as f:
+            json.dump(qp_data, f, default=make_object_json_dumpable, indent=4, sort_keys=True)
+        print("stored qp from solver memory in ", os.path.join(os.getcwd(), filename))
+
 
 
     def load_iterate(self, filename):
@@ -1412,7 +1524,7 @@ class AcadosOcpSolver:
             return self.get_residuals()
 
         else:
-            raise Exception(f'AcadosOcpSolver.get_stats(): {field} is not a valid argument.'
+            raise Exception(f'AcadosOcpSolver.get_stats(): \'{field}\' is not a valid argument.'
                     + f'\n Possible values are {fields}.')
 
 
@@ -1440,6 +1552,12 @@ class AcadosOcpSolver:
     def get_residuals(self, recompute=False):
         """
         Returns an array of the form [res_stat, res_eq, res_ineq, res_comp].
+        This residual has to be computed for SQP_RTI solver, since it is not available by default.
+
+        - res_stat: stationarity residual
+        - res_eq: residual wrt equality constraints (dynamics)
+        - res_ineq: residual wrt inequality constraints (constraints)
+        - res_comp: residual wrt complementarity conditions
         """
         # compute residuals if RTI
         if self.solver_options['nlp_solver_type'] == 'SQP_RTI' or recompute:
@@ -1499,24 +1617,22 @@ class AcadosOcpSolver:
             value_ = np.array([value_])
         value_ = value_.astype(float)
 
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
 
         stage = c_int(stage_)
 
         # treat parameters separately
         if field_ == 'p':
-            getattr(self.shared_lib, f"{self.model_name}_acados_update_params").argtypes = [c_void_p, c_int, POINTER(c_double)]
+            getattr(self.shared_lib, f"{self.model_name}_acados_update_params").argtypes = [c_void_p, c_int, POINTER(c_double), c_int]
             getattr(self.shared_lib, f"{self.model_name}_acados_update_params").restype = c_int
 
             value_data = cast(value_.ctypes.data, POINTER(c_double))
 
             assert getattr(self.shared_lib, f"{self.model_name}_acados_update_params")(self.capsule, stage, value_data, value_.shape[0])==0
         else:
-            if field_ not in constraints_fields + cost_fields + out_fields:
-                raise Exception("AcadosOcpSolver.set(): {} is not a valid argument.\
-                    \nPossible values are {}. Exiting.".format(field, \
-                    constraints_fields + cost_fields + out_fields + ['p']))
+            if field_ not in constraints_fields + cost_fields + out_fields + mem_fields:
+                raise Exception(f"AcadosOcpSolver.set(): '{field}' is not a valid argument.\n"
+                    f" Possible values are {constraints_fields + cost_fields + out_fields + mem_fields + ['p']}.")
 
             self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
                 [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
@@ -1526,8 +1642,8 @@ class AcadosOcpSolver:
                 self.nlp_dims, self.nlp_out, stage_, field)
 
             if value_.shape[0] != dims:
-                msg = 'AcadosOcpSolver.set(): mismatching dimension for field "{}" '.format(field_)
-                msg += 'with dimension {} (you have {})'.format(dims, value_.shape[0])
+                msg = f'AcadosOcpSolver.set(): mismatching dimension for field "{field_}" '
+                msg += f'with dimension {dims} (you have {value_.shape[0]})'
                 raise Exception(msg)
 
             value_data = cast(value_.ctypes.data, POINTER(c_double))
@@ -1553,6 +1669,13 @@ class AcadosOcpSolver:
                     [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
                 self.shared_lib.ocp_nlp_set(self.nlp_config, \
                     self.nlp_solver, stage, field, value_data_p)
+            # also set z_guess, when setting z.
+            if field_ == 'z':
+                field = 'z_guess'.encode('utf-8')
+                self.shared_lib.ocp_nlp_set.argtypes = \
+                    [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+                self.shared_lib.ocp_nlp_set(self.nlp_config, \
+                    self.nlp_solver, stage, field, value_data_p)
         return
 
 
@@ -1561,7 +1684,7 @@ class AcadosOcpSolver:
         Set numerical data in the cost module of the solver.
 
             :param stage: integer corresponding to shooting node
-            :param field: string, e.g. 'yref', 'W', 'ext_cost_num_hess'
+            :param field: string, e.g. 'yref', 'W', 'ext_cost_num_hess', 'zl', 'zu', 'Zl', 'Zu'
             :param value: of appropriate size
         """
         # cast value_ to avoid conversion issues
@@ -1595,7 +1718,7 @@ class AcadosOcpSolver:
                     raise Exception("Ambiguity in API detected.\n"
                                     "Are you making an acados model from scrach? Add api='new' to cost_set and carry on.\n"
                                     "Are you seeing this error suddenly in previously running code? Read on.\n"
-                                    "  You are relying on a now-fixed bug in cost_set for field '{}'.\n".format(field_) +
+                                    f"  You are relying on a now-fixed bug in cost_set for field '{field_}'.\n" +
                                     "  acados_template now correctly passes on any matrices to acados in column major format.\n" +
                                     "  Two options to fix this error: \n" +
                                     "   * Add api='old' to cost_set to restore old incorrect behaviour\n" +
@@ -1663,7 +1786,7 @@ class AcadosOcpSolver:
                     raise Exception("Ambiguity in API detected.\n"
                                     "Are you making an acados model from scrach? Add api='new' to constraints_set and carry on.\n"
                                     "Are you seeing this error suddenly in previously running code? Read on.\n"
-                                    "  You are relying on a now-fixed bug in constraints_set for field '{}'.\n".format(field_) +
+                                    f"  You are relying on a now-fixed bug in constraints_set for field '{field}'.\n" +
                                     "  acados_template now correctly passes on any matrices to acados in column major format.\n" +
                                     "  Two options to fix this error: \n" +
                                     "   * Add api='old' to constraints_set to restore old incorrect behaviour\n" +
@@ -1676,7 +1799,7 @@ class AcadosOcpSolver:
                 # Get elements in column major order
                 value_ = np.ravel(value_, order='F')
             else:
-                raise Exception("Unknown api: '{}'".format(api))
+                raise Exception(f"Unknown api: '{api}'")
 
         if value_shape != tuple(dims):
             raise Exception(f'AcadosOcpSolver.constraints_set(): mismatching dimension' +
@@ -1693,27 +1816,35 @@ class AcadosOcpSolver:
         return
 
 
-    def dynamics_get(self, stage_, field_):
+    def get_from_qp_in(self, stage_: int, field_: str):
         """
-        Get numerical data from the dynamics module of the solver:
+        Get numerical data from the current QP.
 
             :param stage: integer corresponding to shooting node
-            :param field: string, e.g. 'A'
+            :param field: string in ['A', 'B', 'b', 'Q', 'R', 'S', 'q', 'r', 'C', 'D', 'lg', 'ug', 'lbx', 'ubx', 'lbu', 'ubu']
         """
+        # idx* should be added too..
+        if not isinstance(stage_, int):
+            raise TypeError("stage should be int")
+        if stage_ > self.N:
+            raise Exception("stage should be <= self.N")
+        if field_ in self.__qp_dynamics_fields and stage_ >= self.N:
+            raise ValueError(f"dynamics field {field_} not available at terminal stage")
+        if field_ not in self.__qp_dynamics_fields + self.__qp_cost_fields + self.__qp_constraint_fields:
+            raise Exception(f"field {field_} not supported.")
 
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
         stage = c_int(stage_)
 
         # get dims
-        self.shared_lib.ocp_nlp_dynamics_dims_get_from_attr.argtypes = \
+        self.shared_lib.ocp_nlp_qp_dims_get_from_attr.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p, POINTER(c_int)]
-        self.shared_lib.ocp_nlp_dynamics_dims_get_from_attr.restype = c_int
+        self.shared_lib.ocp_nlp_qp_dims_get_from_attr.restype = c_int
 
         dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
         dims_data = cast(dims.ctypes.data, POINTER(c_int))
 
-        self.shared_lib.ocp_nlp_dynamics_dims_get_from_attr(self.nlp_config, \
+        self.shared_lib.ocp_nlp_qp_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage_, field, dims_data)
 
         # create output data
@@ -1748,32 +1879,34 @@ class AcadosOcpSolver:
             - qp_mu0: for HPIPM QP solvers: initial value for complementarity slackness
             - warm_start_first_qp: indicates if first QP in SQP is warm_started
         """
-        int_fields = ['print_level', 'rti_phase', 'initialize_t_slacks', 'qp_warm_start', 'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC', 'warm_start_first_qp']
-        double_fields = ['step_length', 'tol_eq', 'tol_stat', 'tol_ineq', 'tol_comp', 'alpha_min', 'alpha_reduction', 'eps_sufficient_descent',
-        'qp_tol_stat', 'qp_tol_eq', 'qp_tol_ineq', 'qp_tol_comp', 'qp_tau_min', 'qp_mu0']
+        int_fields = ['print_level', 'rti_phase', 'initialize_t_slacks', 'qp_warm_start',
+                      'line_search_use_sufficient_descent', 'full_step_dual', 'globalization_use_SOC', 'warm_start_first_qp']
+        double_fields = ['step_length', 'tol_eq', 'tol_stat', 'tol_ineq', 'tol_comp', 'alpha_min', 'alpha_reduction',
+                         'eps_sufficient_descent', 'qp_tol_stat', 'qp_tol_eq', 'qp_tol_ineq', 'qp_tol_comp', 'qp_tau_min', 'qp_mu0']
         string_fields = ['globalization']
 
         # check field availability and type
         if field_ in int_fields:
             if not isinstance(value_, int):
-                raise Exception('solver option {} must be of type int. You have {}.'.format(field_, type(value_)))
+                raise Exception(f'solver option \'{field_}\' must be of type int. You have {type(value_)}.')
             else:
                 value_ctypes = c_int(value_)
 
         elif field_ in double_fields:
             if not isinstance(value_, float):
-                raise Exception('solver option {} must be of type float. You have {}.'.format(field_, type(value_)))
+                raise Exception(f'solver option \'{field_}\' must be of type float. You have {type(value_)}.')
             else:
                 value_ctypes = c_double(value_)
 
         elif field_ in string_fields:
             if not isinstance(value_, str):
-                raise Exception('solver option {} must be of type str. You have {}.'.format(field_, type(value_)))
+                raise Exception(f'solver option \'{field_}\' must be of type str. You have {type(value_)}.')
             else:
                 value_ctypes = value_.encode('utf-8')
         else:
-            raise Exception('AcadosOcpSolver.options_set() does not support field {}.'\
-                '\n Possible values are {}.'.format(field_, ', '.join(int_fields + double_fields + string_fields)))
+            fields = ', '.join(int_fields + double_fields + string_fields)
+            raise Exception(f'AcadosOcpSolver.options_set() does not support field \'{field_}\'.\n'\
+                f' Possible values are {fields}.')
 
 
         if field_ == 'rti_phase':
@@ -1802,6 +1935,44 @@ class AcadosOcpSolver:
         return
 
 
+    def set_params_sparse(self, stage_, idx_values_, param_values_):
+        """
+        set parameters of the solvers external function partially:
+        Pseudo: solver.param[idx_values_] = param_values_;
+        Parameters:
+            :param stage_: integer corresponding to shooting node
+            :param idx_values_: 0 based np array (or iterable) of integers: indices of parameter to be set
+            :param param_values_: new parameter values as numpy array
+        """
+
+        # if not isinstance(idx_values_, np.ndarray) or not issubclass(type(idx_values_[0]), np.integer):
+        #     raise Exception('idx_values_ must be np.array of integers.')
+
+        if not isinstance(param_values_, np.ndarray):
+            raise Exception('param_values_ must be np.array.')
+        elif np.float64 != param_values_.dtype:
+            raise TypeError('param_values_ must be np.array of float64.')
+
+        if param_values_.shape[0] != len(idx_values_):
+            raise Exception(f'param_values_ and idx_values_ must be of the same size.' +
+                 f' Got sizes idx {param_values_.shape[0]}, param_values {len(idx_values_)}.')
+
+        if any(idx_values_ >= self.acados_ocp.dims.np):
+            raise Exception(f'idx_values_ contains value >= np = {self.acados_ocp.dims.np}')
+
+        stage = c_int(stage_)
+        n_update = c_int(len(param_values_))
+
+        param_data = cast(param_values_.ctypes.data, POINTER(c_double))
+        c_idx_values = np.ascontiguousarray(idx_values_, dtype=np.intc)
+        idx_data = cast(c_idx_values.ctypes.data, POINTER(c_int))
+
+        getattr(self.shared_lib, f"{self.model_name}_acados_update_params_sparse").argtypes = \
+                        [c_void_p, c_int, POINTER(c_int), POINTER(c_double), c_int]
+        getattr(self.shared_lib, f"{self.model_name}_acados_update_params_sparse").restype = c_int
+        getattr(self.shared_lib, f"{self.model_name}_acados_update_params_sparse") \
+                                    (self.capsule, stage, idx_data, param_data, n_update)
+
     def __del__(self):
         if self.solver_created:
             getattr(self.shared_lib, f"{self.model_name}_acados_free").argtypes = [c_void_p]
@@ -1815,4 +1986,6 @@ class AcadosOcpSolver:
             try:
                 self.dlclose(self.shared_lib._handle)
             except:
+                print(f"WARNING: acados Python interface could not close shared_lib handle of AcadosOcpSolver {self.model_name}.\n",
+                     "Attempting to create a new one with the same name will likely result in the old one being used!")
                 pass

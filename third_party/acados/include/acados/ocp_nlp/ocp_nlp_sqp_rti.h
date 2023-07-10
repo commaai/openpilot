@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -145,12 +142,6 @@ acados_size_t ocp_nlp_sqp_rti_workspace_calculate_size(void *config_, void *dims
 /************************************************
  * functions
  ************************************************/
-
-void ocp_nlp_sqp_rti_preparation_step(void *config_, void *dims_,
-    void *nlp_in_, void *nlp_out_, void *opts, void *mem_, void *work_);
-//
-void ocp_nlp_sqp_rti_feedback_step(void *config_, void *dims_,
-    void *nlp_in_, void *nlp_out_, void *opts_, void *mem_, void *work_);
 //
 int ocp_nlp_sqp_rti(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
     void *opts_, void *mem_, void *work_);

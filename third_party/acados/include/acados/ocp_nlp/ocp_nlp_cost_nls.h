@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -38,8 +35,7 @@
 /// @{
 /// \addtogroup ocp_nlp_cost_nls ocp_nlp_cost_nls
 /// \brief This module implements nonlinear-least squares costs of the form
-/// \f$\min_{x,u} \| r(x,u) - y_{\text{ref}} \|_W^2\f$.
-/// @{
+/// \f$\min_{x,u,z} \| y(x,u,z,p) - y_{\text{ref}} \|_W^2\f$,
 
 #ifndef ACADOS_OCP_NLP_OCP_NLP_COST_NLS_H_
 #define ACADOS_OCP_NLP_OCP_NLP_COST_NLS_H_
@@ -65,6 +61,7 @@ extern "C" {
 typedef struct
 {
     int nx;  // number of states
+    int nz;  // number of algebraic variables
     int nu;  // number of inputs
     int ny;  // number of outputs
     int ns;  // number of slacks
@@ -74,8 +71,6 @@ typedef struct
 acados_size_t ocp_nlp_cost_nls_dims_calculate_size(void *config);
 //
 void *ocp_nlp_cost_nls_dims_assign(void *config, void *raw_memory);
-//
-void ocp_nlp_cost_nls_dims_initialize(void *config, void *dims, int nx, int nu, int ny, int ns, int nz);
 //
 void ocp_nlp_cost_nls_dims_set(void *config_, void *dims_, const char *field, int* value);
 //
@@ -99,6 +94,7 @@ typedef struct
     struct blasfeo_dvec Z;              // diagonal Hessian of slacks as vector
     struct blasfeo_dvec z;              // gradient of slacks as vector
     double scaling;
+    int W_changed;                      ///< flag indicating whether W has changed and needs to be refactorized
 } ocp_nlp_cost_nls_model;
 
 //
@@ -144,11 +140,11 @@ typedef struct
     struct blasfeo_dvec grad;    // gradient of cost function
     struct blasfeo_dvec *ux;     // pointer to ux in nlp_out
     struct blasfeo_dvec *tmp_ux;     // pointer to ux in tmp_nlp_out
-    struct blasfeo_dvec *z_alg;         ///< pointer to z in sim_out
-    struct blasfeo_dmat *dzdux_tran;    ///< pointer to sensitivity of a wrt ux in sim_out
     struct blasfeo_dmat *RSQrq;  // pointer to RSQrq in qp_in
     struct blasfeo_dvec *Z;      // pointer to Z in qp_in
-	double fun;                         ///< value of the cost function
+    struct blasfeo_dvec *z_alg;         ///< pointer to z in sim_out
+    struct blasfeo_dmat *dzdux_tran;    ///< pointer to sensitivity of a wrt ux in sim_out
+    double fun;                         ///< value of the cost function
 } ocp_nlp_cost_nls_memory;
 
 //
@@ -180,8 +176,11 @@ typedef struct
 {
     struct blasfeo_dmat tmp_nv_ny;
     struct blasfeo_dmat tmp_nv_nv;
+    struct blasfeo_dmat Vz;
+    struct blasfeo_dmat Cyt_tilde;
     struct blasfeo_dvec tmp_ny;
-    struct blasfeo_dvec tmp_2ns;     // temporary vector of dimension ny
+    struct blasfeo_dvec tmp_2ns;
+    struct blasfeo_dvec tmp_nz;
 } ocp_nlp_cost_nls_workspace;
 
 //
@@ -191,6 +190,8 @@ acados_size_t ocp_nlp_cost_nls_workspace_calculate_size(void *config, void *dims
  * functions
  ************************************************/
 
+//
+void ocp_nlp_cost_nls_precompute(void *config_, void *dims_, void *model_, void *opts_, void *memory_, void *work_);
 //
 void ocp_nlp_cost_nls_config_initialize_default(void *config);
 //

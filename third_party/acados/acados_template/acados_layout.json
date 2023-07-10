@@ -6,6 +6,12 @@
         "str"
     ],
     "cython_include_dirs": [
+        "list"
+    ],
+    "json_file": [
+        "str"
+    ],
+    "shared_lib_ext": [
         "str"
     ],
     "model": {
@@ -15,7 +21,16 @@
         "dyn_ext_fun_type" : [
             "str"
         ],
-        "dyn_source_discrete" : [
+        "dyn_generic_source" : [
+            "str"
+        ],
+        "dyn_impl_dae_fun" : [
+            "str"
+        ],
+        "dyn_impl_dae_fun_jac" : [
+            "str"
+        ],
+        "dyn_impl_dae_jac" : [
             "str"
         ],
         "dyn_disc_fun_jac_hess" : [
@@ -734,6 +749,9 @@
         "sim_method_newton_iter": [
             "int"
         ],
+        "sim_method_newton_tol": [
+            "float"
+        ],
         "sim_method_jac_reuse": [
             "ndarray",
             [
@@ -761,6 +779,12 @@
         "qp_solver_iter_max": [
             "int"
         ],
+        "qp_solver_cond_ric_alg": [
+            "int"
+        ],
+        "qp_solver_ric_alg": [
+            "int"
+        ],
         "nlp_solver_tol_stat": [
             "float"
         ],
@@ -774,6 +798,9 @@
             "float"
         ],
         "nlp_solver_max_iter": [
+            "int"
+        ],
+        "nlp_solver_ext_qp_res": [
             "int"
         ],
         "print_level": [
@@ -793,6 +820,9 @@
         ],
         "ext_cost_num_hess": [
             "int"
+        ],
+        "ext_fun_compile_flags": [
+            "str"
         ],
         "model_external_shared_lib_dir": [
             "str"

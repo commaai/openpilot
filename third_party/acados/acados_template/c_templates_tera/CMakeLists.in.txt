@@ -1,8 +1,5 @@
 #
-# Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
-# Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
-# Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
-# Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+# Copyright (c) The acados authors.
 #
 # This file is part of acados.
 #
@@ -121,12 +118,14 @@
 	{%- set openmp_flag = " " %}
 	{%- if qp_solver == "FULL_CONDENSING_QPOASES" %}
 		{%- set link_libs = "-lqpOASES_e" %}
+	{%- elif qp_solver == "FULL_CONDENSING_DAQP" %}
+		{%- set link_libs = "-ldaqp" %}
 	{%- else %}
 		{%- set link_libs = "" %}
 	{%- endif %}
 {%- endif %}
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.13)
 
 project({{ model.name }})
 
@@ -139,6 +138,14 @@ option(BUILD_SIM_EXAMPLE "Should the simulation example main_sim_{{ model.name }
 option(BUILD_ACADOS_SIM_SOLVER_LIB "Should the simulation solver library acados_sim_solver_{{ model.name }} be build?" OFF)
 {%- endif %}
 
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_SYSTEM_NAME MATCHES "Windows")
+    # MinGW, change to .lib such that mex recognizes it
+    set(CMAKE_SHARED_LIBRARY_SUFFIX ".lib")
+    set(CMAKE_SHARED_LIBRARY_PREFIX "")
+endif()
+
+
 # object target names
 set(MODEL_OBJ model_{{ model.name }})
 set(OCP_OBJ ocp_{{ model.name }})
@@ -146,9 +153,11 @@ set(SIM_OBJ sim_{{ model.name }})
 
 # model
 set(MODEL_SRC
+	{%- if model.dyn_ext_fun_type == "casadi" %}
 {%- if  solver_options.integrator_type == "ERK" %}
     {{ model.name }}_model/{{ model.name }}_expl_ode_fun.c
     {{ model.name }}_model/{{ model.name }}_expl_vde_forw.c
+    {{ model.name }}_model/{{ model.name }}_expl_vde_adj.c
 	{%- if hessian_approx == "EXACT" %}
     {{ model.name }}_model/{{ model.name }}_expl_ode_hess.c
 	{%- endif %}
@@ -176,16 +185,15 @@ set(MODEL_SRC
 	{%- endif %}
     {{ model.name }}_model/{{ model.name }}_gnsf_get_matrices_fun.c
 {%- elif solver_options.integrator_type == "DISCRETE" %}
-	{%- if model.dyn_ext_fun_type == "casadi" %}
     {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun.c
     {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun_jac.c
 		{%- if hessian_approx == "EXACT" %}
     {{ model.name }}_model/{{ model.name }}_dyn_disc_phi_fun_jac_hess.c
 		{%- endif %}
-	{%- else %}
-    {{ model.name }}_model/{{ model.dyn_source_discrete }}
-	{%- endif %}
 {%- endif -%}
+	{%- else %}
+    {{ model.name }}_model/{{ model.dyn_generic_source }}
+	{%- endif %}
 )
 add_library(${MODEL_OBJ} OBJECT ${MODEL_SRC} )
 
@@ -219,6 +227,9 @@ if(${BUILD_ACADOS_SOLVER_LIB} OR ${BUILD_ACADOS_OCP_SOLVER_LIB} OR ${BUILD_EXAMP
         {{ model.name }}_cost/{{ model.name }}_cost_y_0_fun.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_0_fun_jac_ut_xt.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_0_hess.c
+{%- elif cost_type_0 == "CONVEX_OVER_NONLINEAR" %}
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_0_fun.c
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_0_fun_jac_hess.c
 {%- elif cost_type_0 == "EXTERNAL" %}
     {%- if cost.cost_ext_fun_type_0 == "casadi" %}
         {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_0_fun.c
@@ -232,6 +243,9 @@ if(${BUILD_ACADOS_SOLVER_LIB} OR ${BUILD_ACADOS_OCP_SOLVER_LIB} OR ${BUILD_EXAMP
         {{ model.name }}_cost/{{ model.name }}_cost_y_fun.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_fun_jac_ut_xt.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_hess.c
+{%- elif cost_type == "CONVEX_OVER_NONLINEAR" %}
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_fun.c
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_fun_jac_hess.c
 {%- elif cost_type == "EXTERNAL" %}
     {%- if cost.cost_ext_fun_type == "casadi" %}
         {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_fun.c
@@ -245,6 +259,9 @@ if(${BUILD_ACADOS_SOLVER_LIB} OR ${BUILD_ACADOS_OCP_SOLVER_LIB} OR ${BUILD_EXAMP
         {{ model.name }}_cost/{{ model.name }}_cost_y_e_fun.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_e_fun_jac_ut_xt.c
         {{ model.name }}_cost/{{ model.name }}_cost_y_e_hess.c
+{%- elif cost_type_e == "CONVEX_OVER_NONLINEAR" %}
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_e_fun.c
+        {{ model.name }}_cost/{{ model.name }}_conl_cost_e_fun_jac_hess.c
 {%- elif cost_type_e == "EXTERNAL" %}
     {%- if cost.cost_ext_fun_type_e == "casadi" %}
         {{ model.name }}_cost/{{ model.name }}_cost_ext_cost_e_fun.c
@@ -275,7 +292,7 @@ set(EX_SRC main_{{ model.name }}.c)
 set(EX_EXE main_{{ model.name }})
 
 {%- if model_external_shared_lib_dir and model_external_shared_lib_name %}
-set(EXTERNAL_DIR {{ model_external_shared_lib_dir  }})
+set(EXTERNAL_DIR {{ model_external_shared_lib_dir | replace(from="\", to="/")  }})
 set(EXTERNAL_LIB {{ model_external_shared_lib_name }})
 {%- else %}
 set(EXTERNAL_DIR)
@@ -283,23 +300,26 @@ set(EXTERNAL_LIB)
 {%- endif %}
 
 # set some search paths for preprocessor and linker
-set(ACADOS_INCLUDE_PATH {{ acados_include_path }} CACHE PATH "Define the path which contains the include directory for acados.")
-set(ACADOS_LIB_PATH {{ acados_lib_path }} CACHE PATH "Define the path which contains the lib directory for acados.")
+set(ACADOS_INCLUDE_PATH {{ acados_include_path | replace(from="\", to="/")  }} CACHE PATH "Define the path which contains the include directory for acados.")
+set(ACADOS_LIB_PATH {{ acados_lib_path | replace(from="\", to="/") }} CACHE PATH "Define the path which contains the lib directory for acados.")
 
 # c-compiler flags for debugging
 set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
 
-set(CMAKE_C_FLAGS "
+set(CMAKE_C_FLAGS "-fPIC -std=c99 {{ openmp_flag }}
 {%- if qp_solver == "FULL_CONDENSING_QPOASES" -%}
-   -DACADOS_WITH_QPOASES
+    -DACADOS_WITH_QPOASES
+{%- endif -%}
+{%- if qp_solver == "FULL_CONDENSING_DAQP" -%}
+    -DACADOS_WITH_DAQP
 {%- endif -%}
 {%- if qp_solver == "PARTIAL_CONDENSING_OSQP" -%}
-   -DACADOS_WITH_OSQP
+    -DACADOS_WITH_OSQP
 {%- endif -%}
 {%- if qp_solver == "PARTIAL_CONDENSING_QPDUNES" -%}
-   -DACADOS_WITH_QPDUNES
+    -DACADOS_WITH_QPDUNES
 {%- endif -%}
-    -fPIC -std=c99 {{ openmp_flag }}")
+")
 #-fno-diagnostics-show-line-numbers -g
 
 include_directories(
@@ -309,6 +329,9 @@ include_directories(
    ${ACADOS_INCLUDE_PATH}/hpipm/include
 {%- if qp_solver == "FULL_CONDENSING_QPOASES" %}
    ${ACADOS_INCLUDE_PATH}/qpOASES_e/
+{%- endif %}
+{%- if qp_solver == "FULL_CONDENSING_DAQP" %}
+   ${ACADOS_INCLUDE_PATH}/daqp/include
 {%- endif %}
 )
 
