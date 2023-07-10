@@ -129,8 +129,6 @@ class CarState(CarStateBase):
   @staticmethod
   def get_common_global_es_signals():
     signals = [
-      ("AEB_Status", "ES_Brake"),
-      ("Brake_Pressure", "ES_Brake"),
       ("COUNTER", "ES_Distance"),
       ("CHECKSUM", "ES_Distance"),
       ("Signal1", "ES_Distance"),
@@ -165,7 +163,7 @@ class CarState(CarStateBase):
       ("COUNTER", "ES_Brake"),
       ("Signal1", "ES_Brake"),
       ("Brake_Pressure", "ES_Brake"),
-      ("Signal2", "ES_Brake"),
+      ("AEB_Status", "ES_Brake"),
       ("Cruise_Brake_Lights", "ES_Brake"),
       ("Cruise_Brake_Fault", "ES_Brake"),
       ("Cruise_Brake_Active", "ES_Brake"),
