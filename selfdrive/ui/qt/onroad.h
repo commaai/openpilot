@@ -119,7 +119,7 @@ public:
   bool isMapVisible() const { return map && map->isVisible(); }
 
 signals:
-  void mapPanelShown();
+  void mapPanelRequested();
 
 private:
   void paintEvent(QPaintEvent *event);

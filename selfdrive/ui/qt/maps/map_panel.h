@@ -13,7 +13,7 @@ public:
   bool isShowingMap() const;
 
 signals:
-  void mapPanelShown();
+  void mapPanelRequested();
 
 private:
   QStackedLayout *content_stack;
