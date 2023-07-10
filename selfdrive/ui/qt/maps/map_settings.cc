@@ -119,7 +119,6 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
 }
 
 void MapSettings::mousePressEvent(QMouseEvent *ev) {
-//  m_lastPos = ev->localPos();
   ev->accept();
 }
 
