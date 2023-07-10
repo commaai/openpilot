@@ -420,7 +420,7 @@ void MapInstructions::buildPixmapCache() {
   QDir dir("../assets/navigation");
   for (QString fn : dir.entryList({"*" + ICON_SUFFIX}, QDir::Files)) {
     QPixmap pm(dir.filePath(fn));
-    QString key = fn.chopped(ICON_SUFFIX.length());
+    QString key = fn.left(fn.size() - ICON_SUFFIX.length());
     if (key.contains("turn_")) {
       pixmap_cache[key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     } else {
