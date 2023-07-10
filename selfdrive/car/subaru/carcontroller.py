@@ -128,7 +128,6 @@ class CarController:
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
 
     else:
-
       if self.frame % 10 == 0:
         can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control.leadVisible))
 
@@ -136,36 +135,26 @@ class CarController:
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
+        if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
+          can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
+
       if self.CP.openpilotLongitudinalControl:
-        if self.es_status_cnt != CS.es_status_msg["COUNTER"]:
+        if self.frame % 5 == 0:
           can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, cruise_rpm))
-          self.es_status_cnt = CS.es_status_msg["COUNTER"]
-
-        if self.es_brake_cnt != CS.es_brake_msg["COUNTER"]:
           can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value))
-          self.es_brake_cnt = CS.es_brake_msg["COUNTER"]
-
-        if self.cruise_control_cnt != CS.cruise_control_msg["COUNTER"]:
           can_sends.append(subarucan.create_cruise_control(self.packer, CS.cruise_control_msg))
-          self.cruise_control_cnt = CS.cruise_control_msg["COUNTER"]
 
-        if self.brake_status_cnt != CS.brake_status_msg["COUNTER"]:
+        if self.frame % 2 == 0:
           can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, CS.out.stockAeb))
-          self.brake_status_cnt = CS.brake_status_msg["COUNTER"]
 
-        if self.es_distance_cnt != CS.es_distance_msg["COUNTER"]:
+        if self.frame % 10 == 0:
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle))
-          self.es_distance_cnt = CS.es_distance_msg["COUNTER"]
 
       else:
-
-        if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
+        if pcm_cancel_cmd:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle))
           self.last_cancel_frame = self.frame
-
-      if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-        can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
