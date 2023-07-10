@@ -25,15 +25,19 @@ def athena_main(ws_uri: str, cookie: str, stop_condition: Callable[[], bool]) ->
     ]
 
     for t in threads:
+      print("starting", t.name)
       t.start()
     try:
       while not stop_condition() and not end_event.is_set():
         time.sleep(0.1)
+      print("goodbye threads")
+      end_event.set()
     except (KeyboardInterrupt, SystemExit):
       end_event.set()
       raise
     finally:
       for t in threads:
+        print("joining", t.name)
         t.join()
 
 
