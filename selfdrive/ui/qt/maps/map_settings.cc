@@ -118,6 +118,11 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   }
 }
 
+void MapSettings::mousePressEvent(QMouseEvent *ev) {
+//  m_lastPos = ev->localPos();
+  ev->accept();
+}
+
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
 }
@@ -244,11 +249,11 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   inner_frame->setSpacing(0);
   {
     title = new ElidedLabel(this);
-    title->setAttribute(Qt::WA_TransparentForMouseEvents);
+//    title->setAttribute(Qt::WA_TransparentForMouseEvents);
     inner_frame->addWidget(title);
 
     subtitle = new ElidedLabel(this);
-    subtitle->setAttribute(Qt::WA_TransparentForMouseEvents);
+//    subtitle->setAttribute(Qt::WA_TransparentForMouseEvents);
     subtitle->setObjectName("subtitle");
     inner_frame->addWidget(subtitle);
   }
@@ -317,7 +322,7 @@ void DestinationWidget::set(NavDestination *destination, bool current) {
   subtitle->setVisible(true);
 
   // TODO: use pixmap
-  action->setAttribute(Qt::WA_TransparentForMouseEvents, !current);
+//  action->setAttribute(Qt::WA_TransparentForMouseEvents, !current);
   action->setText(current ? "×" : "→");
   action->setVisible(true);
 
