@@ -12,11 +12,10 @@ public:
 
   bool isShowingMap() const;
 
-private:
-  void showEvent(QShowEvent *event) { emit mapWindowShown(); };
+//private:
+//  void showEvent(QShowEvent *event) { emit mapWindowShown(); };
 
 signals:
-  void requestVisible(bool visible);
   void mapWindowShown();
 
 private:
