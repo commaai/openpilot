@@ -92,7 +92,14 @@ void OnroadWindow::offroadTransition(bool offroad) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
-      QObject::connect(m, &MapPanel::mapWindowShown, this, &OnroadWindow::mapWindowShown);
+//      QObject::connect(m->map, &MapPanel::mapWindowShown, this, &OnroadWindow::mapWindowShown);
+//      QObject::connect(m, &MapPanel::mapWindowShown, this, &OnroadWindow::mapWindowShown);
+      QObject::connect(m, &MapPanel::requestVisible, [=](bool visible) {
+        if (visible) {
+          emit mapWindowShown();
+        }
+        m->setVisible(visible);
+      });
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
