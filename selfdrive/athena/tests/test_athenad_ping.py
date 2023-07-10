@@ -13,7 +13,7 @@ from selfdrive.athena.athenad import ATHENA_HOST, ws_recv, ws_send
 
 
 def athena_main(ws_uri: str, cookie: str, stop_condition: Callable[[], bool]) -> None:
-  while 1:
+  while not stop_condition():
     ws = create_connection(ws_uri,
                            cookie=cookie,
                            enable_multithread=True,
