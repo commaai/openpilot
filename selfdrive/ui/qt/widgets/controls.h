@@ -28,7 +28,7 @@ protected:
     if (rect().contains(event->pos())) {
       emit clicked();
     }
-    QWidget::mouseReleaseEvent(event);  // propagate event to parent
+    QLabel::mouseReleaseEvent(event);  // propagate event to parent
   }
   QString lastText_, elidedText_;
 };
