@@ -200,6 +200,10 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
+  if (!panda->up_to_date()) {
+    throw std::runtime_error("Panda firmware out of date. Run pandad.py to update.");
+  }
+
   sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
@@ -419,6 +423,10 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       cs[j].setCanfdEnabled(can_health.canfd_enabled);
       cs[j].setBrsEnabled(can_health.brs_enabled);
       cs[j].setCanfdNonIso(can_health.canfd_non_iso);
+      cs[j].setIrq0CallRate(can_health.irq0_call_rate);
+      cs[j].setIrq1CallRate(can_health.irq1_call_rate);
+      cs[j].setIrq2CallRate(can_health.irq2_call_rate);
+      cs[j].setCanCoreResetCnt(can_health.can_core_reset_cnt);
     }
 
     // Convert faults bitset to capnp list

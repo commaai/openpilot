@@ -72,13 +72,13 @@ TEST_CASE("Parse can messages") {
 
 TEST_CASE("Parse dbc") {
   QString content = R"(
-BO_ 160 message_1: 8 XXX
+BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
   SG_ signal_2 : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
 
 BO_ 162 message_1: 8 XXX
-  SG_ signal_1 M : 0|12@1+ (1,0) [0|4095] "unit"  XXX
-  SG_ signal_2 M4 : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+  SG_ signal_1 M : 0|12@1+ (1,0) [0|4095] "unit" XXX
+  SG_ signal_2 M4 : 12|1@1+ (1.0,0.0) [0.0|1] "" XXX
 
 VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
@@ -96,6 +96,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->size == 8);
   REQUIRE(msg->comment == "message comment");
   REQUIRE(msg->sigs.size() == 2);
+  REQUIRE(msg->transmitter == "EON");
   REQUIRE(file.msg("message_1") != nullptr);
 
   auto sig_1 = msg->sigs[0];
@@ -106,6 +107,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(sig_1->max == 4095);
   REQUIRE(sig_1->unit == "unit");
   REQUIRE(sig_1->comment == "signal comment");
+  REQUIRE(sig_1->receiver_name == "XXX");
   REQUIRE(sig_1->val_desc.size() == 3);
   REQUIRE(sig_1->val_desc[0] == std::pair<double, QString>{0, "disabled"});
   REQUIRE(sig_1->val_desc[1] == std::pair<double, QString>{1.2, "initializing"});
@@ -123,4 +125,5 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[1]->multiplex_value == 4);
   REQUIRE(msg->sigs[1]->start_bit == 12);
   REQUIRE(msg->sigs[1]->size == 1);
+  REQUIRE(msg->sigs[1]->receiver_name == "XXX");
 }

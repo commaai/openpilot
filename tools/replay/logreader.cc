@@ -74,8 +74,8 @@ bool LogReader::parse(const std::set<cereal::Event::Which> &allow, std::atomic<b
       Event *evt = new Event(words);
 #endif
       if (!allow.empty() && allow.find(evt->which) == allow.end()) {
-        delete evt;
         words = kj::arrayPtr(evt->reader.getEnd(), words.end());
+        delete evt;
         continue;
       }
 
