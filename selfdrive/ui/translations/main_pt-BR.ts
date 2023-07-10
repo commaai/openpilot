@@ -552,19 +552,19 @@
     </message>
     <message>
         <source>Remote access</source>
-        <translation>Acesso remoto</translation>
+        <translation>Acesso remoto (proxy comma)</translation>
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectividade LTE (só nos EUA)</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>Navegação passo a passo</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>1 ano de dados em nuvem</translation>
     </message>
 </context>
 <context>
