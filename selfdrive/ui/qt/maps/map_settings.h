@@ -23,6 +23,21 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class NavDestination;
 class DestinationWidget;
 
+class NavigationRequest : public QObject {
+  Q_OBJECT
+
+public:
+  NavigationRequest(QObject *parent);
+  static NavigationRequest *instance();
+
+signals:
+  void locationsUpdated(const QString &response, bool success);
+  void nextDestinationUpdated(const QString &response, bool success);
+
+private:
+  Params params;
+};
+
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
