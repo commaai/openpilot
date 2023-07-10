@@ -81,12 +81,12 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
+    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
+      return;
+    }
     qDebug() << "sidebarVisible:" << sidebarVisible << "- mapVisible" << map->isVisible();
     qDebug() << "isShowingMap:" << ((MapPanel *)map)->isShowingMap();
     qDebug() << "windowPos:" << e->windowPos().x();
-//    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
-//      return;
-//    }
 //    bool nav_enabled = (*uiState()->sm)["modelV2"].getModelV2().getNavEnabled();
     qDebug() << "nav_enabled" << nav_enabled;
     bool show_map = nav_enabled ? sidebarVisible : !sidebarVisible;
