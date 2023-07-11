@@ -373,41 +373,29 @@ void MapWindow::updateDestinationMarker() {
   }
 }
 
-MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
-    icon_01 = new QLabel;
-    layout->addWidget(icon_01);
-    layout->addStretch();
-    main_layout->addLayout(layout);
-  }
+  main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->addWidget(distance = new QLabel);
+  distance->setStyleSheet(R"(font-size: 90px;)");
 
-    distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 90px;)");
-    layout->addWidget(distance);
+  layout->addWidget(primary = new QLabel);
+  primary->setStyleSheet(R"(font-size: 60px;)");
+  primary->setWordWrap(true);
 
-    primary = new QLabel;
-    primary->setStyleSheet(R"(font-size: 60px;)");
-    primary->setWordWrap(true);
-    layout->addWidget(primary);
+  layout->addWidget(secondary = new QLabel);
+  secondary->setStyleSheet(R"(font-size: 50px;)");
+  secondary->setWordWrap(true);
 
-    secondary = new QLabel;
-    secondary->setStyleSheet(R"(font-size: 50px;)");
-    secondary->setWordWrap(true);
-    layout->addWidget(secondary);
-
-    layout->addLayout(lane_layout = new QHBoxLayout);
-    main_layout->addLayout(layout);
-  }
+  layout->addLayout(lane_layout = new QHBoxLayout);
+  main_layout->addLayout(layout);
+  main_layout->addStretch();
 
   setStyleSheet("color:white");
-
   QPalette pal = palette();
   pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
   setAutoFillBackground(true);
