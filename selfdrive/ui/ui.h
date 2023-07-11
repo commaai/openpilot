@@ -171,6 +171,7 @@ signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
   void primeTypeChanged(int prime_type);
+  void navigateOnOpenpilotStarted();
 
 private slots:
   void update();

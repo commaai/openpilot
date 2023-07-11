@@ -638,11 +638,11 @@ void AnnotatedCameraWidget::paintGL() {
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
       // update navigate on openpilot status
-      bool nav_enabled_now = model.getNavEnabled();
-      if (s->scene.navigate_on_openpilot != nav_enabled_now && map) {
-        map->show();
-      }
-      s->scene.navigate_on_openpilot = nav_enabled_now;
+//      bool nav_enabled_now = model.getNavEnabled();
+//      if (s->scene.navigate_on_openpilot != nav_enabled_now && map) {
+//        map->show();
+//      }
+//      s->scene.navigate_on_openpilot = nav_enabled_now;
 
       update_model(s, sm["modelV2"].getModelV2(), sm["uiPlan"].getUiPlan());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {

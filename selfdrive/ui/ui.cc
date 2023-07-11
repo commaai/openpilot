@@ -224,6 +224,12 @@ void UIState::updateStatus() {
     }
   }
 
+  // update navigate on openpilot status
+  if (sm->updated("modelV2")) {
+    bool nav_enabled_now = (*sm)["modelV2"].getModelV2().getNavEnabled();
+    scene.navigate_on_openpilot = nav_enabled_now;
+  }
+
   // Handle onroad/offroad transition
   if (scene.started != started_prev || sm->frame == 1) {
     if (scene.started) {
