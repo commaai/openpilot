@@ -976,8 +976,7 @@ if __name__ == '__main__':
   for i, alerts in EVENTS.items():
     for type, alert in alerts.items():
       if isinstance(alert, Callable):
-        # alert = alert(CP, CS, sm, False, 0.1)  # TODO
-        continue
+        alert = alert(CP, CS, sm, False, 0.1)
       priority = alert.priority
       name = [k for k, v in event_names.items() if v == i][0]
       alerts_by_type[type][priority].append(name)
