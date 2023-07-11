@@ -1,4 +1,3 @@
-import copy
 from cereal import car
 from selfdrive.car.subaru.values import CanBus
 
@@ -160,7 +159,19 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, lead_visi
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
 def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
-  values = copy.copy(es_brake_msg)
+  values = {s: es_brake_msg[s] for s in [
+    "CHECKSUM",
+    "COUNTER",
+    "Signal1",
+    "Brake_Pressure",
+    "AEB_Status",
+    "Cruise_Brake_Lights",
+    "Cruise_Brake_Fault",
+    "Cruise_Brake_Active",
+    "Cruise_Activated",
+    "Signal3",
+  ]}
+
   if enabled:
     values["Cruise_Activated"] = 1
   if brake_cmd:
@@ -171,7 +182,19 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
 def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
-  values = copy.copy(es_status_msg)
+  values = {s: es_status_msg[s] for s in [
+    "CHECKSUM",
+    "COUNTER",
+    "Signal1",
+    "Cruise_Fault",
+    "Cruise_RPM",
+    "Signal2",
+    "Cruise_Activated",
+    "Brake_Lights",
+    "Cruise_Hold",
+    "Signal3",
+  ]}
+
   if long_active:
     values["Cruise_Activated"] = 1
     values["Cruise_RPM"] = cruise_rpm
@@ -180,16 +203,31 @@ def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
 
 # disable cruise_activated feedback to eyesight to keep ready state
 def create_cruise_control(packer, cruise_control_msg):
-  values = copy.copy(cruise_control_msg)
+  values = {s: cruise_control_msg[s] for s in [
+    "CHECKSUM",
+    "COUNTER",
+    "Signal1",
+    "Cruise_On",
+    "Cruise_Activated",
+    "Signal2",
+  ]}
+
   values["Cruise_Activated"] = 0
 
   return packer.make_can_msg("CruiseControl", CanBus.camera, values)
 
-# disable es_brake feedback to eyesight, exempt AEB
-def create_brake_status(packer, brake_status_msg, aeb):
-  values = copy.copy(brake_status_msg)
-  if not aeb:
-    values["ES_Brake"] = 0
+# give eyesight es_brake feedback
+def create_brake_status(packer, brake_status_msg, stock_brake_value):
+  values = {s: brake_status_msg[s] for s in [
+    "CHECKSUM",
+    "COUNTER",
+    "Signal1",
+    "ES_Brake",
+    "Signal2",
+    "Brake",
+    "Signal3",
+  ]}
+  values["ES_Brake"] = stock_brake_value > 0
 
   return packer.make_can_msg("Brake_Status", CanBus.camera, values)
 
