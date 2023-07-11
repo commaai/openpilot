@@ -771,15 +771,21 @@ def main():
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
 
+  conn_start = None
   conn_retries = 0
   while 1:
     try:
+      if conn_start is None:
+        conn_start = time.monotonic()
+
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
+      conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()
