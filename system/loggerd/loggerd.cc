@@ -10,38 +10,34 @@ struct RemoteEncoder {
   std::vector<Message *> q;
   int dropped_frames = 0;
   bool recording = false;
-  bool ready_to_rotate = false;
+  bool marked_ready_to_rotate = false;
   bool seen_first_packet = false;
 };
 
 struct LoggerdState {
-  int readyToRotate() const;
-
   LoggerState logger = {};
   char segment_path[4096];
   std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
+  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   double last_rotate_tms = 0.;      // last rotate time in ms
   std::unordered_map<std::string, RemoteEncoder> encoders;
 };
-
-int LoggerdState::readyToRotate() const {
-  return std::count_if(encoders.cbegin(), encoders.cend(), [](auto &e) { return e.second.ready_to_rotate; });
-}
 
 void logger_rotate(LoggerdState *s) {
   int segment = -1;
   int err = logger_next(&s->logger, LOG_ROOT.c_str(), s->segment_path, sizeof(s->segment_path), &segment);
   assert(err == 0);
   s->rotate_segment = segment;
+  s->ready_to_rotate = 0;
   s->last_rotate_tms = millis_since_boot();
-  for (auto &[_, e] : s->encoders) {
-    e.ready_to_rotate = false;
-  }
   LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
 }
 
 void rotate_if_needed(LoggerdState *s) {
+  // all encoders ready, trigger rotation
+  bool all_ready = (s->encoders.size() > 0) && (s->ready_to_rotate == s->encoders.size());
+
   // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
   bool timed_out = false;
   double tms = millis_since_boot();
@@ -57,8 +53,6 @@ void rotate_if_needed(LoggerdState *s) {
     }
   }
 
-  // all encoders ready, trigger rotation
-  bool all_ready = s->encoders.size() > 0 && s->readyToRotate() == s->encoders.size();
   if (all_ready || timed_out) {
     logger_rotate(s);
   }
@@ -92,6 +86,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         re.recording = false;
       }
       re.current_segment = s->rotate_segment;
+      re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg: re.q) {
@@ -151,11 +146,12 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     delete msg;
   } else if (offset_segment_num > s->rotate_segment) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
-    if (!re.ready_to_rotate) {
-      re.ready_to_rotate = true;
+    if (!re.marked_ready_to_rotate) {
+      re.marked_ready_to_rotate = true;
+      ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%lu for %s",
         s->rotate_segment.load(), offset_segment_num,
-        s->readyToRotate(), s->encoders.size(), name.c_str());
+        s->ready_to_rotate.load(), s->encoders.size(), name.c_str());
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
