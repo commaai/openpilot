@@ -31,7 +31,7 @@ private:
 struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
-  std::atomic<double> last_camera_seen_tms;
+  double last_camera_seen_tms;
   double last_rotate_tms = 0.;      // last rotate time in ms
   std::unordered_map<std::string, std::unique_ptr<RemoteEncoder>> remote_encoders;
 };
@@ -73,6 +73,7 @@ void rotate_if_needed(LoggerdState *s) {
     logger_rotate(s);
   }
 }
+
 void RemoteEncoder::rotate() {
   writer.reset();
   recording = false;
