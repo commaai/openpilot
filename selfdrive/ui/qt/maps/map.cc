@@ -25,7 +25,7 @@ const QString ICON_SUFFIX = ".png";
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
-  map_overlay = new QWidget (this);
+  map_overlay = new QWidget(this);
   map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
   QVBoxLayout *overlay_layout = new QVBoxLayout(map_overlay);
   overlay_layout->setContentsMargins(0, 0, 0, 0);
@@ -34,9 +34,14 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_instructions = new MapInstructions(this);
   map_instructions->setVisible(false);
 
-  map_eta = new MapETA(this);
-  map_eta->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  map_eta->setFixedHeight(120);
+  // ETA & Settings button wrapper
+  QWidget *horizontal_widget = new QWidget(this);
+//  horizontal_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  QHBoxLayout *horizontal_layout = new QHBoxLayout(horizontal_widget);
+//  horizontal_layout->addStretch(1);
+//  horizontal_layout->setAlignment(Qt::AlignBottom);
+  horizontal_layout->setContentsMargins(0, 0, 0, 0);
+//  horizontal_layout->addStretch(1);
 
   // Settings button
   QSize icon_size(120, 120);
@@ -44,6 +49,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
 
   settings_btn = new QPushButton(directions_icon, "", this);
+  settings_btn->setContentsMargins(0, 0, 0, 20);
   settings_btn->setIconSize(icon_size);
   settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   settings_btn->setStyleSheet(R"(
@@ -60,12 +66,22 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
     emit openSettings();
   });
+  horizontal_layout->addWidget(settings_btn, 0, Qt::AlignLeft | Qt::AlignBottom);
 
+  // ETA
+  map_eta = new MapETA(this);
+  map_eta->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  map_eta->setFixedHeight(120);
+  horizontal_layout->addWidget(map_eta, 0, Qt::AlignBottom);
+
+  // Add to main layout
   overlay_layout->addWidget(map_instructions);
   overlay_layout->addStretch(1);
-  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
-  overlay_layout->addSpacing(UI_BORDER_SIZE);
-  overlay_layout->addWidget(map_eta);
+
+  overlay_layout->addWidget(horizontal_widget);
+//  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
+//  overlay_layout->addSpacing(UI_BORDER_SIZE);
+//  overlay_layout->addWidget(map_eta);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
