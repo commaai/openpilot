@@ -98,7 +98,6 @@ class Laikad:
     self.velfix_function = get_velfix_sympy_func()
     self.last_fix_pos = None
     self.last_fix_t = None
-    self.gps_week = None
     self.use_qcom = use_qcom
     self.first_log_time = None
     self.ttff = -1
@@ -245,11 +244,8 @@ class Laikad:
 
   def read_ephemeris(self, gnss_msg):
     if self.use_qcom:
-      # TODO this is not robust to gps week rollover
-      if self.gps_week is None:
-        return
       try:
-        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly)
         self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
       except Exception:
         cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
@@ -310,7 +306,6 @@ class Laikad:
       self.read_ephemeris(gnss_msg)
     elif self.is_good_report(gnss_msg):
       report_t, new_meas = self.read_report(gnss_msg)
-      self.gps_week = report_t.week
       if report_t.week > 0:
         if self.auto_fetch_navs:
           self.fetch_navs(report_t, block)
