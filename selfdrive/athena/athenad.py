@@ -778,7 +778,7 @@ def main():
       if conn_start is None:
         conn_start = time.monotonic()
 
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
