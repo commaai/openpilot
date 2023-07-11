@@ -55,6 +55,10 @@ void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
 }
 
+void HomeWindow::showMapPanel(bool show) {
+  onroad->showMapPanel(show);
+}
+
 void HomeWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 

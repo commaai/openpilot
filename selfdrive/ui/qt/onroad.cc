@@ -64,12 +64,12 @@ void OnroadWindow::updateState(const UIState &s) {
 
   nvg->updateState(s);
 
-  bool nav_enabled_now = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
-  if (nav_enabled != nav_enabled_now && map != nullptr) {
-    emit mapPanelRequested();
-    map->show();
-  }
-  nav_enabled = nav_enabled_now;
+//  bool nav_enabled_now = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
+//  if (nav_enabled != nav_enabled_now && map != nullptr) {
+//    emit mapPanelRequested();
+//    map->show();
+//  }
+  nav_enabled = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
 
   if (bg != bgColor) {
     // repaint border

@@ -75,6 +75,9 @@ void MainWindow::closeSettings() {
 
   if (uiState()->scene.started) {
     homeWindow->showSidebar(false);
+    if (nav_active) {
+      homeWindow->showMapPanel(true);
+    }
   }
 }
 
