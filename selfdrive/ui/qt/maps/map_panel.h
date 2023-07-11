@@ -10,8 +10,6 @@ class MapPanel : public QFrame {
 public:
   explicit MapPanel(const QMapboxGLSettings &settings, QWidget *parent = nullptr);
 
-  bool isShowingMap() const;
-
 signals:
   void mapPanelRequested();
 
