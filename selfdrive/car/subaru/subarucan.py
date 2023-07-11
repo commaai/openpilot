@@ -160,7 +160,6 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, lead_visi
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
 def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
-
   values = copy.copy(es_brake_msg)
   if enabled:
     values["Cruise_Activated"] = 1
@@ -172,7 +171,6 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
 def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
-
   values = copy.copy(es_status_msg)
   if long_active:
     values["Cruise_Activated"] = 1
@@ -182,7 +180,6 @@ def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
 
 # disable cruise_activated feedback to eyesight to keep ready state
 def create_cruise_control(packer, cruise_control_msg):
-
   values = copy.copy(cruise_control_msg)
   values["Cruise_Activated"] = 0
 
@@ -190,7 +187,6 @@ def create_cruise_control(packer, cruise_control_msg):
 
 # disable es_brake feedback to eyesight, exempt AEB
 def create_brake_status(packer, brake_status_msg, aeb):
-
   values = copy.copy(brake_status_msg)
   if not aeb:
     values["ES_Brake"] = 0
