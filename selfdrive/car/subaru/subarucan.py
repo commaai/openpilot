@@ -11,11 +11,11 @@ def create_steering_control(packer, apply_steer, steer_req):
     "LKAS_Request": steer_req,
     "SET_1": 1
   }
-  return packer.make_can_msg("ES_LKAS", 0, values)
+  return packer.make_can_msg("ES_LKAS", CanBus.main, values)
 
 
 def create_steering_status(packer):
-  return packer.make_can_msg("ES_LKAS_State", 0, {})
+  return packer.make_can_msg("ES_LKAS_State", CanBus.main, {})
 
 def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, brake_cmd, brake_value, cruise_throttle):
   values = {s: es_distance_msg[s] for s in [
@@ -169,7 +169,7 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
     values["Cruise_Brake_Active"] = 1
     values["Cruise_Brake_Lights"] = 1 if brake_value >= 70 else 0
 
-  return packer.make_can_msg("ES_Brake", 0, values)
+  return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
 def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
 
@@ -178,7 +178,7 @@ def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
     values["Cruise_Activated"] = 1
     values["Cruise_RPM"] = cruise_rpm
 
-  return packer.make_can_msg("ES_Status", 0, values)
+  return packer.make_can_msg("ES_Status", CanBus.main, values)
 
 # disable cruise_activated feedback to eyesight to keep ready state
 def create_cruise_control(packer, cruise_control_msg):
@@ -186,7 +186,7 @@ def create_cruise_control(packer, cruise_control_msg):
   values = copy.copy(cruise_control_msg)
   values["Cruise_Activated"] = 0
 
-  return packer.make_can_msg("CruiseControl", 2, values)
+  return packer.make_can_msg("CruiseControl", CanBus.camera, values)
 
 # disable es_brake feedback to eyesight, exempt AEB
 def create_brake_status(packer, brake_status_msg, aeb):
@@ -195,7 +195,7 @@ def create_brake_status(packer, brake_status_msg, aeb):
   if not aeb:
     values["ES_Brake"] = 0
 
-  return packer.make_can_msg("Brake_Status", 2, values)
+  return packer.make_can_msg("Brake_Status", CanBus.camera, values)
 
 def create_es_infotainment(packer, es_infotainment_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
