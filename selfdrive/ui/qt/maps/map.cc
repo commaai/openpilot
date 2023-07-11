@@ -64,7 +64,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     }
   )");
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
-    emit openSettings();
+    emit requestSettings(true);
   });
   horizontal_layout->addWidget(settings_btn, 0, Qt::AlignLeft | Qt::AlignBottom);
 
@@ -170,6 +170,7 @@ void MapWindow::updateState(const UIState &s) {
       emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
+    emit requestSettings(false);
   }
 
   if (m_map.isNull()) {
