@@ -130,6 +130,15 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
+  // update navigate on openpilot status
+  if (sm.updated("modelV2")) {
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
+    if (nav_enabled && !uiState()->scene.navigate_on_openpilot) {
+      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
+    }
+    uiState()->scene.navigate_on_openpilot = nav_enabled;
+  }
+
   if (sm.updated("liveLocationKalman")) {
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
     auto locationd_pos = locationd_location.getPositionGeodetic();
