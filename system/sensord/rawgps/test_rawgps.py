@@ -5,12 +5,13 @@ import time
 import datetime
 import unittest
 import subprocess
+import numpy as np
 
 import cereal.messaging as messaging
 from system.hardware import TICI
 from system.sensord.rawgps.rawgpsd import at_cmd
 from selfdrive.manager.process_config import managed_processes
-
+from common.transformations.coordinates import ecef_from_geodetic
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 UPDATE_MS = 100
@@ -106,14 +107,17 @@ class TestRawgpsd(unittest.TestCase):
     at_cmd("AT+QGPSDEL=0")
 
     managed_processes['rawgpsd'].start()
-    #managed_processes['laikad'].start()
+    managed_processes['laikad'].start()
     assert self._wait_for_location(120)
     assert self.sm_gps_location['gpsLocation'].flags == 1
-    #module_fix = [self.sm['gpsLocation'].latitude, self.sm['gpsLocation'].longitude, self.sm['gpsLocation'].altitude]
-    #assert self._wait_for_laikad_location(90)
-    #assert self.sm['gnssMeasurements'].flags == 1
-    #print(self.sm_gnss_measurements['gnssMeasurements'])
-    #managed_processes['laikad'].stop()
+    module_fix = ecef_from_geodetic([self.sm_gps_location['gpsLocation'].latitude,
+                                     self.sm_gps_location['gpsLocation'].longitude,
+                                     self.sm_gps_location['gpsLocation'].altitude])
+    assert self._wait_for_laikad_location(90)
+    total_diff = np.array(self.sm_gnss_measurements['gnssMeasurements'].positionECEF.value) - module_fix
+    print(total_diff)
+    self.assertLess(np.linalg.norm(total_diff), 100)
+    managed_processes['laikad'].stop()
     managed_processes['rawgpsd'].stop()
 
 if __name__ == "__main__":

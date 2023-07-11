@@ -58,7 +58,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     }
   )");
   QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
-    emit openSettings();
+    emit requestSettings(true);
   });
 
   overlay_layout->addWidget(map_instructions);
@@ -157,6 +157,7 @@ void MapWindow::updateState(const UIState &s) {
       emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
+    emit requestSettings(false);
   }
 
   // update navigate on openpilot status
@@ -566,10 +567,6 @@ void MapETA::paintEvent(QPaintEvent *event) {
 }
 
 void MapETA::updateETA(float s, float s_typical, float d) {
-  eta_doc.clear();
-  setVisible(d >= MANEUVER_TRANSITION_THRESHOLD);
-  if (!isVisible()) return;
-
   // ETA
   auto eta_t = QDateTime::currentDateTime().addSecs(s).time();
   auto eta = format_24h ? std::array{eta_t.toString("HH:mm"), tr("eta")}
@@ -590,5 +587,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   eta_doc.setHtml(QString(R"(<body><b>%1</b>%2 <span style="color:%3"><b>%4</b>%5</span> <b>%6</b>%7</body>)")
                       .arg(eta[0], eta[1], color, remaining[0], remaining[1], distance[0], distance[1]));
+
+  setVisible(d >= MANEUVER_TRANSITION_THRESHOLD);
   update();
 }
