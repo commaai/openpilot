@@ -189,7 +189,7 @@ void MapSettings::refresh() {
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
       else if (a->label() == NAV_FAVORITE_LABEL_WORK) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_WORK) return false;
-      else if (a->label() != b->label()) return a->label() < b->label();
+      else return a->name() < b->name();
     }
     else if (a->isFavorite()) return true;
     else if (b->isFavorite()) return false;
