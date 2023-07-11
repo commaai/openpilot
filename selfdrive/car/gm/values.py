@@ -55,7 +55,8 @@ class CarControllerParams:
       max_regen_acceleration = -1. if CP.carFingerprint in EV_CAR else -0.1
 
     # The max amount of deceleration possible using ASCMGasRegenCmd alone.
-    # It is assumed no regen/engine braking is available at low speeds
+    # It is assumed no regen/engine braking is available at low speeds, and avoids
+    # requesting non-zero gas while enabling at a stop
     self.MAX_REGEN_ACCEL_BP = [2., 10.]  # m/s
     self.MAX_REGEN_ACCEL_V = [0., max_regen_acceleration]  # m/s^2
 
