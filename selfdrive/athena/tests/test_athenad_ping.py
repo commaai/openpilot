@@ -93,6 +93,7 @@ class TestAthenadPing(unittest.TestCase):
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
 
   def setUp(self) -> None:
+    restart_network_manager()
     self._clear_ping_time()
 
   @unittest.skip("TODO")
