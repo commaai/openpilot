@@ -553,12 +553,16 @@
         <translation>远程访问</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1年数据存储</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>开发者福利</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
