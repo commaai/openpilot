@@ -30,4 +30,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     content_stack->setCurrentIndex(0);
   });
   content_stack->addWidget(settings);
+
+  // default to settings open
+  content_stack->setCurrentIndex(1);
 }
