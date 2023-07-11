@@ -10,11 +10,8 @@ class MapPanel : public QFrame {
 public:
   explicit MapPanel(const QMapboxGLSettings &settings, QWidget *parent = nullptr);
 
-private:
-  void showEvent(QShowEvent *event) { emit mapWindowShown(); };
-
 signals:
-  void mapWindowShown();
+  void mapPanelRequested();
 
 private:
   QStackedLayout *content_stack;
