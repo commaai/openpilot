@@ -92,6 +92,10 @@ class TestAthenadPing(unittest.TestCase):
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
 
+  @classmethod
+  def tearDownClass(cls) -> None:
+    restart_network_manager()
+
   def setUp(self) -> None:
     restart_network_manager()
     self._clear_ping_time()
