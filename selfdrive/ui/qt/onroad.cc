@@ -75,9 +75,6 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
-    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
-      return;
-    }
     map->setVisible(!sidebarVisible && !map->isVisible());
   }
 #endif

@@ -33,6 +33,7 @@ public:
   void updateCurrentRoute();
 
 private:
+  void mousePressEvent(QMouseEvent *ev) override;
   void showEvent(QShowEvent *event) override;
   void refresh();
 
