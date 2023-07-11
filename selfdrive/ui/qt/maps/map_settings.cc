@@ -182,8 +182,8 @@ void MapSettings::refresh() {
   // TODO: should we build a new layout and swap it in?
   clearLayout(destinations_layout);
 
-  // Sort: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
-  std::sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
+  // Sort: HOME, WORK, and then most recent (as returned by API) FAVORITES, RECENTS
+  std::stable_sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
     if (a->isFavorite() && b->isFavorite()) {
       if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
@@ -193,7 +193,7 @@ void MapSettings::refresh() {
     }
     else if (a->isFavorite()) return true;
     else if (b->isFavorite()) return false;
-    return a->name() < b->name();
+    return false;
   });
 
   for (auto &destination : destinations) {
