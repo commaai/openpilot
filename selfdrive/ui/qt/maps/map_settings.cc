@@ -118,6 +118,11 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
   }
 }
 
+void MapSettings::mousePressEvent(QMouseEvent *ev) {
+  // Prevent mouse event from propagating up
+  ev->accept();
+}
+
 void MapSettings::showEvent(QShowEvent *event) {
   updateCurrentRoute();
 }
