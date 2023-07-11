@@ -179,11 +179,11 @@ def setup_quectel(diag: ModemDiag):
 
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
-  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
-  download_and_inject_assistance()
-  #at_cmd("AT+QGPSXTRADATA?")
+  at_cmd("AT+QGPSSUPLURL=\"NULL\"")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
+  download_and_inject_assistance()
+  #at_cmd("AT+QGPSXTRADATA?")
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")
