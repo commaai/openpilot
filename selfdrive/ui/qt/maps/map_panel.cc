@@ -28,7 +28,3 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   });
   content_stack->addWidget(settings);
 }
-
-bool MapPanel::isShowingMap() const {
-  return content_stack->currentIndex() == 0;
-}
