@@ -1,7 +1,6 @@
 [submodule "panda"]
   path = panda
-  url = ../../jnewb1/panda.git
-  branch = feature-subaru-long
+  url = ../../commaai/panda.git
 [submodule "opendbc"]
   path = opendbc
   url = ../../commaai/opendbc.git
