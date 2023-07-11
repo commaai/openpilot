@@ -74,6 +74,7 @@ void OnroadWindow::updateState(const UIState &s) {
 void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
+    // Map is always shown when using navigate on openpilot
     bool sidebarVisible = geometry().x() > 0;
     bool show_map = uiState()->scene.navigate_on_openpilot ? sidebarVisible : !sidebarVisible;
     map->setVisible(show_map && !map->isVisible());
