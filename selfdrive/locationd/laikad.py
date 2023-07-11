@@ -103,6 +103,10 @@ class Laikad:
     self.first_log_time = None
     self.ttff = -1
 
+    # qcom specific stuff
+    self.qcom_reports_received = 1
+    self.qcom_reports = []
+
   def load_cache(self):
     if not self.save_ephemeris:
       return
@@ -211,18 +215,19 @@ class Laikad:
 
   def read_report(self, gnss_msg):
     if self.use_qcom:
-      # QCOM reports are per constellation, should always send 3 reports
+      # QCOM reports are per constellation, so we need to aggregate them
       report = gnss_msg.drMeasurementReport
       report_time = self.gps_time_from_qcom_report(gnss_msg)
 
       if report_time - self.last_report_time > 0:
+        self.qcom_reports_received = max(1, len(self.qcom_reports))
         self.qcom_reports = [report]
       else:
         self.qcom_reports.append(report)
       self.last_report_time = report_time
 
       new_meas = []
-      if len(self.qcom_reports) == 3:
+      if len(self.qcom_reports) == self.qcom_reports_received:
         for report in self.qcom_reports:
           new_meas.extend(read_raw_qcom(report))
 
