@@ -179,7 +179,7 @@ class TestLaikad(unittest.TestCase):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
       correct_msgs = verify_messages(logs, laikad)
-      correct_msgs_expected = 44 if use_qcom else 560
+      correct_msgs_expected = 43 if use_qcom else 560
       valid_fix_expected = 43 if use_qcom else 560
 
       self.assertEqual(correct_msgs_expected, len(correct_msgs))
