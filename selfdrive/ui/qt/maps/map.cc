@@ -49,7 +49,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
 
   settings_btn = new QPushButton(directions_icon, "", this);
-  settings_btn->setContentsMargins(0, 0, 0, 20);
   settings_btn->setIconSize(icon_size);
   settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
   settings_btn->setStyleSheet(R"(
@@ -58,6 +57,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
       border-radius: 50px;
       padding: 24px;
       margin-left: 30px;
+      margin-bottom: 15px;
     }
     QPushButton:pressed {
       background-color: #D9000000;
@@ -79,9 +79,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   overlay_layout->addStretch(1);
 
   overlay_layout->addWidget(horizontal_widget);
-//  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
-//  overlay_layout->addSpacing(UI_BORDER_SIZE);
-//  overlay_layout->addWidget(map_eta);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position.has_value()) {
