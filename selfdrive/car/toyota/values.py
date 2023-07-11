@@ -24,10 +24,10 @@ class CarControllerParams:
 
   # Lane Tracing Assist (LTA) control limits
   # Assuming a steering ratio of 13.7:
-  # Limit to ~2.5 m/s^3 up (9 deg/s), ~3.6 m/s^3 down (13 deg/s) at 75 mph
-  # Worst case, the low speed limits will allow 4.9 m/s^3 up and down (18 deg/s) at 75 mph,
+  # Limit to ~2.0 m/s^3 up (7.5 deg/s), ~3.5 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow ~4.0 m/s^3 up (15 deg/s) and ~4.9 m/s^3 down (18 deg/s) at 75 mph,
   # however the EPS has its own internal limits at all speeds which are less than that
-  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.18])
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
@@ -1643,6 +1643,7 @@ FW_VERSIONS = {
   CAR.RAV4H_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
+      b'\x01F15264283300\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
