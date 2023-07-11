@@ -625,9 +625,9 @@ void AnnotatedCameraWidget::paintGL() {
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      update_model(s, sm["modelV2"].getModelV2(), sm["uiPlan"].getUiPlan());
+      update_model(s, model, sm["uiPlan"].getUiPlan());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
-        update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
+        update_leads(s, radar_state, model.getPosition());
       }
     }
 
