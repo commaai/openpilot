@@ -14,15 +14,22 @@ from selfdrive.athena.athenad import ATHENA_HOST, backoff, ws_recv, ws_send
 
 
 def athena_main(dongle_id: str, stop_condition: Callable[[], bool]) -> None:
+  start = None
   conn_retries = 0
   while not stop_condition():
     try:
-      print("connecting")
+      if start is None:
+        start = time.monotonic()
+
+      print(f"[WS] connecting ({conn_retries=})")
       ws = create_connection(ATHENA_HOST + "/ws/v2/" + dongle_id,
                              cookie="jwt=" + Api(dongle_id).get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      print("connected")
+
+      duration = time.monotonic() - start
+      print(f"[WS] connected in {duration:.2f}s")
+      start = None
 
       conn_retries = 0
 
@@ -47,11 +54,11 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool]) -> None:
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException) as e:
-      print("connection error")
+      print("[WS] connection error")
       print(e)
       conn_retries += 1
     except Exception as e:
-      print("exception")
+      print("[WS] exception")
       print(e)
       conn_retries += 1
 
