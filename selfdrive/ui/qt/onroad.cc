@@ -81,9 +81,6 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
-    if (map->isVisible() && !((MapPanel *)map)->isShowingMap() && e->windowPos().x() >= 1080) {
-      return;
-    }
     qDebug() << "sidebarVisible:" << sidebarVisible << "- mapVisible" << map->isVisible();
     qDebug() << "isShowingMap:" << ((MapPanel *)map)->isShowingMap();
     qDebug() << "windowPos:" << e->windowPos().x();
@@ -104,7 +101,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
-      QObject::connect(m, &MapPanel::mapWindowShown, this, &OnroadWindow::mapWindowShown);
+      QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
