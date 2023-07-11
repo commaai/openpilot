@@ -45,6 +45,8 @@ class CarControllerParams:
   BRAKE_MAX = 400
   BRAKE_SCALE = 1000            # from testing
 
+  THROTTLE_RPM_HYST = 10           # filter out small changes
+
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
 

@@ -1,21 +1,10 @@
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits
+from selfdrive.car import apply_driver_steer_torque_limits, apply_hysteresis
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from selfdrive.controls.lib.drive_helpers import rate_limit
 
-ACCEL_HYST_GAP = 10  # don't change accel command for small oscilalitons within this value
-
-def accel_hysteresis(accel, accel_steady):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if accel > accel_steady + ACCEL_HYST_GAP:
-    accel_steady = accel - ACCEL_HYST_GAP
-  elif accel < accel_steady - ACCEL_HYST_GAP:
-    accel_steady = accel + ACCEL_HYST_GAP
-  accel = accel_steady
-
-  return accel, accel_steady
 
 def compute_gb(accel):
   return clip(accel/4.0, 0.0, 1.0), clip(-accel/4.0, 0.0, 1.0)
@@ -26,16 +15,7 @@ class CarController:
     self.apply_steer_last = 0
     self.frame = 0
 
-    self.es_lkas_state_cnt = -1
-    self.es_distance_cnt = -1
-    self.es_dashstatus_cnt = -1
-    self.cruise_control_cnt = -1
-    self.brake_status_cnt = -1
-    self.es_status_cnt = -1
-    self.es_brake_cnt = -1
-    self.infotainmentstatus_cnt = -1
     self.cruise_button_prev = 0
-    self.steer_rate_limited = False
     self.cruise_rpm_last = 0
     self.cruise_throttle_last = 0
     self.rpm_steady = 0
@@ -93,16 +73,21 @@ class CarController:
         brake_cmd = False
 
       if CC.longActive and gas > 0:
-        # limit min and max values
-        cruise_throttle = clip(int(CarControllerParams.THROTTLE_BASE + (gas * CarControllerParams.THROTTLE_SCALE)), CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
-        cruise_rpm = clip(int(CarControllerParams.RPM_BASE + (gas * CarControllerParams.RPM_SCALE)), CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
-        # hysteresis
-        cruise_throttle, self.throttle_steady = accel_hysteresis(cruise_throttle, self.throttle_steady)
-        cruise_rpm, self.rpm_steady = accel_hysteresis(cruise_rpm, self.rpm_steady)
+        # calculate desired values
+        cruise_throttle = int(CarControllerParams.THROTTLE_BASE + (gas * CarControllerParams.THROTTLE_SCALE))
+        cruise_rpm = int(CarControllerParams.RPM_BASE + (gas * CarControllerParams.RPM_SCALE))
 
-        # slow down the signals change
-        cruise_throttle = clip(cruise_throttle, self.cruise_throttle_last - CarControllerParams.THROTTLE_DELTA, self.cruise_throttle_last + CarControllerParams.THROTTLE_DELTA)
-        cruise_rpm = clip(cruise_rpm, self.cruise_rpm_last - CarControllerParams.RPM_DELTA, self.cruise_rpm_last + CarControllerParams.RPM_DELTA)
+        # limit min and max values
+        cruise_throttle = clip(cruise_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
+        cruise_rpm = clip(cruise_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
+
+        # hysteresis
+        cruise_throttle, self.throttle_steady = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_RPM_HYST)
+        cruise_rpm, self.rpm_steady = apply_hysteresis(cruise_rpm, self.rpm_steady, CarControllerParams.THROTTLE_RPM_HYST)
+
+        # rate limiting
+        cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
+        cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
 
         self.cruise_throttle_last = cruise_throttle
         self.cruise_rpm_last = cruise_rpm
