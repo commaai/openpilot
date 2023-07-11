@@ -82,8 +82,11 @@ class CarController:
         cruise_rpm = clip(cruise_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
 
         # hysteresis
-        cruise_throttle, self.throttle_steady = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_RPM_HYST)
-        cruise_rpm, self.rpm_steady = apply_hysteresis(cruise_rpm, self.rpm_steady, CarControllerParams.THROTTLE_RPM_HYST)
+        cruise_throttle = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_RPM_HYST)
+        cruise_rpm = apply_hysteresis(cruise_rpm, self.rpm_steady, CarControllerParams.THROTTLE_RPM_HYST)
+
+        self.throttle_steady = cruise_throttle
+        self.rpm_steady = cruise_rpm
 
         # rate limiting
         cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
