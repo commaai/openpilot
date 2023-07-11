@@ -27,7 +27,6 @@ class NavigationRequest : public QObject {
   Q_OBJECT
 
 public:
-  NavigationRequest(QObject *parent);
   static NavigationRequest *instance();
 
 signals:
@@ -35,6 +34,8 @@ signals:
   void nextDestinationUpdated(const QString &response, bool success);
 
 private:
+  NavigationRequest(QObject *parent);
+
   Params params;
 };
 
