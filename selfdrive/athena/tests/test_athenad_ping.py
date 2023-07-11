@@ -100,7 +100,7 @@ class TestAthenadPing(unittest.TestCase):
     restart_network_manager()
     self._clear_ping_time()
 
-  @unittest.skip("TODO")
+  @unittest.skip("only run on desk")
   def test_ping_wifi_to_lte(self) -> None:
     with self.subTest("wifi"):
       with Timeout(120, "no ping received"):
@@ -121,7 +121,4 @@ class TestAthenadPing(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  try:
-    unittest.main()
-  finally:
-    restart_network_manager()
+  unittest.main()
