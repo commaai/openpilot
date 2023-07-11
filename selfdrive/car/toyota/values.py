@@ -1643,6 +1643,7 @@ FW_VERSIONS = {
   CAR.RAV4H_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
+      b'\x01F15264283300\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',

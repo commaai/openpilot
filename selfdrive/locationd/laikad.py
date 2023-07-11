@@ -448,7 +448,7 @@ def clear_tmp_cache():
 def main(sm=None, pm=None):
   #clear_tmp_cache()
 
-  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
+  use_qcom = not Params().get_bool("UbloxAvailable")
   if use_qcom:
     raw_name = "qcomGnss"
   else:

@@ -177,6 +177,7 @@ def setup_quectel(diag: ModemDiag):
 
   # Do internet assistance
   at_cmd("AT+QGPSXTRA=1")
+  at_cmd("AT+QGPSSUPLURL=\"supl.google.com:7275\"")
   download_and_inject_assistance()
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
