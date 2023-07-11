@@ -12,6 +12,9 @@ from system.sensord.rawgps.rawgpsd import at_cmd
 from selfdrive.manager.process_config import managed_processes
 
 
+GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
+
+
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -30,6 +33,14 @@ class TestRawgpsd(unittest.TestCase):
       if self.sm.updated['qcomGnss']:
         break
     return self.sm.updated['qcomGnss']
+
+  def _wait_for_location(self, t=10):
+    self.sm.update(0)
+    for __ in range(t*10):
+      self.sm.update(100)
+      if self.sm.updated['gpsLocation']:
+        break
+    return self.sm.updated['gpsLocation']
 
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
@@ -78,6 +89,15 @@ class TestRawgpsd(unittest.TestCase):
     # TODO: time doesn't match up
     assert injected_date[1:].startswith(datetime.datetime.now().strftime("%Y/%m/%d"))
 
+  @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
+  def test_fix(self):
+    # clear assistance data
+    at_cmd("AT+QGPSDEL=0")
 
+    managed_processes['rawgpsd'].start()
+    assert self._wait_for_location(10)
+    managed_processes['rawgpsd'].stop()
+
+    
 if __name__ == "__main__":
   unittest.main(failfast=True)
