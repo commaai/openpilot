@@ -96,30 +96,23 @@ class TestAthenadPing(unittest.TestCase):
     self._clear_ping_time()
 
   @unittest.skip("TODO")
-  def test_ping_after_disconnect(self) -> None:
-    # wifi
-    with Timeout(70, "no ping received"):
-      athena_main(self.dongle_id, stop_condition=self._received_ping)
-    self.assertIsNotNone(self._get_ping_time())
-
-    self._clear_ping_time()
-
-    # lte
-    try:
-      connect_lte()
-      with Timeout(70, "no ping received"):
+  def test_ping_wifi_to_lte(self) -> None:
+    with self.subTest("wifi"):
+      with Timeout(120, "no ping received"):
         athena_main(self.dongle_id, stop_condition=self._received_ping)
-    finally:
-      restart_network_manager()
-
-    self.assertIsNotNone(self._get_ping_time())
+      self.assertIsNotNone(self._get_ping_time())
 
     self._clear_ping_time()
 
-    # wifi
-    with Timeout(70, "no ping received"):
-      athena_main(self.dongle_id, stop_condition=self._received_ping)
-    self.assertIsNotNone(self._get_ping_time())
+    with self.subTest("lte"):
+      try:
+        connect_lte()
+
+        with Timeout(120, "no ping received"):
+          athena_main(self.dongle_id, stop_condition=self._received_ping)
+      finally:
+        restart_network_manager()
+      self.assertIsNotNone(self._get_ping_time())
 
 
 if __name__ == "__main__":
