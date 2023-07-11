@@ -968,7 +968,10 @@ if __name__ == '__main__':
 
   CP = car.CarParams.new_message()
   CS = car.CarState.new_message()
-  sm = messaging.SubMaster(['carState', 'carParams'])
+  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
+                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'],
+                                    ignore_avg_freq=['radarState', 'testJoystick'])
 
   for i, alerts in EVENTS.items():
     for type, alert in alerts.items():
