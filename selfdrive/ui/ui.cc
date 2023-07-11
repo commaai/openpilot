@@ -115,6 +115,9 @@ void update_model(UIState *s,
   }
   max_idx = get_path_length_idx(plan_position, max_distance);
   update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+
+  // update navigate on openpilot status
+  s->scene.navigate_on_openpilot = model.getNavEnabled();
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
@@ -222,12 +225,6 @@ void UIState::updateStatus() {
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
-  }
-
-  // update navigate on openpilot status
-  if (sm->updated("modelV2")) {
-    bool nav_enabled_now = (*sm)["modelV2"].getModelV2().getNavEnabled();
-    scene.navigate_on_openpilot = nav_enabled_now;
   }
 
   // Handle onroad/offroad transition

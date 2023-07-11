@@ -65,15 +65,12 @@ void OnroadWindow::updateState(const UIState &s) {
   nvg->updateState(s);
 
   // update navigate on openpilot status
-  bool nav_enabled_now = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
-
-//  s.scene.navigate_on_openpilot = nav_enabled_now;
-
+  bool nav_enabled_now = s.scene.navigate_on_openpilot;
   if ((nav_enabled != nav_enabled_now) && map) {
     emit mapPanelRequested();
     map->show();
   }
-  nav_enabled = (*s.sm)["modelV2"].getModelV2().getNavEnabled();
+  nav_enabled = nav_enabled_now;
 
   if (bg != bgColor) {
     // repaint border
@@ -637,13 +634,6 @@ void AnnotatedCameraWidget::paintGL() {
 
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
-      // update navigate on openpilot status
-//      bool nav_enabled_now = model.getNavEnabled();
-//      if (s->scene.navigate_on_openpilot != nav_enabled_now && map) {
-//        map->show();
-//      }
-//      s->scene.navigate_on_openpilot = nav_enabled_now;
-
       update_model(s, sm["modelV2"].getModelV2(), sm["uiPlan"].getUiPlan());
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
         update_leads(s, radar_state, sm["modelV2"].getModelV2().getPosition());
