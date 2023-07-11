@@ -105,8 +105,11 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
+    #ret.flags |= SubaruFlags.EXPERIMENTAL_LONG
+    experimental_long_allowed = (ret.flags & SubaruFlags.EXPERIMENTAL_LONG)
+
     # longitudinal
-    ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 + PREGLOBAL_CARS)
+    ret.experimentalLongitudinalAvailable = experimental_long_allowed and candidate not in (GLOBAL_GEN2 + PREGLOBAL_CARS)
     if experimental_long and ret.experimentalLongitudinalAvailable:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
