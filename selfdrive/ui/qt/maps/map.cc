@@ -275,7 +275,6 @@ void MapWindow::clearRoute() {
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
-  // Prevent mouse event from propagating up
   m_lastPos = ev->localPos();
   ev->accept();
 }
