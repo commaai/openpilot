@@ -14,7 +14,9 @@ from struct import unpack_from, calcsize, pack
 from cereal import log
 import cereal.messaging as messaging
 from common.gpio import gpio_init, gpio_set
-from laika.gps_time import GPSTime
+from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
+from laika.helpers import get_prn_from_nmea_id
+from laika.constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from system.hardware.tici.pins import GPIO
 from system.swaglog import cloudlog
 from system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
@@ -248,6 +250,7 @@ def main() -> NoReturn:
   signal.signal(signal.SIGTERM, cleanup)
 
   setup_quectel(diag)
+  current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
   gpio_set(GPIO.UBLOX_PWR_EN, True)
@@ -316,6 +319,8 @@ def main() -> NoReturn:
               setattr(sv.measurementStatus, kk, bool(v & (1<<vv)))
           else:
             setattr(sv, k, v)
+      if report.source == log.QcomGnss.MeasurementSource.gps:
+        current_gps_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
       pm.send('qcomGnss', msg)
     elif log_type == LOG_GNSS_POSITION_REPORT:
       report = unpack_position(log_payload)
@@ -358,6 +363,21 @@ def main() -> NoReturn:
           pass
         else:
           setattr(poly, k, v)
+
+      prn = get_prn_from_nmea_id(poly.svId)
+      if prn[0] == 'R':
+        epoch = GPSTime(current_gps_time.week, (poly.t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + get_leap_seconds(current_gps_time))
+      else:
+        epoch = GPSTime(current_gps_time.week, poly.t0)
+
+      # handle week rollover
+      if epoch.tow < SECS_IN_DAY and current_gps_time.tow > 6*SECS_IN_DAY:
+        epoch.week += 1
+      elif epoch.tow > 6*SECS_IN_DAY and current_gps_time.tow < SECS_IN_DAY:
+        epoch.week -= 1
+
+      poly.gpsWeek = epoch.week
+      poly.gpsTow = epoch.tow
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:
