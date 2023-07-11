@@ -21,7 +21,7 @@ class TestRawgpsd(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
-    cls.sm = messaging.SubMaster(['qcomGnss'])
+    cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def tearDown(self):
     managed_processes['rawgpsd'].stop()
@@ -41,6 +41,14 @@ class TestRawgpsd(unittest.TestCase):
       if self.sm.updated['gpsLocation']:
         break
     return self.sm.updated['gpsLocation']
+
+  def _wait_for_laikad_location(self, t=10):
+    self.sm.update(0)
+    for __ in range(t*10):
+      self.sm.update(100)
+      if self.sm.updated['gnssMeasurements']:
+        break
+    return self.sm.updated['gnssMeasurements']
 
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
@@ -95,7 +103,14 @@ class TestRawgpsd(unittest.TestCase):
     at_cmd("AT+QGPSDEL=0")
 
     managed_processes['rawgpsd'].start()
-    assert self._wait_for_location(10)
+    assert self._wait_for_location(30)
+    assert self.sm['gpsLocation'].flags == 1
+    #module_fix = [self.sm['gpsLocation'].latitude, self.sm['gpsLocation'].longitude, self.sm['gpsLocation'].altitude]
+    managed_processes['laikad'].start()
+    assert self._wait_for_laikad_location(10)
+    assert self.sm['gnssMeasurements'].flags == 1
+    print(self.sm['gnssMeasurements'].gnssMeasurements)
+    managed_processes['laikad'].stop()
     managed_processes['rawgpsd'].stop()
 
     
