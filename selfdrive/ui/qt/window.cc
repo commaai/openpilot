@@ -75,7 +75,7 @@ void MainWindow::closeSettings() {
 
   if (uiState()->scene.started) {
     homeWindow->showSidebar(false);
-    if (nav_active) {
+    if (uiState()->scene.navigate_on_openpilot) {
       homeWindow->showMapPanel(true);
     }
   }

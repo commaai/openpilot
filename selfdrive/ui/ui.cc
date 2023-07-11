@@ -79,7 +79,7 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
   *pvd = left_points + right_points;
 }
 
-void update_model(UIState *s, 
+void update_model(UIState *s,
                   const cereal::ModelDataV2::Reader &model,
                   const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
@@ -115,6 +115,9 @@ void update_model(UIState *s,
   }
   max_idx = get_path_length_idx(plan_position, max_distance);
   update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+
+  // update navigate on openpilot status
+  navigate_on_openpilot = model.getNavEnabled();
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
