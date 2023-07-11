@@ -488,7 +488,7 @@
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Temperatura do dispositivo muito alta. O sistema está sendo resfriado antes de iniciar. A temperatura atual do componente interno é: %1</translation>
     </message>
 </context>
 <context>
@@ -552,15 +552,19 @@
     </message>
     <message>
         <source>Remote access</source>
-        <translation>Acesso remoto</translation>
+        <translation>Acesso remoto (proxy comma)</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1 ano na nuvem</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation>Conectividade LTE (só nos EUA)</translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>Benefícios para devs</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation>Navegação passo a passo</translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation>1 ano de dados em nuvem</translation>
     </message>
 </context>
 <context>

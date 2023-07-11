@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <QFrame>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -21,6 +23,22 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 class NavDestination;
 class DestinationWidget;
 
+class NavigationRequest : public QObject {
+  Q_OBJECT
+
+public:
+  static NavigationRequest *instance();
+
+signals:
+  void locationsUpdated(const QString &response, bool success);
+  void nextDestinationUpdated(const QString &response, bool success);
+
+private:
+  NavigationRequest(QObject *parent);
+
+  Params params;
+};
+
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
@@ -31,13 +49,14 @@ public:
   void updateCurrentRoute();
 
 private:
+  void mousePressEvent(QMouseEvent *ev) override;
   void showEvent(QShowEvent *event) override;
   void refresh();
 
   Params params;
   QString cur_destinations;
   QVBoxLayout *destinations_layout;
-  NavDestination *current_destination;
+  std::unique_ptr<NavDestination> current_destination;
   DestinationWidget *current_widget;
 
   QPixmap close_icon;

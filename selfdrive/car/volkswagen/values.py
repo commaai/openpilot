@@ -1,5 +1,5 @@
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Union
 
@@ -176,7 +176,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarInfo(CarInfo):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = CarParts.common([CarHarness.j533])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.j533]))
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
@@ -392,17 +392,21 @@ FW_VERSIONS = {
   CAR.CRAFTER_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906056EK\xf1\x896391',
+      b'\xf1\x8705L906023BC\xf1\x892688',
     ],
     # Only current upstreamed vehicle has a manual transmission
     #(Ecu.transmission, 0x7e1, None): [
     #],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655BG\xf1\x890703\xf1\x82\x0e16120016130012051G1313052900',
+      b'\xf1\x875QF959655AS\xf1\x890755\xf1\x82\x1315140015150011111100050200--1311120749',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x872N0909143E \xf1\x897021\xf1\x82\x05163AZ306A2',
+      b'\xf1\x872N0909144K \xf1\x897045\xf1\x82\x05233AZ810A2',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572AA\xf1\x890396',
       b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
@@ -488,6 +492,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300041P \xf1\x894507',
       b'\xf1\x870DD300045K \xf1\x891120',
       b'\xf1\x870DD300046F \xf1\x891601',
+      b'\xf1\x870GC300012A \xf1\x891401',
       b'\xf1\x870GC300012A \xf1\x891403',
       b'\xf1\x870GC300014B \xf1\x892401',
       b'\xf1\x870GC300014B \xf1\x892405',
@@ -504,6 +509,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AA\xf1\x890388\xf1\x82\x111413001113120043114417121411149113',
       b'\xf1\x875Q0959655AA\xf1\x890388\xf1\x82\x111413001113120053114317121C111C9113',
       b'\xf1\x875Q0959655AR\xf1\x890317\xf1\x82\x13141500111233003142114A2131219333313100',
+      b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\x1314160011123300314211012230229333423100',
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\x1314160011123300314211012230229333463100',
       b'\xf1\x875Q0959655BS\xf1\x890403\xf1\x82\x1314160011123300314240012250229333463100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\x13141600111233003142404A2251229333463100',
@@ -577,6 +583,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572F \xf1\x890400\xf1\x82\x0101',
       b'\xf1\x875Q0907572G \xf1\x890571',
       b'\xf1\x875Q0907572H \xf1\x890620',
+      b'\xf1\x875Q0907572J \xf1\x890653',
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
@@ -1302,6 +1309,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300011T \xf1\x894801',
       b'\xf1\x870D9300012  \xf1\x894940',
       b'\xf1\x870D9300013A \xf1\x894905',
+      b'\xf1\x870D9300014K \xf1\x895006',
       b'\xf1\x870D9300041H \xf1\x894905',
       b'\xf1\x870D9300043F \xf1\x895202',
       b'\xf1\x870GC300014M \xf1\x892801',
@@ -1312,6 +1320,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655AE\xf1\x890130\xf1\x82\x12111200111121001121110012211292221111',
       b'\xf1\x875Q0959655AE\xf1\x890130\xf1\x82\022111200111121001121118112231292221111',
       b'\xf1\x875Q0959655AK\xf1\x890130\xf1\x82\022111200111121001121110012211292221111',
+      b'\xf1\x875Q0959655AS\xf1\x890317\xf1\x82\x1331310031313100313131823133319331313100',
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02331310031313100313131013141319331413100',
       b'\xf1\x875Q0959655CA\xf1\x890403\xf1\x82\x1331310031313100313151013141319331423100',
       b'\xf1\x875Q0959655CH\xf1\x890421\xf1\x82\x1333310031313100313152025350539331463100',
@@ -1320,6 +1329,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143K \xf1\x892033\xf1\x820514UZ070203',
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820522UZ070303',
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820526UZ070505',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\00563UZ060700',
       b'\xf1\x875Q0910143B \xf1\x892201\xf1\x82\x0563UZ060600',
       b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567UZ070600',
