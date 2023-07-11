@@ -19,8 +19,8 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     if (visible) { emit mapPanelRequested(); }
     setVisible(visible);
   });
-  QObject::connect(map, &MapWindow::openSettings, [=]() {
-    content_stack->setCurrentIndex(1);
+  QObject::connect(map, &MapWindow::requestSettings, [=](bool settings) {
+    content_stack->setCurrentIndex(settings ? 1 : 0);
   });
   content_stack->addWidget(map);
 
