@@ -159,6 +159,15 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
+  // update navigate on openpilot status
+  if (sm.updated("modelV2")) {
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
+    if (nav_enabled && !s.scene.navigate_on_openpilot) {
+      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
+    }
+    uiState()->scene.navigate_on_openpilot = nav_enabled;
+  }
+
   if (m_map.isNull()) {
     return;
   }

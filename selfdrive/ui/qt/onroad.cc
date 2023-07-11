@@ -64,14 +64,6 @@ void OnroadWindow::updateState(const UIState &s) {
 
   nvg->updateState(s);
 
-  // update navigate on openpilot status
-  bool nav_enabled_now = s.scene.navigate_on_openpilot;
-  if ((nav_enabled != nav_enabled_now) && map) {
-    emit mapPanelRequested();
-    map->show();
-  }
-  nav_enabled = nav_enabled_now;
-
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
@@ -83,7 +75,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 #ifdef ENABLE_MAPS
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
-    bool show_map = nav_enabled ? sidebarVisible : !sidebarVisible;
+    bool show_map = uiState()->scene.navigate_on_openpilot ? sidebarVisible : !sidebarVisible;
     map->setVisible(show_map && !map->isVisible());
   }
 #endif
