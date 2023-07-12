@@ -451,10 +451,9 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     painter.drawPolygon(scene.road_edge_vertices[i]);
   }
 
-  const auto cp = sm["carParams"].getCarParams();
-  const bool show_e2e_path = sm["controlsState"].getControlsState().getExperimentalMode() && hasLongitudinalControl(cp);
-
   // paint path
+  const bool show_e2e_path = (sm["controlsState"].getControlsState().getExperimentalMode() &&
+                              sm["carParams"].getCarParams().getOpenpilotLongitudinalControl());
   QLinearGradient bg(0, height(), 0, 0);
   if (show_e2e_path) {
     // The first half of track_vertices are the points for the right side of the path
