@@ -12,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
+  // don't think signals work down
 //  QObject::connect(&device, &Device::interactiveTimout, homeWindow, &HomeWindow::interactiveTimout);
   QObject::connect(&device, &Device::interactiveTimout,  [=]() {
     homeWindow->interactiveTimout();
