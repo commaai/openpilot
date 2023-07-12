@@ -26,13 +26,12 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
 void PairingQRWidget::showEvent(QShowEvent *event) {
   refresh();
   timer->start(5 * 60 * 1000);
-  // set max brightness
-  Hardware::set_brightness(100);
+  uiState()->setOffroadBrightness(100);
 }
 
 void PairingQRWidget::hideEvent(QHideEvent *event) {
   timer->stop();
-  Hardware::set_brightness(BACKLIGHT_OFFROAD);
+  uiState()->setOffroadBrightness(BACKLIGHT_OFFROAD);
 }
 
 void PairingQRWidget::refresh() {

@@ -155,6 +155,11 @@ public:
   void setPrimeType(int type);
   inline int primeType() const { return prime_type; }
 
+  int offroadBrightness() const { return offroad_brightness; }
+  void setOffroadBrightness(int brightness) {
+    offroad_brightness = std::clamp(brightness, 0, 100);
+  }
+
   int fb_w = 0, fb_h = 0;
 
   std::unique_ptr<SubMaster> sm;
@@ -178,6 +183,7 @@ private:
   QTimer *timer;
   bool started_prev = false;
   int prime_type = -1;
+  int offroad_brightness = BACKLIGHT_OFFROAD;
 };
 
 UIState *uiState();
