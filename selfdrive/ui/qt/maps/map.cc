@@ -357,6 +357,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
 void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
+    uiState()->scene.navigate_on_openpilot = false;
   } else {
     auto dest = coordinate_from_param("NavDestination");
     emit requestVisible(dest.has_value());
