@@ -161,6 +161,11 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
     re.encoderd_segment_offset = -s->rotate_segment.load();
+    // clear queue
+    for (auto &qmsg : re.q) {
+      delete qmsg;
+    }
+    re.q.clear();
     delete msg;
   }
 
