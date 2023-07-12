@@ -14,20 +14,15 @@ size_t EncoderWriter::write(LoggerState *logger, Message *msg) {
 
   size_t written = 0;
   if (current_encoder_segment == remote_encoder_segment) {
-    if (!q.empty()) {
-      for (auto &qmsg : q) {
-        capnp::FlatArrayMessageReader msg_reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
-        written += write_encoder_data(logger, msg_reader.getRoot<cereal::Event>());
-      }
-      q.clear();
+    for (; !q.empty(); q.pop_front()) {
+      auto &qmsg = q.front();
+      capnp::FlatArrayMessageReader msg_reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
+      written += write_encoder_data(logger, msg_reader.getRoot<cereal::Event>());
     }
     written = write_encoder_data(logger, event);
   } else {
     // rotate to the next segment to sync with remote encoders.
-    if (!marked_ready_to_rotate) {
-      marked_ready_to_rotate = true;
-      ++ready_to_rotate;
-    }
+    ready_to_rotate += std::exchange(marked_ready_to_rotate, true) == false;
     q.push_back(std::move(m));
   }
   return written;

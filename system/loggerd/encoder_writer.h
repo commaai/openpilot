@@ -1,5 +1,6 @@
 #pragma once
 
+#include <deque>
 #include "system/loggerd/logger.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
@@ -19,7 +20,7 @@ private:
   int remote_encoder_segment = -1;
   int current_encoder_segment = -1;
   std::string segment_path;
-  std::vector<std::unique_ptr<Message>> q;
+  std::deque<std::unique_ptr<Message>> q;
   int dropped_frames = 0;
   bool marked_ready_to_rotate = false;
   EncoderInfo info;
