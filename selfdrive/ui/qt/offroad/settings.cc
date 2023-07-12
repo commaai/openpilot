@@ -129,7 +129,8 @@ void TogglesPanel::updateToggles() {
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
 
   QMap<QString, QString> exp_features;
-  exp_features["e2e_long"] = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.");
+  exp_features["e2e_long"] = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
+                                "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.");
   exp_features["nav_on_op"] = tr("When navigation has a destination, openpilot will input the map information into the model, generally improving behavior and allowing the following functionality:</b><br><br>"
                                  "- openpilot will keep left or right appropriately at forks/exits and take turns<br>"
                                  "- lane change behavior is unchanged and still activated by the driver");
