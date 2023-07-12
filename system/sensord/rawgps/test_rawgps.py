@@ -14,8 +14,6 @@ from selfdrive.manager.process_config import managed_processes
 from common.transformations.coordinates import ecef_from_geodetic
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
-UPDATE_MS = 100
-UPDATES_PER_S = 1000//UPDATE_MS
 
 
 class TestRawgpsd(unittest.TestCase):
@@ -24,66 +22,42 @@ class TestRawgpsd(unittest.TestCase):
     if not TICI:
       raise unittest.SkipTest
 
-    cls.sm_qcom_gnss = messaging.SubMaster(['qcomGnss'])
-    cls.sm_gps_location = messaging.SubMaster(['gpsLocation'])
-    cls.sm_gnss_measurements = messaging.SubMaster(['gnssMeasurements'])
+    cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def tearDown(self):
     managed_processes['rawgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
 
   def _wait_for_output(self, t=10):
-    self.sm_qcom_gnss.update(0)
-    for __ in range(t*UPDATES_PER_S):
-      self.sm_qcom_gnss.update(UPDATE_MS)
-      if self.sm_qcom_gnss.updated['qcomGnss']:
-        return True
-
-  def _wait_for_location(self, t=10):
-    self.sm_gps_location.update(0)
-    for __ in range(t*UPDATES_PER_S):
-      self.sm_gps_location.update(UPDATE_MS)
-      if self.sm_gps_location.updated['gpsLocation'] and self.sm_gps_location['gpsLocation'].flags:
-        return True
-    return False
-
-  def _wait_for_laikad_location(self, t=10):
-    self.sm_gnss_measurements.update(0)
-    for __ in range(t*UPDATES_PER_S):
-      self.sm_gnss_measurements.update(UPDATE_MS)
-      if self.sm_gnss_measurements.updated['gnssMeasurements'] and self.sm_gnss_measurements['gnssMeasurements'].positionECEF.valid:
-        return True
-    return False
+    time.sleep(t)
+    self.sm.update(0)
 
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
     managed_processes['rawgpsd'].start()
-    assert not self._wait_for_output(10)
+    self._wait_for_output(10)
+    assert not self.sm.updated['qcomGnss']
 
     os.system("sudo systemctl restart ModemManager lte")
-    assert self._wait_for_output(30)
+    self._wait_for_output(10)
+    assert self.sm.updated['qcomGnss']
+
 
   def test_startup_time_no_internet(self):
     os.system("sudo systemctl stop systemd-resolved")
     for _ in range(5):
       managed_processes['rawgpsd'].start()
 
-      start_time = time.monotonic()
-      assert self._wait_for_output(), "rawgpsd didn't start outputting messages in time"
-
-      et = time.monotonic() - start_time
-      assert et < 7, f"rawgpsd took {et:.1f}s to start"
+      self._wait_for_output(7)
+      assert self.sm.updated['qcomGnss'], "rawgpsd didn't start outputting messages in time"
       managed_processes['rawgpsd'].stop()
 
   def test_startup_time_internet(self):
     for _ in range(5):
       managed_processes['rawgpsd'].start()
 
-      start_time = time.monotonic()
-      assert self._wait_for_output(), "rawgpsd didn't start outputting messages in time"
-
-      et = time.monotonic() - start_time
-      assert et < 7, f"rawgpsd took {et:.1f}s to start"
+      self._wait_for_output(7)
+      assert self.sm.updated['qcomGnss'], "rawgpsd didn't start outputting messages in time"
       managed_processes['rawgpsd'].stop()
 
   def test_turns_off_gnss(self):
@@ -119,7 +93,8 @@ class TestRawgpsd(unittest.TestCase):
     at_cmd("AT+QGPSDEL=0")
 
     managed_processes['rawgpsd'].start()
-    assert self._wait_for_output(10)
+    self._wait_for_output(10)
+    assert self.sm.updated['qcomGnss']
     managed_processes['rawgpsd'].stop()
 
     # after QGPSDEL: '+QGPSXTRADATA: 0,"1980/01/05,19:00:00"'
@@ -131,6 +106,7 @@ class TestRawgpsd(unittest.TestCase):
     assert injected_time_str[:] == '1980/01/05,19:00:00'[:]
     assert valid_duration == '0'
 
+
   @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
   def test_fix(self):
     # clear assistance data
@@ -138,14 +114,15 @@ class TestRawgpsd(unittest.TestCase):
 
     managed_processes['rawgpsd'].start()
     managed_processes['laikad'].start()
-    assert self._wait_for_location(120)
-    assert self.sm_gps_location['gpsLocation'].flags == 1
-    module_fix = ecef_from_geodetic([self.sm_gps_location['gpsLocation'].latitude,
-                                     self.sm_gps_location['gpsLocation'].longitude,
-                                     self.sm_gps_location['gpsLocation'].altitude])
-    assert self._wait_for_laikad_location(90)
-    total_diff = np.array(self.sm_gnss_measurements['gnssMeasurements'].positionECEF.value) - module_fix
-    print(total_diff)
+    assert self._wait_for_output(60)
+    assert self.sm.updated['qcomGnss']
+    assert self.sm.updated['gpsLocation']
+    assert self.sm['gpsLocation'].flags == 1
+    module_fix = ecef_from_geodetic([self.sm['gpsLocation'].latitude,
+                                     self.sm['gpsLocation'].longitude,
+                                     self.sm['gpsLocation'].altitude])
+    assert self.sm['gnssMeasurements'].positionECEF.valid
+    total_diff = np.array(self.sm['gnssMeasurements'].positionECEF.value) - module_fix
     self.assertLess(np.linalg.norm(total_diff), 100)
     managed_processes['laikad'].stop()
     managed_processes['rawgpsd'].stop()
