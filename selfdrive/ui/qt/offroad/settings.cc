@@ -180,7 +180,7 @@ void TogglesPanel::updateToggles() {
   }
 
   // set experimental mode toggle description
-  QString e2e_description = tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:<br>");
+  QString e2e_description = tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:") + "<br>";
   for (const auto& kv : exp_features_headers) {
     e2e_description += QString("<h4>%1</h4><br>%2<br>").arg(kv.second).arg(exp_features.value(kv.first));
   }
