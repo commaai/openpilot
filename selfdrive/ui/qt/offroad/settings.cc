@@ -161,6 +161,7 @@ void TogglesPanel::updateToggles() {
       // no long for now
       long_personality_setting->setEnabled(false);
 
+      // prepend note that end-to-end longitudinal control will not work
       const QString unavailable = tr("End-to-End Longitudinal Control is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
       QString long_desc = unavailable + " " + \
