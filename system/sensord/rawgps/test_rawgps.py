@@ -54,8 +54,16 @@ class TestRawgpsd(unittest.TestCase):
         return True
     return False
 
-  def test_startup_time_no_internet(self):
+  def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
+    managed_processes['rawgpsd'].start()
+    assert not self._wait_for_output(10)
+
+    os.system("sudo systemctl restart ModemManager lte")
+    assert self._wait_for_output(30)
+
+  def test_startup_time_no_internet(self):
+    os.system("sudo systemctl stop systemd-resolved")
     for _ in range(5):
       managed_processes['rawgpsd'].start()
 
@@ -65,7 +73,7 @@ class TestRawgpsd(unittest.TestCase):
       et = time.monotonic() - start_time
       assert et < 7, f"rawgpsd took {et:.1f}s to start"
       managed_processes['rawgpsd'].stop()
-    os.system("sudo systemctl start ModemManager lte")
+    os.system("sudo systemctl restart systemd-resolved")
 
   def test_startup_time_internet(self):
     for _ in range(5):
@@ -106,7 +114,7 @@ class TestRawgpsd(unittest.TestCase):
     self.assertLess(abs((datetime.datetime.utcnow() - injected_time).total_seconds()), 60*60*12)
 
   def test_no_assistance_loading(self):
-    os.system("sudo systemctl stop ModemManager lte")
+    os.system("sudo systemctl stop systemd-resolved")
     # clear assistance data
     at_cmd("AT+QGPSDEL=0")
 
@@ -122,7 +130,7 @@ class TestRawgpsd(unittest.TestCase):
     assert valid_duration == "10080"  # should be max time
     injected_time = datetime.datetime.strptime(injected_time_str.replace("\"", ""), "%Y/%m/%d,%H:%M:%S")
     self.assertLess(abs((datetime.datetime.utcnow() - injected_time).total_seconds()), 60*60*12)
-    os.system("sudo systemctl start ModemManager lte")
+    os.system("sudo systemctl restart systemd-resolved")
 
 
   @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
