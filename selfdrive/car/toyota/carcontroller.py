@@ -81,7 +81,7 @@ class CarController:
         # Angular rate limit based on speed
         apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
 
-        if not CC.latActive:
+        if not lat_active:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
@@ -93,7 +93,7 @@ class CarController:
     # on consecutive messages
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
-      lta_active = CC.latActive and self.CP.steerControlType == SteerControlType.angle
+      lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2))
 
     # *** gas and brake ***

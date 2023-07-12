@@ -57,7 +57,7 @@ public:
   virtual void pause(bool pause) {}
   const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
-  virtual const std::vector<std::tuple<int, int, TimelineType>> getTimeline() { return {}; }
+  virtual const std::vector<std::tuple<double, double, TimelineType>> getTimeline() { return {}; }
 
 signals:
   void paused();

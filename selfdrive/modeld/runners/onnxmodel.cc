@@ -1,25 +1,18 @@
 #include "selfdrive/modeld/runners/onnxmodel.h"
 
-#include <poll.h>
-#include <unistd.h>
-
-#include <cassert>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
-#include <stdexcept>
-#include <string>
+#include <poll.h>
+#include <unistd.h>
 
-#include "common/swaglog.h"
 #include "common/util.h"
 
-ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime, bool _use_extra, bool _use_tf8, cl_context context) {
-  LOGD("loading model %s", path);
+ONNXModel::ONNXModel(const std::string path, float *_output, size_t _output_size, int runtime, bool _use_tf8, cl_context context) {
+  LOGD("loading model %s", path.c_str());
 
   output = _output;
   output_size = _output_size;
-  use_extra = _use_extra;
   use_tf8 = _use_tf8;
 
   int err = pipe(pipein);
@@ -34,7 +27,7 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   proc_pid = fork();
   if (proc_pid == 0) {
     LOGD("spawning onnx process %s", onnx_runner.c_str());
-    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, (char*)tf8_arg.c_str(), nullptr};
+    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path.c_str(), (char*)tf8_arg.c_str(), nullptr};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
     close(pipein[0]);
@@ -87,72 +80,9 @@ void ONNXModel::pread(float *buf, int size) {
   LOGD("host read done");
 }
 
-void ONNXModel::addRecurrent(float *state, int state_size) {
-  rnn_input_buf = state;
-  rnn_state_size = state_size;
-}
-
-void ONNXModel::addDesire(float *state, int state_size) {
-  desire_input_buf = state;
-  desire_state_size = state_size;
-}
-
-void ONNXModel::addNavFeatures(float *state, int state_size) {
-  nav_features_input_buf = state;
-  nav_features_size = state_size;
-}
-
-void ONNXModel::addDrivingStyle(float *state, int state_size) {
-    driving_style_input_buf = state;
-    driving_style_size = state_size;
-}
-
-void ONNXModel::addTrafficConvention(float *state, int state_size) {
-  traffic_convention_input_buf = state;
-  traffic_convention_size = state_size;
-}
-
-void ONNXModel::addCalib(float *state, int state_size) {
-  calib_input_buf = state;
-  calib_size = state_size;
-}
-
-void ONNXModel::addImage(float *image_buf, int buf_size) {
-  image_input_buf = image_buf;
-  image_buf_size = buf_size;
-}
-
-void ONNXModel::addExtra(float *image_buf, int buf_size) {
-  extra_input_buf = image_buf;
-  extra_buf_size = buf_size;
-}
-
 void ONNXModel::execute() {
-  // order must be this
-  if (image_input_buf != NULL) {
-    pwrite(image_input_buf, image_buf_size);
-  }
-  if (extra_input_buf != NULL) {
-    pwrite(extra_input_buf, extra_buf_size);
-  }
-  if (desire_input_buf != NULL) {
-    pwrite(desire_input_buf, desire_state_size);
-  }
-  if (traffic_convention_input_buf != NULL) {
-    pwrite(traffic_convention_input_buf, traffic_convention_size);
-  }
-  if (driving_style_input_buf != NULL) {
-    pwrite(driving_style_input_buf, driving_style_size);
-  }
-  if (nav_features_input_buf != NULL) {
-    pwrite(nav_features_input_buf, nav_features_size);
-  }
-  if (calib_input_buf != NULL) {
-    pwrite(calib_input_buf, calib_size);
-  }
-  if (rnn_input_buf != NULL) {
-    pwrite(rnn_input_buf, rnn_state_size);
+  for (auto &input : inputs) {
+    pwrite(input->buffer, input->size);
   }
   pread(output, output_size);
 }
-

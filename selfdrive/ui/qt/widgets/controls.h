@@ -11,8 +11,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-QFrame *horizontal_line(QWidget *parent = nullptr);
-
 class ElidedLabel : public QLabel {
   Q_OBJECT
 

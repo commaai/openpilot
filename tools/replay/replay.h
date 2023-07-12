@@ -67,14 +67,14 @@ public:
   inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
   inline QDateTime currentDateTime() const { return route_->datetime().addSecs(currentSeconds()); }
   inline uint64_t routeStartTime() const { return route_start_ts_; }
-  inline int toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
+  inline double toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline int totalSeconds() const { return (!segments_.empty()) ? (segments_.rbegin()->first + 1) * 60 : 0; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::vector<Event *> *events() const { return events_.get(); }
   inline const std::map<int, std::unique_ptr<Segment>> &segments() const { return segments_; };
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
-  inline const std::vector<std::tuple<int, int, TimelineType>> getTimeline() {
+  inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
     return timeline;
   }
@@ -131,7 +131,7 @@ protected:
 
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
-  std::vector<std::tuple<int, int, TimelineType>> timeline;
+  std::vector<std::tuple<double, double, TimelineType>> timeline;
   std::set<cereal::Event::Which> allow_list;
   std::string car_fingerprint_;
   float speed_ = 1.0;
