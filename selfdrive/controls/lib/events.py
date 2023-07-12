@@ -954,37 +954,3 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
 }
-
-
-if __name__ == '__main__':
-  # print all alerts by type and priority
-  from collections import defaultdict, OrderedDict
-  from pprint import pprint
-
-  event_names = EventName.__dict__
-  event_names = {k: v for k, v in event_names.items() if not k.startswith('_')}
-
-  alerts_by_type = defaultdict(lambda: defaultdict(list))
-
-  CP = car.CarParams.new_message()
-  CS = car.CarState.new_message()
-  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                     'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters', 'testJoystick'],
-                                    ignore_avg_freq=['radarState', 'testJoystick'])
-
-  for i, alerts in EVENTS.items():
-    for type, alert in alerts.items():
-      if isinstance(alert, Callable):
-        alert = alert(CP, CS, sm, False, 0.1)
-      priority = alert.priority
-      name = [k for k, v in event_names.items() if v == i][0]
-      alerts_by_type[type][priority].append(name)
-
-  for k, v in alerts_by_type.items():
-    alerts_by_type[k] = OrderedDict(v)
-    alerts_by_type[k] = {str(j): v for j, v in sorted(alerts_by_type[k].items(), key=lambda x: -x[0])}
-  alerts_by_type = OrderedDict(alerts_by_type)
-  alerts_by_type = sorted(alerts_by_type.items(), key=lambda x: x[0])
-
-  pprint(alerts_by_type)
