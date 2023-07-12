@@ -203,10 +203,10 @@ private:
 
 signals:
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimout();
+  void resetInteractiveTimeout();
   void update(const UIState &s);
 };
 
