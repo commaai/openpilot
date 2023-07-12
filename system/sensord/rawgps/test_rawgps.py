@@ -95,11 +95,10 @@ class TestRawgpsd(unittest.TestCase):
     # after loading: '+QGPSXTRADATA: 10080,"2023/06/24,19:00:00"'
     out = at_cmd("AT+QGPSXTRADATA?")
     out = out.split("+QGPSXTRADATA:")[1].split("'")[0].strip()
-    valid_duration, injected_date = out.split(",", 1)
+    valid_duration, injected_time_str = out.split(",", 1)
     assert valid_duration == "10080"  # should be max time
-
-    # TODO: time doesn't match up
-    assert injected_date[1:].startswith(datetime.datetime.utcnow().strftime("%Y/%m/%d"))
+    injected_time = datetime.datetime.strptime(injected_time_str.replace("\"", ""), "%Y/%m/%d,%H:%M:%S")
+    self.assertLess(abs((datetime.datetime.utcnow() - injected_time).total_seconds()), 60*60*12)
 
   @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
   def test_fix(self):
