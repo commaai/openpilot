@@ -7,10 +7,6 @@
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/ui/qt/maps/map_panel.h"
-#endif
 
 
 const int btn_size = 192;
@@ -132,7 +128,7 @@ private:
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
-  MapPanel *map = nullptr;
+  QWidget *map = nullptr;
   QHBoxLayout* split;
 
 private slots:

@@ -7,6 +7,10 @@
 
 #include "common/timing.h"
 #include "selfdrive/ui/qt/util.h"
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/maps/map_panel.h"
+#endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
