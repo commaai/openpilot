@@ -129,7 +129,7 @@ private:
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
-  QWidget *map = nullptr;
+  MapPanel *map = nullptr;
   QHBoxLayout* split;
 
 private slots:
