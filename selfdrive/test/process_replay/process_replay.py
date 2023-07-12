@@ -21,14 +21,13 @@ from common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from selfdrive.car.car_helpers import get_car, interfaces
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.test.process_replay.helpers import OpenpilotPrefix
+from selfdrive.test.process_replay.helpers import OpenpilotPrefix, DummySocket
 from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from selfdrive.test.process_replay.migration import migrate_all
 from tools.lib.logreader import LogReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
-CI = "CI" in os.environ
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
@@ -117,20 +116,6 @@ class ProcessConfig:
   main_pub_drained: bool = True
   vision_pubs: List[str] = field(default_factory=list)
   ignore_alive_pubs: List[str] = field(default_factory=list)
-
-
-class DummySocket:
-  def __init__(self):
-    self.data = []
-
-  def receive(self, non_blocking=False):
-    if non_blocking:
-      return None
-
-    return self.data.pop()
-
-  def send(self, data):
-    self.data.append(data)
 
 
 def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
