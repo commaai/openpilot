@@ -52,9 +52,10 @@ def setup_data_readers(route, sidx, use_route_meta):
     lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {
       'roadCameraState': FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc"),
-      'wideRoadCameraState': FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc"),
       'driverCameraState': FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc"),
     }
+    if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
+      frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
 
   return lr, frs
 
