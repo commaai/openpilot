@@ -127,24 +127,41 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 void TogglesPanel::updateToggles() {
   auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
-  const QString e2e_description = QString("%1<br>"
-                                          "<h4>%2</h4><br>"
-                                          "%3<br>"
-                                          "<h4>%4</h4><br>"
-                                          "%5<br>"
-                                          "<h4>%6</h4><br>"
-                                          "%7")
-                                  .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
-                                  .arg(tr("🌮 End-to-End Longitudinal Control 🌮"))
-                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-                                       "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected."))
-                                  .arg(tr("🌮 Navigate on openpilot 🌮"))
-                                  .arg(tr("When navigation has a destination openpilot will input the map information into the model, generally improving behavior. "
-                                       "<b>When navigating on openpilot:</b><br><br>"
-                                       "- openpilot will keep left or right appropriately at forks/exits and take turns<br>"
-                                       "- lane change behavior is unchanged and still activated by the driver"))
-                                  .arg(tr("New Driving Visualization"))
-                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
+
+  QMap<QString, QString> exp_features;
+  exp_features["e2e_long"] = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.");
+  exp_features["nav_on_op"] = tr("When navigation has a destination openpilot will input the map information into the model, generally improving behavior. <b>When navigating on openpilot:</b><br><br>- openpilot will keep left or right appropriately at forks/exits and take turns<br>- lane change behavior is unchanged and still activated by the driver");
+  exp_features["visualization"] = tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.");
+
+  QVector<QPair<QString, QString>> exp_features_headers {
+    {"e2e_long", tr("🌮 End-to-End Longitudinal Control 🌮")},
+    {"nav_on_op", tr("🛣 Navigate On openpilot 🛣")},
+    {"visualization", tr("New Driving Visualization")}
+  };
+
+//  QVector<QPair<QString, QString>> exp_features_headers;
+//  exp_features_headers.append(qMakePair("e2e_long", tr("🌮 End-to-End Longitudinal Control 🌮")));
+//  exp_features_headers.append(qMakePair("nav_on_op", tr("🛣 Navigate On openpilot 🗺️")));
+//  exp_features_headers.append(qMakePair("vis", tr("New Driving Visualization")));
+
+//  const QString e2e_description = QString("%1<br>"
+//                                          "<h4>%2</h4><br>"
+//                                          "%3<br>"
+//                                          "<h4>%4</h4><br>"
+//                                          "%5<br>"
+//                                          "<h4>%6</h4><br>"
+//                                          "%7")
+//                                  .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
+//                                  .arg(tr("🌮 End-to-End Longitudinal Control 🌮<br>%1 (THIS NEEDS TO CHANGE BELOW)"))
+//                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
+//                                       "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected."))
+//                                  .arg(tr("🌮 Navigate On openpilot 🌮"))
+//                                  .arg(tr("When navigation has a destination openpilot will input the map information into the model, generally improving behavior. "
+//                                       "<b>When navigating on openpilot:</b><br><br>"
+//                                       "- openpilot will keep left or right appropriately at forks/exits and take turns<br>"
+//                                       "- lane change behavior is unchanged and still activated by the driver"))
+//                                  .arg(tr("New Driving Visualization"))
+//                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
   const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
@@ -157,34 +174,44 @@ void TogglesPanel::updateToggles() {
       params.remove("ExperimentalLongitudinalEnabled");
     }
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
-    if (hasLongitudinalControl(CP)) {
+    if (hasLongitudinalControl(CP) && false) {
       // normal description and toggle
-      experimental_mode_toggle->setDescription(e2e_description);
+//      exp_features[tr("🌮 End-to-End Longitudinal Control 🌮")] = exp_features[tr("🌮 End-to-End Longitudinal Control 🌮")].arg(tr("hi! <br>"));
+//      experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
     } else {
       // no long for now
       long_personality_setting->setEnabled(false);
-      params.remove("ExperimentalMode");
+//      params.remove("ExperimentalMode");
 
-      const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
+      const QString unavailable = tr("End-to-End Longitudinal Control is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
       QString long_desc = unavailable + " " + \
                           tr("openpilot longitudinal control may come in a future update.");
       if (CP.getExperimentalLongitudinalAvailable()) {
         if (is_release) {
-          long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+          long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with End-to-End Longitudinal Control, on non-release branches.");
         } else {
-          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
+          long_desc = tr("Enable experimental longitudinal control to use End-to-End Longitudinal Control.");
         }
       }
-      experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
+      exp_features["e2e_long"].prepend("<b>" + long_desc + "</b><br><br>");
+//      experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
     experimental_mode_toggle->refresh();
   } else {
-    experimental_mode_toggle->setDescription(e2e_description);
+//    experimental_mode_toggle->setDescription(e2e_description);
     op_long_toggle->setVisible(false);
   }
+    QString e2e_description;
+//  for (auto& k : exp_features.keys()) {
+//  for (auto it = exp_features.cbegin(); it != exp_features.cend(); ++it) {
+  for (const auto& kv : exp_features_headers) {
+//    e2e_description += QString("<h4>%1</h4><br>%2<br>").arg(it.key()).arg(it.value());
+    e2e_description += QString("<h4>%1</h4><br>%2<br>").arg(kv.second).arg(exp_features.value(kv.first));
+  }
+  experimental_mode_toggle->setDescription(e2e_description);
 }
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
