@@ -51,13 +51,6 @@ QMap<QString, QString> getSupportedLanguages() {
   return map;
 }
 
-void configFont(QPainter &p, const QString &family, int size, const QString &style) {
-  QFont f(family);
-  f.setPixelSize(size);
-  f.setStyleName(style);
-  p.setFont(f);
-}
-
 void clearLayout(QLayout* layout) {
   while (layout->count() > 0) {
     QLayoutItem* item = layout->takeAt(0);
@@ -162,12 +155,6 @@ QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMo
   }
 }
 
-QRect getTextRect(QPainter &p, int flags, const QString &text) {
-  QFontMetrics fm(p.font());
-  QRect init_rect = fm.boundingRect(text);
-  return fm.boundingRect(init_rect, flags, text);
-}
-
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom){
   qreal w_2 = rect.width() / 2;
   qreal h_2 = rect.height() / 2;
@@ -255,4 +242,12 @@ QPixmap bootstrapPixmap(const QString &id) {
     pixmap.loadFromData(it.value(), "svg");
   }
   return pixmap;
+}
+
+bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
+  // Using the experimental longitudinal toggle, returns whether longitudinal control
+  // will be active without needing a restart of openpilot
+  return car_params.getExperimentalLongitudinalAvailable()
+             ? Params().getBool("ExperimentalLongitudinalEnabled")
+             : car_params.getOpenpilotLongitudinalControl();
 }

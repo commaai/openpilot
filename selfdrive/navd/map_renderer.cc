@@ -101,8 +101,7 @@ void MapRenderer::msgUpdate() {
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
 
-    bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
+    if ((sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
@@ -116,6 +115,7 @@ void MapRenderer::msgUpdate() {
 
         if (!loaded()) {
           LOGE("failed to render map after retry");
+          publish(0, false);
         }
       }
     }
@@ -161,7 +161,7 @@ void MapRenderer::update() {
   double end_t = millis_since_boot();
 
   if ((vipc_server != nullptr) && loaded()) {
-    publish((end_t - start_t) / 1000.0);
+    publish((end_t - start_t) / 1000.0, true);
   }
 }
 
@@ -174,14 +174,18 @@ void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> 
   pm->send("navThumbnail", msg);
 }
 
-void MapRenderer::publish(const double render_time) {
+void MapRenderer::publish(const double render_time, const bool loaded) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+
+  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  bool valid = loaded && (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
     .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
+    .valid = valid,
   };
 
   assert(cap.sizeInBytes() >= buf->len);
@@ -214,7 +218,9 @@ void MapRenderer::publish(const double render_time) {
 
   // Send state msg
   MessageBuilder msg;
-  auto state = msg.initEvent().initMapRenderState();
+  auto evt = msg.initEvent();
+  auto state = evt.initMapRenderState();
+  evt.setValid(valid);
   state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
   state.setRenderTime(render_time);
   state.setFrameId(frame_id);

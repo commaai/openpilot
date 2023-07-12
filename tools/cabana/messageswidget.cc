@@ -32,7 +32,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   auto delegate = new MessageBytesDelegate(view, settings.multiple_lines_bytes);
 
   view->setItemDelegate(delegate);
+  view->setHeader(header);
   view->setModel(model);
+  view->setHeader(header);
   view->setSortingEnabled(true);
   view->sortByColumn(MessageListModel::Column::NAME, Qt::AscendingOrder);
   view->setAllColumnsShowFocus(true);
@@ -40,7 +42,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->setHeader(header);
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
@@ -82,6 +83,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(suppress_defined_signals, &QCheckBox::stateChanged, [=](int state) {
     settings.suppress_defined_signals = (state == Qt::Checked);
+    emit settings.changed();
   });
   QObject::connect(can, &AbstractStream::msgsReceived, model, &MessageListModel::msgsReceived);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &MessagesWidget::dbcModified);
@@ -130,7 +132,7 @@ void MessagesWidget::dbcModified() {
 void MessagesWidget::selectMessage(const MessageId &msg_id) {
   auto it = std::find(model->msgs.cbegin(), model->msgs.cend(), msg_id);
   if (it != model->msgs.cend()) {
-    view->selectionModel()->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0), QItemSelectionModel::Rows | QItemSelectionModel::ClearAndSelect);
+    view->setCurrentIndex(model->index(std::distance(model->msgs.cbegin(), it), 0));
   }
 }
 
@@ -209,7 +211,7 @@ void MessageListModel::setFilterStrings(const QMap<int, QString> &filters) {
 
 void MessageListModel::dbcModified() {
   dbc_address.clear();
-  for (const auto &[_, m] : dbc()->getMessages(0)) {
+  for (const auto &[_, m] : dbc()->getMessages(-1)) {
     dbc_address.insert(m.address);
   }
   fetchData();
