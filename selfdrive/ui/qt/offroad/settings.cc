@@ -155,8 +155,6 @@ void TogglesPanel::updateToggles() {
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
     if (hasLongitudinalControl(CP) && false) {
       // normal description and toggle
-//      exp_features[tr("🌮 End-to-End Longitudinal Control 🌮")] = exp_features[tr("🌮 End-to-End Longitudinal Control 🌮")].arg(tr("hi! <br>"));
-//      experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
     } else {
       // no long for now
@@ -175,19 +173,16 @@ void TogglesPanel::updateToggles() {
         }
       }
       exp_features["e2e_long"].prepend("<b>" + long_desc + "</b><br><br>");
-//      experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
-    experimental_mode_toggle->refresh();
+//    experimental_mode_toggle->refresh();
   } else {
-//    experimental_mode_toggle->setDescription(e2e_description);
     op_long_toggle->setVisible(false);
   }
-    QString e2e_description = tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:<br>");
-//  for (auto& k : exp_features.keys()) {
-//  for (auto it = exp_features.cbegin(); it != exp_features.cend(); ++it) {
+
+  // set experimental mode toggle description
+  QString e2e_description = tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:<br>");
   for (const auto& kv : exp_features_headers) {
-//    e2e_description += QString("<h4>%1</h4><br>%2<br>").arg(it.key()).arg(it.value());
     e2e_description += QString("<h4>%1</h4><br>%2<br>").arg(kv.second).arg(exp_features.value(kv.first));
   }
   experimental_mode_toggle->setDescription(e2e_description);
