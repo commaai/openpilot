@@ -68,7 +68,6 @@ class MapWindow : public QOpenGLWidget {
 public:
   MapWindow(const QMapboxGLSettings &);
   ~MapWindow();
-  void interactiveTimeout();
 
 private:
   void initializeGL() final;
