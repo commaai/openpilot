@@ -80,10 +80,6 @@ MapWindow::~MapWindow() {
   makeCurrent();
 }
 
-void MapWindow::interactiveTimout() {
-
-}
-
 void MapWindow::initLayers() {
   // This doesn't work from initializeGL
   if (!m_map->layerExists("modelPathLayer")) {
