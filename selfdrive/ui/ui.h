@@ -20,6 +20,7 @@ const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
+const int BACKLIGHT_OFFROAD = 50;
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
