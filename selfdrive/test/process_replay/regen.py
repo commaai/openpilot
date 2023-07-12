@@ -74,7 +74,7 @@ def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=Fals
   print("New route:", rel_log_dir, "\n")
 
   if not check_openpilot_enabled(output_logs):
-    raise Exception(f"Route did not engage for long enough")
+    raise Exception("Route did not engage for long enough")
 
   if upload:
     upload_route(rel_log_dir)
