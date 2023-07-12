@@ -1,39 +1,18 @@
 #include <unordered_map>
 
 #include "system/loggerd/encoder/encoder.h"
+#include "system/loggerd/encoder_writer.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
 
 ExitHandler do_exit;
-
-class LoggerdState;
-
-class RemoteEncoder {
-public:
-  RemoteEncoder(const EncoderInfo &info) : info(info) {}
-  void rotate();
-  size_t handle_msg(LoggerdState *s, Message *msg);
-  inline static int ready_to_rotate = 0;  // count of encoders ready to rotate
-
-private:
-  int write_encode_data(LoggerdState *s, const cereal::Event::Reader event);
-
-  std::unique_ptr<VideoWriter> writer;
-  int remote_encoder_segment = -1;
-  int current_encoder_segment = -1;
-  std::vector<Message *> q;
-  int dropped_frames = 0;
-  bool recording = false;
-  bool marked_ready_to_rotate = false;
-  EncoderInfo info;
-};
 
 struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
   double last_camera_seen_tms;
   double last_rotate_tms = 0.;      // last rotate time in ms
-  std::unordered_map<std::string, std::unique_ptr<RemoteEncoder>> remote_encoders;
+  std::unordered_map<std::string, std::unique_ptr<EncoderWriter>> remote_encoders;
 };
 
 void logger_rotate(LoggerdState *s) {
@@ -42,9 +21,9 @@ void logger_rotate(LoggerdState *s) {
   assert(err == 0);
 
   for (auto &[_, encoder] : s->remote_encoders) {
-    encoder->rotate();
+    encoder->rotate(s->segment_path);
   }
-  RemoteEncoder::ready_to_rotate = 0;
+  EncoderWriter::ready_to_rotate = 0;
 
   s->last_rotate_tms = millis_since_boot();
   LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
@@ -52,7 +31,7 @@ void logger_rotate(LoggerdState *s) {
 
 void rotate_if_needed(LoggerdState *s) {
   // all encoders ready, trigger rotation
-  bool all_ready = s->remote_encoders.size() > 0 && (RemoteEncoder::ready_to_rotate == s->remote_encoders.size());
+  bool all_ready = s->remote_encoders.size() > 0 && (EncoderWriter::ready_to_rotate == s->remote_encoders.size());
 
   // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
   bool timed_out = false;
@@ -74,111 +53,20 @@ void rotate_if_needed(LoggerdState *s) {
   }
 }
 
-void RemoteEncoder::rotate() {
-  writer.reset();
-  recording = false;
-  current_encoder_segment = remote_encoder_segment;
-  marked_ready_to_rotate = false;
-}
-
-size_t RemoteEncoder::handle_msg(LoggerdState *s, Message *msg) {
-  capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
-  auto event = cmsg.getRoot<cereal::Event>();
-  auto idx = (event.*(info.get_encode_data_func))().getIdx();
-
-  remote_encoder_segment = idx.getSegmentNum();
-  if (current_encoder_segment == -1) {
-    current_encoder_segment = remote_encoder_segment;
-    LOGD("%s: has encoderd offset %d", info.publish_name, current_encoder_segment);
-  }
-
-  size_t written = 0;
-  if (current_encoder_segment == remote_encoder_segment) {
-    if (!q.empty()) {
-      for (auto &qmsg : q) {
-        capnp::FlatArrayMessageReader msg_reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
-        written += write_encode_data(s, msg_reader.getRoot<cereal::Event>());
-        delete qmsg;
-      }
-      q.clear();
-    }
-    written = write_encode_data(s, event);
-    delete msg;
-  } else {
-    // rotate to the next segment to sync with remote encoders.
-    if (!marked_ready_to_rotate) {
-      marked_ready_to_rotate = true;
-      ++ready_to_rotate;
-    }
-    q.push_back(msg);
-  }
-  return written;
-}
-
-int RemoteEncoder::write_encode_data(LoggerdState *s, const cereal::Event::Reader event) {
-  auto edata = (event.*(info.get_encode_data_func))();
-  const auto idx = edata.getIdx();
-  const bool is_key_frame = idx.getFlags() & V4L2_BUF_FLAG_KEYFRAME;
-
-  // if we aren't recording yet, try to start, since we are in the correct segment
-  if (!recording) {
-    if (is_key_frame) {
-      // only create on iframe
-      if (dropped_frames) {
-        // this should only happen for the first segment, maybe
-        LOGW("%s: dropped %d non iframe packets before init", info.publish_name, dropped_frames);
-        dropped_frames = 0;
-      }
-      // if we aren't actually recording, don't create the writer
-      if (info.record) {
-        writer.reset(new VideoWriter(s->segment_path, info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-                                     info.frame_width, info.frame_height, info.fps, idx.getType()));
-        // write the header
-        auto header = edata.getHeader();
-        writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof() / 1000, true, false);
-      }
-      recording = true;
-    } else {
-      // this is a sad case when we aren't recording, but don't have an iframe
-      // nothing we can do but drop the frame
-      ++dropped_frames;
-      return 0;
-    }
-  }
-
-  // we have to be recording if we are here
-  assert(recording);
-
-  // if we are actually writing the video file, do so
-  if (writer) {
-    auto data = edata.getData();
-    writer->write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof() / 1000, false, is_key_frame);
-  }
-
-  // put it in log stream as the idx packet
-  MessageBuilder msg;
-  auto evt = msg.initEvent(event.getValid());
-  evt.setLogMonoTime(event.getLogMonoTime());
-  (evt.*(info.set_encode_idx_func))(idx);
-  auto bytes = msg.toBytes();
-  logger_log(&s->logger, (uint8_t *)bytes.begin(), bytes.size(), true);  // always in qlog?
-  return bytes.size();
-}
-
 size_t handle_encoder_msg(LoggerdState *s, const std::string &name, Message *m) {
   auto &encoder = s->remote_encoders[name];
   if (!encoder) {
     for (const auto &cam : cameras_logged) {
       for (const auto &encoder_info : cam.encoder_infos) {
         if (name == encoder_info.publish_name) {
-          encoder.reset(new RemoteEncoder(encoder_info));
+          encoder.reset(new EncoderWriter(s->segment_path, encoder_info));
           break;
         }
       }
     }
     assert(encoder != nullptr);
   }
-  return encoder->handle_msg(s, m);
+  return encoder->write(&(s->logger), m);
 }
 
 void loggerd_thread() {

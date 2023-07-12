@@ -260,6 +260,8 @@ system/loggerd/encoder/encoder.cc
 system/loggerd/encoder/encoder.h
 system/loggerd/encoder/v4l_encoder.cc
 system/loggerd/encoder/v4l_encoder.h
+system/loggerd/encoder_writer.cc
+system/loggerd/encoder_writer.h
 system/loggerd/video_writer.cc
 system/loggerd/video_writer.h
 system/loggerd/logger.cc

@@ -5,7 +5,7 @@ libs = [common, cereal, messaging, visionipc,
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'OpenCL', 'pthread']
 
-src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
+src = ['encoder_writer.cc', 'logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
 if arch != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']
 
