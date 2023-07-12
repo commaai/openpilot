@@ -154,13 +154,12 @@ void TogglesPanel::updateToggles() {
       params.remove("ExperimentalLongitudinalEnabled");
     }
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
-    if (hasLongitudinalControl(CP) && false) {
+    if (hasLongitudinalControl(CP)) {
       // normal description and toggle
       long_personality_setting->setEnabled(true);
     } else {
       // no long for now
       long_personality_setting->setEnabled(false);
-//      params.remove("ExperimentalMode");
 
       const QString unavailable = tr("End-to-End Longitudinal Control is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
@@ -175,8 +174,6 @@ void TogglesPanel::updateToggles() {
       }
       exp_features["e2e_long"].prepend("<b>" + long_desc + "</b><br><br>");
     }
-
-//    experimental_mode_toggle->refresh();
   } else {
     op_long_toggle->setVisible(false);
   }
