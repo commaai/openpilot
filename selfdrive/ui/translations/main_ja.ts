@@ -1076,16 +1076,8 @@ This may take up to a minute.</source>
         <translation>新しい運転画面では、低速時に広角カメラの映像を表示することで、曲がる際の道路の視覚を向上します。実験段階を表すマークが右上に表示されます。</translation>
     </message>
     <message>
-        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="vanished">この車のACCがアクセル制御を行うため実験モードを利用することができません。</translation>
-    </message>
-    <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="vanished">実験段階のopenpilotによるアクセル制御を有効にしてください。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
