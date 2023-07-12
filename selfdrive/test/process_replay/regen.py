@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import os
 import argparse
-import time 
+import time
+import capnp
+
+from typing import Union, Iterable, Optional, List, Any, Dict, Tuple
 
 from selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, replay_process, get_process_config, check_openpilot_enabled, get_custom_params_from_lr
 from selfdrive.test.update_ci_routes import upload_route
@@ -11,7 +14,10 @@ from tools.lib.logreader import LogReader
 from tools.lib.helpers import save_log
 
 
-def regen_segment(lr, frs=None, daemons="all", disable_tqdm=False):
+def regen_segment(
+  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
+  daemons: Union[str, Iterable[str]] = "all", disable_tqdm: bool = False
+) -> List[capnp._DynamicStructReader]:
   if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
 
@@ -37,7 +43,7 @@ def regen_segment(lr, frs=None, daemons="all", disable_tqdm=False):
   return output_logs
 
 
-def setup_data_readers(route, sidx, use_route_meta):
+def setup_data_readers(route: str, sidx: int, use_route_meta: bool) -> Tuple[LogReader, Dict[str, Any]]:
   if use_route_meta:
     r = Route(route)
     lr = LogReader(r.log_paths()[sidx])
@@ -60,7 +66,10 @@ def setup_data_readers(route, sidx, use_route_meta):
   return lr, frs
 
 
-def regen_and_save(route, sidx, daemons="all", upload=False, use_route_meta=False, outdir=FAKEDATA, disable_tqdm=False):
+def regen_and_save(
+  route: str, sidx: int, daemons: Union[str, Iterable[str]] = "all", outdir: str = FAKEDATA,
+  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False
+) -> str:
   lr, frs = setup_data_readers(route, sidx, use_route_meta)
   output_logs = regen_segment(lr, frs, daemons, disable_tqdm=disable_tqdm)
 
@@ -98,4 +107,4 @@ if __name__ == "__main__":
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
 
-  regen_and_save(args.route, args.seg, args.whitelist_procs, args.upload, outdir=args.outdir)
+  regen_and_save(args.route, args.seg, daemons=args.whitelist_procs, upload=args.upload, outdir=args.outdir)

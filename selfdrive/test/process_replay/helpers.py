@@ -2,12 +2,12 @@ import os
 import shutil
 import uuid
 
-from typing import List
+from typing import List, Optional
 
 from common.params import Params
 
 class OpenpilotPrefix(object):
-  def __init__(self, prefix: str = None, clean_dirs_on_exit: bool = True) -> None:
+  def __init__(self, prefix: str = None, clean_dirs_on_exit: bool = True):
     self.prefix = prefix if prefix else str(uuid.uuid4())
     self.msgq_path = os.path.join('/dev/shm', self.prefix)
     self.clean_dirs_on_exit = clean_dirs_on_exit
@@ -37,7 +37,7 @@ class DummySocket:
   def __init__(self):
     self.data: List[bytes] = []
 
-  def receive(self, non_blocking: bool = False):
+  def receive(self, non_blocking: bool = False) -> Optional[bytes]:
     if non_blocking:
       return None
 
