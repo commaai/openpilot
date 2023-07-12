@@ -3,6 +3,8 @@ import math
 import os
 import time
 import shutil
+import warnings
+
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from enum import IntEnum
@@ -396,7 +398,9 @@ class Laikad:
 
 
 def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cache_dir):
-  astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, cache_dir=cache_dir)
+  warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
+
+  astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, cache_dir=cache_dir)  
   cloudlog.info(f"Start to download/parse navs for time {t.as_datetime()}")
   start_time = time.monotonic()
   try:
