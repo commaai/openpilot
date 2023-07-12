@@ -9,7 +9,6 @@ class MapPanel : public QFrame {
 
 public:
   explicit MapPanel(const QMapboxGLSettings &settings, QWidget *parent = nullptr);
-  void interactiveTimeout();
 
 signals:
   void mapPanelRequested();

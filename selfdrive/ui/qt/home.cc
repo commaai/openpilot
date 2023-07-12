@@ -59,10 +59,6 @@ void HomeWindow::showMapPanel(bool show) {
   onroad->showMapPanel(show);
 }
 
-void HomeWindow::interactiveTimeout() {
-//  onroad->interactiveTimeout();
-}
-
 void HomeWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
 

@@ -46,7 +46,6 @@ class HomeWindow : public QWidget {
 
 public:
   explicit HomeWindow(QWidget* parent = 0);
-  void interactiveTimeout();
 
 signals:
   void openSettings(int index = 0, const QString &param = "");
