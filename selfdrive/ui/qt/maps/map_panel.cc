@@ -14,6 +14,9 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
   auto map = new MapWindow(mapboxSettings);
   QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
+  QObject::connect(device(), &Device::interactiveTimeout, [=]() {
+    content_stack->setCurrentIndex(0);
+  });
   QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
     // when we show the map for a new route, signal HomeWindow to hide the sidebar
     if (visible) { emit mapPanelRequested(); }

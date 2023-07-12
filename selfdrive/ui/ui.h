@@ -210,6 +210,8 @@ public slots:
   void update(const UIState &s);
 };
 
+Device *device();
+
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
 void update_model(UIState *s,

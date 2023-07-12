@@ -18,7 +18,7 @@ private:
   void openSettings(int index = 0, const QString &param = "");
   void closeSettings();
 
-  Device device;
+//  Device device;
 
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
