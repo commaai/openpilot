@@ -959,7 +959,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 if __name__ == '__main__':
   # print all alerts by type and priority
   from collections import defaultdict, OrderedDict
-  from pprint import pprint
 
   event_names = EventName.__dict__
   event_names = {k: v for k, v in event_names.items() if not k.startswith('_')}
@@ -988,4 +987,8 @@ if __name__ == '__main__':
       for priority, l in sorted(priority_alerts.items(), key=lambda x: -int(x[0]))
     ])
 
-  pprint(sorted(all_alerts.items(), key=lambda x: x[0]))
+  for status, evs in sorted(all_alerts.items(), key=lambda x: x[0]):
+    print(f'****{status}****')
+    for p, alert_list in evs.items():
+      print(f'  {p}:')
+      print('\t', *alert_list, end='\n\n')
