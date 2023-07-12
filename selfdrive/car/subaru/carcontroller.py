@@ -16,9 +16,7 @@ class CarController:
     self.frame = 0
 
     self.cruise_button_prev = 0
-    self.cruise_rpm_last = 0
     self.cruise_throttle_last = 0
-    self.rpm_steady = 0
     self.throttle_steady = 0
 
     self.last_cancel_frame = 0
@@ -54,7 +52,6 @@ class CarController:
 
     ### LONG ###
 
-    cruise_rpm = 0
     cruise_throttle = 0
 
     brake_cmd = False
@@ -75,25 +72,17 @@ class CarController:
       if CC.longActive and gas > 0:
         # calculate desired values
         cruise_throttle = int(CarControllerParams.THROTTLE_BASE + (gas * CarControllerParams.THROTTLE_SCALE))
-        cruise_rpm = int(CarControllerParams.RPM_BASE + (gas * CarControllerParams.RPM_SCALE))
 
         # limit min and max values
         cruise_throttle = clip(cruise_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
-        cruise_rpm = clip(cruise_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
 
         # hysteresis
-        cruise_throttle = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_RPM_HYST)
-        cruise_rpm = apply_hysteresis(cruise_rpm, self.rpm_steady, CarControllerParams.THROTTLE_RPM_HYST)
-
+        cruise_throttle = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_HYST)
         self.throttle_steady = cruise_throttle
-        self.rpm_steady = cruise_rpm
 
         # rate limiting
         cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
-        cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
-
         self.cruise_throttle_last = cruise_throttle
-        self.cruise_rpm_last = cruise_rpm
 
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
@@ -128,7 +117,7 @@ class CarController:
 
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
-          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, cruise_rpm))
+          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive))
           can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value))
           can_sends.append(subarucan.create_cruise_control(self.packer, CS.cruise_control_msg))
 
