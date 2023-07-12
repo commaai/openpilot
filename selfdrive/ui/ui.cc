@@ -233,6 +233,7 @@ void UIState::updateStatus() {
       scene.started_frame = sm->frame;
     }
     started_prev = scene.started;
+    uiState()->scene.navigate_on_openpilot = false;
     emit offroadTransition(!scene.started);
   }
 }
