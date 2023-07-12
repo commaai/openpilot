@@ -91,7 +91,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     case QEvent::MouseButtonPress:
     case QEvent::MouseMove: {
       // ignore events when device is awakened by resetInteractiveTimeout
-      ignore = !uiState()->awake;
+      ignore = !device()->isAwake();
       device()->resetInteractiveTimeout();
       break;
     }
