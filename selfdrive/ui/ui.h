@@ -161,7 +161,6 @@ public:
   UIStatus status;
   UIScene scene = {};
 
-  bool awake;
   QString language;
 
   QTransform car_space_transform;
@@ -188,6 +187,7 @@ class Device : public QObject {
 
 public:
   Device(QObject *parent = 0);
+  bool isAwake() { return awake; }
 
 private:
   bool awake = false;
