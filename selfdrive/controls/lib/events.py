@@ -964,7 +964,7 @@ if __name__ == '__main__':
   event_names = EventName.__dict__
   event_names = {k: v for k, v in event_names.items() if not k.startswith('_')}
 
-  alerts_by_type = defaultdict(lambda: defaultdict(list))
+  alerts_by_type: Dict[str, Dict[int, List[str]]] = defaultdict(lambda: defaultdict(list))
 
   CP = car.CarParams.new_message()
   CS = car.CarState.new_message()
@@ -974,17 +974,18 @@ if __name__ == '__main__':
                                     ignore_avg_freq=['radarState', 'testJoystick'])
 
   for i, alerts in EVENTS.items():
-    for type, alert in alerts.items():
-      if isinstance(alert, Callable):
-        alert = alert(CP, CS, sm, False, 0.1)
+    for et, alert in alerts.items():
+      if callable(alert):
+        alert = alert(CP, CS, sm, False, 1)
       priority = alert.priority
       name = [k for k, v in event_names.items() if v == i][0]
-      alerts_by_type[type][priority].append(name)
+      alerts_by_type[et][priority].append(name)
 
-  for k, v in alerts_by_type.items():
-    alerts_by_type[k] = OrderedDict(v)
-    alerts_by_type[k] = {str(j): v for j, v in sorted(alerts_by_type[k].items(), key=lambda x: -x[0])}
-  alerts_by_type = OrderedDict(alerts_by_type)
-  alerts_by_type = sorted(alerts_by_type.items(), key=lambda x: x[0])
+  all_alerts = {}
+  for et, priority_alerts in alerts_by_type.items():
+    all_alerts[et] = OrderedDict([
+      (str(priority), l)
+      for priority, l in sorted(priority_alerts.items(), key=lambda x: -int(x[0]))
+    ])
 
-  pprint(alerts_by_type)
+  pprint(sorted(all_alerts.items(), key=lambda x: x[0]))
