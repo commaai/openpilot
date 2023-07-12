@@ -139,7 +139,7 @@ void TogglesPanel::updateToggles() {
   // Ordering of the headers
   QVector<QPair<QString, QString>> exp_features_headers {
     {"e2e_long", tr("🌮 End-to-End Longitudinal Control 🌮")},
-    {"nav_on_op", tr("🛣 Navigate On openpilot 🛣")},
+    {"nav_on_op", tr("🛣 Navigate on openpilot 🛣")},
     {"visualization", tr("New Driving Visualization")}
   };
 

@@ -1132,11 +1132,11 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>🛣 Navigate On openpilot 🛣</source>
+        <source>When navigation has a destination, openpilot will input the map information into the model, generally improving behavior and allowing the following functionality:&lt;/b&gt;&lt;br&gt;&lt;br&gt;- openpilot will keep left or right appropriately at forks/exits and take turns&lt;br&gt;- lane change behavior is unchanged and still activated by the driver</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model, generally improving behavior and allowing the following functionality:&lt;/b&gt;&lt;br&gt;&lt;br&gt;- openpilot will keep left or right appropriately at forks/exits and take turns&lt;br&gt;- lane change behavior is unchanged and still activated by the driver</source>
+        <source>🛣 Navigate on openpilot 🛣</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
