@@ -59,8 +59,8 @@ void HomeWindow::showMapPanel(bool show) {
   onroad->showMapPanel(show);
 }
 
-void HomeWindow::interactiveTimout() {
-  onroad->interactiveTimout();
+void HomeWindow::interactiveTimeout() {
+  onroad->interactiveTimeout();
 }
 
 void HomeWindow::updateState(const UIState &s) {

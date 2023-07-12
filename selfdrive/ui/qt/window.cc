@@ -13,9 +13,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
   // don't think signals work down
-//  QObject::connect(&device, &Device::interactiveTimout, homeWindow, &HomeWindow::interactiveTimout);
-  QObject::connect(&device, &Device::interactiveTimout,  [=]() {
-    homeWindow->interactiveTimout();
+//  QObject::connect(&device, &Device::interactiveTimeout, homeWindow, &HomeWindow::interactiveTimeout);
+  QObject::connect(&device, &Device::interactiveTimeout,  [=]() {
+    homeWindow->interactiveTimeout();
   });
 
   settingsWindow = new SettingsWindow(this);
