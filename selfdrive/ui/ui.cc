@@ -347,3 +347,8 @@ UIState *uiState() {
   static UIState ui_state;
   return &ui_state;
 }
+
+Device *device() {
+  static Device _device;
+  return &_device;
+}
