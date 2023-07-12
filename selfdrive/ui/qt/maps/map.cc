@@ -389,7 +389,10 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   main_layout->setContentsMargins(11, 50, 11, 11);
   main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  QVBoxLayout *layout = new QVBoxLayout;
+  QWidget *right_container = new QWidget(this);
+  right_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  QVBoxLayout *layout = new QVBoxLayout(right_container);
+
   layout->addWidget(distance = new QLabel);
   distance->setStyleSheet(R"(font-size: 90px;)");
 
@@ -402,8 +405,8 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   secondary->setWordWrap(true);
 
   layout->addLayout(lane_layout = new QHBoxLayout);
-  main_layout->addLayout(layout);
-  main_layout->addStretch();
+  layout->addStretch();
+  main_layout->addWidget(right_container);
 
   setStyleSheet("color:white");
   QPalette pal = palette();
