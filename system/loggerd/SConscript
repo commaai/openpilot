@@ -24,4 +24,4 @@ env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_encoder_writer.cc'], LIBS=libs + ['curl', 'crypto'])

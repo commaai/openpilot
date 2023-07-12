@@ -143,6 +143,11 @@ void loggerd_thread() {
     }
   }
 
+  // flush encoder writer
+  for (auto &[_, e] : s.remote_encoders) {
+    e->flush(&s.logger);
+  }
+
   LOGW("closing logger");
   logger_close(&s.logger, &do_exit);
 

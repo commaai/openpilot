@@ -10,6 +10,8 @@ public:
   EncoderWriter(const std::string &path, const EncoderInfo &info) : segment_path(path), info(info) {}
   void rotate(const std::string &path);
   size_t write(LoggerState *logger, Message *msg);
+  size_t flush(LoggerState *logger);
+
   inline static int ready_to_rotate = 0;  // count of encoders ready to rotate
 
 private:

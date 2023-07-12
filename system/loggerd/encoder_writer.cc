@@ -14,12 +14,10 @@ size_t EncoderWriter::write(LoggerState *logger, Message *msg) {
 
   size_t written = 0;
   if (current_encoder_segment == remote_encoder_segment) {
-    for (; !q.empty(); q.pop_front()) {
-      auto &qmsg = q.front();
-      capnp::FlatArrayMessageReader msg_reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
-      written += write_encoder_data(logger, msg_reader.getRoot<cereal::Event>());
+    if (!q.empty()) {
+      written += flush(logger);
     }
-    written = write_encoder_data(logger, event);
+    written += write_encoder_data(logger, event);
   } else {
     // rotate to the next segment to sync with remote encoders.
     ready_to_rotate += std::exchange(marked_ready_to_rotate, true) == false;
@@ -28,11 +26,21 @@ size_t EncoderWriter::write(LoggerState *logger, Message *msg) {
   return written;
 }
 
+size_t EncoderWriter::flush(LoggerState *logger) {
+  size_t written = 0;
+  for (; !q.empty(); q.pop_front()) {
+    auto &qmsg = q.front();
+    capnp::FlatArrayMessageReader msg_reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
+    written += write_encoder_data(logger, msg_reader.getRoot<cereal::Event>());
+  }
+  return written;
+}
+
 void EncoderWriter::rotate(const std::string &path) {
   video_writer.reset();
-  current_encoder_segment = remote_encoder_segment;
   segment_path = path;
   marked_ready_to_rotate = false;
+  current_encoder_segment = -1;
 }
 
 size_t EncoderWriter::write_encoder_data(LoggerState *logger, const cereal::Event::Reader event) {
