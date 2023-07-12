@@ -118,7 +118,7 @@ public:
   OnroadWindow(QWidget* parent = 0);
   bool isMapVisible() const { return map && map->isVisible(); }
   void showMapPanel(bool show) { if (map) map->setVisible(show); }
-  void interactiveTimout() { if (map) map->interactiveTimeout(); }
+  void interactiveTimout() { if (map) map->interactiveTimout(); }
 
 signals:
   void mapPanelRequested();

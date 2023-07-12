@@ -31,6 +31,6 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   content_stack->addWidget(settings);
 }
 
-void MapPanel::interactiveTimeout() {
+void MapPanel::interactiveTimout() {
   content_stack->setCurrentIndex(0);
 }
