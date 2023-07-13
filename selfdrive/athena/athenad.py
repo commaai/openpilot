@@ -171,7 +171,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
     try:
       data = recv_queue.get(timeout=1)
       if "method" in data:
-        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data}")
+        cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "id" in data and ("result" in data or "error" in data):
@@ -771,15 +771,21 @@ def main():
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
 
+  conn_start = None
   conn_retries = 0
   while 1:
     try:
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
+      if conn_start is None:
+        conn_start = time.monotonic()
+
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
+      conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()

@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   });
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
-    device.resetInteractiveTimout(60);
+    device()->resetInteractiveTimeout(60);
     homeWindow->showDriverView(true);
   });
 
@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::interactiveTimout, [=]() {
+  QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     if (main_layout->currentWidget() == settingsWindow) {
       closeSettings();
     }
@@ -76,15 +76,28 @@ void MainWindow::closeSettings() {
 
   if (uiState()->scene.started) {
     homeWindow->showSidebar(false);
+    // Map is always shown when using navigate on openpilot
+    if (uiState()->scene.navigate_on_openpilot) {
+      homeWindow->showMapPanel(true);
+    }
   }
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  const static QSet<QEvent::Type> evts({QEvent::MouseButtonPress, QEvent::MouseMove,
-                                 QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
-
-  if (evts.contains(event->type())) {
-    device.resetInteractiveTimout();
+  bool ignore = false;
+  switch (event->type()) {
+    case QEvent::TouchBegin:
+    case QEvent::TouchUpdate:
+    case QEvent::TouchEnd:
+    case QEvent::MouseButtonPress:
+    case QEvent::MouseMove: {
+      // ignore events when device is awakened by resetInteractiveTimeout
+      ignore = !device()->isAwake();
+      device()->resetInteractiveTimeout();
+      break;
+    }
+    default:
+      break;
   }
-  return false;
+  return ignore;
 }

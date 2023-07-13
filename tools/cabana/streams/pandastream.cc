@@ -20,7 +20,6 @@ PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(co
   if (!connect()) {
     throw std::runtime_error("Failed to connect to panda");
   }
-  startStreamThread();
 }
 
 bool PandaStream::connect() {

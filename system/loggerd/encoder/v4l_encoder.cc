@@ -206,6 +206,7 @@ void V4LEncoder::encoder_init() {
     struct v4l2_control ctrls[] = {
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_PROFILE, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_PROFILE_MAIN},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_HEVC_TIER_LEVEL, .value = V4L2_MPEG_VIDC_VIDEO_HEVC_LEVEL_HIGH_TIER_LEVEL_5},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_VUI_TIMING_INFO, .value = V4L2_MPEG_VIDC_VIDEO_VUI_TIMING_INFO_ENABLED},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = 29},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = 0},
     };
@@ -255,7 +256,6 @@ void V4LEncoder::encoder_init() {
 
 void V4LEncoder::encoder_open(const char* path) {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
-  writer_open(path);
   this->is_open = true;
   this->counter = 0;
 }
@@ -288,7 +288,6 @@ void V4LEncoder::encoder_close() {
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
     assert(extras.empty());
-    writer_close();
   }
   this->is_open = false;
 }

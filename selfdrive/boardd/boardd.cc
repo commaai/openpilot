@@ -94,11 +94,12 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
       }
     }
   } else if (dir == SyncTimeDir::FROM_PANDA) {
+    LOGW("System time: %s, RTC time: %s", get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
-      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
-           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+      LOGE("System time wrong, setting from RTC.");
     }
   }
 }
@@ -199,6 +200,10 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
+  if (!panda->up_to_date()) {
+    throw std::runtime_error("Panda firmware out of date. Run pandad.py to update.");
+  }
+
   sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
@@ -232,6 +237,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         panda->can_send(event.getSendcan());
         LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
+    } else {
+      LOGE("sendcan too old to send: %llu, %llu", nanos_since_boot(), event.getLogMonoTime());
     }
   }
 }
@@ -416,6 +423,10 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       cs[j].setCanfdEnabled(can_health.canfd_enabled);
       cs[j].setBrsEnabled(can_health.brs_enabled);
       cs[j].setCanfdNonIso(can_health.canfd_non_iso);
+      cs[j].setIrq0CallRate(can_health.irq0_call_rate);
+      cs[j].setIrq1CallRate(can_health.irq1_call_rate);
+      cs[j].setIrq2CallRate(can_health.irq2_call_rate);
+      cs[j].setCanCoreResetCnt(can_health.can_core_reset_cnt);
     }
 
     // Convert faults bitset to capnp list
@@ -470,6 +481,11 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   bool is_onroad_last = false;
   std::future<bool> safety_future;
 
+  std::vector<std::string> connected_serials;
+  for (Panda *p : pandas) {
+    connected_serials.push_back(p->hw_serial());
+  }
+
   LOGD("start panda state thread");
 
   // run at 2hz
@@ -497,10 +513,15 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
         LOGE("Reconnecting, communication to pandas not healthy");
         do_exit = true;
 
-      // TODO: list is slow, takes 16ms
-      } else if (pandas.size() != Panda::list().size()) {
-        LOGW("Reconnecting to changed amount of pandas!");
-        do_exit = true;
+      } else {
+        // check for new pandas
+        for (std::string &s : Panda::list(true)) {
+          if (!std::count(connected_serials.begin(), connected_serials.end(), s)) {
+            LOGW("Reconnecting to new panda: %s", s.c_str());
+            do_exit = true;
+            break;
+          }
+        }
       }
 
       if (do_exit) {

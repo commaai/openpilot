@@ -1,4 +1,3 @@
-import copy
 import crcmod
 
 from common.conversions import Conversions as CV
@@ -18,12 +17,12 @@ class TeslaCAN:
     ret += sum(dat)
     return ret & 0xFF
 
-  def create_steering_control(self, angle, enabled, frame):
+  def create_steering_control(self, angle, enabled, counter):
     values = {
       "DAS_steeringAngleRequest": -angle,
       "DAS_steeringHapticRequest": 0,
       "DAS_steeringControlType": 1 if enabled else 0,
-      "DAS_steeringControlCounter": (frame % 16),
+      "DAS_steeringControlCounter": counter,
     }
 
     data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)[2]
@@ -31,7 +30,40 @@ class TeslaCAN:
     return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
 
   def create_action_request(self, msg_stw_actn_req, cancel, bus, counter):
-    values = copy.copy(msg_stw_actn_req)
+    # We copy this whole message when spamming cancel
+    values = {s: msg_stw_actn_req[s] for s in [
+      "SpdCtrlLvr_Stat",
+      "VSL_Enbl_Rq",
+      "SpdCtrlLvrStat_Inv",
+      "DTR_Dist_Rq",
+      "TurnIndLvr_Stat",
+      "HiBmLvr_Stat",
+      "WprWashSw_Psd",
+      "WprWash_R_Sw_Posn_V2",
+      "StW_Lvr_Stat",
+      "StW_Cond_Flt",
+      "StW_Cond_Psd",
+      "HrnSw_Psd",
+      "StW_Sw00_Psd",
+      "StW_Sw01_Psd",
+      "StW_Sw02_Psd",
+      "StW_Sw03_Psd",
+      "StW_Sw04_Psd",
+      "StW_Sw05_Psd",
+      "StW_Sw06_Psd",
+      "StW_Sw07_Psd",
+      "StW_Sw08_Psd",
+      "StW_Sw09_Psd",
+      "StW_Sw10_Psd",
+      "StW_Sw11_Psd",
+      "StW_Sw12_Psd",
+      "StW_Sw13_Psd",
+      "StW_Sw14_Psd",
+      "StW_Sw15_Psd",
+      "WprSw6Posn",
+      "MC_STW_ACTN_RQ",
+      "CRC_STW_ACTN_RQ",
+    ]}
 
     if cancel:
       values["SpdCtrlLvr_Stat"] = 1

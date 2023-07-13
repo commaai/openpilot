@@ -8,13 +8,13 @@
 
 class EditMsgCommand : public QUndoCommand {
 public:
-  EditMsgCommand(const MessageId &id, const QString &name, int size, QUndoCommand *parent = nullptr);
+  EditMsgCommand(const MessageId &id, const QString &name, int size, const QString &comment, QUndoCommand *parent = nullptr);
   void undo() override;
   void redo() override;
 
 private:
   const MessageId id;
-  QString old_name, new_name;
+  QString old_name, new_name, old_comment, new_comment;
   int old_size = 0, new_size = 0;
 };
 
@@ -37,6 +37,7 @@ public:
 
 private:
   const MessageId id;
+  bool msg_created = false;
   cabana::Signal signal = {};
 };
 
@@ -48,7 +49,7 @@ public:
 
 private:
   const MessageId id;
-  cabana::Signal signal = {};
+  QList<cabana::Signal> sigs;
 };
 
 class EditSignalCommand : public QUndoCommand {
@@ -59,8 +60,7 @@ public:
 
 private:
   const MessageId id;
-  cabana::Signal old_signal = {};
-  cabana::Signal new_signal = {};
+  QList<std::pair<cabana::Signal, cabana::Signal>> sigs; // QList<{old_sig, new_sig}>
 };
 
 namespace UndoStack {
