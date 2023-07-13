@@ -106,7 +106,7 @@ class CarInterface(CarInterfaceBase):
       raise ValueError(f"unknown car: {candidate}")
 
     #ret.flags |= SubaruFlags.EXPERIMENTAL_LONG
-    experimental_long_allowed = (ret.flags & SubaruFlags.EXPERIMENTAL_LONG)
+    experimental_long_allowed = (ret.flags & SubaruFlags.EXPERIMENTAL_LONG) != 0
 
     # longitudinal
     ret.experimentalLongitudinalAvailable = experimental_long_allowed and candidate not in (GLOBAL_GEN2 + PREGLOBAL_CARS)
