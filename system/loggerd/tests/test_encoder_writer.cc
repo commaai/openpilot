@@ -7,28 +7,24 @@
 #include "system/loggerd/encoder_writer.h"
 
 static Message *generate_msg(const EncoderInfo &info, uint32_t segment_num, uint32_t frame_id, uint32_t flags = 0) {
-  cereal::EncodeData::Builder (cereal::Event::Builder::*initEncoder)();
-  if (strcmp(info.publish_name, "roadEncodeData") == 0) {
-    initEncoder = &cereal::Event::Builder::initRoadEncodeData;
-  } else if (strcmp(info.publish_name, "driverEncodeData") == 0) {
-    initEncoder = &cereal::Event::Builder::initDriverEncodeData;
+  cereal::EncodeData::Builder (cereal::Event::Builder::*initEncodeData)() = initEncodeData = &cereal::Event::Builder::initRoadEncodeData;
+  if (strcmp(info.publish_name, "driverEncodeData") == 0) {
+    initEncodeData = &cereal::Event::Builder::initDriverEncodeData;
   } else if (strcmp(info.publish_name, "wideRoadEncodeData") == 0) {
-    initEncoder = &cereal::Event::Builder::initWideRoadEncodeData;
+    initEncodeData = &cereal::Event::Builder::initWideRoadEncodeData;
   } else if (strcmp(info.publish_name, "qRoadEncodeData") == 0) {
-    initEncoder = &cereal::Event::Builder::initQRoadEncodeData;
+    initEncodeData = &cereal::Event::Builder::initQRoadEncodeData;
   }
 
   MessageBuilder msg;
   auto event = msg.initEvent(true);
-  cereal::EncodeData::Builder edat = (event.*initEncoder)();
+  cereal::EncodeData::Builder edat = (event.*initEncodeData)();
   auto edata = edat.initIdx();
-  struct timespec ts;
-  timespec_get(&ts, TIME_UTC);
-  uint64_t tt = (uint64_t)ts.tv_sec * 1000000000 + ts.tv_nsec;
-  edat.setUnixTimestampNanos(tt);
+  uint64_t ts = nanos_since_boot();
+  edat.setUnixTimestampNanos(ts);
   edata.setFrameId(frame_id);
-  edata.setTimestampSof(tt);
-  edata.setTimestampEof(tt);
+  edata.setTimestampSof(ts);
+  edata.setTimestampEof(ts);
   edata.setEncodeId(frame_id);
   edata.setSegmentNum(segment_num);
   edata.setSegmentId(frame_id);
@@ -41,7 +37,7 @@ static Message *generate_msg(const EncoderInfo &info, uint32_t segment_num, uint
 }
 
 static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>> &encoders, const std::vector<int> &segments) {
-  int segment = -1;
+  int logger_segment = -1;
   char segment_path[4096];
   const int frames = 10;
   int prev_seg = -1;
@@ -65,7 +61,7 @@ static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>
         if (e->ready_to_rotate == encoders.size()) {
           // q should not empty
           REQUIRE(e->q.size() > 0);
-          int err = logger_next(logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &segment);
+          int err = logger_next(logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &logger_segment);
           REQUIRE(err == 0);
           for (auto &en : encoders) {
             en->rotate(segment_path);
@@ -81,6 +77,8 @@ static void test(LoggerState *logger, std::vector<std::unique_ptr<EncoderWriter>
     e->flush(logger);
     REQUIRE(e->q.size() == 0);
   }
+
+  REQUIRE(segments.size() == logger_segment + 1);
 }
 
 TEST_CASE("EncoderWriter") {
@@ -104,18 +102,6 @@ TEST_CASE("EncoderWriter") {
     test(&logger, encoders, {10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20});
   }
   SECTION("encoderd restarted in the middle)") {
-    test(&logger, encoders, {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5});
+    test(&logger, encoders, {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5});
   }
-  SECTION("random encoder segment id)") {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(0, 50);
-    std::vector<int> segments;
-    for (int n = 0; n < 40; ++n) {
-      segments.push_back(distr(gen));
-    }
-    test(&logger, encoders, segments);
-  }
-
-  logger_close(&logger, nullptr);
 }

@@ -11,8 +11,7 @@ public:
   void rotate(const std::string &path);
   size_t write(LoggerState *logger, Message *msg);
   size_t flush(LoggerState *logger);
-
-  inline static int ready_to_rotate = 0;  // count of encoders ready to rotate
+  static int readyToRotate() { return ready_to_rotate; }
 
 private:
   size_t write_encoder_data(LoggerState *logger, const cereal::Event::Reader event);
@@ -26,4 +25,6 @@ private:
   int dropped_frames = 0;
   bool marked_ready_to_rotate = false;
   EncoderInfo info;
+
+  inline static int ready_to_rotate = 0;  // count of encoders ready to rotate
 };

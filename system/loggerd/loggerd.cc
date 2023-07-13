@@ -23,7 +23,6 @@ void logger_rotate(LoggerdState *s) {
   for (auto &[_, encoder] : s->remote_encoders) {
     encoder->rotate(s->segment_path);
   }
-  EncoderWriter::ready_to_rotate = 0;
 
   s->last_rotate_tms = millis_since_boot();
   LOGW((s->logger.part == 0) ? "logging to %s" : "rotated to %s", s->segment_path);
@@ -31,7 +30,7 @@ void logger_rotate(LoggerdState *s) {
 
 void rotate_if_needed(LoggerdState *s) {
   // all encoders ready, trigger rotation
-  bool all_ready = s->remote_encoders.size() > 0 && (EncoderWriter::ready_to_rotate == s->remote_encoders.size());
+  bool all_ready = EncoderWriter::readyToRotate() > 0 && (EncoderWriter::readyToRotate() == s->remote_encoders.size());
 
   // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
   bool timed_out = false;

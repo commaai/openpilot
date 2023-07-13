@@ -39,7 +39,10 @@ size_t EncoderWriter::flush(LoggerState *logger) {
 void EncoderWriter::rotate(const std::string &path) {
   video_writer.reset();
   segment_path = path;
-  marked_ready_to_rotate = false;
+  if (marked_ready_to_rotate) {
+    marked_ready_to_rotate = false;
+    --ready_to_rotate;
+  }
   current_encoder_segment = -1;
 }
 
@@ -47,9 +50,11 @@ size_t EncoderWriter::write_encoder_data(LoggerState *logger, const cereal::Even
   auto edata = (event.*(info.get_encode_data_func))();
   const auto idx = edata.getIdx();
 
+  // write video
   if (info.record) {
     write_video(edata, idx);
   }
+
   // put it in log stream as the idx packet
   MessageBuilder msg;
   auto evt = msg.initEvent(event.getValid());
@@ -65,7 +70,7 @@ size_t EncoderWriter::write_video(const cereal::EncodeData::Reader &edata, const
   const bool is_key_frame = idx.getFlags() & V4L2_BUF_FLAG_KEYFRAME;
 
   if (!video_writer) {
-    if (is_key_frame) { // only create on iframe
+    if (is_key_frame) {  // only create on iframe
       if (dropped_frames) {
         // this should only happen for the first segment, maybe
         LOGW("%s: dropped %d non iframe packets before init", info.publish_name, dropped_frames);
