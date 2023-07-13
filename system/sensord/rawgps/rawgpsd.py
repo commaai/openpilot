@@ -87,7 +87,7 @@ measurementStatusGlonassFields = {
 
 
 def try_setup_logs(diag, log_types):
-  for _ in range(5):
+  for _ in range(3):
     try:
       setup_logs(diag, log_types)
       break
@@ -97,11 +97,12 @@ def try_setup_logs(diag, log_types):
     raise Exception(f"setup logs failed, {log_types=}")
 
 def at_cmd(cmd: str) -> Optional[str]:
-  for _ in range(5):
+  for _ in range(3):
     try:
       return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
     except subprocess.CalledProcessError:
       cloudlog.exception("rawgps.mmcli_command_failed")
+      time.sleep(1.0)
   raise Exception(f"failed to execute mmcli command {cmd=}")
 
 
@@ -139,7 +140,6 @@ def download_assistance():
 
 
 def inject_assistance():
-  # inject into module
   try:
     cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
     subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)

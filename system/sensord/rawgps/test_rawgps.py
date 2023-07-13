@@ -34,6 +34,10 @@ class TestRawgpsd(unittest.TestCase):
     time.sleep(t)
     self.sm.update()
 
+  def test_no_crash_double_command(self):
+    at_cmd("AT+QGPSDEL=0")
+    at_cmd("AT+QGPSDEL=0")
+
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
     managed_processes['rawgpsd'].start()
@@ -100,7 +104,7 @@ class TestRawgpsd(unittest.TestCase):
     os.system("sudo systemctl stop systemd-resolved")
 
     managed_processes['rawgpsd'].start()
-    self._wait_for_output(15)
+    self._wait_for_output(17)
     assert self.sm.updated['qcomGnss']
     os.system("sudo systemctl restart systemd-resolved")
     self._wait_for_output(15)
