@@ -405,7 +405,6 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   secondary->setWordWrap(true);
 
   layout->addLayout(lane_layout = new QHBoxLayout);
-  layout->addStretch();
   main_layout->addWidget(right_container);
 
   setStyleSheet("color:white");
