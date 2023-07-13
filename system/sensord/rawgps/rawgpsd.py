@@ -8,10 +8,10 @@ import time
 import pycurl
 import subprocess
 from datetime import datetime
+from multiprocessing import Process
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
-from concurrent.futures import ProcessPoolExecutor
 from cereal import log
 import cereal.messaging as messaging
 from common.gpio import gpio_init, gpio_set
@@ -113,7 +113,6 @@ def gps_enabled() -> bool:
     raise Exception("failed to execute QGPS mmcli command") from exc
 
 def download_assistance():
-  # download assistance
   try:
     c = pycurl.Curl()
     c.setopt(pycurl.URL, ASSISTANCE_URL)
@@ -235,25 +234,22 @@ def main() -> NoReturn:
       break
     time.sleep(0.1)
 
-  # connect to modem
-
-  def cleanup(sig, frame):
-    cloudlog.warning(f"caught sig {sig}, disabling quectel gps")
+  assist_fetch_proc = None
+  def cleanup(proc):
+    cloudlog.warning(f"caught sig disabling quectel gps")
     gpio_set(GPIO.UBLOX_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
     sys.exit(0)
-  signal.signal(signal.SIGINT, cleanup)
-  signal.signal(signal.SIGTERM, cleanup)
+  signal.signal(signal.SIGINT, lambda sig, frame: cleanup(assist_fetch_proc))
+  signal.signal(signal.SIGTERM, lambda sig, frame: cleanup(assist_fetch_proc))
 
-
+  # connect to modem
   diag = ModemDiag()
   download_assistance()
   want_assistance = not os.path.exists(ASSIST_DATA_FILE)
   setup_quectel(diag)
   current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
-  assist_fetch_executor = ProcessPoolExecutor(max_workers=1)
-  assist_fetch_future = None
   last_fetch_time = time.monotonic()
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
@@ -269,9 +265,10 @@ def main() -> NoReturn:
       else:
         os.remove(ASSIST_DATA_FILE)
     if want_assistance and time.monotonic() - last_fetch_time > 10:
-      if assist_fetch_future is None or assist_fetch_future.done():
+      if assist_fetch_proc is None or not assist_fetch_proc.is_alive():
         cloudlog.warning("fetching assistance data")
-        assist_fetch_future = assist_fetch_executor.submit(download_assistance)
+        assist_fetch_proc = Process(target=download_assistance)
+        assist_fetch_proc.start()
         last_fetch_time = time.monotonic()
 
 
