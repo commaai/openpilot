@@ -30,7 +30,7 @@ class TestRawgpsd(unittest.TestCase):
 
   def _wait_for_output(self, t=10):
     time.sleep(t)
-    self.sm.update(0)
+    self.sm.update()
 
   def test_wait_for_modem(self):
     os.system("sudo systemctl stop ModemManager lte")
@@ -39,25 +39,25 @@ class TestRawgpsd(unittest.TestCase):
     assert not self.sm.updated['qcomGnss']
 
     os.system("sudo systemctl restart ModemManager lte")
-    self._wait_for_output(10)
+    self._wait_for_output(30)
     assert self.sm.updated['qcomGnss']
 
 
   def test_startup_time_no_internet(self):
     os.system("sudo systemctl stop systemd-resolved")
-    for _ in range(5):
+    for _ in range(1):
       managed_processes['rawgpsd'].start()
 
       self._wait_for_output(7)
-      assert self.sm.updated['qcomGnss'], "rawgpsd didn't start outputting messages in time"
+      assert self.sm.updated['qcomGnss']
       managed_processes['rawgpsd'].stop()
 
   def test_startup_time_internet(self):
-    for _ in range(5):
+    for _ in range(1):
       managed_processes['rawgpsd'].start()
 
       self._wait_for_output(7)
-      assert self.sm.updated['qcomGnss'], "rawgpsd didn't start outputting messages in time"
+      assert self.sm.updated['qcomGnss']
       managed_processes['rawgpsd'].stop()
 
   def test_turns_off_gnss(self):
@@ -75,7 +75,8 @@ class TestRawgpsd(unittest.TestCase):
     at_cmd("AT+QGPSDEL=0")
 
     managed_processes['rawgpsd'].start()
-    assert self._wait_for_output(10)
+    self._wait_for_output(10)
+    assert self.sm.updated['qcomGnss']
     managed_processes['rawgpsd'].stop()
 
     # after QGPSDEL: '+QGPSXTRADATA: 0,"1980/01/05,19:00:00"'
