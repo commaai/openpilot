@@ -559,7 +559,7 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
-  CAR.FORESTER_2022: dbc_dict('subaru_global_2022_generated', None),
+  CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
