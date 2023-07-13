@@ -443,8 +443,22 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // lanelines
   for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
-    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
-    painter.drawPolygon(scene.lane_line_vertices[i]);
+//    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, std::clamp<float>(scene.lane_line_probs[i], 0.0, 0.7)));
+    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, 1.0));
+    QPolygonF newp;
+    if (badp.isEmpty()) {
+      newp = QPolygonF(scene.lane_line_vertices[i]);
+    } else {
+      newp = QPolygonF(badp);
+//      newp.setPoint(0, newp.point(newp.size() - 1));
+//      newp[0] = newp[(newp.size() - 1)];
+      qDebug() << "using bad poly";
+    }
+    qDebug() << "size:" << newp.size();
+    qDebug() << "is closed:" << newp.isClosed() << "intersected:" << (newp.intersected(newp).size() > 0);
+    qDebug() << newp;
+    painter.drawPolygon(newp.united(newp));
+//    painter.drawConvexPolygon(newp);
   }
 
   // road edges
@@ -662,6 +676,14 @@ void AnnotatedCameraWidget::paintGL() {
     LOGW("slow frame rate: %.2f fps", fps);
   }
   prev_draw_t = cur_draw_t;
+
+  bool high_d_time = false;//(cur_draw_t - start_draw_t) > 45;
+
+  qDebug() << "draw time:" << (cur_draw_t - start_draw_t) << "ms" << (high_d_time ? "high!" : "") << "\n";
+
+  if (high_d_time && std::size(s->scene.lane_line_vertices) == 1 && badp.size() == 0) {
+    badp = QPolygonF(s->scene.lane_line_vertices[0]);
+  }
 
   // publish debug msg
   MessageBuilder msg;
