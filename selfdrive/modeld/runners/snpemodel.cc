@@ -33,7 +33,7 @@ SNPEModel::SNPEModel(const std::string path, float *_output, size_t _output_size
   // load model
   std::unique_ptr<zdl::DlContainer::IDlContainer> container = zdl::DlContainer::IDlContainer::open((uint8_t*)model_data.data(), model_data.size());
   if (!container) { PrintErrorStringAndExit(); }
-  printf("loaded model with size: %lu\n", model_data.size());
+  LOGW("loaded model with size: %lu", model_data.size());
 
   // create model runner
   zdl::SNPE::SNPEBuilder snpe_builder(container.get());
@@ -86,7 +86,7 @@ void SNPEModel::addInput(const std::string name, float *buffer, int size) {
   const auto &input_tensor_names = *input_tensor_names_opt;
   const char *input_tensor_name = input_tensor_names.at(idx);
   const bool input_tf8 = use_tf8 && strcmp(input_tensor_name, "input_img") == 0;  // TODO: This is a terrible hack, get rid of this name check both here and in onnx_runner.py
-  printf("adding index %d: %s\n", idx, input_tensor_name);
+  LOGW("adding index %d: %s", idx, input_tensor_name);
 
   zdl::DlSystem::UserBufferEncodingFloat ub_encoding_float;
   zdl::DlSystem::UserBufferEncodingTf8 ub_encoding_tf8(0, 1./255); // network takes 0-1
