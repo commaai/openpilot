@@ -128,7 +128,7 @@
     </message>
     <message>
         <source>No destination set</source>
-        <translation>설정된 목적지 없음</translation>
+        <translation>목적지가 설정되지 않았습니다</translation>
     </message>
     <message>
         <source>No %1 location set</source>
@@ -487,7 +487,7 @@
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>장치 온도가 너무 높습니다. 시작하기 전에 장치온도를 낮춰주세요. 현재 내부 구성 요소 온도: %1</translation>
     </message>
 </context>
 <context>
@@ -539,11 +539,11 @@
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>지금 업그레이드</translation>
+        <translation>지금 업그레이드 하세요</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai 접속 comma prime 가입</translation>
+        <translation>connect.comma.ai 접속하여 comma prime에 가입하세요</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -554,12 +554,16 @@
         <translation>원격 접속</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1년간 저장</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation>항상 LTE 연결</translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>개발자 혜택</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation>내비게이션 경로안내</translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation>1년간 저장</translation>
     </message>
 </context>
 <context>

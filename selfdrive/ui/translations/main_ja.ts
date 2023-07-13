@@ -553,12 +553,16 @@
         <translation>リモートアクセス</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>一年間の保存期間</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>開発者向け特典</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

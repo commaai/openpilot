@@ -408,7 +408,7 @@ void fill_model(ModelState* s, cereal::ModelDataV2::Builder &framed, const Model
 }
 
 void model_publish(ModelState* s, PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
+                   const ModelOutput &net_outputs, uint64_t timestamp_eof, uint64_t timestamp_llk,
                    float model_execution_time, const bool nav_enabled, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
@@ -418,6 +418,7 @@ void model_publish(ModelState* s, PubMaster &pm, uint32_t vipc_frame_id, uint32_
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
+  framed.setLocationMonoTime(timestamp_llk);
   framed.setModelExecutionTime(model_execution_time);
   framed.setNavEnabled(nav_enabled);
   if (send_raw_pred) {
