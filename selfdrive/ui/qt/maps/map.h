@@ -34,8 +34,8 @@ private:
   QLabel *icon_01;
   QHBoxLayout *lane_layout;
   bool is_rhd = false;
-  QHash<QString, QPixmap> pixmap_cache;
   std::vector<QLabel *> lane_labels;
+  QHash<QString, QPixmap> pixmap_cache;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
