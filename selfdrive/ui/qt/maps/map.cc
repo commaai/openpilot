@@ -6,7 +6,6 @@
 
 #include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
 
@@ -61,6 +60,11 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
     emit requestSettings(true);
   });
 
+  error = new QLabel(this);
+  error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgb(0, 0, 0, 150);)");
+  error->setAlignment(Qt::AlignCenter);
+
+  overlay_layout->addWidget(error);
   overlay_layout->addWidget(map_instructions);
   overlay_layout->addStretch(1);
   overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
@@ -169,21 +173,15 @@ void MapWindow::updateState(const UIState &s) {
     emit requestSettings(false);
   }
 
-  if (m_map.isNull()) {
-    return;
-  }
-
-  loaded_once = loaded_once || m_map->isFullyLoaded();
+  loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
   if (!loaded_once) {
-    map_instructions->showError(tr("Map Loading"));
+    setError(tr("Map Loading"));
     return;
   }
-
   initLayers();
 
+  setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
-    map_instructions->noError();
-
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
     QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
@@ -191,8 +189,6 @@ void MapWindow::updateState(const UIState &s) {
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
     m_map->updateSource("carPosSource", carPosSource);
-  } else {
-    map_instructions->showError(tr("Waiting for GPS"));
   }
 
   if (pan_counter == 0) {
@@ -242,6 +238,14 @@ void MapWindow::updateState(const UIState &s) {
   }
 }
 
+void MapWindow::setError(const QString &err_str) {
+  if (err_str != error->text()) {
+    error->setText(err_str);
+    error->setVisible(!err_str.isEmpty());
+    if (!err_str.isEmpty()) map_instructions->setVisible(false);
+  }
+}
+
 void MapWindow::resizeGL(int w, int h) {
   m_map->resize(size() / MAP_SCALE);
   map_overlay->setFixedSize(width(), height());
@@ -279,7 +283,7 @@ void MapWindow::clearRoute() {
     updateDestinationMarker();
   }
 
-  map_instructions->hideIfNoError();
+  map_instructions->setVisible(false);
   map_eta->setVisible(false);
   allow_open = true;
 }
@@ -378,46 +382,31 @@ void MapWindow::updateDestinationMarker() {
   }
 }
 
-MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   is_rhd = Params().getBool("IsRhdDetected");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
-    icon_01 = new QLabel;
-    layout->addWidget(icon_01);
-    layout->addStretch();
-    main_layout->addLayout(layout);
-  }
+  main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
 
-  {
-    QVBoxLayout *layout = new QVBoxLayout;
+  QWidget *right_container = new QWidget(this);
+  right_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  QVBoxLayout *layout = new QVBoxLayout(right_container);
 
-    distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 90px;)");
-    layout->addWidget(distance);
+  layout->addWidget(distance = new QLabel);
+  distance->setStyleSheet(R"(font-size: 90px;)");
 
-    primary = new QLabel;
-    primary->setStyleSheet(R"(font-size: 60px;)");
-    primary->setWordWrap(true);
-    layout->addWidget(primary);
+  layout->addWidget(primary = new QLabel);
+  primary->setStyleSheet(R"(font-size: 60px;)");
+  primary->setWordWrap(true);
 
-    secondary = new QLabel;
-    secondary->setStyleSheet(R"(font-size: 50px;)");
-    secondary->setWordWrap(true);
-    layout->addWidget(secondary);
+  layout->addWidget(secondary = new QLabel);
+  secondary->setStyleSheet(R"(font-size: 50px;)");
+  secondary->setWordWrap(true);
 
-    lane_widget = new QWidget;
-    lane_widget->setFixedHeight(125);
-
-    lane_layout = new QHBoxLayout(lane_widget);
-    layout->addWidget(lane_widget);
-
-    main_layout->addLayout(layout);
-  }
+  layout->addLayout(lane_layout = new QHBoxLayout);
+  main_layout->addWidget(right_container);
 
   setStyleSheet("color:white");
-
   QPalette pal = palette();
   pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
   setAutoFillBackground(true);
@@ -436,24 +425,6 @@ QString MapInstructions::getDistance(float d) {
   }
 }
 
-void MapInstructions::showError(QString error_text) {
-  primary->setText("");
-  distance->setText(error_text);
-  distance->setAlignment(Qt::AlignCenter);
-
-  secondary->setVisible(false);
-  icon_01->setVisible(false);
-
-  this->error = true;
-  lane_widget->setVisible(false);
-
-  setVisible(true);
-}
-
-void MapInstructions::noError() {
-  error = false;
-}
-
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
 
@@ -464,7 +435,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  distance->setAlignment(Qt::AlignLeft);
   distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
@@ -534,17 +504,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   for (int i = lanes.size(); i < lane_labels.size(); ++i) {
     lane_labels[i]->setVisible(false);
   }
-  lane_widget->setVisible(lanes.size() > 0);
 
   setUpdatesEnabled(true);
   setVisible(true);
-}
-
-
-void MapInstructions::hideIfNoError() {
-  if (!error) {
-    hide();
-  }
 }
 
 MapETA::MapETA(QWidget *parent) : QWidget(parent) {
