@@ -1,5 +1,6 @@
 #include "map_settings.h"
 
+#include <QApplication>
 #include <QDebug>
 #include <vector>
 
@@ -84,38 +85,13 @@ MapSettings::MapSettings(bool closeable, QWidget *parent)
 
   setStyleSheet("MapSettings { background-color: #333333; }");
 
-  if (auto dongle_id = getDongleId()) {
-    // Fetch favorite and recent locations
-    {
-      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
-      RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
-      QObject::connect(repeater, &RequestRepeater::requestDone, this, &MapSettings::parseResponse);
-    }
+  QObject::connect(NavigationRequest::instance(), &NavigationRequest::locationsUpdated, this, &MapSettings::parseResponse);
+  QObject::connect(NavigationRequest::instance(), &NavigationRequest::nextDestinationUpdated, this, &MapSettings::updateCurrentRoute);
+}
 
-    // Destination set while offline
-    {
-      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
-      HttpRequest* deleter = new HttpRequest(this);
-
-      QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
-        if (success && resp != "null") {
-          if (params.get("NavDestination").empty()) {
-            qWarning() << "Setting NavDestination from /next" << resp;
-            params.put("NavDestination", resp.toStdString());
-          } else {
-            qWarning() << "Got location from /next, but NavDestination already set";
-          }
-
-          // Send DELETE to clear destination server side
-          deleter->sendRequest(url, HttpRequest::Method::DELETE);
-        }
-
-        // Update UI (athena can set destination at any time)
-        updateCurrentRoute();
-      });
-    }
-  }
+void MapSettings::mousePressEvent(QMouseEvent *ev) {
+  // Prevent mouse event from propagating up
+  ev->accept();
 }
 
 void MapSettings::showEvent(QShowEvent *event) {
@@ -177,18 +153,18 @@ void MapSettings::refresh() {
   // TODO: should we build a new layout and swap it in?
   clearLayout(destinations_layout);
 
-  // Sort: HOME, WORK, and then descending-alphabetical FAVORITES, RECENTS
-  std::sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
+  // Sort: HOME, WORK, alphabetical FAVORITES, and then most recent (as returned by API)
+  std::stable_sort(destinations.begin(), destinations.end(), [](const auto &a, const auto &b) {
     if (a->isFavorite() && b->isFavorite()) {
       if (a->label() == NAV_FAVORITE_LABEL_HOME) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_HOME) return false;
       else if (a->label() == NAV_FAVORITE_LABEL_WORK) return true;
       else if (b->label() == NAV_FAVORITE_LABEL_WORK) return false;
-      else if (a->label() != b->label()) return a->label() < b->label();
+      else return a->name() < b->name();
     }
     else if (a->isFavorite()) return true;
     else if (b->isFavorite()) return false;
-    return a->name() < b->name();
+    return false;
   });
 
   for (auto &destination : destinations) {
@@ -341,4 +317,44 @@ void DestinationWidget::unset(const QString &label, bool current) {
   action->setVisible(false);
 
   setStyleSheet(styleSheet());
+}
+
+// singleton NavigationRequest
+
+NavigationRequest *NavigationRequest::instance() {
+  static NavigationRequest *request = new NavigationRequest(qApp);
+  return request;
+}
+
+NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
+  if (auto dongle_id = getDongleId()) {
+    {
+      // Fetch favorite and recent locations
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
+      RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
+      QObject::connect(repeater, &RequestRepeater::requestDone, this, &NavigationRequest::locationsUpdated);
+    }
+
+    {
+      // Destination set while offline
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
+      HttpRequest *deleter = new HttpRequest(this);
+      RequestRepeater *repeater = new RequestRepeater(this, url, "", 10, true);
+      QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
+        if (success && resp != "null") {
+          if (params.get("NavDestination").empty()) {
+            qWarning() << "Setting NavDestination from /next" << resp;
+            params.put("NavDestination", resp.toStdString());
+          } else {
+            qWarning() << "Got location from /next, but NavDestination already set";
+          }
+          // Send DELETE to clear destination server side
+          deleter->sendRequest(url, HttpRequest::Method::DELETE);
+        }
+
+        // Update UI (athena can set destination at any time)
+        emit nextDestinationUpdated(resp, success);
+      });
+    }
+  }
 }
