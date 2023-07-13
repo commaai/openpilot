@@ -11,6 +11,7 @@ Version 0.9.4 (2023-XX-XX)
   * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
 * Ford Focus 2018 support
 * Subaru Forester 2022 support thanks to martinl!
+* Kia Carnival 2023 support thanks to sunnyhaibin!
 
 Version 0.9.3 (2023-06-29)
 ========================

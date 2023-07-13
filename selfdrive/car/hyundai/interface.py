@@ -202,6 +202,10 @@ class CarInterface(CarInterfaceBase):
         ret.mass = 3957 * CV.LB_TO_KG + STD_CARGO_KG
       else:
         ret.mass = 4537 * CV.LB_TO_KG + STD_CARGO_KG
+    elif candidate == CAR.KIA_CARNIVAL_4TH_GEN:
+      ret.mass = 2087. + STD_CARGO_KG
+      ret.wheelbase = 3.09
+      ret.steerRatio = 14.23
 
     # Genesis
     elif candidate == CAR.GENESIS_GV60_EV_1ST_GEN:
