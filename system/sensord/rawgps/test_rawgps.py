@@ -9,7 +9,7 @@ import numpy as np
 
 import cereal.messaging as messaging
 from system.hardware import TICI
-from system.sensord.rawgps.rawgpsd import at_cmd
+from system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
 from selfdrive.manager.process_config import managed_processes
 from common.transformations.coordinates import ecef_from_geodetic
 
@@ -19,9 +19,18 @@ GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 class TestRawgpsd(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
+    os.system("sudo systemctl restart systemd-resolved")
+    os.system("sudo systemctl restart ModemManager lte")
+    wait_for_modem()
     if not TICI:
       raise unittest.SkipTest
     cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
+
+  @classmethod
+  def tearDownClass(cls):
+    managed_processes['rawgpsd'].stop()
+    os.system("sudo systemctl restart systemd-resolved")
+    os.system("sudo systemctl restart ModemManager lte")
 
   def setUp(self):
     at_cmd("AT+QGPSDEL=0")

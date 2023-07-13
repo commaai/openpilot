@@ -211,6 +211,15 @@ def teardown_quectel(diag):
   try_setup_logs(diag, [])
 
 
+def wait_for_modem():
+  cloudlog.warning("waiting for modem to come up")
+  while True:
+    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    if ret == 0:
+      return
+    time.sleep(0.1)
+
+
 def main() -> NoReturn:
   unpack_gps_meas, size_gps_meas = dict_unpacker(gps_measurement_report, True)
   unpack_gps_meas_sv, size_gps_meas_sv = dict_unpacker(gps_measurement_report_sv, True)
@@ -226,13 +235,7 @@ def main() -> NoReturn:
 
   unpack_position, _ = dict_unpacker(position_report)
 
-  # wait for ModemManager to come up
-  cloudlog.warning("waiting for modem to come up")
-  while True:
-    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
-    if ret == 0:
-      break
-    time.sleep(0.1)
+  wait_for_modem()
 
   assist_fetch_proc = None
   def cleanup(proc):
