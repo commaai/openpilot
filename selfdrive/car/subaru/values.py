@@ -36,6 +36,12 @@ class CarControllerParams:
   THROTTLE_DELTA = 50
   THROTTLE_HYST = 10            # filter out small changes
 
+  RPM_MIN = 0                   # min cruise_rpm
+  RPM_MAX = 3200                # max cruise_rpm
+  RPM_BASE = 600                # cruise_rpm idle, from stock drive
+  RPM_SCALE = 3000              # cruise_rpm, from testing
+  RPM_DELTA = 50
+
   BRAKE_MIN = 0
   BRAKE_MAX = 400
   BRAKE_SCALE = 1000            # from testing

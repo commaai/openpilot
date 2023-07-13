@@ -181,7 +181,7 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
-def create_es_status(packer, es_status_msg, long_active):
+def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -197,6 +197,7 @@ def create_es_status(packer, es_status_msg, long_active):
 
   if long_active:
     values["Cruise_Activated"] = 1
+    values["Cruise_RPM"] = cruise_rpm
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
