@@ -236,7 +236,7 @@ def main() -> NoReturn:
 
   assist_fetch_proc = None
   def cleanup(proc):
-    cloudlog.warning(f"caught sig disabling quectel gps")
+    cloudlog.warning("caught sig disabling quectel gps")
     gpio_set(GPIO.UBLOX_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
@@ -265,7 +265,7 @@ def main() -> NoReturn:
       else:
         os.remove(ASSIST_DATA_FILE)
     if want_assistance and time.monotonic() - last_fetch_time > 10:
-      if assist_fetch_proc is None or not assist_fetch_proc.is_alive():
+      if assist_fetch_proc is None or not assist_fetch_proc.is_alive():  # type: ignore
         cloudlog.warning("fetching assistance data")
         assist_fetch_proc = Process(target=download_assistance)
         assist_fetch_proc.start()
