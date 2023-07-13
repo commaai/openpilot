@@ -197,8 +197,10 @@ class CarState(CarStateBase):
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > self.params.STEER_THRESHOLD, 5)
     ret.steerFaultTemporary = cp.vl["MDPS"]["LKA_FAULT"] != 0
 
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"]["LEFT_LAMP"],
-                                                                      cp.vl["BLINKERS"]["RIGHT_LAMP"])
+    left_blinker_sig = "LEFT_LAMP_ALT" if self.CP.carFingerprint == CAR.KONA_EV_2ND_GEN else "LEFT_LAMP"
+    right_blinker_sig = "RIGHT_LAMP_ALT" if self.CP.carFingerprint == CAR.KONA_EV_2ND_GEN else "RIGHT_LAMP"
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
+                                                                      cp.vl["BLINKERS"][right_blinker_sig])
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FL_INDICATOR"] != 0
       ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR"] != 0
@@ -431,6 +433,8 @@ class CarState(CarStateBase):
     gear_msg = "GEAR_ALT_2" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS_2 else \
                "GEAR_ALT" if CP.flags & HyundaiFlags.CANFD_ALT_GEARS else \
                "GEAR_SHIFTER"
+    left_blinker_sig = "LEFT_LAMP_ALT" if CP.carFingerprint == CAR.KONA_EV_2ND_GEN else "LEFT_LAMP"
+    right_blinker_sig = "RIGHT_LAMP_ALT" if CP.carFingerprint == CAR.KONA_EV_2ND_GEN else "RIGHT_LAMP"
     signals = [
       ("WHEEL_SPEED_1", "WHEEL_SPEEDS"),
       ("WHEEL_SPEED_2", "WHEEL_SPEEDS"),
@@ -454,8 +458,8 @@ class CarState(CarStateBase):
       ("ADAPTIVE_CRUISE_MAIN_BTN", cruise_btn_msg),
       ("DISTANCE_UNIT", "CRUISE_BUTTONS_ALT"),
 
-      ("LEFT_LAMP", "BLINKERS"),
-      ("RIGHT_LAMP", "BLINKERS"),
+      (left_blinker_sig, "BLINKERS"),
+      (right_blinker_sig, "BLINKERS"),
 
       ("DRIVER_DOOR", "DOORS_SEATBELTS"),
       ("DRIVER_SEATBELT", "DOORS_SEATBELTS"),
