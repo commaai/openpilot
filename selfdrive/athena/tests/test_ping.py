@@ -7,9 +7,8 @@ from typing import Optional
 from common.timeout import Timeout
 
 
-def connect_lte() -> None:
-  subprocess.run(["nmcli", "connection", "modify", "--temporary", "lte", "ipv4.route-metric", "1", "ipv6.route-metric", "1"], check=True)
-  subprocess.run(["nmcli", "connection", "up", "lte"], check=True)
+def wifi_radio(on: bool) -> None:
+  subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
 def restart_network_manager() -> None:
@@ -17,8 +16,8 @@ def restart_network_manager() -> None:
 
 
 def ping() -> None:
-  """attempt to ping google.com, return on success"""
-  subprocess.run(["bash", "-c", "until ping -c1 www.google.com; do :; done"], check=True)
+  # https://serverfault.com/a/42382
+  subprocess.run(["bash", "-c", "until ping -c1 www.google.com >/dev/null 2>&1; do :; done"], check=True)
 
 
 class Timer(Timeout):
@@ -46,11 +45,11 @@ class Timer(Timeout):
 class TestPing(unittest.TestCase):
   @classmethod
   def tearDownClass(cls):
-    restart_network_manager()
+    wifi_radio(True)
 
-  # Measure how long it takes to switch from Wi-Fi to LTE (time to first ping after disconnect)
+  # Measure how long it takes for connectivity after disabling Wi-Fi
   def test_ping(self):
-    timer = Timer(60)
+    timer = Timer(seconds=20)
 
     with self.subTest("Wi-Fi"):
       with timer:
@@ -58,15 +57,13 @@ class TestPing(unittest.TestCase):
       print(f"Wi-Fi ping took {timer.elapsed_time:.2f} seconds")
 
     with self.subTest("LTE"):
-      try:
-        connect_lte()
-        with timer:
-          ping()
-        print(f"LTE ping took {timer.elapsed_time:.2f} seconds")
-      finally:
-        restart_network_manager()
+      wifi_radio(False)
+      with timer:
+        ping()
+      print(f"LTE ping took {timer.elapsed_time:.2f} seconds")
 
     with self.subTest("Wi-Fi"):
+      wifi_radio(True)
       with timer:
         ping()
       print(f"Wi-Fi ping took {timer.elapsed_time:.2f} seconds")
