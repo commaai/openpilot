@@ -9,7 +9,6 @@
 #include <QStyleOption>
 #include <QPainterPath>
 #include <QTextStream>
-#include <QDebug>
 #include <QtXml/QDomDocument>
 
 #include "common/params.h"
@@ -97,9 +96,6 @@ void setQtSurfaceFormat() {
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
   fmt.setSamples(16);
-//  fmt.setStencilBufferSize(1);
-  qDebug() << "depth" << fmt.depthBufferSize() << fmt.stencilBufferSize();
-//  fmt.setDepthBufferSize(1);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
