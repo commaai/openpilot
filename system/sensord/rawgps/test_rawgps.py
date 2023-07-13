@@ -21,13 +21,10 @@ class TestRawgpsd(unittest.TestCase):
   def setUpClass(cls):
     if not TICI:
       raise unittest.SkipTest
-
     cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
-
 
   def setUp(self):
     at_cmd("AT+QGPSDEL=0")
-
 
   def tearDown(self):
     managed_processes['rawgpsd'].stop()
@@ -112,9 +109,6 @@ class TestRawgpsd(unittest.TestCase):
 
   @unittest.skipIf(not GOOD_SIGNAL, "No good GPS signal")
   def test_fix(self):
-    # clear assistance data
-    at_cmd("AT+QGPSDEL=0")
-
     managed_processes['rawgpsd'].start()
     managed_processes['laikad'].start()
     assert self._wait_for_output(60)
