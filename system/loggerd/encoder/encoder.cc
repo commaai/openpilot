@@ -5,8 +5,7 @@ VideoEncoder::~VideoEncoder() {}
 
 void VideoEncoder::publisher_init() {
   // publish
-  service_name = this->publish_name;
-  pm.reset(new PubMaster({service_name}));
+  pm.reset(new PubMaster({encoder_info.publish_name}));
 }
 
 void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
@@ -14,9 +13,7 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   // broadcast packet
   MessageBuilder msg;
   auto event = msg.initEvent(true);
-  auto edat = (e->type == DriverCam) ? event.initDriverEncodeData() :
-    ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
-    (e->in_width == e->out_width ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
+  auto edat = (event.*(e->encoder_info.init_encode_data_func))();
   auto edata = edat.initIdx();
   struct timespec ts;
   timespec_get(&ts, TIME_UTC);
@@ -35,6 +32,6 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
 
   auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
   auto bytes = words->asBytes();
-  e->pm->send(e->service_name, bytes.begin(), bytes.size());
+  e->pm->send(e->encoder_info.publish_name, bytes.begin(), bytes.size());
   delete words;
 }
