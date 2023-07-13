@@ -3,12 +3,12 @@ Version 0.9.4 (2023-XX-XX)
 * Navigate on openpilot
   * When navigation has a destination openpilot will input the map information into the model, generally improving behavior
   * When navigating on openpilot, openpilot will keep left or right appropriately at forks/exits and take turns
-  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver 
+  * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver
 * UI updates
   * Navigation settings moved to home screen and map
 * UI alerts rework
   * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
-  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
+  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert
 * Ford Focus 2018 support
 * Kia Carnival 2023 support thanks to sunnyhaibin!
 
@@ -46,7 +46,6 @@ Version 0.9.2 (2023-05-22)
 * Ford Maverick 2022-23 support
 * Genesis GV80 2023 support thanks to JWingate80!
 * Honda HR-V 2023 support thanks to AlexandreSato and galegozi!
-* Hyundai Ioniq 6 2023 support
 * Kia Niro EV 2023 support thanks to JosselinLecocq!
 * Lexus ES 2017-18 support
 * Lincoln Aviator 2021 support
