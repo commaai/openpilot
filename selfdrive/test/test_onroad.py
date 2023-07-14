@@ -56,7 +56,7 @@ PROCS = {
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": 3.0,
   "system.loggerd.deleter": 0.1,
-  "selfdrive.locationd.laikad": None,  # TODO: laikad cpu usage is sporadic
+  "selfdrive.locationd.laikad": 20.0,
 }
 
 PROCS.update({
