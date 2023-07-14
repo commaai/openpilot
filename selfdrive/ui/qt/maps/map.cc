@@ -421,17 +421,20 @@ void MapInstructions::buildPixmapCache() {
   for (QString fn : dir.entryList({"*" + ICON_SUFFIX}, QDir::Files)) {
     QPixmap pm(dir.filePath(fn));
     QString key = fn.left(fn.size() - ICON_SUFFIX.length());
+    pm = pm.scaledToWidth(200, Qt::SmoothTransformation);
+
+    // Maneuver icons
+    pixmap_cache[key] = pm;
+    // lane direction icons
     if (key.contains("turn_")) {
-      pixmap_cache[key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    } else {
-      pm = pm.scaledToWidth(200, Qt::SmoothTransformation);
-      pixmap_cache[key] = pm;
-      // for rhd, reflect direction and then flip
-      if (key.contains("_left")) {
-        pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
-      } else if (key.contains("_right")) {
-        pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
-      }
+      pixmap_cache["lane_" + key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+
+    // for rhd, reflect direction and then flip
+    if (key.contains("_left")) {
+      pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
+    } else if (key.contains("_right")) {
+      pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
     }
   }
 }
@@ -489,7 +492,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
 
     // TODO: Make more images based on active direction and combined directions
-    QString fn = "direction_";
+    QString fn = "lane_direction_";
     if (left) {
       fn += "turn_left";
     } else if (right) {
