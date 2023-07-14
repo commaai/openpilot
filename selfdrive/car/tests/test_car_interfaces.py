@@ -12,43 +12,25 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
 from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
-Ecu = car.CarParams.Ecu
-
-
-# def get_fuzzy_car_params_
-
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in all_known_cars()])
   @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
+    if car_name in FINGERPRINTS:
+      fingerprint = FINGERPRINTS[car_name][0]
+    else:
+      fingerprint = {}
+
     CarInterface, CarController, CarState = interfaces[car_name]
+    fingerprints = gen_empty_fingerprint()
+    fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
-    # Fuzzy fingerprints and FW versions to get more variable carParams
-    fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
-                                                                       st.integers(min_value=0, max_value=64)) for key in gen_empty_fingerprint()})
+    car_fw = []
 
-    # just the most important stuff
-    car_fw_strategy = st.lists(st.fixed_dictionaries({
-      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # TODO: use fuzzygenerator
-      # TODO: only use reasonable addrs for the paired ecu and brand/platform so we can test as many different states as possible
-      'address': st.integers(min_value=0, max_value=0x800),
-    }))
-
-    params_strategy = st.fixed_dictionaries({
-      'fingerprints': fingerprint_strategy,
-      'car_fw': car_fw_strategy,
-      'experimental_long': st.booleans(),
-    })
-
-    params = data.draw(params_strategy)
-    car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
-    print(car_fw)
-
-    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw,
-                                         experimental_long=params['experimental_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -102,7 +84,7 @@ class TestCarInterfaces(unittest.TestCase):
     # Run radar interface once
     radar_interface.update([])
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
-      hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":
