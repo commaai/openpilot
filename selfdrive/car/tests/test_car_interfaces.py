@@ -78,7 +78,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
-      now_nanos += 10e6
+      now_nanos += 10e6  # 10ms
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
