@@ -12,6 +12,7 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
 
 
+def get_fuzzy_car_interface_args(draw) -> dict:
   # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
   fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
                                                                      st.integers(min_value=0, max_value=64)) for key in
