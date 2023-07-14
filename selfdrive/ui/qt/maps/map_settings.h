@@ -20,24 +20,6 @@ const QString NAV_FAVORITE_LABEL_WORK = "work";
 
 class DestinationWidget;
 
-class NavigationRequest : public QObject {
-  Q_OBJECT
-
-public:
-  static NavigationRequest *instance();
-
-signals:
-  void locationsUpdated(const QJsonArray &locations);
-  void nextDestinationUpdated(const QString &response, bool success);
-
-private:
-  NavigationRequest(QObject *parent);
-  void parseLocationsResponse(const QString &response, bool success);
-
-  Params params;
-  QString prev_response;
-};
-
 class MapSettings : public QFrame {
   Q_OBJECT
 public:
