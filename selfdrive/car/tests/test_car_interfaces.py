@@ -15,7 +15,7 @@ from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in all_known_cars()])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
