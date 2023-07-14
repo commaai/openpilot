@@ -214,7 +214,7 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs[:300]:
       self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in filter(lambda m: m.src in range(64), can.can):
-        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
