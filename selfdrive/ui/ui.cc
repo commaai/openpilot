@@ -295,7 +295,7 @@ void Device::setAwake(bool on) {
 }
 
 void Device::resetInteractiveTimeout() {
-  interactive_timeout = (ignition_on ? 10000 : 30000) * UI_FREQ;
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
