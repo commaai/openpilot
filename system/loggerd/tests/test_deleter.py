@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import time
 import threading
 import unittest
@@ -39,11 +38,11 @@ class TestDeleter(UploaderTestCase):
     self.start_thread()
 
     with Timeout(5, "Timeout waiting for file to be deleted"):
-      while os.path.exists(f_path):
+      while f_path.exists():
         time.sleep(0.01)
     self.join_thread()
 
-    self.assertFalse(os.path.exists(f_path), "File not deleted")
+    self.assertFalse(f_path.exists(), "File not deleted")
 
   def test_delete_files_in_create_order(self):
     f_path_1 = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -55,14 +54,13 @@ class TestDeleter(UploaderTestCase):
     self.start_thread()
 
     with Timeout(5, "Timeout waiting for file to be deleted"):
-      while os.path.exists(f_path_1) and os.path.exists(f_path_2):
+      while f_path_1.exists() and f_path_2.exists():
         time.sleep(0.01)
 
     self.join_thread()
 
-    self.assertFalse(os.path.exists(f_path_1), "Older file not deleted")
-
-    self.assertTrue(os.path.exists(f_path_2), "Newer file deleted before older file")
+    self.assertFalse(f_path_1.exists(), "Older file not deleted")
+    self.assertTrue(f_path_2.exists(), "Newer file deleted before older file")
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -75,14 +73,14 @@ class TestDeleter(UploaderTestCase):
 
     try:
       with Timeout(2, "Timeout waiting for file to be deleted"):
-        while os.path.exists(f_path):
+        while f_path.exists():
           time.sleep(0.01)
     except TimeoutException:
       pass
     finally:
       self.join_thread()
 
-    self.assertTrue(os.path.exists(f_path), "File deleted with available space")
+    self.assertTrue(f_path.exists(), "File deleted with available space")
 
   def test_no_delete_with_lock_file(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type, lock=True)
@@ -91,14 +89,14 @@ class TestDeleter(UploaderTestCase):
 
     try:
       with Timeout(2, "Timeout waiting for file to be deleted"):
-        while os.path.exists(f_path):
+        while f_path.exists():
           time.sleep(0.01)
     except TimeoutException:
       pass
     finally:
       self.join_thread()
 
-    self.assertTrue(os.path.exists(f_path), "File deleted when locked")
+    self.assertTrue(f_path.exists(), "File deleted when locked")
 
 
 if __name__ == "__main__":
