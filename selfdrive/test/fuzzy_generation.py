@@ -38,7 +38,7 @@ class FuzzyGenerator:
     elif field == 'text':
       return st.text(max_size=1000)
     elif field == 'data':
-      return st.text(max_size=1000)
+      return st.binary(max_size=1000)
     elif field == 'anyPointer':
       return st.text()
     else:
