@@ -17,15 +17,15 @@ Ecu = car.CarParams.Ecu
 
 class TestCarInterfaces(unittest.TestCase):
 
-  # @parameterized.expand([(car,) for car in sorted(all_known_cars())])
-  @parameterized.expand([(car,) for car in ["KIA EV6 2022"]])
-  @settings(max_examples=100)
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('HYUNDAI', 'KIA', 'GENESIS'))])
+  # @parameterized.expand([(car,) for car in ["KIA EV6 2022"]])
+  @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    if 'HYUNDAI' not in car_name and "GENESIS" not in car_name and "KIA" not in car_name:
-      return
-    if car_name != 'KIA EV6 2022':
-      return
+    # if 'HYUNDAI' not in car_name and "GENESIS" not in car_name and "KIA" not in car_name:
+    #   return
+    # if car_name != 'KIA EV6 2022':
+    #   return
 
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
@@ -46,25 +46,29 @@ class TestCarInterfaces(unittest.TestCase):
 
     # just the most important stuff
     car_fw_strategy = st.lists(st.fixed_dictionaries({
-      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # use fuzzygenerator
-      'address': st.integers(min_value=0, max_value=0x800),  # todo: only use reasonable addrs for this ecu and brand/platform
+      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # TODO: use fuzzygenerator
+      # TODO: only use reasonable addrs for the paired ecu and brand/platform so we can test as many different states as possible
+      'address': st.integers(min_value=0, max_value=0x800),
     }))
 
     params_strategy = st.fixed_dictionaries({
-      'fingerprint': fingerprint_strategy,
+      'fingerprints': fingerprint_strategy,
       'car_fw': car_fw_strategy,
       'experimental_long': st.booleans(),
       'docs': st.booleans(),
     })
 
     params = data.draw(params_strategy)
-    print('params', params['car_fw'])
+    print('car_fw', params['car_fw'])
+    car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+
+    # print('final', car_fw)
 
     # CP = FuzzyGenerator.get_random_msg(data.draw, car.CarParams, real_floats=True)
     # print('CP', CP)
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    # car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw, experimental_long=params['experimental_long'], docs=params['docs'])
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
