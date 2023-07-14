@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from cereal import log
 
-
 DrawType = Callable[[st.SearchStrategy], Any]
 
 
