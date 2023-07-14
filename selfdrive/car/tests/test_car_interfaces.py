@@ -23,7 +23,7 @@ def get_fuzzy_car_interface_args(draw) -> dict:
 
   # just the most important fields
   car_fw_strategy = st.lists(st.fixed_dictionaries({
-    'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),
+    'ecu': st.sampled_from(list(car.CarParams.Ecu.schema.enumerants.keys())),
     # TODO: only use reasonable addrs for the paired ecu and brand/platform
     'address': st.integers(min_value=0, max_value=0x800),
   }))
