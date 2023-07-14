@@ -189,9 +189,9 @@ class VWCarInfo(CarInfo):
 
 CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.ARTEON_MK1: [
-    VWCarInfo("Volkswagen Arteon 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon R 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
-    VWCarInfo("Volkswagen Arteon eHybrid 2020-22", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
+    VWCarInfo("Volkswagen Arteon eHybrid 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
     VWCarInfo("Volkswagen CC 2018-22", video_link="https://youtu.be/FAomFKPFlDA"),
   ],
   CAR.ATLAS_MK1: [
