@@ -21,7 +21,7 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   edata.setFrameId(extra.frame_id);
   edata.setTimestampSof(extra.timestamp_sof);
   edata.setTimestampEof(extra.timestamp_eof);
-  edata.setType(e->codec);
+  edata.setType(e->encoder_info.encode_type);
   edata.setEncodeId(e->cnt++);
   edata.setSegmentNum(segment_num);
   edata.setSegmentId(idx);

@@ -62,7 +62,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       if (buf_info.width > 0 && buf_info.height > 0) {
         for (const auto &encoder_info: cam_info.encoder_infos){
-          encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height, encoder_info.encode_type));
+          encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
         }
       } else {
         LOGE("not initting empty encoder");

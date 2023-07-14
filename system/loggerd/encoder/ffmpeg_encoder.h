@@ -16,8 +16,8 @@ extern "C" {
 
 class FfmpegEncoder : public VideoEncoder {
 public:
-  FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height, cereal::EncodeIndex::Type codec)
-      : VideoEncoder(encoder_info, in_width, in_height, cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS) { encoder_init(); }
+  FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+      : VideoEncoder(encoder_info, in_width, in_height) { encoder_init(); }
   ~FfmpegEncoder();
   void encoder_init();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);

@@ -4,6 +4,7 @@
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc_client.h"
 #include "system/camerad/cameras/camera_common.h"
+#include "system/hardware/hw.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
@@ -27,7 +28,8 @@ public:
   int frame_height = 1208;
   int fps = MAIN_FPS;
   int bitrate = MAIN_BITRATE;
-  cereal::EncodeIndex::Type encode_type = cereal::EncodeIndex::Type::FULL_H_E_V_C;
+  cereal::EncodeIndex::Type encode_type = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS
+                                                         : cereal::EncodeIndex::Type::FULL_H_E_V_C;
   ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
   void (cereal::Event::Builder::*set_encode_idx_func)(::cereal::EncodeIndex::Reader);
   cereal::EncodeData::Builder (cereal::Event::Builder::*init_encode_data_func)();
