@@ -6,8 +6,10 @@ import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
+from common.basedir import BASEDIR
 import hypothesis.strategies as st
 from hypothesis import given, settings
+import glob
 
 from cereal import log, car
 from common.realtime import DT_CTRL
@@ -22,6 +24,24 @@ from tools.lib.logreader import LogReader
 from tools.lib.route import Route
 
 from panda.tests.libpanda import libpanda_py
+
+
+PANDA_TEST_DIR = os.path.join(BASEDIR, "panda/tests/safety")
+
+
+def load_test_modules():
+  test_files = glob.glob(os.path.join(PANDA_TEST_DIR, 'test_*.py'))
+  for test_file in test_files:
+    fn = test_file.split('/')[-1]
+    cls_name = fn
+    # print(test_file, brand_name)
+    test_module = importlib.import_module(f'panda.tests.safety.{fn[:-3]}')
+    print(test_module)
+  print(test_files)
+
+
+load_test_modules()
+
 
 PandaType = log.PandaState.PandaType
 
@@ -206,24 +226,46 @@ class TestCarModelBase(unittest.TestCase):
   # @settings(max_examples=5)
   # @given(data=st.data())
   def test_panda_safety_tx_cases(self, data=None):
+    if self.CP.notCar:
+      self.skipTest("")
+
     # Asserts we can tx common messages
 
     # cc_msg = {'actuators': {'steer': 1}, 'latActive': True, 'cruiseControl': {'cancel': True}}
     # cc_msg = {'cruiseControl': {'cancel': False}}
+
+    # Make sure we can send all messages while inactive
     cc_msg = {}
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(300):  # make sure we test the slowest messages
       self.CI.update(CC, [])
       _, sendcan = self.CI.apply(CC, 0)
       for addr, _, dat, bus in sendcan:
-        # print(addr, dat)
+        print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
         sent = self.safety.safety_tx_hook(to_send)
-        # print('send', sent)
+        print('send', sent)
+        print(sendcan)
         self.assertTrue(sent)
-      # print(sendcan)
-      # car_interface.apply(CC, 0)
-    # print()
+
+    # Make sure we can send cancel messages
+    # TODO: hyundai requires cruise engaged for cancel
+    cc_msg = {'cruiseControl': {'cancel': True}}
+    if self.CP.carName != 'hyundai':
+      CC = car.CarControl.new_message(**cc_msg)
+      for _ in range(300):  # make sure we test the slowest messages
+        self.CI.update(CC, [])
+        _, sendcan = self.CI.apply(CC, 0)
+        for addr, _, dat, bus in sendcan:
+          print(addr, dat)
+          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+          sent = self.safety.safety_tx_hook(to_send)
+          print('send', sent)
+          print(sendcan)
+          self.assertTrue(sent, (addr, dat, bus))
+
+
+    print()
 
   def test_panda_safety_carstate(self):
     if bool(1):
