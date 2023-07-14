@@ -76,7 +76,8 @@ class FuzzyGenerator:
   @classmethod
   def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False) -> Dict[str, Any]:
     fg = cls(draw, real_floats=real_floats)
-    return draw(fg.generate_struct(struct.schema))
+    data: Dict[str, Any] = draw(fg.generate_struct(struct.schema))
+    return data
 
   @classmethod
   def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False) -> List[Dict[str, Any]]:
