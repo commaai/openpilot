@@ -17,7 +17,7 @@ Ecu = car.CarParams.Ecu
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('CHRYSLER', 'JEEP', 'RAM'))])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('CHEVROLET',))])
   @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
@@ -35,9 +35,6 @@ class TestCarInterfaces(unittest.TestCase):
     fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
                                                                        st.integers(min_value=0, max_value=64)) for key in gen_empty_fingerprint()})
 
-    # fingerprint_strategy = st.dictionaries(st.integers(max_value=max(fingerprints)), st.dictionaries(st.integers(), st.integers()))
-    # car_fw_strategy = st.lists(FuzzyGenerator.get_random_msg(data.draw, car.CarParams.CarFw))  # If CarFw is a strategy, or create your own
-
     # just the most important stuff
     car_fw_strategy = st.lists(st.fixed_dictionaries({
       'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # TODO: use fuzzygenerator
@@ -49,7 +46,6 @@ class TestCarInterfaces(unittest.TestCase):
       'fingerprints': fingerprint_strategy,
       'car_fw': car_fw_strategy,
       'experimental_long': st.booleans(),
-      'docs': st.booleans(),
     })
 
     params = data.draw(params_strategy)
@@ -58,11 +54,11 @@ class TestCarInterfaces(unittest.TestCase):
 
     # print('final', car_fw)
 
-    # CP = FuzzyGenerator.get_random_msg(data.draw, car.CarParams, real_floats=True)
-    # print('CP', CP)
+    CP = FuzzyGenerator.get_random_msg(data.draw, car.CarParams, real_floats=True)
+    print('CP', CP)
 
     # car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
-    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw, experimental_long=params['experimental_long'], docs=params['docs'])
+    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw, experimental_long=params['experimental_long'], docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
