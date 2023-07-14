@@ -98,6 +98,22 @@ class TestDeleter(UploaderTestCase):
 
     self.assertTrue(f_path.exists(), "File deleted when locked")
 
+  def test_no_delete_preserved(self):
+    f_path = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=True)
+
+    self.start_thread()
+
+    try:
+      with Timeout(2, "Timeout waiting for file to be deleted"):
+        while os.path.exists(f_path):
+          time.sleep(0.01)
+    except TimeoutException:
+      pass
+    finally:
+      self.join_thread()
+
+    self.assertTrue(os.path.exists(f_path), "File deleted when preserved")
+
 
 if __name__ == "__main__":
   unittest.main()
