@@ -29,8 +29,9 @@ class TestCarInterfaces(unittest.TestCase):
     fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
     car_fw = []
+    experimental_long = data.draw(st.booleans())
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=experimental_long, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
