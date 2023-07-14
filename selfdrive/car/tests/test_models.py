@@ -220,7 +220,7 @@ class TestCarModelBase(unittest.TestCase):
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
         sent = self.safety.safety_tx_hook(to_send)
         # print('send', sent)
-        assert sent
+        self.assertTrue(sent)
       # print(sendcan)
       # car_interface.apply(CC, 0)
     # print()
