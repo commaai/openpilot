@@ -1128,7 +1128,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>🛣 Navigate on openpilot 🛣</source>
+        <source>Navigate on openpilot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
