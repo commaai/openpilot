@@ -129,9 +129,6 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
-    if 'd545129f3ca90f28|2022-10-19--09-22-54' in cls.test_route:
-      assert not cls.CP.openpilotLongitudinalControl
-    assert False, cls.test_route.route
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
 
@@ -239,13 +236,6 @@ class TestCarModelBase(unittest.TestCase):
 
     # cc_msg = {'actuators': {'steer': 1}, 'latActive': True, 'cruiseControl': {'cancel': True}}
     # cc_msg = {'cruiseControl': {'cancel': False}}
-
-    print('controls allowed', self.safety.get_controls_allowed())
-    print('cruise engaged', self.safety.get_cruise_engaged_prev())
-    print('openpilotLong', self.CP.openpilotLongitudinalControl)
-    self.assertFalse(self.safety.get_controls_allowed())
-    self.assertFalse(self.safety.get_cruise_engaged_prev())
-    self.assertEqual(self.CI.CC.frame, 0)
 
     # Make sure we can send all messages while inactive
     cc_msg = {}
