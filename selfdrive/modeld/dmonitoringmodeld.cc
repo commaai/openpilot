@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
   DMonitoringModelState model;
   dmonitoring_init(&model);
 
+  LOGW("connecting to driver stream");
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_DRIVER, true);
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
