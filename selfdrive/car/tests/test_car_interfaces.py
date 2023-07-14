@@ -17,16 +17,10 @@ Ecu = car.CarParams.Ecu
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('HYUNDAI', 'KIA', 'GENESIS'))])
-  # @parameterized.expand([(car,) for car in ["KIA EV6 2022"]])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('CHRYSLER', 'JEEP', 'RAM'))])
   @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    # if 'HYUNDAI' not in car_name and "GENESIS" not in car_name and "KIA" not in car_name:
-    #   return
-    # if car_name != 'KIA EV6 2022':
-    #   return
-
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -59,7 +53,7 @@ class TestCarInterfaces(unittest.TestCase):
     })
 
     params = data.draw(params_strategy)
-    print('car_fw', params['car_fw'])
+    # print('car_fw', params['car_fw'])
     car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
 
     # print('final', car_fw)
