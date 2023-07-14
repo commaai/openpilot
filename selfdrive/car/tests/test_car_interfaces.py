@@ -9,7 +9,7 @@ from parameterized import parameterized
 from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
+from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 Ecu = car.CarParams.Ecu
