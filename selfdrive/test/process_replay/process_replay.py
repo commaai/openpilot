@@ -273,7 +273,6 @@ CONFIGS = [
     init_callback=controlsd_fingerprint_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
-    simulation=False,
     main_pub="can",
   ),
   ProcessConfig(

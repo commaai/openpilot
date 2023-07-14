@@ -161,7 +161,6 @@ public:
   UIStatus status;
   UIScene scene = {};
 
-  bool awake;
   QString language;
 
   QTransform car_space_transform;
@@ -188,6 +187,7 @@ class Device : public QObject {
 
 public:
   Device(QObject *parent = 0);
+  bool isAwake() { return awake; }
 
 private:
   bool awake = false;
@@ -203,12 +203,14 @@ private:
 
 signals:
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimout();
+  void resetInteractiveTimeout();
   void update(const UIState &s);
 };
+
+Device *device();
 
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
