@@ -29,7 +29,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # just the most important stuff
     car_fw_strategy = st.lists(st.fixed_dictionaries({
-      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # TODO: use fuzzygenerator
+      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),
       # TODO: only use reasonable addrs for the paired ecu and brand/platform so we can test as many different states as possible
       'address': st.integers(min_value=0, max_value=0x800),
     }))
@@ -75,7 +75,7 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
-    cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
