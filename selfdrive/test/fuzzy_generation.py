@@ -1,11 +1,19 @@
+import capnp
 import hypothesis.strategies as st
+from typing import Any, Callable, TypeVar, Optional, List
 
 from cereal import log
 
+
+T = TypeVar('T')
+Draw = TypeVar('Draw', bound=Callable[[st.SearchStrategy[T]], T])
+DrawType = Callable[[st.SearchStrategy], Any]
+
+
 class FuzzyGenerator:
-  def __init__(self, draw, real_floats):
+  def __init__(self, draw: Draw, real_floats: bool):
     self.draw = draw
-    self.real_floats=real_floats
+    self.real_floats = real_floats
 
   def generate_native_type(self, field):
     def floats(**kwargs):
@@ -62,13 +70,13 @@ class FuzzyGenerator:
     else:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema, event=None):
+  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: Optional[str] = None):
     full_fill = list(schema.non_union_fields)
     single_fill = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
-  def get_random_msg(cls, draw, struct, real_floats=False):
+  def get_random_msg(cls, draw: DrawType, struct, real_floats=False):
     fg = cls(draw, real_floats=real_floats)
     return draw(fg.generate_struct(struct.schema))
 
