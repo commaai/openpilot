@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, GLOBAL_GEN3, PREGLOBAL_CARS, CanBus, SubaruFlags
 
 
 class CarState(CarStateBase):
@@ -53,7 +53,7 @@ class CarState(CarStateBase):
     steer_threshold = 75 if self.CP.carFingerprint in PREGLOBAL_CARS else 80
     ret.steeringPressed = abs(ret.steeringTorque) > steer_threshold
 
-    if self.car_fingerprint == CAR.FORESTER_2022:
+    if self.car_fingerprint in GLOBAL_GEN3:
       ret.cruiseState.enabled = cp_cam.vl["ES_Status"]['Cruise_Activated'] != 0
       ret.cruiseState.available = cp_cam.vl["ES_DashStatus"]['Cruise_On'] != 0
     else:
@@ -139,7 +139,6 @@ class CarState(CarStateBase):
       ("Cruise_Set", "ES_Distance"),
       ("Cruise_Resume", "ES_Distance"),
       ("Signal6", "ES_Distance"),
-
       ("Cruise_Activated", "ES_Status"),
     ]
 
