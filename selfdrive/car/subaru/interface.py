@@ -117,9 +117,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [0.54, 0.36]
 
       ret.stoppingControl = True
-      ret.openpilotLongitudinalControl = experimental_long
-      if ret.openpilotLongitudinalControl:
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LONG
+      ret.openpilotLongitudinalControl = True
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LONG
 
     return ret
 
