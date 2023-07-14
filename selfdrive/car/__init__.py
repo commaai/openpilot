@@ -190,5 +190,4 @@ class CanBusBase:
       print('here2', fingerprint, num)
     else:
       num = len(CP.safetyConfigs)
-      print('here', num)
-    self.offset = 4 * (max(num, 1) - 1)
+    self.offset = 4 * (num - 1)

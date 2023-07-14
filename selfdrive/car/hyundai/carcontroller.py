@@ -140,7 +140,6 @@ class CarController:
         if (self.frame - self.last_button_frame) * DT_CTRL > 0.25:
           # cruise cancel
           if CC.cruiseControl.cancel:
-            print(self.CP.flags)
             if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
               can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CP, self.CAN, CS.cruise_info))
               self.last_button_frame = self.frame
