@@ -187,6 +187,8 @@ class CanBusBase:
     if CP is None:
       assert fingerprint is not None
       num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
+      print('here2', fingerprint, num)
     else:
       num = len(CP.safetyConfigs)
-    self.offset = 4 * (num - 1)
+      print('here', num)
+    self.offset = 4 * (max(num, 1) - 1)
