@@ -39,7 +39,7 @@ for r in routes:
 test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
-    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+    test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None, ))))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
