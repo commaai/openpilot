@@ -189,4 +189,5 @@ class CanBusBase:
       num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
     else:
       num = len(CP.safetyConfigs)
+
     self.offset = 4 * (num - 1)
