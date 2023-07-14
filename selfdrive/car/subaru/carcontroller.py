@@ -94,7 +94,13 @@ class CarController:
 
         cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
         self.cruise_rpm_last = cruise_rpm
-
+      
+      else:
+        cruise_throttle = 1818 # zero acceleration
+      
+      if brake_value > 35:
+        cruise_throttle = 808 # for engine braking
+      
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
