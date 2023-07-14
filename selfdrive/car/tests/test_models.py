@@ -36,8 +36,8 @@ def load_test_modules():
     cls_name = fn
     # print(test_file, brand_name)
     test_module = importlib.import_module(f'panda.tests.safety.{fn[:-3]}')
-    print(test_module)
-  print(test_files)
+    # print(test_module)
+  # print(test_files)
 
 
 load_test_modules()
@@ -237,35 +237,34 @@ class TestCarModelBase(unittest.TestCase):
     # Make sure we can send all messages while inactive
     cc_msg = {}
     CC = car.CarControl.new_message(**cc_msg)
+    for _ in range(5):  # make sure we test the slowest messages
+      self.CI.update(CC, [])
+      _, sendcan = self.CI.apply(CC, 0)
+      for addr, _, dat, bus in sendcan:
+        # print(addr, dat)
+        to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+        sent = self.safety.safety_tx_hook(to_send)
+        # print('send', sent)
+        # print(sendcan)
+        self.assertTrue(sent)
+
+    # Make sure we can send cancel messages
+    cc_msg = {'cruiseControl': {'cancel': True}}
+    CC = car.CarControl.new_message(**cc_msg)
     for _ in range(300):  # make sure we test the slowest messages
       self.CI.update(CC, [])
       _, sendcan = self.CI.apply(CC, 0)
       for addr, _, dat, bus in sendcan:
-        print(addr, dat)
+        # print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+        self.safety.set_cruise_engaged_prev(True)
         sent = self.safety.safety_tx_hook(to_send)
-        print('send', sent)
-        print(sendcan)
-        self.assertTrue(sent)
-
-    # Make sure we can send cancel messages
-    # TODO: hyundai requires cruise engaged for cancel
-    cc_msg = {'cruiseControl': {'cancel': True}}
-    if self.CP.carName != 'hyundai':
-      CC = car.CarControl.new_message(**cc_msg)
-      for _ in range(300):  # make sure we test the slowest messages
-        self.CI.update(CC, [])
-        _, sendcan = self.CI.apply(CC, 0)
-        for addr, _, dat, bus in sendcan:
-          print(addr, dat)
-          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-          sent = self.safety.safety_tx_hook(to_send)
-          print('send', sent)
-          print(sendcan)
-          self.assertTrue(sent, (addr, dat, bus))
+        # print('send', sent)
+        # print(sendcan)
+        self.assertTrue(sent, (addr, dat, bus))
 
 
-    print()
+    # print()
 
   def test_panda_safety_carstate(self):
     if bool(1):
