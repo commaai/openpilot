@@ -99,7 +99,7 @@ class TestDeleter(UploaderTestCase):
     self.assertTrue(f_path.exists(), "File deleted when locked")
 
   def test_no_delete_preserved(self):
-    f_path = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=True)
+    f_path = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
 
     self.start_thread()
 
@@ -113,6 +113,30 @@ class TestDeleter(UploaderTestCase):
       self.join_thread()
 
     self.assertTrue(os.path.exists(f_path), "File deleted when preserved")
+
+  def test_delete_many_preserved(self):
+    self.seg_dir = self.seg_format.format(self.seg_num)
+    f_path_old_preserved = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+
+    f_paths_preserved = []
+    for _ in range(deleter.PRESERVE_COUNT):
+      self.seg_num += 1
+      self.seg_dir = self.seg_format.format(self.seg_num)
+      f_paths_preserved.append(self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE))
+
+    self.start_thread()
+
+    try:
+      with Timeout(2, "Timeout waiting for file to be deleted"):
+        while all([os.path.exists(f_path) for f_path in f_paths_preserved]):
+          time.sleep(0.01)
+    except TimeoutException:
+      pass
+    finally:
+      self.join_thread()
+
+    self.assertFalse(os.path.exists(f_path_old_preserved), "Oldest file not deleted")
+    self.assertTrue(all([os.path.exists(f_path) for f_path in f_paths_preserved]), "File deleted when preserved")
 
 
 if __name__ == "__main__":
