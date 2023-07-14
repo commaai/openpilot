@@ -117,7 +117,7 @@ class CarController:
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control.leadVisible))
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, self.CP.openpilotLongitudinalControl, hud_control.leadVisible))
 
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
@@ -137,12 +137,12 @@ class CarController:
           can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, stock_brake_value))
 
         if self.frame % 10 == 0:
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle))
+          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive, self.CP.openpilotLongitudinalControl, brake_cmd, brake_value, cruise_throttle))
 
       else:
         if pcm_cancel_cmd:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive, brake_cmd, brake_value, cruise_throttle))
+          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive, self.CP.openpilotLongitudinalControl, brake_cmd, brake_value, cruise_throttle))
           self.last_cancel_frame = self.frame
 
     new_actuators = actuators.copy()
