@@ -31,17 +31,12 @@ private:
   QLabel *primary;
   QLabel *secondary;
   QLabel *icon_01;
-  QWidget *lane_widget;
   QHBoxLayout *lane_layout;
-  bool error = false;
   bool is_rhd = false;
   std::vector<QLabel *> lane_labels;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
-  void showError(QString error);
-  void noError();
-  void hideIfNoError();
   QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };
@@ -87,6 +82,7 @@ private:
   bool event(QEvent *event) final;
   bool gestureEvent(QGestureEvent *event);
   void pinchTriggered(QPinchGesture *gesture);
+  void setError(const QString &err_str);
 
   bool m_sourceAdded = false;
 
@@ -105,6 +101,7 @@ private:
   bool locationd_valid = false;
 
   QWidget *map_overlay;
+  QLabel *error;
   MapInstructions* map_instructions;
   MapETA* map_eta;
   QPushButton *settings_btn;
