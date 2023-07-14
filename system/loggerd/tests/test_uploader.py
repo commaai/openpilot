@@ -83,7 +83,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_order) < len(exp_order), "Some files failed to upload")
     self.assertFalse(len(log_handler.upload_order) > len(exp_order), "Some files were uploaded twice")
     for f_path in exp_order:
-      self.assertEqual(os.getxattr(self.root / f_path.replace('.bz2', ''), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
+      self.assertEqual(os.getxattr((self.root / f_path).with_suffix(""), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
@@ -101,7 +101,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_order) < len(exp_order), "Some files failed to upload")
     self.assertFalse(len(log_handler.upload_order) > len(exp_order), "Some files were uploaded twice")
     for f_path in exp_order:
-      self.assertEqual(os.getxattr(self.root / f_path.replace('.bz2', ''), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
+      self.assertEqual(os.getxattr((self.root / f_path).with_suffix(""), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
@@ -120,7 +120,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_ignored) < len(exp_order), "Some files failed to ignore")
     self.assertFalse(len(log_handler.upload_ignored) > len(exp_order), "Some files were ignored twice")
     for f_path in exp_order:
-      self.assertEqual(os.getxattr(self.root / f_path.replace('.bz2', ''), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not ignored")
+      self.assertEqual(os.getxattr((self.root / f_path).with_suffix(""), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not ignored")
 
     self.assertTrue(log_handler.upload_ignored == exp_order, "Files ignored in wrong order")
 
@@ -145,7 +145,7 @@ class TestUploader(UploaderTestCase):
     self.assertFalse(len(log_handler.upload_order) < len(exp_order), "Some files failed to upload")
     self.assertFalse(len(log_handler.upload_order) > len(exp_order), "Some files were uploaded twice")
     for f_path in exp_order:
-      self.assertEqual(os.getxattr(self.root / f_path.replace('.bz2', ''), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
+      self.assertEqual(os.getxattr((self.root / f_path).with_suffix(""), UPLOAD_ATTR_NAME), UPLOAD_ATTR_VALUE, "All files not uploaded")
 
     self.assertTrue(log_handler.upload_order == exp_order, "Files uploaded in wrong order")
 
