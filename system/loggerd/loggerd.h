@@ -14,7 +14,12 @@
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = 10000000;
 
-#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
+#define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
+
+#define INIT_ENCODE_FUNCTIONS(encode_type)                                \
+  .get_encode_data_func = &cereal::Event::Reader::get##encode_type##Data, \
+  .set_encode_idx_func = &cereal::Event::Builder::set##encode_type##Idx,  \
+  .init_encode_data_func = &cereal::Event::Builder::init##encode_type##Data
 
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
@@ -47,24 +52,18 @@ public:
 const EncoderInfo main_road_encoder_info = {
   .publish_name = "roadEncodeData",
   .filename = "fcamera.hevc",
-  .get_encode_data_func = &cereal::Event::Reader::getRoadEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setRoadEncodeIdx,
-  .init_encode_data_func = &cereal::Event::Builder::initRoadEncodeData,
+  INIT_ENCODE_FUNCTIONS(RoadEncode),
 };
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
-  .get_encode_data_func = &cereal::Event::Reader::getWideRoadEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setWideRoadEncodeIdx,
-  .init_encode_data_func = &cereal::Event::Builder::initWideRoadEncodeData,
+  INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 const EncoderInfo main_driver_encoder_info = {
    .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
   .record = Params().getBool("RecordFront"),
-  .get_encode_data_func = &cereal::Event::Reader::getDriverEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setDriverEncodeIdx,
-  .init_encode_data_func = &cereal::Event::Builder::initDriverEncodeData,
+  INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
 const EncoderInfo qcam_encoder_info = {
@@ -74,9 +73,7 @@ const EncoderInfo qcam_encoder_info = {
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .frame_width = 526,
   .frame_height = 330,
-  .get_encode_data_func = &cereal::Event::Reader::getQRoadEncodeData,
-  .set_encode_idx_func = &cereal::Event::Builder::setQRoadEncodeIdx,
-  .init_encode_data_func = &cereal::Event::Builder::initQRoadEncodeData,
+  INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };
 
 
