@@ -162,7 +162,7 @@ def setup_quectel(diag: ModemDiag):
   send_recv(diag, DIAG_NV_WRITE_F, pack('<HI', NV_GNSS_OEM_FEATURE_MASK, 1))
   send_recv(diag, DIAG_NV_READ_F, pack('<H', NV_GNSS_OEM_FEATURE_MASK))
 
-  setup_logs(diag, LOG_TYPES)
+  try_setup_logs(diag, LOG_TYPES)
 
   if gps_enabled():
     at_cmd("AT+QGPSEND")
