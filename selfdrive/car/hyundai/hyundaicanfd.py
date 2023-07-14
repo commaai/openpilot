@@ -142,6 +142,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "DISTANCE_SETTING": 4,
   }
   if values['ACCMode'] == 0:
+    # raise Exception('negative')
     del values['aReqRaw']
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
