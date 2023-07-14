@@ -15,6 +15,30 @@ from selfdrive.test.fuzzy_generation import FuzzyGenerator
 Ecu = car.CarParams.Ecu
 
 
+def get_fuzzy_car_interface_args(draw) -> dict:
+  # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
+  fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
+                                                                     st.integers(min_value=0, max_value=64)) for key in
+                                                gen_empty_fingerprint()})
+
+  # just the most important fields
+  car_fw_strategy = st.lists(st.fixed_dictionaries({
+    'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),
+    # TODO: only use reasonable addrs for the paired ecu and brand/platform
+    'address': st.integers(min_value=0, max_value=0x800),
+  }))
+
+  params_strategy = st.fixed_dictionaries({
+    'fingerprints': fingerprint_strategy,
+    'car_fw': car_fw_strategy,
+    'experimental_long': st.booleans(),
+  })
+
+  params = draw(params_strategy)
+  params['car_fw'] = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+  return params
+
+
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
@@ -23,28 +47,10 @@ class TestCarInterfaces(unittest.TestCase):
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
 
-    # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
-    fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
-                                                                       st.integers(min_value=0, max_value=64)) for key in gen_empty_fingerprint()})
+    args = get_fuzzy_car_interface_args(data.draw)
 
-    # just the most important fields
-    car_fw_strategy = st.lists(st.fixed_dictionaries({
-      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),
-      # TODO: only use reasonable addrs for the paired ecu and brand/platform
-      'address': st.integers(min_value=0, max_value=0x800),
-    }))
-
-    params_strategy = st.fixed_dictionaries({
-      'fingerprints': fingerprint_strategy,
-      'car_fw': car_fw_strategy,
-      'experimental_long': st.booleans(),
-    })
-
-    params = data.draw(params_strategy)
-    car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
-
-    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw,
-                                         experimental_long=params['experimental_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
+                                         experimental_long=args['experimental_long'], docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
