@@ -120,9 +120,9 @@ class RadarInterface(RadarInterfaceBase):
         self.track_id += 1
 
       valid = bool(msg[f"CAN_DET_VALID_LEVEL_{ii:02d}"])
-      amplitude = msg[f"CAN_DET_AMPLITUDE_{ii:02d}"]            # dBsm [-64|63]
+      #amplitude = msg[f"CAN_DET_AMPLITUDE_{ii:02d}"]            # dBsm [-64|63]
 
-      if valid and 0 < amplitude <= 15:
+      if valid:# and 0 < amplitude <= 15:
         azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
         dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                   # m [0|255.984]
         distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]          # m/s [-128|127.984]
