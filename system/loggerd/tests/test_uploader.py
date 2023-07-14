@@ -5,6 +5,7 @@ import threading
 import unittest
 import logging
 import json
+from typing import List
 
 from system.swaglog import cloudlog
 from system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
@@ -59,7 +60,7 @@ class TestUploader(UploaderTestCase):
       f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}", 1, lock=lock, xattr=xattr))
     return f_paths
 
-  def gen_order(self, seg1, seg2, boot=True):
+  def gen_order(self, seg1: List[int], seg2: List[int], boot=True) -> List[str]:
     keys = []
     if boot:
       keys += [f"boot/{self.seg_format.format(i)}.bz2" for i in seg1]
