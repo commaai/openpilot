@@ -22,8 +22,6 @@ class TestFuzzProcesses(unittest.TestCase):
   @settings(phases=[Phase.generate, Phase.target], max_examples=50, deadline=1000, suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
   def test_fuzz_process(self, proc_name, cfg, data):
     msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
-    # print('msgs', msgs)
-    # exit()
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
     pr.replay_process(cfg, lr, TOYOTA.COROLLA_TSS2, TOYOTA.COROLLA_TSS2, disable_progress=True)

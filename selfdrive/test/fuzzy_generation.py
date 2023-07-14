@@ -1,14 +1,11 @@
-import capnp
 import hypothesis.strategies as st
-from typing import Optional, List
 
 from cereal import log
-
 
 class FuzzyGenerator:
   def __init__(self, draw, real_floats):
     self.draw = draw
-    self.real_floats = real_floats
+    self.real_floats=real_floats
 
   def generate_native_type(self, field):
     def floats(**kwargs):
@@ -65,26 +62,15 @@ class FuzzyGenerator:
     else:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: Optional[str] = None):
+  def generate_struct(self, schema, event=None):
     full_fill = list(schema.non_union_fields)
-    # print('full_fill', full_fill)
-    # if len(schema.union_fields):
-    #   print('union', event, schema.union_fields)
-    # single_fill = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
-    single_fill = [event] if event else [st.sampled_from(schema.union_fields).example()] if schema.union_fields else []
-    single_fill_new = [event] if event else [st.sampled_from(schema.union_fields)] if schema.union_fields else []
-    if not event and len(schema.union_fields):
-      print('old v. new')
-      print('old', single_fill)
-      print(schema.fields[single_fill[0]])
-      print('new', single_fill_new)
-    return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill_new))
+    single_fill = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
+    return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
   def get_random_msg(cls, draw, struct, real_floats=False):
     fg = cls(draw, real_floats=real_floats)
-    # return draw(fg.generate_struct(struct.schema))
-    return fg.generate_struct(struct.schema).example()
+    return draw(fg.generate_struct(struct.schema))
 
   @classmethod
   def get_random_event_msg(cls, draw, events, real_floats=False):
