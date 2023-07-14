@@ -101,8 +101,8 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
     ]}
   values.update({
     "ACCMode": 4,
-    "aReqRaw": 0.0,
-    "aReqValue": 0.0,
+    # "aReqRaw": 0.0,
+    # "aReqValue": 0.0,
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
@@ -127,8 +127,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "ACCMode": 0 if not enabled else (2 if gas_override else 1),
     "MainMode_ACC": 1,
     "StopReq": 1 if stopping else 0,
-    "aReqValue": a_val,
-    "aReqRaw": a_raw,
+    # "aReqValue": a_val,
+    # "aReqRaw": a_raw,
     "VSetDis": set_speed,
     "JerkLowerLimit": jerk if enabled else 1,
     "JerkUpperLimit": 3.0,
