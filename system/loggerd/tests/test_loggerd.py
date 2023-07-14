@@ -16,6 +16,8 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
 from system.loggerd.config import ROOT
+from system.loggerd.xattr_cache import getxattr
+from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from selfdrive.manager.process_config import managed_processes
 from system.version import get_version
 from tools.lib.logreader import LogReader
@@ -275,6 +277,33 @@ class TestLoggerd(unittest.TestCase):
       sent = sent_msgs[m.which()].pop(0)
       sent.clear_write_flag()
       self.assertEqual(sent.to_bytes(), m.as_builder().to_bytes())
+
+  def test_userflag(self):
+    services = random.sample(CEREAL_SERVICES, random.randint(5, 10)) + ["userFlag"]
+    pm = messaging.PubMaster(services)
+
+    # sleep enough for the first poll to time out
+    # TODO: fix loggerd bug dropping the msgs from the first poll
+    # managed_processes["loggerd"].start()
+    # for s in services:
+    #   while not pm.all_readers_updated(s):
+    #     time.sleep(0.1)
+
+    sent_msgs = defaultdict(list)
+    for _ in range(random.randint(2, 10) * 100):
+      for s in services:
+        try:
+          m = messaging.new_message(s)
+        except Exception:
+          m = messaging.new_message(s, random.randint(2, 10))
+        pm.send(s, m)
+        sent_msgs[s].append(m)
+
+    time.sleep(2)
+    managed_processes["loggerd"].stop()
+
+    segment_dir = self._get_latest_log_dir()
+    self.assertEqual(getxattr(segment_dir, PRESERVE_ATTR_NAME), PRESERVE_ATTR_VALUE)
 
 
 if __name__ == "__main__":
