@@ -126,16 +126,18 @@ class RadarInterface(RadarInterfaceBase):
         azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
         dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                   # m [0|255.984]
         distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]          # m/s [-128|127.984]
+        dRel = cos*(azimuth) * dist                             # m from front of car
+        yRel = -sin(azimuth) * dist                             # in car frame's y axis, left is positive
 
-        # TODO delphi doesn't notify of track switches, do this properly
-        if abs(self.pts[i].vRel - distRate) > 2:
+        # delphi doesn't notify of track switches, so do it manually
+        # TODO refactor this to radard if more radars behave this way
+        if abs(self.pts[i].vRel - distRate) > 2 or abs(self.pts[i].dRel - dRel) > 5:
           self.track_id += 1
           self.pts[i].trackId = self.track_id
 
-        # *** openpilot radar point ***
-        self.pts[i].dRel = cos(azimuth) * dist                  # m from front of car
-        self.pts[i].yRel = -sin(azimuth) * dist                 # in car frame's y axis, left is positive
-        self.pts[i].vRel = distRate                             # m/s
+        self.pts[i].dRel = dRel
+        self.pts[i].yRel = yRel
+        self.pts[i].vRel = distRate
 
         self.pts[i].measured = True
 
