@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, GLOBAL_GEN3, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -37,8 +37,8 @@ class CarController:
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
-      elif self.CP.carFingerprint == CAR.FORESTER_2022:
-        can_sends.append(subarucan.create_steering_control_2(self.packer, apply_steer, CC.latActive))
+      elif self.CP.carFingerprint in GLOBAL_GEN3:
+        can_sends.append(subarucan.create_steering_control_alt(self.packer, apply_steer, CC.latActive))
       else:
         can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 

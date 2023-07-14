@@ -12,7 +12,7 @@ def create_steering_control(packer, apply_steer, steer_req):
   }
   return packer.make_can_msg("ES_LKAS", 0, values)
 
-def create_steering_control_2(packer, apply_steer, steer_req):
+def create_steering_control_alt(packer, apply_steer, steer_req):
   values = {
     "LKAS_Output": apply_steer,
     "LKAS_Request": steer_req,
