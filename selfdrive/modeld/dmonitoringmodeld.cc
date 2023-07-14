@@ -15,7 +15,7 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
   PubMaster pm({"driverStateV2"});
   SubMaster sm({"liveCalibration"});
   float calib[CALIB_LEN] = {0};
-  double last = 0;
+  // double last = 0;
 
   while (!do_exit) {
     VisionIpcBufExtra extra = {};
@@ -37,8 +37,8 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
     // send dm packet
     dmonitoring_publish(pm, extra.frame_id, model_res, (t2 - t1) / 1000.0, model.output);
 
-    //printf("dmonitoring process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last);
-    last = t1;
+    // printf("dmonitoring process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last);
+    // last = t1;
   }
 }
 
