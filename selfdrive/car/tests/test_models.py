@@ -63,8 +63,6 @@ for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
     test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None, ))))
 
-# test_cases = sorted(test_cases)
-
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
@@ -380,20 +378,9 @@ class TestCarModelBase(unittest.TestCase):
   #   self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-def get_class_name(cls, num, params_dict):
-  return str(num)
-
-
-# @parameterized_class(('car_model', 'test_route'), test_cases)  # class_name_func=lambda cls, num, params_dict:
-@parameterized_class([{'car_model': a, 'test_route': b, 'name': b.route if b else ''} for a, b in test_cases])#, test_cases)  # class_name_func=lambda cls, num, params_dict:
+@parameterized_class(('car_model', 'test_route'), test_cases)
 class TestCarModel(TestCarModelBase):
   pass
-
-  def __str__(self):
-    return self.car_model + self.test_route.route
-
-  def __repr__(self):
-    return self.car_model + self.test_route.route
 
 
 if __name__ == "__main__":
