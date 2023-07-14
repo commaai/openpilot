@@ -17,21 +17,13 @@ Ecu = car.CarParams.Ecu
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith(('CHEVROLET',))])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=5)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    if car_name in FINGERPRINTS:
-      fingerprint = FINGERPRINTS[car_name][0]
-    else:
-      fingerprint = {}
-
     CarInterface, CarController, CarState = interfaces[car_name]
-    fingerprints = gen_empty_fingerprint()
-    # fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
-    car_fw = []
-
+    # Fuzzy fingerprints and FW versions to get more variable carParams
     fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
                                                                        st.integers(min_value=0, max_value=64)) for key in gen_empty_fingerprint()})
 
@@ -49,16 +41,10 @@ class TestCarInterfaces(unittest.TestCase):
     })
 
     params = data.draw(params_strategy)
-    # print('car_fw', params['car_fw'])
     car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
 
-    # print('final', car_fw)
-
-    CP = FuzzyGenerator.get_random_msg(data.draw, car.CarParams, real_floats=True)
-    print('CP', CP)
-
-    # car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
-    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw, experimental_long=params['experimental_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw,
+                                         experimental_long=params['experimental_long'], docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -90,8 +76,6 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
     cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
-    # print('msg1')
-    # print(cc_msg)
     # Run car interface
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
