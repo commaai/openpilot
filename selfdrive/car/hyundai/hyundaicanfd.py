@@ -101,8 +101,8 @@ def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
     ]}
   values.update({
     "ACCMode": 4,
-    # "aReqRaw": 0.0,
-    # "aReqValue": 0.0,
+    "aReqRaw": 0.0,
+    "aReqValue": 0.0,
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
@@ -141,6 +141,8 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_TMP_64": 0x64,
     "DISTANCE_SETTING": 4,
   }
+  if values['ACCMode'] == 0:
+    del values['aReqRaw']
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
