@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "ford"
     ret.dashcamOnly = candidate in {CAR.F_150_MK14}
 
-    ret.radarUnavailable = True
+    ret.radarUnavailable = False
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
