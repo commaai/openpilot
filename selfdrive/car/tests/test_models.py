@@ -238,15 +238,14 @@ class TestCarModelBase(unittest.TestCase):
     # cc_msg = {'cruiseControl': {'cancel': False}}
 
     # Make sure we can send all messages while inactive
-    addrs_sent = set()
     msgs_sent = 0
+    now = 0
     CC = car.CarControl.new_message()
     for _ in range(300):  # make sure we test the slowest messages
       self.CI.update(CC, [])
-      _, sendcan = self.CI.apply(CC, 0)
+      _, sendcan = self.CI.apply(CC, now)
+      now += 0.01*1e9
       msgs_sent += len(sendcan)
-      addrs_sent |= {addr for addr, _, _, _ in sendcan}
-      # self.assertTrue(len(sendcan))
       for addr, _, dat, bus in sendcan:
         # print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
@@ -256,15 +255,13 @@ class TestCarModelBase(unittest.TestCase):
         self.assertTrue(sent, (addr, dat, bus))
 
     # Make sure we attempted to send messages
-    # with self.subTest():
-    #   self.assertGreater(len(addrs_sent), 100, )
-    with self.subTest():
-      self.assertGreater(msgs_sent, 1000000, )
+    self.assertGreater(msgs_sent, 500)
 
     # Make sure we can send cancel messages
     self.safety.set_cruise_engaged_prev(True)
     cc_msg = {'cruiseControl': {'cancel': True}}
     CC = car.CarControl.new_message(**cc_msg)
+    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
     for _ in range(300):  # make sure we test the slowest messages
       self.CI.update(CC, [])
       _, sendcan = self.CI.apply(CC, 0)
