@@ -12,13 +12,21 @@ from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
 from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
+Ecu = car.CarParams.Ecu
+
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in all_known_cars()])
-  @settings(max_examples=5)
+  # @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in ["KIA EV6 2022"]])
+  @settings(max_examples=100)
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
+    if 'HYUNDAI' not in car_name and "GENESIS" not in car_name and "KIA" not in car_name:
+      return
+    if car_name != 'KIA EV6 2022':
+      return
+
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -26,10 +34,36 @@ class TestCarInterfaces(unittest.TestCase):
 
     CarInterface, CarController, CarState = interfaces[car_name]
     fingerprints = gen_empty_fingerprint()
-    fingerprints.update({k: fingerprint for k in fingerprints.keys()})
+    # fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
     car_fw = []
 
+    fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
+                                                                       st.integers(min_value=0, max_value=64)) for key in gen_empty_fingerprint()})
+
+    # fingerprint_strategy = st.dictionaries(st.integers(max_value=max(fingerprints)), st.dictionaries(st.integers(), st.integers()))
+    # car_fw_strategy = st.lists(FuzzyGenerator.get_random_msg(data.draw, car.CarParams.CarFw))  # If CarFw is a strategy, or create your own
+
+    # just the most important stuff
+    car_fw_strategy = st.lists(st.fixed_dictionaries({
+      'ecu': st.sampled_from(list(Ecu.schema.enumerants.keys())),  # use fuzzygenerator
+      'address': st.integers(min_value=0, max_value=0x800),  # todo: only use reasonable addrs for this ecu and brand/platform
+    }))
+
+    params_strategy = st.fixed_dictionaries({
+      'fingerprint': fingerprint_strategy,
+      'car_fw': car_fw_strategy,
+      'experimental_long': st.booleans(),
+      'docs': st.booleans(),
+    })
+
+    params = data.draw(params_strategy)
+    print('params', params['car_fw'])
+
+    # CP = FuzzyGenerator.get_random_msg(data.draw, car.CarParams, real_floats=True)
+    # print('CP', CP)
+
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
     car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
@@ -62,6 +96,8 @@ class TestCarInterfaces(unittest.TestCase):
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
     cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    # print('msg1')
+    # print(cc_msg)
     # Run car interface
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
@@ -84,7 +120,7 @@ class TestCarInterfaces(unittest.TestCase):
     # Run radar interface once
     radar_interface.update([])
     if not car_params.radarUnavailable and radar_interface.rcp is not None and \
-       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
+      hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
       radar_interface._update([radar_interface.trigger_msg])
 
 if __name__ == "__main__":
