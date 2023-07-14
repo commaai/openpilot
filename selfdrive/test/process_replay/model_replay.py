@@ -21,7 +21,6 @@ from tools.lib.helpers import save_log
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
 MAX_FRAMES = 100 if PC else 600
-NAV_FRAMES = 50
 
 NO_NAV = "NO_NAV" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -56,7 +55,7 @@ def nav_model_replay(lr):
 
   nav = [m for m in lr if m.which() == 'navRoute']
   llk = [m for m in lr if m.which() == 'liveLocationKalman']
-  assert len(nav) > 0 and len(llk) >= NAV_FRAMES and nav[0].logMonoTime < llk[-NAV_FRAMES].logMonoTime
+  assert len(nav) > 0 and len(llk) >= MAX_FRAMES and nav[0].logMonoTime < llk[-MAX_FRAMES].logMonoTime
 
   log_msgs = []
   try:
@@ -67,7 +66,7 @@ def nav_model_replay(lr):
 
     # setup position and route
     for _ in range(10):
-      for s in (llk[-NAV_FRAMES], nav[0]):
+      for s in (llk[-MAX_FRAMES], nav[0]):
         pm.send(s.which(), s.as_builder().to_bytes())
       sm.update(1000)
       if sm.updated['navModel']:
@@ -82,19 +81,13 @@ def nav_model_replay(lr):
     sm.update(0)
 
     # run replay
-    for n in range(len(llk) - NAV_FRAMES, len(llk)):
+    for n in range(len(llk) - MAX_FRAMES, len(llk)):
       pm.send(llk[n].which(), llk[n].as_builder().to_bytes())
-      m = messaging.recv_one(sm.sock['navThumbnail'])
-      assert m is not None, f"no navThumbnail, frame={n}"
-      log_msgs.append(m)
 
-      m = messaging.recv_one(sm.sock['mapRenderState'])
-      assert m is not None, f"no mapRenderState, frame={n}"
-      log_msgs.append(m)
-
-      m = messaging.recv_one(sm.sock['navModel'])
-      assert m is not None, f"no navModel response, frame={n}"
-      log_msgs.append(m)
+      for k in ('navThumbnail', 'mapRenderState', 'navModel'):
+        m = messaging.recv_one(sm.sock[k])
+        assert m is not None, f"no {k}, frame={n}"
+        log_msgs.append(m)
   finally:
     managed_processes['mapsd'].stop()
     managed_processes['navmodeld'].stop()
@@ -102,7 +95,7 @@ def nav_model_replay(lr):
   return log_msgs
 
 
-def model_replay(lr, frs):
+def model_replay(lr, frs, nav_msgs):
   if not PC:
     spinner = Spinner()
     spinner.update("starting model replay")
@@ -122,6 +115,10 @@ def model_replay(lr, frs):
   cal_msg.logMonoTime = lr[0].logMonoTime
   modeld_logs.insert(0, cal_msg.as_reader())
   dmodeld_logs.insert(0, cal_msg.as_reader())
+  # insert navmodel packets every 10 frames
+  rcs_indices = [i for i,msg in enumerate(modeld_logs) if msg.which() == 'roadCameraState']
+  for i,(idx,msg) in enumerate(zip(rcs_indices[::10], nav_msgs[::10])):
+    modeld_logs.insert(idx+i+1, msg)
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
@@ -179,9 +176,14 @@ if __name__ == "__main__":
     os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
 
   # run replays
-  log_msgs = model_replay(lr, frs)
+  nav_msgs = []
   if not NO_NAV:
-    log_msgs += nav_model_replay(lr)
+    nav_msgs = nav_model_replay(lr)
+  log_msgs = model_replay(lr, frs, [m for m in nav_msgs if m.which() == 'navModel'])
+  log_msgs += nav_msgs
+  for msg in log_msgs:
+    if msg.which() == 'modelV2':
+      assert msg.modelV2.navEnabled == (not NO_NAV)
 
   # get diff
   failed = False
@@ -200,7 +202,7 @@ if __name__ == "__main__":
       cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
       if not NO_NAV:
         nav_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ["navThumbnail", "mapRenderState", "navModel"])
-        nav_logs = all_logs[nav_start_index:nav_start_index + NAV_FRAMES*3]
+        nav_logs = all_logs[nav_start_index:nav_start_index + MAX_FRAMES*3]
         cmp_log += nav_logs
 
       ignore = [
