@@ -84,7 +84,10 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::locationsUpdated, this, &MapSettings::updateLocations);
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::nextDestinationUpdated, this, &MapSettings::updateCurrentRoute);
 
-  updateLocations(NavigationRequest::instance()->currentLocations());
+  auto locations = NavigationRequest::instance()->currentLocations();
+  if (!locations.isEmpty()) {
+    updateLocations(location);
+  }
 }
 
 void MapSettings::mousePressEvent(QMouseEvent *ev) {
