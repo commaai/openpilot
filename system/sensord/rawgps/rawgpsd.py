@@ -138,6 +138,11 @@ def download_assistance():
     cloudlog.exception("Failed to download assistance file")
     return
 
+def downloader_loop():
+  os.remove(ASSIST_DATA_FILE)
+  while not os.path.exists(ASSIST_DATA_FILE):
+    download_assistance()
+    time.sleep(10)
 
 def inject_assistance():
   try:
@@ -237,7 +242,8 @@ def main() -> NoReturn:
 
   wait_for_modem()
 
-  assist_fetch_proc = None
+  assist_fetch_proc = Process(target=downloader_loop)
+  assist_fetch_proc.start()
   def cleanup(proc):
     cloudlog.warning("caught sig disabling quectel gps")
     gpio_set(GPIO.UBLOX_PWR_EN, False)
@@ -249,11 +255,9 @@ def main() -> NoReturn:
 
   # connect to modem
   diag = ModemDiag()
-  download_assistance()
-  want_assistance = not os.path.exists(ASSIST_DATA_FILE)
   setup_quectel(diag)
+  want_assistance = True
   current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
-  last_fetch_time = time.monotonic()
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
   gpio_set(GPIO.UBLOX_PWR_EN, True)
@@ -267,13 +271,6 @@ def main() -> NoReturn:
         want_assistance = False
       else:
         os.remove(ASSIST_DATA_FILE)
-    if want_assistance and time.monotonic() - last_fetch_time > 10:
-      if assist_fetch_proc is None or not assist_fetch_proc.is_alive():  # type: ignore
-        cloudlog.warning("fetching assistance data")
-        assist_fetch_proc = Process(target=download_assistance)
-        assist_fetch_proc.start()
-        last_fetch_time = time.monotonic()
-
 
     opcode, payload = diag.recv()
     if opcode != DIAG_LOG_F:
