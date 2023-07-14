@@ -5,7 +5,8 @@ import threading
 import unittest
 import logging
 import json
-from typing import List
+from pathlib import Path
+from typing import List, Optional
 
 from system.swaglog import cloudlog
 from system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
@@ -51,8 +52,8 @@ class TestUploader(UploaderTestCase):
     self.end_event.set()
     self.up_thread.join()
 
-  def gen_files(self, lock=False, xattr=None, boot=True):
-    f_paths = list()
+  def gen_files(self, lock=False, xattr: Optional[bytes] = None, boot=True) -> List[Path]:
+    f_paths = []
     for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
       f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock, xattr=xattr))
 
@@ -160,7 +161,7 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      fn = f_path.replace('.bz2', '')
+      fn = f_path.with_suffix(f_path.suffix.replace(".bz2", ""))
       uploaded = UPLOAD_ATTR_NAME in os.listxattr(fn) and os.getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
       self.assertFalse(uploaded, "File upload when locked")
 
@@ -181,7 +182,8 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      self.assertFalse(os.path.isfile(f_path + ".lock"), "File lock not cleared on startup")
+      lock_path = f_path.with_suffix(f_path.suffix + ".lock")
+      self.assertFalse(lock_path.is_file(), "File lock not cleared on startup")
 
 
 if __name__ == "__main__":
