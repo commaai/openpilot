@@ -117,7 +117,7 @@ class CarController:
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, self.CP.openpilotLongitudinalControl, hud_control.leadVisible))
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, hud_control.leadVisible))
 
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
@@ -128,7 +128,7 @@ class CarController:
 
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
-          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, cruise_rpm))
+          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, self.CP.openpilotLongitudinalControl, cruise_rpm))
           can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value))
           can_sends.append(subarucan.create_cruise_control(self.packer, CS.cruise_control_msg))
 
