@@ -230,7 +230,7 @@ class TestCarModelBase(unittest.TestCase):
   # @given(data=st.data())
   def test_panda_safety_tx_cases(self, data=None):
     if self.CP.notCar:
-      self.skipTest("")
+      self.skipTest("Safety for notCar is different")
 
     # Asserts we can tx common messages
 
@@ -238,12 +238,15 @@ class TestCarModelBase(unittest.TestCase):
     # cc_msg = {'cruiseControl': {'cancel': False}}
 
     # Make sure we can send all messages while inactive
-    cc_msg = {}
-    CC = car.CarControl.new_message(**cc_msg)
+    addrs_sent = set()
+    msgs_sent = 0
+    CC = car.CarControl.new_message()
     for _ in range(300):  # make sure we test the slowest messages
       self.CI.update(CC, [])
       _, sendcan = self.CI.apply(CC, 0)
-      self.assertTrue(len(sendcan))
+      msgs_sent += len(sendcan)
+      addrs_sent |= {addr for addr, _, _, _ in sendcan}
+      # self.assertTrue(len(sendcan))
       for addr, _, dat, bus in sendcan:
         # print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
@@ -252,7 +255,14 @@ class TestCarModelBase(unittest.TestCase):
         # print(sendcan)
         self.assertTrue(sent, (addr, dat, bus))
 
+    # Make sure we attempted to send messages
+    # with self.subTest():
+    #   self.assertGreater(len(addrs_sent), 100, )
+    with self.subTest():
+      self.assertGreater(msgs_sent, 1000000, )
+
     # Make sure we can send cancel messages
+    self.safety.set_cruise_engaged_prev(True)
     cc_msg = {'cruiseControl': {'cancel': True}}
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(300):  # make sure we test the slowest messages
@@ -261,13 +271,14 @@ class TestCarModelBase(unittest.TestCase):
       for addr, _, dat, bus in sendcan:
         # print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-        self.safety.set_cruise_engaged_prev(True)
         sent = self.safety.safety_tx_hook(to_send)
         # print('send', sent)
         # print(sendcan)
         self.assertTrue(sent, (addr, dat, bus))
 
     # Assert resume button logic
+    self.safety.set_cruise_engaged_prev(False)
+    self.safety.set_controls_allowed(True)
     cc_msg = {'cruiseControl': {'resume': True}}
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(300):  # make sure we test the slowest messages
@@ -276,11 +287,9 @@ class TestCarModelBase(unittest.TestCase):
       for addr, _, dat, bus in sendcan:
         # print(addr, dat)
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-        # self.safety.set_cruise_engaged_prev(True)
 
         # TODO: get the button message function and test it directly for false positive tx's
         # or not, panda safety tests should really catch that
-        self.safety.set_controls_allowed(True)
         sent = self.safety.safety_tx_hook(to_send)
         # print('send', sent)
         # print(sendcan)
