@@ -154,6 +154,8 @@ def create_gas_interceptor_command(packer, gas_amount, idx):
   values = {
     "ENABLE": enable,
     "COUNTER_PEDAL": idx & 0xF,
+    "GAS_COMMAND": 0.0,
+    "GAS_COMMAND2": 0.0,
   }
 
   if enable:
