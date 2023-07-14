@@ -75,6 +75,12 @@ class MockParams():
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"
 
+  root: Path
+  seg_num: int
+  seg_format: str
+  seg_format2: str
+  seg_dir: str
+
   def set_ignore(self):
     uploader.Api = MockApiIgnore
 
@@ -98,7 +104,8 @@ class UploaderTestCase(unittest.TestCase):
       if e.errno != errno.ENOENT:
         raise
 
-  def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False, xattr: Optional[bytes] = None):
+  def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
+                          xattr: Optional[bytes] = None) -> Path:
     file_path = self.root / f_dir / fn
     create_random_file(file_path, size_mb, lock, xattr)
 
