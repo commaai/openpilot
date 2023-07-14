@@ -263,6 +263,25 @@ class TestCarModelBase(unittest.TestCase):
         # print(sendcan)
         self.assertTrue(sent, (addr, dat, bus))
 
+    # Assert resume button logic
+    cc_msg = {'cruiseControl': {'resume': True}}
+    CC = car.CarControl.new_message(**cc_msg)
+    for _ in range(300):  # make sure we test the slowest messages
+      self.CI.update(CC, [])
+      _, sendcan = self.CI.apply(CC, 0)
+      for addr, _, dat, bus in sendcan:
+        # print(addr, dat)
+        to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+        # self.safety.set_cruise_engaged_prev(True)
+
+        # TODO: get the button message function and test it directly for false positive tx's
+        # or not, panda safety tests should really catch that
+        self.safety.set_controls_allowed(True)
+        sent = self.safety.safety_tx_hook(to_send)
+        # print('send', sent)
+        # print(sendcan)
+        self.assertTrue(sent, (addr, dat, bus))
+
 
     # print()
 
