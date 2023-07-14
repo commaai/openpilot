@@ -63,8 +63,16 @@ class FuzzyGenerator:
       return self.generate_struct(field.schema)
 
   def generate_struct(self, schema, event=None):
+    print('schema.union_fields', type(schema.union_fields), schema.union_fields)
+    print('schema.non_union_fields', type(schema.non_union_fields), schema.non_union_fields)
     full_fill = list(schema.non_union_fields) if schema.non_union_fields else []
+    single_fill_orig = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
     single_fill = [event] if event else [st.sampled_from(schema.union_fields)] if schema.union_fields else []
+    orig = st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill_orig))
+    new = st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
+    print('orig', orig)
+    print('new', new)
+    print()
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
