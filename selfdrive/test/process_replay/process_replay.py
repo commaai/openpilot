@@ -119,6 +119,153 @@ class ProcessConfig:
   ignore_alive_pubs: List[str] = field(default_factory=list)
 
 
+class ProcessContainer:
+  def __init__(self, cfg: ProcessConfig):
+    self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
+    self.cfg = copy.deepcopy(cfg)
+    self.process = managed_processes[cfg.proc_name]
+    self.msg_queue: List[capnp._DynamicStructReader] = []
+    self.cnt = 0
+    self.pm: Optional[messaging.PubMaster] = None
+    self.sockets: Optional[List[messaging.SubSocket]] = None
+    self.rc: Optional[ReplayContext] = None 
+    self.vipc_server: Optional[VisionIpcServer] = None
+
+  @property
+  def has_empty_queue(self) -> bool:
+    return len(self.msg_queue) == 0
+
+  @property
+  def pubs(self) -> List[str]:
+    return self.cfg.pubs
+
+  @property
+  def subs(self) -> List[str]:
+    return self.cfg.subs
+
+  def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
+    for k, v in environ_config.items():
+      if len(v) != 0:
+        os.environ[k] = v
+      elif k in os.environ:
+        del os.environ[k]
+
+    os.environ["PROC_NAME"] = self.cfg.proc_name
+    if self.cfg.simulation:
+      os.environ["SIMULATION"] = "1"
+    elif "SIMULATION" in os.environ:
+      del os.environ["SIMULATION"]
+
+    params = Params()
+    for k, v in params_config.items():
+      if isinstance(v, bool):
+        params.put_bool(k, v)
+      else:
+        params.put(k, v)
+
+  def _setup_vision_ipc(self, all_msgs):
+    assert len(self.cfg.vision_pubs) != 0
+
+    device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
+
+    vipc_server = VisionIpcServer("camerad")
+    streams_metas = available_streams(all_msgs)
+    for meta in streams_metas:
+      if meta.camera_state in self.cfg.vision_pubs:
+        vipc_server.create_buffers(meta.stream, 2, False, *meta.frame_sizes[device_type])
+    vipc_server.start_listener()
+
+    self.vipc_server = vipc_server
+
+  def start(
+    self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
+    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str]
+  ):
+    with self.prefix:
+      self._setup_env(params_config, environ_config)
+
+      if self.cfg.config_callback is not None:
+        params = Params()
+        self.cfg.config_callback(params, self.cfg, all_msgs)
+
+      self.rc = ReplayContext(self.cfg)
+      self.rc.open()
+
+      self.pm = messaging.PubMaster(self.cfg.pubs)
+      self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
+
+      if len(self.cfg.vision_pubs) != 0:
+        self._setup_vision_ipc(all_msgs)
+        assert self.vipc_server is not None
+
+      self.process.prepare()
+      self.process.start()
+
+      if self.cfg.init_callback is not None:
+        self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
+
+      # wait for process to startup
+      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
+        while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
+          time.sleep(0)
+
+  def stop(self):
+    with self.prefix:
+      self.process.signal(signal.SIGKILL)
+      self.process.stop()
+      self.rc.close()
+      self.prefix.clean_dirs()
+
+  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
+    assert self.rc and self.pm and self.sockets and self.process.proc
+
+    output_msgs = []
+    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      end_of_cycle = True
+      if self.cfg.should_recv_callback is not None:
+        end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
+
+      self.msg_queue.append(msg)
+      if end_of_cycle:
+        self.rc.wait_for_recv_called()
+
+        # call recv to let sub-sockets reconnect, after we know the process is ready
+        if self.cnt == 0:
+          for s in self.sockets:
+            messaging.recv_one_or_none(s)
+
+        # empty recv on drained pub indicates the end of messages, only do that if there're any
+        trigger_empty_recv = False
+        if self.cfg.main_pub and self.cfg.main_pub_drained:
+          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+
+        for m in self.msg_queue:
+          self.pm.send(m.which(), m.as_builder())
+          # send frames if needed
+          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
+            camera_state = getattr(m, m.which())
+            camera_meta = meta_from_camera_state(m.which())
+            assert frs is not None
+            img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+        self.msg_queue = []
+
+        self.rc.unlock_sockets()
+        self.rc.wait_for_next_recv(trigger_empty_recv)
+
+        for socket in self.sockets:
+          ms = messaging.drain_sock(socket)
+          for m in ms:
+            m = m.as_builder()
+            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
+            output_msgs.append(m.as_reader())
+        self.cnt += 1
+    assert self.process.proc.is_alive()
+
+    return output_msgs
+
+
 def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
@@ -468,153 +615,6 @@ def replay_process(
     log_msgs = process_logs
 
   return log_msgs
-
-
-class ProcessContainer:
-  def __init__(self, cfg: ProcessConfig):
-    self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
-    self.cfg = copy.deepcopy(cfg)
-    self.process = managed_processes[cfg.proc_name]
-    self.msg_queue: List[capnp._DynamicStructReader] = []
-    self.cnt = 0
-    self.pm: Optional[messaging.PubMaster] = None
-    self.sockets: Optional[List[messaging.SubSocket]] = None
-    self.rc: Optional[ReplayContext] = None 
-    self.vipc_server: Optional[VisionIpcServer] = None
-
-  @property
-  def has_empty_queue(self) -> bool:
-    return len(self.msg_queue) == 0
-
-  @property
-  def pubs(self) -> List[str]:
-    return self.cfg.pubs
-
-  @property
-  def subs(self) -> List[str]:
-    return self.cfg.subs
-
-  def _setup_env(self, params_config: Dict[str, Any], environ_config: Dict[str, Any]):
-    for k, v in environ_config.items():
-      if len(v) != 0:
-        os.environ[k] = v
-      elif k in os.environ:
-        del os.environ[k]
-
-    os.environ["PROC_NAME"] = self.cfg.proc_name
-    if self.cfg.simulation:
-      os.environ["SIMULATION"] = "1"
-    elif "SIMULATION" in os.environ:
-      del os.environ["SIMULATION"]
-
-    params = Params()
-    for k, v in params_config.items():
-      if isinstance(v, bool):
-        params.put_bool(k, v)
-      else:
-        params.put(k, v)
-
-  def _setup_vision_ipc(self, all_msgs):
-    assert len(self.cfg.vision_pubs) != 0
-
-    device_type = next(msg.initData.deviceType for msg in all_msgs if msg.which() == "initData")
-
-    vipc_server = VisionIpcServer("camerad")
-    streams_metas = available_streams(all_msgs)
-    for meta in streams_metas:
-      if meta.camera_state in self.cfg.vision_pubs:
-        vipc_server.create_buffers(meta.stream, 2, False, *meta.frame_sizes[device_type])
-    vipc_server.start_listener()
-
-    self.vipc_server = vipc_server
-
-  def start(
-    self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str]
-  ):
-    with self.prefix:
-      self._setup_env(params_config, environ_config)
-
-      if self.cfg.config_callback is not None:
-        params = Params()
-        self.cfg.config_callback(params, self.cfg, all_msgs)
-
-      self.rc = ReplayContext(self.cfg)
-      self.rc.open()
-
-      self.pm = messaging.PubMaster(self.cfg.pubs)
-      self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
-
-      if len(self.cfg.vision_pubs) != 0:
-        self._setup_vision_ipc(all_msgs)
-        assert self.vipc_server is not None
-
-      self.process.prepare()
-      self.process.start()
-
-      if self.cfg.init_callback is not None:
-        self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
-
-      # wait for process to startup
-      with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
-        while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
-          time.sleep(0)
-
-  def stop(self):
-    with self.prefix:
-      self.process.signal(signal.SIGKILL)
-      self.process.stop()
-      self.rc.close()
-      self.prefix.clean_dirs()
-
-  def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
-    assert self.rc and self.pm and self.sockets and self.process.proc
-
-    output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
-      end_of_cycle = True
-      if self.cfg.should_recv_callback is not None:
-        end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
-
-      self.msg_queue.append(msg)
-      if end_of_cycle:
-        self.rc.wait_for_recv_called()
-
-        # call recv to let sub-sockets reconnect, after we know the process is ready
-        if self.cnt == 0:
-          for s in self.sockets:
-            messaging.recv_one_or_none(s)
-
-        # empty recv on drained pub indicates the end of messages, only do that if there're any
-        trigger_empty_recv = False
-        if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
-
-        for m in self.msg_queue:
-          self.pm.send(m.which(), m.as_builder())
-          # send frames if needed
-          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
-            camera_state = getattr(m, m.which())
-            camera_meta = meta_from_camera_state(m.which())
-            assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
-            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-        self.msg_queue = []
-
-        self.rc.unlock_sockets()
-        self.rc.wait_for_next_recv(trigger_empty_recv)
-
-        for socket in self.sockets:
-          ms = messaging.drain_sock(socket)
-          for m in ms:
-            m = m.as_builder()
-            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
-            output_msgs.append(m.as_reader())
-        self.cnt += 1
-    assert self.process.proc.is_alive()
-
-    return output_msgs
 
 
 def _replay_multi_process(
