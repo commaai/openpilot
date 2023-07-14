@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import unittest
+import hypothesis.strategies as st
 from hypothesis import given, settings
 import importlib
 from parameterized import parameterized
@@ -9,15 +10,15 @@ from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
-from selfdrive.test.fuzzy_generation import get_random_msg
+from selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in all_known_cars()])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=5)
-  @given(cc_msg=get_random_msg(car.CarControl, real_floats=True))
-  def test_car_interfaces(self, car_name, cc_msg):
+  @given(data=st.data())
+  def test_car_interfaces(self, car_name, data):
     if car_name in FINGERPRINTS:
       fingerprint = FINGERPRINTS[car_name][0]
     else:
@@ -28,8 +29,9 @@ class TestCarInterfaces(unittest.TestCase):
     fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
     car_fw = []
+    experimental_long = data.draw(st.booleans())
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=experimental_long, docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -60,6 +62,7 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
+    cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):

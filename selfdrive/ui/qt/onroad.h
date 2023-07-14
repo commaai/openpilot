@@ -38,10 +38,13 @@ public:
 
 private:
   void paintEvent(QPaintEvent *event) override;
+  void changeMode();
 
   Params params;
   QPixmap engage_img;
   QPixmap experimental_img;
+  bool experimental_mode;
+  bool engageable;
 };
 
 // container window for the NVG UI
@@ -114,6 +117,10 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
   bool isMapVisible() const { return map && map->isVisible(); }
+  void showMapPanel(bool show) { if (map) map->setVisible(show); }
+
+signals:
+  void mapPanelRequested();
 
 private:
   void paintEvent(QPaintEvent *event);

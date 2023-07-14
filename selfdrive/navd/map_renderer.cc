@@ -176,12 +176,16 @@ void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> 
 
 void MapRenderer::publish(const double render_time, const bool loaded) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+
+  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  bool valid = loaded && (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
     .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
+    .valid = valid,
   };
 
   assert(cap.sizeInBytes() >= buf->len);
@@ -213,13 +217,10 @@ void MapRenderer::publish(const double render_time, const bool loaded) {
   }
 
   // Send state msg
-  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
-  bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
-
   MessageBuilder msg;
   auto evt = msg.initEvent();
   auto state = evt.initMapRenderState();
-  evt.setValid(loaded && localizer_valid);
+  evt.setValid(valid);
   state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
   state.setRenderTime(render_time);
   state.setFrameId(frame_id);

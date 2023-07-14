@@ -32,7 +32,7 @@ PROCS = {
   "./locationd": 11.0,
   "./mapsd": 2.0,
   "selfdrive.controls.plannerd": 16.5,
-  "./_ui": 21.0,
+  "./_ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./_sensord": 12.0,
   "selfdrive.controls.radard": 4.5,
@@ -205,9 +205,13 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     print(result)
 
-    #self.assertLess(max(ts), 30.)
+    self.assertLess(max(ts), 250.)
     self.assertLess(np.mean(ts), 10.)
     #self.assertLess(np.std(ts), 5.)
+
+    # some slow frames are expected since camerad/modeld can preempt ui
+    veryslow = [x for x in ts if x > 40.]
+    assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
   def test_cpu_usage(self):
     result = "\n"
