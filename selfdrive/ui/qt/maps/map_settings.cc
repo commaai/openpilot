@@ -86,7 +86,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
 
   auto locations = NavigationRequest::instance()->currentLocations();
   if (!locations.isEmpty()) {
-    updateLocations(location);
+    updateLocations(locations);
   }
 }
 
