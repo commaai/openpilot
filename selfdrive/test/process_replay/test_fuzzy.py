@@ -21,7 +21,6 @@ class TestFuzzProcesses(unittest.TestCase):
   @given(st.data())
   @settings(phases=[Phase.generate, Phase.target], max_examples=50, deadline=1000, suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
   def test_fuzz_process(self, proc_name, cfg, data):
-    # print('type', type(data.draw))
     msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5

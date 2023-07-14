@@ -67,7 +67,7 @@ class FuzzyGenerator:
     else:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: Optional[str] = None) -> st.SearchStrategy:
+  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: Optional[str] = None) -> st.SearchStrategy[Dict[str, Any]]:
     full_fill: List[str] = list(schema.non_union_fields)
     single_fill: List[str] = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
