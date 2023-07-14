@@ -5,13 +5,11 @@ from typing import Any, Callable, TypeVar, Optional, List
 from cereal import log
 
 
-T = TypeVar('T')
-Draw = TypeVar('Draw', bound=Callable[[st.SearchStrategy[T]], T])
 DrawType = Callable[[st.SearchStrategy], Any]
 
 
 class FuzzyGenerator:
-  def __init__(self, draw: Draw, real_floats: bool):
+  def __init__(self, draw: DrawType, real_floats: bool):
     self.draw = draw
     self.real_floats = real_floats
 
@@ -76,11 +74,12 @@ class FuzzyGenerator:
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
-  def get_random_msg(cls, draw: DrawType, struct, real_floats=False):
+  def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False):
+    print('struct123', type(struct))
     fg = cls(draw, real_floats=real_floats)
     return draw(fg.generate_struct(struct.schema))
 
   @classmethod
-  def get_random_event_msg(cls, draw, events, real_floats=False):
+  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False):
     fg = cls(draw, real_floats=real_floats)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
