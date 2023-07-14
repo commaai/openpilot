@@ -36,6 +36,7 @@ routes_by_car = defaultdict(set)
 for r in routes:
   routes_by_car[r.car_model].add(r)
 
+# We ensure all test cases are sorted for determinism with multiple jobs
 test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
