@@ -1,5 +1,4 @@
 # functions common among cars
-import math
 from collections import namedtuple
 from typing import Dict, Optional
 
