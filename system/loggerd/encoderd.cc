@@ -1,5 +1,4 @@
 #include <cassert>
-#include <future>
 
 #include "system/loggerd/loggerd.h"
 
@@ -139,14 +138,16 @@ void encoderd_thread() {
   }
 
   if (!streams.empty()) {
-    std::vector<std::future<void>> encoder_threads;
+    std::vector<std::thread> encoder_threads;
     for (auto stream : streams) {
       auto it = std::find_if(std::begin(cameras_logged), std::end(cameras_logged),
                              [stream](auto &cam) { return cam.stream_type == stream; });
       assert(it != std::end(cameras_logged));
       ++s.max_waiting;
-      encoder_threads.emplace_back(std::async(std::launch::async, encoder_thread, &s, *it));
+      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
     }
+
+    for (auto &t : encoder_threads) t.join();
   }
 }
 
