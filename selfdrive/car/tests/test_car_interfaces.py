@@ -15,6 +15,9 @@ from selfdrive.test.fuzzy_generation import FuzzyGenerator
 Ecu = car.CarParams.Ecu
 
 
+# def get_fuzzy_car_params_
+
+
 class TestCarInterfaces(unittest.TestCase):
 
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])
@@ -42,6 +45,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     params = data.draw(params_strategy)
     car_fw = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+    print(car_fw)
 
     car_params = CarInterface.get_params(car_name, params['fingerprints'], car_fw,
                                          experimental_long=params['experimental_long'], docs=False)
