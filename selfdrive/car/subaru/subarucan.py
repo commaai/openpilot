@@ -16,7 +16,7 @@ def create_steering_control(packer, apply_steer, steer_req):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, {})
 
-def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, brake_cmd, brake_value, cruise_throttle):
+def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, long_enabled, brake_cmd, brake_value, cruise_throttle):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -43,9 +43,11 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active
 
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
+
+  if long_enabled:
+    values["Cruise_Throttle"] = cruise_throttle
   
   if long_active:
-    values["Cruise_Throttle"] = cruise_throttle
     # Do not disable openpilot on Eyesight Soft Disable, if openpilot is controlling long
     values["Cruise_Soft_Disable"] = 0
 
@@ -181,7 +183,7 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
-def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
+def create_es_status(packer, es_status_msg, long_active, long_enabled, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -195,9 +197,11 @@ def create_es_status(packer, es_status_msg, long_active, cruise_rpm):
     "Signal3",
   ]}
 
+  if long_enabled:
+    values["Cruise_RPM"] = cruise_rpm
+    
   if long_active:
     values["Cruise_Activated"] = 1
-    values["Cruise_RPM"] = cruise_rpm
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
