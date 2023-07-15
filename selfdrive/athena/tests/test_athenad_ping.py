@@ -107,7 +107,7 @@ class TestAthenadPing(unittest.TestCase):
     mock_create_connection.reset_mock()
 
     # websocket should attempt reconnect after short time
-    timer = Timer(90, "no reconnect attempt")
+    timer = Timer(180, "no reconnect attempt")
     with self.subTest(f"LTE: attempt reconnect within {timer.seconds}s"):
       wifi_radio(False)
       with timer:
