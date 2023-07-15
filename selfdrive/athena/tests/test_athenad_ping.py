@@ -12,13 +12,6 @@ from selfdrive.athena import athenad
 from system.hardware import TICI
 
 
-# athenad.create_connection = MagicMock(wraps=athenad.create_connection)
-# athenad.upload_handler = MagicMock(wraps=athenad.upload_handler)
-# athenad.log_handler = MagicMock(wraps=athenad.log_handler)
-# athenad.stat_handler = MagicMock(wraps=athenad.stat_handler)
-# athenad.jsonrpc_handler = MagicMock(wraps=athenad.jsonrpc_handler)
-
-
 def wifi_radio(on: bool) -> None:
   if not TICI:
     return
