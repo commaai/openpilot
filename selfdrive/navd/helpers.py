@@ -31,7 +31,7 @@ class Coordinate:
   def __str__(self) -> str:
     return f'Coordinate({self.latitude}, {self.longitude})'
 
-  def __repr__(self):
+  def __repr__(self) -> str:
     return self.__str__()
 
   def __eq__(self, other) -> bool:
@@ -93,12 +93,14 @@ def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> floa
 
   for i in range(len(geometry) - 1):
     d = minimum_distance(geometry[i], geometry[i + 1], pos)
+    total_distance += geometry[i].distance_to(geometry[i + 1])
 
     if d < closest_distance:
       closest_distance = d
-      total_distance_closest = total_distance + geometry[i].distance_to(pos)
+      total_distance_closest = total_distance + d #geometry[i].distance_to(pos)
+      # total_distance_closest = total_distance + geometry[i].distance_to(pos)
 
-    total_distance += geometry[i].distance_to(geometry[i + 1])
+    # total_distance += geometry[i].distance_to(geometry[i + 1])
 
   return total_distance_closest
 

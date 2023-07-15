@@ -46,6 +46,7 @@ class RouteEngine:
 
     self.recompute_backoff = 0
     self.recompute_countdown = 0
+    self.last_distance_to_maneuver_along_geometry = 0
 
     self.ui_pid = None
 
@@ -208,14 +209,18 @@ class RouteEngine:
   def send_instruction(self):
     msg = messaging.new_message('navInstruction')
 
+
     if self.step_idx is None:
       msg.valid = False
       self.pm.send('navInstruction', msg)
       return
+    print('step idx', self.step_idx, len(self.route))
 
     step = self.route[self.step_idx]
+    print('step distance', step['distance'] )
     geometry = self.route_geometry[self.step_idx]
     along_geometry = distance_along_geometry(geometry, self.last_position)
+    print('along geom', along_geometry)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Current instruction
@@ -262,6 +267,7 @@ class RouteEngine:
     self.pm.send('navInstruction', msg)
 
     # Transition to next route segment
+    print('geom', distance_to_maneuver_along_geometry, -MANEUVER_TRANSITION_THRESHOLD)
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
@@ -304,6 +310,7 @@ class RouteEngine:
     # Compute closest distance to all line segments in the current path
     min_d = REROUTE_DISTANCE + 1
     path = self.route_geometry[self.step_idx]
+    print(path)
     for i in range(len(path) - 1):
       a = path[i]
       b = path[i + 1]
@@ -312,8 +319,23 @@ class RouteEngine:
         continue
 
       min_d = min(min_d, minimum_distance(a, b, self.last_position))
+      print(min_d)
+    print()
 
-    if min_d > REROUTE_DISTANCE:
+    step = self.route[self.step_idx]
+    print('step distance', step['distance'])
+    geometry = self.route_geometry[self.step_idx]
+    along_geometry = distance_along_geometry(geometry, self.last_position)
+    distance_to_maneuver_along_geometry = step['distance'] - along_geometry
+
+    # don't re-route if we pass node and should switch to next step but don't
+    increasing = max(distance_to_maneuver_along_geometry, 0) > max(self.last_distance_to_maneuver_along_geometry, 0)
+    print('increasing', increasing)
+
+    self.last_distance_to_maneuver_along_geometry = distance_to_maneuver_along_geometry
+
+    # if min_d > REROUTE_DISTANCE:
+    if increasing:
       self.reroute_counter += 1
     else:
       self.reroute_counter = 0
