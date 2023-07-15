@@ -224,7 +224,7 @@ class TestCarModelBase(unittest.TestCase):
     now_nanos = 0
 
     # Make sure we can send all messages while inactive
-    CC = car.CarControl.new_message(enabled=True)
+    CC = car.CarControl.new_message()
     now_nanos = test_car_controller(CC, now_nanos)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
