@@ -138,8 +138,8 @@ void MapSettings::refresh() {
   home_widget->unset(NAV_FAVORITE_LABEL_HOME);
   work_widget->unset(NAV_FAVORITE_LABEL_WORK);
   for (auto location : current_locations) {
-    auto dest = location.toObject();
     DestinationWidget *w = nullptr;
+    auto dest = location.toObject();
     if (dest["save_type"].toString() == NAV_TYPE_FAVORITE) {
       auto label = dest["label"].toString();
       if (label == NAV_FAVORITE_LABEL_HOME) w = home_widget;
