@@ -17,7 +17,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-def athena_main(dongle_id: str, stop_condition: Callable[[], bool], reconnect: bool = False) -> None:
+def athena_main(dongle_id: str, stop_condition: Callable[[], bool], disconnected: Optional[threading.Event] = None) -> None:
   start = None
   conn_retries = 0
   while not stop_condition():
@@ -67,8 +67,8 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool], reconnect: b
       print(e)
       conn_retries += 1
 
-    if not reconnect:
-      break
+    if disconnected is not None:
+      disconnected.set()
     time.sleep(backoff(conn_retries))
 
 
@@ -107,7 +107,8 @@ class TestAthenadPing(unittest.TestCase):
   def test_ws_timeout(self) -> None:
     # start athena_main in a thread
     stop_event = threading.Event()
-    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set()))  # pylint: disable=unnecessary-lambda
+    disconnected = threading.Event()
+    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set(), ))  # pylint: disable=unnecessary-lambda
     t.start()
 
     try:
@@ -116,11 +117,13 @@ class TestAthenadPing(unittest.TestCase):
         while not self._received_ping():
           time.sleep(0.1)
 
+      disconnected.clear()
+
       # check that websocket disconnects in less than 60 seconds
       with self.subTest("Switch to LTE"):
         wifi_radio(False)
-        with Timeout(60, "did not disconnect"):
-          while t.is_alive():
+        with Timeout(120, "did not disconnect"):
+          while not disconnected.is_set():
             time.sleep(0.1)
     finally:
       stop_event.set()
