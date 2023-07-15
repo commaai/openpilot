@@ -101,7 +101,7 @@ class TestAthenadPing(unittest.TestCase):
     self._clear_ping_time()
 
   def subTest(self, msg, **params):  # pylint: disable=signature-differs
-    print(f"[TEST] {self.id()} {msg}")
+    print(f"[TEST] {self._testMethodName} {msg}")
     return super().subTest(msg, **params)
 
   @unittest.skip("only run on desk")
