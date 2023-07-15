@@ -1,5 +1,13 @@
 #include "system/loggerd/loggerd.h"
 
+#ifdef QCOM2
+#include "system/loggerd/encoder/v4l_encoder.h"
+#define Encoder V4LEncoder
+#else
+#include "system/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
+#endif
+
 ExitHandler do_exit;
 
 struct EncoderdState {
@@ -54,11 +62,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       if (buf_info.width > 0 && buf_info.height > 0) {
         for (const auto &encoder_info: cam_info.encoder_infos){
-          encoders.push_back(new Encoder(encoder_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                        encoder_info.fps, encoder_info.bitrate,
-                                        encoder_info.encode_type,
-                                        encoder_info.frame_width, encoder_info.frame_height,
-                                        encoder_info.publish_name));
+          encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
         }
       } else {
         LOGE("not initting empty encoder");
