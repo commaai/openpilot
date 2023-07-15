@@ -137,7 +137,7 @@ class UploadQueueCache:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
-def handle_long_poll(ws: WebSocket) -> None:
+def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> None:
   end_event = threading.Event()
 
   threads = [
@@ -156,6 +156,8 @@ def handle_long_poll(ws: WebSocket) -> None:
   try:
     while not end_event.is_set():
       time.sleep(0.1)
+      if exit_event is not None and exit_event.is_set():
+        end_event.set()
   except (KeyboardInterrupt, SystemExit):
     end_event.set()
     raise
@@ -782,19 +784,22 @@ def main(exit_event: Optional[threading.Event] = None):
       if conn_start is None:
         conn_start = time.monotonic()
 
+      print(f"[WS] connecting... (retries={conn_retries})")
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
-                     duration=time.monotonic() - conn_start)
+      duration = time.monotonic() - conn_start
+      print(f"[WS] connected     (retries={conn_retries}, {duration=}:.2fs)")
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries, duration=duration)
       conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()
 
-      handle_long_poll(ws)
+      handle_long_poll(ws, exit_event)
+      print("[WS] disconnected")
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
