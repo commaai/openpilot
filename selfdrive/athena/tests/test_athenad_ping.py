@@ -109,7 +109,7 @@ class TestAthenadPing(unittest.TestCase):
     # start athena_main in a thread
     stop_event = threading.Event()
     disconnected = threading.Event()
-    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set(), ))  # pylint: disable=unnecessary-lambda
+    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set(), disconnected))  # pylint: disable=unnecessary-lambda
     t.start()
 
     try:
