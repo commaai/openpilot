@@ -16,8 +16,6 @@ from selfdrive.athena import athenad
 
 realtime.set_core_affinity = MagicMock()
 athenad.upload_handler = MagicMock()
-athenad.ws_recv = MagicMock()
-athenad.ws_send = MagicMock()
 athenad.upload_handler = MagicMock()
 athenad.log_handler = MagicMock()
 athenad.stat_handler = MagicMock()
