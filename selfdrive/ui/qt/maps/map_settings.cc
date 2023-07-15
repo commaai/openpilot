@@ -75,6 +75,12 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   destinations_layout = new QVBoxLayout(destinations_container);
   destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
+  destinations_layout->addWidget(home_widget = new DestinationWidget(this));
+  destinations_layout->addWidget(work_widget = new DestinationWidget(this));
+  QObject::connect(home_widget, &DestinationWidget::navigateTo, this, &MapSettings::navigateTo);
+  QObject::connect(work_widget, &DestinationWidget::navigateTo, this, &MapSettings::navigateTo);
+  destinations_layout->addStretch();
+
   ScrollView *destinations_scroller = new ScrollView(destinations_container, this);
   destinations_scroller->setFrameShape(QFrame::NoFrame);
   frame->addWidget(destinations_scroller);
@@ -118,50 +124,40 @@ void MapSettings::updateLocations(const QJsonArray &locations) {
 
 void MapSettings::refresh() {
   setUpdatesEnabled(false);
-  // TODO: should we build a new layout and swap it in?
-  clearLayout(destinations_layout);
 
-  bool has_home = false, has_work = false;
+  auto get_w = [this](int i) {
+    auto w = i < widgets.size() ? widgets[i] : widgets.emplace_back(new DestinationWidget);
+    if (!w->parentWidget()) {
+      destinations_layout->insertWidget(destinations_layout->count() - 1, w);
+      QObject::connect(w, &DestinationWidget::navigateTo, this, &MapSettings::navigateTo);
+    }
+    return w;
+  };
+
+  int n = 0;
+  home_widget->unset(NAV_FAVORITE_LABEL_HOME);
+  work_widget->unset(NAV_FAVORITE_LABEL_WORK);
   for (auto location : current_locations) {
     auto dest = location.toObject();
+    DestinationWidget *w = nullptr;
     if (dest["save_type"].toString() == NAV_TYPE_FAVORITE) {
-      has_home = has_home || dest["label"].toString() == NAV_FAVORITE_LABEL_HOME;
-      has_work = has_work || dest["label"].toString() == NAV_FAVORITE_LABEL_WORK;
+      auto label = dest["label"].toString();
+      if (label == NAV_FAVORITE_LABEL_HOME) w = home_widget;
+      if (label == NAV_FAVORITE_LABEL_WORK) w = work_widget;
     }
-    if (dest == current_destination) continue;
-
-    auto widget = new DestinationWidget(this);
-    widget->set(dest, false);
-    QObject::connect(widget, &QPushButton::clicked, [this, dest]() {
-      navigateTo(dest);
-      emit closeSettings();
-    });
-
-    destinations_layout->addWidget(widget);
+    w = w ? w : get_w(n++);
+    w->set(dest, false);
+    w->setVisible(dest != current_destination);
   }
+  for (; n < widgets.size(); ++n) widgets[n]->setVisible(false);
 
-  // add home and work if missing
-  if (!has_home) {
-    auto widget = new DestinationWidget(this);
-    widget->unset(NAV_FAVORITE_LABEL_HOME);
-    destinations_layout->insertWidget(0, widget);
-  }
-  if (!has_work) {
-    auto widget = new DestinationWidget(this);
-    widget->unset(NAV_FAVORITE_LABEL_WORK);
-    // TODO: refactor to remove this hack
-    int index = !has_home || (current_destination["save_type"] == NAV_TYPE_FAVORITE && current_destination["label"] == NAV_FAVORITE_LABEL_HOME) ? 0 : 1;
-    destinations_layout->insertWidget(index, widget);
-  }
-
-  destinations_layout->addStretch();
   setUpdatesEnabled(true);
 }
 
 void MapSettings::navigateTo(const QJsonObject &place) {
   QJsonDocument doc(place);
   params.put("NavDestination", doc.toJson().toStdString());
-  updateCurrentRoute();
+  emit closeSettings();
 }
 
 DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
@@ -196,8 +192,8 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   action->setFixedSize(96, 96);
   action->setObjectName("action");
   action->setStyleSheet("font-size: 65px; font-weight: 600;");
-  QObject::connect(action, &QPushButton::clicked, [=]() { emit clicked(); });
-  QObject::connect(action, &QPushButton::clicked, [=]() { emit actionClicked(); });
+  QObject::connect(action, &QPushButton::clicked, this, &QPushButton::clicked);
+  QObject::connect(action, &QPushButton::clicked, this,  &DestinationWidget::actionClicked);
   frame->addWidget(action);
 
   setFixedHeight(164);
@@ -223,9 +219,13 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
     [current="false"]:pressed { background-color: #18191B; }
     [current="true"] #action:pressed { background-color: #D6D6D6; }
   )");
+  QObject::connect(this, &QPushButton::clicked, [this]() { if (!dest.isEmpty()) emit navigateTo(dest); });
 }
 
 void DestinationWidget::set(const QJsonObject &destination, bool current) {
+  if (dest == destination) return;
+
+  dest = destination;
   setProperty("current", current);
   setProperty("set", true);
 
@@ -263,6 +263,7 @@ void DestinationWidget::set(const QJsonObject &destination, bool current) {
 }
 
 void DestinationWidget::unset(const QString &label, bool current) {
+  dest = {};
   setProperty("current", current);
   setProperty("set", false);
 
