@@ -759,6 +759,10 @@ def backoff(retries: int) -> int:
 
 
 def main(exit_event: Optional[threading.Event] = None):
+  print("hello from athenad", exit_event.is_set() if exit_event is not None else None)
+  if exit_event is not None:
+    exit_event.clear()
+
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:

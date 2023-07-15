@@ -84,11 +84,14 @@ class TestAthenadPing(unittest.TestCase):
     self._clear_ping_time()
 
     self.exit_event = threading.Event()
+    self.exit_event.set()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
   def tearDown(self) -> None:
+    print("tearDown")
     if self.athenad.is_alive():
       self.exit_event.set()
+      print("joining")
       self.athenad.join()
 
   @unittest.skip("only run on desk")
