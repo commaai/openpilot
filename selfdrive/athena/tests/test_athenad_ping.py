@@ -82,8 +82,8 @@ class TestAthenadPing(unittest.TestCase):
     wifi_radio(True)
     self._clear_ping_time()
 
-    self.athenad = threading.Thread(target=athenad.main)
     self.exit_event = threading.Event()
+    self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
   def tearDown(self) -> None:
     if self.athenad.is_alive():
