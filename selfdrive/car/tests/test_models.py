@@ -227,14 +227,12 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(enabled=True, latActive=True, longActive=True)
     now_nanos = test_car_controller(CC, now_nanos)
 
-    # Make sure we can send cancel messages
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = car.CarControl.new_message(cruiseControl={'cancel': True})
     now_nanos = test_car_controller(CC, now_nanos)
 
-    # Make sure we can send resume messages
-    self.safety.set_cruise_engaged_prev(False)
+    # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = car.CarControl.new_message(enabled=True, longActive=True, latActive=True, cruiseControl={'resume': True})
     test_car_controller(CC, now_nanos)
