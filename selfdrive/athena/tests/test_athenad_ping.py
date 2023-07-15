@@ -98,13 +98,15 @@ class TestAthenadPing(unittest.TestCase):
   @mock.patch("websocket.create_connection", autospec=True)
   def test_timeout(self, mock_create_connection) -> None:
     self.athenad.start()
+    mock_create_connection.assert_called_once()
+    mock_create_connection.reset_mock()
 
     # check normal behaviour
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
 
-    mock_create_connection.reset_mock()
+    mock_create_connection.assert_not_called()
 
     # websocket should attempt reconnect after short time
     timer = Timer(180, "no reconnect attempt")
