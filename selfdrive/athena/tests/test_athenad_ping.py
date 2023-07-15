@@ -4,8 +4,9 @@ import threading
 import time
 import unittest
 from typing import cast, Optional
-from unittest import mock
 from unittest.mock import MagicMock
+
+from websocket import create_connection
 
 from common import realtime
 from common.params import Params
@@ -14,6 +15,7 @@ from selfdrive.athena import athenad
 
 
 realtime.set_core_affinity = MagicMock()
+athenad.create_connection = MagicMock(wraps=create_connection)
 athenad.upload_handler = MagicMock()
 # athenad.ws_recv = MagicMock()
 # athenad.ws_send = MagicMock()
@@ -87,6 +89,8 @@ class TestAthenadPing(unittest.TestCase):
     self.exit_event.set()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
+    athenad.create_connection.reset_mock()
+
   def tearDown(self) -> None:
     print("tearDown")
     if self.athenad.is_alive():
@@ -95,18 +99,19 @@ class TestAthenadPing(unittest.TestCase):
       self.athenad.join()
 
   @unittest.skip("only run on desk")
-  @mock.patch("websocket.create_connection", autospec=True)
-  def test_timeout(self, mock_create_connection) -> None:
+  def test_timeout(self) -> None:
     self.athenad.start()
-    mock_create_connection.assert_called_once()
-    mock_create_connection.reset_mock()
+
+    time.sleep(1)
+    athenad.create_connection.assert_called_once()
+    athenad.create_connection.reset_mock()
 
     # check normal behaviour
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
 
-    mock_create_connection.assert_not_called()
+    athenad.create_connection.assert_not_called()
 
     # websocket should attempt reconnect after short time
     timer = Timer(180, "no reconnect attempt")
@@ -114,7 +119,7 @@ class TestAthenadPing(unittest.TestCase):
       wifi_radio(False)
       with timer:
         print("waiting for reconnect attempt")
-        while not mock_create_connection.called:
+        while not athenad.create_connection.called:
           time.sleep(0.1)
       print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
 
