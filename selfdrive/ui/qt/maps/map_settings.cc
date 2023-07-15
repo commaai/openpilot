@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QFileSystemWatcher>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
@@ -299,6 +300,9 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
       QObject::connect(repeater, &RequestRepeater::requestDone, this, &NavigationRequest::parseLocationsResponse);
     }
     {
+      auto file_watcher = new QFileSystemWatcher(this);
+      QObject::connect(file_watcher, &QFileSystemWatcher::fileChanged, this, &NavigationRequest::nextDestinationUpdated);
+
       // Destination set while offline
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
       HttpRequest *deleter = new HttpRequest(this);
@@ -315,8 +319,8 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
           deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
 
-        // Update UI (athena can set destination at any time)
-        emit nextDestinationUpdated(resp, success);
+        // athena can set destination at any time
+        file_watcher->addPath(params.getParamPath("NavDestination").c_str());
       });
     }
   }
