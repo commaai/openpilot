@@ -1,3 +1,4 @@
+#include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/encoder_writer.h"
 
 size_t EncoderWriter::write(LoggerState *logger, Message *msg) {
