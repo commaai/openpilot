@@ -49,9 +49,6 @@ class TestCarModelBase(unittest.TestCase):
   test_route = None
   ci = True
 
-  def __str__(self):
-    return self.car_model + self.test_route.route
-
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
   def setUpClass(cls):
