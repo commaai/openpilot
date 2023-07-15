@@ -21,6 +21,12 @@ class Coordinate:
     self.longitude = longitude
     self.annotations: Dict[str, float] = {}
 
+  def __repr__(self):
+    return f'Coordinate({self.latitude}, {self.longitude})'
+
+  def __str__(self):
+    return self.__repr__()
+
   @classmethod
   def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
     return cls(t[1], t[0])
