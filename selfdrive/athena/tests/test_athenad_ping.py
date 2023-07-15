@@ -100,6 +100,7 @@ class TestAthenadPing(unittest.TestCase):
       with timer:
         while not mock_backoff.called:
           time.sleep(0.1)
+      print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
 
 
 if __name__ == "__main__":
