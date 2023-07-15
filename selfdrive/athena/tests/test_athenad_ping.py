@@ -92,10 +92,8 @@ class TestAthenadPing(unittest.TestCase):
     athenad.create_connection.reset_mock()
 
   def tearDown(self) -> None:
-    print("tearDown")
     if self.athenad.is_alive():
       self.exit_event.set()
-      print("joining")
       self.athenad.join()
 
   @unittest.skip("only run on desk")
@@ -117,8 +115,8 @@ class TestAthenadPing(unittest.TestCase):
     timer = Timer(180, "no reconnect attempt")
     with self.subTest(f"LTE: attempt reconnect within {timer.seconds}s"):
       wifi_radio(False)
+      print("waiting for reconnect attempt")
       with timer:
-        print("waiting for reconnect attempt")
         while not athenad.create_connection.called:
           time.sleep(0.1)
       print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
