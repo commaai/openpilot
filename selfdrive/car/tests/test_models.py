@@ -224,7 +224,7 @@ class TestCarModelBase(unittest.TestCase):
     now_nanos = 0
 
     # Make sure we can send all messages while inactive
-    CC = car.CarControl.new_message(enabled=True, latActive=True, longActive=True)
+    CC = car.CarControl.new_message(enabled=True)
     now_nanos = test_car_controller(CC, now_nanos)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
@@ -234,7 +234,7 @@ class TestCarModelBase(unittest.TestCase):
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
-    CC = car.CarControl.new_message(enabled=True, longActive=True, latActive=True, cruiseControl={'resume': True})
+    CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC, now_nanos)
 
   def test_panda_safety_carstate(self):
