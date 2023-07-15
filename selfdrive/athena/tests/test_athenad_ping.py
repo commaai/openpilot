@@ -46,6 +46,7 @@ class Timer(Timeout):
 
 
 def wifi_radio(on: bool) -> None:
+  print(f"wifi_radio({'on' if on else 'off'})")
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
@@ -91,8 +92,8 @@ class TestAthenadPing(unittest.TestCase):
       self.athenad.join()
 
   @unittest.skip("only run on desk")
-  @mock.patch("selfdrive.athena.athenad.backoff", autospec=True)
-  def test_timeout(self, mock_backoff) -> None:
+  @mock.patch("websocket.create_connection", autospec=True)
+  def test_timeout(self, mock_create_connection) -> None:
     self.athenad.start()
 
     # check normal behaviour
@@ -100,14 +101,15 @@ class TestAthenadPing(unittest.TestCase):
       while not self._received_ping():
         time.sleep(0.1)
 
-    mock_backoff.assert_not_called()
+    mock_create_connection.reset_mock()
 
     # websocket should attempt reconnect after short time
     timer = Timer(90, "no reconnect attempt")
     with self.subTest(f"LTE: attempt reconnect within {timer.seconds}s"):
       wifi_radio(False)
       with timer:
-        while not mock_backoff.called:
+        print("waiting for reconnect attempt")
+        while not mock_create_connection.called:
           time.sleep(0.1)
       print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
 
