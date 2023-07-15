@@ -136,9 +136,10 @@ void MapSettings::refresh() {
     return w;
   };
 
-  int n = 0;
   home_widget->unset(NAV_FAVORITE_LABEL_HOME);
   work_widget->unset(NAV_FAVORITE_LABEL_WORK);
+
+  int n = 0;
   for (auto location : current_locations) {
     DestinationWidget *w = nullptr;
     auto dest = location.toObject();
@@ -283,6 +284,7 @@ void DestinationWidget::unset(const QString &label, bool current) {
   action->setVisible(false);
 
   setStyleSheet(styleSheet());
+  setVisible(true);
 }
 
 // singleton NavigationRequest
@@ -346,4 +348,3 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
   });
   emit locationsUpdated(locations);
 }
-
