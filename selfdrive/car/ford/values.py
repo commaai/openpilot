@@ -104,17 +104,57 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine],
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
       bus=0,
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      bus=0,
+      auxiliary=True,
     ),
   ],
   extra_ecus=[
-    (Ecu.shiftByWire, 0x732, None),
+    (Ecu.debug, 0x703, None),             # All Wheel Drive (AWD)
+    # 0x706                                 Image Processing Module A (IPMA)
+    (Ecu.debug, 0x714, None),             # Heated Steering Wheel Module (HSWM)
+    (Ecu.gateway, 0x716, None),           # Gateway Module A (GWM)
+    (Ecu.combinationMeter, 0x720, None),  # Instrument Panel Cluster (IPC)
+    (Ecu.debug, 0x721, None),             # Vehicle Dynamics Control Module (VDM)
+    (Ecu.debug, 0x724, None),             # Steering Column Control Module (SCCM)
+    (Ecu.debug, 0x725, None),             # Wireless Accessory Charging Module (WACM)
+    (Ecu.body, 0x726, None),              # Body Control Module (BCM)
+    (Ecu.debug, 0x727, None),             # Audio Control Module (ACM)
+    # 0x730                                 Power Steering Control Module (PSCM)
+    (Ecu.debug, 0x731, None),             # Remote Function Actuator (RFA)
+    (Ecu.shiftByWire, 0x732, None),       # Gear Shift Module (GSM)
+    (Ecu.hvac, 0x733, None),              # HVAC
+    (Ecu.debug, 0x734, None),             # Headlamp Control Module (HCM)
+    (Ecu.parkingAdas, 0x736, None),       # Parking Aid Module (PAM)
+    (Ecu.srs, 0x737, None),               # Restraints Control Module (RCM)
+    (Ecu.debug, 0x740, None),             # Driver Door Module (DDM)
+    (Ecu.debug, 0x741, None),             # Passenger Door Module (PDM)
+    (Ecu.debug, 0x744, None),             # Driver Seat Module (DSM)
+    (Ecu.debug, 0x746, None),             # Direct Current/Direct Current Converter Control Module (DCDC)
+    (Ecu.debug, 0x751, None),             # Radio Transceiver Module (RTM)
+    (Ecu.telematics, 0x754, None),        # Telematic Control Unit Module (TCU)
+    # 0x760                                 Anti-lock Brake System (ABS)
+    # 0x764                                 Cruise Control Module (CCM)
+    (Ecu.debug, 0x765, None),             # Occupant Classification System (OCS)
+    (Ecu.debug, 0x775, None),             # Rear Gate Trunk Module (RGTM)
+    (Ecu.debug, 0x776, None),             # Front Seat Climate Control Module (SCME)
+    (Ecu.debug, 0x783, None),             # Audio Sigital Signal Processing Module (DSP)
+    (Ecu.debug, 0x791, None),             # Trailer Module (TRM)
+    (Ecu.debug, 0x7A0, None),             # Front Controls Interface Module B (FCIMB)
+    (Ecu.debug, 0x7B1, None),             # Image Processing Module B (IPMB)
+    (Ecu.cornerRadar, 0x7C4, None),       # Side Obstacle Detection Control Module LH (SODL)
+    (Ecu.cornerRadar, 0x7C6, None),       # Side Obstacle Detection Control Module RH (SODR)
+    (Ecu.debug, 0x7D0, None),             # Accessory Protocol Interface Module (APIM)
+    (Ecu.debug, 0x7D5, None),             # Digital Audio Control Module C (DACMC)
+    # 0x7E0                                 Powertrain Control Module (PCM)
   ],
 )
 
