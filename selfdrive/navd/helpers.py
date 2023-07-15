@@ -21,12 +21,6 @@ class Coordinate:
     self.longitude = longitude
     self.annotations: Dict[str, float] = {}
 
-  def __repr__(self):
-    return f'Coordinate({self.latitude}, {self.longitude})'
-
-  def __str__(self):
-    return self.__repr__()
-
   @classmethod
   def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
     return cls(t[1], t[0])
@@ -35,7 +29,10 @@ class Coordinate:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
   def __str__(self) -> str:
-    return f"({self.latitude}, {self.longitude})"
+    return f'Coordinate({self.latitude}, {self.longitude})'
+
+  def __repr__(self):
+    return self.__str__()
 
   def __eq__(self, other) -> bool:
     if not isinstance(other, Coordinate):
