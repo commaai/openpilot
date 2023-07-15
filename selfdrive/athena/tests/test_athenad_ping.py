@@ -12,6 +12,7 @@ from common import realtime
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.athena import athenad
+from system.hardware import TICI
 
 
 realtime.set_core_affinity = MagicMock()
@@ -53,12 +54,10 @@ class Timer(Timeout):
 
 
 def wifi_radio(on: bool) -> None:
+  if not TICI:
+    return
   print(f"wifi {'on' if on else 'off'}")
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
-
-
-class TestException(BaseException):
-  pass
 
 
 class TestAthenadPing(unittest.TestCase):
@@ -100,7 +99,7 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  @unittest.skip("only run on desk")
+  @unittest.skipIf(not TICI, "only run on desk")
   def test_timeout(self) -> None:
     self.athenad.start()
 
