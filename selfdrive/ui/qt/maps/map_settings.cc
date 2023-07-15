@@ -334,16 +334,14 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
     return;
   }
 
-  // Sort: HOME, WORK, alphabetical FAVORITES, and then most recent (as returned by API)
+  // Sort: alphabetical FAVORITES, and then most recent (as returned by API).
+  // We don't need to care about the ordering of HOME and WORK. DestinationWidget always displays them at the top.
   QJsonArray locations = doc.array();
   std::stable_sort(locations.begin(), locations.end(), [](const QJsonValue &a, const QJsonValue &b) {
-    if (a["save_type"] == NAV_TYPE_FAVORITE || b["save_type"] == NAV_TYPE_FAVORITE) {
-      QString a_label = a["label"].toString(), b_label = b["label"].toString();
-      return std::tuple(a["save_type"].toString(), (a_label.isEmpty() ? "xxx" : a_label), a["place_name"].toString()) <
-             std::tuple(b["save_type"].toString(), (b_label.isEmpty() ? "xxx" : b_label), b["place_name"].toString());
-    } else {
-      return false;
-    }
+    bool has_favorite = a["save_type"] == NAV_TYPE_FAVORITE || b["save_type"] == NAV_TYPE_FAVORITE;
+    return has_favorite && (std::tuple(a["save_type"].toString(), a["place_name"].toString()) <
+                            std::tuple(b["save_type"].toString(), b["place_name"].toString()));
   });
   emit locationsUpdated(locations);
 }
+
