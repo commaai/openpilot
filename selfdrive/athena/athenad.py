@@ -780,22 +780,19 @@ def main(exit_event: Optional[threading.Event] = None):
       if conn_start is None:
         conn_start = time.monotonic()
 
-      print(f"[WS] connecting... (retries={conn_retries})")
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      duration = time.monotonic() - conn_start
-      print(f"[WS] connected     (retries={conn_retries}, {duration=:.2f}s)")
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries, duration=duration)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
       conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()
 
-      handle_long_poll(ws, exit_event)
-      print("[WS] disconnected")
+      handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):

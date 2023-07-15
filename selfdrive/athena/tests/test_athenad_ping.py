@@ -6,7 +6,7 @@ import unittest
 from typing import cast, Optional
 from unittest.mock import MagicMock
 
-from websocket import create_connection
+import websocket
 
 from common import realtime
 from common.params import Params
@@ -15,7 +15,6 @@ from selfdrive.athena import athenad
 
 
 realtime.set_core_affinity = MagicMock()
-athenad.create_connection = MagicMock(wraps=create_connection)
 athenad.upload_handler = MagicMock()
 athenad.ws_recv = MagicMock()
 athenad.ws_send = MagicMock()
@@ -23,6 +22,14 @@ athenad.upload_handler = MagicMock()
 athenad.log_handler = MagicMock()
 athenad.stat_handler = MagicMock()
 athenad.jsonrpc_handler = MagicMock()
+
+
+def create_connection(*args, **kwargs):
+  print("[WS] create_connection")
+  websocket.create_connection(*args, **kwargs)
+
+
+athenad.create_connection = MagicMock(wraps=create_connection)
 
 
 class Timer(Timeout):
