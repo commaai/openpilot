@@ -6,8 +6,6 @@ import unittest
 from typing import cast, Optional
 from unittest.mock import MagicMock
 
-import websocket
-
 from common import realtime
 from common.params import Params
 from common.timeout import Timeout
@@ -16,6 +14,7 @@ from system.hardware import TICI
 
 
 realtime.set_core_affinity = MagicMock()
+athenad.create_connection = MagicMock()
 athenad.upload_handler = MagicMock()
 athenad.upload_handler = MagicMock()
 athenad.log_handler = MagicMock()
@@ -23,34 +22,7 @@ athenad.stat_handler = MagicMock()
 athenad.jsonrpc_handler = MagicMock()
 
 
-def create_connection(*args, **kwargs):
-  print("[WS] create_connection")
-  return websocket.create_connection(*args, **kwargs)
-
-
-athenad.create_connection = MagicMock(wraps=create_connection)
-
-
-class Timer(Timeout):
-  start_time: Optional[float]
-  end_time: Optional[float]
-  elapsed_time: Optional[float]
-
-  def handle_timeout(self, signume, frame):
-    self.end_time = time.monotonic()
-    super().handle_timeout(signume, frame)
-
-  def __enter__(self):
-    self.start_time = time.monotonic()
-    self.end_time = None
-    self.elapsed_time = None
-    return super().__enter__()
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    if self.end_time is None:
-      self.end_time = time.monotonic()
-      self.elapsed_time = self.end_time - self.start_time
-    return super().__exit__(exc_type, exc_val, exc_tb)
+athenad.create_connection.side_effect = lambda: print("[WS] create_connection")
 
 
 def wifi_radio(on: bool) -> None:
@@ -116,14 +88,14 @@ class TestAthenadPing(unittest.TestCase):
     athenad.create_connection.assert_not_called()
 
     # websocket should attempt reconnect after short time
-    timer = Timer(180, "no reconnect attempt")
-    with self.subTest(f"LTE: attempt reconnect within {timer.seconds}s"):
+    with self.subTest("LTE: attempt reconnect"):
       wifi_radio(False)
       print("waiting for reconnect attempt")
-      with timer:
+      start_time = time.monotonic()
+      with Timeout(180, "no reconnect attempt"):
         while not athenad.create_connection.called:
           time.sleep(0.1)
-      print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
+        print(f"reconnect attempt after {time.monotonic() - start_time:.2f}s")
 
     self._clear_ping_time()
 
