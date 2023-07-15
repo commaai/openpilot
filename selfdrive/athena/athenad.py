@@ -791,7 +791,7 @@ def main(exit_event: Optional[threading.Event] = None):
                              enable_multithread=True,
                              timeout=30.0)
       duration = time.monotonic() - conn_start
-      print(f"[WS] connected     (retries={conn_retries}, {duration:.2f=}s)")
+      print(f"[WS] connected     (retries={conn_retries}, {duration=:.2f}s)")
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries, duration=duration)
       conn_start = None
 
