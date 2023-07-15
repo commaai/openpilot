@@ -83,6 +83,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
 
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::locationsUpdated, this, &MapSettings::updateLocations);
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::nextDestinationUpdated, this, &MapSettings::updateCurrentRoute);
+
+  current_locations = NavigationRequest::instance()->currentLocations();
 }
 
 void MapSettings::mousePressEvent(QMouseEvent *ev) {
@@ -333,7 +335,7 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
   }
 
   // Sort: HOME, WORK, alphabetical FAVORITES, and then most recent (as returned by API)
-  QJsonArray locations = doc.array();
+  locations = doc.array();
   std::stable_sort(locations.begin(), locations.end(), [](const QJsonValue &a, const QJsonValue &b) {
     if (a["save_type"] == NAV_TYPE_FAVORITE || b["save_type"] == NAV_TYPE_FAVORITE) {
       QString a_label = a["label"].toString(), b_label = b["label"].toString();
