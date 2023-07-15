@@ -54,6 +54,7 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool], reconnect: b
         raise
       finally:
         for t in threads:
+          print("[WS] joining", t.name)
           t.join()
     except (KeyboardInterrupt, SystemExit):
       break
