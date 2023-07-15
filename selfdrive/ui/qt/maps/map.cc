@@ -105,7 +105,7 @@ void MapWindow::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
+    m_map->setPaintProperty("navLayer", "line-color", getPathColor(uiState()->scene.navigate_on_openpilot));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
     m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
@@ -139,7 +139,9 @@ void MapWindow::updateState(const UIState &s) {
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       // Set path color on change, and show map on rising edge of navigate on openpilot
-      m_map->setPaintProperty("navLayer", "line-color", nav_enabled ? QColor("#31ee73") : QColor("#31a1ee"));
+      if (loaded_once) {
+        m_map->setPaintProperty("navLayer", "line-color", getPathColor(nav_enabled));
+      }
       if (nav_enabled) {
         emit requestVisible(true);
       }
