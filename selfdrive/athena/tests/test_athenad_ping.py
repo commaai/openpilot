@@ -13,7 +13,11 @@ from common.timeout import Timeout
 from selfdrive.athena.athenad import ATHENA_HOST, backoff, ws_recv, ws_send
 
 
-def athena_main(dongle_id: str, stop_condition: Callable[[], bool]) -> None:
+def wifi_radio(on: bool) -> None:
+  subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
+
+
+def athena_main(dongle_id: str, stop_condition: Callable[[], bool], reconnect: bool = False) -> None:
   start = None
   conn_retries = 0
   while not stop_condition():
@@ -62,16 +66,9 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool]) -> None:
       print(e)
       conn_retries += 1
 
+    if not reconnect:
+      break
     time.sleep(backoff(conn_retries))
-
-
-def connect_lte() -> None:
-  subprocess.run(["nmcli", "connection", "modify", "--temporary", "lte", "ipv4.route-metric", "1", "ipv6.route-metric", "1"], check=True)
-  subprocess.run(["nmcli", "connection", "up", "lte"], check=True)
-
-
-def restart_network_manager() -> None:
-  subprocess.run(["sudo", "systemctl", "restart", "NetworkManager"], check=True)
 
 
 class TestAthenadPing(unittest.TestCase):
@@ -91,33 +88,49 @@ class TestAthenadPing(unittest.TestCase):
   def setUpClass(cls) -> None:
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
+    wifi_radio(True)
 
   @classmethod
   def tearDownClass(cls) -> None:
-    restart_network_manager()
+    wifi_radio(True)
 
   def setUp(self) -> None:
-    restart_network_manager()
+    wifi_radio(True)
     self._clear_ping_time()
 
   @unittest.skip("only run on desk")
-  def test_ping_wifi_to_lte(self) -> None:
-    with self.subTest("wifi"):
-      with Timeout(120, "no ping received"):
-        athena_main(self.dongle_id, stop_condition=self._received_ping)
-      self.assertIsNotNone(self._get_ping_time())
+  def test_ws_timeout(self) -> None:
+    # start athena_main in a thread
+    stop_event = threading.Event()
+    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set()))  # pylint: disable=unnecessary-lambda
+    t.start()
+
+    try:
+      # check normal behaviour
+      with self.subTest("Wi-Fi"), Timeout(120, "no ping received"):
+        while not self._received_ping():
+          time.sleep(0.1)
+
+      # check that websocket disconnects in less than 60 seconds
+      with self.subTest("Switch to LTE"), Timeout(60, "did not disconnect"):
+        athena_main(self.dongle_id, stop_condition=lambda: False, reconnect=False)
+    finally:
+      stop_event.set()
+      t.join()
+
+  @unittest.skip("only run on desk")
+  def test_recover_ping_wifi_to_lte(self) -> None:
+    # check normal behaviour
+    with self.subTest("Wi-Fi"), Timeout(120, "no ping received"):
+      athena_main(self.dongle_id, stop_condition=self._received_ping)
 
     self._clear_ping_time()
 
-    with self.subTest("lte"):
-      try:
-        connect_lte()
-
-        with Timeout(120, "no ping received"):
-          athena_main(self.dongle_id, stop_condition=self._received_ping)
-      finally:
-        restart_network_manager()
-      self.assertIsNotNone(self._get_ping_time())
+    # check that we continue to update ping after switching to LTE
+    with self.subTest("Switch to LTE"):
+      wifi_radio(False)
+      with Timeout(120, "no ping received"):
+        athena_main(self.dongle_id, stop_condition=self._received_ping)
 
 
 if __name__ == "__main__":

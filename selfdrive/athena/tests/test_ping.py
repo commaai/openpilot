@@ -5,14 +5,7 @@ import unittest
 from typing import Optional
 
 from common.timeout import Timeout
-
-
-def wifi_radio(on: bool) -> None:
-  subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
-
-
-def restart_network_manager() -> None:
-  subprocess.run(["sudo", "systemctl", "restart", "NetworkManager"], check=True)
+from selfdrive.athena.tests.test_athenad_ping import wifi_radio
 
 
 def ping() -> None:
@@ -47,8 +40,9 @@ class TestPing(unittest.TestCase):
   def tearDownClass(cls):
     wifi_radio(True)
 
-  # Measure how long it takes for connectivity after disabling Wi-Fi
+  @unittest.skip("only run on desk")
   def test_ping(self):
+    """Measure how long it takes for connectivity after disabling Wi-Fi"""
     timer = Timer(seconds=20)
 
     with self.subTest("Wi-Fi"):
