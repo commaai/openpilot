@@ -108,6 +108,7 @@ class TestAthenadPing(unittest.TestCase):
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
+      print("ping received")
 
     athenad.create_connection.assert_not_called()
 
@@ -127,6 +128,7 @@ class TestAthenadPing(unittest.TestCase):
     with self.subTest("LTE: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
+      print("ping received")
 
 
 if __name__ == "__main__":
