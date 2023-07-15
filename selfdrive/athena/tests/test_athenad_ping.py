@@ -3,26 +3,20 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import cast, Optional
+from typing import Callable, cast, Optional
 from unittest.mock import MagicMock
 
-from common import realtime
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.athena import athenad
 from system.hardware import TICI
 
 
-realtime.set_core_affinity = MagicMock()
-athenad.create_connection = MagicMock()
-athenad.upload_handler = MagicMock()
-athenad.upload_handler = MagicMock()
-athenad.log_handler = MagicMock()
-athenad.stat_handler = MagicMock()
-athenad.jsonrpc_handler = MagicMock()
-
-
-athenad.create_connection.side_effect = lambda: print("[WS] create_connection")
+# athenad.create_connection = MagicMock(wraps=athenad.create_connection)
+# athenad.upload_handler = MagicMock(wraps=athenad.upload_handler)
+# athenad.log_handler = MagicMock(wraps=athenad.log_handler)
+# athenad.stat_handler = MagicMock(wraps=athenad.stat_handler)
+# athenad.jsonrpc_handler = MagicMock(wraps=athenad.jsonrpc_handler)
 
 
 def wifi_radio(on: bool) -> None:
@@ -39,6 +33,8 @@ class TestAthenadPing(unittest.TestCase):
   athenad: threading.Thread
   exit_event: threading.Event
 
+  _create_connection: Callable
+
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
 
@@ -52,10 +48,13 @@ class TestAthenadPing(unittest.TestCase):
   def setUpClass(cls) -> None:
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
+    cls._create_connection = athenad.create_connection
+    athenad.create_connection = MagicMock(wraps=cls._create_connection)
 
   @classmethod
   def tearDownClass(cls) -> None:
     wifi_radio(True)
+    athenad.create_connection = cls._create_connection
 
   def setUp(self) -> None:
     wifi_radio(True)
