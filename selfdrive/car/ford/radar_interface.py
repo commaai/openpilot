@@ -126,7 +126,7 @@ class RadarInterface(RadarInterfaceBase):
         azimuth = msg[f"CAN_DET_AZIMUTH_{ii:02d}"]              # rad [-3.1416|3.13964]
         dist = msg[f"CAN_DET_RANGE_{ii:02d}"]                   # m [0|255.984]
         distRate = msg[f"CAN_DET_RANGE_RATE_{ii:02d}"]          # m/s [-128|127.984]
-        dRel = cos*(azimuth) * dist                             # m from front of car
+        dRel = cos(azimuth) * dist                             # m from front of car
         yRel = -sin(azimuth) * dist                             # in car frame's y axis, left is positive
 
         # delphi doesn't notify of track switches, so do it manually
