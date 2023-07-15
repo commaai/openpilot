@@ -25,6 +25,7 @@ class NavigationRequest : public QObject {
 
 public:
   static NavigationRequest *instance();
+  QJsonArray currentLocations() const { return locations; };
 
 signals:
   void locationsUpdated(const QJsonArray &locations);
@@ -36,6 +37,7 @@ private:
 
   Params params;
   QString prev_response;
+  QJsonArray locations;
 };
 
 class MapSettings : public QFrame {
