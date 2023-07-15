@@ -60,8 +60,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      assert(buf_info.width > 0 && buf_info.height > 0);
       LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
+      assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
         encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
