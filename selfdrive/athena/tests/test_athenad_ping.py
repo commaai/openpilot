@@ -121,6 +121,13 @@ class TestAthenadPing(unittest.TestCase):
           time.sleep(0.1)
       print(f"reconnect attempt after {timer.elapsed_time:.2f}s")
 
+    self._clear_ping_time()
+
+    # check ping received after reconnect
+    with self.subTest("LTE: receives ping"), Timeout(70, "no ping received"):
+      while not self._received_ping():
+        time.sleep(0.1)
+
 
 if __name__ == "__main__":
   unittest.main()
