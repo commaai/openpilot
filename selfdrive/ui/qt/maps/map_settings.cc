@@ -157,6 +157,7 @@ void MapSettings::refresh() {
 void MapSettings::navigateTo(const QJsonObject &place) {
   QJsonDocument doc(place);
   params.put("NavDestination", doc.toJson().toStdString());
+  updateCurrentRoute();
   emit closeSettings();
 }
 
