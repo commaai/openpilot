@@ -135,15 +135,11 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  qDebug() << "updateState()";
-
   if (sm.updated("modelV2")) {
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       // Set path color on change, and show map on rising edge of navigate on openpilot
-      qDebug() << "going to change path color:" << loaded_once;
       if (loaded_once) {
-        qDebug() << "setting path color on change!";
         m_map->setPaintProperty("navLayer", "line-color", getPathColor(nav_enabled));
       }
       if (nav_enabled) {
