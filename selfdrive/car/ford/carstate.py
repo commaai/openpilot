@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import DBC, CarControllerParams
+from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams, DBC
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -54,6 +54,10 @@ class CarState(CarStateBase):
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     # ret.espDisabled = False  # TODO: find traction control signal
+
+    if self.CP.carFingerprint in CANFD_CARS:
+      # this signal is always 0 on non-CAN FD cars
+      ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
     # cruise state
     ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
@@ -181,11 +185,18 @@ class CarState(CarStateBase):
       ("Cluster_Info1_FD1", 10),
       ("SteeringPinion_Data", 100),
       ("EPAS_INFO", 50),
-      ("Lane_Assist_Data3_FD1", 33),
       ("Steering_Data_FD1", 10),
       ("BodyInfo_3_FD1", 2),
       ("RCMStatusMessage2_FD1", 10),
     ]
+
+    if CP.carFingerprint in CANFD_CARS:
+      signals += [
+        ("LatCtlSte_D_Stat", "Lane_Assist_Data3_FD1"),       # PSCM lateral control status
+      ]
+      checks += [
+        ("Lane_Assist_Data3_FD1", 33),
+      ]
 
     if CP.transmissionType == TransmissionType.automatic:
       signals += [
