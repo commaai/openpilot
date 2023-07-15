@@ -48,7 +48,7 @@ class Timer(Timeout):
 
 
 def wifi_radio(on: bool) -> None:
-  print(f"wifi_radio({'on' if on else 'off'})")
+  print(f"wifi {'on' if on else 'off'}")
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
@@ -86,7 +86,6 @@ class TestAthenadPing(unittest.TestCase):
     self._clear_ping_time()
 
     self.exit_event = threading.Event()
-    self.exit_event.set()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
     athenad.create_connection.reset_mock()
