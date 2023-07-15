@@ -758,7 +758,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main():
+def main(exit_event: Optional[threading.Event] = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -773,7 +773,7 @@ def main():
 
   conn_start = None
   conn_retries = 0
-  while 1:
+  while exit_event is None or not exit_event.is_set():
     try:
       if conn_start is None:
         conn_start = time.monotonic()

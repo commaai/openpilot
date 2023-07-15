@@ -49,10 +49,16 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
+class TestException(BaseException):
+  pass
+
+
 class TestAthenadPing(unittest.TestCase):
   params: Params
   dongle_id: str
+
   athenad: threading.Thread
+  exit_event: threading.Event
 
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
@@ -75,10 +81,13 @@ class TestAthenadPing(unittest.TestCase):
   def setUp(self) -> None:
     wifi_radio(True)
     self._clear_ping_time()
+
     self.athenad = threading.Thread(target=athenad.main)
+    self.exit_event = threading.Event()
 
   def tearDown(self) -> None:
-    if self.athenad is not None and self.athenad.is_alive():
+    if self.athenad.is_alive():
+      self.exit_event.set()
       self.athenad.join()
 
   @unittest.skip("only run on desk")
