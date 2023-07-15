@@ -117,9 +117,11 @@ class TestAthenadPing(unittest.TestCase):
           time.sleep(0.1)
 
       # check that websocket disconnects in less than 60 seconds
-      with self.subTest("Switch to LTE"), Timeout(60, "did not disconnect"):
-        while t.is_alive():
-          time.sleep(0.1)
+      with self.subTest("Switch to LTE"):
+        wifi_radio(False)
+        with Timeout(60, "did not disconnect"):
+          while t.is_alive():
+            time.sleep(0.1)
     finally:
       stop_event.set()
       t.join()
