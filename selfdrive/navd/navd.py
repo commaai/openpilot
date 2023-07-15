@@ -76,6 +76,7 @@ class RouteEngine:
     self.update_location()
     self.recompute_route()
     self.send_instruction()
+    self.send_route()
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
