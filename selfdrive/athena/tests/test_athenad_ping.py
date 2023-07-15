@@ -118,6 +118,7 @@ class TestAthenadPing(unittest.TestCase):
     finally:
       stop_event.set()
       t.join()
+      print("joining")
 
   @unittest.skip("only run on desk")
   def test_recover_ping_wifi_to_lte(self) -> None:
