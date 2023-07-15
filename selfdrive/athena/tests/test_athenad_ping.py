@@ -13,6 +13,28 @@ from common.timeout import Timeout
 from selfdrive.athena.athenad import ATHENA_HOST, backoff, ws_recv, ws_send
 
 
+class Timer(Timeout):
+  start_time: Optional[float]
+  end_time: Optional[float]
+  elapsed_time: Optional[float]
+
+  def handle_timeout(self, signume, frame):
+    self.end_time = time.monotonic()
+    super().handle_timeout(signume, frame)
+
+  def __enter__(self):
+    self.start_time = time.monotonic()
+    self.end_time = None
+    self.elapsed_time = None
+    return super().__enter__()
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    if self.end_time is None:
+      self.end_time = time.monotonic()
+      self.elapsed_time = self.end_time - self.start_time
+    return super().__exit__(exc_type, exc_val, exc_tb)
+
+
 def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
@@ -54,10 +76,8 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool], disconnected
         raise
       finally:
         if disconnected is not None:
-          print("disconnected")
           disconnected.set()
         for t in threads:
-          print("[WS] joining", t.name)
           t.join()
     except (KeyboardInterrupt, SystemExit):
       break
@@ -100,10 +120,6 @@ class TestAthenadPing(unittest.TestCase):
     wifi_radio(True)
     self._clear_ping_time()
 
-  def subTest(self, msg, **params):  # pylint: disable=signature-differs
-    print(f"[TEST] {self._testMethodName} {msg}")
-    return super().subTest(msg, **params)
-
   @unittest.skip("only run on desk")
   def test_ws_timeout(self) -> None:
     # start athena_main in a thread
@@ -121,11 +137,14 @@ class TestAthenadPing(unittest.TestCase):
       disconnected.clear()
 
       # check that websocket disconnects in less than 120 seconds
+      timer = Timer(seconds=120)
       with self.subTest("Switch to LTE"):
         wifi_radio(False)
-        with Timeout(120, "did not disconnect"):
+        with timer:
           while not disconnected.is_set():
             time.sleep(0.1)
+
+        print(f"Disconnect took {timer.elapsed_time:.2f} seconds")
     finally:
       stop_event.set()
       t.join()

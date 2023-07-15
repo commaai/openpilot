@@ -1,38 +1,13 @@
 #!/usr/bin/env python3
 import subprocess
-import time
 import unittest
-from typing import Optional
 
-from common.timeout import Timeout
-from selfdrive.athena.tests.test_athenad_ping import wifi_radio
+from selfdrive.athena.tests.test_athenad_ping import Timer, wifi_radio
 
 
 def ping() -> None:
   # https://serverfault.com/a/42382
   subprocess.run(["bash", "-c", "until ping -c1 www.google.com >/dev/null 2>&1; do :; done"], check=True)
-
-
-class Timer(Timeout):
-  start_time: Optional[float]
-  end_time: Optional[float]
-  elapsed_time: Optional[float]
-
-  def handle_timeout(self, signume, frame):
-    self.end_time = time.monotonic()
-    super().handle_timeout(signume, frame)
-
-  def __enter__(self):
-    self.start_time = time.monotonic()
-    self.end_time = None
-    self.elapsed_time = None
-    return super().__enter__()
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    if self.end_time is None:
-      self.end_time = time.monotonic()
-      self.elapsed_time = self.end_time - self.start_time
-    return super().__exit__(exc_type, exc_val, exc_tb)
 
 
 class TestPing(unittest.TestCase):
