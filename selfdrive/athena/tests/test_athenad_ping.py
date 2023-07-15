@@ -53,6 +53,8 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool], disconnected
         end_event.set()
         raise
       finally:
+        if disconnected is not None:
+          disconnected.set()
         for t in threads:
           print("[WS] joining", t.name)
           t.join()
@@ -67,8 +69,6 @@ def athena_main(dongle_id: str, stop_condition: Callable[[], bool], disconnected
       print(e)
       conn_retries += 1
 
-    if disconnected is not None:
-      disconnected.set()
     time.sleep(backoff(conn_retries))
 
 
