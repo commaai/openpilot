@@ -99,6 +99,10 @@ class TestAthenadPing(unittest.TestCase):
     wifi_radio(True)
     self._clear_ping_time()
 
+  def subTest(self, msg, **params):  # pylint: disable=signature-differs
+    print(f"[TEST] {msg}")
+    return super().subTest(msg, **params)
+
   @unittest.skip("only run on desk")
   def test_ws_timeout(self) -> None:
     # start athena_main in a thread
