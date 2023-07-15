@@ -1,16 +1,20 @@
 import signal
+from typing import Optional
 
 class TimeoutException(Exception):
   pass
 
 class Timeout:
+  seconds: int
+  error_msg: str
+
   """
   Timeout context manager.
   For example this code will raise a TimeoutException:
   with Timeout(seconds=5, error_msg="Sleep was too long"):
     time.sleep(10)
   """
-  def __init__(self, seconds, error_msg=None):
+  def __init__(self, seconds: int, error_msg: Optional[str] = None) -> None:
     if error_msg is None:
       error_msg = f'Timed out after {seconds} seconds'
     self.seconds = seconds

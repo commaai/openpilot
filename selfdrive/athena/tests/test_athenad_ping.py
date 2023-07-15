@@ -3,14 +3,24 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import Callable, cast, Optional
+from typing import cast, Optional
+from unittest import mock
+from unittest.mock import MagicMock
 
-from websocket import create_connection, WebSocketException
-
-from common.api import Api
+from common import realtime
 from common.params import Params
 from common.timeout import Timeout
-from selfdrive.athena.athenad import ATHENA_HOST, backoff, ws_recv, ws_send
+from selfdrive.athena import athenad
+
+
+realtime.set_core_affinity = MagicMock()
+athenad.upload_handler = MagicMock()
+# athenad.ws_recv = MagicMock()
+# athenad.ws_send = MagicMock()
+athenad.upload_handler = MagicMock()
+athenad.log_handler = MagicMock()
+athenad.stat_handler = MagicMock()
+athenad.jsonrpc_handler = MagicMock()
 
 
 class Timer(Timeout):
@@ -39,63 +49,10 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-def athena_main(dongle_id: str, stop_condition: Callable[[], bool], disconnected: Optional[threading.Event] = None) -> None:
-  start = None
-  conn_retries = 0
-  while not stop_condition():
-    try:
-      if start is None:
-        start = time.monotonic()
-
-      print(f"[WS] connecting ({conn_retries=})")
-      ws = create_connection(ATHENA_HOST + "/ws/v2/" + dongle_id,
-                             cookie="jwt=" + Api(dongle_id).get_token(),
-                             enable_multithread=True,
-                             timeout=30.0)
-
-      duration = time.monotonic() - start
-      print(f"[WS] connected in {duration:.2f}s")
-      start = None
-
-      conn_retries = 0
-
-      end_event = threading.Event()
-      threads = [
-        threading.Thread(target=ws_recv, args=(ws, end_event), name="ws_recv"),
-        threading.Thread(target=ws_send, args=(ws, end_event), name="ws_send"),
-      ]
-
-      for t in threads:
-        t.start()
-      try:
-        while not stop_condition() and not end_event.is_set():
-          time.sleep(0.1)
-        end_event.set()
-      except (KeyboardInterrupt, SystemExit):
-        end_event.set()
-        raise
-      finally:
-        if disconnected is not None:
-          disconnected.set()
-        for t in threads:
-          t.join()
-    except (KeyboardInterrupt, SystemExit):
-      break
-    except (ConnectionError, TimeoutError, WebSocketException) as e:
-      print("[WS] connection error")
-      print(e)
-      conn_retries += 1
-    except Exception as e:
-      print("[WS] exception")
-      print(e)
-      conn_retries += 1
-
-    time.sleep(backoff(conn_retries))
-
-
 class TestAthenadPing(unittest.TestCase):
   params: Params
   dongle_id: str
+  athenad: threading.Thread
 
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
@@ -110,7 +67,6 @@ class TestAthenadPing(unittest.TestCase):
   def setUpClass(cls) -> None:
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
-    wifi_radio(True)
 
   @classmethod
   def tearDownClass(cls) -> None:
@@ -119,50 +75,31 @@ class TestAthenadPing(unittest.TestCase):
   def setUp(self) -> None:
     wifi_radio(True)
     self._clear_ping_time()
+    self.athenad = threading.Thread(target=athenad.main)
+
+  def tearDown(self) -> None:
+    if self.athenad is not None and self.athenad.is_alive():
+      self.athenad.join()
 
   @unittest.skip("only run on desk")
-  def test_ws_timeout(self) -> None:
-    # start athena_main in a thread
-    stop_event = threading.Event()
-    disconnected = threading.Event()
-    t = threading.Thread(target=athena_main, args=(self.dongle_id, lambda: stop_event.is_set(), disconnected))  # pylint: disable=unnecessary-lambda
-    t.start()
+  @mock.patch("selfdrive.athena.athenad.backoff", autospec=True)
+  def test_timeout(self, mock_backoff) -> None:
+    self.athenad.start()
 
-    try:
-      # check normal behaviour
-      with self.subTest("Wi-Fi"), Timeout(120, "no ping received"):
-        while not self._received_ping():
-          time.sleep(0.1)
-
-      disconnected.clear()
-
-      # check that websocket disconnects in less than 120 seconds
-      timer = Timer(seconds=120)
-      with self.subTest("Switch to LTE"):
-        wifi_radio(False)
-        with timer:
-          while not disconnected.is_set():
-            time.sleep(0.1)
-
-        print(f"Disconnect took {timer.elapsed_time:.2f} seconds")
-    finally:
-      stop_event.set()
-      t.join()
-      print("joining")
-
-  @unittest.skip("only run on desk")
-  def test_recover_ping_wifi_to_lte(self) -> None:
     # check normal behaviour
-    with self.subTest("Wi-Fi"), Timeout(120, "no ping received"):
-      athena_main(self.dongle_id, stop_condition=self._received_ping)
+    with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
+      while not self._received_ping():
+        time.sleep(0.1)
 
-    self._clear_ping_time()
+    mock_backoff.assert_not_called()
 
-    # check that we continue to update ping after switching to LTE
-    with self.subTest("Switch to LTE"):
+    # websocket should attempt reconnect after short time
+    timer = Timer(90, "no reconnect attempt")
+    with self.subTest(f"LTE: attempt reconnect within {timer.seconds}s"):
       wifi_radio(False)
-      with Timeout(120, "no ping received"):
-        athena_main(self.dongle_id, stop_condition=self._received_ping)
+      with timer:
+        while not mock_backoff.called:
+          time.sleep(0.1)
 
 
 if __name__ == "__main__":
