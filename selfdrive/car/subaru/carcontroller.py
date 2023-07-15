@@ -89,10 +89,10 @@ class CarController:
         self.rpm_steady = cruise_rpm
 
         # rate limiting
-        cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
+        cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, -CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
         self.cruise_throttle_last = cruise_throttle
 
-        cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
+        cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, -CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
         self.cruise_rpm_last = cruise_rpm
       
       else:
