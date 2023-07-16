@@ -55,15 +55,10 @@ void rotate_if_needed(LoggerdState *s) {
 size_t handle_encoder_msg(LoggerdState *s, const std::string &name, Message *m) {
   auto &encoder = s->remote_encoders[name];
   if (!encoder) {
-    for (const auto &cam : cameras_logged) {
-      for (const auto &encoder_info : cam.encoder_infos) {
-        if (name == encoder_info.publish_name) {
-          encoder.reset(new EncoderWriter(s->segment_path, encoder_info));
-          break;
-        }
-      }
-    }
-    assert(encoder != nullptr);
+    auto it = std::find_if(std::begin(ALL_ENCODER_INFOS), std::end(ALL_ENCODER_INFOS),
+                           [&name](auto &e) { return name == e.publish_name; });
+    assert(it != std::end(ALL_ENCODER_INFOS));
+    encoder.reset(new EncoderWriter(s->segment_path, *it));
   }
   return encoder->write(&(s->logger), m);
 }
