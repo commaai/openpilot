@@ -265,7 +265,7 @@ void ParamWatcher::fileChanged(const QString &path) {
   auto param_value = QString::fromStdString(param.get(param_name.toStdString()));
 
   auto it = params_hash.find(param_name);
-  bool content_changed = it == params_hash.end() || it.value() != param_value;
+  bool content_changed = (it == params_hash.end()) || (it.value() != param_value);
   params_hash[param_name] = param_value;
   // emit signal when the content changes.
   if (content_changed) {
