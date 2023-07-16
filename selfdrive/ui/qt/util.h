@@ -54,5 +54,5 @@ private:
 
   QFileSystemWatcher *watcher;
   QHash<QString, QString> params_hash;
-  Params param;
+  Params params;
 };
