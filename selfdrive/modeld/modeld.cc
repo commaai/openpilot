@@ -62,11 +62,13 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   PubMaster pm({"modelV2", "cameraOdometry"});
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
 
+  Params params;
+
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
-  double last = 0;
+  // double last = 0;
   uint32_t run_count = 0;
 
   mat3 model_transform_main = {};
@@ -140,9 +142,10 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     // Enable/disable nav features
     uint64_t timestamp_llk = sm["navModel"].getNavModel().getLocationMonoTime();
     bool nav_valid = sm["navModel"].getValid() && (nanos_since_boot() - timestamp_llk < 1e9);
-    if (!nav_enabled && nav_valid) {
+    bool use_nav = nav_valid && params.getBool("ExperimentalMode");
+    if (!nav_enabled && use_nav) {
       nav_enabled = true;
-    } else if (nav_enabled && !nav_valid) {
+    } else if (nav_enabled && !use_nav) {
       memset(nav_features, 0, sizeof(float)*NAV_FEATURE_LEN);
       nav_enabled = false;
     }
@@ -181,8 +184,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
 
-    //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
-    last = mt1;
+    // printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
+    // last = mt1;
     last_vipc_frame_id = meta_main.frame_id;
   }
 }

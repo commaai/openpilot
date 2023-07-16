@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import CAR, Ecu
+from selfdrive.car.ford.values import CANFD_CARS, CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -31,6 +31,9 @@ class CarInterface(CarInterfaceBase):
     if experimental_long:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
       ret.openpilotLongitudinalControl = True
+
+    if candidate in CANFD_CARS:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
 
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67

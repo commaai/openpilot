@@ -29,7 +29,10 @@ class Coordinate:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
   def __str__(self) -> str:
-    return f"({self.latitude}, {self.longitude})"
+    return f'Coordinate({self.latitude}, {self.longitude})'
+
+  def __repr__(self) -> str:
+    return self.__str__()
 
   def __eq__(self, other) -> bool:
     if not isinstance(other, Coordinate):
