@@ -25,7 +25,7 @@ MAX_USER_TORQUE = 500
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_STEER_ANGLE = 94.9461  # deg
 MAX_STEER_TORQUE = 1500  # 1500 units is about 2 m/s^2 on RAV4 2023
-MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistence when changing lanes
+MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 
 class CarController:
