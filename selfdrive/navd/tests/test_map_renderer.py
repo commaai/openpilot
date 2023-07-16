@@ -40,17 +40,16 @@ class TestMapRenderer(unittest.TestCase):
 
     # run test
     for i in range(20*LLK_DECIMATION):
+      frame_expected = (i+1) % LLK_DECIMATION == 0
       prev_frame_id = self.sm['mapRenderState'].frameId
 
       llk = gen_llk()
       self.pm.send("liveLocationKalman", llk)
-      self.sm.update(200)
+      self.sm.update(200 if frame_expected else 10)
+      assert self.sm.updated['mapRenderState'] == frame_expected, "renderer running at wrong frequency"
 
-      if (i+1) % LLK_DECIMATION != 0:
-        assert not self.sm.updated['mapRenderState'], "renderer running at wrong frequency"
+      if not frame_expected:
         continue
-
-      assert self.sm.updated['mapRenderState']
 
       # check output
       assert self.sm.valid['mapRenderState'] == valid
