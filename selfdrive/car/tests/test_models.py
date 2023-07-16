@@ -39,7 +39,7 @@ for r in routes:
 test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 for i, c in enumerate(sorted(all_known_cars())):
   if i % NUM_JOBS == JOB_ID:
-    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+    test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None, ))))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
@@ -214,7 +214,7 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs[:300]:
       self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in filter(lambda m: m.src in range(64), can.can):
-        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False

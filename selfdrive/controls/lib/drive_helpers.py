@@ -132,7 +132,7 @@ class VCruiseHelper:
     if self.CP.pcmCruise:
       return
 
-    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
+    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode and self.CP.openpilotLongitudinalControl else V_CRUISE_INITIAL
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:

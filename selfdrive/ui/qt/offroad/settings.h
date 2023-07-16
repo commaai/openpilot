@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QButtonGroup>
-#include <QFileSystemWatcher>
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
@@ -9,6 +8,7 @@
 #include <QWidget>
 
 
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
@@ -88,5 +88,5 @@ private:
   ButtonControl *targetBranchBtn;
 
   Params params;
-  QFileSystemWatcher *fs_watch;
+  ParamWatcher *fs_watch;
 };

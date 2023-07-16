@@ -93,7 +93,7 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   // fclose(dump_yuv_file);
 
   double t1 = millis_since_boot();
-  s->m->setInputBuffer("input_imgs", (float*)net_input_buf, yuv_buf_len / 4);
+  s->m->setInputBuffer("input_imgs", (float*)net_input_buf, yuv_buf_len / sizeof(float));
   for (int i = 0; i < CALIB_LEN; i++) {
     s->calib[i] = calib[i];
   }
