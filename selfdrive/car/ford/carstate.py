@@ -97,8 +97,9 @@ class CarState(CarStateBase):
 
     # blindspot sensors
     if self.CP.enableBsm:
-      ret.leftBlindspot = cp.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
-      ret.rightBlindspot = cp.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
+      cp_bsm = cp_cam if self.CP.carFingerprint in CANFD_CARS else cp
+      ret.leftBlindspot = cp_bsm.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
+      ret.rightBlindspot = cp_bsm.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
 
     # Stock steering buttons so that we can passthru blinkers etc.
     self.buttons_stock_values = cp.vl["Steering_Data_FD1"]
@@ -215,7 +216,7 @@ class CarState(CarStateBase):
         ("BCM_Lamp_Stat_FD1", 1),
       ]
 
-    if CP.enableBsm:
+    if CP.enableBsm and CP.carFingerprint not in CANFD_CARS:
       signals += [
         ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
         ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
@@ -284,5 +285,15 @@ class CarState(CarStateBase):
       ("ACCDATA_3", 5),
       ("IPMA_Data", 1),
     ]
+
+    if CP.enableBsm and CP.carFingerprint in CANFD_CARS:
+      signals += [
+        ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
+        ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
+      ]
+      checks += [
+        ("Side_Detect_L_Stat", 5),
+        ("Side_Detect_R_Stat", 5),
+      ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).camera)
