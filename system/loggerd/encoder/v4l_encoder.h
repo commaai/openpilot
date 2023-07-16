@@ -8,10 +8,8 @@
 
 class V4LEncoder : public VideoEncoder {
 public:
-  V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
-     : VideoEncoder(encoder_info, in_width, in_height) { encoder_init(); }
+  V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~V4LEncoder();
-  void encoder_init();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();
