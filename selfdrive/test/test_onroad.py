@@ -239,8 +239,10 @@ class TestOnroad(unittest.TestCase):
         cpu_usage = cpu_time / dt * 100.
 
         if isinstance(expected_cpu, tuple):
+          exp = str(expected_cpu)
           minn, maxx = expected_cpu
         else:
+          exp = f"{expected_cpu:5.2f}"
           minn = min(expected_cpu * 0.65, max(expected_cpu - 1.0, 0.0))
           maxx = max(expected_cpu * 1.15, expected_cpu + 5.0)
 
@@ -251,7 +253,7 @@ class TestOnroad(unittest.TestCase):
       else:
         err = "NO METRICS FOUND"
 
-      result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({expected_cpu:5.2f}%) {err}\n"
+      result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({exp}%) {err}\n"
       if len(err) > 0:
         cpu_ok = False
 
