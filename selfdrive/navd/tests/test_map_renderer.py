@@ -53,9 +53,12 @@ class TestMapRenderer(unittest.TestCase):
 
       # check output
       assert self.sm.valid['mapRenderState'] == valid
-      assert 0. < self.sm['mapRenderState'].renderTime < 0.1
       assert self.sm['mapRenderState'].frameId == (prev_frame_id + 1)
       assert self.sm['mapRenderState'].locationMonoTime == llk.logMonoTime
+      if not valid:
+        assert self.sm['mapRenderState'].renderTime == 0.
+      else:
+        assert 0. < self.sm['mapRenderState'].renderTime < 0.1
 
   def test_with_internet(self):
     self._run_test(True)
