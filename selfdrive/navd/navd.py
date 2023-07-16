@@ -3,6 +3,7 @@ import json
 import math
 import os
 import threading
+import time
 
 import requests
 import numpy as np
@@ -48,6 +49,7 @@ class RouteEngine:
     self.recompute_countdown = 0
 
     self.ui_pid = None
+    self.last_route_send = 0
 
     self.reroute_counter = 0
 
@@ -76,6 +78,9 @@ class RouteEngine:
     self.update_location()
     self.recompute_route()
     self.send_instruction()
+
+    if time.monotonic() - self.last_route_send > 45:
+      self.send_route()
 
   def update_location(self):
     location = self.sm['liveLocationKalman']
@@ -286,6 +291,8 @@ class RouteEngine:
     msg = messaging.new_message('navRoute')
     msg.navRoute.coordinates = coords
     self.pm.send('navRoute', msg)
+
+    self.last_route_send = time.monotonic()
 
   def clear_route(self):
     self.route = None
