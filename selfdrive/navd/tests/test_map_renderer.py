@@ -3,6 +3,7 @@ import os
 import unittest
 
 import cereal.messaging as messaging
+from cereal.visionipc import VisionIpcClient, VisionStreamType
 from selfdrive.manager.process_config import managed_processes
 
 LLK_DECIMATION = 10
@@ -24,6 +25,7 @@ class TestMapRenderer(unittest.TestCase):
   def setUp(self):
     self.sm = messaging.SubMaster(['mapRenderState'])
     self.pm = messaging.PubMaster(['liveLocationKalman'])
+    self.vipc = VisionIpcClient("navd", VisionStreamType.VISION_STREAM_MAP, True)
 
   def tearDown(self):
     managed_processes['mapsd'].stop()
@@ -37,6 +39,11 @@ class TestMapRenderer(unittest.TestCase):
       if self.sm.updated['mapRenderState']:
         break
     assert self.sm.updated['mapRenderState'], "renderer didn't start"
+    assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
+
+    # connect to vipc
+    assert self.vipc.connect(False)
+    self.vipc.recv()
 
     # run test
     for i in range(20*LLK_DECIMATION):
@@ -59,6 +66,12 @@ class TestMapRenderer(unittest.TestCase):
         assert self.sm['mapRenderState'].renderTime == 0.
       else:
         assert 0. < self.sm['mapRenderState'].renderTime < 0.1
+
+      # check vision ipc output
+      assert self.vipc.recv() is not None
+      assert self.vipc.valid == valid
+      assert self.vipc.timestamp_sof == llk.logMonoTime
+      assert self.vipc.frame_id == self.sm['mapRenderState'].frameId
 
   def test_with_internet(self):
     self._run_test(True)
