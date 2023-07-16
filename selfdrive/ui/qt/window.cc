@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::interactiveTimeout, [=]() {
+  QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     if (main_layout->currentWidget() == settingsWindow) {
       closeSettings();
     }
@@ -91,8 +91,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     case QEvent::MouseButtonPress:
     case QEvent::MouseMove: {
       // ignore events when device is awakened by resetInteractiveTimeout
-      ignore = !uiState()->awake;
-      device.resetInteractiveTimeout();
+      ignore = !device()->isAwake();
+      device()->resetInteractiveTimeout();
       break;
     }
     default:
