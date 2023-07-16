@@ -543,22 +543,20 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
 
   SubMaster sm({"deviceState", "driverCameraState"});
 
-  uint64_t last_front_frame_t = 0;
+  uint64_t last_driver_camera_t = 0;
   uint16_t prev_fan_speed = 999;
   uint16_t ir_pwr = 0;
   uint16_t prev_ir_pwr = 999;
-  unsigned int cnt = 0;
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
   while (!do_exit && panda->connected()) {
-    cnt++;
     sm.update(1000);
 
     if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
-      if (fan_speed != prev_fan_speed || cnt % 100 == 0) {
+      if (fan_speed != prev_fan_speed || sm.frame % 100 == 0) {
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
@@ -569,7 +567,7 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
 
       cur_integ_lines = integ_lines_filter.update(cur_integ_lines);
-      last_front_frame_t = event.getLogMonoTime();
+      last_driver_camera_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
         ir_pwr = 100.0 * MIN_IR_POWER;
@@ -580,19 +578,18 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
       }
     }
 
-    // Disable ir_pwr on front frame timeout
-    uint64_t cur_t = nanos_since_boot();
-    if (cur_t - last_front_frame_t > 1e9) {
+    // Disable IR on input timeout
+    if (nanos_since_boot() - last_driver_camera_t > 1e9) {
       ir_pwr = 0;
     }
 
-    if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0) {
+    if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0 || ir_pwr >= 50.0) {
       panda->set_ir_pwr(ir_pwr);
       prev_ir_pwr = ir_pwr;
     }
 
     // Write to rtc once per minute when no ignition present
-    if (!ignition && (cnt % 120 == 1)) {
+    if (!ignition && (sm.frame % 120 == 1)) {
       sync_time(panda, SyncTimeDir::TO_PANDA);
     }
   }
@@ -631,12 +628,12 @@ void boardd_main_thread(std::vector<std::string> serials) {
   }
 
   if (!do_exit) {
-    LOGW("connected to board");
-    Panda *peripheral_panda = pandas[0];
+    LOGW("connected to all pandas");
+
     std::vector<std::thread> threads;
 
     threads.emplace_back(panda_state_thread, pandas, getenv("STARTED") != nullptr);
-    threads.emplace_back(peripheral_control_thread, peripheral_panda, getenv("NO_FAN_CONTROL") != nullptr);
+    threads.emplace_back(peripheral_control_thread, pandas[0], getenv("NO_FAN_CONTROL") != nullptr);
 
     threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, pandas);
@@ -644,7 +641,6 @@ void boardd_main_thread(std::vector<std::string> serials) {
     for (auto &t : threads) t.join();
   }
 
-  // we have exited, clean up pandas
   for (Panda *panda : pandas) {
     delete panda;
   }
