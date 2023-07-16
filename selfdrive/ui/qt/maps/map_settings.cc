@@ -300,8 +300,8 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
       QObject::connect(repeater, &RequestRepeater::requestDone, this, &NavigationRequest::parseLocationsResponse);
     }
     {
-      auto file_watcher = new QFileSystemWatcher(this);
-      QObject::connect(file_watcher, &QFileSystemWatcher::fileChanged, this, &NavigationRequest::nextDestinationUpdated);
+      auto param_watcher = new ParamWatcher(this);
+      QObject::connect(param_watcher, &ParamWatcher::paramChanged, this, &NavigationRequest::nextDestinationUpdated);
 
       // Destination set while offline
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
@@ -320,7 +320,7 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
         }
 
         // athena can set destination at any time
-        file_watcher->addPath(params.getParamPath("NavDestination").c_str());
+        param_watcher->addParam("NavDestination");
       });
     }
   }
