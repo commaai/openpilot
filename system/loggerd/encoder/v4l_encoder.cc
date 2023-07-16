@@ -131,7 +131,8 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   }
 }
 
-void V4LEncoder::encoder_init() {
+V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : VideoEncoder(encoder_info, in_width, in_height) {
   fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
   assert(fd >= 0);
 
