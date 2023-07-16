@@ -59,6 +59,8 @@ class RADAR:
 
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
 
+DBC[CAR.F_150_MK14] = dbc_dict("ford_lincoln_base_pt", None)
+
 
 class Footnote(Enum):
   FOCUS = CarFootnote(
