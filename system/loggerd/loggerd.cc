@@ -12,14 +12,16 @@
 
 ExitHandler do_exit;
 
+class RemoteEncoder;
+
 struct LoggerdState {
   LoggerState logger = {};
   char segment_path[4096];
   std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
-  int max_waiting = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
+  std::unordered_map<std::string, std::unique_ptr<RemoteEncoder>> encoders;
 };
 
 void logger_rotate(LoggerdState *s) {
@@ -34,7 +36,7 @@ void logger_rotate(LoggerdState *s) {
 
 void rotate_if_needed(LoggerdState *s) {
   // all encoders ready, trigger rotation
-  bool all_ready = s->ready_to_rotate == s->max_waiting;
+  bool all_ready = s->encoders.size() > 0 && s->ready_to_rotate == s->encoders.size();
 
   // fallback logic to prevent extremely long segments in the case of camera, encoder, etc. malfunctions
   bool timed_out = false;
@@ -57,6 +59,8 @@ void rotate_if_needed(LoggerdState *s) {
 }
 
 struct RemoteEncoder {
+  RemoteEncoder(const EncoderInfo &encoder_info) : encoder_info(encoder_info) {}
+
   std::unique_ptr<VideoWriter> writer;
   int encoderd_segment_offset;
   int current_segment = -1;
@@ -65,15 +69,16 @@ struct RemoteEncoder {
   bool recording = false;
   bool marked_ready_to_rotate = false;
   bool seen_first_packet = false;
+  const EncoderInfo encoder_info;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
+int write_encoder_msg(RemoteEncoder &re, LoggerdState *s, Message *msg) {
   int bytes_count = 0;
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (event.*(encoder_info.get_encode_data_func))();
+  auto edata = (event.*(re.encoder_info.get_encode_data_func))();
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
@@ -81,7 +86,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   if (!re.seen_first_packet) {
     re.seen_first_packet = true;
     re.encoderd_segment_offset = idx.getSegmentNum();
-    LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
+    LOGD("%s: has encoderd offset %d", re.encoder_info.publish_name, re.encoderd_segment_offset);
   }
   int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
 
@@ -99,7 +104,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg : re.q) {
-          bytes_count += handle_encoder_msg(s, qmsg, name, re, encoder_info);
+          bytes_count += write_encoder_msg(re, s, qmsg);
         }
         re.q.clear();
       }
@@ -111,14 +116,14 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         // only create on iframe
         if (re.dropped_frames) {
           // this should only happen for the first segment, maybe
-          LOGW("%s: dropped %d non iframe packets before init", name.c_str(), re.dropped_frames);
+          LOGW("%s: dropped %d non iframe packets before init", re.encoder_info.publish_name, re.dropped_frames);
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (encoder_info.record) {
+        if (re.encoder_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));
+            re.encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            re.encoder_info.frame_width, re.encoder_info.frame_height, re.encoder_info.fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -146,7 +151,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
-    (evt.*(encoder_info.set_encode_idx_func))(idx);
+    (evt.*(re.encoder_info.set_encode_idx_func))(idx);
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
@@ -160,13 +165,13 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       ++s->ready_to_rotate;
       LOGD("rotate %d -> %d ready %d/%d for %s",
         s->rotate_segment.load(), offset_segment_num,
-        s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+        s->ready_to_rotate.load(), (int)s->encoders.size(), re.encoder_info.publish_name);
     }
     // queue up all the new segment messages, they go in after the rotate
     re.q.push_back(msg);
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->rotate_segment:%d re.encoderd_segment_offset:%d",
-      name.c_str(), idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
+      re.encoder_info.publish_name, idx.getSegmentNum(), s->rotate_segment.load(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
     // actually, this can happen if you restart encoderd
     re.encoderd_segment_offset = -s->rotate_segment.load();
@@ -193,6 +198,17 @@ void handle_user_flag(LoggerdState *s) {
   prev_segment = s->rotate_segment.load();
 }
 
+int handle_encoder_msg(LoggerdState *s, const std::string &name, Message *msg) {
+  auto &encoder = s->encoders[name];
+  if (!encoder) {
+    auto it = std::find_if(std::begin(ALL_ENCODER_INFO), std::end(ALL_ENCODER_INFO),
+                           [&name](auto &e) { return name == e.publish_name; });
+    assert(it != std::end(ALL_ENCODER_INFO));
+    encoder.reset(new RemoteEncoder(*it));
+  }
+  return write_encoder_msg(*encoder, s, msg);
+}
+
 void loggerd_thread() {
   // setup messaging
   typedef struct ServiceState {
@@ -201,17 +217,16 @@ void loggerd_thread() {
     bool encoder, user_flag;
   } ServiceState;
   std::unordered_map<SubSocket*, ServiceState> service_state;
-  std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
-  for (const auto& [_, it] : services) {
-    const bool encoder = util::ends_with(it.name, "EncodeData");
-    const bool livestream_encoder = util::starts_with(it.name, "livestream");
-    if (!it.should_log && (!encoder || livestream_encoder)) continue;
-    LOGD("logging %s (on port %d)", it.name.c_str(), it.port);
+  for (const auto& it : services) {
+    bool encoder = std::any_of(std::begin(ALL_ENCODER_INFO), std::end(ALL_ENCODER_INFO),
+                               [name = it.name](auto &e) { return strcmp(name, e.publish_name) == 0; });
+    if (!it.should_log && !encoder) continue;
+    LOGD("logging %s (on port %d)", it.name, it.port);
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
@@ -230,14 +245,6 @@ void loggerd_thread() {
   logger_init(&s.logger, true);
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
-
-  std::map<std::string, EncoderInfo> encoder_infos_dict;
-  for (const auto &cam : cameras_logged) {
-    for (const auto &encoder_info : cam.encoder_infos) {
-      encoder_infos_dict[encoder_info.publish_name] = encoder_info;
-      s.max_waiting++;
-    }
-  }
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
@@ -258,7 +265,7 @@ void loggerd_thread() {
         const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
         if (service.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
+          bytes_count += handle_encoder_msg(&s, service.name, msg);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
