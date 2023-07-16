@@ -7,7 +7,7 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 from selfdrive.manager.process_config import managed_processes
 
 LLK_DECIMATION = 10
-
+CACHE_PATH = "/data/mbgl-cache-navd.db"
 
 def gen_llk():
   msg = messaging.new_message('liveLocationKalman')
@@ -26,6 +26,9 @@ class TestMapRenderer(unittest.TestCase):
     self.sm = messaging.SubMaster(['mapRenderState'])
     self.pm = messaging.PubMaster(['liveLocationKalman'])
     self.vipc = VisionIpcClient("navd", VisionStreamType.VISION_STREAM_MAP, True)
+
+    if os.path.exists(CACHE_PATH):
+      os.remove(CACHE_PATH)
 
   def tearDown(self):
     managed_processes['mapsd'].stop()
