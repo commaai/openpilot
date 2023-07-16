@@ -262,7 +262,7 @@ ParamWatcher::ParamWatcher(QObject *parent) : QObject(parent) {
 
 void ParamWatcher::fileChanged(const QString &path) {
   auto param_name = QFileInfo(path).fileName();
-  auto param_value = QString::fromStdString(param.get(param_name.toStdString()));
+  auto param_value = QString::fromStdString(params.get(param_name.toStdString()));
 
   auto it = params_hash.find(param_name);
   bool content_changed = (it == params_hash.end()) || (it.value() != param_value);
