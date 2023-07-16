@@ -13,6 +13,7 @@ from system.hardware import HARDWARE, TICI
 from system.hardware.tici.power_monitor import get_power
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.manager.manager import manager_cleanup
+from selfdrive.navd.tests.test_map_renderer import gen_llk
 
 SAMPLE_TIME = 8   # seconds to sample power
 
@@ -35,17 +36,12 @@ PROCS = [
 ]
 
 def send_llk_msg(done):
+  # Send liveLocationKalman at 20Hz
   pm = messaging.PubMaster(['liveLocationKalman'])
-  msg = messaging.new_message('liveLocationKalman')
-  msg.liveLocationKalman.positionGeodetic = {'value': [32.7174, -117.16277, 0], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.status = 'valid'
-
-  # Send liveLocationKalman at 20hz
   while not done.is_set():
-    msg.clear_write_flag()
+    msg = gen_llk()
     pm.send('liveLocationKalman', msg)
-    time.sleep(1/20)
+    time.sleep(1/20.)
 
 
 class TestPowerDraw(unittest.TestCase):
