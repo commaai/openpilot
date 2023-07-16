@@ -98,7 +98,7 @@ class CarController:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
       enable_condition = (abs(CS.out.steeringTorqueEps) < MAX_STEER_TORQUE and
                           abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE)
-      setme_x64 = 100 if enable_condition else 0
+      setme_x64 = 100 if lta_active and enable_condition else 0
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
