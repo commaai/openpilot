@@ -60,6 +60,13 @@ class TestMapRenderer(unittest.TestCase):
   def test_with_internet(self):
     self._run_test(True)
 
+  def test_with_no_internet(self):
+    token = os.environ['MAPBOX_TOKEN']
+    try:
+      os.environ['MAPBOX_TOKEN'] = 'invalid_token'
+      self._run_test(False)
+    finally:
+      os.environ['MAPBOX_TOKEN'] = token
 
 if __name__ == "__main__":
   unittest.main()
