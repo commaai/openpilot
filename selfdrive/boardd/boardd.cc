@@ -619,7 +619,7 @@ void boardd_main_thread(std::vector<std::string> serials) {
   for (int i = 0; i < serials.size() && !do_exit; /**/) {
     Panda *p = connect(serials[i], i);
     if (!p) {
-      util::sleep_for(500);
+      util::sleep_for(100);
       continue;
     }
 
