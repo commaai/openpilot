@@ -96,11 +96,9 @@ class CarController:
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
-      need_to_winddown = False  # abs(CS.out.steeringAngleDeg) > abs(actuators.steeringAngleDeg) and abs(CS.out.steeringAngleDeg) - abs(actuators.steeringAngleDeg) > 4
       enable_condition = abs(CS.out.steeringTorqueEps) < MAX_STEER_TORQUE and \
-                         abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE and not need_to_winddown
+                         abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE
       setme_x64 = 100 if enable_condition else 0
-      # lta_active = lta_active and enable_condition
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
