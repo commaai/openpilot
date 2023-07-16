@@ -14,14 +14,12 @@
 
 class VideoEncoder {
 public:
-  VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
-     : encoder_info(encoder_info), in_width(in_width), in_height(in_height) {}
-  virtual ~VideoEncoder();
+  VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
+  virtual ~VideoEncoder() {};
   virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
   virtual void encoder_open(const char* path) = 0;
   virtual void encoder_close() = 0;
 
-  void publisher_init();
   static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
 
@@ -32,7 +30,5 @@ protected:
 private:
   // total frames encoded
   int cnt = 0;
-
-  // publishing
   std::unique_ptr<PubMaster> pm;
 };
