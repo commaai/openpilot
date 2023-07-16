@@ -2,7 +2,6 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QFileSystemWatcher>
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
