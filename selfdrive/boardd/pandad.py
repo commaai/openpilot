@@ -7,7 +7,7 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU, FW_PATH
+from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.boardd.set_time import set_time
@@ -25,7 +25,17 @@ def get_expected_signature(panda: Panda) -> bytes:
 
 
 def flash_panda(panda_serial: str) -> Panda:
-  panda = Panda(panda_serial)
+  try:
+    panda = Panda(panda_serial)
+  except PandaProtcolMismatch:
+    cloudlog.warning("detected protocol mismatch, reflashing panda")
+    HARDWARE.recover_internal_panda()
+    pd = PandaDFU(Panda.st_serial_to_dfu_serial(panda_serial))
+    pd.recover()
+    HARDWARE.reset_internal_panda()
+
+    # now we're up to date
+    panda = Panda(panda_serial)
 
   fw_signature = get_expected_signature(panda)
   internal_panda = panda.is_internal()
@@ -42,10 +52,11 @@ def flash_panda(panda_serial: str) -> Panda:
   if panda.bootstub:
     bootstub_version = panda.get_version()
     cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. {bootstub_version=}, {internal_panda=}")
+
     if internal_panda:
       HARDWARE.recover_internal_panda()
     panda.recover(reset=(not internal_panda))
-    cloudlog.info("Done flashing bootloader")
+    cloudlog.info("Done flashing bootstub")
 
   if panda.bootstub:
     cloudlog.info("Panda still not booting, exiting")
