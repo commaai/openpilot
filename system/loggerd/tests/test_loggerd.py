@@ -202,8 +202,7 @@ class TestLoggerd(unittest.TestCase):
     # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
     for s in services:
-      while not pm.all_readers_updated(s):
-        time.sleep(0.1)
+      pm.wait_for_readers_to_update(s, timeout=5)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -249,8 +248,7 @@ class TestLoggerd(unittest.TestCase):
     # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
     for s in services:
-      while not pm.all_readers_updated(s):
-        time.sleep(0.1)
+      pm.wait_for_readers_to_update(s, timeout=5)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -286,8 +284,7 @@ class TestLoggerd(unittest.TestCase):
     # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
     for s in services:
-      while not pm.all_readers_updated(s):
-        time.sleep(0.1)
+      pm.wait_for_readers_to_update(s, timeout=5)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
