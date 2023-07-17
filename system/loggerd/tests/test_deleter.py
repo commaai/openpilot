@@ -124,7 +124,7 @@ class TestDeleter(UploaderTestCase):
     f_paths_preserved = []
     for _ in range(deleter.PRESERVE_COUNT):
       # space out so they do not preserve each other (as they are neighbors)
-      self.seg_num += 3
+      self.seg_num += 2
       self.seg_dir = self.seg_format.format(self.seg_num)
       f_paths_preserved.append(self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE))
 

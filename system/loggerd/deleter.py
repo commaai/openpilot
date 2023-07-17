@@ -32,14 +32,13 @@ def deleter_thread(exit_event):
 
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = []
-      for n, d in enumerate(filter(has_preserve_xattr, dirs)):
+      for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs))):
         if n == PRESERVE_COUNT:
           break
-
-        preserved_dirs.append(d)
-
-        # also preserve prior segment
         date_str, _, seg_num = d.rpartition("--")
+
+        # preserve segment and its prior
+        preserved_dirs.append(d)
         preserved_dirs.append(f"{date_str}--{int(seg_num) - 1}")
 
       for delete_dir in filter(lambda d: d not in preserved_dirs, dirs):
