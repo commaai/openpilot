@@ -4,8 +4,8 @@ import threading
 import unittest
 from collections import namedtuple
 
-from common.timeout import Timeout, TimeoutException
 import system.loggerd.deleter as deleter
+from common.timeout import Timeout, TimeoutException
 from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -100,7 +100,7 @@ class TestDeleter(UploaderTestCase):
 
   def test_no_delete_preserved(self):
     f_paths = []
-    for seg_num, preserve_attr in enumerate((None, deleter.PRESERVE_ATTR_VALUE, None, None)):
+    for seg_num, preserve_attr in enumerate((None, deleter.PRESERVE_ATTR_VALUE, None)):
       seg_dir = self.seg_format.format(seg_num)
       f_paths.append(self.make_file_with_data(seg_dir, self.f_type, preserve_xattr=preserve_attr))
 
@@ -114,8 +114,8 @@ class TestDeleter(UploaderTestCase):
 
     self.join_thread()
 
-    self.assertTrue(all(f_path.exists() for f_path in f_paths[0:2]), "File deleted when preserved")
-    self.assertFalse(f_paths[3].exists(), "File not deleted")
+    self.assertTrue(f_paths[0].exists() and f_paths[1].exists(), "File deleted when preserved")
+    self.assertFalse(f_paths[2].exists(), "File not deleted")
 
   def test_delete_many_preserved(self):
     self.seg_dir = self.seg_format.format(self.seg_num)
@@ -123,7 +123,8 @@ class TestDeleter(UploaderTestCase):
 
     f_paths_preserved = []
     for _ in range(deleter.PRESERVE_COUNT):
-      self.seg_num += 1
+      # space out so they do not preserve each other (as they are neighbors)
+      self.seg_num += 3
       self.seg_dir = self.seg_format.format(self.seg_num)
       f_paths_preserved.append(self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE))
 

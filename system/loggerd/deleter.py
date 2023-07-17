@@ -30,7 +30,7 @@ def deleter_thread(exit_event):
       # remove the earliest directory we can
       dirs = sorted(listdir_by_creation(ROOT), key=lambda x: x in DELETE_LAST)
 
-      # preserve last N segments from deletion
+      # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = []
       for n, d in enumerate(filter(has_preserve_xattr, dirs)):
         if n == PRESERVE_COUNT:
@@ -38,10 +38,9 @@ def deleter_thread(exit_event):
 
         preserved_dirs.append(d)
 
-        # also preserve neighboring segments
+        # also preserve prior segment
         date_str, _, seg_num = d.rpartition("--")
-        for i in (-1, 1):
-          preserved_dirs.append(f"{date_str}--{int(seg_num) + i}")
+        preserved_dirs.append(f"{date_str}--{int(seg_num) - 1}")
 
       for delete_dir in filter(lambda d: d not in preserved_dirs, dirs):
         delete_path = os.path.join(ROOT, delete_dir)
