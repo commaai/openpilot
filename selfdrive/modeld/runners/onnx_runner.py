@@ -32,11 +32,12 @@ def run_loop(m, tf8_input=False):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
   itypes = [ORT_TYPES_TO_NP_TYPES[x.type] for x in m.get_inputs()]
-  print("onnx model inputs", keys, ishapes, itypes)
+
   # run once to initialize CUDA provider
   if "CUDAExecutionProvider" in m.get_providers():
     m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes)])))
 
+  print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
     for k, shp, itp in zip(keys, ishapes, itypes):
