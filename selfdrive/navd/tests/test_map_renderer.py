@@ -35,12 +35,16 @@ class TestMapRenderer(unittest.TestCase):
 
   def _run_test(self, valid):
     # start + sync up
+    first_frame_id = None
     managed_processes['mapsd'].start()
     for _ in range(100):
       self.pm.send("liveLocationKalman", gen_llk())
       self.sm.update(100)
       if self.sm.updated['mapRenderState']:
-        break
+        if first_frame_id is None:
+          first_frame_id = self.sm['mapRenderState'].frameId
+        if self.sm.valid['mapRenderState'] == valid:
+          break
     assert self.sm.updated['mapRenderState'], "renderer didn't start"
     assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
 
@@ -50,7 +54,7 @@ class TestMapRenderer(unittest.TestCase):
 
     # run test
     for i in range(20*LLK_DECIMATION):
-      frame_expected = (i+1) % LLK_DECIMATION == 0
+      frame_expected = (i+first_frame_id+1) % LLK_DECIMATION == 0
       prev_frame_id = self.sm['mapRenderState'].frameId
 
       llk = gen_llk()
