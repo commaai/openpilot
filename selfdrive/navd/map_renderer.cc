@@ -53,7 +53,8 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   ctx->makeCurrent(surface.get());
   assert(QOpenGLContext::currentContext() == ctx.get());
 
-  ctx->functions()->initializeOpenGLFunctions();
+  gl_functions.reset(ctx->functions());
+  gl_functions->initializeOpenGLFunctions();
 
   QOpenGLFramebufferObjectFormat fbo_format;
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
@@ -66,7 +67,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
-  ctx->functions()->glViewport(0, 0, WIDTH, HEIGHT);
+  gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
@@ -156,9 +157,9 @@ bool MapRenderer::loaded() {
 
 void MapRenderer::update() {
   double start_t = millis_since_boot();
-  ctx->functions()->glClear(GL_COLOR_BUFFER_BIT);
+  gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
-  ctx->functions()->glFlush();
+  gl_functions->glFlush();
   double end_t = millis_since_boot();
 
   if ((vipc_server != nullptr) && loaded()) {
