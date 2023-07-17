@@ -3,6 +3,7 @@
 import os
 import sys
 import numpy as np
+from typing import Tuple, Dict, Union, Any
 
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
@@ -55,6 +56,8 @@ if __name__ == "__main__":
   print("Onnx available providers: ", ort.get_available_providers(), file=sys.stderr)
   options = ort.SessionOptions()
   options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+
+  provider: Union[str, Tuple[str, Dict[Any, Any]]]
   if 'OpenVINOExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     provider = 'OpenVINOExecutionProvider'
   elif 'CUDAExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
