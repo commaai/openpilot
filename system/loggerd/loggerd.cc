@@ -226,7 +226,9 @@ void loggerd_thread() {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
 
         if (qs.name == "userFlag") {
-          // TODO
+          if (setxattr(s.segment_path, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE, sizeof(PRESERVE_ATTR_VALUE), 0)) {
+            LOGE("failed to setxattr %s for %s", PRESERVE_ATTR_NAME, s.segment_path);
+          }
         }
 
         if (qs.encoder) {
