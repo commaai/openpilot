@@ -108,12 +108,10 @@ class UploaderTestCase(unittest.TestCase):
 
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
                           upload_xattr: Optional[bytes] = None, preserve_xattr: Optional[bytes] = None) -> Path:
-    folder_path = self.root / f_dir
-    if preserve_xattr is not None:
-      folder_path.mkdir(parents=True, exist_ok=True)
-      setxattr(str(folder_path), deleter.PRESERVE_ATTR_NAME, preserve_xattr)
-
     file_path = self.root / f_dir / fn
     create_random_file(file_path, size_mb, lock, upload_xattr)
+
+    if preserve_xattr is not None:
+      setxattr(str(file_path.parent), deleter.PRESERVE_ATTR_NAME, preserve_xattr)
 
     return file_path
