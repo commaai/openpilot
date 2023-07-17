@@ -225,6 +225,10 @@ void loggerd_thread() {
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
 
+        if (qs.name == "userFlag") {
+          // TODO
+        }
+
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock], encoder_infos_dict[qs.name]);
