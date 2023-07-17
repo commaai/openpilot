@@ -555,15 +555,15 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>24/7 LTE 連線</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>導航功能</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>一年的行駛記錄儲存空間</translation>
     </message>
 </context>
 <context>
@@ -1115,23 +1115,23 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>End-to-End Longitudinal Control is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>目前這輛車無法使用端到端縱向控制，因為車輛使用原廠ACC (自適應巡航控制系統) 進行縱向控制。</translation>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with End-to-End Longitudinal Control, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>在非發佈版本的分支上，可以測試 openpilot 縱向控制的 Alpha 版本，包括端到端的縱向控制。</translation>
     </message>
     <message>
         <source>Enable experimental longitudinal control to use End-to-End Longitudinal Control.</source>
-        <translation type="unfinished"></translation>
+        <translation>啟用實驗性縱向控制以使用端到端縱向控制。</translation>
     </message>
     <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>當導航有設定目的地時，openpilot 將會把地圖導航信息輸入模型。這通常會改善 openpilot 的行駛路徑使它能夠在分歧處/出口適當地靠左或靠右，並進行轉彎。車道變換行為保持不變，仍由駕駛員手動執行。這是一個 Alpha 版本的功能，請保持心理準備隨時有可能會出現錯誤。</translation>
     </message>
     <message>
         <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 自動輔助駕駛</translation>
     </message>
 </context>
 <context>
