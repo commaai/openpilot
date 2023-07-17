@@ -166,31 +166,11 @@ class TestFwFingerprint(unittest.TestCase):
       with self.subTest(brand=brand):
         for request_obj in config.requests:
           self.assertEqual(len(request_obj.request), len(request_obj.response))
-
-
-class TestFwFingerprintTiming(unittest.TestCase):
-  N: int = 5
-  TOL: float = 0.1
-
-  @staticmethod
-  def _run_thread(thread: threading.Thread) -> float:
-    params = Params()
-    params.put_bool("ObdMultiplexingEnabled", True)
-    thread.start()
-    t = time.perf_counter()
-    while thread.is_alive():
-      time.sleep(0.02)
-      if not params.get_bool("ObdMultiplexingChanged"):
-        params.put_bool("ObdMultiplexingChanged", True)
-    return time.perf_counter() - t
-
-  def _benchmark_brand(self, brand, num_pandas):
-    fake_socket = FakeSocket()
-    brand_time = 0
-    for _ in range(self.N):
-      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
-                                kwargs=dict(num_pandas=num_pandas))
-      brand_time += self._run_thread(thread)
+          # TODO: test this before __post_init__
+          # self.assertLessEqual(request_obj.bus, 1)  # We use flags to refer to multiple pandas
+          # Assert no auxiliary pandas will change multiplexing mode
+          # On auxiliary pandas, bus 1 is usually multiplexed to nothing
+          self.assertFalse(request_obj.bus % 4 == 1 and request_obj.obd_multiplexing and request_obj.bus > 3)
 
     return round(brand_time / self.N, 2)
 

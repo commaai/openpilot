@@ -80,7 +80,10 @@ class FwQueryConfig:
 
   def __post_init__(self):
     for i in range(len(self.requests)):
-      if self.requests[i].auxiliary and self.requests[i].bus != 1:
+      obd_multiplexed = self.requests[i].bus == 1 and self.requests[i].obd_multiplexing
+      if self.requests[i].auxiliary:
+        print(self.requests[i].bus == 1, self.requests[i].obd_multiplexing)
+      if self.requests[i].auxiliary and not obd_multiplexed:
         new_request = copy.deepcopy(self.requests[i])
         new_request.bus += 4
         self.requests.append(new_request)
