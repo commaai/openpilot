@@ -1,3 +1,5 @@
+#include <sys/xattr.h>
+
 #include <unordered_map>
 
 #include "system/loggerd/encoder/encoder.h"

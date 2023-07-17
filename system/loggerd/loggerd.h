@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sys/xattr.h>
-
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc_client.h"
