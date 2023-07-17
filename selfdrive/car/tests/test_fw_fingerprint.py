@@ -236,7 +236,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'volkswagen': 0.2,
       },
       2: {
-        'ford': 0.4,
+        'ford': 0.5,
         'hyundai': 1.1,
       }
     }
