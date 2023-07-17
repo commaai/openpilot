@@ -80,6 +80,7 @@ class FwQueryConfig:
 
   def __post_init__(self):
     for i in range(len(self.requests)):
+      # Do not add useless queries on auxiliary pandas for OBD multiplexed queries
       obd_multiplexed = self.requests[i].bus == 1 and self.requests[i].obd_multiplexing
       if self.requests[i].auxiliary and not obd_multiplexed:
         new_request = copy.deepcopy(self.requests[i])
