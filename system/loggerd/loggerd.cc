@@ -227,7 +227,7 @@ void loggerd_thread() {
 
         if (qs.name == "userFlag") {
           LOGD("preserving %s", s.segment_path);
-          if (setxattr(s.segment_path, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE, sizeof(PRESERVE_ATTR_VALUE), 0)) {
+          if (setxattr(s.segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0)) {
             LOGE("failed to setxattr %s for %s", PRESERVE_ATTR_NAME, s.segment_path);
           }
         }
