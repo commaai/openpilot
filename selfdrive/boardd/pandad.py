@@ -27,15 +27,10 @@ def get_expected_signature(panda: Panda) -> bytes:
 def flash_panda(panda_serial: str) -> Panda:
   try:
     panda = Panda(panda_serial)
-  except PandaProtcolMismatch:
+  except PandaProtocolMismatch:
     cloudlog.warning("detected protocol mismatch, reflashing panda")
     HARDWARE.recover_internal_panda()
-    pd = PandaDFU(Panda.st_serial_to_dfu_serial(panda_serial))
-    pd.recover()
-    HARDWARE.reset_internal_panda()
-
-    # now we're up to date
-    panda = Panda(panda_serial)
+    raise
 
   fw_signature = get_expected_signature(panda)
   internal_panda = panda.is_internal()
@@ -162,6 +157,9 @@ def main() -> NoReturn:
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except PandaProtocolMismatch:
+      cloudlog.exception("pandad.protocol_mismatch")
       continue
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")
