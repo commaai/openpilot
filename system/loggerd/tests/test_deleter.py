@@ -106,12 +106,10 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
 
-    try:
-      with Timeout(4, "Timeout waiting for file to be deleted"):
-        while any([f_path.exists() for f_path in f_paths]):
-          time.sleep(0.01)
-    finally:
-      self.join_thread()
+    # allow time for any files to be deleted
+    time.sleep(2)
+
+    self.join_thread()
 
     self.assertTrue(all(f_path.exists() for f_path in f_paths[0:2]), "File deleted when preserved")
     self.assertFalse(f_paths[3].exists(), "File not deleted")
