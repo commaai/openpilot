@@ -292,7 +292,7 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
     for addr_chunk in chunks(addr):
       for brand, config, r in requests:
         # Skip query if no panda available
-        if not ((num_pandas - 1) * 4 <= r.bus <= num_pandas * 4 - 1):
+        if not ((num_pandas - 1) * 4 <= r.bus <= num_pandas * 4 - 1) and not (r.bus == 1 and r.obd_multiplexing):
           continue
 
         # Toggle OBD multiplexing for each request
