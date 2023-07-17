@@ -98,33 +98,21 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # CAN and CAN FD queries are combined. For CAN FD, bus 0 (4) queries do not respond and so
+    # are purely for debugging/logging purposes at the moment.
+    # TODO: properly handle auxiliary queries to separate queries and add back whitelists
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine],
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
-      bus=0,
-    ),
-
-    # CAN FD queries. F150 does not respond to queries on powertrain bus (0) yet,
-    # so that query below is just for logging and debugging purposes
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.shiftByWire],
+      # whitelist_ecus=[Ecu.engine],
       auxiliary=True,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.shiftByWire],
+      # whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
       bus=0,
       auxiliary=True,
-      logging=True,
     ),
   ],
   extra_ecus=[
