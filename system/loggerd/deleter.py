@@ -17,6 +17,10 @@ PRESERVE_ATTR_VALUE = b'1'
 PRESERVE_COUNT = 5
 
 
+def has_preserve_xattr(d: str) -> bool:
+  return getxattr(os.path.join(ROOT, d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+
+
 def deleter_thread(exit_event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
@@ -26,13 +30,20 @@ def deleter_thread(exit_event):
       # remove the earliest directory we can
       dirs = sorted(listdir_by_creation(ROOT), key=lambda x: x in DELETE_LAST)
 
-      # sort directories based on xattr presence and creation time
-      preserved_dirs = [d for d in dirs if getxattr(os.path.join(ROOT, d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE]
+      # preserve last N segments from deletion
+      preserved_dirs = []
+      for n, d in enumerate(filter(has_preserve_xattr, dirs)):
+        if n == PRESERVE_COUNT:
+          break
 
-      # exclude the last N preserved directories
-      to_delete_dirs = [d for d in dirs if d not in preserved_dirs[-PRESERVE_COUNT:]]
+        preserved_dirs.append(d)
 
-      for delete_dir in to_delete_dirs:
+        # also preserve neighboring segments
+        date_str, _, seg_num = d.rpartition("--")
+        for i in (-1, 1):
+          preserved_dirs.append(f"{date_str}--{int(seg_num) + i}")
+
+      for delete_dir in filter(lambda d: d not in preserved_dirs, dirs):
         delete_path = os.path.join(ROOT, delete_dir)
 
         if any(name.endswith(".lock") for name in os.listdir(delete_path)):
