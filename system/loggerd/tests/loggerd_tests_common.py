@@ -12,7 +12,7 @@ import system.loggerd.uploader as uploader
 from system.loggerd.xattr_cache import setxattr
 
 
-def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: Optional[bytes] = None):
+def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: Optional[bytes] = None) -> None:
   file_path.parent.mkdir(parents=True, exist_ok=True)
 
   if lock:
