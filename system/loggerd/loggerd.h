@@ -1,17 +1,6 @@
 #pragma once
 
 #include <sys/xattr.h>
-#include <unistd.h>
-
-#include <atomic>
-#include <cassert>
-#include <cerrno>
-#include <condition_variable>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_map>
-#include <utility>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
