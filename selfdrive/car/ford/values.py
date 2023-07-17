@@ -100,7 +100,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # CAN and CAN FD queries are combined. For CAN FD, bus 0 (4) queries do not respond and so
     # are purely for debugging/logging purposes at the moment.
-    # TODO: properly handle auxiliary queries to separate queries and add back whitelists
+    # TODO: properly handle auxiliary requests to separate queries and add back whitelists
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
