@@ -6,7 +6,7 @@ import unittest
 import cereal.messaging as messaging
 from cereal import log
 from common.gpio import gpio_set, gpio_init
-from panda import Panda, PandaDFU
+from panda import Panda, PandaDFU, PandaProtocolMismatch
 from selfdrive.test.helpers import phone_only
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
@@ -34,7 +34,7 @@ class TestPandad(unittest.TestCase):
     HARDWARE.recover_internal_panda()
     assert Panda.wait_for_dfu(None, 10)
 
-  def _flash_and_test(self, fn):
+  def _flash_and_test(self, fn, expect_mismatch=False):
     self._go_to_dfu()
     pd = PandaDFU(None)
     if fn is None:
@@ -45,8 +45,12 @@ class TestPandad(unittest.TestCase):
     HARDWARE.reset_internal_panda()
 
     assert Panda.wait_for_panda(None, 10)
-    with Panda() as p:
-      assert p.bootstub
+    if expect_mismatch:
+      with self.assertRaises(PandaProtocolMismatch):
+        Panda()
+    else:
+      with Panda() as p:
+        assert p.bootstub
 
     managed_processes['pandad'].start()
     self._wait_for_boardd(45)
@@ -90,12 +94,12 @@ class TestPandad(unittest.TestCase):
 
   @phone_only
   def test_protocol_version_check(self):
-    if HARDWARE.get_device_type() in ('tizi', ):
-      self.skipTest("")
+    if HARDWARE.get_device_type() == 'tici':
+      self.skipTest()
 
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
-    self._flash_and_test(fn)
+    self._flash_and_test(fn, expect_mismatch=True)
 
   @phone_only
   def test_release_to_devel_bootstub(self):
