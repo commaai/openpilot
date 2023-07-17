@@ -28,6 +28,7 @@ public:
 private:
   std::unique_ptr<QOpenGLContext> ctx;
   std::unique_ptr<QOffscreenSurface> surface;
+  std::unique_ptr<QOpenGLFunctions> gl_functions;
   std::unique_ptr<QOpenGLFramebufferObject> fbo;
 
   std::unique_ptr<VisionIpcServer> vipc_server;
