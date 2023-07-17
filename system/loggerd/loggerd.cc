@@ -1,3 +1,6 @@
+#include <unordered_map>
+
+#include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
 

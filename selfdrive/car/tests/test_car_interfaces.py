@@ -62,7 +62,7 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
-    cc_msg=FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
