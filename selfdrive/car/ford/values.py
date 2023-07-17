@@ -98,8 +98,8 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # CAN and CAN FD queries are combined. For CAN FD, bus 0 (4) queries do not respond and so
-    # are purely for debugging/logging purposes at the moment.
+    # CAN and CAN FD queries are combined.
+    # FIXME: For CAN FD, ECUs respond with frames larger than 8 bytes on the powertrain bus
     # TODO: properly handle auxiliary requests to separate queries and add back whitelists
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
