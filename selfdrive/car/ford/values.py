@@ -77,14 +77,8 @@ class FordCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.ford_q3]))
 
   def init_make(self, CP: car.CarParams):
-    harness = CarHarness.ford_q3
-    if CP.carFingerprint in CANFD_CARS:
-      harness = CarHarness.ford_q4
-
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.F_150_MK14, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.three_angled_mount, harness])
-    else:
-      self.car_parts = CarParts.common([harness])
+    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
+      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
 
 
 CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
