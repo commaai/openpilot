@@ -113,7 +113,7 @@ const LogCameraInfo wide_road_camera_info{
     .stream_type = VISION_STREAM_WIDE_ROAD,
    .encoder_infos = {main_wide_road_encoder_info}
     };
-  
+
 const LogCameraInfo driver_camera_info{
     .thread_name = "driver_cam_encoder",
     .type = DriverCam,
