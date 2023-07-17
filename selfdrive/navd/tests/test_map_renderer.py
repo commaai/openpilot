@@ -35,7 +35,6 @@ class TestMapRenderer(unittest.TestCase):
 
   def _run_test(self, expect_valid):
     # start + sync up
-    first_frame_id = None
     managed_processes['mapsd'].start()
     assert self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
 
@@ -44,10 +43,16 @@ class TestMapRenderer(unittest.TestCase):
     self.vipc.recv()
 
     # run test
+    prev_frame_id = -1
     for i in range(30*LLK_DECIMATION):
       frame_expected = (i+1) % LLK_DECIMATION == 0
-      prev_frame_id = self.sm['mapRenderState'].frameId
-      prev_valid = self.sm.valid['mapRenderState'] and self.sm.rcv_frame['mapRenderState'] != 0
+
+      if self.sm.logMonoTime['mapRenderState'] == 0:
+        prev_valid = False
+        prev_frame_id = -1
+      else:
+        prev_frame_id = self.sm['mapRenderState'].frameId
+        prev_valid = self.sm.valid['mapRenderState']
 
       llk = gen_llk()
       self.pm.send("liveLocationKalman", llk)
@@ -56,6 +61,7 @@ class TestMapRenderer(unittest.TestCase):
       assert self.sm.updated['mapRenderState'] == frame_expected, "renderer running at wrong frequency"
 
       if not frame_expected:
+
         continue
 
       # give a few frames to go valid
