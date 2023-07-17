@@ -415,7 +415,7 @@ def main() -> None:
   if not params.get("InstallDate"):
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
-
+  
   updater = Updater()
   update_failed_count = 0  # TODO: Load from param?
 
