@@ -37,7 +37,6 @@ def run_loop(m, tf8_input=False):
   if "CUDAExecutionProvider" in m.get_providers():
     m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes)])))
 
-  print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
     for k, shp, itp in zip(keys, ishapes, itypes):
