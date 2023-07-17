@@ -167,8 +167,8 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
         int distance_idx = 25 + (int)(maneuvers[i].getDistance() / 20);
         std::string direction = maneuvers[i].getModifier();
         int direction_idx = 0;
-        if (direction == "left") direction_idx = 1;
-        if (direction == "right") direction_idx = 2;
+        if (direction == "left" || direction == "slight left" || direction == "sharp left") direction_idx = 1;
+        if (direction == "right" || direction == "slight right" || direction == "sharp right") direction_idx = 2;
         if (distance_idx >= 0 && distance_idx < 50) {
           nav_instructions[distance_idx*3 + direction_idx] = 1;
         }
