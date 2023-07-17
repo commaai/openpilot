@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <QDateTime>
+#include <QFileSystemWatcher>
 #include <QLayout>
 #include <QPainter>
 #include <QPixmap>
@@ -10,6 +11,7 @@
 #include <QWidget>
 
 #include "cereal/gen/cpp/car.capnp.h"
+#include "common/params.h"
 
 QString getVersion();
 QString getBrand();
@@ -35,4 +37,22 @@ struct InterFont : public QFont {
     setPixelSize(pixel_size);
     setWeight(weight);
   }
+};
+
+class ParamWatcher : public QObject {
+  Q_OBJECT
+
+public:
+  ParamWatcher(QObject *parent);
+  void addParam(const QString &param_name);
+
+signals:
+  void paramChanged(const QString &param_name, const QString &param_value);
+
+private:
+  void fileChanged(const QString &path);
+
+  QFileSystemWatcher *watcher;
+  QHash<QString, QString> params_hash;
+  Params params;
 };
