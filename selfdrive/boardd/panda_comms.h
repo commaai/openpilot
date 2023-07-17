@@ -14,7 +14,7 @@
 
 
 #define TIMEOUT 0
-#define SPI_BUF_SIZE 1024
+#define SPI_BUF_SIZE 2048
 
 
 // comms base class
