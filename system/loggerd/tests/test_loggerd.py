@@ -284,10 +284,10 @@ class TestLoggerd(unittest.TestCase):
 
     # sleep enough for the first poll to time out
     # TODO: fix loggerd bug dropping the msgs from the first poll
-    # managed_processes["loggerd"].start()
-    # for s in services:
-    #   while not pm.all_readers_updated(s):
-    #     time.sleep(0.1)
+    managed_processes["loggerd"].start()
+    for s in services:
+      while not pm.all_readers_updated(s):
+        time.sleep(0.1)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
