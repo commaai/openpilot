@@ -173,7 +173,7 @@ class TestFwFingerprint(unittest.TestCase):
 
 
 class TestFwFingerprintTiming(unittest.TestCase):
-  N: int = 2
+  N: int = 5
   TOL: float = 0.1
 
   @staticmethod
