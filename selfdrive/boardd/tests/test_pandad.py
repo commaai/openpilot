@@ -37,6 +37,8 @@ class TestPandad(unittest.TestCase):
   def _flash_and_test(self, fn):
     self._go_to_dfu()
     pd = PandaDFU(None)
+    if fn is None:
+      fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
     with open(fn, "rb") as f:
       pd.program_bootstub(f.read())
     pd.reset()
@@ -97,8 +99,7 @@ class TestPandad(unittest.TestCase):
 
   @phone_only
   def test_release_to_devel_bootstub(self):
-    fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
-    self._flash_and_test(fn)
+    self._flash_and_test(None)
 
 if __name__ == "__main__":
   unittest.main()
