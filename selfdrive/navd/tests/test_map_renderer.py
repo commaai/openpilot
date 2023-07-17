@@ -59,7 +59,8 @@ class TestMapRenderer(unittest.TestCase):
 
       llk = gen_llk()
       self.pm.send("liveLocationKalman", llk)
-      self.sm.update(200 if frame_expected else 10)
+      self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
+      self.sm.update(1000 if frame_expected else 0)
       assert self.sm.updated['mapRenderState'] == frame_expected, "renderer running at wrong frequency"
 
       if not frame_expected:
