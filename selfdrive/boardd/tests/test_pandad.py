@@ -34,6 +34,21 @@ class TestPandad(unittest.TestCase):
     HARDWARE.recover_internal_panda()
     assert Panda.wait_for_dfu(None, 10)
 
+  def _flash_and_test(self, fn):
+    self._go_to_dfu()
+    pd = PandaDFU(None)
+    with open(fn, "rb") as f:
+      pd.program_bootstub(f.read())
+    pd.reset()
+    HARDWARE.reset_internal_panda()
+
+    assert Panda.wait_for_panda(None, 10)
+    with Panda() as p:
+      assert p.bootstub
+
+    managed_processes['pandad'].start()
+    self._wait_for_boardd(45)
+
   @phone_only
   def test_in_dfu(self):
     HARDWARE.recover_internal_panda()
@@ -72,23 +87,18 @@ class TestPandad(unittest.TestCase):
     self._wait_for_boardd(8)
 
   @phone_only
+  def test_protocol_version_check(self):
+    if HARDWARE.get_device_type() in ('tizi', ):
+      self.skipTest("")
+
+    # flash old fw
+    fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
+    self._flash_and_test(fn)
+
+  @phone_only
   def test_release_to_devel_bootstub(self):
-    # flash release bootstub
-    self._go_to_dfu()
-    pd = PandaDFU(None)
     fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
-    with open(fn, "rb") as f:
-      pd.program_bootstub(f.read())
-    pd.reset()
-    HARDWARE.reset_internal_panda()
-
-    assert Panda.wait_for_panda(None, 10)
-    with Panda() as p:
-      assert p.bootstub
-
-    managed_processes['pandad'].start()
-    self._wait_for_boardd(45)
-
+    self._flash_and_test(fn)
 
 if __name__ == "__main__":
   unittest.main()
