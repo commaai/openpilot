@@ -106,8 +106,11 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
 
-    # allow time for any files to be deleted
-    time.sleep(2)
+    try:
+      # allow time for any files to be deleted
+      time.sleep(2)
+    finally:
+      self.join_thread()
 
     self.join_thread()
 
