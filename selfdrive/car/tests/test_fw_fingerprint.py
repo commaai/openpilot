@@ -172,6 +172,31 @@ class TestFwFingerprint(unittest.TestCase):
           # On auxiliary pandas, bus 1 is usually multiplexed to nothing
           self.assertFalse(request_obj.bus % 4 == 1 and request_obj.obd_multiplexing and request_obj.bus > 3)
 
+
+class TestFwFingerprintTiming(unittest.TestCase):
+  N: int = 2
+  TOL: float = 0.1
+
+  @staticmethod
+  def _run_thread(thread: threading.Thread) -> float:
+    params = Params()
+    params.put_bool("ObdMultiplexingEnabled", True)
+    thread.start()
+    t = time.perf_counter()
+    while thread.is_alive():
+      time.sleep(0.02)
+      if not params.get_bool("ObdMultiplexingChanged"):
+        params.put_bool("ObdMultiplexingChanged", True)
+    return time.perf_counter() - t
+
+  def _benchmark_brand(self, brand, num_pandas):
+    fake_socket = FakeSocket()
+    brand_time = 0
+    for _ in range(self.N):
+      thread = threading.Thread(target=get_fw_versions, args=(fake_socket, fake_socket, brand),
+                                kwargs=dict(num_pandas=num_pandas))
+      brand_time += self._run_thread(thread)
+
     return round(brand_time / self.N, 2)
 
   def _assert_timing(self, avg_time, ref_time):
