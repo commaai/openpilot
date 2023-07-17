@@ -168,8 +168,7 @@ class TestFwFingerprint(unittest.TestCase):
           self.assertEqual(len(request_obj.request), len(request_obj.response))
           # TODO: test this before __post_init__
           # self.assertLessEqual(request_obj.bus, 1)  # We use flags to refer to multiple pandas
-          # Assert no auxiliary pandas will change multiplexing mode
-          # On auxiliary pandas, bus 1 is usually multiplexed to nothing
+          # On auxiliary pandas, bus 1 is usually multiplexed to nothing, assert they will not change multiplexing mode
           self.assertFalse(request_obj.bus % 4 == 1 and request_obj.obd_multiplexing and request_obj.bus > 3)
 
 
