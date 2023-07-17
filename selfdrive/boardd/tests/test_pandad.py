@@ -6,7 +6,7 @@ import unittest
 import cereal.messaging as messaging
 from cereal import log
 from common.gpio import gpio_set, gpio_init
-from panda import Panda, PandaDFU
+from panda import Panda, PandaDFU, PandaProtocolMismatch
 from selfdrive.test.helpers import phone_only
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE
@@ -22,8 +22,8 @@ class TestPandad(unittest.TestCase):
 
   def _wait_for_boardd(self, timeout=30):
     sm = messaging.SubMaster(['peripheralState'])
-    for _ in range(timeout):
-      sm.update(1000)
+    for _ in range(timeout*10):
+      sm.update(100)
       if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
         break
 
@@ -33,6 +33,27 @@ class TestPandad(unittest.TestCase):
   def _go_to_dfu(self):
     HARDWARE.recover_internal_panda()
     assert Panda.wait_for_dfu(None, 10)
+
+  def _flash_and_test(self, fn, expect_mismatch=False):
+    self._go_to_dfu()
+    pd = PandaDFU(None)
+    if fn is None:
+      fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
+    with open(fn, "rb") as f:
+      pd.program_bootstub(f.read())
+    pd.reset()
+    HARDWARE.reset_internal_panda()
+
+    assert Panda.wait_for_panda(None, 10)
+    if expect_mismatch:
+      with self.assertRaises(PandaProtocolMismatch):
+        Panda()
+    else:
+      with Panda() as p:
+        assert p.bootstub
+
+    managed_processes['pandad'].start()
+    self._wait_for_boardd(45)
 
   @phone_only
   def test_in_dfu(self):
@@ -72,23 +93,17 @@ class TestPandad(unittest.TestCase):
     self._wait_for_boardd(8)
 
   @phone_only
+  def test_protocol_version_check(self):
+    if HARDWARE.get_device_type() == 'tici':
+      self.skipTest("")
+
+    # flash old fw
+    fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
+    self._flash_and_test(fn, expect_mismatch=True)
+
+  @phone_only
   def test_release_to_devel_bootstub(self):
-    # flash release bootstub
-    self._go_to_dfu()
-    pd = PandaDFU(None)
-    fn = os.path.join(HERE, pd.get_mcu_type().config.bootstub_fn)
-    with open(fn, "rb") as f:
-      pd.program_bootstub(f.read())
-    pd.reset()
-    HARDWARE.reset_internal_panda()
-
-    assert Panda.wait_for_panda(None, 10)
-    with Panda() as p:
-      assert p.bootstub
-
-    managed_processes['pandad'].start()
-    self._wait_for_boardd(45)
-
+    self._flash_and_test(None)
 
 if __name__ == "__main__":
   unittest.main()
