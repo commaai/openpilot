@@ -32,7 +32,7 @@ def run_loop(m, tf8_input=False):
   ishapes = [[1]+ii.shape[1:] for ii in m.get_inputs()]
   keys = [x.name for x in m.get_inputs()]
   itypes = [ORT_TYPES_TO_NP_TYPES[x.type] for x in m.get_inputs()]
-
+  print("onnx model inputs", keys, ishapes, itypes)
   # run once to initialize CUDA provider
   if "CUDAExecutionProvider" in m.get_providers():
     m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes)])))
@@ -59,10 +59,9 @@ if __name__ == "__main__":
     provider = 'OpenVINOExecutionProvider'
   elif 'CUDAExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     options.intra_op_num_threads = 2
-    provider = 'CUDAExecutionProvider'
+    provider = ('CUDAExecutionProvider', {'cudnn_conv_algo_search': 'DEFAULT'})
   else:
     options.intra_op_num_threads = 2
-    options.inter_op_num_threads = 8
     options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
