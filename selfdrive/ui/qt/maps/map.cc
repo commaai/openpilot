@@ -141,7 +141,8 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("modelV2")) {
     // set path color on change, and show map on rising edge of navigate on openpilot
-    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
+                       sm["controlsState"].getControlsState().getEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       if (loaded_once) {
         m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
