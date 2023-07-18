@@ -10,6 +10,10 @@ import zmq
 from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from system.hardware import PC
 
+
+# TODO suppresses warning about forking proc with zmq socket, fix root cause
+warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
+
 if PC:
   SWAGLOG_DIR = os.path.join(str(Path.home()), ".comma", "log")
 else:
