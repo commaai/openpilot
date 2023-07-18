@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Script to fill up EON with fake data"""
+"""Script to fill up storage with fake data"""
 
-import os
+from pathlib import Path
 
 from system.loggerd.config import ROOT, get_available_percent
 from system.loggerd.tests.loggerd_tests_common import create_random_file
@@ -10,13 +10,13 @@ from system.loggerd.tests.loggerd_tests_common import create_random_file
 if __name__ == "__main__":
   segment_idx = 0
   while True:
-    seg_name = "1970-01-01--00-00-00--%d" % segment_idx
-    seg_path = os.path.join(ROOT, seg_name)
+    seg_name = f"1970-01-01--00-00-00--{segment_idx}"
+    seg_path = Path(ROOT) / seg_name
 
     print(seg_path)
 
-    create_random_file(os.path.join(seg_path, 'fcamera.hevc'), 36)
-    create_random_file(os.path.join(seg_path, 'rlog.bz2'), 2)
+    create_random_file(seg_path / "fcamera.hevc", 36)
+    create_random_file(seg_path / "rlog.bz2", 2)
 
     segment_idx += 1
 

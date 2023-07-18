@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QFile>
+#include <QFileInfo>
 #include <QHash>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -11,7 +12,6 @@
 #include <QTextStream>
 #include <QtXml/QDomDocument>
 
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "system/hardware/hw.h"
 
@@ -251,4 +251,28 @@ bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
   return car_params.getExperimentalLongitudinalAvailable()
              ? Params().getBool("ExperimentalLongitudinalEnabled")
              : car_params.getOpenpilotLongitudinalControl();
+}
+
+// ParamWatcher
+
+ParamWatcher::ParamWatcher(QObject *parent) : QObject(parent) {
+  watcher = new QFileSystemWatcher(this);
+  QObject::connect(watcher, &QFileSystemWatcher::fileChanged, this, &ParamWatcher::fileChanged);
+}
+
+void ParamWatcher::fileChanged(const QString &path) {
+  auto param_name = QFileInfo(path).fileName();
+  auto param_value = QString::fromStdString(params.get(param_name.toStdString()));
+
+  auto it = params_hash.find(param_name);
+  bool content_changed = (it == params_hash.end()) || (it.value() != param_value);
+  params_hash[param_name] = param_value;
+  // emit signal when the content changes.
+  if (content_changed) {
+    emit paramChanged(param_name, param_value);
+  }
+}
+
+void ParamWatcher::addParam(const QString &param_name) {
+  watcher->addPath(QString::fromStdString(params.getParamPath(param_name.toStdString())));
 }

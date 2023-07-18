@@ -105,18 +105,20 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode
-      if (!loaded() && frame_id > 0) {
-        for (int i = 0; i < 5 && !loaded(); i++) {
-          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
-          QApplication::processEvents(QEventLoop::AllEvents, 100);
-          update();
+      // TODO: use the static rendering mode instead
+      // retry render a few times
+      for (int i = 0; i < 5 && !rendered(); i++) {
+        QApplication::processEvents(QEventLoop::AllEvents, 100);
+        update();
+        if (rendered()) {
+          LOGW("rendered after %d retries", i+1);
+          break;
         }
+      }
 
-        if (!loaded()) {
-          LOGE("failed to render map after retry");
-          publish(0, false);
-        }
+      // fallback to sending a blank frame
+      if (!rendered()) {
+        publish(0, false);
       }
     }
   }
@@ -162,6 +164,7 @@ void MapRenderer::update() {
 
   if ((vipc_server != nullptr) && loaded()) {
     publish((end_t - start_t) / 1000.0, true);
+    last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
   }
 }
 

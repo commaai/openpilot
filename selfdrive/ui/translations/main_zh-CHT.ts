@@ -555,15 +555,15 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>24/7 LTE 連線</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>導航功能</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>一年的行駛記錄儲存空間</translation>
     </message>
 </context>
 <context>
