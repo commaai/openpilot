@@ -51,7 +51,7 @@ class CarInterface(CarInterfaceBase):
     if self.CP.carFingerprint == CAR.BOLT_EUV:
       a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
     elif self.CP.carFingerprint == CAR.ACADIA:
-      a, b, c, _ = [6.32452859, 1.0, 0.344451722, 0.05591772]
+      a, b, c, _ = [4.78003305, 1.0, 0.3122, 0.05591772]
 
     steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
     return float(steer_torque) + friction
