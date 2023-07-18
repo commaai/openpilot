@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams, DBC
+from selfdrive.car.ford.values import CANFD_CAR, CarControllerParams, DBC
 
 GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
@@ -55,7 +55,7 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = cp.vl["EPAS_INFO"]["EPAS_Failure"] in (2, 3)
     # ret.espDisabled = False  # TODO: find traction control signal
 
-    if self.CP.carFingerprint in CANFD_CARS:
+    if self.CP.carFingerprint in CANFD_CAR:
       # this signal is always 0 on non-CAN FD cars
       ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
@@ -97,7 +97,7 @@ class CarState(CarStateBase):
 
     # blindspot sensors
     if self.CP.enableBsm:
-      cp_bsm = cp_cam if self.CP.carFingerprint in CANFD_CARS else cp
+      cp_bsm = cp_cam if self.CP.carFingerprint in CANFD_CAR else cp
       ret.leftBlindspot = cp_bsm.vl["Side_Detect_L_Stat"]["SodDetctLeft_D_Stat"] != 0
       ret.rightBlindspot = cp_bsm.vl["Side_Detect_R_Stat"]["SodDetctRight_D_Stat"] != 0
 
@@ -191,7 +191,7 @@ class CarState(CarStateBase):
       ("RCMStatusMessage2_FD1", 10),
     ]
 
-    if CP.carFingerprint in CANFD_CARS:
+    if CP.carFingerprint in CANFD_CAR:
       signals += [
         ("LatCtlSte_D_Stat", "Lane_Assist_Data3_FD1"),       # PSCM lateral control status
       ]
@@ -216,7 +216,7 @@ class CarState(CarStateBase):
         ("BCM_Lamp_Stat_FD1", 1),
       ]
 
-    if CP.enableBsm and CP.carFingerprint not in CANFD_CARS:
+    if CP.enableBsm and CP.carFingerprint not in CANFD_CAR:
       signals += [
         ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
         ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
@@ -286,7 +286,7 @@ class CarState(CarStateBase):
       ("IPMA_Data", 1),
     ]
 
-    if CP.enableBsm and CP.carFingerprint in CANFD_CARS:
+    if CP.enableBsm and CP.carFingerprint in CANFD_CAR:
       signals += [
         ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
         ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
