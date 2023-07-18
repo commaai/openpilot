@@ -16,7 +16,7 @@ from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
-from common.time import valid_system_time
+from common.time import system_time_valid
 from system.hardware import AGNOS, HARDWARE
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -440,11 +440,12 @@ def main() -> None:
 
       # ensure we have some params written soon after startup
       updater.set_params(False, update_failed_count, exception)
-      update_failed_count += 1
 
-      if not valid_system_time(): # updated should wait for valid system time before trying to update
+      if not system_time_valid():
         wait_helper.sleep(5)
         continue
+        
+      update_failed_count += 1
 
       # check for update
       params.put("UpdaterState", "checking...")
