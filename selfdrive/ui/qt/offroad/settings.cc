@@ -125,7 +125,7 @@ void TogglesPanel::showEvent(QShowEvent *event) {
 }
 
 void TogglesPanel::updateToggles() {
-  auto e2e_toggle = toggles["ExperimentalMode"];
+  auto experimental_mode_toggle = toggles["ExperimentalMode"];
   auto op_long_toggle = toggles["ExperimentalLongitudinalEnabled"];
   const QString e2e_description = QString("%1<br>"
                                           "<h4>%2</h4><br>"
@@ -152,12 +152,12 @@ void TogglesPanel::updateToggles() {
     op_long_toggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
     if (hasLongitudinalControl(CP)) {
       // normal description and toggle
-      e2e_toggle->setEnabled(true);
-      e2e_toggle->setDescription(e2e_description);
+      experimental_mode_toggle->setEnabled(true);
+      experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
     } else {
       // no long for now
-      e2e_toggle->setEnabled(false);
+      experimental_mode_toggle->setEnabled(false);
       long_personality_setting->setEnabled(false);
       params.remove("ExperimentalMode");
 
@@ -172,12 +172,12 @@ void TogglesPanel::updateToggles() {
           long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
         }
       }
-      e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
+      experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
 
-    e2e_toggle->refresh();
+    experimental_mode_toggle->refresh();
   } else {
-    e2e_toggle->setDescription(e2e_description);
+    experimental_mode_toggle->setDescription(e2e_description);
     op_long_toggle->setVisible(false);
   }
 }
