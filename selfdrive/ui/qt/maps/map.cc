@@ -104,11 +104,10 @@ void MapWindow::initLayers() {
     nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
+    m_map->addLayer(nav, "road-intersection");
 
     QVariantMap transition;
     transition["duration"] = 400;  // 400 ms color transition for navigate on openpilot
-
-    m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()->scene.navigate_on_openpilot));
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
