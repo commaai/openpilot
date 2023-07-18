@@ -121,6 +121,7 @@ class IsoTpParallelQuery:
         # Log unexpected empty responses
         if len(dat) == 0:
           cloudlog.error(f"iso-tp query empty response: {tx_addr}")
+          request_done[tx_addr] = True
           continue
 
         counter = request_counter[tx_addr]
