@@ -18,9 +18,8 @@ def set_time(logger):
   set_time_count = 0
   time_set = False
 
-  logger.info(os.popen("lsusb").read())
-
   while set_time_count < SET_TIME_RETRIES and not time_set:
+    logger.info(os.popen("lsusb").read())
     try:
       ps = Panda.list()
       if len(ps) == 0:
