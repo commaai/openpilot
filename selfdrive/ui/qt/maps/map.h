@@ -89,6 +89,7 @@ private:
 
   bool m_sourceAdded = false;
 
+  bool nav_path_active = false;
   bool loaded_once = false;
   bool allow_open = true;
 
