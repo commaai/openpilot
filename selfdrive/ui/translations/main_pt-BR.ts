@@ -1127,15 +1127,15 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Navegação no openpilot</translation>
     </message>
     <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quando a navegação tem um destino, o openpilot insere as informações do mapa no modelo. Isso geralmente melhora o comportamento e permite que o openpilot mantenha a esquerda ou a direita adequadamente nas bifurcações/saídas e entre nas curvas. O comportamento de mudança de faixa permanece inalterado e ainda é ativado pelo motorista. Este é um recurso de qualidade alfa; erros devem ser esperados.</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilite o controle longitudinal (embrionário) openpilot para permitir o modo Experimental.</translation>
     </message>
 </context>
 <context>
