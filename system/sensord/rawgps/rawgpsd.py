@@ -139,7 +139,8 @@ def download_assistance():
     return
 
 def downloader_loop(event):
-  os.remove(ASSIST_DATA_FILE)
+  if os.path.exists(ASSIST_DATA_FILE):
+    os.remove(ASSIST_DATA_FILE)
   while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
     download_assistance()
     time.sleep(10)
