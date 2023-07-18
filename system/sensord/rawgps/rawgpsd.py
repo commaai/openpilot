@@ -8,7 +8,7 @@ import time
 import pycurl
 import subprocess
 from datetime import datetime
-from multiprocessing import Process
+from multiprocessing import Process, Event
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
@@ -31,6 +31,7 @@ from system.sensord.rawgps.structs import (dict_unpacker, position_report, relis
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 ASSIST_DATA_FILE = '/tmp/xtra3grc.bin'
+ASSIST_DATA_FILE_DOWNLOAD = ASSIST_DATA_FILE + '.download'
 ASSISTANCE_URL = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
 
 LOG_TYPES = [
@@ -126,7 +127,7 @@ def download_assistance():
       cloudlog.error("Qcom assistance data larger than expected")
       return
 
-    with open(ASSIST_DATA_FILE, 'wb') as fp:
+    with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
       c = pycurl.Curl()
       c.setopt(pycurl.URL, ASSISTANCE_URL)
       c.setopt(pycurl.CONNECTTIMEOUT, 5)
@@ -134,10 +135,17 @@ def download_assistance():
       c.setopt(pycurl.WRITEDATA, fp)
       c.perform()
       c.close()
+      os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
   except pycurl.error:
     cloudlog.exception("Failed to download assistance file")
     return
 
+def downloader_loop(event):
+  if os.path.exists(ASSIST_DATA_FILE):
+    os.remove(ASSIST_DATA_FILE)
+  while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
+    download_assistance()
+    time.sleep(10)
 
 def inject_assistance():
   try:
@@ -237,7 +245,9 @@ def main() -> NoReturn:
 
   wait_for_modem()
 
-  assist_fetch_proc = None
+  stop_download_event = Event()
+  assist_fetch_proc = Process(target=downloader_loop, args=(stop_download_event,))
+  assist_fetch_proc.start()
   def cleanup(proc):
     cloudlog.warning("caught sig disabling quectel gps")
     gpio_set(GPIO.UBLOX_PWR_EN, False)
@@ -249,11 +259,9 @@ def main() -> NoReturn:
 
   # connect to modem
   diag = ModemDiag()
-  download_assistance()
-  want_assistance = not os.path.exists(ASSIST_DATA_FILE)
   setup_quectel(diag)
+  want_assistance = True
   current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
-  last_fetch_time = time.monotonic()
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
   gpio_set(GPIO.UBLOX_PWR_EN, True)
@@ -267,13 +275,6 @@ def main() -> NoReturn:
         want_assistance = False
       else:
         os.remove(ASSIST_DATA_FILE)
-    if want_assistance and time.monotonic() - last_fetch_time > 10:
-      if assist_fetch_proc is None or not assist_fetch_proc.is_alive():  # type: ignore
-        cloudlog.warning("fetching assistance data")
-        assist_fetch_proc = Process(target=download_assistance)
-        assist_fetch_proc.start()
-        last_fetch_time = time.monotonic()
-
 
     opcode, payload = diag.recv()
     if opcode != DIAG_LOG_F:
@@ -364,6 +365,8 @@ def main() -> NoReturn:
       gps.flags = 1 if gps.verticalAccuracy != 500 else 0
       if gps.flags:
         want_assistance = False
+        stop_download_event.set()
+
 
       pm.send('gpsLocation', msg)
 
