@@ -64,18 +64,21 @@ class TestCarInterfaces(unittest.TestCase):
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
+    now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, 0)
-      car_interface.apply(CC, 0)
+      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC, now_nanos)
+      now_nanos += 10e6  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, 0)
-      car_interface.apply(CC, 0)
+      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC, now_nanos)
+      now_nanos += 10e6  # 10ms
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
