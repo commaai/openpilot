@@ -110,7 +110,7 @@ void MapWindow::initLayers() {
     transition["duration"] = 400;  // ms
     double s = millis_since_boot();
 //    getNavPathColor(uiState());
-    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(false));
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_path_active));
 //    m_map->setPaintProperty("navLayer", "line-color", "#ffffff");
     double e = millis_since_boot() - s;
     qDebug() << "took:" << e << "ms";
@@ -158,11 +158,11 @@ void MapWindow::updateState(const UIState &s) {
     bool show_nav_path = sm["controlsState"].getControlsState().getEnabled() &&
                          uiState()->scene.navigate_on_openpilot;
     qDebug() << "enabled:" << sm["controlsState"].getControlsState().getEnabled() << "noo:" << uiState()->scene.navigate_on_openpilot;
-    if ((show_nav_path != nav_path_active) && m_map->layerExists("navLayer")) {
+    if ((show_nav_path != nav_path_active) && loaded_once) {
       qDebug() << "showing nav path:" << show_nav_path;
       m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(show_nav_path));
-      nav_path_active = show_nav_path;
     }
+    nav_path_active = show_nav_path;
   }
 
   if (sm.updated("liveLocationKalman")) {
