@@ -1087,7 +1087,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
+        <translation type="vanished">啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1124,6 +1124,10 @@ This may take up to a minute.</source>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本，以及實驗模式。</translation>
+    </message>
+    <message>
+        <source>Enable longitudinal control (alpha) to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

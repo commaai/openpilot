@@ -169,7 +169,7 @@ void TogglesPanel::updateToggles() {
         if (is_release) {
           long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
-          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
+          long_desc = tr("Enable longitudinal control (alpha) to allow Experimental mode.");
         }
       }
       e2e_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
