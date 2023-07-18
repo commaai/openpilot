@@ -419,7 +419,7 @@ def main() -> None:
     params.put("InstallDate", t.encode('utf8'))
 
   updater = Updater()
-  update_failed_count = 0  # TODO: Load from param?
+  update_failed_count = -1  # TODO: Load from param?
 
   # no fetch on the first time
   wait_helper = WaitTimeHelper()
@@ -440,12 +440,12 @@ def main() -> None:
       init_overlay()
 
       # ensure we have some params written soon after startup
-      updater.set_params(-1, exception)
+      updater.set_params(update_failed_count, exception)
+      update_failed_count += 1
 
       if not valid_system_time(): # updated should wait for valid system time before trying to update
         wait_helper.sleep(5)
         continue
-      update_failed_count += 1
 
       # check for update
       params.put("UpdaterState", "checking...")
