@@ -108,7 +108,7 @@ void MapWindow::initLayers() {
 
     QVariantMap transition;
     transition["duration"] = 400;  // ms
-    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()->scene.navigate_on_openpilot));
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor());
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
@@ -132,6 +132,13 @@ void MapWindow::initLayers() {
   }
 }
 
+QColor MapWindow::getNavPathColor() {
+  const SubMaster &sm = *uiState()->sm;
+  bool nav_enabled = uiState()->scene.navigate_on_openpilot;
+  bool cs_enabled = sm["controlsState"].getControlsState().getEnabled();
+  return nav_enabled && cs_enabled ? QColor("#31ee73") : QColor("#31a1ee");
+}
+
 void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
     return;
@@ -139,18 +146,21 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
+  // handle navigate on openpilot status
   if (sm.updated("modelV2")) {
-    // set path color on change, and show map on rising edge of navigate on openpilot
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
-    if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
-      if (loaded_once) {
-        m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
-      }
-      if (nav_enabled) {
-        emit requestVisible(true);
-      }
+    if (nav_enabled && !uiState()->scene.navigate_on_openpilot) {
+      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
     }
     uiState()->scene.navigate_on_openpilot = nav_enabled;
+  }
+
+  // set path color on change on enabled status using navigate on openpilot
+  if (sm.updated("controlsState")) {
+    if ((sm["controlsState"].getControlsState().getEnabled() != cs_enabled_last) && loaded_once) {
+      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor());
+    }
+    cs_enabled_last = sm["controlsState"].getControlsState().getEnabled();
   }
 
   if (sm.updated("liveLocationKalman")) {
