@@ -57,6 +57,13 @@ class TestFordFW(unittest.TestCase):
       self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
       self.assertIsNone(subaddr, "Unexpected ECU subaddress")
 
+      # Software part number takes the form: PREFIX-CORE-SUFFIX
+      # Prefix changes based on the family of part. It includes the model year
+      #   and likely the platform.
+      # Core identifies the type of the item (e.g. 14D003 = PSCM, 14C204 = PCM).
+      # Suffix specifies the version of the part. -AA would be followed by -AB.
+      #   Small increments in the suffix are usually be compatible.
+      # Details: https://forscan.org/forum/viewtopic.php?p=70008#p70008
       for rx in ecu_rxs:
         self.assertEqual(len(rx), 24, "Expected ECU response to be 24 bytes")
 
