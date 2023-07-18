@@ -257,14 +257,14 @@ class Updater:
   def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
-  def set_params(self, failed_count: int, exception: Optional[str]) -> None:
+  def set_params(self, update_success: bool, failed_count: int, exception: Optional[str]) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
     self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
     last_update = datetime.datetime.utcnow()
-    if failed_count == 0:
+    if update_success:
       t = last_update.isoformat()
       self.params.put("LastUpdateTime", t.encode('utf8'))
     else:
@@ -428,19 +428,20 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
+  # ensure we have some params written soon after startup
+  exception = None
+  updater.set_params(False, update_failed_count, exception)
+
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
 
     # Attempt an update
-    exception = None
     try:
       # TODO: reuse overlay from previous updated instance if it looks clean
 
       init_overlay()
 
-      # ensure we have some params written soon after startup
-      updater.set_params(update_failed_count, exception)
       update_failed_count += 1
 
       if not valid_system_time(): # updated should wait for valid system time before trying to update
@@ -473,7 +474,8 @@ def main() -> None:
 
     try:
       params.put("UpdaterState", "idle")
-      updater.set_params(update_failed_count, exception)
+      update_successful = (update_failed_count == 0)
+      updater.set_params(update_successful, update_failed_count, exception)
     except Exception:
       cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
 
