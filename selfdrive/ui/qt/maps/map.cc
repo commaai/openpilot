@@ -139,8 +139,8 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  // show map on rising edge of navigate on openpilot
   if (sm.updated("modelV2")) {
+    // set path color on change, and show map on rising edge of navigate on openpilot
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
                        sm["controlsState"].getControlsState().getEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
@@ -150,6 +150,7 @@ void MapWindow::updateState(const UIState &s) {
       if (nav_enabled) {
         emit requestVisible(true);
       }
+    }
     uiState()->scene.navigate_on_openpilot = nav_enabled;
   }
 
