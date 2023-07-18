@@ -305,6 +305,8 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+    - name: Build base Docker image
+      run: eval "$BUILD"
     - name: Build Docker image
       # Sim docker is needed to get the OpenCL drivers
       run: eval "$BUILD_CL"
