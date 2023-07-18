@@ -115,7 +115,7 @@ class IsoTpParallelQuery:
           addrs_responded.add(tx_addr)
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
-        if not dat:
+        if dat is not None:
           continue
 
         counter = request_counter[tx_addr]
