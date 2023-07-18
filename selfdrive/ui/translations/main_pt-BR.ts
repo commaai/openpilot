@@ -1090,10 +1090,6 @@ Isso pode levar até um minuto.</translation>
         <translation>O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="vanished">Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>Controle Longitudinal openpilot (Embrionário)</translation>
     </message>
