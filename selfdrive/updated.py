@@ -434,6 +434,7 @@ def main() -> None:
 
   exception = None
 
+  init_overlay()
   # ensure we have some params written soon after startup
   updater.set_params(None, exception)
 
@@ -446,7 +447,6 @@ def main() -> None:
       try:
         # TODO: reuse overlay from previous updated instance if it looks clean
         init_overlay()
-
         update_failed_count += 1
 
         # check for update
