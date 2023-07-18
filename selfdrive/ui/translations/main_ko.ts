@@ -1122,7 +1122,7 @@ This may take up to a minute.</source>
         <translation>openpilot 롱컨 제어의 알파 버전은 비 릴리스 분기에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
     </message>
     <message>
-        <source>Enable longitudinal control (alpha) to allow Experimental mode.</source>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
