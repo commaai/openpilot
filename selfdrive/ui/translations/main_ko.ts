@@ -1086,10 +1086,6 @@ This may take up to a minute.</source>
         <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>openpilot 롱컨트롤 (알파)</translation>
     </message>
@@ -1124,6 +1120,18 @@ This may take up to a minute.</source>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>openpilot 롱컨 제어의 알파 버전은 비 릴리스 분기에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

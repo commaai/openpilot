@@ -131,11 +131,14 @@ void TogglesPanel::updateToggles() {
   QMap<QString, QString> exp_features;
   exp_features["e2e_long"] = tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
                                 "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.");
+  exp_features["nav_on_op"] = tr("When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. "
+                                 "Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.");
   exp_features["visualization"] = tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.");
 
   // Ordering of the headers
   QVector<QPair<QString, QString>> exp_features_headers {
     {"e2e_long", tr("🌮 End-to-End Longitudinal Control 🌮")},
+    {"nav_on_op", tr("Navigate on openpilot")},
     {"visualization", tr("New Driving Visualization")}
   };
 
@@ -169,7 +172,7 @@ void TogglesPanel::updateToggles() {
         if (is_release) {
           long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
-          long_desc = tr("Enable experimental longitudinal control to allow Experimental mode.");
+          long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
         }
       }
       exp_features["e2e_long"].prepend("<b>" + long_desc + "</b><br><br>");
