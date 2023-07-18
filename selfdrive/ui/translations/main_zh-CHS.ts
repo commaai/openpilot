@@ -1076,8 +1076,16 @@ This may take up to a minute.</source>
         <translation>当低速行驶时，驾驶视角将切换到前向广角摄像头，便于更完整地显示转向路径。右上角将显示试验模式图标。</translation>
     </message>
     <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>由于此车辆使用自带的ACC纵向控制，当前无法使用试验模式。</translation>
+    </message>
+    <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>启用试验性的纵向控制，以便允许使用试验模式。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1112,19 +1120,11 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <source>Navigate on openpilot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
