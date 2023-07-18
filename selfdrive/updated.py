@@ -428,15 +428,14 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
-
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
 
     # Attempt an update
+    exception = None
     try:
       # TODO: reuse overlay from previous updated instance if it looks clean
-      exception = None
 
       init_overlay()
 
