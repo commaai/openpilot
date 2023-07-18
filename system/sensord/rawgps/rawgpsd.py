@@ -31,6 +31,7 @@ from system.sensord.rawgps.structs import (dict_unpacker, position_report, relis
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 ASSIST_DATA_FILE = '/tmp/xtra3grc.bin'
+ASSIST_DATA_FILE_DOWNLOAD = ASSIST_DATA_FILE + '.download'
 ASSISTANCE_URL = 'http://xtrapath3.izatcloud.net/xtra3grc.bin'
 
 LOG_TYPES = [
@@ -126,7 +127,7 @@ def download_assistance():
       cloudlog.error("Qcom assistance data larger than expected")
       return
 
-    with open(ASSIST_DATA_FILE, 'wb') as fp:
+    with open(ASSIST_DATA_FILE_DOWNLOAD, 'wb') as fp:
       c = pycurl.Curl()
       c.setopt(pycurl.URL, ASSISTANCE_URL)
       c.setopt(pycurl.CONNECTTIMEOUT, 5)
@@ -134,6 +135,7 @@ def download_assistance():
       c.setopt(pycurl.WRITEDATA, fp)
       c.perform()
       c.close()
+      os.rename(ASSIST_DATA_FILE_DOWNLOAD, ASSIST_DATA_FILE)
   except pycurl.error:
     cloudlog.exception("Failed to download assistance file")
     return
