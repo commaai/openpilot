@@ -7,7 +7,7 @@ import subprocess
 from typing import List, NoReturn
 from functools import cmp_to_key
 
-from panda import Panda, PandaDFU, FW_PATH
+from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.boardd.set_time import set_time
@@ -25,7 +25,12 @@ def get_expected_signature(panda: Panda) -> bytes:
 
 
 def flash_panda(panda_serial: str) -> Panda:
-  panda = Panda(panda_serial)
+  try:
+    panda = Panda(panda_serial)
+  except PandaProtocolMismatch:
+    cloudlog.warning("detected protocol mismatch, reflashing panda")
+    HARDWARE.recover_internal_panda()
+    raise
 
   fw_signature = get_expected_signature(panda)
   internal_panda = panda.is_internal()
@@ -42,10 +47,11 @@ def flash_panda(panda_serial: str) -> Panda:
   if panda.bootstub:
     bootstub_version = panda.get_version()
     cloudlog.info(f"Flashed firmware not booting, flashing development bootloader. {bootstub_version=}, {internal_panda=}")
+
     if internal_panda:
       HARDWARE.recover_internal_panda()
     panda.recover(reset=(not internal_panda))
-    cloudlog.info("Done flashing bootloader")
+    cloudlog.info("Done flashing bootstub")
 
   if panda.bootstub:
     cloudlog.info("Panda still not booting, exiting")
@@ -151,6 +157,9 @@ def main() -> NoReturn:
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
+      continue
+    except PandaProtocolMismatch:
+      cloudlog.exception("pandad.protocol_mismatch")
       continue
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")
