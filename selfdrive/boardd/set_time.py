@@ -6,8 +6,8 @@ from panda import Panda
 from common.time import MIN_DATE
 import time
 
-SET_TIME_RETRIES = 10
-SET_TIME_DELAY = 0.5
+SET_TIME_RETRIES = 100
+SET_TIME_DELAY = 1
 
 def set_time(logger):
   sys_time = datetime.datetime.today()
