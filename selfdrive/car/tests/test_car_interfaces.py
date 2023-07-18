@@ -10,10 +10,10 @@ from cereal import car
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.test.fuzzy_generation import FuzzyGenerator
+from selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 
-def get_fuzzy_car_interface_args(draw) -> dict:
+def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
   fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
                                                                      st.integers(min_value=0, max_value=64)) for key in
@@ -32,7 +32,7 @@ def get_fuzzy_car_interface_args(draw) -> dict:
     'experimental_long': st.booleans(),
   })
 
-  params = draw(params_strategy)
+  params: dict = draw(params_strategy)
   params['car_fw'] = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
   return params
 
