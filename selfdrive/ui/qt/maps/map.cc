@@ -110,7 +110,7 @@ void MapWindow::initLayers() {
     transition["duration"] = 400;  // ms
     double s = millis_since_boot();
 //    getNavPathColor(uiState());
-    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()));
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(false));
 //    m_map->setPaintProperty("navLayer", "line-color", "#ffffff");
     double e = millis_since_boot() - s;
     qDebug() << "took:" << e << "ms";
@@ -137,13 +137,13 @@ void MapWindow::initLayers() {
   }
 }
 
-QColor MapWindow::getNavPathColor(const UIState *s) {
-//  UIState *s = uiState();
-  const SubMaster &sm = *s->sm;
-  bool nav_enabled = s->scene.navigate_on_openpilot;
-  bool cs_enabled = sm["controlsState"].getControlsState().getEnabled();
-  return nav_enabled && cs_enabled ? QColor("#31ee73") : QColor("#31a1ee");
-}
+//QColor MapWindow::getNavPathColor(bool nav_enabled) {
+////  UIState *s = uiState();
+//  const SubMaster &sm = *s->sm;
+//  bool nav_enabled = s->scene.navigate_on_openpilot;
+//  bool cs_enabled = sm["controlsState"].getControlsState().getEnabled();
+//  return nav_enabled && cs_enabled ? QColor("#31ee73") : QColor("#31a1ee");
+//}
 
 void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
@@ -164,10 +164,11 @@ void MapWindow::updateState(const UIState &s) {
   // set path color on change on enabled status using navigate on openpilot
   if (sm.updated("controlsState")) {
     bool controls_enabled = sm["controlsState"].getControlsState().getEnabled();
-    if ((controls_enabled != cs_enabled_last) && loaded_once) {
-      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()));
+    if ((controls_enabled != controls_enabled_last) && loaded_once) {
+      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(controls_enabled &&
+                                                                        uiState()->scene.navigate_on_openpilot));
     }
-    cs_enabled_last = controls_enabled;
+    controls_enabled_last = controls_enabled;
   }
 
   if (sm.updated("liveLocationKalman")) {
