@@ -139,11 +139,11 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  // update navigate on openpilot status
+  // show map on rising edge of navigate on openpilot
   if (sm.updated("modelV2")) {
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
     if (nav_enabled && !uiState()->scene.navigate_on_openpilot) {
-      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
+      emit requestVisible(true);
     }
     uiState()->scene.navigate_on_openpilot = nav_enabled;
   }
