@@ -6,6 +6,7 @@ import json
 import heapq
 import signal
 import platform
+import multiprocessing
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable, Union, Any, Iterable, Tuple
@@ -31,6 +32,60 @@ from tools.lib.logreader import LogReader
 NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
+
+
+class ProcessOutputProxy:
+  def __init__(self, proc_name, prefix, capture_stdout, capture_stderr):
+    self.stdout_fifo_fname = None
+    self.stdout_fifo_fd = None
+    self.stderr_fifo_fname = None
+    self.stderr_fifo_fd = None
+
+    if capture_stdout:
+      self.stdout_fifo_fname = os.path.join("/tmp", f"{prefix}_{proc_name}.stdout")
+      os.unlink(self.stdout_fifo_fname)
+      self.stdout_fifo_fd = os.mkfifo(self.stdout_fifo_fname)
+    if capture_stderr:
+      self.stderr_fifo_fname = os.path.join("/tmp", f"{prefix}_{proc_name}.stderr")
+      os.unlink(self.stderr_fifo_fname)
+      self.stderr_fifo_fd = os.mkfifo(self.stdout_fifo_fname)
+
+  def __del__(self):
+    if self.stdout_fifo_fd is not None:
+      os.close(self.stdout_fifo_fd)
+      os.unlink(self.stdout_fifo_fname)
+    if self.stderr_fifo_fd is not None:
+      os.close(self.stderr_fifo_fd)
+      os.unlink(self.stderr_fifo_fname)
+  
+  def _read_fd(self, fd):
+    buf_size = 1024
+    buf = None
+    total_buf = b""
+    while buf is None and len(buf) != 0:
+      buf = os.read(fd, buf_size)
+      total_buf += buf
+
+    return total_buf
+
+  def link_with_current_proc(self):
+    if self.stdout_fifo_fd is not None:
+      os.dup2(self.stdout_fifo_fd, 1)
+      os.close(self.stdout_fifo_fd)
+    if self.stderr_fifo_fd is not None:
+      os.dup2(self.stderr_fifo_fd, 2)
+      os.close(self.stderr_fifo_fd)
+
+  def read_outputs(self):
+    out_str = None
+    err_str = None
+
+    if self.stdout_fifo_fd is not None:
+      out_str = self.read_fd(self.stdout_fifo_fd)
+    if self.stderr_fifo_fd is not None:
+      err_str = self.read_fd(self.stderr_fifo_fd)
+
+    return out_str, err_str
 
 
 class ReplayContext:
@@ -123,7 +178,7 @@ class ProcessContainer:
   def __init__(self, cfg: ProcessConfig):
     self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
     self.cfg = copy.deepcopy(cfg)
-    self.process = managed_processes[cfg.proc_name]
+    self.process = copy.deepcopy(managed_processes[cfg.proc_name])
     self.msg_queue: List[capnp._DynamicStructReader] = []
     self.cnt = 0
     self.pm: Optional[messaging.PubMaster] = None
@@ -179,7 +234,8 @@ class ProcessContainer:
 
   def start(
     self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str]
+    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str],
+    output_proxy: Optional[ProcessOutputProxy] = None
   ):
     with self.prefix:
       self._setup_env(params_config, environ_config)
