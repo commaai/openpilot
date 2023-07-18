@@ -8,7 +8,7 @@ import time
 import pycurl
 import subprocess
 from datetime import datetime
-from multiprocessing import Process
+from multiprocessing import Process, Event
 from typing import NoReturn, Optional
 from struct import unpack_from, calcsize, pack
 
@@ -138,9 +138,9 @@ def download_assistance():
     cloudlog.exception("Failed to download assistance file")
     return
 
-def downloader_loop():
+def downloader_loop(event):
   os.remove(ASSIST_DATA_FILE)
-  while not os.path.exists(ASSIST_DATA_FILE):
+  while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
     download_assistance()
     time.sleep(10)
 
@@ -242,7 +242,8 @@ def main() -> NoReturn:
 
   wait_for_modem()
 
-  assist_fetch_proc = Process(target=downloader_loop)
+  stop_download_event = Event()
+  assist_fetch_proc = Process(target=downloader_loop, args=(stop_download_event,))
   assist_fetch_proc.start()
   def cleanup(proc):
     cloudlog.warning("caught sig disabling quectel gps")
@@ -361,6 +362,8 @@ def main() -> NoReturn:
       gps.flags = 1 if gps.verticalAccuracy != 500 else 0
       if gps.flags:
         want_assistance = False
+        stop_download_event.set()
+
 
       pm.send('gpsLocation', msg)
 
