@@ -1078,8 +1078,16 @@ This may take up to a minute.</source>
         <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
     </message>
     <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
+    </message>
+    <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>openpilot 縱向控制可能會在未來的更新中提供。</translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
+        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1114,24 +1122,8 @@ This may take up to a minute.</source>
         <translation>推薦使用標準模式。在積極模式中，openpilot 會更靠近前車並在加速和剎車方面更積極。在舒適模式中，openpilot 會與前車保持較遠的距離。</translation>
     </message>
     <message>
-        <source>End-to-End Longitudinal Control is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>目前這輛車無法使用端到端縱向控制，因為車輛使用原廠ACC (自適應巡航控制系統) 進行縱向控制。</translation>
-    </message>
-    <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with End-to-End Longitudinal Control, on non-release branches.</source>
-        <translation>在非發佈版本的分支上，可以測試 openpilot 縱向控制的 Alpha 版本，包括端到端的縱向控制。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to use End-to-End Longitudinal Control.</source>
-        <translation>啟用實驗性縱向控制以使用端到端縱向控制。</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>當導航有設定目的地時，openpilot 將會把地圖導航信息輸入模型。這通常會改善 openpilot 的行駛路徑使它能夠在分歧處/出口適當地靠左或靠右，並進行轉彎。車道變換行為保持不變，仍由駕駛員手動執行。這是一個 Alpha 版本的功能，請保持心理準備隨時有可能會出現錯誤。</translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation>openpilot 自動輔助駕駛</translation>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本，以及實驗模式。</translation>
     </message>
 </context>
 <context>
