@@ -82,7 +82,7 @@ def run_test_process(data):
     assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
     upload_file(cur_log_fn, os.path.basename(cur_log_fn))
     os.remove(cur_log_fn)
-  return (segment, cfg.proc_name, cfg.subtest_name, res)
+  return (segment, cfg.proc_name, res)
 
 
 def get_log_data(segment):
@@ -224,24 +224,24 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{cur_commit}.bz2")
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
           ref_log_path = get_url(*segment.rsplit("--", 1))
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}{cfg.subtest_name}_{ref_commit}.bz2")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         dat = None if args.upload_only else log_data[segment]
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, dat))
 
-        log_paths[segment][cfg.proc_name + cfg.subtest_name]['ref'] = ref_log_path
-        log_paths[segment][cfg.proc_name + cfg.subtest_name]['new'] = cur_log_fn
+        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, subtest_name, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, result) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       if not args.upload_only:
-        results[segment][proc + subtest_name] = result
+        results[segment][proc] = result
 
   diff1, diff2, failed = format_diff(results, log_paths, ref_commit)
   if not upload:
