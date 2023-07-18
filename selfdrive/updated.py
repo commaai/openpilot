@@ -437,8 +437,8 @@ def main() -> None:
       init_overlay()
 
       # ensure we have some params written soon after startup
-      updater.set_params(update_failed_count, exception)
       update_failed_count += 1
+      updater.set_params(update_failed_count, exception)
 
       # check for update
       params.put("UpdaterState", "checking...")
