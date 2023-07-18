@@ -319,7 +319,7 @@ class Updater:
       set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
     elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
       set_offroad_alert("Offroad_ConnectivityNeeded", True)
-    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT and failed_count > 1:
       remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
       set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
 
