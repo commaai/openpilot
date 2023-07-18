@@ -27,7 +27,7 @@ Jinja2 = "^3.1.2"
 json-rpc = "^1.13.0"
 libusb1 = "^3.0.0"
 nose = "^1.3.7"
-numpy = "^1.23.0"
+numpy = "==1.24.2"
 onnx = "^1.14.0"
 onnxruntime-gpu = { version = "^1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
 pillow = "^9.2.0"
