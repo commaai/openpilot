@@ -39,7 +39,7 @@ def create_pscm_status(packer, bus, pscm_status):
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
   values = {
     "LKASteeringCmdActive": lkas_active,
-    "LKASteeringCmd": 10,
+    "LKASteeringCmd": apply_steer,
     "RollingCounter": idx,
     "LKASteeringCmdChecksum": 0x1000 - (lkas_active << 11) - (apply_steer & 0x7ff) - idx
   }
