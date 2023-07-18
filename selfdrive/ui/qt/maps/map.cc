@@ -108,7 +108,12 @@ void MapWindow::initLayers() {
 
     QVariantMap transition;
     transition["duration"] = 400;  // ms
-    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor());
+    double s = millis_since_boot();
+//    getNavPathColor(uiState());
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()));
+//    m_map->setPaintProperty("navLayer", "line-color", "#ffffff");
+    double e = millis_since_boot() - s;
+    qDebug() << "took:" << e << "ms";
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
@@ -132,9 +137,10 @@ void MapWindow::initLayers() {
   }
 }
 
-QColor MapWindow::getNavPathColor() {
-  const SubMaster &sm = *uiState()->sm;
-  bool nav_enabled = uiState()->scene.navigate_on_openpilot;
+QColor MapWindow::getNavPathColor(const UIState *s) {
+//  UIState *s = uiState();
+  const SubMaster &sm = *s->sm;
+  bool nav_enabled = s->scene.navigate_on_openpilot;
   bool cs_enabled = sm["controlsState"].getControlsState().getEnabled();
   return nav_enabled && cs_enabled ? QColor("#31ee73") : QColor("#31a1ee");
 }
@@ -157,10 +163,11 @@ void MapWindow::updateState(const UIState &s) {
 
   // set path color on change on enabled status using navigate on openpilot
   if (sm.updated("controlsState")) {
-    if ((sm["controlsState"].getControlsState().getEnabled() != cs_enabled_last) && loaded_once) {
-      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor());
+    bool controls_enabled = sm["controlsState"].getControlsState().getEnabled();
+    if ((controls_enabled != cs_enabled_last) && loaded_once) {
+      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()));
     }
-    cs_enabled_last = sm["controlsState"].getControlsState().getEnabled();
+    cs_enabled_last = controls_enabled;
   }
 
   if (sm.updated("liveLocationKalman")) {

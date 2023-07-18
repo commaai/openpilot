@@ -111,7 +111,7 @@ private:
   QPixmap directions_icon, settings_icon;
 
   // Blue with normal nav, green when nav is input into the model
-  QColor getNavPathColor();
+  QColor getNavPathColor(const UIState *s);
   bool cs_enabled_last = false;
 
   void clearRoute();
