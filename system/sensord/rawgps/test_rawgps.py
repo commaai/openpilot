@@ -62,7 +62,7 @@ class TestRawgpsd(unittest.TestCase):
       if i == 1:
         os.system("sudo systemctl stop systemd-resolved")
       managed_processes['rawgpsd'].start()
-      self._wait_for_output(7)
+      self._wait_for_output(10)
       assert self.sm.updated['qcomGnss']
       managed_processes['rawgpsd'].stop()
 

@@ -4,6 +4,7 @@
 
 #include <QGeoCoordinate>
 #include <QGestureEvent>
+#include <QHash>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMap>
@@ -34,9 +35,11 @@ private:
   QHBoxLayout *lane_layout;
   bool is_rhd = false;
   std::vector<QLabel *> lane_labels;
+  QHash<QString, QPixmap> pixmap_cache;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
+  void buildPixmapCache();
   QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };
@@ -106,6 +109,11 @@ private:
   MapETA* map_eta;
   QPushButton *settings_btn;
   QPixmap directions_icon, settings_icon;
+
+  // Blue with normal nav, green when nav is input into the model
+  QColor getNavPathColor(bool nav_enabled) {
+    return nav_enabled ? QColor("#31ee73") : QColor("#31a1ee");
+  }
 
   void clearRoute();
   void updateDestinationMarker();

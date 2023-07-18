@@ -3,6 +3,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include <QDebug>
+#include <QDir>
 
 #include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -104,7 +105,11 @@ void MapWindow::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
+
+    QVariantMap transition;
+    transition["duration"] = 400;  // ms
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()->scene.navigate_on_openpilot));
+    m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
     m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
@@ -134,11 +139,16 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  // update navigate on openpilot status
   if (sm.updated("modelV2")) {
+    // set path color on change, and show map on rising edge of navigate on openpilot
     bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
-    if (nav_enabled && !uiState()->scene.navigate_on_openpilot) {
-      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
+    if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
+      if (loaded_once) {
+        m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
+      }
+      if (nav_enabled) {
+        emit requestVisible(true);
+      }
     }
     uiState()->scene.navigate_on_openpilot = nav_enabled;
   }
@@ -411,6 +421,31 @@ MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
   pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
   setAutoFillBackground(true);
   setPalette(pal);
+
+  buildPixmapCache();
+}
+
+void MapInstructions::buildPixmapCache() {
+  QDir dir("../assets/navigation");
+  for (QString fn : dir.entryList({"*" + ICON_SUFFIX}, QDir::Files)) {
+    QPixmap pm(dir.filePath(fn));
+    QString key = fn.left(fn.size() - ICON_SUFFIX.length());
+    pm = pm.scaledToWidth(200, Qt::SmoothTransformation);
+
+    // Maneuver icons
+    pixmap_cache[key] = pm;
+    // lane direction icons
+    if (key.contains("turn_")) {
+      pixmap_cache["lane_" + key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    }
+
+    // for rhd, reflect direction and then flip
+    if (key.contains("_left")) {
+      pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
+    } else if (key.contains("_right")) {
+      pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
+    }
+  }
 }
 
 QString MapInstructions::getDistance(float d) {
@@ -441,27 +476,13 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   QString type = QString::fromStdString(instruction.getManeuverType());
   QString modifier = QString::fromStdString(instruction.getManeuverModifier());
   if (!type.isEmpty()) {
-    QString fn = "../assets/navigation/direction_" + type;
+    QString fn = "direction_" + type;
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
-    fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
-
-    // for rhd, reflect direction and then flip
-    if (is_rhd) {
-      if (fn.contains("left")) {
-        fn.replace("left", "right");
-      } else if (fn.contains("right")) {
-        fn.replace("right", "left");
-      }
-    }
-
-    QPixmap pix(fn);
-    if (is_rhd) {
-      pix = pix.transformed(QTransform().scale(-1, 1));
-    }
-    icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
+    bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
+    icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
   }
@@ -480,7 +501,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
 
     // TODO: Make more images based on active direction and combined directions
-    QString fn = "../assets/navigation/direction_";
+    QString fn = "lane_direction_";
     if (left) {
       fn += "turn_left";
     } else if (right) {
@@ -497,7 +518,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!label->parentWidget()) {
       lane_layout->addWidget(label);
     }
-    label->setPixmap(loadPixmap(fn + ICON_SUFFIX, {125, 125}, Qt::IgnoreAspectRatio));
+    label->setPixmap(pixmap_cache[fn]);
     label->setVisible(true);
   }
 
@@ -536,9 +557,8 @@ void MapETA::updateETA(float s, float s_typical, float d) {
                         : std::array{eta_t.toString("h:mm a").split(' ')[0], eta_t.toString("a")};
 
   // Remaining time
-  auto time_t = QDateTime::fromTime_t(s);
-  auto remaining = s < 3600 ? std::array{time_t.toString("m"), tr("min")}
-                            : std::array{time_t.toString("h:mm"), tr("hr")};
+  auto remaining = s < 3600 ? std::array{QString::number(int(s / 60)), tr("min")}
+                            : std::array{QString("%1:%2").arg((int)s / 3600).arg(((int)s % 3600) / 60, 2, 10, QLatin1Char('0')), tr("hr")};
   QString color = "#25DA6E";
   if (s / s_typical > 1.5) color = "#DA3025";
   else if (s / s_typical > 1.2) color = "#DAA725";
