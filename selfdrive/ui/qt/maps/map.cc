@@ -108,12 +108,7 @@ void MapWindow::initLayers() {
 
     QVariantMap transition;
     transition["duration"] = 400;  // ms
-    double s = millis_since_boot();
-//    getNavPathColor(uiState());
     m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_path_active));
-//    m_map->setPaintProperty("navLayer", "line-color", "#ffffff");
-    double e = millis_since_boot() - s;
-    qDebug() << "took:" << e << "ms";
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
@@ -157,9 +152,7 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.updated("controlsState")) {
     bool show_nav_path = sm["controlsState"].getControlsState().getEnabled() &&
                          uiState()->scene.navigate_on_openpilot;
-    qDebug() << "enabled:" << sm["controlsState"].getControlsState().getEnabled() << "noo:" << uiState()->scene.navigate_on_openpilot;
     if ((show_nav_path != nav_path_active) && loaded_once) {
-      qDebug() << "showing nav path:" << show_nav_path;
       m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(show_nav_path));
     }
     nav_path_active = show_nav_path;
