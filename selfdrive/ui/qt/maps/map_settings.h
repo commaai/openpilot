@@ -25,10 +25,11 @@ class NavigationRequest : public QObject {
 
 public:
   static NavigationRequest *instance();
+  QJsonArray currentLocations() const { return locations; };
 
 signals:
   void locationsUpdated(const QJsonArray &locations);
-  void nextDestinationUpdated(const QString &response, bool success);
+  void nextDestinationUpdated();
 
 private:
   NavigationRequest(QObject *parent);
@@ -36,6 +37,7 @@ private:
 
   Params params;
   QString prev_response;
+  QJsonArray locations;
 };
 
 class MapSettings : public QFrame {
@@ -57,6 +59,9 @@ private:
   QJsonObject current_destination;
   QVBoxLayout *destinations_layout;
   DestinationWidget *current_widget;
+  DestinationWidget *home_widget;
+  DestinationWidget *work_widget;
+  std::vector<DestinationWidget *> widgets;
   QPixmap close_icon;
 
 signals:
@@ -72,6 +77,7 @@ public:
 
 signals:
   void actionClicked();
+  void navigateTo(const QJsonObject &destination);
 
 private:
   struct NavIcons {
@@ -92,4 +98,5 @@ private:
 private:
   QLabel *icon, *title, *subtitle;
   QPushButton *action;
+  QJsonObject dest;
 };
