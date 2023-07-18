@@ -262,7 +262,7 @@ class Updater:
     self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
     if failed_count is None: # initialize only, don't set update time
-      self.params.put("UpdateFailedCount", 0)
+      self.params.put("UpdateFailedCount", str(0))
     else:
       self.params.put("UpdateFailedCount", str(failed_count))
 
