@@ -104,7 +104,7 @@ if GetOption('extras'):
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
+    ("openpilot_nightly", "nightly"),
     ("openpilot_internal", "master"),
     ("dashcam", dashcam),
     ("dashcam_test", f"{dashcam}-staging"),
