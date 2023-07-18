@@ -196,11 +196,9 @@ void ExperimentalButton::changeMode() {
 void ExperimentalButton::updateState(const UIState &s) {
   const auto cs = (*s.sm)["controlsState"].getControlsState();
   bool eng = cs.getEngageable() || cs.getEnabled();
-//  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
-  if ((params.getBool("ExperimentalMode") != experimental_mode) || (eng != engageable)) {
+  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
     engageable = eng;
-//    experimental_mode = cs.getExperimentalMode();
-    experimental_mode = params.getBool("ExperimentalMode");
+    experimental_mode = cs.getExperimentalMode();
     update();
   }
 }

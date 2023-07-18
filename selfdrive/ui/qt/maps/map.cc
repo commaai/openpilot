@@ -106,13 +106,12 @@ void MapWindow::initLayers() {
     nav["source"] = "navSource";
 
     QVariantMap transition;
-    transition["duration"] = 400;
+    transition["duration"] = 400;  // 400 ms color transition for navigate on openpilot
 
     m_map->addLayer(nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()->scene.navigate_on_openpilot));
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
-    m_map->setPaintProperty("navLayer", "line-width", uiState()->scene.navigate_on_openpilot ? 9.0 : 7.25);
-    m_map->setPaintProperty("navLayer", "line-width-transition", transition);
+    m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
     m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
   }
@@ -142,13 +141,11 @@ void MapWindow::updateState(const UIState &s) {
   update();
 
   if (sm.updated("modelV2")) {
-//    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
-    bool nav_enabled = Params().getBool("ExperimentalMode");
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       // Set path color on change, and show map on rising edge of navigate on openpilot
       if (loaded_once) {
         m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
-        m_map->setPaintProperty("navLayer", "line-width", nav_enabled ? 12.0 : 7.25);
       }
       if (nav_enabled) {
         emit requestVisible(true);
