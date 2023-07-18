@@ -115,7 +115,12 @@ class IsoTpParallelQuery:
           addrs_responded.add(tx_addr)
           response_timeouts[tx_addr] = time.monotonic() + timeout
 
-        if dat is not None:
+        if dat is None:
+          continue
+
+        # Log unexpected empty responses
+        if len(dat) == 0:
+          cloudlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
           continue
 
         counter = request_counter[tx_addr]
