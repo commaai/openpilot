@@ -464,10 +464,10 @@ def main() -> None:
         returncode=e.returncode
       )
       exception = f"command failed: {e.cmd}\n{e.output}"
+      OVERLAY_INIT.unlink(missing_ok=True)
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
       exception = str(e)
-    finally:
       OVERLAY_INIT.unlink(missing_ok=True)
 
     try:
