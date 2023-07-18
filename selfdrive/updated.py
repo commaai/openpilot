@@ -419,7 +419,7 @@ def main() -> None:
     params.put("InstallDate", t.encode('utf8'))
 
   updater = Updater()
-  update_failed_count = -1  # TODO: Load from param?
+  update_failed_count = 0 # TODO: Load from param?
 
   # no fetch on the first time
   wait_helper = WaitTimeHelper()
@@ -428,20 +428,18 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
-  # ensure we have some params written soon after startup
-  exception = None
-  updater.set_params(False, update_failed_count, exception)
-
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
 
     # Attempt an update
+    exception = None
     try:
       # TODO: reuse overlay from previous updated instance if it looks clean
-
       init_overlay()
 
+      # ensure we have some params written soon after startup
+      updater.set_params(False, update_failed_count, exception)
       update_failed_count += 1
 
       if not valid_system_time(): # updated should wait for valid system time before trying to update
