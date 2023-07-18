@@ -16,6 +16,7 @@ from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
+from common.time import valid_datetime
 from system.hardware import AGNOS, HARDWARE
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
@@ -256,22 +257,25 @@ class Updater:
   def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
-  def set_params(self, failed_count: int, exception: Optional[str]) -> None:
-    self.params.put("UpdateFailedCount", str(failed_count))
-
+  def set_params(self, failed_count: Optional[int], exception: Optional[str]) -> None:
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
     self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-    last_update = datetime.datetime.utcnow()
-    if failed_count == 0:
-      t = last_update.isoformat()
-      self.params.put("LastUpdateTime", t.encode('utf8'))
+    if failed_count is None: # initialize only, don't set update time
+      self.params.put("UpdateFailedCount", 0)
     else:
-      try:
-        t = self.params.get("LastUpdateTime", encoding='utf8')
-        last_update = datetime.datetime.fromisoformat(t)
-      except (TypeError, ValueError):
-        pass
+      self.params.put("UpdateFailedCount", str(failed_count))
+
+      last_update = datetime.datetime.utcnow()
+      if failed_count == 0:
+        t = last_update.isoformat()
+        self.params.put("LastUpdateTime", t.encode('utf8'))
+      else:
+        try:
+          t = self.params.get("LastUpdateTime", encoding='utf8')
+          last_update = datetime.datetime.fromisoformat(t)
+        except (TypeError, ValueError):
+          pass
 
     if exception is None:
       self.params.remove("LastUpdateException")
@@ -308,20 +312,22 @@ class Updater:
     # Handle user prompt
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
       set_offroad_alert(alert, False)
-
-    now = datetime.datetime.utcnow()
-    dt = now - last_update
-    if failed_count > 15 and exception is not None and self.has_internet:
-      if is_tested_branch():
-        extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
-      else:
-        extra_text = exception
-      set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
-    elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
-      set_offroad_alert("Offroad_ConnectivityNeeded", True)
-    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT and failed_count > 1:
-      remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
-      set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
+    
+    if failed_count is not None: # don't show warnings on init
+      now = datetime.datetime.utcnow()
+      dt = now - last_update
+      if failed_count > 15 and exception is not None and self.has_internet:
+        if is_tested_branch():
+          extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
+        else:
+          extra_text = exception
+        set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+      elif failed_count > 0:
+        if dt.days > DAYS_NO_CONNECTIVITY_MAX:
+          set_offroad_alert("Offroad_ConnectivityNeeded", True)
+        elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+          remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
+          set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
 
   def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
@@ -426,49 +432,56 @@ def main() -> None:
   # invalidate old finalized update
   set_consistent_flag(False)
 
+  exception = None
+
+  # ensure we have some params written soon after startup
+  updater.set_params(None, exception)
+
   # Run the update loop
   while True:
     wait_helper.ready_event.clear()
 
-    # Attempt an update
-    exception = None
-    try:
-      # TODO: reuse overlay from previous updated instance if it looks clean
-      init_overlay()
+    if valid_datetime(datetime.datetime.now()): # only check for updates if we have a valid system time
+      # Attempt an update
+      try:
+        # TODO: reuse overlay from previous updated instance if it looks clean
+        init_overlay()
 
-      # ensure we have some params written soon after startup
-      update_failed_count += 1
-      updater.set_params(update_failed_count, exception)
+        update_failed_count += 1
 
-      # check for update
-      params.put("UpdaterState", "checking...")
-      updater.check_for_update()
+        # check for update
+        params.put("UpdaterState", "checking...")
+        updater.check_for_update()
 
-      # download update
-      if wait_helper.only_check_for_update:
-        cloudlog.info("skipping fetch this cycle")
-      else:
-        updater.fetch_update()
-      update_failed_count = 0
-    except subprocess.CalledProcessError as e:
-      cloudlog.event(
-        "update process failed",
-        cmd=e.cmd,
-        output=e.output,
-        returncode=e.returncode
-      )
-      exception = f"command failed: {e.cmd}\n{e.output}"
-      OVERLAY_INIT.unlink(missing_ok=True)
-    except Exception as e:
-      cloudlog.exception("uncaught updated exception, shouldn't happen")
-      exception = str(e)
-      OVERLAY_INIT.unlink(missing_ok=True)
+        # download update
+        if wait_helper.only_check_for_update:
+          cloudlog.info("skipping fetch this cycle")
+        else:
+          updater.fetch_update()
+        update_failed_count = 0
+      except subprocess.CalledProcessError as e:
+        cloudlog.event(
+          "update process failed",
+          cmd=e.cmd,
+          output=e.output,
+          returncode=e.returncode
+        )
+        exception = f"command failed: {e.cmd}\n{e.output}"
+        OVERLAY_INIT.unlink(missing_ok=True)
+      except Exception as e:
+        cloudlog.exception("uncaught updated exception, shouldn't happen")
+        exception = str(e)
+        OVERLAY_INIT.unlink(missing_ok=True)
 
-    try:
-      params.put("UpdaterState", "idle")
-      updater.set_params(update_failed_count, exception)
-    except Exception:
-      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+      try:
+        params.put("UpdaterState", "idle")
+        updater.set_params(update_failed_count, exception)
+      except Exception:
+        cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+    
+    else:
+      params.put("UpdaterState", "idle... invalid system time")
+
 
     # infrequent attempts if we successfully updated recently
     wait_helper.only_check_for_update = False
