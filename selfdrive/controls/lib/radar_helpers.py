@@ -1,4 +1,3 @@
-from common.numpy_fast import mean
 from common.kalman.simple_kalman import KF1D
 
 
@@ -55,65 +54,6 @@ class Track():
     self.aLeadK = aLeadK
     self.aLeadTau = aLeadTau
 
-
-class Cluster():
-  def __init__(self):
-    self.tracks = set()
-
-  def add(self, t):
-    # add the first track
-    self.tracks.add(t)
-
-  # TODO: make generic
-  @property
-  def dRel(self):
-    return mean([t.dRel for t in self.tracks])
-
-  @property
-  def yRel(self):
-    return mean([t.yRel for t in self.tracks])
-
-  @property
-  def vRel(self):
-    return mean([t.vRel for t in self.tracks])
-
-  @property
-  def aRel(self):
-    return mean([t.aRel for t in self.tracks])
-
-  @property
-  def vLead(self):
-    return mean([t.vLead for t in self.tracks])
-
-  @property
-  def dPath(self):
-    return mean([t.dPath for t in self.tracks])
-
-  @property
-  def vLat(self):
-    return mean([t.vLat for t in self.tracks])
-
-  @property
-  def vLeadK(self):
-    return mean([t.vLeadK for t in self.tracks])
-
-  @property
-  def aLeadK(self):
-    if all(t.cnt <= 1 for t in self.tracks):
-      return 0.
-    else:
-      return mean([t.aLeadK for t in self.tracks if t.cnt > 1])
-
-  @property
-  def aLeadTau(self):
-    if all(t.cnt <= 1 for t in self.tracks):
-      return _LEAD_ACCEL_TAU
-    else:
-      return mean([t.aLeadTau for t in self.tracks if t.cnt > 1])
-
-  @property
-  def measured(self):
-    return any(t.measured for t in self.tracks)
 
   def get_RadarState(self, model_prob=0.0):
     return {
