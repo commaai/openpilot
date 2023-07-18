@@ -100,7 +100,7 @@ void Replay::start(int seconds) {
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {
-  // set updating_events to true to force stream thread release the lock and wait for evnets_udpated.
+  // set updating_events to true to force stream thread release the lock and wait for events_updated.
   updating_events_ = true;
   {
     std::unique_lock lk(stream_lock_);
@@ -301,14 +301,14 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       }
     }
 
+    if (stream_thread_) {
+      emit segmentsMerged();
+    }
     updateEvents([&]() {
       events_.swap(new_events_);
       segments_merged_ = segments_need_merge;
       return true;
     });
-    if (stream_thread_) {
-      emit segmentsMerged();
-    }
   }
 }
 

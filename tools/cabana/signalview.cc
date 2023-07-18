@@ -226,10 +226,14 @@ void SignalModel::handleMsgChanged(MessageId id) {
 
 void SignalModel::handleSignalAdded(MessageId id, const cabana::Signal *sig) {
   if (id == msg_id) {
-    int i = dbc()->msg(msg_id)->indexOf(sig);
-    beginInsertRows({}, i, i);
-    insertItem(root.get(), i, sig);
-    endInsertRows();
+    if (filter_str.isEmpty()) {
+      int i = dbc()->msg(msg_id)->indexOf(sig);
+      beginInsertRows({}, i, i);
+      insertItem(root.get(), i, sig);
+      endInsertRows();
+    } else if (sig->name.contains(filter_str, Qt::CaseInsensitive)) {
+      refresh();
+    }
   }
 }
 
@@ -237,12 +241,14 @@ void SignalModel::handleSignalUpdated(const cabana::Signal *sig) {
   if (int row = signalRow(sig); row != -1) {
     emit dataChanged(index(row, 0), index(row, 1), {Qt::DisplayRole, Qt::EditRole, Qt::CheckStateRole});
 
-    // move row when the order changes.
-    int to = dbc()->msg(msg_id)->indexOf(sig);
-    if (to != row) {
-      beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
-      root->children.move(row, to);
-      endMoveRows();
+    if (filter_str.isEmpty()) {
+      // move row when the order changes.
+      int to = dbc()->msg(msg_id)->indexOf(sig);
+      if (to != row) {
+        beginMoveRows({}, row, row, {}, to > row ? to + 1 : to);
+        root->children.move(row, to);
+        endMoveRows();
+      }
     }
   }
 }

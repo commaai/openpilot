@@ -53,7 +53,6 @@ typedef struct CameraInfo {
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
-  unsigned int frame_length;
 
   // Timestamps
   uint64_t timestamp_sof; // only set on tici

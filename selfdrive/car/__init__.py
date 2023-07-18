@@ -1,5 +1,4 @@
 # functions common among cars
-import math
 from collections import namedtuple
 from typing import Dict, Optional
 
@@ -186,7 +185,7 @@ class CanBusBase:
   def __init__(self, CP, fingerprint: Optional[Dict[int, Dict[int, int]]]) -> None:
     if CP is None:
       assert fingerprint is not None
-      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
+      num = max([k for k, v in fingerprint.items() if len(v)], default=0) // 4 + 1
     else:
       num = len(CP.safetyConfigs)
     self.offset = 4 * (num - 1)
