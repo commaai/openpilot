@@ -155,12 +155,14 @@ void MapWindow::updateState(const UIState &s) {
 
   // set path color on change on enabled status using navigate on openpilot
   if (sm.updated("controlsState")) {
-    bool controls_enabled = sm["controlsState"].getControlsState().getEnabled();
-    if ((controls_enabled != controls_enabled_last) && loaded_once) {
-      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(controls_enabled &&
-                                                                        uiState()->scene.navigate_on_openpilot));
+    bool show_nav_path = sm["controlsState"].getControlsState().getEnabled() &&
+                         uiState()->scene.navigate_on_openpilot;
+    qDebug() << "enabled:" << sm["controlsState"].getControlsState().getEnabled() << "noo:" << uiState()->scene.navigate_on_openpilot;
+    if ((show_nav_path != nav_path_active) && loaded_once) {
+      qDebug() << "showing nav path:" << show_nav_path;
+      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(show_nav_path));
+      nav_path_active = show_nav_path;
     }
-    controls_enabled_last = controls_enabled;
   }
 
   if (sm.updated("liveLocationKalman")) {
