@@ -153,6 +153,18 @@ void MapWindow::updateState(const UIState &s) {
     uiState()->scene.navigate_on_openpilot = nav_enabled;
   }
 
+  // set path color on change on enabled status using navigate on openpilot
+  if (sm.updated("controlsState")) {
+    bool show_nav_path = sm["controlsState"].getControlsState().getEnabled() &&
+                         uiState()->scene.navigate_on_openpilot;
+    qDebug() << "enabled:" << sm["controlsState"].getControlsState().getEnabled() << "noo:" << uiState()->scene.navigate_on_openpilot;
+    if ((show_nav_path != nav_path_active) && m_map->layerExists("navLayer")) {
+      qDebug() << "showing nav path:" << show_nav_path;
+      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(show_nav_path));
+      nav_path_active = show_nav_path;
+    }
+  }
+
   if (sm.updated("liveLocationKalman")) {
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
     auto locationd_pos = locationd_location.getPositionGeodetic();
@@ -189,18 +201,6 @@ void MapWindow::updateState(const UIState &s) {
     return;
   }
   initLayers();
-
-    // set path color on change on enabled status using navigate on openpilot
-  if (sm.updated("controlsState")) {
-    bool show_nav_path = sm["controlsState"].getControlsState().getEnabled() &&
-                         uiState()->scene.navigate_on_openpilot;
-    qDebug() << "enabled:" << sm["controlsState"].getControlsState().getEnabled() << "noo:" << uiState()->scene.navigate_on_openpilot;
-    if ((show_nav_path != nav_path_active) && loaded_once) {
-      qDebug() << "showing nav path:" << show_nav_path;
-      m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(show_nav_path));
-      nav_path_active = show_nav_path;
-    }
-  }
 
   setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
