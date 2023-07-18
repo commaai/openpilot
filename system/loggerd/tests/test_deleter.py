@@ -117,7 +117,7 @@ class TestDeleter(UploaderTestCase):
     self.assertTrue(f_paths[0].exists() and f_paths[1].exists(), "File deleted when preserved")
     self.assertFalse(f_paths[2].exists(), "File not deleted")
 
-  def test_delete_many_preserved(self):
+  def test_delete_oldest_preserved(self):
     self.seg_dir = self.seg_format.format(self.seg_num)
     f_path_old_preserved = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
 
