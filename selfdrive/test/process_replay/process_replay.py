@@ -32,6 +32,7 @@ NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+
 class ReplayContext:
   def __init__(self, cfg):
     self.proc_name = cfg.proc_name
