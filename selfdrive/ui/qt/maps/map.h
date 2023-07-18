@@ -114,7 +114,6 @@ private:
   QColor getNavPathColor(bool nav_enabled) {
     return nav_enabled ? QColor("#31ee73") : QColor("#31a1ee");
   }
-  bool nav_path_active = false;
 
   void clearRoute();
   void updateDestinationMarker();
