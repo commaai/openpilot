@@ -64,7 +64,7 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation>데이터 요금제 연결 시 대용량 데이터 업로드 방지</translation>
+        <translation>데이터 요금제 연결 시 대용량 데이터 업로드를 방지합니다</translation>
     </message>
 </context>
 <context>
@@ -167,7 +167,7 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>운전자 모니터링이 좋은 가시성을 갖도록 운전자를 향한 카메라를 미리 봅니다. (차량연결은 해제되어있어야 합니다)</translation>
+        <translation>운전자 모니터링이 잘 되는지 확인하기 위해 카메라를 향한 운전자를 미리 봅니다. (차량연결은 해제되어있어야 합니다)</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
@@ -227,11 +227,11 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot은 좌우측은 4° 이내, 위쪽은 5° 아래쪽은 8° 이내로 장치를 설치해야 합니다. openpilot은 지속적으로 보정되므로 리셋은 거의 필요하지 않습니다.</translation>
+        <translation>openpilot 장치는 좌우측 4° 이내, 위쪽 5° 아래쪽 8° 이내로 장착되어야 합니다. openpilot은 지속적으로 보정되며 재설정은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 사용자의 장치가 %1° %2 및 %3° %4 위치에 설치되어있습니다.</translation>
+        <translation> 사용자의 장치는 %1° %2 및 %3° %4 의 위치에 장착되어 있습니다.</translation>
     </message>
     <message>
         <source>down</source>
@@ -389,7 +389,7 @@
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 관리</translation>
+        <translation>connect.comma.ai에서 관리됩니다</translation>
     </message>
 </context>
 <context>
@@ -400,7 +400,7 @@
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>GPS 수신중 입니다</translation>
+        <translation>GPS 수신중</translation>
     </message>
 </context>
 <context>
@@ -426,7 +426,7 @@
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation>&quot;%1&quot;에 접속하려면 인증이 필요합니다</translation>
+        <translation>&quot;%1&quot;에 접속하려면 비밀번호가 필요합니다</translation>
     </message>
     <message>
         <source>Wrong password</source>
@@ -441,7 +441,7 @@
     </message>
     <message>
         <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
-        <translation>인터넷에 연결하여 업데이트를 확인하세요. openpilot은 업데이트를 확인하기 위해 인터넷에 연결할 때까지 자동으로 시작되지 않습니다.</translation>
+        <translation>업데이트를 확인하려면 인터넷에 연결하세요. openpilot은 업데이트를 확인하기 위해 인터넷에 연결할 때까지 자동으로 시작되지 않습니다.</translation>
     </message>
     <message>
         <source>Unable to download updates
@@ -459,11 +459,11 @@
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
-        <translation>백그라운드에서 운영 체제에 대한 업데이트를 다운로드되고 있습니다. 설치할 준비가 되면 업데이트하라는 메시지가 표시됩니다.</translation>
+        <translation>백그라운드에서 운영 체제에 대한 업데이트가 다운로드되고 있습니다. 설치준비가 완료되면 업데이트하라는 메시지가 표시됩니다.</translation>
     </message>
     <message>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치는 https://comma.ai/support로 방문하세요</translation>
+        <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치인경우 https://comma.ai/support 에 방문하여 문의하세요.</translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
@@ -475,7 +475,7 @@
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>opepilot이 차량을 식별할수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 펌웨어 버전을 추가하려면 PR을 제출하십시오. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
+        <translation>opepilot이 차량을 식별할수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
@@ -483,7 +483,7 @@
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation>openpilot이 장치의 장착 위치 변경을 감지했습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하십시오. </translation>
+        <translation>openpilot 장치의 장착 위치 변경을 감지했습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하세요. </translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
@@ -509,7 +509,7 @@
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>장치를 콤마 계정과 페어링합니다</translation>
+        <translation>장치를 comma 계정과 페어링합니다</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
@@ -521,7 +521,7 @@
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>connect.comma.ai을 앱처럼 사용하려면 홈 화면에 바로가기를 만드십시오</translation>
+        <translation>connect.comma.ai를 앱처럼 사용하려면 홈 화면에 바로가기를 만드세요.</translation>
     </message>
 </context>
 <context>
@@ -543,7 +543,7 @@
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai 접속하여 comma prime에 가입하세요</translation>
+        <translation>connect.comma.ai에 접속하여 comma prime 회원이 되세요</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -642,7 +642,7 @@
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>데이터 파티션을 마운트할 수 없습니다. 파티션이 손상되었을 수 있습니다. 장치를 초기화하려면 확인을 누르세요.</translation>
+        <translation>데이터 파티션을 마운트할 수 없습니다. 파티션이 손상되었을 수 있습니다. 모든 내용을 지우고 장치를 초기화하려면 확인을 누르세요.</translation>
     </message>
     <message>
         <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
@@ -651,7 +651,7 @@
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation>장치 초기화 중...
+        <translation>장치를 초기화하는 중...
 최대 1분이 소요될 수 있습니다.</translation>
     </message>
 </context>
@@ -726,7 +726,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>for Custom Software</source>
-        <translation>for Custom Software</translation>
+        <translation>커스텀 소프트웨어</translation>
     </message>
     <message>
         <source>Downloading...</source>
@@ -765,7 +765,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>장치를 (connect.comma.ai)에서 페어링하고 comma prime 오퍼를 청구합니다.</translation>
+        <translation>장치를 comma connect (connect.comma.ai)에서 페어링하고 comma prime 제안을 요청하세요.</translation>
     </message>
     <message>
         <source>Pair device</source>
@@ -832,11 +832,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Wi-Fi</source>
-        <translation>Wi-Fi</translation>
+        <translation>wifi</translation>
     </message>
     <message>
         <source>ETH</source>
-        <translation>이더넷</translation>
+        <translation>LAN</translation>
     </message>
     <message>
         <source>2G</source>
@@ -915,7 +915,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation>최신 상태, 마지막으로 확인 %1</translation>
+        <translation>최신 상태 입니다, %1에 마지막으로 확인</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
@@ -958,7 +958,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>&apos;%1&apos;의 키가 GitHub에 없습니다</translation>
+        <translation>사용자 &apos;%1&apos;의 키가 GitHub에 없습니다</translation>
     </message>
     <message>
         <source>Request timed out</source>
@@ -966,7 +966,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>&apos;%1&apos;은 GitHub에 없습니다</translation>
+        <translation>사용자 &apos;%1&apos;는 GitHub에 없습니다</translation>
     </message>
 </context>
 <context>
@@ -988,7 +988,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Scroll to accept</source>
-        <translation>허용하려면 아래로 스크롤하세요</translation>
+        <translation>동의하려면 아래로 스크롤하세요</translation>
     </message>
     <message>
         <source>Agree</source>
@@ -1011,7 +1011,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향지시등 없이 감지된 차선 위를 주행할 경우 차선이탈 경고를 표시합니다.</translation>
+        <translation>차량이 50km/h(31mph) 이상의 속도로 주행하는 동안 방향지시등이 켜지지 않은 상태에서 차량이 감지된 차선을 벗어나면 차선이탈 경고를 합니다.</translation>
     </message>
     <message>
         <source>Use Metric System</source>
@@ -1035,7 +1035,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>활성화된 경우 가속 페달을 누르면 openpilot이 해제됩니다.</translation>
+        <translation>활성화된 경우 가속 페달을 밟으면 openpilot이 해제됩니다.</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
@@ -1083,7 +1083,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
+        <translation>openpilot 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1095,7 +1095,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 내장 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
+        <translation>이 차량은 openpilot 롱컨트롤 대신 차량의 ACC로 기본 설정됩니다. openpilot 롱컨트롤으로 전환하려면 이 기능을 활성화하세요. openpilot 롱컨트롤 알파를 활성화하는경우 실험적 모드 활성화를 권장합니다.</translation>
     </message>
     <message>
         <source>Aggressive</source>
@@ -1119,19 +1119,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>openpilot 롱컨 제어의 알파 버전은 비 릴리스 분기에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
+        <translation>openpilot 롱컨트롤 알파 버전은 비 릴리스 분기에서 실험적 모드와 함께 테스트할 수 있습니다.</translation>
     </message>
     <message>
         <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Navigate on openpilot (NOO)</translation>
     </message>
     <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>내비게이션에 목적지가 있으면 openpilot이 경로 정보를 모델에 입력합니다. 이것은 일반적으로 동작을 개선하고 openpilot이 분기점에서 적절하게 왼쪽 또는 오른쪽을 유지하고 회전할 수 있도록 합니다. 차선 변경 동작은 변경되지 않았으며 여전히 운전자에 의해 활성화됩니다. 이것은 알파 상태의 기능이니 사용에 주의해야 합니다.</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot E2E 롱컨트롤 (알파) 토글을 활성화하여 실험적 모드를 허용합니다.</translation>
     </message>
 </context>
 <context>
@@ -1173,11 +1173,11 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation>Wi-Fi 설정</translation>
+        <translation>wifi 설정</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 참여하세요.</translation>
+        <translation>wifi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 참여하세요.</translation>
     </message>
     <message>
         <source>Open Settings</source>
@@ -1208,7 +1208,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>wifi 네트워크 저장안함 &quot;%1&quot;?</translation>
+        <translation>&quot;%1&quot;를 저장하지 않겠습니까?</translation>
     </message>
     <message>
         <source>Forget</source>
