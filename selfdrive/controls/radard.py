@@ -8,7 +8,7 @@ from cereal import car
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
-from selfdrive.controls.lib.radar_helpers import Track, RADAR_TO_CAMERA
+from selfdrive.controls.lib.radar_helpers import Track, RADAR_TO_CAMERA, get_RadarState_from_vision
 from system.swaglog import cloudlog
 
 
@@ -73,7 +73,7 @@ def get_lead(v_ego, ready, tracks, lead_msg, model_v_ego, low_speed_override=Tru
   if track is not None:
     lead_dict = track.get_RadarState(lead_msg.prob)
   elif (track is None) and ready and (lead_msg.prob > .5):
-    lead_dict = Track(v_ego, KalmanParams(.1)).get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
+    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]

@@ -13,6 +13,23 @@ v_ego_stationary = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
 
+
+def get_RadarState_from_vision(lead_msg, v_ego, model_v_ego):
+  lead_v_rel_pred = lead_msg.v[0] - model_v_ego
+  return {
+    "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
+    "yRel": float(-lead_msg.y[0]),
+    "vRel": float(lead_v_rel_pred),
+    "vLead": float(v_ego + lead_v_rel_pred),
+    "vLeadK": float(v_ego + lead_v_rel_pred),
+    "aLeadK": 0.0,
+    "aLeadTau": 0.3,
+    "fcw": False,
+    "modelProb": float(lead_msg.prob),
+    "radar": False,
+    "status": True
+  }
+
 class Track():
   def __init__(self, v_lead, kalman_params):
     self.cnt = 0
@@ -68,22 +85,6 @@ class Track():
       "modelProb": model_prob,
       "radar": True,
       "aLeadTau": float(self.aLeadTau)
-    }
-
-  def get_RadarState_from_vision(self, lead_msg, v_ego, model_v_ego):
-    lead_v_rel_pred = lead_msg.v[0] - model_v_ego
-    return {
-      "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
-      "yRel": float(-lead_msg.y[0]),
-      "vRel": float(lead_v_rel_pred),
-      "vLead": float(v_ego + lead_v_rel_pred),
-      "vLeadK": float(v_ego + lead_v_rel_pred),
-      "aLeadK": 0.0,
-      "aLeadTau": 0.3,
-      "fcw": False,
-      "modelProb": float(lead_msg.prob),
-      "radar": False,
-      "status": True
     }
 
   def __str__(self):
