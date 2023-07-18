@@ -94,8 +94,6 @@ def regen_and_save(
 
 if __name__ == "__main__":
   def comma_separated_list(string):
-    if string == "all":
-      return string
     return string.split(",")
 
   all_procs = [p.proc_name for p in CONFIGS]
@@ -110,5 +108,6 @@ if __name__ == "__main__":
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
 
-  daemons = sorted(set(args.whitelist_procs) - set(args.blacklist_procs))
+  blacklist_set = set(args.blacklist_procs)
+  daemons = [p for p in args.whitelist_procs if p not in blacklist_set]
   regen_and_save(args.route, args.seg, daemons=daemons, upload=args.upload, outdir=args.outdir)
