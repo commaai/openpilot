@@ -137,14 +137,6 @@ void MapWindow::initLayers() {
   }
 }
 
-//QColor MapWindow::getNavPathColor(bool nav_enabled) {
-////  UIState *s = uiState();
-//  const SubMaster &sm = *s->sm;
-//  bool nav_enabled = s->scene.navigate_on_openpilot;
-//  bool cs_enabled = sm["controlsState"].getControlsState().getEnabled();
-//  return nav_enabled && cs_enabled ? QColor("#31ee73") : QColor("#31a1ee");
-//}
-
 void MapWindow::updateState(const UIState &s) {
   if (!uiState()->scene.started) {
     return;
