@@ -1114,23 +1114,23 @@ This may take up to a minute.</source>
         <translation>표준 모드를 권장합니다. 공격적 모드에서는 openpilot은 앞차를 더 가까이 따라가며 가속과 감속을 더 공격적으로 사용합니다. 편안한 모드에서 openpilot은 선두 차량에서 더 멀리 떨어져 있습니다.</translation>
     </message>
     <message>
-        <source>End-to-End Longitudinal Control is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <source>Navigate on openpilot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with End-to-End Longitudinal Control, on non-release branches.</source>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to use End-to-End Longitudinal Control.</source>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
