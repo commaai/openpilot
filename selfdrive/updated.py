@@ -443,7 +443,7 @@ def main() -> None:
       # ensure we have some params written soon after startup
       updater.set_params(-1, exception)
 
-      if not valid_system_time(): # updated should wait for valid system time before continuing
+      if not valid_system_time(): # updated should wait for valid system time before trying to update
         wait_helper.sleep(5)
         continue
       update_failed_count += 1
