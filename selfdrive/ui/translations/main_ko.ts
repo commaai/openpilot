@@ -1086,10 +1086,6 @@ This may take up to a minute.</source>
         <translation>오픈파일럿 롱컨트롤은 향후 업데이트에서 제공될 수 있습니다.</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="vanished">실험적 롱컨트롤을 사용하려면 실험적 모드를 활성화 하세요.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>openpilot 롱컨트롤 (알파)</translation>
     </message>

@@ -1086,10 +1086,6 @@ This may take up to a minute.</source>
         <translation>openpilot 縱向控制可能會在未來的更新中提供。</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation type="vanished">啟用實驗性縱向控制以使用實驗模式。</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>openpilot 縱向控制 (Alpha 版)</translation>
     </message>
