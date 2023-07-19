@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import unittest
+import time
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
@@ -16,11 +17,61 @@ def gen_llk():
   msg.liveLocationKalman.status = 'valid'
   return msg
 
+import requests
+import threading
+import http.server
+
+class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
+  INTERNET_ACTIVE = True
+
+  def do_GET(self):
+    url = f'https://api.mapbox.com{self.path}'
+
+    print(url, self.INTERNET_ACTIVE)
+
+    if self.INTERNET_ACTIVE:
+      headers = dict(self.headers)
+      headers["Host"] = "api.mapbox.com"
+      
+      r = requests.get(url, headers=headers, timeout=5)
+
+      if r.status_code != 200:
+        print(r.content)
+        print(r.headers)
+        print(headers)
+
+      self.send_response(r.status_code)
+      for key in r.headers:
+        self.send_header(key, r.headers[key])
+
+      self.end_headers()
+      self.wfile.write(r.content)
+
+    else:
+      self.send_response(404, "404 page not found (internet disabled)")
+
+
+class MapBoxInternetDisabledServer(threading.Thread):
+  def run(self):
+    self.server = http.server.HTTPServer(("127.0.0.1", 5000), MapBoxInternetDisabledRequestHandler)
+    self.server.serve_forever()
+  
+  def stop(self):
+    self.server.shutdown()
+
 
 class TestMapRenderer(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     assert "MAPBOX_TOKEN" in os.environ
+
+    cls.server = MapBoxInternetDisabledServer()
+    cls.server.start()
+    time.sleep(1) # wait for server to be setup
+  
+  @classmethod
+  def tearDownClass(cls) -> None:
+    cls.server.stop()
 
   def setUp(self):
     self.sm = messaging.SubMaster(['mapRenderState'])
@@ -29,21 +80,27 @@ class TestMapRenderer(unittest.TestCase):
 
     if os.path.exists(CACHE_PATH):
       os.remove(CACHE_PATH)
-    
-    self.original_token = os.environ['MAPBOX_TOKEN']
-
+  
   def tearDown(self):
     managed_processes['mapsd'].stop()
-
-  def _run_test(self, expect_valid):
+  
+  def _setup_test(self):
     # start + sync up
+    os.environ['MAPS_HOST'] = 'http://localhost:5000'
+
     managed_processes['mapsd'].start()
+
     assert self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
 
     assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
     assert self.vipc.connect(False)
     self.vipc.recv()
+  
+  def _run_test(self, expect_valid):
+    self._setup_test()
+    self.__run_test(expect_valid)
 
+  def __run_test(self, expect_valid):
     # run test
     prev_frame_id = -1
     for i in range(30*LLK_DECIMATION):
@@ -86,13 +143,13 @@ class TestMapRenderer(unittest.TestCase):
       assert self.vipc.frame_id == self.sm['mapRenderState'].frameId
   
   def disable_internet(self):
-    self.original_token = os.environ['MAPBOX_TOKEN']
-    os.environ['MAPBOX_TOKEN'] = 'invalid_token'
+    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = False
   
   def enable_internet(self):
-    os.environ['MAPBOX_TOKEN'] = self.original_token
+    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
   def test_with_internet(self):
+    self.enable_internet()
     self._run_test(True)
 
   def test_with_no_internet(self):
@@ -103,11 +160,18 @@ class TestMapRenderer(unittest.TestCase):
       self.enable_internet()
     
   def test_recover_from_no_internet(self):
-    self._run_test(True)
-    self.disable_internet()
-    self._run_test(False)
     self.enable_internet()
-    self._run_test(True)
+    self._setup_test()
+
+    self.__run_test(True)
+
+    self.disable_internet()
+    time.sleep(2)
+    self.__run_test(False)
+
+    self.enable_internet()
+    time.sleep(2)
+    self.__run_test(True)
 
 if __name__ == "__main__":
   unittest.main()
