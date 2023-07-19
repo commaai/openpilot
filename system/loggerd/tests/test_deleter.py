@@ -68,32 +68,31 @@ class TestDeleter(UploaderTestCase):
     self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
 
   def test_delete_order(self):
-    # delete files in order
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-    ])
+    with self.subTest("delete files in order"):
+      self.assertDeleteOrder([
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      ])
 
-    # delete old segments, then preserved, then boot and crash
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data("boot", self.seg_format[:-4]),
-      self.make_file_with_data("crash", self.seg_format2[:-4]),
-    ])
+    with self.subTest("preserved segments should be deleted when there is more than the limit"):
+      self.assertDeleteOrder([
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(1), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data(self.seg_format.format(2), self.f_type),
+      ] + [
+        self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+        for i in range(5)
+      ])
 
-    # preserved segments should be deleted when there is more than the limit
-    self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format.format(2), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data(self.seg_format.format(3), self.f_type),
-    ] + [
-      self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
-      for i in range(5)
-    ])
+    with self.subTest("delete old segments, then preserved, then boot and crash"):
+      self.assertDeleteOrder([
+        self.make_file_with_data(self.seg_format.format(1), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+        self.make_file_with_data("boot", self.seg_format[:-4]),
+        self.make_file_with_data("crash", self.seg_format2[:-4]),
+      ])
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
