@@ -7,6 +7,7 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car
+from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import all_known_cars
@@ -87,7 +88,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
-      now_nanos += 10e6  # 10 ms
+      now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
@@ -95,7 +96,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
-      now_nanos += 10e6  # 10ms
+      now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
