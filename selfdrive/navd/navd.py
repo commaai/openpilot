@@ -269,11 +269,11 @@ class RouteEngine:
         self.recompute_countdown = 0
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
+          self.params.remove("NavDestination")
           self.clear_route()
 
   def send_route(self):
