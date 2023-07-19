@@ -267,6 +267,13 @@ class TestLoggerd(unittest.TestCase):
     segment_dir = self._get_latest_log_dir()
     self.assertEqual(getxattr(segment_dir, PRESERVE_ATTR_NAME), PRESERVE_ATTR_VALUE)
 
+  def test_not_preserving_unflagged_segments(self):
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userFlag"}
+    self._publish_random_messages(services)
+
+    segment_dir = self._get_latest_log_dir()
+    self.assertIsNone(getxattr(segment_dir, PRESERVE_ATTR_NAME))
+
 
 if __name__ == "__main__":
   unittest.main()
