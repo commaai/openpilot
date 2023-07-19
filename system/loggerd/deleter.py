@@ -2,6 +2,8 @@
 import os
 import shutil
 import threading
+from typing import List
+
 from system.swaglog import cloudlog
 from system.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from system.loggerd.uploader import listdir_by_creation
@@ -21,6 +23,28 @@ def has_preserve_xattr(d: str) -> bool:
   return getxattr(os.path.join(ROOT, d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
+def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
+  preserved = []
+  for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
+    if n == PRESERVE_COUNT:
+      break
+    date_str, _, seg_str = d.rpartition("--")
+
+    # ignore non-segment directories
+    if not date_str:
+      continue
+    try:
+      seg_num = int(seg_str)
+    except ValueError:
+      continue
+
+    # preserve segment and its prior
+    preserved.append(d)
+    preserved.append(f"{date_str}--{seg_num - 1}")
+
+  return preserved
+
+
 def deleter_thread(exit_event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
@@ -30,15 +54,7 @@ def deleter_thread(exit_event):
       dirs = listdir_by_creation(ROOT)
 
       # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_dirs = []
-      for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs))):
-        if n == PRESERVE_COUNT:
-          break
-        date_str, _, seg_num = d.rpartition("--")
-
-        # preserve segment and its prior
-        preserved_dirs.append(d)
-        preserved_dirs.append(f"{date_str}--{int(seg_num) - 1}")
+      preserved_dirs = get_preserved_segments(dirs)
 
       # remove the earliest directory we can
       for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
