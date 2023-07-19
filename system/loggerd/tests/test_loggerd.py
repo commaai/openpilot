@@ -276,7 +276,7 @@ class TestLoggerd(unittest.TestCase):
       sent.clear_write_flag()
       self.assertEqual(sent.to_bytes(), m.as_builder().to_bytes())
 
-  def test_userflag(self):
+  def test_preserving_flagged_segments(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10)) + ["userFlag"]
     pm = messaging.PubMaster(services)
 
