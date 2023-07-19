@@ -99,6 +99,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
   }
   if (!m_map->layerExists("navLayer")) {
+    setError("");
     qDebug() << "Initializing navLayer";
     QVariantMap nav;
     nav["id"] = "navLayer";
@@ -191,7 +192,7 @@ void MapWindow::updateState(const UIState &s) {
   }
   initLayers();
 
-  setError(locationd_valid ? "" : tr("Waiting for GPS"));
+//  setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
@@ -225,7 +226,7 @@ void MapWindow::updateState(const UIState &s) {
         map_instructions->updateInstructions(i);
       }
     } else {
-      clearRoute();
+//      clearRoute();
     }
 
     if (isVisible()) {
@@ -236,6 +237,23 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
+    if (!route.getCoordinates().size()) {
+//      qWarning() << "Got empty navRoute from navd. Clearing map";
+      // have navd send this so we can replicate online behavior better
+      auto nav_dest = coordinate_from_param("NavDestination");
+      if (nav_dest.has_value()) {
+        // Cleared route (coords) with nav destination, there's a problem
+        clearRoute();  // TODO: keep some stuff shown?
+        setError(tr("Waiting for internet"));
+      } else {
+        // Actually have cleared route for valid reason (no errors)
+        clearRoute();
+        setError("");
+      }
+//      return;
+    } else {
+      setError("");
+    }
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
