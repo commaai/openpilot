@@ -8,7 +8,8 @@ from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
-from selfdrive.modeld.models.driving import ModelState, model_init, model_eval_frame
+from selfdrive.modeld.models.driving import ModelState, model_init, model_eval_frame, MODEL_FREQ, DESIRE_LEN, NAV_FEATURE_LEN
+from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
 from system.hardware import PC
 
 # NOTE: These are almost exactly the same as the numbers in modeld.cc, but to get perfect equivalence we might have to copy them exactly
@@ -20,14 +21,8 @@ def update_calibration(device_from_calib_euler:np.ndarray, wide_camera:bool, big
   calib_from_model = calib_from_sbigmodel if bigmodel_frame else calib_from_medmodel
   device_from_calib = rot_from_euler(device_from_calib_euler)
   camera_from_calib = cam_intrinsics @ view_frame_from_device_frame @ device_from_calib
-  warp_matrix = camera_from_calib @ calib_from_model
-
-  # TODO: Is this needed?
-  transform = np.zeros((3, 3), dtype=np.float32)
-  for i in range(3*3):
-    transform[i] = warp_matrix[i//3, i%3]
-
-  return transform
+  warp_matrix: np.ndarray = camera_from_calib @ calib_from_model
+  return warp_matrix
 
 
 def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClient, main_wide_camera:bool, use_extra_client:bool):
@@ -66,7 +61,8 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
       # Keep receiving extra frames until frame id matches main camera
       while True:
         buf_extra = vipc_client_extra.recv()
-        if buf_extra is None or vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000: break
+        if buf_extra is None or vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000:
+          break
 
       if buf_extra is None:
         logging.error("vipc_client_extra no frame")
@@ -83,7 +79,7 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
 
     # TODO: path planner timeout?
     sm.update(0)
-    desire = sm["lateralPlan"].desire
+    desire = sm["lateralPlan"].desire.raw
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
     if sm.updated["liveCalibration"]:
@@ -100,7 +96,7 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
     vipc_dropped_frames = vipc_client_main.frame_id - last_vipc_frame_id - 1
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
-      frame_dropped_filter.reset(0)
+      # frame_dropped_filter.reset(0)
       frames_dropped = 0.
     run_count = run_count + 1
 
@@ -110,7 +106,7 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
       logging.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
     mt1 = time.perf_counter()
-    # model_output = model_eval_frame(model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only)
+    model_output = model_eval_frame(model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
@@ -131,15 +127,11 @@ if __name__ == '__main__':
     set_realtime_priority(54)
     set_core_affinity([7])
 
-  """
   # cl init
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-  """
-  device_id, context = None, None
+  cl_context = CLContext()
 
   # init the models
-  model = model_init(device_id, context)
+  model = model_init(cl_context)
   logging.warning("models loaded, modeld starting")
 
   main_wide_camera = False
@@ -164,13 +156,8 @@ if __name__ == '__main__':
   while not vipc_client_extra.connect(False):
     time.sleep(0.1)
 
-  logging.warning(f"connected main cam with buffer size: {vipc_client_main.size()} ({vipc_client_main.width()} x {vipc_client_main.height()})")
+  logging.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
   if use_extra_client:
-    logging.warning(f"connected extra cam with buffer size: {vipc_client_extra.size()} ({vipc_client_extra.width()} x {vipc_client_extra.height()})")
+    logging.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
 
   run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra_client)
-
-  """
-  model_free(&model);
-  CL_CHECK(clReleaseContext(context));
-  """

@@ -1,13 +1,18 @@
 import numpy as np
+from typing import Dict
 from dataclasses import dataclass
-from selfdrive.modeld.runners.runmodel_pyx import ONNXModel
+from selfdrive.modeld.runners.runmodel_pyx import ONNXModel, Runtime # pylint: disable=no-name-in-module
+from selfdrive.modeld.models.commonmodel_pyx import ModelFrame # pylint: disable=no-name-in-module
+from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
 
 FEATURE_LEN = 128
 HISTORY_BUFFER_LEN = 99
 DESIRE_LEN = 8
 TRAFFIC_CONVENTION_LEN = 2
 DRIVING_STYLE_LEN = 12
+NAV_FEATURE_LEN = 256
 MODEL_OUTPUT_SIZE = 1000
+MODEL_FREQ = 20
 
 MODEL_WIDTH = 512
 MODEL_HEIGHT = 256
@@ -19,17 +24,20 @@ class ModelState:
   model: ONNXModel
   inputs: Dict[str, np.ndarray]
   output: np.ndarray
-  # frame: ModelFrame
-  # wide_frame: ModelFrame
+  frame: ModelFrame
+  wide_frame: ModelFrame
 
 
-def model_init(device_id, context):
-  frame = ModelFrame(device_id, context)
-  wide_frame = ModelFrame(device_id, context)
+def model_init(context:CLContext):
+  frame = ModelFrame(context)
+  wide_frame = ModelFrame(context)
 
-  inputs = {}
+  inputs = {
+    'desire_pulse': np.zeros(DESIRE_LEN, dtype=np.float32),
+  }
+
   output = np.zeros(MODEL_OUTPUT_SIZE, dtype=np.float32)
-  model = ONNXModel("models/supercombo.onnx", output, MODEL_OUTPUT_SIZE, Runtimes.GPU_RUNTIME, False, context)
+  model = ONNXModel("models/supercombo.onnx", output, Runtime.GPU, False, context)
 
   model.addInput("input_imgs", None)
   model.addInput("big_input_imgs", None)
@@ -42,8 +50,7 @@ def model_init(device_id, context):
 def model_eval_frame(s:ModelState, buf:np.ndarray, wbuf:np.ndarray, transform:np.ndarray, transform_wide:np.ndarray,
                      desire_in:np.ndarray, is_rhd:bool, driving_style:np.ndarray, nav_features:np.ndarray, prepare_only:bool):
 
-  return None
-  """
+  return """
   std::memmove(&s->pulse_desire[0], &s->pulse_desire[DESIRE_LEN], sizeof(float) * DESIRE_LEN*HISTORY_BUFFER_LEN);
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
@@ -84,9 +91,7 @@ def model_eval_frame(s:ModelState, buf:np.ndarray, wbuf:np.ndarray, transform:np
   s->m->execute();
   LOGT("Execution finished");
 
-  #ifdef TEMPORAL
-    std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1));
-    std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN);
-    LOGT("Features enqueued");
-  #endif
+  std::memmove(&s->feature_buffer[0], &s->feature_buffer[FEATURE_LEN], sizeof(float) * FEATURE_LEN*(HISTORY_BUFFER_LEN-1))
+  std::memcpy(&s->feature_buffer[FEATURE_LEN*(HISTORY_BUFFER_LEN-1)], &s->output[OUTPUT_SIZE], sizeof(float) * FEATURE_LEN)
+  LOGT("Features enqueued")
   """

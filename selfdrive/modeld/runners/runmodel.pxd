@@ -3,14 +3,12 @@
 
 from libcpp.string cimport string
 from libcpp cimport bool, int, float
+from selfdrive.modeld.models.cl_pyx cimport _cl_context
 
-cdef extern from "<CL/cl.h>":
-  cdef int CL_DEVICE_TYPE_DEFAULT
-
-  struct _cl_device_id:
-    pass
-  struct _cl_context:
-    pass
+cdef extern from "selfdrive/modeld/runners/runmodel.h":
+  cdef int USE_CPU_RUNTIME
+  cdef int USE_GPU_RUNTIME
+  cdef int USE_DSP_RUNTIME
 
 cdef extern from "selfdrive/modeld/runners/onnxmodel.h":
   cdef cppclass ONNXModel:

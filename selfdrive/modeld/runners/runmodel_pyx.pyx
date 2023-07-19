@@ -8,17 +8,14 @@ from libc.string cimport memcpy
 from libcpp.string cimport string
 from libcpp cimport bool, int, float
 
+from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from .runmodel cimport ONNXModel as cppONNXModel
-from .runmodel cimport _cl_context, _cl_device_id
+from selfdrive.modeld.models.cl_pyx cimport CLContext
 
-
-cdef class CLContext:
-  cdef _cl_device_id * device_id
-  cdef _cl_context * context
-
-  def __cinit__(self):
-    pass
-
+class Runtime:
+  CPU = USE_CPU_RUNTIME
+  GPU = USE_GPU_RUNTIME
+  DSP = USE_DSP_RUNTIME
 
 cdef class ONNXModel:
   cdef cppONNXModel * model
@@ -30,7 +27,10 @@ cdef class ONNXModel:
     del self.model
 
   def addInput(self, string name, float[:] buffer):
-    self.model.addInput(name, &buffer[0], len(buffer))
+    if buffer is not None:
+      self.model.addInput(name, &buffer[0], len(buffer))
+    else:
+      self.model.addInput(name, NULL, 0)
 
   def setInputBuffer(self, string name, float[:] buffer):
     self.model.setInputBuffer(name, &buffer[0], len(buffer))

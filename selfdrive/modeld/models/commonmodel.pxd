@@ -1,11 +1,10 @@
 # distutils: language = c++
 #cython: language_level=3
 
-from libcpp.string cimport string
-from libcpp.vector cimport vector
 from libcpp cimport int, float
+from .cl_pyx cimport _cl_device_id, _cl_context, _cl_mem
 
 cdef extern from "selfdrive/modeld/models/commonmodel.h":
   cppclass ModelFrame:
-    ModelFrame(cl_device_id device_id, cl_context context)
-    float * prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, mat3 transform, cl_mem * output)
+    ModelFrame(_cl_device_id*, _cl_context*)
+    float * prepare(_cl_mem*, int, int, int, int, mat3, _cl_mem**)

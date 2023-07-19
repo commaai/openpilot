@@ -55,11 +55,15 @@ else:
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
+common_objects = env.SharedObject(common_src)
+common_lib = env.Library('commonmodel', common_objects)
+
 runmodel_objects = env.SharedObject(runmodel_src)
 runmodel_lib = env.Library('runmodel', runmodel_objects)
 
-envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[runmodel_lib, common])
-envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common])
+envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[runmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
+envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
+envCython.Program('models/cl_pyx.so', 'models/cl_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
 
 common_model = lenv.Object(common_src)
 
