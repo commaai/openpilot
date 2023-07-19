@@ -94,17 +94,20 @@ def regen_and_save(
 
 if __name__ == "__main__":
   def comma_separated_list(string):
-    if string == "all":
-      return string
     return string.split(",")
 
+  all_procs = [p.proc_name for p in CONFIGS]
   parser = argparse.ArgumentParser(description="Generate new segments from old ones")
   parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
   parser.add_argument("--outdir", help="log output dir", default=FAKEDATA)
-  parser.add_argument("--whitelist-procs", type=comma_separated_list, default="all",
-                      help="Comma-separated whitelist of processes to regen (e.g. controlsd). Pass 'all' to whitelist all processes.")
+  parser.add_argument("--whitelist-procs", type=comma_separated_list, default=all_procs,
+                      help="Comma-separated whitelist of processes to regen (e.g. controlsd,radard)")
+  parser.add_argument("--blacklist-procs", type=comma_separated_list, default=[],
+                      help="Comma-separated blacklist of processes to regen (e.g. controlsd,radard)")
   parser.add_argument("route", type=str, help="The source route")
   parser.add_argument("seg", type=int, help="Segment in source route")
   args = parser.parse_args()
 
-  regen_and_save(args.route, args.seg, daemons=args.whitelist_procs, upload=args.upload, outdir=args.outdir)
+  blacklist_set = set(args.blacklist_procs)
+  daemons = [p for p in args.whitelist_procs if p not in blacklist_set]
+  regen_and_save(args.route, args.seg, daemons=daemons, upload=args.upload, outdir=args.outdir)
