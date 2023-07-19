@@ -442,7 +442,7 @@ def main() -> None:
       updater.set_params(False, update_failed_count, exception)
 
       if not system_time_valid():
-        wait_helper.sleep(5)
+        wait_helper.sleep(60)
         continue
         
       update_failed_count += 1
