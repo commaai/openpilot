@@ -18,6 +18,8 @@ QString getBrand();
 QString getUserAgent();
 std::optional<QString> getDongleId();
 QMap<QString, QString> getSupportedLanguages();
+
+[[deprecated]]
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 void sigTermHandler(int s);
