@@ -272,9 +272,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Responds to KWP (0x1a8881):
     # - Body Control Module ((0x750, 0x40))
 
-    # Hybrid control computer can be on one of two addresses
+    # Hybrid control computer can be on 0x7e2 or 0x7d2 depending on platform
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     # TODO: if these duplicate ECUs always exist together, remove one
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
