@@ -77,6 +77,7 @@ class TestLoggerd(unittest.TestCase):
   def _publish_random_messages(self, services: List[str]) -> Dict[str, list]:
     pm = messaging.PubMaster(services)
 
+    managed_processes["loggerd"].start()
     for s in services:
       self.assertTrue(pm.wait_for_readers_to_update(s, timeout=5))
 
@@ -92,6 +93,8 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
+    managed_processes["loggerd"].stop()
+
     return sent_msgs
 
   def test_init_data_values(self):
@@ -216,10 +219,7 @@ class TestLoggerd(unittest.TestCase):
 
     services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
                random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
-
-    managed_processes["loggerd"].start()
     sent_msgs = self._publish_random_messages(services)
-    managed_processes["loggerd"].stop()
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
@@ -245,10 +245,7 @@ class TestLoggerd(unittest.TestCase):
 
   def test_rlog(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
-
-    managed_processes["loggerd"].start()
     sent_msgs = self._publish_random_messages(services)
-    managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
 
@@ -265,10 +262,7 @@ class TestLoggerd(unittest.TestCase):
 
   def test_preserving_flagged_segments(self):
     services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
-
-    managed_processes["loggerd"].start()
     self._publish_random_messages(services)
-    managed_processes["loggerd"].stop()
 
     segment_dir = self._get_latest_log_dir()
     self.assertEqual(getxattr(segment_dir, PRESERVE_ATTR_NAME), PRESERVE_ATTR_VALUE)
