@@ -10,6 +10,7 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
+from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.coordinates import ecef2geodetic
@@ -219,11 +220,11 @@ class RouteEngine:
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Banner instructions are for the following step, don't use empty last step
-    banner_instructions = self.route[max(min(self.step_idx, len(self.route) - 2), 0))]
+    banner_step = self.route[clip(self.step_idx, 0, len(self.route) - 2)]
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, banner_instructions, distance_to_maneuver_along_geometry)
+    parse_banner_instructions(msg.navInstruction, banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
