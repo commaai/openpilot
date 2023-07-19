@@ -4,7 +4,6 @@
 
 #include <QDateTime>
 #include <QFileSystemWatcher>
-#include <QLayout>
 #include <QPainter>
 #include <QPixmap>
 #include <QSurfaceFormat>
