@@ -206,12 +206,14 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
-    def test_car_controller(car_control, _now_nanos):
+    def test_car_controller(car_control):
+      now_nanos = 0
       msgs_sent = 0
-      for _ in range(300):  # make sure we hit the slowest messages
-        self.CI.update(car_control, [])
-        _, sendcan = self.CI.apply(car_control, _now_nanos)
-        _now_nanos += 10e6
+      CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+      for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
+        CI.update(car_control, [])
+        _, sendcan = CI.apply(car_control, now_nanos)
+        now_nanos += DT_CTRL * 1e9
         msgs_sent += len(sendcan)
         for addr, _, dat, bus in sendcan:
           to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
@@ -219,23 +221,20 @@ class TestCarModelBase(unittest.TestCase):
 
       # Make sure we attempted to send messages
       self.assertGreater(msgs_sent, 50)
-      return _now_nanos
-
-    now_nanos = 0
 
     # Make sure we can send all messages while inactive
     CC = car.CarControl.new_message()
-    now_nanos = test_car_controller(CC, now_nanos)
+    test_car_controller(CC)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    now_nanos = test_car_controller(CC, now_nanos)
+    test_car_controller(CC)
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    test_car_controller(CC, now_nanos)
+    test_car_controller(CC)
 
   def test_panda_safety_carstate(self):
     """
