@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 import system.loggerd.deleter as deleter
-from common.timeout import Timeout
+from common.timeout import Timeout, TimeoutException
 from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -39,12 +39,12 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
 
-    with Timeout(5, "Timeout waiting for file to be deleted"):
-      while f_path.exists():
-        time.sleep(0.01)
-    self.join_thread()
-
-    self.assertFalse(f_path.exists(), "File not deleted")
+    try:
+      with Timeout(2, "Timeout waiting for file to be deleted"):
+        while f_path.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
 
   def assertDeleteOrder(self, f_paths: Sequence[Path], timeout: int = 5) -> None:
     deleted_order = []
@@ -59,6 +59,9 @@ class TestDeleter(UploaderTestCase):
           if len(deleted_order) == len(f_paths):
             break
           time.sleep(0.01)
+    except TimeoutException:
+      print("Not deleted:", [f for f in f_paths if f not in deleted_order])
+      raise
     finally:
       self.join_thread()
 
@@ -102,9 +105,9 @@ class TestDeleter(UploaderTestCase):
     self.start_thread()
 
     try:
-      with Timeout(2, "Timeout waiting for file to be deleted"):
-        while f_path.exists():
-          time.sleep(0.01)
+      start_time = time.monotonic()
+      while f_path.exists() and time.monotonic() - start_time < 2:
+        time.sleep(0.01)
     finally:
       self.join_thread()
 
@@ -116,9 +119,9 @@ class TestDeleter(UploaderTestCase):
     self.start_thread()
 
     try:
-      with Timeout(2, "Timeout waiting for file to be deleted"):
-        while f_path.exists():
-          time.sleep(0.01)
+      start_time = time.monotonic()
+      while f_path.exists() and time.monotonic() - start_time < 2:
+        time.sleep(0.01)
     finally:
       self.join_thread()
 
