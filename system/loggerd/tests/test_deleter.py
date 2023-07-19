@@ -3,9 +3,11 @@ import time
 import threading
 import unittest
 from collections import namedtuple
+from pathlib import Path
+from typing import Sequence
 
 import system.loggerd.deleter as deleter
-from common.timeout import Timeout, TimeoutException
+from common.timeout import Timeout
 from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -44,40 +46,12 @@ class TestDeleter(UploaderTestCase):
 
     self.assertFalse(f_path.exists(), "File not deleted")
 
-  def test_delete_files_in_create_order(self):
-    f_path_1 = self.make_file_with_data(self.seg_dir, self.f_type)
-    time.sleep(1)
-    self.seg_num += 1
-    self.seg_dir = self.seg_format.format(self.seg_num)
-    f_path_2 = self.make_file_with_data(self.seg_dir, self.f_type)
-
-    self.start_thread()
-
-    with Timeout(5, "Timeout waiting for file to be deleted"):
-      while f_path_1.exists() and f_path_2.exists():
-        time.sleep(0.01)
-
-    self.join_thread()
-
-    self.assertFalse(f_path_1.exists(), "Older file not deleted")
-    self.assertTrue(f_path_2.exists(), "Newer file deleted before older file")
-
-  def test_delete_last_order(self):
-    # expected order of deletion
-    f_paths = [
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
-      self.make_file_with_data("boot", self.seg_format[:-4]),
-      self.make_file_with_data("crash", self.seg_format2[:-4]),
-    ]
-
-    self.start_thread()
-
+  def assertDeleteOrder(self, f_paths: Sequence[Path], timeout: int = 5) -> None:
     deleted_order = []
 
+    self.start_thread()
     try:
-      with Timeout(5, "Timeout waiting for file to be deleted"):
+      with Timeout(timeout, "Timeout waiting for files to be deleted"):
         while True:
           for f in f_paths:
             if not f.exists() and f not in deleted_order:
@@ -87,7 +61,36 @@ class TestDeleter(UploaderTestCase):
           time.sleep(0.01)
     finally:
       self.join_thread()
-      self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+
+    self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+
+  def test_delete_order(self):
+    # delete files in order
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+    ])
+
+    # delete old segments, then preserved, then boot and crash
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+      self.make_file_with_data("boot", self.seg_format[:-4]),
+      self.make_file_with_data("crash", self.seg_format2[:-4]),
+    ])
+
+    # preserved segments should be deleted when there is more than the limit
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format.format(2), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+      self.make_file_with_data(self.seg_format.format(3), self.f_type),
+    ] + [
+      self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+      for i in range(5)
+    ])
 
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
@@ -102,8 +105,6 @@ class TestDeleter(UploaderTestCase):
       with Timeout(2, "Timeout waiting for file to be deleted"):
         while f_path.exists():
           time.sleep(0.01)
-    except TimeoutException:
-      pass
     finally:
       self.join_thread()
 
@@ -118,56 +119,10 @@ class TestDeleter(UploaderTestCase):
       with Timeout(2, "Timeout waiting for file to be deleted"):
         while f_path.exists():
           time.sleep(0.01)
-    except TimeoutException:
-      pass
     finally:
       self.join_thread()
 
     self.assertTrue(f_path.exists(), "File deleted when locked")
-
-  def test_no_delete_preserved(self):
-    f_paths = []
-    for seg_num, preserve_attr in enumerate((None, deleter.PRESERVE_ATTR_VALUE, None)):
-      seg_dir = self.seg_format.format(seg_num)
-      f_paths.append(self.make_file_with_data(seg_dir, self.f_type, preserve_xattr=preserve_attr))
-
-    self.start_thread()
-
-    try:
-      # allow time for any files to be deleted
-      time.sleep(2)
-    finally:
-      self.join_thread()
-
-    self.join_thread()
-
-    self.assertTrue(f_paths[0].exists() and f_paths[1].exists(), "File deleted when preserved")
-    self.assertFalse(f_paths[2].exists(), "File not deleted")
-
-  def test_delete_oldest_preserved(self):
-    self.seg_dir = self.seg_format.format(self.seg_num)
-    f_path_old_preserved = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
-
-    f_paths_preserved = []
-    for _ in range(deleter.PRESERVE_COUNT):
-      # space out so they do not preserve each other
-      self.seg_num += 2
-      self.seg_dir = self.seg_format.format(self.seg_num)
-      f_paths_preserved.append(self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE))
-
-    self.start_thread()
-
-    try:
-      with Timeout(2, "Timeout waiting for file to be deleted"):
-        while all([f_path.exists() for f_path in f_paths_preserved]):
-          time.sleep(0.01)
-    except TimeoutException:
-      pass
-    finally:
-      self.join_thread()
-
-    self.assertFalse(f_path_old_preserved.exists(), "Oldest file not deleted")
-    self.assertTrue(all([f_path.exists() for f_path in f_paths_preserved]), "File deleted when preserved")
 
 
 if __name__ == "__main__":
