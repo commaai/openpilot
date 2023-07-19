@@ -32,7 +32,7 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
     if self.INTERNET_ACTIVE:
       headers = dict(self.headers)
       headers["Host"] = "api.mapbox.com"
-      
+
       r = requests.get(url, headers=headers, timeout=5)
 
       if r.status_code != 200:
@@ -61,11 +61,11 @@ class MapBoxInternetDisabledServer(threading.Thread):
 
 
 class TestMapRenderer(unittest.TestCase):
+  server = MapBoxInternetDisabledServer()
+
   @classmethod
   def setUpClass(cls):
     assert "MAPBOX_TOKEN" in os.environ
-
-    cls.server = MapBoxInternetDisabledServer()
     cls.server.start()
     time.sleep(1) # wait for server to be setup
   
