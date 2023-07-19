@@ -236,8 +236,11 @@ class ProcessContainer:
 
         # empty recv on drained pub indicates the end of messages, only do that if there're any
         trigger_empty_recv = False
+        number_of_unlocks = 1
         if self.cfg.main_pub and self.cfg.main_pub_drained:
+          msg_types = [m.which() for m in self.msg_queue]
           trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+          number_of_unlocks = msg_types.count(self.cfg.main_pub) if trigger_empty_recv else 1
 
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
@@ -251,8 +254,9 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        self.rc.unlock_sockets()
-        self.rc.wait_for_next_recv(trigger_empty_recv)
+        for i in range(number_of_unlocks):
+          self.rc.unlock_sockets()
+          self.rc.wait_for_next_recv(number_of_unlocks - 1 == i and trigger_empty_recv)
 
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
