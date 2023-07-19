@@ -110,6 +110,11 @@ private:
   QPushButton *settings_btn;
   QPixmap directions_icon, settings_icon;
 
+  // Blue with normal nav, green when nav is input into the model
+  QColor getNavPathColor(bool nav_enabled) {
+    return nav_enabled ? QColor("#31ee73") : QColor("#31a1ee");
+  }
+
   void clearRoute();
   void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;

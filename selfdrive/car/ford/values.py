@@ -49,7 +49,7 @@ class CAR:
   MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
 
 
-CANFD_CARS = {CAR.F_150_MK14}
+CANFD_CAR = {CAR.F_150_MK14}
 
 
 class RADAR:
@@ -98,18 +98,19 @@ CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # CAN and CAN FD queries are combined.
+    # FIXME: For CAN FD, ECUs respond with frames larger than 8 bytes on the powertrain bus
+    # TODO: properly handle auxiliary requests to separate queries and add back whitelists
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      # whitelist_ecus=[Ecu.engine],
+      auxiliary=True,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      bus=0,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      # whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
       bus=0,
       auxiliary=True,
     ),

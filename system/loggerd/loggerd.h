@@ -60,7 +60,7 @@ const EncoderInfo main_wide_road_encoder_info = {
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 const EncoderInfo main_driver_encoder_info = {
-   .publish_name = "driverEncodeData",
+  .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
   .record = Params().getBool("RecordFront"),
   INIT_ENCODE_FUNCTIONS(DriverEncode),
@@ -78,24 +78,24 @@ const EncoderInfo qcam_encoder_info = {
 
 
 const LogCameraInfo road_camera_info{
-    .thread_name = "road_cam_encoder",
-    .type = RoadCam,
-    .stream_type = VISION_STREAM_ROAD,
-    .encoder_infos = {main_road_encoder_info, qcam_encoder_info}
-    };
+  .thread_name = "road_cam_encoder",
+  .type = RoadCam,
+  .stream_type = VISION_STREAM_ROAD,
+  .encoder_infos = {main_road_encoder_info, qcam_encoder_info}
+};
 
 const LogCameraInfo wide_road_camera_info{
-    .thread_name = "wide_road_cam_encoder",
-    .type = WideRoadCam,
-    .stream_type = VISION_STREAM_WIDE_ROAD,
-   .encoder_infos = {main_wide_road_encoder_info}
-    };
+  .thread_name = "wide_road_cam_encoder",
+  .type = WideRoadCam,
+  .stream_type = VISION_STREAM_WIDE_ROAD,
+  .encoder_infos = {main_wide_road_encoder_info}
+};
 
 const LogCameraInfo driver_camera_info{
-    .thread_name = "driver_cam_encoder",
-    .type = DriverCam,
-    .stream_type = VISION_STREAM_DRIVER,
-    .encoder_infos = {main_driver_encoder_info}
-    };
+  .thread_name = "driver_cam_encoder",
+  .type = DriverCam,
+  .stream_type = VISION_STREAM_DRIVER,
+  .encoder_infos = {main_driver_encoder_info}
+};
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
