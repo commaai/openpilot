@@ -1,4 +1,14 @@
+#include <cassert>
+
 #include "system/loggerd/loggerd.h"
+
+#ifdef QCOM2
+#include "system/loggerd/encoder/v4l_encoder.h"
+#define Encoder V4LEncoder
+#else
+#include "system/loggerd/encoder/ffmpeg_encoder.h"
+#define Encoder FfmpegEncoder
+#endif
 
 ExitHandler do_exit;
 
@@ -51,19 +61,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
+      assert(buf_info.width > 0 && buf_info.height > 0);
 
-      if (buf_info.width > 0 && buf_info.height > 0) {
-        for (const auto &encoder_info: cam_info.encoder_infos){
-          encoders.push_back(new Encoder(encoder_info.filename, cam_info.type, buf_info.width, buf_info.height,
-                                        encoder_info.fps, encoder_info.bitrate,
-                                        encoder_info.encode_type,
-                                        encoder_info.frame_width, encoder_info.frame_height,
-                                        encoder_info.publish_name));
-        }
-      } else {
-        LOGE("not initting empty encoder");
-        s->max_waiting--;
-        break;
+      for (const auto &encoder_info : cam_info.encoder_infos) {
+        encoders.push_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
       }
     }
 
@@ -123,12 +124,27 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 void encoderd_thread() {
   EncoderdState s;
 
-  std::vector<std::thread> encoder_threads;
-  for (const auto &cam : cameras_logged) {
-    encoder_threads.push_back(std::thread(encoder_thread, &s, cam));
-    s.max_waiting++;
+  std::set<VisionStreamType> streams;
+  while (!do_exit) {
+    streams = VisionIpcClient::getAvailableStreams("camerad", false);
+    if (!streams.empty()) {
+      break;
+    }
+    util::sleep_for(100);
   }
-  for (auto &t : encoder_threads) t.join();
+
+  if (!streams.empty()) {
+    std::vector<std::thread> encoder_threads;
+    for (auto stream : streams) {
+      auto it = std::find_if(std::begin(cameras_logged), std::end(cameras_logged),
+                             [stream](auto &cam) { return cam.stream_type == stream; });
+      assert(it != std::end(cameras_logged));
+      ++s.max_waiting;
+      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
+    }
+
+    for (auto &t : encoder_threads) t.join();
+  }
 }
 
 int main() {

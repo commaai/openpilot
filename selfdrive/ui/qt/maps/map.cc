@@ -105,7 +105,11 @@ void MapWindow::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
+
+    QVariantMap transition;
+    transition["duration"] = 400;  // ms
+    m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(uiState()->scene.navigate_on_openpilot));
+    m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
     m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
@@ -135,11 +139,17 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  // update navigate on openpilot status
   if (sm.updated("modelV2")) {
-    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
-    if (nav_enabled && !uiState()->scene.navigate_on_openpilot) {
-      emit requestVisible(true);  // Show map on rising edge of navigate on openpilot
+    // set path color on change, and show map on rising edge of navigate on openpilot
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
+                       sm["controlsState"].getControlsState().getEnabled();
+    if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
+      if (loaded_once) {
+        m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
+      }
+      if (nav_enabled) {
+        emit requestVisible(true);
+      }
     }
     uiState()->scene.navigate_on_openpilot = nav_enabled;
   }
@@ -548,9 +558,8 @@ void MapETA::updateETA(float s, float s_typical, float d) {
                         : std::array{eta_t.toString("h:mm a").split(' ')[0], eta_t.toString("a")};
 
   // Remaining time
-  auto time_t = QDateTime::fromTime_t(s);
-  auto remaining = s < 3600 ? std::array{time_t.toString("m"), tr("min")}
-                            : std::array{time_t.toString("h:mm"), tr("hr")};
+  auto remaining = s < 3600 ? std::array{QString::number(int(s / 60)), tr("min")}
+                            : std::array{QString("%1:%2").arg((int)s / 3600).arg(((int)s % 3600) / 60, 2, 10, QLatin1Char('0')), tr("hr")};
   QString color = "#25DA6E";
   if (s / s_typical > 1.5) color = "#DA3025";
   else if (s / s_typical > 1.2) color = "#DAA725";
