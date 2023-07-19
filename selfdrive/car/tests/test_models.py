@@ -213,6 +213,7 @@ class TestCarModelBase(unittest.TestCase):
       for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
         CI.update(car_control, [])
         _, sendcan = CI.apply(car_control, now_nanos)
+
         now_nanos += DT_CTRL * 1e9
         msgs_sent += len(sendcan)
         for addr, _, dat, bus in sendcan:
