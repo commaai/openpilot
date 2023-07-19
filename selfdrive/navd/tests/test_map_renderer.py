@@ -29,6 +29,8 @@ class TestMapRenderer(unittest.TestCase):
 
     if os.path.exists(CACHE_PATH):
       os.remove(CACHE_PATH)
+    
+    self.original_token = os.environ['MAPBOX_TOKEN']
 
   def tearDown(self):
     managed_processes['mapsd'].stop()
@@ -82,17 +84,30 @@ class TestMapRenderer(unittest.TestCase):
       assert self.vipc.valid == expect_valid
       assert self.vipc.timestamp_sof == llk.logMonoTime
       assert self.vipc.frame_id == self.sm['mapRenderState'].frameId
+  
+  def disable_internet(self):
+    self.original_token = os.environ['MAPBOX_TOKEN']
+    os.environ['MAPBOX_TOKEN'] = 'invalid_token'
+  
+  def enable_internet(self):
+    os.environ['MAPBOX_TOKEN'] = self.original_token
 
   def test_with_internet(self):
     self._run_test(True)
 
   def test_with_no_internet(self):
-    token = os.environ['MAPBOX_TOKEN']
     try:
-      os.environ['MAPBOX_TOKEN'] = 'invalid_token'
+      self.disable_internet()
       self._run_test(False)
     finally:
-      os.environ['MAPBOX_TOKEN'] = token
+      self.enable_internet()
+    
+  def test_recover_from_no_internet(self):
+    self._run_test(True)
+    self.disable_internet()
+    self._run_test(False)
+    self.enable_internet()
+    self._run_test(True)
 
 if __name__ == "__main__":
   unittest.main()
