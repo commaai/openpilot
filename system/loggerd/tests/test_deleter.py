@@ -85,6 +85,14 @@ class TestDeleter(UploaderTestCase):
         for i in range(5)
       ])
 
+    with self.subTest("delete segments, then boot and crash"):
+      self.assertDeleteOrder([
+        self.make_file_with_data(self.seg_format.format(0), self.f_type),
+        self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+        self.make_file_with_data("boot", self.seg_format[:-4]),
+        self.make_file_with_data("crash", self.seg_format2[:-4]),
+      ])
+
     with self.subTest("delete old segments, then preserved, then boot and crash"):
       self.assertDeleteOrder([
         self.make_file_with_data(self.seg_format.format(1), self.f_type),
