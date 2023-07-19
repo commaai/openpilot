@@ -1,23 +1,11 @@
 # distutils: language = c++
+#cython: language_level=3
 
-from cereal.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
-
-cdef extern from "common/mat.h":
-  cdef struct mat3:
-    float v[9]
-
-cdef extern from "common/clutil.h":
-  cdef unsigned long CL_DEVICE_TYPE_DEFAULT
-  cl_device_id cl_get_device_id(unsigned long)
-  cl_context cl_create_context(cl_device_id)
+from libcpp.string cimport string
+from libcpp.vector cimport vector
+from libcpp cimport int, float
 
 cdef extern from "selfdrive/modeld/models/commonmodel.h":
   cppclass ModelFrame:
-    int buf_size
-    ModelFrame(cl_device_id, cl_context)
-    float * prepare(cl_mem, int, int, int, int, mat3, cl_mem*)
-
-cdef extern from "selfdrive/modeld/runners/runmodel.h":
-  cdef int USE_CPU_RUNTIME
-  cdef int USE_GPU_RUNTIME
-  cdef int USE_DSP_RUNTIME
+    ModelFrame(cl_device_id device_id, cl_context context)
+    float * prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, mat3 transform, cl_mem * output)

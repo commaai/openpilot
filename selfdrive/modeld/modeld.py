@@ -8,6 +8,7 @@ from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
+from selfdrive.modeld.models.driving import ModelState, model_init, model_eval_frame
 from system.hardware import PC
 
 # NOTE: These are almost exactly the same as the numbers in modeld.cc, but to get perfect equivalence we might have to copy them exactly
@@ -29,7 +30,7 @@ def update_calibration(device_from_calib_euler:np.ndarray, wide_camera:bool, big
   return transform
 
 
-def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClient, main_wide_camera:bool, use_extra_client:bool):
+def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClient, main_wide_camera:bool, use_extra_client:bool):
   # messaging
   pm = messaging.PubMaster(["modelV2", "cameraOdometry"])
   sm = messaging.SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"])
@@ -108,12 +109,10 @@ def run_model(vipc_client_main:VisionIpcClient, vipc_client_extra:VisionIpcClien
     if prepare_only:
       logging.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
-    """
-    mt1 = millis_since_boot()
-    model_output = model_eval_frame(&model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only);
-    mt2 = millis_since_boot()
-    """
-    model_execution_time = (mt2 - mt1) / 1000.0
+    mt1 = time.perf_counter()
+    # model_output = model_eval_frame(model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only)
+    mt2 = time.perf_counter()
+    model_execution_time = mt2 - mt1
 
     """
     if model_output:
@@ -136,11 +135,11 @@ if __name__ == '__main__':
   # cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+  """
+  device_id, context = None, None
 
   # init the models
-  ModelState model;
-  model_init(&model, device_id, context);
-  """
+  model = model_init(device_id, context)
   logging.warning("models loaded, modeld starting")
 
   main_wide_camera = False
