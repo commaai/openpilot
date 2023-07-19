@@ -218,9 +218,12 @@ class RouteEngine:
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
+    # Banner instructions are for the following step, don't use empty last step
+    banner_instructions = self.route[max(min(self.step_idx, len(self.route) - 2), 0))]
+
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    parse_banner_instructions(msg.navInstruction, banner_instructions, distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
