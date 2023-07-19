@@ -101,13 +101,10 @@ class TestDeleter(UploaderTestCase):
     self.fake_stats = Stats(f_bavail=available, f_blocks=10, f_frsize=block_size)
 
     self.start_thread()
-
-    try:
-      start_time = time.monotonic()
-      while f_path.exists() and time.monotonic() - start_time < 2:
-        time.sleep(0.01)
-    finally:
-      self.join_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
 
     self.assertTrue(f_path.exists(), "File deleted with available space")
 
@@ -115,13 +112,10 @@ class TestDeleter(UploaderTestCase):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type, lock=True)
 
     self.start_thread()
-
-    try:
-      start_time = time.monotonic()
-      while f_path.exists() and time.monotonic() - start_time < 2:
-        time.sleep(0.01)
-    finally:
-      self.join_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
 
     self.assertTrue(f_path.exists(), "File deleted when locked")
 
