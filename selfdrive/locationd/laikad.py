@@ -98,10 +98,13 @@ class Laikad:
     self.velfix_function = get_velfix_sympy_func()
     self.last_fix_pos = None
     self.last_fix_t = None
-    self.gps_week = None
     self.use_qcom = use_qcom
     self.first_log_time = None
     self.ttff = -1
+
+    # qcom specific stuff
+    self.qcom_reports_received = 1
+    self.qcom_reports = []
 
   def load_cache(self):
     if not self.save_ephemeris:
@@ -211,18 +214,19 @@ class Laikad:
 
   def read_report(self, gnss_msg):
     if self.use_qcom:
-      # QCOM reports are per constellation, should always send 3 reports
+      # QCOM reports are per constellation, so we need to aggregate them
       report = gnss_msg.drMeasurementReport
       report_time = self.gps_time_from_qcom_report(gnss_msg)
 
       if report_time - self.last_report_time > 0:
+        self.qcom_reports_received = max(1, len(self.qcom_reports))
         self.qcom_reports = [report]
       else:
         self.qcom_reports.append(report)
       self.last_report_time = report_time
 
       new_meas = []
-      if len(self.qcom_reports) == 3:
+      if len(self.qcom_reports) == self.qcom_reports_received:
         for report in self.qcom_reports:
           new_meas.extend(read_raw_qcom(report))
 
@@ -240,11 +244,8 @@ class Laikad:
 
   def read_ephemeris(self, gnss_msg):
     if self.use_qcom:
-      # TODO this is not robust to gps week rollover
-      if self.gps_week is None:
-        return
       try:
-        ephem = parse_qcom_ephem(gnss_msg.drSvPoly, self.gps_week)
+        ephem = parse_qcom_ephem(gnss_msg.drSvPoly)
         self.astro_dog.add_qcom_polys({ephem.prn: [ephem]})
       except Exception:
         cloudlog.exception("Error parsing qcom svPoly ephemeris from qcom module")
@@ -305,7 +306,6 @@ class Laikad:
       self.read_ephemeris(gnss_msg)
     elif self.is_good_report(gnss_msg):
       report_t, new_meas = self.read_report(gnss_msg)
-      self.gps_week = report_t.week
       if report_t.week > 0:
         if self.auto_fetch_navs:
           self.fetch_navs(report_t, block)
@@ -448,7 +448,7 @@ def clear_tmp_cache():
 def main(sm=None, pm=None):
   #clear_tmp_cache()
 
-  use_qcom = not Params().get_bool("UbloxAvailable", block=True)
+  use_qcom = not Params().get_bool("UbloxAvailable")
   if use_qcom:
     raw_name = "qcomGnss"
   else:
