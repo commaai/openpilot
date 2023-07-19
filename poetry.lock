@@ -525,6 +525,17 @@ msgpack = ["msgpack-python (>=0.5,<0.6)"]
 redis = ["redis (>=3.3.6,<4.0.0)"]
 
 [[package]]
+name = "carla"
+version = "0.9.14"
+description = "Python API for communicating with the CARLA server."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.source]
+type = "url"
+url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl"
+[[package]]
 name = "casadi"
 version = "3.6.3"
 description = "CasADi -- framework for algorithmic differentiation and numeric optimization"
@@ -2815,7 +2826,7 @@ sympy = "*"
 
 [[package]]
 name = "opencv-python-headless"
-version = "4.8.0.74"
+version = "4.5.5.64"
 description = "Wrapper package for OpenCV python bindings."
 category = "dev"
 optional = false
@@ -2823,13 +2834,15 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 numpy = [
-    {version = ">=1.21.2", markers = "python_version >= \"3.10\""},
-    {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\""},
-    {version = ">=1.23.5", markers = "python_version >= \"3.11\""},
+    {version = ">=1.21.2", markers = "python_version >= \"3.10\" or python_version >= \"3.6\" and platform_system == \"Darwin\" and platform_machine == \"arm64\""},
     {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\" or python_version >= \"3.9\""},
-    {version = ">=1.17.0", markers = "python_version >= \"3.7\""},
+    {version = ">=1.14.5", markers = "python_version >= \"3.7\""},
     {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
 ]
+
+[package.source]
+type = "url"
+url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118-cp311/opencv_python_headless-4.5.5.64-cp311-cp311-manylinux_2_31_x86_64.whl"
 
 [[package]]
 name = "osmium"
@@ -4591,6 +4604,7 @@ opt-einsum = ["opt-einsum (>=3.3)"]
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "torchsummary"
 version = "1.5.1"
@@ -4619,6 +4633,7 @@ scipy = ["scipy"]
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu118/torchvision-0.15.2%2Bcu118-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "tornado"
 version = "6.3.2"
@@ -5077,7 +5092,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "ead0ff9633fd37a9f3085bcb142f290b063a9371fcb82cf362410dcd9d10f89f"
+content-hash = "7365da201b1bb1d8f05f13c5ee1d36663d68f394a3707008a697b813e2d0fd4d"
 
 [metadata.files]
 adal = [
@@ -5500,6 +5515,7 @@ cachy = [
     {file = "cachy-0.3.0-py2.py3-none-any.whl", hash = "sha256:338ca09c8860e76b275aff52374330efedc4d5a5e45dc1c5b539c1ead0786fe7"},
     {file = "cachy-0.3.0.tar.gz", hash = "sha256:186581f4ceb42a0bbe040c407da73c14092379b1e4c0e327fdb72ae4a9b269b1"},
 ]
+carla = []
 casadi = [
     {file = "casadi-3.6.3-cp27-none-macosx_10_13_x86_64.macosx_10_13_intel.whl", hash = "sha256:884c07617fbbedbd047900d6f2ab86e933064efc517b973fa4139fc60543e498"},
     {file = "casadi-3.6.3-cp27-none-manylinux1_i686.whl", hash = "sha256:6f9c1fadfb1eb729f8906f01cd2b45f542846a386fb63d59eb1872451dda8de3"},
@@ -7687,15 +7703,7 @@ onnxruntime-gpu = [
     {file = "onnxruntime_gpu-1.15.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:58773200fbe3a840cab163fc9f196a3de376a2902d633a714ef13501910c4dfc"},
     {file = "onnxruntime_gpu-1.15.1-cp39-cp39-win_amd64.whl", hash = "sha256:b9fb31cb7608b4a0e84ba3325860f0b5159ccea5fe43e74eecf6f360021b987f"},
 ]
-opencv-python-headless = [
-    {file = "opencv-python-headless-4.8.0.74.tar.gz", hash = "sha256:a72770b8f2e08358b1faa41c8372b17d040aa9bb3e446ab7090e358f6f4e91ba"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-macosx_10_16_x86_64.whl", hash = "sha256:f645b17667fc9bffec8c3b3a72a217430c8d7090ed3ebb80fd8efc657f372d6c"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:7c88744ce922b81747c86f2b7f1b3ec84ff2f53477ee9219a5e75ae2012b443f"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:34e92fef90e8f768d92dca875aefaff8b11556427f82484378a3848eb690d4c0"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f8a88620c43a5d17f7df8317767da93b935656ab9236df92e1e2e0dd23195756"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-win32.whl", hash = "sha256:b52a6eb2d92fff0f660e6aade958cb4373fbfcbafa0488f7ae88c4e6ce3f47f6"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-win_amd64.whl", hash = "sha256:19d30269ae710f67e0ae549361a68b755e28599a572d5f72d0bbb177ab438a28"},
-]
+opencv-python-headless = []
 osmium = [
     {file = "osmium-3.6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0520d39797c17030c11427213421237aa17f327b076c5367dd2721e856a8aab7"},
     {file = "osmium-3.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e46615d9761f49ae86b7f891c1e00a7e010b85622d17d956029299407b86b0cb"},
