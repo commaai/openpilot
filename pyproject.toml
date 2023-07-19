@@ -163,7 +163,7 @@ redis = "^4.3.4"
 s2sphere = "^0.2.5"
 scikit-image = "^0.19.3"
 scikit-learn = "^1.1.1"
-segmentation-models-pytorch = "==0.3.2"
+segmentation-models-pytorch = "==0.3.3"
 simplejson = "^3.17.6"
 SQLAlchemy = "^1.4.39"
 torch = { url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp311-cp311-linux_x86_64.whl" }
@@ -176,6 +176,7 @@ omegaconf = "^2.3.0"
 osmnx = "==1.2.2"
 tritonclient = {version = "2.28.0", extras = ["http"]}
 transformers = "^4.29.2"
+timm = "==0.9.2"
 
 
 [build-system]
