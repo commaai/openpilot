@@ -92,7 +92,8 @@ class TestLoggerd(unittest.TestCase):
         sent_msgs[s].append(m)
       time.sleep(0.01)
 
-    time.sleep(1)
+    for s in services:
+      self.assertTrue(pm.wait_for_readers_to_update(s, timeout=5))
     managed_processes["loggerd"].stop()
 
     return sent_msgs
