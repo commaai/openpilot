@@ -535,6 +535,7 @@ python-versions = "*"
 [package.source]
 type = "url"
 url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "casadi"
 version = "3.6.3"
@@ -5092,7 +5093,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "7365da201b1bb1d8f05f13c5ee1d36663d68f394a3707008a697b813e2d0fd4d"
+content-hash = "0bbb3486d22803a2c39b0b02954535422596641977b3483c1712799a473250b1"
 
 [metadata.files]
 adal = [
