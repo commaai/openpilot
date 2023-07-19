@@ -62,6 +62,33 @@ class TestDeleter(UploaderTestCase):
     self.assertFalse(f_path_1.exists(), "Older file not deleted")
     self.assertTrue(f_path_2.exists(), "Newer file deleted before older file")
 
+  def test_delete_last_order(self):
+    # expected order of deletion
+    f_paths = [
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE),
+      self.make_file_with_data("boot", self.seg_format[:-4]),
+      self.make_file_with_data("crash", self.seg_format2[:-4]),
+    ]
+
+    self.start_thread()
+
+    deleted_order = []
+
+    try:
+      with Timeout(5, "Timeout waiting for file to be deleted"):
+        while True:
+          for f in f_paths:
+            if not f.exists() and f not in deleted_order:
+              deleted_order.append(f)
+          if len(deleted_order) == len(f_paths):
+            break
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
+      self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
 
