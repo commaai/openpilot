@@ -277,7 +277,7 @@ class TestLoggerd(unittest.TestCase):
       self.assertEqual(sent.to_bytes(), m.as_builder().to_bytes())
 
   def test_preserving_flagged_segments(self):
-    services = random.sample(CEREAL_SERVICES, random.randint(5, 10)) + ["userFlag"]
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
