@@ -221,7 +221,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
       new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
