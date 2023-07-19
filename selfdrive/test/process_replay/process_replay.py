@@ -337,6 +337,29 @@ def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
   return msg.which() == "driverCameraState"
 
 
+class RadardRcvCallback:
+  def __init__(self):
+    self.radar_available = None
+    self.frequency = None
+    self.can_cnt = 0
+
+  def __call__(self, msg, cfg, frame):
+    if self.radar_available is None or self.frequency is None:
+      params = Params()
+      CP_bytes = params.get("CarParams")
+      assert CP_bytes is not None
+      CP = car.CarParams.from_bytes(CP_bytes)
+      radar_frequency = int(round(1 / CP.radarTimeStep))
+      self.radar_available = not CP.radarUnavailable
+      self.frequency = int(service_list["can"].frequency / radar_frequency)
+
+    if msg.which() != "can":
+      return False
+    
+    self.can_cnt += 1
+    return self.radar_available or self.can_cnt % self.frequency == 0
+
+
 class ModeldCameraSyncRcvCallback:
   def __init__(self):
     self.road_present = False
@@ -440,7 +463,7 @@ CONFIGS = [
     subs=["radarState", "liveTracks"],
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("can"),
+    should_recv_callback=RadardRcvCallback(),
     main_pub="can",
   ),
   ProcessConfig(
