@@ -189,7 +189,7 @@ def main() -> NoReturn:
             set_time(cloudlog)
 
           # reset panda to ensure we're in a good state
-          cloudlog.info(f"Resetting panda {serial}")
+          cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
           if panda.is_internal():
             HARDWARE.reset_internal_panda()
           else:
