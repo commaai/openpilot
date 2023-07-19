@@ -8,6 +8,7 @@ import time
 import unittest
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict, List
 
 import cereal.messaging as messaging
 from cereal import log
@@ -72,6 +73,26 @@ class TestLoggerd(unittest.TestCase):
 
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     self.assertTrue(msgs[-1].sentinel.type == end_type)
+
+  def _publish_random_messages(self, services: List[str]) -> Dict[str, list]:
+    pm = messaging.PubMaster(services)
+
+    for s in services:
+      self.assertTrue(pm.wait_for_readers_to_update(s, timeout=5))
+
+    sent_msgs = defaultdict(list)
+    for _ in range(random.randint(2, 10) * 100):
+      for s in services:
+        try:
+          m = messaging.new_message(s)
+        except Exception:
+          m = messaging.new_message(s, random.randint(2, 10))
+        pm.send(s, m)
+        sent_msgs[s].append(m)
+      time.sleep(0.01)
+
+    time.sleep(1)
+    return sent_msgs
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
@@ -196,26 +217,8 @@ class TestLoggerd(unittest.TestCase):
     services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
                random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
 
-    pm = messaging.PubMaster(services)
-
-    # sleep enough for the first poll to time out
-    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    for s in services:
-      pm.wait_for_readers_to_update(s, timeout=5)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-      time.sleep(0.01)
-
-    time.sleep(1)
+    sent_msgs = self._publish_random_messages(services)
     managed_processes["loggerd"].stop()
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
@@ -242,25 +245,9 @@ class TestLoggerd(unittest.TestCase):
 
   def test_rlog(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
-    pm = messaging.PubMaster(services)
 
-    # sleep enough for the first poll to time out
-    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    for s in services:
-      pm.wait_for_readers_to_update(s, timeout=5)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-
-    time.sleep(2)
+    sent_msgs = self._publish_random_messages(services)
     managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
@@ -278,25 +265,9 @@ class TestLoggerd(unittest.TestCase):
 
   def test_preserving_flagged_segments(self):
     services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
-    pm = messaging.PubMaster(services)
 
-    # sleep enough for the first poll to time out
-    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    for s in services:
-      pm.wait_for_readers_to_update(s, timeout=5)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-
-    time.sleep(2)
+    self._publish_random_messages(services)
     managed_processes["loggerd"].stop()
 
     segment_dir = self._get_latest_log_dir()
