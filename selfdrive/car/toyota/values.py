@@ -272,9 +272,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Responds to KWP (0x1a8881):
     # - Body Control Module ((0x750, 0x40))
 
-    # Hybrid control computer can be on one of two addresses
+    # Hybrid control computer can be on 0x7e2 (KWP) or 0x7d2 (UDS) depending on platform
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     # TODO: if these duplicate ECUs always exist together, remove one
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
@@ -1652,6 +1651,11 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x01896634AE1001\x00\x00\x00\x00',
       b'\x01896634AF0000\x00\x00\x00\x00',
+    ],
+    (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
+      b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
+      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
