@@ -102,6 +102,7 @@ class RouteEngine:
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
       self.clear_route()
+      self.recompute_backoff = 0
       return
 
     should_recompute = self.should_recompute()
