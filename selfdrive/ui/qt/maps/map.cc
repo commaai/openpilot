@@ -414,11 +414,7 @@ void MapWindow::updateDestinationMarker() {
     QVariantMap pinSource;
     pinSource["type"] = "geojson";
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
-    if (!updated) {
-      m_map->updateSource("pinSource", pinSource);
-      updated = true;
-    }
-    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+    m_map->updateSource("pinSource", pinSource);
   }
 }
 
