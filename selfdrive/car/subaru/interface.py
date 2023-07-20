@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import ALT_LKAS_MSG, CAR, ES_STATUS, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import LKAS_ANGLE, CAR, ES_STATUS, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -27,8 +27,8 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
       if candidate in GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
-      if candidate in ALT_LKAS_MSG:
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LKAS_ALT
+      if candidate in LKAS_ANGLE:
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LKAS_ANGLE
       if candidate in ES_STATUS:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_ES_STATUS
 

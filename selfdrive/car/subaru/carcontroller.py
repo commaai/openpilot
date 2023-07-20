@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits, apply_std_steer_angle_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, ALT_LKAS_MSG, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, LKAS_ANGLE, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -25,7 +25,7 @@ class CarController:
 
     # *** steering ***
     if (self.frame % self.p.STEER_STEP) == 0:
-      if self.CP.carFingerprint in ALT_LKAS_MSG:
+      if self.CP.carFingerprint in LKAS_ANGLE:
         if CC.latActive:
           apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, CarControllerParams)
         else:

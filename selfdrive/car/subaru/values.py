@@ -20,7 +20,7 @@ class CarControllerParams:
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
     
-    if CP.carFingerprint in ALT_LKAS_MSG:
+    if CP.carFingerprint in LKAS_ANGLE:
       self.ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0.], angle_v=[1.])
       self.ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0.], angle_v=[1.])
     else:
@@ -587,7 +587,7 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-ALT_LKAS_MSG = (CAR.FORESTER_2022,)
+LKAS_ANGLE = (CAR.FORESTER_2022,)
 ES_STATUS = (CAR.FORESTER_2022,)
 
 GLOBAL_GEN2 = (CAR.OUTBACK, CAR.LEGACY)
