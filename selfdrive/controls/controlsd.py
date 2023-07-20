@@ -7,7 +7,7 @@ from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
-from common.params import Params, put_nonblocking
+from common.params import Params, put_nonblocking, put_bool_nonblocking
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.conversions import Conversions as CV
@@ -448,7 +448,7 @@ class Controls:
 
         self.initialized = True
         self.set_initial_state()
-        Params().put_bool("ControlsReady", True)
+        put_bool_nonblocking("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:
