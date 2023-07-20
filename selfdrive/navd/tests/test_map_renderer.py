@@ -14,7 +14,10 @@ from selfdrive.manager.process_config import managed_processes
 LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"
 
-def gen_llk(location):
+LOCATION1 = (32.7174, -117.16277)
+LOCATION2 = (32.7558, -117.2037)
+
+def gen_llk(location=LOCATION1):
   msg = messaging.new_message('liveLocationKalman')
   msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
@@ -68,9 +71,6 @@ class MapBoxInternetDisabledServer(threading.Thread):
   
   def stop(self):
     self.server.shutdown()
-
-LOCATION1 = (32.7174, -117.16277)
-LOCATION2 = (32.7558, -117.2037)
 
 
 class TestMapRenderer(unittest.TestCase):
