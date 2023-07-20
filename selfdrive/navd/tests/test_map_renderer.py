@@ -92,6 +92,7 @@ class TestMapRenderer(unittest.TestCase):
   
   def tearDown(self):
     managed_processes['mapsd'].stop()
+    time.sleep(2) # wait for server to be fully stopped
   
   def _setup_test(self):
     os.environ['MAPS_HOST'] = 'http://localhost:5000'
@@ -171,7 +172,6 @@ class TestMapRenderer(unittest.TestCase):
     self.location = LOCATION1
     self.enable_internet()
     self._setup_test()
-    
     self._run_test(True)
 
     self.disable_internet()
@@ -187,14 +187,4 @@ class TestMapRenderer(unittest.TestCase):
     self._run_test(True)
 
 if __name__ == "__main__":
-
-  TEST_MANY = False
-
-  if TEST_MANY:
-    suite = unittest.TestSuite()
-    for i in range(100):
-      suite.addTest(TestMapRenderer("test_recover_from_no_internet"))
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-  
   unittest.main()
