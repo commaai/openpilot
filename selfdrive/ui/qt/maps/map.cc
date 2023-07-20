@@ -116,7 +116,6 @@ void MapWindow::initLayers() {
   if (!m_map->layerExists("pinLayer")) {
     qDebug() << "Initializing pinLayer";
     m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
-
     QVariantMap pin;
     pin["id"] = "pinLayer";
     pin["type"] = "symbol";
