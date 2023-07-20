@@ -167,7 +167,6 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v3
       with:
@@ -178,12 +177,16 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
+        docker tag $DOCKER_REGISTRY/$BASE_IMAGE:latest $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
+        docker push $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
     - name: Build CL Docker image
       run: eval "$BUILD_CL"
     - name: Push to container registry
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
+        docker tag $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
+        docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
 
   static_analysis:
     name: static analysis

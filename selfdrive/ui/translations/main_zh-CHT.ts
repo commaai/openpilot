@@ -402,6 +402,10 @@
         <source>Waiting for GPS</source>
         <translation>等待 GPS</translation>
     </message>
+    <message>
+        <source>Waiting for internet</source>
+        <translation type="unfinished">連接至網路中</translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
