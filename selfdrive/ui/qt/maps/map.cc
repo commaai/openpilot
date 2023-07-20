@@ -249,6 +249,7 @@ void MapWindow::updateState(const UIState &s) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
+      routing_problem = false;
       if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         map_instructions->updateInstructions(i);
