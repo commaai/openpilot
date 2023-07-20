@@ -218,7 +218,6 @@ void MapWindow::updateState(const UIState &s) {
   } else {
     setError("");
   }
-  qDebug() << "routing_problem:" << routing_problem << "locationd_valid:" << locationd_valid;;
 
   if (locationd_valid) {
     // Update current location marker
@@ -244,11 +243,6 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navInstruction")) {
-    auto route = sm["navRoute"].getNavRoute();
-    if ((route.getCoordinates().size() != 0) != (sm.valid("navInstruction"))) {
-      qDebug() << "WARNING: coords don't match navInstruction" << route.getCoordinates().size() << sm.valid("navInstruction");
-    }
-
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
@@ -273,8 +267,8 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
+    qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
-    qWarning() << "Updating navLayer with new route:" << route.getCoordinates().size() << "coordinates";
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
