@@ -125,7 +125,7 @@ void MapWindow::initLayers() {
 
     QVariantMap transition;
     transition["duration"] = 0;  // ms
-    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
+    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "map");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
@@ -199,6 +199,7 @@ void MapWindow::updateState(const UIState &s) {
     if (allow_open) {
       emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
+
     }
     emit requestSettings(false);
   }
@@ -218,7 +219,10 @@ void MapWindow::updateState(const UIState &s) {
     QVariantMap carPosSource;
     carPosSource["type"] = "geojson";
     carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
-    m_map->updateSource("carPosSource", carPosSource);
+    if (!updated_carpos) {
+      m_map->updateSource("carPosSource", carPosSource);
+      updated_carpos = true;
+    }
   }
 
   if (pan_counter == 0) {
@@ -262,6 +266,8 @@ void MapWindow::updateState(const UIState &s) {
     navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
+    m_map->setLayoutProperty("carPosLayer", "visibility", "visible");
+//    m_map->setLayoutProperty("pinLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
     updateDestinationMarker();
@@ -314,6 +320,8 @@ void MapWindow::paintGL() {
 void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
+    m_map->setLayoutProperty("carPosLayer", "visibility", "none");
+//    m_map->setLayoutProperty("pinLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
     updateDestinationMarker();
   }
@@ -405,7 +413,8 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
+//  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
+  m_map->setLayoutProperty("pinLayer", "visibility", "none");
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
@@ -414,11 +423,12 @@ void MapWindow::updateDestinationMarker() {
     QVariantMap pinSource;
     pinSource["type"] = "geojson";
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
-    if (!updated) {
+    m_map->setLayoutProperty("pinLayer", "visibility", "visible");
+//    if (!updated) {
       m_map->updateSource("pinSource", pinSource);
       updated = true;
-    }
-    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+//    }
+//    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
   }
 }
 

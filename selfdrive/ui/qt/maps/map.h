@@ -118,6 +118,7 @@ private:
   void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
   bool updated = false;
+  bool updated_carpos = false;
 
 private slots:
   void updateState(const UIState &s);
