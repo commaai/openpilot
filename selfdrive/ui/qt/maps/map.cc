@@ -126,44 +126,11 @@ void MapWindow::initLayers() {
     QVariantMap transition;
     transition["duration"] = 0;  // ms
     m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "icon-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "text-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "text-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "raster-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "raster-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "background-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "background-opacity-transition", transition);
-
-    m_map->setLayoutProperty("pinLayer", "fill-opacity-transition", transition);
-
-    m_map->setLayoutProperty("pinLayer", "line-opacity-transition", transition);
-
-    m_map->setLayoutProperty("pinLayer", "icon-opacity-transition", transition);
-
-    m_map->setLayoutProperty("pinLayer", "text-opacity-transition", transition);
-
-    m_map->setLayoutProperty("pinLayer", "raster-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "circle-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "circle-stroke-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "fill-extrusion-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "heatmap-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "sky-opacity-transition", transition);
-
-    m_map->setPaintProperty("pinLayer", "raster-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "circle-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "circle-stroke-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "fill-extrusion-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "heatmap-opacity-transition", transition);
-    m_map->setPaintProperty("pinLayer", "sky-opacity-transition", transition);
-
-    m_map->setPaintProperty("pinLayer", "raster-fade-duration", 0);
-    m_map->setLayoutProperty("pinLayer", "raster-fade-duration", 0);
-//    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
-//    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
-//    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-//    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
-//    m_map->setLayoutProperty("pinLayer", "icon-anchor", "bottom");
+    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
+    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
+    m_map->setLayoutProperty("pinLayer", "icon-anchor", "bottom");
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
