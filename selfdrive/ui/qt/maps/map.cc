@@ -99,7 +99,6 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
   }
   if (!m_map->layerExists("navLayer")) {
-    setError("");
     qDebug() << "Initializing navLayer";
     QVariantMap nav;
     nav["id"] = "navLayer";
@@ -221,7 +220,6 @@ void MapWindow::updateState(const UIState &s) {
   }
 //  qDebug() << "routing_problem:" << routing_problem;
 
-//  setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
