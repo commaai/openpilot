@@ -67,7 +67,7 @@ class RouteEngine:
     self.sm.update(0)
 
     if self.sm.updated["managerState"]:
-      self.send_route()
+      # self.send_route()
       ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui" and p.running]
       if ui_pid:
         if self.ui_pid and self.ui_pid != ui_pid[0]:
@@ -310,6 +310,7 @@ class RouteEngine:
     self.route = None
     self.route_geometry = None
     self.step_idx = None
+    self.recompute_backoff = 0
     if clear_destination:
       self.nav_destination = None
 

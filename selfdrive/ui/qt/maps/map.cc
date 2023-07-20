@@ -212,6 +212,14 @@ void MapWindow::updateState(const UIState &s) {
   }
   initLayers();
 
+  if (!locationd_valid) {
+    setError(tr("Waiting for GPS"));
+  } else if (routing_problem) {
+    setError(tr("Waiting for internet"));
+  } else {
+    setError("");
+  }
+
 //  setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
     // Update current location marker
@@ -246,7 +254,7 @@ void MapWindow::updateState(const UIState &s) {
         map_instructions->updateInstructions(i);
       }
     } else {
-//      clearRoute();
+      clearRoute();
     }
 
     if (isVisible()) {
@@ -257,23 +265,34 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
-    if (!route.getCoordinates().size()) {
-//      qWarning() << "Got empty navRoute from navd. Clearing map";
-      // have navd send this so we can replicate online behavior better
-      auto nav_dest = coordinate_from_param("NavDestination");
-      if (nav_dest.has_value()) {
-        // Cleared route (coords) with nav destination, there's a problem
-        clearRoute();  // TODO: keep some stuff shown?
-        setError(tr("Waiting for internet"));
-      } else {
-        // Actually have cleared route for valid reason (no errors)
-        clearRoute();
-        setError("");
-      }
-//      return;
-    } else {
-      setError("");
-    }
+    qDebug() << "coords size:" << route.getCoordinates().size();
+
+    // a navRoute packet that has no coordinates with a nav destination is unexpected
+    // todo: this is sent on reroute only. if no internet, clear_route will be run, causing step_idx to be set to None,
+    // causing invalid navInstructions and a cleared route in map.cc (but not param).
+    // think we can check if navInstruction is invalid for this, should be identical. it's preference
+    // TODO: actually if we send empty coords, but then somehow reach our destination, a navRoute won't be set to reset routing_problem
+    // probably should move to navInstruction above
+    auto nav_dest = coordinate_from_param("NavDestination");
+    routing_problem = !route.getCoordinates().size() && nav_dest.has_value();
+
+//    if (!route.getCoordinates().size()) {
+////      qWarning() << "Got empty navRoute from navd. Clearing map";
+//      // have navd send this so we can replicate online behavior better
+//      auto nav_dest = coordinate_from_param("NavDestination");
+//      if (nav_dest.has_value()) {
+//        // Cleared route (coords) with nav destination, there's a problem
+//        clearRoute();  // TODO: keep some stuff shown?
+//        setError(tr("Waiting for internet"));
+//      } else {
+//        // Actually have cleared route for valid reason (no errors)
+//        clearRoute();
+//        setError("");
+//      }
+////      return;
+//    } else {
+//      setError("");
+//    }
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
@@ -411,6 +430,7 @@ void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
     uiState()->scene.navigate_on_openpilot = false;
+    routing_problem = false;
   } else {
     auto dest = coordinate_from_param("NavDestination");
     emit requestVisible(dest.has_value());
