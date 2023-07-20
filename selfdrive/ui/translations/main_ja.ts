@@ -402,6 +402,10 @@
         <source>Waiting for GPS</source>
         <translation>GPS信号を探しています</translation>
     </message>
+    <message>
+        <source>Waiting for internet</source>
+        <translation type="unfinished">インターネット接続を待機中</translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>

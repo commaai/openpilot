@@ -211,7 +211,14 @@ void MapWindow::updateState(const UIState &s) {
   }
   initLayers();
 
-  setError(locationd_valid ? "" : tr("Waiting for GPS"));
+  if (!locationd_valid) {
+    setError(tr("Waiting for GPS"));
+  } else if (routing_problem) {
+    setError(tr("Waiting for internet"));
+  } else {
+    setError("");
+  }
+
   if (locationd_valid) {
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
@@ -236,6 +243,12 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navInstruction")) {
+    // an invalid navInstruction packet with a nav destination is only possible if:
+    // - API exception/no internet
+    // - route response is empty
+    auto dest = coordinate_from_param("NavDestination");
+    routing_problem = !sm.valid("navInstruction") && dest.has_value();
+
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
@@ -393,6 +406,7 @@ void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
     uiState()->scene.navigate_on_openpilot = false;
+    routing_problem = false;
   } else {
     auto dest = coordinate_from_param("NavDestination");
     emit requestVisible(dest.has_value());
