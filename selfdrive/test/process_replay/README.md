@@ -15,9 +15,10 @@ Currently the following processes are tested:
 * calibrationd
 * dmonitoringd
 * locationd
-* laikad
 * paramsd
 * ubloxd
+* laikad
+* torqued
 
 ### Usage
 ```
@@ -45,3 +46,71 @@ To generate new logs:
 `./test_processes.py`
 
 Then, check in the new logs using git-lfs. Make sure to also update the `ref_commit` file to the current commit.
+
+## API
+
+Process replay test suite exposes programmatic APIs for simultaneously running processes or groups of processes on provided logs. 
+
+```py
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader, List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
+
+def replay_process(
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
+  fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None, disable_progress: bool = False
+) -> List[capnp._DynamicStructReader]:
+```
+
+Example usage:
+```py
+from selfdrive.test.process_replay import replay_process_with_name
+from tools.lib.logreader import LogReader
+
+lr = LogReader(...)
+
+# provide a name of the process to replay
+output_logs = replay_process_with_name('locationd', lr)
+
+# or list of names
+output_logs = replay_process_with_name(['ubloxd', 'locationd', 'laikad'], lr)
+```
+
+Supported processes: 
+* controlsd
+* radard
+* plannerd
+* calibrationd
+* dmonitoringd
+* locationd
+* paramsd 
+* ubloxd
+* laikad
+* torqued
+* modeld
+* dmonitoringmodeld
+
+Certain processes may require an initial state, which is usually supplied within `Params` and persisting from segment to segment (e.g CalibrationParams, LiveParameters). The `custom_params` is dictionary  used to prepopulate `Params` with arbitrary values. The `get_custom_params_from_lr` helper is provided to fetch meaningful values from log files.
+
+```py
+from selfdrive.test.process_replay import get_custom_params_from_lr
+
+previous_segment_lr = LogReader(...)
+current_segment_lr = LogReader(...)
+
+custom_params = get_custom_params_from_lr(previous_segment_lr, 'last')
+
+output_logs = replay_process_with_name('calibrationd', lr, custom_params=custom_params)
+```
+
+Replaying processes that use VisionIPC (e.g. modeld, dmonitoringmodeld) require additional `frs` dictionary with camera states as keys and `FrameReader` objects as values.
+
+```py
+from tools.lib.framereader import FrameReader
+
+frs = {
+  'roadCameraState': FrameReader(...),
+  'wideRoadCameraState': FrameReader(...),
+  'driverCameraState': FrameReader(...),
+}
+
+output_logs = replay_process_with_name(['modeld', 'dmonitoringmodeld'], lr, frs=frs)
+```
