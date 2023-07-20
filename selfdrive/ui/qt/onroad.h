@@ -47,6 +47,25 @@ private:
   bool engageable;
 };
 
+
+class MapSettingsButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  explicit MapSettingsButton(QWidget *parent = 0);
+  void updateState(const UIState &s);
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+  void changeMode();
+
+  Params params;
+  QPixmap engage_img;
+//  QPixmap experimental_img;
+  bool experimental_mode;
+  bool engageable;
+};
+
 // container window for the NVG UI
 class AnnotatedCameraWidget : public CameraWidget {
   Q_OBJECT
@@ -73,6 +92,7 @@ private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   ExperimentalButton *experimental_btn;
+  MapSettingsButton *map_settings_btn;
   QPixmap dm_img;
   float speed;
   QString speedUnit;

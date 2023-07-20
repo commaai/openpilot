@@ -221,16 +221,66 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 }
 
 
+// MapSettingsButton
+MapSettingsButton::MapSettingsButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
+  setFixedSize(btn_size, btn_size);
+
+  params = Params();
+//  engage_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
+//  engage_img = loadPixmap("../assets/navigation/nav-settings-square-padding.png", {img_size, img_size});
+//  engage_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
+//  engage_img = loadPixmap("../assets/navigation/nav-settings-square.png", {img_size, img_size});
+  engage_img = loadPixmap("../assets/navigation/nav-settings-square-smaller.png", {img_size, img_size});
+//  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+  QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
+}
+
+void MapSettingsButton::changeMode() {
+  const auto cp = (*uiState()->sm)["carParams"].getCarParams();
+  bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
+  if (can_change) {
+    params.putBool("ExperimentalMode", !experimental_mode);
+  }
+}
+
+void MapSettingsButton::updateState(const UIState &s) {
+  const auto cs = (*s.sm)["controlsState"].getControlsState();
+  bool eng = cs.getEngageable() || cs.getEnabled();
+  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
+    engageable = eng;
+    experimental_mode = cs.getExperimentalMode();
+    update();
+  }
+}
+
+void MapSettingsButton::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  QPoint center(btn_size / 2, btn_size / 2);
+
+  p.setOpacity(1.0);
+  p.setPen(Qt::NoPen);
+  p.setBrush(QColor(0, 0, 0, 166));
+  p.drawEllipse(center, btn_size / 2, btn_size / 2);
+  p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
+  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, engage_img);
+}
+
+
 // Window that shows camera view and variety of info drawn on top
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
-  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
   main_layout->setSpacing(0);
 
   experimental_btn = new ExperimentalButton(this);
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+
+  map_settings_btn = new MapSettingsButton(this);
+  main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 }
@@ -281,6 +331,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
+  map_settings_btn->updateState(s);
 
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
