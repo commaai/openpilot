@@ -279,8 +279,8 @@ void MapWindow::updateState(const UIState &s) {
     // think we can check if navInstruction is invalid for this, should be identical. it's preference
     // TODO: actually if we send empty coords, but then somehow reach our destination, a navRoute won't be set to reset routing_problem
     // probably should move to navInstruction above
-    auto nav_dest = coordinate_from_param("NavDestination");
-    routing_problem = !route.getCoordinates().size() && nav_dest.has_value();
+//    auto nav_dest = coordinate_from_param("NavDestination");
+//    routing_problem = !route.getCoordinates().size() && nav_dest.has_value();
 
 //    if (!route.getCoordinates().size()) {
 ////      qWarning() << "Got empty navRoute from navd. Clearing map";
