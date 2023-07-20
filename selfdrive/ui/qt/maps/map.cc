@@ -112,7 +112,6 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
-    m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -129,6 +128,21 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
+  }
+  if (!m_map->layerExists("pinLayer")) {
+    qDebug() << "Initializing pinLayer";
+    m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
+
+    QVariantMap pin;
+    pin["id"] = "pinLayer";
+    pin["type"] = "symbol";
+    pin["source"] = "pinSource";
+    m_map->addLayer(pin);
+    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
+    m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
+    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
+    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
   }
 }
 
@@ -381,15 +395,14 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  if (marker_id != -1) {
-    m_map->removeAnnotation(marker_id);
-    marker_id = -1;
-  }
-
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
-    auto ano = QMapbox::SymbolAnnotation {*nav_dest, "default_marker"};
-    marker_id = m_map->addAnnotation(QVariant::fromValue<QMapbox::SymbolAnnotation>(ano));
+    auto point = coordinate_to_collection(*nav_dest);
+    QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
+    QVariantMap pinSource;
+    pinSource["type"] = "geojson";
+    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+    m_map->updateSource("pinSource", pinSource);
   }
 }
 
