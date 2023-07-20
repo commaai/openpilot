@@ -19,7 +19,7 @@ class MapRenderer : public QObject {
   Q_OBJECT
 
 public:
-  MapRenderer(const QMapboxGLSettings &, bool online=true);
+  MapRenderer(const QMapboxGLSettings &, bool online=true, QObject *parent = nullptr);
   uint8_t* getImage();
   void update();
   bool loaded();
@@ -28,7 +28,6 @@ public:
 private:
   std::unique_ptr<QOpenGLContext> ctx;
   std::unique_ptr<QOffscreenSurface> surface;
-  std::unique_ptr<QOpenGLFunctions> gl_functions;
   std::unique_ptr<QOpenGLFramebufferObject> fbo;
 
   std::unique_ptr<VisionIpcServer> vipc_server;
