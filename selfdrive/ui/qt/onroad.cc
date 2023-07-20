@@ -229,10 +229,9 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 
 
 // MapSettingsButton
-MapSettingsButton::MapSettingsButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
+MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
 
-  params = Params();
   settings_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
 }
@@ -246,16 +245,6 @@ void MapSettingsButton::changeMode() {
 //  }
 }
 
-void MapSettingsButton::updateState(const UIState &s) {
-  const auto cs = (*s.sm)["controlsState"].getControlsState();
-  bool eng = cs.getEngageable() || cs.getEnabled();
-  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
-    engageable = eng;
-    experimental_mode = cs.getExperimentalMode();
-    update();
-  }
-}
-
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
@@ -266,7 +255,7 @@ void MapSettingsButton::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
   p.setBrush(QColor(0, 0, 0, 166));
   p.drawEllipse(center, btn_size / 2, btn_size / 2);
-  p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
+  p.setOpacity(isDown() ? 0.6 : 1.0);
   p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, settings_img);
 }
 
@@ -343,7 +332,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
-  map_settings_btn->updateState(s);
 
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
