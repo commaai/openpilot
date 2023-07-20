@@ -117,11 +117,6 @@ void MapWindow::initLayers() {
     pin["type"] = "symbol";
     pin["source"] = "pinSource";
     m_map->addLayer(pin);
-
-    // FIXME: solve, workaround to remove animation on visibility property
-    QVariantMap transition;
-    transition["duration"] = 0;  // ms
-    m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
     m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
@@ -305,6 +300,10 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // set global animation duration to 0 ms so visibility changes are instant
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+      m_map->setTransitionOptions(0, 0);
+    }
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
@@ -411,7 +410,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
+  m_map->setPaintProperty("pinLayer", "visibility", "none");
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
@@ -421,6 +420,6 @@ void MapWindow::updateDestinationMarker() {
     pinSource["type"] = "geojson";
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
-    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+    m_map->setPaintProperty("pinLayer", "visibility", "visible");
   }
 }
