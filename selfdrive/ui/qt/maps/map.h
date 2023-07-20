@@ -101,6 +101,7 @@ private:
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
+  bool routing_problem = false;
 
   QWidget *map_overlay;
   QLabel *error;
