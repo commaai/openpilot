@@ -312,7 +312,6 @@ class RadarInterfaceBase(ABC):
     self.pts = {}
     self.delay = 0
 
-  @abstractmethod
   def update(self, can_strings):
     pass
 
