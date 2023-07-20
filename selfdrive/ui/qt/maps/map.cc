@@ -16,7 +16,7 @@ const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
 const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
-//const float MAX_PITCH = 50;
+const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
@@ -249,7 +249,7 @@ void MapWindow::updateState(const UIState &s) {
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (locationd_valid) {
-//        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
+        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         map_instructions->updateInstructions(i);
       }
     } else {
@@ -304,6 +304,7 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // set global animation duration to 0 ms so visibility changes are instant
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
       m_map->setTransitionOptions(0, 0);
     }
