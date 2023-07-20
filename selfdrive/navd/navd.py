@@ -39,7 +39,6 @@ class RouteEngine:
     self.gps_ok = False
     self.localizer_valid = False
 
-    # nav_destination will not be cleared for connection issues, etc.
     self.nav_destination = None
     self.step_idx = None
     self.route = None
@@ -67,7 +66,6 @@ class RouteEngine:
     self.sm.update(0)
 
     if self.sm.updated["managerState"]:
-      # self.send_route()
       ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui" and p.running]
       if ui_pid:
         if self.ui_pid and self.ui_pid != ui_pid[0]:
@@ -103,7 +101,6 @@ class RouteEngine:
 
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
-      print('CLEARING INCORRECTLY')
       self.clear_route()
       return
 
@@ -162,9 +159,8 @@ class RouteEngine:
     url = self.mapbox_host + '/directions/v5/mapbox/driving-traffic/' + coords_str
     try:
       resp = requests.get(url, params=params, timeout=10)
-      resp.status_code = 200 if not os.path.exists('/tmp/bnav') else 400
-      # if resp.status_code != 200:
-      #   cloudlog.event("API request failed", status_code=resp.status_code, text=resp.text, error=True)
+      if resp.status_code != 200:
+        cloudlog.event("API request failed", status_code=resp.status_code, text=resp.text, error=True)
       resp.raise_for_status()
 
       r = resp.json()
@@ -204,8 +200,7 @@ class RouteEngine:
       self.params.remove('NavDestinationWaypoints')
 
     except requests.exceptions.RequestException:
-      # cloudlog.exception("failed to get route")
-      print("failed to get route")
+      cloudlog.exception("failed to get route")
       self.clear_route()
 
     self.send_route()
@@ -218,16 +213,8 @@ class RouteEngine:
       self.pm.send('navInstruction', msg)
       return
 
-
-    print('ban instruct', [s['bannerInstructions'] for s in self.route])
-    print()
-    print('2ndlsstep', self.route[-2])
-    print()
-    print('last step', self.route[-1])
-    print()
-    print('last geom', self.route_geometry[-2], self.route_geometry[-1])
-    step = self.route[max(min(self.step_idx, len(self.route) - 2), 0)]
-    geometry = self.route_geometry[max(min(self.step_idx, len(self.route) - 2), 0)]
+    step = self.route[self.step_idx]
+    geometry = self.route_geometry[self.step_idx]
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
@@ -275,7 +262,6 @@ class RouteEngine:
     self.pm.send('navInstruction', msg)
 
     # Transition to next route segment
-    print(distance_to_maneuver_along_geometry)
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
@@ -283,16 +269,12 @@ class RouteEngine:
         self.recompute_countdown = 0
       else:
         cloudlog.warning("Destination reached")
-        # Params().remove("NavDestination")
+        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
-        print(dist, REROUTE_DISTANCE, dist > REROUTE_DISTANCE)
-        print('step idx', self.step_idx, len(self.route))
         if dist > REROUTE_DISTANCE:
-          Params().remove("NavDestination")
-          print('CLEARING CORRECTLY')
-          self.clear_route(clear_destination=True)
+          self.clear_route()
 
   def send_route(self):
     coords = []
@@ -303,16 +285,13 @@ class RouteEngine:
 
     msg = messaging.new_message('navRoute')
     msg.navRoute.coordinates = coords
-    # msg.navRoute.routeValid = len(coords)
     self.pm.send('navRoute', msg)
 
-  def clear_route(self, clear_destination=False):
+  def clear_route(self):
     self.route = None
     self.route_geometry = None
     self.step_idx = None
-    self.recompute_backoff = 0
-    if clear_destination:
-      self.nav_destination = None
+    self.nav_destination = None
 
   def should_recompute(self):
     if self.step_idx is None or self.route is None:
