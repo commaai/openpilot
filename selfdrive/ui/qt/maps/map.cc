@@ -68,10 +68,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   overlay_layout->addSpacing(UI_BORDER_SIZE);
   overlay_layout->addWidget(map_eta);
 
-  auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position.has_value()) {
-    last_position = *last_gps_position;
-  }
+  updateLastGPSLocation();
 
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
@@ -278,6 +275,13 @@ void MapWindow::updateState(const UIState &s) {
   }
 }
 
+void MapWindow::updateLastGPSLocation(){
+  auto last_gps_position = coordinate_from_param("LastGPSPosition");
+  if (last_gps_position.has_value()) {
+    last_position = *last_gps_position;
+  }
+}
+
 void MapWindow::setError(const QString &err_str) {
   if (err_str != error->text()) {
     error->setText(err_str);
@@ -399,6 +403,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
 }
 
 void MapWindow::offroadTransition(bool offroad) {
+  updateLastGPSLocation();
   if (offroad) {
     clearRoute();
     uiState()->scene.navigate_on_openpilot = false;

@@ -80,6 +80,7 @@ private:
 
   void clearRoute();
   void updateDestinationMarker();
+  void updateLastGPSLocation();
   uint64_t route_rcv_frame = 0;
 
 private slots:
