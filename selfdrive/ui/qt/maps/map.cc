@@ -117,22 +117,18 @@ void MapWindow::initLayers() {
     qDebug() << "Initializing pinLayer";
     m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
 
-    QVariantMap transition;
-    transition["duration"] = 0;  // ms
-
     QVariantMap pin;
     pin["id"] = "pinLayer";
     pin["type"] = "symbol";
     pin["source"] = "pinSource";
     m_map->addLayer(pin);
+
+    QVariantMap transition;
+    transition["duration"] = 0;  // ms
     m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setTransitionOptions(0, 0);
-
-
     m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
@@ -297,7 +293,6 @@ void MapWindow::initializeGL() {
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
-  m_map->setTransitionOptions(0, 0);
 
 //  QVariantList updatedFilter;
 //updatedFilter << "==" << QVariant::fromValue(QStringLiteral("isVisible")) << false;
@@ -410,7 +405,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-
+  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
@@ -423,12 +418,7 @@ void MapWindow::updateDestinationMarker() {
       m_map->updateSource("pinSource", pinSource);
       updated = true;
     }
-//    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
-    m_map->setLayoutProperty("pinLayer", "visibility", "visible");
-  } else {
-//     m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
-     m_map->setLayoutProperty("pinLayer", "visibility", "none");
-//     m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
   }
 }
 
