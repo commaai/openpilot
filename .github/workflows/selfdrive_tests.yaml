@@ -167,7 +167,7 @@ jobs:
     name: docker push
     runs-on: ubuntu-20.04
     #if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
+    #needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
     - uses: actions/checkout@v3
       with:
