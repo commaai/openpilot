@@ -3424,6 +3424,31 @@ docs = ["sphinx (>=1.6.5)", "sphinx_rtd_theme"]
 tests = ["hypothesis (>=3.27.0)", "pytest (>=3.2.1,!=3.3.0)"]
 
 [[package]]
+name = "PyNvCodec"
+version = "2.0"
+description = "Video Processing Library with full NVENC/NVDEC hardware acceleration"
+category = "dev"
+optional = false
+python-versions = "*"
+develop = false
+
+[package.dependencies]
+numpy = "*"
+
+[package.extras]
+dev = ["PytorchNvCodec @ file:///home/batman/.pyenv/versions/3.8.10/src/VideoProcessingFramework/src/PytorchNvCodec", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision"]
+samples = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision", "tqdm"]
+tensorrt = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "torch", "torchvision"]
+tests = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "opencv-python", "pycuda", "pyopengl", "torch", "torchvision"]
+torch = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "opencv-python", "torch", "torchvision"]
+
+[package.source]
+type = "git"
+url = "git@github.com:NVIDIA/VideoProcessingFramework.git"
+reference = "3347e55"
+resolved_reference = "3347e555ed795ba7de98b4e6b9bf7fe441784663"
+
+[[package]]
 name = "pyopencl"
 version = "2022.3.1"
 description = "Python wrapper for OpenCL"
@@ -5094,7 +5119,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "52967a1276ab8589803d059de22f038d388ef9fc3d3a6d25778571ce9b006c99"
+content-hash = "2da7da7005c72a145aa954dc76fe36a6d97bea7b8cf32a792c7ac7f46546ec0a"
 
 [metadata.files]
 adal = [
@@ -8209,6 +8234,7 @@ pynacl = [
     {file = "PyNaCl-1.5.0-cp36-abi3-win_amd64.whl", hash = "sha256:20f42270d27e1b6a29f54032090b972d97f0a1b0948cc52392041ef7831fee93"},
     {file = "PyNaCl-1.5.0.tar.gz", hash = "sha256:8ac7448f09ab85811607bdd21ec2464495ac8b7c66d146bf545b0f08fb9220ba"},
 ]
+PyNvCodec = []
 pyopencl = [
     {file = "pyopencl-2022.3.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:9f9b3dea6dde223486fc397b0722aa7fd44f41deb8c8cd2ae8f62238bb24aee2"},
     {file = "pyopencl-2022.3.1-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5cd62d230f94ffa6e5c3557f783878985c6945a67276d853fd5839a1ce0ecc9a"},

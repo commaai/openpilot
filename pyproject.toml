@@ -177,6 +177,7 @@ osmnx = "==1.2.2"
 tritonclient = {version = "2.28.0", extras = ["http"]}
 transformers = "^4.29.2"
 timm = "==0.9.2"
+PyNvCodec = { git = "git@github.com:NVIDIA/VideoProcessingFramework.git", rev = "3347e55" }
 
 
 [build-system]
