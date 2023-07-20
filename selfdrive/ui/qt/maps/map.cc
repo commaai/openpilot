@@ -218,7 +218,7 @@ void MapWindow::updateState(const UIState &s) {
   } else {
     setError("");
   }
-//  qDebug() << "routing_problem:" << routing_problem;
+  qDebug() << "routing_problem:" << routing_problem << "locationd_valid:" << locationd_valid;;
 
   if (locationd_valid) {
     // Update current location marker
