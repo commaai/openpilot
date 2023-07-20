@@ -3436,7 +3436,7 @@ develop = false
 numpy = "*"
 
 [package.extras]
-dev = ["PytorchNvCodec @ file:///home/batman/.pyenv/versions/3.8.10/src/VideoProcessingFramework/src/PytorchNvCodec", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision"]
+dev = ["PytorchNvCodec @ file:///home/batman/.cache/pypoetry/virtualenvs/openpilot-UOXNx3lQ-py3.11/src/VideoProcessingFramework/src/PytorchNvCodec", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision"]
 samples = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision", "tqdm"]
 tensorrt = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "torch", "torchvision"]
 tests = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "opencv-python", "pycuda", "pyopengl", "torch", "torchvision"]
@@ -3444,7 +3444,7 @@ torch = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramewor
 
 [package.source]
 type = "git"
-url = "git@github.com:NVIDIA/VideoProcessingFramework.git"
+url = "https://github.com/NVIDIA/VideoProcessingFramework.git"
 reference = "3347e55"
 resolved_reference = "3347e555ed795ba7de98b4e6b9bf7fe441784663"
 
@@ -5119,7 +5119,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "2da7da7005c72a145aa954dc76fe36a6d97bea7b8cf32a792c7ac7f46546ec0a"
+content-hash = "3bfa942af0545da3b48a866dbeecd6895e8b5619895a95b8b2308bcbf846210e"
 
 [metadata.files]
 adal = [
@@ -6805,7 +6805,6 @@ json5 = [
 ]
 jsonpointer = [
     {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
-    {file = "jsonpointer-2.4.tar.gz", hash = "sha256:585cee82b70211fa9e6043b7bb89db6e1aa49524340dde8ad6b63206ea689d88"},
 ]
 jsonschema = [
     {file = "jsonschema-4.18.4-py3-none-any.whl", hash = "sha256:971be834317c22daaa9132340a51c01b50910724082c2c1a2ac87eeec153a3fe"},
