@@ -8,7 +8,7 @@ from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
-from selfdrive.modeld.models.driving import ModelState, model_init, model_eval_frame, MODEL_FREQ, DESIRE_LEN, NAV_FEATURE_LEN
+from selfdrive.modeld.models.driving import ModelState, MODEL_FREQ, DESIRE_LEN, NAV_FEATURE_LEN
 from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
 from system.hardware import PC
 
@@ -88,6 +88,9 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
       model_transform_extra = update_calibration(device_from_calib_euler, True, True)
       live_calib_seen = True
 
+    traffic_convention = np.zeros(2)
+    traffic_convention[int(is_rhd)] = 1
+
     vec_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
     if desire >= 0 and desire < DESIRE_LEN:
       vec_desire[desire] = 1
@@ -105,8 +108,14 @@ def run_model(model:ModelState, vipc_client_main:VisionIpcClient, vipc_client_ex
     if prepare_only:
       logging.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
+    inputs = {
+      'desire_pulse': vec_desire,
+      'traffic_convention': traffic_convention,
+      'driving_style': driving_style,
+      'nav_features': nav_features}
+
     mt1 = time.perf_counter()
-    model_output = model_eval_frame(model, buf_main, buf_extra, model_transform_main, model_transform_extra, vec_desire, is_rhd, driving_style, nav_features, prepare_only)
+    model_output = model.eval(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
@@ -127,11 +136,8 @@ if __name__ == '__main__':
     set_realtime_priority(54)
     set_core_affinity([7])
 
-  # cl init
   cl_context = CLContext()
-
-  # init the models
-  model = model_init(cl_context)
+  model = ModelState(cl_context)
   logging.warning("models loaded, modeld starting")
 
   main_wide_camera = False
