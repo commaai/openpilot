@@ -43,18 +43,13 @@ class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
   def do_GET(self):
     url = f'https://api.mapbox.com{self.path}'
 
-    #token_regex = r'access_token=([\d\w.]*)'
-    #url = re.sub(token_regex, "access_token=invalid_token", url)
-
     headers = dict(self.headers)
     headers["Host"] = "api.mapbox.com"
 
     r = requests.get(url, headers=headers, timeout=5)
 
     self.send_response(r.status_code)
-    
     self.end_headers()
-
     self.wfile.write(r.content)
   
   def log_message(self, *args: Any) -> None:
@@ -94,8 +89,6 @@ class TestMapRenderer(unittest.TestCase):
 
     if os.path.exists(CACHE_PATH):
       os.remove(CACHE_PATH)
-    
-    self.location = LOCATION1
   
   def tearDown(self):
     managed_processes['mapsd'].stop()
@@ -140,7 +133,7 @@ class TestMapRenderer(unittest.TestCase):
       # give a few frames to go valid
       if frames_since_test_start < 5:
         continue
-        
+
       # check output
       assert self.sm.valid['mapRenderState'] == expect_valid
       assert self.sm['mapRenderState'].frameId == (prev_frame_id + 1)
@@ -158,11 +151,9 @@ class TestMapRenderer(unittest.TestCase):
 
   def disable_internet(self):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = False
-    print("internet disabled")
   
   def enable_internet(self):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
-    print("internet enabled")
 
   def test_with_internet(self):
     self.location = LOCATION1
@@ -196,4 +187,14 @@ class TestMapRenderer(unittest.TestCase):
     self._run_test(True)
 
 if __name__ == "__main__":
+
+  TEST_MANY = False
+
+  if TEST_MANY:
+    suite = unittest.TestSuite()
+    for i in range(100):
+      suite.addTest(TestMapRenderer("test_recover_from_no_internet"))
+    runner = unittest.TextTestRunner()
+    runner.run(suite)
+  
   unittest.main()
