@@ -307,17 +307,12 @@ void MapWindow::initializeGL() {
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
-//  m_map->setTransitionOptions(0, 0);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
-      double ts = millis_since_boot();
-      qDebug() << fixed << qSetRealNumberPrecision(20) << "WARNINGWARNING: style finished loading" << ts;
       m_map->setTransitionOptions(0, 0);
     }
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
-      double ts = millis_since_boot();
-      qDebug() << fixed << qSetRealNumberPrecision(20) << "WARNINGWARNING: MAP finished loading" << ts;
       loaded_once = true;
     }
   });
@@ -423,8 +418,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-//  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
-//  m_map->setPaintProperty("pinLayer", "visibility", "none");
+  m_map->setPaintProperty("pinLayer", "visibility", "none");
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
@@ -435,10 +429,6 @@ void MapWindow::updateDestinationMarker() {
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
     m_map->setPaintProperty("pinLayer", "visibility", "visible");
-//    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
-    qDebug() << "setting vis: true";
-  } else {
-    m_map->setPaintProperty("pinLayer", "visibility", "none");
   }
 }
 
