@@ -126,6 +126,7 @@ void MapWindow::initLayers() {
     QVariantMap transition;
     transition["duration"] = 0;  // ms
     m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
@@ -265,21 +266,6 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-//  auto nav_dest = coordinate_from_param("NavDestination");
-//  if (nav_dest.has_value()) {
-//    auto point = coordinate_to_collection(*nav_dest);
-//    QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
-//    QVariantMap pinSource;
-//    pinSource["type"] = "geojson";
-//    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
-//    m_map->updateSource("pinSource", pinSource);
-//    m_map->setPaintProperty("pinLayer", "visibility", "visible");
-////    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
-//    qDebug() << "setting vis: true";
-//  } else {
-//    m_map->setPaintProperty("pinLayer", "visibility", "none");
-//  }
-
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
@@ -318,7 +304,6 @@ void MapWindow::initializeGL() {
     m_map->setCoordinateZoom(QMapbox::Coordinate(64.31990695292795, -149.79038934046247), MIN_ZOOM);
   }
 
-  qDebug() << fixed << qSetRealNumberPrecision(20);
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
