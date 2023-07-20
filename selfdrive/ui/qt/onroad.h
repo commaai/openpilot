@@ -60,8 +60,7 @@ private:
   void changeMode();
 
   Params params;
-  QPixmap engage_img;
-//  QPixmap experimental_img;
+  QPixmap settings_img;
   bool experimental_mode;
   bool engageable;
 };

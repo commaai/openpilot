@@ -226,12 +226,7 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : experimental_mode(false)
   setFixedSize(btn_size, btn_size);
 
   params = Params();
-//  engage_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
-//  engage_img = loadPixmap("../assets/navigation/nav-settings-square-padding.png", {img_size, img_size});
-//  engage_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
-//  engage_img = loadPixmap("../assets/navigation/nav-settings-square.png", {img_size, img_size});
-  engage_img = loadPixmap("../assets/navigation/nav-settings-square-smaller.png", {img_size, img_size});
-//  experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
+  settings_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
 }
 
@@ -264,7 +259,7 @@ void MapSettingsButton::paintEvent(QPaintEvent *event) {
   p.setBrush(QColor(0, 0, 0, 166));
   p.drawEllipse(center, btn_size / 2, btn_size / 2);
   p.setOpacity((isDown() || !engageable) ? 0.6 : 1.0);
-  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, engage_img);
+  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, settings_img);
 }
 
 
