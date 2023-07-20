@@ -256,15 +256,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
   map_settings_btn = new MapSettingsButton(this);
-  // TODO: connect to clicked!
   QObject::connect(map_settings_btn, &MapSettingsButton::clicked, this, &AnnotatedCameraWidget::mapSettingsRequested);
-//  QObject::connect(map_settings_btn, &MapSettingsButton::mapSettingsRequested, [=]() {
-//    qDebug() << "clicked!";
-//    if (map) {
-//      map->mapSettingsRequested();
-//    }
-//  });
-//  QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
