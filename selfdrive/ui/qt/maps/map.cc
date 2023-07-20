@@ -399,10 +399,10 @@ void MapWindow::updateDestinationMarker() {
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
     auto point = coordinate_to_collection(*nav_dest);
-    QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
+    QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
     QVariantMap pinSource;
     pinSource["type"] = "geojson";
-    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
   }
 }
