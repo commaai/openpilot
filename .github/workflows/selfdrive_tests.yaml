@@ -178,7 +178,7 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:latest
-        docker tag $GITHUB_SHA $DOCKER_REGISTRY/$BASE_IMAGE:latest
+        docker tag $DOCKER_REGISTRY/$BASE_IMAGE:latest $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
         docker push $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA
     - name: Build CL Docker image
       run: eval "$BUILD_CL"
@@ -186,7 +186,7 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
-        docker tag $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest
+        docker tag $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
         docker push $DOCKER_REGISTRY/$CL_BASE_IMAGE:$GITHUB_SHA
 
   static_analysis:

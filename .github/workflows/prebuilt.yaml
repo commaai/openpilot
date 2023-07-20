@@ -40,7 +40,7 @@ jobs:
         $DOCKER_LOGIN
         echo push
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
-        echo "running: docker tag $GITHUB_SHA $DOCKER_REGISTRY/$IMAGE_NAME:latest"
-        docker tag $GITHUB_SHA $DOCKER_REGISTRY/$IMAGE_NAME:latest
+        echo "running: docker tag $DOCKER_REGISTRY/$IMAGE_NAME:latest $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA"
+        docker tag $DOCKER_REGISTRY/$IMAGE_NAME:latest $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
         echo push
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
