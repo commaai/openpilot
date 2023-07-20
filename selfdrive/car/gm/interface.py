@@ -19,6 +19,12 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
+NON_LINEAR_TORQUE_PARAMS = {
+  CAR.BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
+  CAR.ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772]
+}
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -48,16 +54,14 @@ class CarInterface(CarInterfaceBase):
     # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
     # This has big effect on the stability about 0 (noise when going straight)
     # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
-    if self.CP.carFingerprint == CAR.BOLT_EUV:
-      a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
-    elif self.CP.carFingerprint == CAR.ACADIA:
-      a, b, c, _ = [4.78003305, 1.0, 0.3122, 0.05591772]
-
+    non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+    assert non_linear_torque_params, "The params are not defined"
+    a, b, c, _ = non_linear_torque_params
     steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
     return float(steer_torque) + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint in [CAR.BOLT_EUV, CAR.ACADIA]:
+    if self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
       return self.torque_from_lateral_accel_siglin
     else:
       return self.torque_from_lateral_accel_linear
