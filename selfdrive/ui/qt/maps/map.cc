@@ -121,11 +121,6 @@ void MapWindow::initLayers() {
     pin["type"] = "symbol";
     pin["source"] = "pinSource";
     m_map->addLayer(pin);
-
-    // FIXME: solve, workaround to remove animation on visibility property
-    QVariantMap transition;
-    transition["duration"] = 0;  // ms
-    m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
     m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
