@@ -3,6 +3,9 @@ import os
 from typing import Any
 import unittest
 import time
+import requests
+import threading
+import http.server
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
@@ -17,10 +20,6 @@ def gen_llk(location):
   msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
   msg.liveLocationKalman.status = 'valid'
   return msg
-
-import requests
-import threading
-import http.server
 
 
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
