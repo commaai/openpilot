@@ -256,8 +256,7 @@ void MapWindow::updateState(const UIState &s) {
       // an invalid navInstruction packet with a nav destination is only possible if:
       // - route response is empty
       // - API exception/no internet
-      auto nav_dest = coordinate_from_param("NavDestination");
-      routing_problem = nav_dest.has_value();
+      routing_problem = coordinate_from_param("NavDestination").has_value();
       clearRoute();
     }
 
