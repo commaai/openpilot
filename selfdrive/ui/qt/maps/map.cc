@@ -130,7 +130,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
+    m_map->setLayoutProperty("pinLayer", "icon-anchor", "top");
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
