@@ -4,7 +4,7 @@ from typing import Dict, List, Union
 
 from cereal import car
 from panda.python import uds
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
@@ -19,15 +19,19 @@ class CarControllerParams:
     self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
     self.STEER_DRIVER_MULTIPLIER = 50  # weight driver torque heavily
     self.STEER_DRIVER_FACTOR = 1       # from dbc
-
-    if CP.carFingerprint in GLOBAL_GEN2:
-      self.STEER_MAX = 1000
-      self.STEER_DELTA_UP = 40
-      self.STEER_DELTA_DOWN = 40
-    elif CP.carFingerprint == CAR.IMPREZA_2020:
-      self.STEER_MAX = 1439
+    
+    if CP.carFingerprint in ALT_LKAS_MSG:
+      self.ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[0.], angle_v=[1.])
+      self.ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[0.], angle_v=[1.])
     else:
-      self.STEER_MAX = 2047
+      if CP.carFingerprint in GLOBAL_GEN2:
+        self.STEER_MAX = 1000
+        self.STEER_DELTA_UP = 40
+        self.STEER_DELTA_DOWN = 40
+      elif CP.carFingerprint == CAR.IMPREZA_2020:
+        self.STEER_MAX = 1439
+      else:
+        self.STEER_MAX = 2047
 
 
 class SubaruFlags(IntFlag):
