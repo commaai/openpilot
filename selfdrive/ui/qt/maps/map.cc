@@ -123,13 +123,14 @@ void MapWindow::initLayers() {
     pin["source"] = "pinSource";
     m_map->addLayer(pin);
 
+    // FIXME: solve, workaround to remove animation on visibility property
     QVariantMap transition;
     transition["duration"] = 0;  // ms
+    m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
     m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
     // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
   }
@@ -293,11 +294,6 @@ void MapWindow::initializeGL() {
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
-
-//  QVariantList updatedFilter;
-//updatedFilter << "==" << QVariant::fromValue(QStringLiteral("isVisible")) << false;
-
-//m_map->setFilter("pinLayer", updatedFilter);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
