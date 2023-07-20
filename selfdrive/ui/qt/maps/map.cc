@@ -126,6 +126,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
     m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+    // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
   }
   if (!m_map->layerExists("carPosLayer")) {
