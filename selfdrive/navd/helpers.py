@@ -136,7 +136,6 @@ def field_valid(dat: dict, field: str) -> bool:
 
 
 def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
-  # print('banners', banners)
   if not len(banners):
     return
 
@@ -152,7 +151,6 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
 
   # Primary
   p = current_banner['primary']
-  # print(p)
   if field_valid(p, 'text'):
     instruction.maneuverPrimaryText = p['text']
   if field_valid(p, 'type'):
