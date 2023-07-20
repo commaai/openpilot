@@ -59,7 +59,6 @@ signals:
 
 private:
   void paintEvent(QPaintEvent *event) override;
-  void changeMode();
 
   QPixmap settings_img;
 };

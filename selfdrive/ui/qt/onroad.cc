@@ -20,12 +20,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   nvg = new AnnotatedCameraWidget(VISION_STREAM_ROAD, this);
-  QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, [=]() {
-    qDebug() << "double clicked!";
-//    if (map) {
-//      map->mapSettingsRequested();
-//    }
-  });
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -233,16 +227,6 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
 
   settings_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
-  QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
-}
-
-void MapSettingsButton::changeMode() {
-  emit mapSettingsRequested();
-//  const auto cp = (*uiState()->sm)["carParams"].getCarParams();
-//  bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
-//  if (can_change) {
-//    params.putBool("ExperimentalMode", !experimental_mode);
-//  }
 }
 
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
@@ -273,7 +257,7 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 
   map_settings_btn = new MapSettingsButton(this);
   // TODO: connect to clicked!
-  QObject::connect(map_settings_btn, &MapSettingsButton::mapSettingsRequested, this, &AnnotatedCameraWidget::mapSettingsRequested);
+  QObject::connect(map_settings_btn, &MapSettingsButton::clicked, this, &AnnotatedCameraWidget::mapSettingsRequested);
 //  QObject::connect(map_settings_btn, &MapSettingsButton::mapSettingsRequested, [=]() {
 //    qDebug() << "clicked!";
 //    if (map) {
