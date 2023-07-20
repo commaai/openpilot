@@ -11,7 +11,7 @@ env:
 
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: |
-      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:$GITHUB_SHA -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+      DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
 jobs:
   build_prebuilt:
@@ -39,4 +39,5 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+        docker tag $GITHUB_SHA $DOCKER_REGISTRY/$IMAGE_NAME:latest
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
