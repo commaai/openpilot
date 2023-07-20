@@ -219,6 +219,7 @@ void MapWindow::updateState(const UIState &s) {
   } else {
     setError("");
   }
+//  qDebug() << "routing_problem:" << routing_problem;
 
 //  setError(locationd_valid ? "" : tr("Waiting for GPS"));
   if (locationd_valid) {
@@ -245,6 +246,11 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navInstruction")) {
+    auto route = sm["navRoute"].getNavRoute();
+    if ((route.getCoordinates().size() != 0) != (sm.valid("navInstruction"))) {
+      qDebug() << "WARNING: coords don't match navInstruction" << route.getCoordinates().size() << sm.valid("navInstruction");
+    }
+
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
@@ -272,6 +278,10 @@ void MapWindow::updateState(const UIState &s) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
     qDebug() << "coords size:" << route.getCoordinates().size();
+//    if ((route.getCoordinates().size() == 0) != (sm.valid("navInstruction"))) {
+//      qDebug() << "WARNING: coords don't match navInstruction" << route.getCoordinates().size() << sm.valid("navInstruction");
+//    }
+//    assert((route.getCoordinates().size() == 0) == (sm.valid("navInstruction")));
 
     // a navRoute packet that has no coordinates with a nav destination is unexpected
     // todo: this is sent on reroute only. if no internet, clear_route will be run, causing step_idx to be set to None,
