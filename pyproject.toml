@@ -95,7 +95,7 @@ pyprof2calltree = "^1.4.5"
 pytest = "^7.1.2"
 pytest-xdist = "^2.5.0"
 reverse_geocoder = "^1.5.1"
-scipy = "^1.8.1"
+scipy = "==1.9.3"  # pinned until xx refs changes can be checked
 sphinx = "^5.0.2"
 sphinx-rtd-theme = "^1.0.0"
 sphinx-sitemap = "^2.2.0"
