@@ -403,6 +403,10 @@
         <source>Waiting for GPS</source>
         <translation>Esperando por GPS</translation>
     </message>
+    <message>
+        <source>Waiting for internet</source>
+        <translation type="unfinished">Esperando pela internet</translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
@@ -1082,6 +1086,10 @@ Isso pode levar até um minuto.</translation>
         <translation>A visualização da direção fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será exibido no canto superior direito.</translation>
     </message>
     <message>
+        <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
+        <translation>O modo Experimental está atualmente indisponível para este carro já que o ACC original do carro é usado para controle longitudinal.</translation>
+    </message>
+    <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
     </message>
@@ -1118,24 +1126,20 @@ Isso pode levar até um minuto.</translation>
         <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
     </message>
     <message>
-        <source>End-to-End Longitudinal Control is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with End-to-End Longitudinal Control, on non-release branches.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to use End-to-End Longitudinal Control.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>Uma versão embrionária do controle longitudinal openpilot pode ser testada em conjunto com o modo Experimental, em branches que não sejam de produção.</translation>
     </message>
     <message>
         <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Navegação no openpilot</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>Quando a navegação tem um destino, o openpilot insere as informações do mapa no modelo. Isso geralmente melhora o comportamento e permite que o openpilot mantenha a esquerda ou a direita adequadamente nas bifurcações/saídas e entre nas curvas. O comportamento de mudança de faixa permanece inalterado e ainda é ativado pelo motorista. Este é um recurso de qualidade alfa; erros devem ser esperados.</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>Habilite o controle longitudinal (embrionário) openpilot para permitir o modo Experimental.</translation>
     </message>
 </context>
 <context>
