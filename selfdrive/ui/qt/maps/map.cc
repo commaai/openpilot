@@ -113,6 +113,21 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
+  if (!m_map->layerExists("pinLayer")) {
+    qDebug() << "Initializing pinLayer";
+    m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
+
+    QVariantMap pin;
+    pin["id"] = "pinLayer";
+    pin["type"] = "symbol";
+    pin["source"] = "pinSource";
+    m_map->addLayer(pin);
+    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
+    m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
+    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
+    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
+  }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
     m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
@@ -128,21 +143,6 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
-  }
-  if (!m_map->layerExists("pinLayer")) {
-    qDebug() << "Initializing pinLayer";
-    m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
-
-    QVariantMap pin;
-    pin["id"] = "pinLayer";
-    pin["type"] = "symbol";
-    pin["source"] = "pinSource";
-    m_map->addLayer(pin);
-    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
-    m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
-    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
-    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
   }
 }
 
