@@ -20,6 +20,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   nvg = new AnnotatedCameraWidget(VISION_STREAM_ROAD, this);
+  QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, [=]() {
+    qDebug() << "double clicked!";
+//    if (map) {
+//      map->mapSettingsRequested();
+//    }
+  });
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -92,6 +98,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       map = m;
 
       QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
+      QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, m, &MapPanel::mapSettingsRequested);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
@@ -231,11 +238,12 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : experimental_mode(false)
 }
 
 void MapSettingsButton::changeMode() {
-  const auto cp = (*uiState()->sm)["carParams"].getCarParams();
-  bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
-  if (can_change) {
-    params.putBool("ExperimentalMode", !experimental_mode);
-  }
+  emit mapSettingsRequested();
+//  const auto cp = (*uiState()->sm)["carParams"].getCarParams();
+//  bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
+//  if (can_change) {
+//    params.putBool("ExperimentalMode", !experimental_mode);
+//  }
 }
 
 void MapSettingsButton::updateState(const UIState &s) {
@@ -275,6 +283,15 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
   map_settings_btn = new MapSettingsButton(this);
+  // TODO: connect to clicked!
+  QObject::connect(map_settings_btn, &MapSettingsButton::mapSettingsRequested, this, &AnnotatedCameraWidget::mapSettingsRequested);
+//  QObject::connect(map_settings_btn, &MapSettingsButton::mapSettingsRequested, [=]() {
+//    qDebug() << "clicked!";
+//    if (map) {
+//      map->mapSettingsRequested();
+//    }
+//  });
+//  QObject::connect(this, &QPushButton::clicked, this, &MapSettingsButton::changeMode);
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});

@@ -55,6 +55,9 @@ public:
   explicit MapSettingsButton(QWidget *parent = 0);
   void updateState(const UIState &s);
 
+signals:
+  void mapSettingsRequested();
+
 private:
   void paintEvent(QPaintEvent *event) override;
   void changeMode();
@@ -85,6 +88,9 @@ class AnnotatedCameraWidget : public CameraWidget {
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
+
+signals:
+  void mapSettingsRequested();
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);

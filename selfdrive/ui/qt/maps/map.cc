@@ -24,6 +24,7 @@ const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   map_overlay = new QWidget (this);
   map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);

@@ -33,3 +33,9 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   });
   content_stack->addWidget(settings);
 }
+
+void MapPanel::mapSettingsRequested() {
+  emit mapPanelRequested();
+  setVisible(true);
+  content_stack->setCurrentIndex(1);
+}
