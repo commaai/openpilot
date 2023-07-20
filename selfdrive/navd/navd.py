@@ -66,6 +66,7 @@ class RouteEngine:
     self.sm.update(0)
 
     if self.sm.updated["managerState"]:
+      self.send_route()
       ui_pid = [p.pid for p in self.sm["managerState"].processes if p.name == "ui" and p.running]
       if ui_pid:
         if self.ui_pid and self.ui_pid != ui_pid[0]:
@@ -115,7 +116,7 @@ class RouteEngine:
 
     if self.recompute_countdown == 0 and should_recompute:
       self.recompute_countdown = 2**self.recompute_backoff
-      self.recompute_backoff = min(6, self.recompute_backoff + 1)
+      self.recompute_backoff = 0  # min(6, self.recompute_backoff + 1)
       self.calculate_route(new_destination)
       self.reroute_counter = 0
     else:

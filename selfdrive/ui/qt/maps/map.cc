@@ -16,7 +16,7 @@ const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
 const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
-const float MAX_PITCH = 50;
+//const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
@@ -126,12 +126,44 @@ void MapWindow::initLayers() {
     QVariantMap transition;
     transition["duration"] = 0;  // ms
     m_map->setPaintProperty("pinLayer", "icon-opacity-transition", transition);
-    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
+    m_map->setLayoutProperty("pinLayer", "icon-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "text-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "text-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "raster-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "raster-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "background-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "background-opacity-transition", transition);
+
+    m_map->setLayoutProperty("pinLayer", "fill-opacity-transition", transition);
+
+    m_map->setLayoutProperty("pinLayer", "line-opacity-transition", transition);
+
+    m_map->setLayoutProperty("pinLayer", "icon-opacity-transition", transition);
+
+    m_map->setLayoutProperty("pinLayer", "text-opacity-transition", transition);
+
+    m_map->setLayoutProperty("pinLayer", "raster-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "circle-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "circle-stroke-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "fill-extrusion-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "heatmap-opacity-transition", transition);
+    m_map->setLayoutProperty("pinLayer", "sky-opacity-transition", transition);
+
+    m_map->setPaintProperty("pinLayer", "raster-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "circle-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "circle-stroke-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "fill-extrusion-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "heatmap-opacity-transition", transition);
+    m_map->setPaintProperty("pinLayer", "sky-opacity-transition", transition);
+
+    m_map->setPaintProperty("pinLayer", "raster-fade-duration", 0);
+    m_map->setLayoutProperty("pinLayer", "raster-fade-duration", 0);
+//    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
     m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
-    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
-    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
-    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
-    m_map->setLayoutProperty("pinLayer", "icon-anchor", "bottom");
+//    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
+//    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+//    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
+//    m_map->setLayoutProperty("pinLayer", "icon-anchor", "bottom");
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -254,7 +286,7 @@ void MapWindow::updateState(const UIState &s) {
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
 
       if (locationd_valid) {
-        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
+//        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
         map_instructions->updateInstructions(i);
       }
     } else {
@@ -265,6 +297,21 @@ void MapWindow::updateState(const UIState &s) {
       settings_btn->setIcon(map_eta->isVisible() ? settings_icon : directions_icon);
     }
   }
+
+//  auto nav_dest = coordinate_from_param("NavDestination");
+//  if (nav_dest.has_value()) {
+//    auto point = coordinate_to_collection(*nav_dest);
+//    QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
+//    QVariantMap pinSource;
+//    pinSource["type"] = "geojson";
+//    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+//    m_map->updateSource("pinSource", pinSource);
+//    m_map->setPaintProperty("pinLayer", "visibility", "visible");
+////    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+//    qDebug() << "setting vis: true";
+//  } else {
+//    m_map->setPaintProperty("pinLayer", "visibility", "none");
+//  }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
@@ -304,12 +351,21 @@ void MapWindow::initializeGL() {
     m_map->setCoordinateZoom(QMapbox::Coordinate(64.31990695292795, -149.79038934046247), MIN_ZOOM);
   }
 
+  qDebug() << fixed << qSetRealNumberPrecision(20);
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
+//  m_map->setTransitionOptions(0, 0);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+      double ts = millis_since_boot();
+      qDebug() << fixed << qSetRealNumberPrecision(20) << "WARNINGWARNING: style finished loading" << ts;
+      m_map->setTransitionOptions(0, 0);
+    }
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
+      double ts = millis_since_boot();
+      qDebug() << fixed << qSetRealNumberPrecision(20) << "WARNINGWARNING: MAP finished loading" << ts;
       loaded_once = true;
     }
   });
@@ -415,7 +471,8 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
+//  m_map->setPaintProperty("pinLayer", "icon-opacity", 0);
+//  m_map->setPaintProperty("pinLayer", "visibility", "none");
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
@@ -425,7 +482,11 @@ void MapWindow::updateDestinationMarker() {
     pinSource["type"] = "geojson";
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
-    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+    m_map->setPaintProperty("pinLayer", "visibility", "visible");
+//    m_map->setPaintProperty("pinLayer", "icon-opacity", 1);
+    qDebug() << "setting vis: true";
+  } else {
+    m_map->setPaintProperty("pinLayer", "visibility", "none");
   }
 }
 
