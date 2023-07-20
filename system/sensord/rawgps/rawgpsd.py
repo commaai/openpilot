@@ -88,12 +88,13 @@ measurementStatusGlonassFields = {
 
 
 def try_setup_logs(diag, log_types):
-  for _ in range(3):
+  for _ in range(10):
     try:
       setup_logs(diag, log_types)
       break
     except Exception:
       cloudlog.exception("setup logs failed, trying again")
+      time.sleep(1.0)
   else:
     raise Exception(f"setup logs failed, {log_types=}")
 
