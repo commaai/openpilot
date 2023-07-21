@@ -8,7 +8,8 @@ Version 0.9.4 (2023-XX-XX)
   * Navigation settings moved to home screen and map
 * UI alerts rework
   * Border color always shows engagement status. Blue means disengaged, green means engaged, and grey means engaged with human overriding
-  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert 
+  * Alerts are shown inside the border. Black/grey means info, orange means warning, and red means critical alert
+* Bookmarked segments are preserved on the device's storage
 * Ford Focus 2018 support
 * Kia Carnival 2023 support thanks to sunnyhaibin!
 

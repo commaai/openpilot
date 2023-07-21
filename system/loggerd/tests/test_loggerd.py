@@ -8,6 +8,7 @@ import time
 import unittest
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict, List
 
 import cereal.messaging as messaging
 from cereal import log
@@ -16,6 +17,8 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
 from system.loggerd.config import ROOT
+from system.loggerd.xattr_cache import getxattr
+from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from selfdrive.manager.process_config import managed_processes
 from system.version import get_version
 from tools.lib.logreader import LogReader
@@ -70,6 +73,30 @@ class TestLoggerd(unittest.TestCase):
 
     end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
     self.assertTrue(msgs[-1].sentinel.type == end_type)
+
+  def _publish_random_messages(self, services: List[str]) -> Dict[str, list]:
+    pm = messaging.PubMaster(services)
+
+    managed_processes["loggerd"].start()
+    for s in services:
+      self.assertTrue(pm.wait_for_readers_to_update(s, timeout=5))
+
+    sent_msgs = defaultdict(list)
+    for _ in range(random.randint(2, 10) * 100):
+      for s in services:
+        try:
+          m = messaging.new_message(s)
+        except Exception:
+          m = messaging.new_message(s, random.randint(2, 10))
+        pm.send(s, m)
+        sent_msgs[s].append(m)
+      time.sleep(0.01)
+
+    for s in services:
+      self.assertTrue(pm.wait_for_readers_to_update(s, timeout=5))
+    managed_processes["loggerd"].stop()
+
+    return sent_msgs
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
@@ -193,29 +220,7 @@ class TestLoggerd(unittest.TestCase):
 
     services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
                random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
-
-    pm = messaging.PubMaster(services)
-
-    # sleep enough for the first poll to time out
-    # TODO: fix loggerd bug dropping the msgs from the first poll
-    managed_processes["loggerd"].start()
-    for s in services:
-      while not pm.all_readers_updated(s):
-        time.sleep(0.1)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-      time.sleep(0.01)
-
-    time.sleep(1)
-    managed_processes["loggerd"].stop()
+    sent_msgs = self._publish_random_messages(services)
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
     lr = list(LogReader(qlog_path))
@@ -241,27 +246,7 @@ class TestLoggerd(unittest.TestCase):
 
   def test_rlog(self):
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
-    pm = messaging.PubMaster(services)
-
-    # sleep enough for the first poll to time out
-    # TODO: fix loggerd bug dropping the msgs from the first poll
-    managed_processes["loggerd"].start()
-    for s in services:
-      while not pm.all_readers_updated(s):
-        time.sleep(0.1)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-
-    time.sleep(2)
-    managed_processes["loggerd"].stop()
+    sent_msgs = self._publish_random_messages(services)
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
 
@@ -275,6 +260,20 @@ class TestLoggerd(unittest.TestCase):
       sent = sent_msgs[m.which()].pop(0)
       sent.clear_write_flag()
       self.assertEqual(sent.to_bytes(), m.as_builder().to_bytes())
+
+  def test_preserving_flagged_segments(self):
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
+    self._publish_random_messages(services)
+
+    segment_dir = self._get_latest_log_dir()
+    self.assertEqual(getxattr(segment_dir, PRESERVE_ATTR_NAME), PRESERVE_ATTR_VALUE)
+
+  def test_not_preserving_unflagged_segments(self):
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userFlag"}
+    self._publish_random_messages(services)
+
+    segment_dir = self._get_latest_log_dir()
+    self.assertIsNone(getxattr(segment_dir, PRESERVE_ATTR_NAME))
 
 
 if __name__ == "__main__":
