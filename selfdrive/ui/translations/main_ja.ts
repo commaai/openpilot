@@ -403,8 +403,8 @@
         <translation>GPS信号を探しています</translation>
     </message>
     <message>
-        <source>Waiting for internet</source>
-        <translation type="unfinished">インターネット接続を待機中</translation>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
