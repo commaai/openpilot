@@ -282,7 +282,8 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
+  with car.CarParams.from_bytes(Params().get("CarParams", block=True)) as msg:
+    CP = msg
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
@@ -317,7 +318,7 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
     rk.monitor_time()
 
 
-def main(sm: messaging.SubMaster = None, pm: messaging.PubMaster = None, can_sock: messaging.SubSocket = None):
+def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None, can_sock: messaging.SubSocket = None):
   radard_thread(sm, pm, can_sock)
 
 
