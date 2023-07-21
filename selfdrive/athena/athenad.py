@@ -159,8 +159,7 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
   for thread in threads:
     thread.start()
   try:
-    while not end_event.is_set():
-      time.sleep(0.1)
+    while not end_event.wait(0.1):
       if exit_event is not None and exit_event.is_set():
         end_event.set()
   except (KeyboardInterrupt, SystemExit):
