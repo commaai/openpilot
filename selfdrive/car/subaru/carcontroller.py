@@ -89,7 +89,7 @@ class CarController:
 
     new_actuators = actuators.copy()
     if self.CP.carFingerprint in LKAS_ANGLE:
-      new_actuators.steeringAngleDeg = apply_steer
+      new_actuators.steeringAngleDeg = self.apply_steer_last
     else:
       new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
       new_actuators.steerOutputCan = self.apply_steer_last
