@@ -7,6 +7,10 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+bool locationEqual(const QJsonValue &v1, const QJsonValue &v2) {
+  return v1["latitude"] == v2["latitude"] && v1["longitude"] == v2["longitude"];
+}
+
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   setContentsMargins(0, 0, 0, 0);
 
@@ -82,10 +86,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
 
   setStyleSheet("MapSettings { background-color: #333333; }");
 
-  QObject::connect(NavigationRequest::instance(), &NavigationRequest::locationsUpdated, this, &MapSettings::updateLocations);
+  QObject::connect(NavigationRequest::instance(), &NavigationRequest::locationsUpdated, this, &MapSettings::refresh);
   QObject::connect(NavigationRequest::instance(), &NavigationRequest::nextDestinationUpdated, this, &MapSettings::updateCurrentRoute);
-
-  current_locations = NavigationRequest::instance()->currentLocations();
 }
 
 void MapSettings::mousePressEvent(QMouseEvent *ev) {
@@ -114,11 +116,6 @@ void MapSettings::updateCurrentRoute() {
   if (isVisible()) refresh();
 }
 
-void MapSettings::updateLocations(const QJsonArray &locations) {
-  current_locations = locations;
-  refresh();
-}
-
 void MapSettings::refresh() {
   setUpdatesEnabled(false);
 
@@ -135,7 +132,7 @@ void MapSettings::refresh() {
   work_widget->unset(NAV_FAVORITE_LABEL_WORK);
 
   int n = 0;
-  for (auto location : current_locations) {
+  for (auto location : NavigationRequest::instance()->currentLocations()) {
     DestinationWidget *w = nullptr;
     auto dest = location.toObject();
     if (dest["save_type"].toString() == NAV_TYPE_FAVORITE) {
@@ -145,7 +142,7 @@ void MapSettings::refresh() {
     }
     w = w ? w : get_w(n++);
     w->set(dest, false);
-    w->setVisible(dest != current_destination);
+    w->setVisible(!locationEqual(dest, current_destination));
   }
   for (; n < widgets.size(); ++n) widgets[n]->setVisible(false);
 
@@ -153,8 +150,8 @@ void MapSettings::refresh() {
 }
 
 void MapSettings::navigateTo(const QJsonObject &place) {
-  QJsonDocument doc(place);
-  params.put("NavDestination", doc.toJson().toStdString());
+  params.put("NavDestination", QJsonDocument(place).toJson().toStdString());
+  NavigationRequest::instance()->setLastActivity(place, QDateTime::currentSecsSinceEpoch());
   updateCurrentRoute();
   emit closeSettings();
 }
@@ -289,6 +286,10 @@ NavigationRequest *NavigationRequest::instance() {
 }
 
 NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
+  if (auto v = params.get("NavDestinations"); !v.empty()) {
+    locations = QJsonDocument::fromJson(QString::fromStdString(v).toUtf8()).array();
+  }
+
   if (auto dongle_id = getDongleId()) {
     {
       // Fetch favorite and recent locations
@@ -335,13 +336,49 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
     return;
   }
 
-  // Sort: alphabetical FAVORITES, and then most recent (as returned by API).
+  // set last activity time.
+  auto new_locations = doc.array();
+  for (QJsonValueRef location : new_locations) {
+    qint64 sec = 0;
+    auto it = std::find_if(locations.begin(), locations.end(),
+                           [location](const QJsonValue &l) { return locationEqual(location, l); });
+    if (it != locations.end()) {
+      auto tm = it->toObject().value("time");
+      if (!tm.isUndefined() && !tm.isNull())
+        sec = tm.toVariant().toLongLong();
+    }
+
+    auto obj = location.toObject();
+    obj.insert("time", sec);
+    location = obj;
+  }
+
+  locations = new_locations;
+  sortLocations();
+  emit locationsUpdated();
+}
+
+void NavigationRequest::sortLocations() {
+  // Sort: alphabetical FAVORITES, and then most recent.
   // We don't need to care about the ordering of HOME and WORK. DestinationWidget always displays them at the top.
-  locations = doc.array();
   std::stable_sort(locations.begin(), locations.end(), [](const QJsonValue &a, const QJsonValue &b) {
-    bool has_favorite = a["save_type"] == NAV_TYPE_FAVORITE || b["save_type"] == NAV_TYPE_FAVORITE;
-    return has_favorite && (std::tuple(a["save_type"].toString(), a["place_name"].toString()) <
-                            std::tuple(b["save_type"].toString(), b["place_name"].toString()));
+    if (a["save_type"] == NAV_TYPE_FAVORITE || b["save_type"] == NAV_TYPE_FAVORITE) {
+      return (std::tuple(a["save_type"].toString(), a["place_name"].toString()) <
+              std::tuple(b["save_type"].toString(), b["place_name"].toString()));
+    } else {
+      return a["time"].toVariant().toLongLong() > b["time"].toVariant().toLongLong();
+    }
   });
-  emit locationsUpdated(locations);
+  params.put("NavDestinations", QJsonDocument(locations).toJson().toStdString());
+}
+
+void NavigationRequest::setLastActivity(const QJsonObject &location, qint64 sec) {
+  auto it = std::find_if(locations.begin(), locations.end(),
+                         [&location](const QJsonValue &l) { return locationEqual(location, l); });
+  if (it != locations.end()) {
+    auto obj = it->toObject();
+    obj.insert("time", sec);
+    *it = obj;
+    sortLocations();
+  }
 }

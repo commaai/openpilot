@@ -26,13 +26,15 @@ class NavigationRequest : public QObject {
 public:
   static NavigationRequest *instance();
   QJsonArray currentLocations() const { return locations; };
+  void setLastActivity(const QJsonObject &location, qint64 sec);
 
 signals:
-  void locationsUpdated(const QJsonArray &locations);
+  void locationsUpdated();
   void nextDestinationUpdated();
 
 private:
   NavigationRequest(QObject *parent);
+  void sortLocations();
   void parseLocationsResponse(const QString &response, bool success);
 
   Params params;
@@ -46,7 +48,6 @@ public:
   explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
 
   void navigateTo(const QJsonObject &place);
-  void updateLocations(const QJsonArray &locations);
   void updateCurrentRoute();
 
 private:
@@ -55,7 +56,6 @@ private:
   void refresh();
 
   Params params;
-  QJsonArray current_locations;
   QJsonObject current_destination;
   QVBoxLayout *destinations_layout;
   DestinationWidget *current_widget;
