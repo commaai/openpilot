@@ -48,7 +48,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
                              uiState()->scene.is_metric ? tr("km") : tr("mi")};
 
   eta_doc.setHtml(QString(R"(<body><table><tr><td><b>%1</b></td><td>%2</td>
-                             <td style="padding-left:40px;color:%3;"><b>%4</b></td><td style="padding-right:40px;">%5</td>
+                             <td style="padding-left:40px;color:%3;"><b>%4</b></td><td style="padding-right:40px;color:%3;">%5</td>
                              <td><b>%6</b></td><td>%7</td></tr></body>)")
                       .arg(eta[0], eta[1], color, remaining[0], remaining[1], distance[0], distance[1]));
 
