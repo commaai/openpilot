@@ -103,7 +103,7 @@ class TestAthenadPing(unittest.TestCase):
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self) -> None:
-    self._set_onroad(True)
+    self._set_onroad(False)
     self.assertTimeout(180)
 
   @unittest.skipIf(not TICI, "only run on desk")
