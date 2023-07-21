@@ -2,6 +2,18 @@
 
 set -e
 
+if command -v salt-call >/dev/null /dev/null; then
+  ROLES=$(sudo salt-call --local grains.get roles 2>/dev/null)
+  if ! echo "$ROLES" | grep -q -e "- "; then # yaml list check
+    echo "ERROR: FAILED TO READ ROLES"
+    exit 1
+  fi
+  if echo "$ROLES" | grep -q -e "- server"; then
+    echo "ERROR: UBUNTU SETUP MANAGED BY SALT (RUNNING THIS SCRIPT WILL BREAK THINGS)"
+    exit 2
+  fi
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"
 SUDO=""
