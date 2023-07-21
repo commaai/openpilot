@@ -43,16 +43,8 @@ from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
 
-# mypy does not see socket.TCP_USER_TIMEOUT
+# missing in pysocket
 TCP_USER_TIMEOUT = 18
-
-WS_SOCKET_OPTS = [
-  (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-  (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
-  (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
-  (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
-  (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
-]
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -768,27 +760,18 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       end_event.set()
 
 
-# Default socket options:
-# SO_KEEPALIVE: 1
-# TCP_KEEPIDLE: 30
-# TCP_KEEPINTVL: 10
-# TCP_KEEPCNT: 3
-# TCP_USER_TIMEOUT: 0
 def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
-  # params = Params()
-  # onroad_prev = False
+  params = Params()
+  onroad_prev = False
+  sock = ws.sock
 
   while not end_event.wait(5):
-    sock = ws.sock
+    onroad = params.get_bool("IsOnroad")
+    if onroad != onroad_prev:
+      onroad = onroad_prev
 
-    print(f"SO_KEEPALIVE: {sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)}")
-    print(f"TCP_KEEPIDLE: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE)}")
-    print(f"TCP_KEEPINTVL: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL)}")
-    print(f"TCP_KEEPCNT: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
-    print(f"TCP_USER_TIMEOUT: {sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT)}")
-
-    # for level, optname, value in WS_SOCKET_OPTS:
-    #   sock.setsockopt(level, optname, value)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5 if onroad else 30)      # s
+      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 30000 if onroad else 60000)  # ms
 
 
 def backoff(retries: int) -> int:

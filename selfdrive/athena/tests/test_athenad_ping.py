@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
-import socket
 import subprocess
 import threading
 import time
 import unittest
-from typing import Callable, cast, List, Optional, Tuple
+from typing import Callable, cast, Optional
 from unittest.mock import MagicMock
-
-from websocket import WebSocket
 
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.athena import athenad
-from selfdrive.athena.athenad import TCP_USER_TIMEOUT
 from system.hardware import TICI
 
 
@@ -23,14 +19,6 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-def custom_ws_manage(sockopts: List[Tuple[int, int, int]]) -> Callable:
-  def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
-    while not end_event.wait(5):
-      for level, optname, value in sockopts:
-        ws.sock.setsockopt(level, optname, value)
-  return ws_manage
-
-
 class TestAthenadPing(unittest.TestCase):
   params: Params
   dongle_id: str
@@ -39,10 +27,7 @@ class TestAthenadPing(unittest.TestCase):
   exit_event: threading.Event
 
   _create_connection: Callable
-  _ws_manage: Callable
-
   mock_create_connection: MagicMock
-  mock_ws_manage: MagicMock
 
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
@@ -53,32 +38,30 @@ class TestAthenadPing(unittest.TestCase):
   def _received_ping(self) -> bool:
     return self._get_ping_time() is not None
 
+  def _set_onroad(self, onroad: bool) -> None:
+    self.params.put_bool("IsOnroad", onroad)
+
   @classmethod
   def setUpClass(cls) -> None:
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
     cls._create_connection = athenad.create_connection
-    cls._ws_manage = athenad.ws_manage
     cls.mock_create_connection = MagicMock(wraps=cls._create_connection)
-    cls.mock_ws_manage = MagicMock(side_effect=cls._ws_manage)
     athenad.create_connection = cls.mock_create_connection
-    athenad.ws_manage = cls.mock_ws_manage
 
   @classmethod
   def tearDownClass(cls) -> None:
     wifi_radio(True)
     athenad.create_connection = cls._create_connection
-    athenad.ws_manage = cls._ws_manage
 
   def setUp(self) -> None:
     wifi_radio(True)
     self._clear_ping_time()
 
-    self.mock_create_connection.reset_mock()
-    self.mock_ws_manage.reset_mock()
-
     self.exit_event = threading.Event()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
+
+    self.mock_create_connection.reset_mock()
 
   def tearDown(self) -> None:
     if self.athenad.is_alive():
@@ -119,29 +102,13 @@ class TestAthenadPing(unittest.TestCase):
       print("ping received")
 
   @unittest.skipIf(not TICI, "only run on desk")
-  def test_default_sockopts(self) -> None:
-    self.assertTimeout(120)
+  def test_offroad(self) -> None:
+    self._set_onroad(True)
+    self.assertTimeout(180)
 
   @unittest.skipIf(not TICI, "only run on desk")
-  def test_correct_sockopts(self) -> None:
-    self.mock_ws_manage.side_effect = custom_ws_manage([
-      # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
-      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
-    ])
-    self.assertTimeout(120)
-
-  @unittest.skipIf(not TICI, "only run on desk")
-  def test_new_sockopts(self) -> None:
-    self.mock_ws_manage.side_effect = custom_ws_manage([
-      # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-      (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
-      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 35000),
-    ])
+  def test_onroad(self) -> None:
+    self._set_onroad(True)
     self.assertTimeout(120)
 
 
