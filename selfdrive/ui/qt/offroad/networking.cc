@@ -4,6 +4,7 @@
 
 #include <QHBoxLayout>
 #include <QScrollBar>
+#include <QStyle>
 
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -347,9 +348,14 @@ WifiItem::WifiItem(const QString &connecting_text, const QString &forget_text, Q
 
 void WifiItem::setItem(const Network &n, const QPixmap &status_icon, bool show_forget_btn, const QPixmap &strength_icon) {
   network = n;
+
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
   ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
+  ssidLabel->style()->unpolish(ssidLabel);
+  ssidLabel->style()->polish(ssidLabel);
+  ssidLabel->update();
+
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
   forgetBtn->setVisible(show_forget_btn);
 
