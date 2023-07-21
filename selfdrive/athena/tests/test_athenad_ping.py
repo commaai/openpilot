@@ -25,9 +25,9 @@ def wifi_radio(on: bool) -> None:
 
 def custom_ws_manage(sockopts: List[Tuple[int, int, int]]) -> Callable:
   def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
-    for level, optname, value in sockopts:
-      ws.sock.setsockopt(level, optname, value)
-    end_event.wait()
+    while not end_event.wait(5):
+      for level, optname, value in sockopts:
+        ws.sock.setsockopt(level, optname, value)
   return ws_manage
 
 
@@ -120,18 +120,28 @@ class TestAthenadPing(unittest.TestCase):
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_timeout(self) -> None:
-    # default sockopts
-    self.assertTimeout(120)
+    with self.subTest("default sockopts"):
+      self.assertTimeout(120)
 
-    # set user timeout
-    self.mock_ws_manage.side_effect = custom_ws_manage([
-      # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
-      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
-    ])
-    self.assertTimeout(70)
+    with self.subTest("set sockopts"):
+      self.mock_ws_manage.side_effect = custom_ws_manage([
+        # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+        # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
+        # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+        # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+        (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
+      ])
+      self.assertTimeout(120)
 
-    # new strict timeout
-    # self.assertTimeout(40)
+    with self.subTest("strict sockopts"):
+      self.mock_ws_manage.side_effect = custom_ws_manage([
+        # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+        (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
+        # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+        # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+        (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 35000),
+      ])
+      self.assertTimeout(120)
 
 
 if __name__ == "__main__":

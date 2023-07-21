@@ -46,6 +46,14 @@ from system.version import get_commit, get_origin, get_short_branch, get_version
 # mypy does not see socket.TCP_USER_TIMEOUT
 TCP_USER_TIMEOUT = 18
 
+WS_SOCKET_OPTS = [
+  (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+  (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
+  (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+  (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+  (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
+]
+
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {8022}
@@ -145,9 +153,9 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
   end_event = threading.Event()
 
   threads = [
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
-    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
     threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
@@ -770,7 +778,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
   # params = Params()
   # onroad_prev = False
 
-  while not end_event.is_set():
+  while not end_event.wait(5):
     sock = ws.sock
 
     print(f"SO_KEEPALIVE: {sock.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)}")
@@ -779,17 +787,8 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     print(f"TCP_KEEPCNT: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
     print(f"TCP_USER_TIMEOUT: {sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT)}")
 
-    # onroad = params.get_bool("IsOnroad")
-    # if onroad != onroad_prev:
-    #   onroad_prev = onroad
-
-    #   keepidle = 5 if onroad else 30  # seconds
-    #   sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, keepidle)
-
-    #   user_timeout = 40*1000 if onroad else 60*1000  # milliseconds
-    #   sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, user_timeout)
-
-    end_event.wait(5)
+    for level, optname, value in WS_SOCKET_OPTS:
+      sock.setsockopt(level, optname, value)
 
 
 def backoff(retries: int) -> int:
