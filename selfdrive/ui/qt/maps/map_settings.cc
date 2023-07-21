@@ -369,7 +369,10 @@ void NavigationRequest::sortLocations() {
       return a["time"].toVariant().toLongLong() > b["time"].toVariant().toLongLong();
     }
   });
-  params.put("NavDestinations", QJsonDocument(locations).toJson().toStdString());
+
+  write_param_future = std::async(std::launch::async, [destinations = QJsonArray(locations)]() {
+    Params().put("NavDestinations", QJsonDocument(destinations).toJson().toStdString());
+  });
 }
 
 void NavigationRequest::setLastActivity(const QJsonObject &location, qint64 sec) {

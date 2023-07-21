@@ -1,5 +1,7 @@
 #pragma once
 
+#include <future>
+
 #include <QFrame>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -40,6 +42,7 @@ private:
   Params params;
   QString prev_response;
   QJsonArray locations;
+  std::future<void> write_param_future;
 };
 
 class MapSettings : public QFrame {
