@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import socket
 import subprocess
 import threading
 import time
@@ -11,6 +12,7 @@ from websocket import WebSocket
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.athena import athenad
+from selfdrive.athena.athenad import TCP_USER_TIMEOUT
 from system.hardware import TICI
 
 
@@ -21,7 +23,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-def custom_ws_manage(sockopts: List[Tuple[int, int, int]]):
+def custom_ws_manage(sockopts: List[Tuple[int, int, int]]) -> Callable:
   def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     for level, optname, value in sockopts:
       ws.sock.setsockopt(level, optname, value)
@@ -119,12 +121,16 @@ class TestAthenadPing(unittest.TestCase):
   @unittest.skipIf(not TICI, "only run on desk")
   def test_timeout(self) -> None:
     # default sockopts
+    self.assertTimeout(120)
+
+    # set user timeout
+    self.mock_ws_manage.side_effect = custom_ws_manage([
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
+      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
+    ])
     self.assertTimeout(70)
 
-    # more correct sockopts
-    # self.assertTimeout(70)
-
-    # improved sockopts
+    # new strict timeout
     # self.assertTimeout(40)
 
 
