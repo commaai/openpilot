@@ -92,7 +92,7 @@ class CarController:
         gas = CarControllerParams.INACTIVE_GAS
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
-      can_sends.append(create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=CS.out.vEgo * CV.KPH_TO_MS))
+      can_sends.append(create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=40 * CV.KPH_TO_MS))
 
     ### ui ###
     send_ui = (self.main_on_last != main_on) or (self.lkas_enabled_last != CC.latActive) or (self.steer_alert_last != steer_alert)
