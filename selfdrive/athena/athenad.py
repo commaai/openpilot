@@ -770,8 +770,8 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 20000 if onroad else 55000)
-      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 10 if onroad else 30)
+      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 55000)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
 
