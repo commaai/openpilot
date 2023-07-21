@@ -237,17 +237,12 @@ void MapWindow::updateState(const UIState &s) {
     // an invalid navInstruction packet with a nav destination is only possible if:
     // - API exception/no internet
     // - route response is empty
-
-    //this kind of works, but we need an additional check somewhere to monitor the param
-//    auto dest = coordinate_from_param("NavDestination");
-//    routing_problem = !sm.valid("navInstruction") && dest.has_value();
+    auto dest = coordinate_from_param("NavDestination");
+    routing_problem = !sm.valid("navInstruction") && dest.has_value();
 
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
-
-//      auto dest = coordinate_from_param("NavDestination");
-      routing_problem = false;
 
       if (locationd_valid) {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
@@ -265,11 +260,6 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
-    auto dest = coordinate_from_param("NavDestination");
-    if (route.getCoordinates().size() == 0 && dest.has_value()) {
-      routing_problem = true;
-    }
-
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
