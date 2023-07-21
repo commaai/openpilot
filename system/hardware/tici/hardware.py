@@ -4,7 +4,7 @@ import os
 import subprocess
 import time
 from enum import IntEnum
-from functools import cached_property
+from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
@@ -91,8 +91,12 @@ class Tici(HardwareBase):
   def amplifier(self):
     return Amplifier()
 
-  @cached_property
-  def model(self):
+  def get_os_version(self):
+    with open("/VERSION") as f:
+      return f.read().strip()
+
+  @lru_cache
+  def get_device_type(self):
     with open("/sys/firmware/devicetree/base/model") as f:
       model = f.read().strip('\x00')
     model = model.split('comma ')[-1]
@@ -101,16 +105,11 @@ class Tici(HardwareBase):
       model = 'tici'
     return model
 
-  def get_os_version(self):
-    with open("/VERSION") as f:
-      return f.read().strip()
-
-  def get_device_type(self):
-    return "tici"
-
   def get_sound_card_online(self):
-    return (os.path.isfile('/proc/asound/card0/state') and
-            open('/proc/asound/card0/state').read().strip() == 'ONLINE')
+    if os.path.isfile('/proc/asound/card0/state'):
+      with open('/proc/asound/card0/state') as f:
+        return f.read().strip() == 'ONLINE'
+    return False
 
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
@@ -424,7 +423,7 @@ class Tici(HardwareBase):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
     if not powersave_enabled:
-      self.amplifier.initialize_configuration(self.model)
+      self.amplifier.initialize_configuration(self.get_device_type())
 
     # *** CPU config ***
 
@@ -445,7 +444,7 @@ class Tici(HardwareBase):
     # boardd core
     affine_irq(4, "spi_geni")         # SPI
     affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
-    if "tici" in self.model:
+    if "tici" in self.get_device_type():
       affine_irq(4, "xhci-hcd:usb1")  # internal panda USB
 
     # camerad core
@@ -455,22 +454,21 @@ class Tici(HardwareBase):
 
   def get_gpu_usage_percent(self):
     try:
-      used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
+        used, total = f.read().strip().split()
       return 100.0 * int(used) / int(total)
     except Exception:
       return 0
 
   def initialize_hardware(self):
-    self.amplifier.initialize_configuration(self.model)
+    self.amplifier.initialize_configuration(self.get_device_type())
 
     # Allow thermald to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
-    # TODO: remove the if once agnos 7 ships
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
-    if os.path.exists('/sys/class/gpio/gpio49/'):
-      gpio_init(GPIO.SOM_ST_IO, True)
-      gpio_set(GPIO.SOM_ST_IO, 1)
+    gpio_init(GPIO.SOM_ST_IO, True)
+    gpio_set(GPIO.SOM_ST_IO, 1)
 
     # *** IRQ config ***
 
@@ -489,7 +487,7 @@ class Tici(HardwareBase):
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
-    sudo_write("1000000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+    sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
     sudo_write("596", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
@@ -581,8 +579,9 @@ class Tici(HardwareBase):
 
     gpio_set(GPIO.STM_RST_N, 1)
     gpio_set(GPIO.STM_BOOT0, 1)
-    time.sleep(2)
+    time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
+    time.sleep(1)
     gpio_set(GPIO.STM_BOOT0, 0)
 
 

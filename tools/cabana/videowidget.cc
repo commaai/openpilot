@@ -1,10 +1,12 @@
 #include "tools/cabana/videowidget.h"
 
 #include <QButtonGroup>
+#include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QStackedLayout>
 #include <QStyleOptionSlider>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
@@ -19,18 +21,6 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
-
-bool sortTimelineBasedOnEventPriority(const std::tuple<int, int, TimelineType> &left, const std::tuple<int, int, TimelineType> &right){
-  const static std::map<TimelineType, int> timelinePriority = {
-    {  TimelineType::None, 0 },
-    {  TimelineType::Engaged, 10 },
-    {  TimelineType::AlertInfo, 20 },
-    {  TimelineType::AlertWarning, 30 },
-    {  TimelineType::AlertCritical, 40 },
-    {  TimelineType::UserFlag, 35 }
-  };
-  return timelinePriority.at(std::get<2>(left)) < timelinePriority.at(std::get<2>(right));
-}
 
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -48,11 +38,9 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QButtonGroup *group = new QButtonGroup(this);
   group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
-    if (can->liveStreaming() && speed > 1) continue;
-
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
+    QObject::connect(btn, &QPushButton::clicked, [speed]() { can->setSpeed(speed); });
     control_layout->addWidget(btn);
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
@@ -102,49 +90,47 @@ QWidget *VideoWidget::createCameraWidget() {
   l->addLayout(stacked);
 
   // slider controls
-  slider_layout = new QHBoxLayout();
-  time_label = new QLabel("00:00");
-  slider_layout->addWidget(time_label);
+  auto slider_layout = new QHBoxLayout();
+  slider_layout->addWidget(time_label = new QLabel("00:00"));
 
   slider = new Slider(this);
   slider->setSingleStep(0);
   slider_layout->addWidget(slider);
 
-  end_time_label = new QLabel(this);
-  slider_layout->addWidget(end_time_label);
+  slider_layout->addWidget(end_time_label = new QLabel(this));
   l->addLayout(slider_layout);
-  QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
-  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(value / 1000)); });
+
+  setMaximumTime(can->totalSeconds());
+  QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
+  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(slider->currentSecond())); });
+  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::streamStarted, [this]() {
-    end_time_label->setText(utils::formatSeconds(can->totalSeconds()));
-    slider->setRange(0, can->totalSeconds() * 1000);
-  });
   return w;
 }
 
-void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+void VideoWidget::setMaximumTime(double sec) {
+  maximum_time = sec;
+  end_time_label->setText(utils::formatSeconds(sec));
+  slider->setTimeRange(0, sec);
+}
+
+void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
+  if (can->liveStreaming()) return;
+
   if (!is_zoomed) {
     min = 0;
-    max = can->totalSeconds();
+    max = maximum_time;
   }
   end_time_label->setText(utils::formatSeconds(max));
-  slider->setRange(min * 1000, max * 1000);
+  slider->setTimeRange(min, max);
 }
 
 void VideoWidget::updateState() {
   if (!slider->isSliderDown()) {
-    slider->setValue(can->currentSec() * 1000);
+    slider->setCurrentSecond(can->currentSec());
   }
-  std::lock_guard lk(slider->thumbnail_lock);
-  uint64_t mono_time = (can->currentSec() + can->routeStartTime()) * 1e9;
-  auto it = slider->alerts.lower_bound(mono_time);
-  if (it != slider->alerts.end() && (it->first - mono_time) < 1e9) {
-    alert_label->showAlert(it->second);
-  } else {
-    alert_label->showAlert({});
-  }
+  alert_label->showAlert(slider->alertInfo(can->currentSec()));
 }
 
 void VideoWidget::updatePlayBtnState() {
@@ -153,38 +139,61 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : timer(this), thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
-  timer.callOnTimeout([this]() {
+
+Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
+  setMouseTracking(true);
+  auto timer = new QTimer(this);
+  timer->callOnTimeout([this]() {
     timeline = can->getTimeline();
-    std::sort(timeline.begin(), timeline.end(), sortTimelineBasedOnEventPriority);
+    std::sort(timeline.begin(), timeline.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
     update();
   });
-  setMouseTracking(true);
-  QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
+  timer->start(2000);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
+    if (!qlog_future) {
+      qlog_future = std::make_unique<QFuture<void>>(QtConcurrent::run(this, &Slider::parseQLog));
+    }
+  });
 }
 
 Slider::~Slider() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
+  abort_parse_qlog = true;
+  if (qlog_future) {
+    qlog_future->waitForFinished();
+  }
 }
 
-void Slider::streamStarted() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
-  abort_load_thumbnail = false;
-  thumbnails.clear();
-  timeline.clear();
-  timer.start(2000);
-  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+AlertInfo Slider::alertInfo(double seconds) {
+  std::lock_guard lk(thumbnail_lock);
+  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+  auto alert_it = alerts.lower_bound(mono_time);
+  bool has_alert = (alert_it != alerts.end()) && ((alert_it->first - mono_time) <= 1e8);
+  return has_alert ? alert_it->second : AlertInfo{};
 }
 
-void Slider::loadThumbnails() {
+QPixmap Slider::thumbnail(double seconds)  {
+  std::lock_guard lk(thumbnail_lock);
+  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+  auto it = thumbnails.lowerBound(mono_time);
+  return it != thumbnails.end() ? it.value() : QPixmap();
+}
+
+void Slider::setTimeRange(double min, double max) {
+  assert(min < max);
+  setRange(min * factor, max * factor);
+}
+
+void Slider::parseQLog() {
   const auto &segments = can->route()->segments();
-  for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
+  for (auto it = segments.rbegin(); it != segments.rend() && !abort_parse_qlog; ++it) {
     LogReader log;
     std::string qlog = it->second.qlog.toStdString();
-    if (!qlog.empty() && log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
-      for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
+    if (!qlog.empty() && log.load(qlog, &abort_parse_qlog, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
+      if (it == segments.rbegin() && !log.events.empty()) {
+        double max_time = log.events.back()->mono_time / 1e9 - can->routeStartTime();
+        emit updateMaximumTime(max_time);
+      }
+      for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_parse_qlog; ++ev) {
         if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
           auto thumb = (*ev)->event.getThumbnail();
           auto data = thumb.getThumbnail();
@@ -195,7 +204,8 @@ void Slider::loadThumbnails() {
           }
         } else if ((*ev)->which == cereal::Event::Which::CONTROLS_STATE) {
           auto cs = (*ev)->event.getControlsState();
-          if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0) {
+          if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
+              cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
             std::lock_guard lk(thumbnail_lock);
             alerts.emplace((*ev)->mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
           }
@@ -205,30 +215,18 @@ void Slider::loadThumbnails() {
   }
 }
 
-void Slider::sliderChange(QAbstractSlider::SliderChange change) {
-  if (change == QAbstractSlider::SliderValueChange) {
-    int x = width() * ((value() - minimum()) / double(maximum() - minimum()));
-    if (x != slider_x) {
-      slider_x = x;
-      update();
-    }
-  } else {
-    QAbstractSlider::sliderChange(change);
-  }
-}
-
 void Slider::paintEvent(QPaintEvent *ev) {
   QPainter p(this);
   QRect r = rect().adjusted(0, 4, 0, -4);
   p.fillRect(r, timeline_colors[(int)TimelineType::None]);
-  double min = minimum() / 1000.0;
-  double max = maximum() / 1000.0;
+  double min = minimum() / factor;
+  double max = maximum() / factor;
 
   for (auto [begin, end, type] : timeline) {
     if (begin > max || end < min)
       continue;
-    r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
-    r.setRight(((std::min(max, (double)end) - min) / (max - min)) * width());
+    r.setLeft(((std::max(min, begin) - min) / (max - min)) * width());
+    r.setRight(((std::min(max, end) - min) / (max - min)) * width());
     p.fillRect(r, timeline_colors[(int)type]);
   }
 
@@ -251,22 +249,16 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 }
 
 void Slider::mouseMoveEvent(QMouseEvent *e) {
-  QPixmap thumb;
-  AlertInfo alert;
-  double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
-  {
-    std::lock_guard lk(thumbnail_lock);
-    uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
-    auto it = thumbnails.lowerBound(mono_time);
-    if (it != thumbnails.end()) thumb = it.value();
-    auto alert_it = alerts.lower_bound(mono_time);
-    if (alert_it != alerts.end() && (alert_it->first - mono_time) < 1e9) {
-      alert = alert_it->second;
-    }
+  int pos = std::clamp(e->pos().x(), 0, width());
+  double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor;
+  QPixmap thumb = thumbnail(seconds);
+  if (!thumb.isNull()) {
+    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
+    int y = -thumb.height();
+    thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
+  } else {
+    thumbnail_label.hide();
   }
-  int x = std::clamp(e->pos().x() - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
-  int y = -thumb.height();
-  thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alert);
   QSlider::mouseMoveEvent(e);
 }
 
@@ -293,24 +285,20 @@ InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint
 }
 
 void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert) {
-  pixmap = pm;
   second = sec;
+  pixmap = pm;
   alert_info = alert;
-  setVisible(!pm.isNull());
-  if (isVisible()) {
-    resize(pm.size());
-    move(pt);
-    update();
-  }
+  resize(pm.size());
+  move(pt);
+  setVisible(true);
+  update();
 }
 
 void InfoLabel::showAlert(const AlertInfo &alert) {
   alert_info = alert;
   pixmap = {};
   setVisible(!alert_info.text1.isEmpty());
-  if (isVisible()) {
-    update();
-  }
+  update();
 }
 
 void InfoLabel::paintEvent(QPaintEvent *event) {

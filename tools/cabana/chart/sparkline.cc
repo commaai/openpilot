@@ -5,10 +5,15 @@
 #include "tools/cabana/streams/abstractstream.h"
 
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
-  const auto &msgs = can->events().at(msg_id);
+  const auto &msgs = can->events(msg_id);
   uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), CanEvent{.mono_time = (uint64_t)std::max<int64_t>(ts - range * 1e9, 0)});
-  auto last = std::upper_bound(first, msgs.cend(), CanEvent{.mono_time = ts});
+  uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, [](auto e, uint64_t ts) {
+    return e->mono_time < ts;
+  });
+  auto last = std::upper_bound(first, msgs.cend(), ts, [](uint64_t ts, auto e) {
+    return ts < e->mono_time;
+  });
 
   bool update_values = last_ts != last_msg_ts || time_range != range;
   last_ts = last_msg_ts;
@@ -17,21 +22,31 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
   if (first != last) {
     if (update_values) {
       values.clear();
-      values.reserve(std::distance(first, last));
+      if (values.capacity() < std::distance(first, last)) {
+        values.reserve(std::distance(first, last) * 2);
+      }
       min_val = std::numeric_limits<double>::max();
       max_val = std::numeric_limits<double>::lowest();
       for (auto it = first; it != last; ++it) {
-        double value = get_raw_value(it->dat, it->size, *sig);
-        values.emplace_back((it->mono_time - first->mono_time) / 1e9, value);
-        if (min_val > value) min_val = value;
-        if (max_val < value) max_val = value;
+        const CanEvent *e = *it;
+        double value = 0;
+        if (sig->getValue(e->dat, e->size, &value)) {
+          values.emplace_back((e->mono_time - (*first)->mono_time) / 1e9, value);
+          if (min_val > value) min_val = value;
+          if (max_val < value) max_val = value;
+        }
       }
       if (min_val == max_val) {
         min_val -= 1;
         max_val += 1;
       }
     }
-    render(getColor(sig), size);
+  } else {
+    values.clear();
+  }
+
+  if (!values.empty()) {
+    render(sig->color, size);
   } else {
     pixmap = QPixmap();
     min_val = -1;
@@ -43,7 +58,7 @@ void Sparkline::render(const QColor &color, QSize size) {
   const double xscale = (size.width() - 1) / (double)time_range;
   const double yscale = (size.height() - 3) / (max_val - min_val);
   points.clear();
-  points.reserve(values.size());
+  points.reserve(values.capacity());
   for (auto &v : values) {
     points.emplace_back(v.x() * xscale, 1 + std::abs(v.y() - max_val) * yscale);
   }

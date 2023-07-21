@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import os
 import math
 import json
 import numpy as np
 
 import cereal.messaging as messaging
 from cereal import car
+from cereal import log
 from common.params import Params, put_nonblocking
 from common.realtime import config_realtime_process, DT_MDL
 from common.numpy_fast import clip
@@ -16,8 +18,11 @@ from system.swaglog import cloudlog
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MAX_DELTA = math.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
+ROLL_LOWERED_MAX = math.radians(8)
 ROLL_STD_MAX = math.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
+OFFSET_MAX = 10.0
+OFFSET_LOWERED_MAX = 8.0
 
 
 class ParamsLearner:
@@ -102,8 +107,19 @@ class ParamsLearner:
       self.kf.filter.reset_rewind()
 
 
+def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: float, lowered_threshold: float):
+  if current_valid:
+    current_valid = abs(val) < threshold
+  else:
+    current_valid = abs(val) < lowered_threshold
+  return current_valid
+
+
 def main(sm=None, pm=None):
   config_realtime_process([0, 1, 2, 3], 5)
+
+  DEBUG = bool(int(os.getenv("DEBUG", "0")))
+  REPLAY = bool(int(os.getenv("REPLAY", "0")))
 
   if sm is None:
     sm = messaging.SubMaster(['liveLocationKalman', 'carState'], poll=['liveLocationKalman'])
@@ -130,10 +146,8 @@ def main(sm=None, pm=None):
   # Check if starting values are sane
   if params is not None:
     try:
-      angle_offset_sane = abs(params.get('angleOffsetAverageDeg')) < 10.0
       steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
-      params_sane = angle_offset_sane and steer_ratio_sane
-      if not params_sane:
+      if not steer_ratio_sane:
         cloudlog.info(f"Invalid starting values found {params}")
         params = None
     except Exception as e:
@@ -150,13 +164,22 @@ def main(sm=None, pm=None):
     }
     cloudlog.info("Parameter learner resetting to default values")
 
-  # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
-  # Without a way to detect this we have to reset the stiffness every drive
-  params['stiffnessFactor'] = 1.0
-  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
+  if not REPLAY:
+    # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
+    # Without a way to detect this we have to reset the stiffness every drive
+    params['stiffnessFactor'] = 1.0
+
+  pInitial = None
+  if DEBUG:
+    pInitial = np.array(params['filterState']['std']) if 'filterState' in params else None
+
+  learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']), pInitial)
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
   roll = 0.0
+  avg_offset_valid = True
+  total_offset_valid = True
+  roll_valid = True
 
   while True:
     sm.update()
@@ -180,6 +203,9 @@ def main(sm=None, pm=None):
       roll_std = float(P[States.ROAD_ROLL])
       # Account for the opposite signs of the yaw rates
       sensors_valid = bool(abs(learner.speed * (x[States.YAW_RATE] + learner.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
+      total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
+      roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
 
       msg = messaging.new_message('liveParameters')
 
@@ -192,9 +218,9 @@ def main(sm=None, pm=None):
       liveParameters.angleOffsetAverageDeg = angle_offset_average
       liveParameters.angleOffsetDeg = angle_offset
       liveParameters.valid = all((
-        abs(liveParameters.angleOffsetAverageDeg) < 10.0,
-        abs(liveParameters.angleOffsetDeg) < 10.0,
-        abs(liveParameters.roll) < ROLL_MAX,
+        avg_offset_valid,
+        total_offset_valid,
+        roll_valid,
         roll_std < ROLL_STD_MAX,
         0.2 <= liveParameters.stiffnessFactor <= 5.0,
         min_sr <= liveParameters.steerRatio <= max_sr,
@@ -203,6 +229,11 @@ def main(sm=None, pm=None):
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
+      if DEBUG:
+        liveParameters.filterState = log.LiveLocationKalman.Measurement.new_message()
+        liveParameters.filterState.value = x.tolist()
+        liveParameters.filterState.std = P.tolist()
+        liveParameters.filterState.valid = True
 
       msg.valid = sm.all_checks()
 
