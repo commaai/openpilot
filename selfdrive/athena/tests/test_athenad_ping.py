@@ -107,7 +107,7 @@ class TestAthenadPing(unittest.TestCase):
   @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     self._set_onroad(True)
-    self.assertTimeout(40)  # expect 25-35s
+    self.assertTimeout(30)  # expect 20-30s
 
 
 if __name__ == "__main__":
