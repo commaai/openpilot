@@ -262,7 +262,7 @@ CAR_INFO: Dict[str, Union[VWCarInfo, List[VWCarInfo]]] = {
   CAR.SKODA_KAMIQ_MK1: VWCarInfo("Škoda Kamiq 2021", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
   CAR.SKODA_KAROQ_MK1: VWCarInfo("Škoda Karoq 2019-21"),
   CAR.SKODA_KODIAQ_MK1: VWCarInfo("Škoda Kodiaq 2017-23"),
-  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020", footnotes=[Footnote.VW_MQB_A0]),
+  CAR.SKODA_SCALA_MK1: VWCarInfo("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0]),
   CAR.SKODA_SUPERB_MK3: VWCarInfo("Škoda Superb 2015-22"),
   CAR.SKODA_OCTAVIA_MK3: [
     VWCarInfo("Škoda Octavia 2015, 2018-19"),
@@ -1280,19 +1280,24 @@ FW_VERSIONS = {
   CAR.SKODA_SCALA_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704C906025AK\xf1\x897053',
+      b'\xf1\x8705C906032M \xf1\x892365',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300020  \xf1\x891907',
       b'\xf1\x870CW300050  \xf1\x891709',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x872Q0959655AJ\xf1\x890250\xf1\x82\x1211110411110411--04040404131111112H14',
       b'\xf1\x872Q0959655AM\xf1\x890351\xf1\x82\022111104111104112104040404111111112H14',
+      b'\xf1\x872Q0959655AS\xf1\x890411\xf1\x82\x1311150411110411210404040417151215391413',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x872Q1909144M \xf1\x896041',
+      b'\xf1\x872Q1909144AB\xf1\x896050',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572R \xf1\x890372',
+      b'\xf1\x872Q0907572AA\xf1\x890396',
     ],
   },
   CAR.SKODA_SUPERB_MK3: {
