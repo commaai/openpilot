@@ -119,29 +119,30 @@ class TestAthenadPing(unittest.TestCase):
       print("ping received")
 
   @unittest.skipIf(not TICI, "only run on desk")
-  def test_timeout(self) -> None:
-    with self.subTest("default sockopts"):
-      self.assertTimeout(120)
+  def test_default_sockopts(self) -> None:
+    self.assertTimeout(120)
 
-    with self.subTest("set sockopts"):
-      self.mock_ws_manage.side_effect = custom_ws_manage([
-        # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-        # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
-        # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
-        # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
-        (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
-      ])
-      self.assertTimeout(120)
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_correct_sockopts(self) -> None:
+    self.mock_ws_manage.side_effect = custom_ws_manage([
+      # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 30),
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 60000),
+    ])
+    self.assertTimeout(120)
 
-    with self.subTest("strict sockopts"):
-      self.mock_ws_manage.side_effect = custom_ws_manage([
-        # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-        (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
-        # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
-        # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
-        (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 35000),
-      ])
-      self.assertTimeout(120)
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_new_sockopts(self) -> None:
+    self.mock_ws_manage.side_effect = custom_ws_manage([
+      # (socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+      (socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5),
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10),
+      # (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3),
+      (socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 35000),
+    ])
+    self.assertTimeout(120)
 
 
 if __name__ == "__main__":

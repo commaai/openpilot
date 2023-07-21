@@ -787,8 +787,8 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     print(f"TCP_KEEPCNT: {sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT)}")
     print(f"TCP_USER_TIMEOUT: {sock.getsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT)}")
 
-    for level, optname, value in WS_SOCKET_OPTS:
-      sock.setsockopt(level, optname, value)
+    # for level, optname, value in WS_SOCKET_OPTS:
+    #   sock.setsockopt(level, optname, value)
 
 
 def backoff(retries: int) -> int:
