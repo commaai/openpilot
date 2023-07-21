@@ -21,23 +21,20 @@ class CarController:
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
-    new_actuators = actuators.copy()
-
     can_sends = []
 
     # *** steering ***
     if (self.frame % self.p.STEER_STEP) == 0:
       # angle based steering
       if self.CP.carFingerprint in LKAS_ANGLE:
-        if CC.latActive:
-          apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, self.p)
-        else:
+        apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, self.p)
+        
+        if not CC.latActive:
           apply_steer = CS.out.steeringAngleDeg
 
         can_sends.append(subarucan.create_steering_control_angle(self.packer, apply_steer, CC.latActive))
 
         self.apply_steer_last = apply_steer
-        new_actuators.steeringAngleDeg = apply_steer
       
       # torque based steering
       else:
@@ -55,8 +52,6 @@ class CarController:
           can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 
         self.apply_steer_last = apply_steer
-        new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
-        new_actuators.steerOutputCan = self.apply_steer_last
 
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
@@ -95,4 +90,13 @@ class CarController:
           can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
 
     self.frame += 1
+
+    new_actuators = actuators.copy()
+    
+    if self.CP.carFingerprint in LKAS_ANGLE:
+      new_actuators.steeringAngleDeg = apply_steer
+    else:
+      new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
+      new_actuators.steerOutputCan = self.apply_steer_last
+
     return new_actuators, can_sends
