@@ -286,7 +286,8 @@ NavigationRequest *NavigationRequest::instance() {
 }
 
 NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
-  if (auto v = params.get("NavDestinations"); !v.empty()) {
+  auto v = params.get("NavPastDestinations");
+  if (!v.empty()) {
     locations = QJsonDocument::fromJson(QString::fromStdString(v).toUtf8()).array();
   }
 
@@ -371,7 +372,7 @@ void NavigationRequest::sortLocations() {
   });
 
   write_param_future = std::async(std::launch::async, [destinations = QJsonArray(locations)]() {
-    Params().put("NavDestinations", QJsonDocument(destinations).toJson().toStdString());
+    Params().put("NavPastDestinations", QJsonDocument(destinations).toJson().toStdString());
   });
 }
 
