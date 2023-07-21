@@ -84,7 +84,6 @@ private:
 };
 
 std::unordered_map<std::string, uint32_t> keys = {
-    {"DmModelInitialized", CLEAR_ON_ONROAD_TRANSITION},
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_DriveStats", PERSISTENT},
@@ -108,6 +107,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisablePowerDown", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
+    {"DmModelInitialized", CLEAR_ON_ONROAD_TRANSITION},
     {"DongleId", PERSISTENT},
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
