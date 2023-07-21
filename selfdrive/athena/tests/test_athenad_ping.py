@@ -27,7 +27,6 @@ class TestAthenadPing(unittest.TestCase):
   exit_event: threading.Event
 
   _create_connection: Callable
-  mock_create_connection: MagicMock
 
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
@@ -46,8 +45,7 @@ class TestAthenadPing(unittest.TestCase):
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
     cls._create_connection = athenad.create_connection
-    cls.mock_create_connection = MagicMock(wraps=cls._create_connection)
-    athenad.create_connection = cls.mock_create_connection
+    athenad.create_connection = MagicMock(wraps=cls._create_connection)
 
   @classmethod
   def tearDownClass(cls) -> None:
@@ -61,7 +59,7 @@ class TestAthenadPing(unittest.TestCase):
     self.exit_event = threading.Event()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
-    self.mock_create_connection.reset_mock()
+    athenad.create_connection.reset_mock()
 
   def tearDown(self) -> None:
     if self.athenad.is_alive():
