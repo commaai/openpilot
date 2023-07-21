@@ -24,6 +24,9 @@ const int MAIN_BITRATE = 10000000;
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
+constexpr char PRESERVE_ATTR_VALUE = '1';
+
 class EncoderInfo {
 public:
   const char *publish_name;

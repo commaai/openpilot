@@ -496,7 +496,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
-    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj)
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
   sync_objs[i] = sync_create.sync_obj;
 

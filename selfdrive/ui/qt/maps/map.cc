@@ -3,7 +3,6 @@
 #include <eigen3/Eigen/Dense>
 
 #include <QDebug>
-#include <QDir>
 
 #include "common/transformations/coordinates.hpp"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -12,15 +11,12 @@
 
 
 const int PAN_TIMEOUT = 100;
-const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
 const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
 const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
-
-const QString ICON_SUFFIX = ".png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
@@ -112,7 +108,21 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-color-transition", transition);
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
-    m_map->addAnnotationIcon("default_marker", QImage("../assets/navigation/default_marker.svg"));
+  }
+  if (!m_map->layerExists("pinLayer")) {
+    qDebug() << "Initializing pinLayer";
+    m_map->addImage("default_marker", QImage("../assets/navigation/default_marker.svg"));
+    QVariantMap pin;
+    pin["id"] = "pinLayer";
+    pin["type"] = "symbol";
+    pin["source"] = "pinSource";
+    m_map->addLayer(pin);
+    m_map->setLayoutProperty("pinLayer", "icon-pitch-alignment", "viewport");
+    m_map->setLayoutProperty("pinLayer", "icon-image", "default_marker");
+    m_map->setLayoutProperty("pinLayer", "icon-ignore-placement", true);
+    m_map->setLayoutProperty("pinLayer", "icon-allow-overlap", true);
+    m_map->setLayoutProperty("pinLayer", "symbol-sort-key", 0);
+    m_map->setLayoutProperty("pinLayer", "icon-anchor", "bottom");
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
@@ -128,6 +138,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("carPosLayer", "icon-size", 0.5);
     m_map->setLayoutProperty("carPosLayer", "icon-ignore-placement", true);
     m_map->setLayoutProperty("carPosLayer", "icon-allow-overlap", true);
+    // TODO: remove, symbol-sort-key does not seem to matter outside of each layer
     m_map->setLayoutProperty("carPosLayer", "symbol-sort-key", 0);
   }
 }
@@ -141,7 +152,8 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("modelV2")) {
     // set path color on change, and show map on rising edge of navigate on openpilot
-    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled();
+    bool nav_enabled = sm["modelV2"].getModelV2().getNavEnabled() &&
+                       sm["controlsState"].getControlsState().getEnabled();
     if (nav_enabled != uiState()->scene.navigate_on_openpilot) {
       if (loaded_once) {
         m_map->setPaintProperty("navLayer", "line-color", getNavPathColor(nav_enabled));
@@ -190,7 +202,14 @@ void MapWindow::updateState(const UIState &s) {
   }
   initLayers();
 
-  setError(locationd_valid ? "" : tr("Waiting for GPS"));
+  if (!locationd_valid) {
+    setError(tr("Waiting for GPS"));
+  } else if (routing_problem) {
+    setError(tr("Waiting for route"));
+  } else {
+    setError("");
+  }
+
   if (locationd_valid) {
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
@@ -215,6 +234,13 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.updated("navInstruction")) {
+    // an invalid navInstruction packet with a nav destination is only possible if:
+    // - API exception/no internet
+    // - route response is empty
+    // - any time navd is waiting for recompute_countdown
+    auto dest = coordinate_from_param("NavDestination");
+    routing_problem = !sm.valid("navInstruction") && dest.has_value();
+
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
       map_eta->updateETA(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
@@ -275,6 +301,10 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commaai/clj7g5vrp007b01qzb5ro0i4j");
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // set global animation duration to 0 ms so visibility changes are instant
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingStyle) {
+      m_map->setTransitionOptions(0, 0);
+    }
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
@@ -372,6 +402,7 @@ void MapWindow::offroadTransition(bool offroad) {
   if (offroad) {
     clearRoute();
     uiState()->scene.navigate_on_openpilot = false;
+    routing_problem = false;
   } else {
     auto dest = coordinate_from_param("NavDestination");
     emit requestVisible(dest.has_value());
@@ -380,197 +411,16 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
-  if (marker_id != -1) {
-    m_map->removeAnnotation(marker_id);
-    marker_id = -1;
-  }
+  m_map->setPaintProperty("pinLayer", "visibility", "none");
 
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
-    auto ano = QMapbox::SymbolAnnotation {*nav_dest, "default_marker"};
-    marker_id = m_map->addAnnotation(QVariant::fromValue<QMapbox::SymbolAnnotation>(ano));
+    auto point = coordinate_to_collection(*nav_dest);
+    QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
+    QVariantMap pinSource;
+    pinSource["type"] = "geojson";
+    pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+    m_map->updateSource("pinSource", pinSource);
+    m_map->setPaintProperty("pinLayer", "visibility", "visible");
   }
-}
-
-MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRhdDetected");
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(11, 50, 11, 11);
-  main_layout->addWidget(icon_01 = new QLabel, 0, Qt::AlignTop);
-
-  QWidget *right_container = new QWidget(this);
-  right_container->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  QVBoxLayout *layout = new QVBoxLayout(right_container);
-
-  layout->addWidget(distance = new QLabel);
-  distance->setStyleSheet(R"(font-size: 90px;)");
-
-  layout->addWidget(primary = new QLabel);
-  primary->setStyleSheet(R"(font-size: 60px;)");
-  primary->setWordWrap(true);
-
-  layout->addWidget(secondary = new QLabel);
-  secondary->setStyleSheet(R"(font-size: 50px;)");
-  secondary->setWordWrap(true);
-
-  layout->addLayout(lane_layout = new QHBoxLayout);
-  main_layout->addWidget(right_container);
-
-  setStyleSheet("color:white");
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
-  setAutoFillBackground(true);
-  setPalette(pal);
-
-  buildPixmapCache();
-}
-
-void MapInstructions::buildPixmapCache() {
-  QDir dir("../assets/navigation");
-  for (QString fn : dir.entryList({"*" + ICON_SUFFIX}, QDir::Files)) {
-    QPixmap pm(dir.filePath(fn));
-    QString key = fn.left(fn.size() - ICON_SUFFIX.length());
-    pm = pm.scaledToWidth(200, Qt::SmoothTransformation);
-
-    // Maneuver icons
-    pixmap_cache[key] = pm;
-    // lane direction icons
-    if (key.contains("turn_")) {
-      pixmap_cache["lane_" + key] = pm.scaled({125, 125}, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    }
-
-    // for rhd, reflect direction and then flip
-    if (key.contains("_left")) {
-      pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
-    } else if (key.contains("_right")) {
-      pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
-    }
-  }
-}
-
-QString MapInstructions::getDistance(float d) {
-  d = std::max(d, 0.0f);
-  if (uiState()->scene.is_metric) {
-    return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
-                     : QString::number(50 * int(d / 50)) + tr(" m");
-  } else {
-    float feet = d * METER_TO_FOOT;
-    return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
-                        : QString::number(50 * int(feet / 50)) + tr(" ft");
-  }
-}
-
-void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
-  setUpdatesEnabled(false);
-
-  // Show instruction text
-  QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
-  QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
-
-  primary->setText(primary_str);
-  secondary->setVisible(secondary_str.length() > 0);
-  secondary->setText(secondary_str);
-  distance->setText(getDistance(instruction.getManeuverDistance()));
-
-  // Show arrow with direction
-  QString type = QString::fromStdString(instruction.getManeuverType());
-  QString modifier = QString::fromStdString(instruction.getManeuverModifier());
-  if (!type.isEmpty()) {
-    QString fn = "direction_" + type;
-    if (!modifier.isEmpty()) {
-      fn += "_" + modifier;
-    }
-    fn = fn.replace(' ', '_');
-    bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
-    icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
-    icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    icon_01->setVisible(true);
-  }
-
-  // Show lanes
-  auto lanes = instruction.getLanes();
-  for (int i = 0; i < lanes.size(); ++i) {
-    bool active = lanes[i].getActive();
-
-    // TODO: only use active direction if active
-    bool left = false, straight = false, right = false;
-    for (auto const &direction: lanes[i].getDirections()) {
-      left |= direction == cereal::NavInstruction::Direction::LEFT;
-      right |= direction == cereal::NavInstruction::Direction::RIGHT;
-      straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
-    }
-
-    // TODO: Make more images based on active direction and combined directions
-    QString fn = "lane_direction_";
-    if (left) {
-      fn += "turn_left";
-    } else if (right) {
-      fn += "turn_right";
-    } else if (straight) {
-      fn += "turn_straight";
-    }
-
-    if (!active) {
-      fn += "_inactive";
-    }
-
-    QLabel *label = (i < lane_labels.size()) ? lane_labels[i] : lane_labels.emplace_back(new QLabel);
-    if (!label->parentWidget()) {
-      lane_layout->addWidget(label);
-    }
-    label->setPixmap(pixmap_cache[fn]);
-    label->setVisible(true);
-  }
-
-  for (int i = lanes.size(); i < lane_labels.size(); ++i) {
-    lane_labels[i]->setVisible(false);
-  }
-
-  setUpdatesEnabled(true);
-  setVisible(true);
-}
-
-MapETA::MapETA(QWidget *parent) : QWidget(parent) {
-  setVisible(false);
-  setAttribute(Qt::WA_TranslucentBackground);
-  eta_doc.setUndoRedoEnabled(false);
-  eta_doc.setDefaultStyleSheet("body {font-family:Inter;font-size:60px;color:white;} b{font-size:70px;font-weight:600}");
-}
-
-void MapETA::paintEvent(QPaintEvent *event) {
-  if (!eta_doc.isEmpty()) {
-    QPainter p(this);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(Qt::NoPen);
-    p.setBrush(QColor(0, 0, 0, 150));
-    QSizeF txt_size = eta_doc.size();
-    p.drawRoundedRect((width() - txt_size.width()) / 2 - UI_BORDER_SIZE, 0, txt_size.width() + UI_BORDER_SIZE * 2, height() + 25, 25, 25);
-    p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
-    eta_doc.drawContents(&p);
-  }
-}
-
-void MapETA::updateETA(float s, float s_typical, float d) {
-  // ETA
-  auto eta_t = QDateTime::currentDateTime().addSecs(s).time();
-  auto eta = format_24h ? std::array{eta_t.toString("HH:mm"), tr("eta")}
-                        : std::array{eta_t.toString("h:mm a").split(' ')[0], eta_t.toString("a")};
-
-  // Remaining time
-  auto remaining = s < 3600 ? std::array{QString::number(int(s / 60)), tr("min")}
-                            : std::array{QString("%1:%2").arg((int)s / 3600).arg(((int)s % 3600) / 60, 2, 10, QLatin1Char('0')), tr("hr")};
-  QString color = "#25DA6E";
-  if (s / s_typical > 1.5) color = "#DA3025";
-  else if (s / s_typical > 1.2) color = "#DAA725";
-
-  // Distance
-  float num = uiState()->scene.is_metric ? (d / 1000.0) : (d * METER_TO_MILE);
-  auto distance = std::array{QString::number(num, 'f', num < 100 ? 1 : 0),
-                             uiState()->scene.is_metric ? tr("km") : tr("mi")};
-
-  eta_doc.setHtml(QString(R"(<body><b>%1</b>%2 <span style="color:%3"><b>%4</b>%5</span> <b>%6</b>%7</body>)")
-                      .arg(eta[0], eta[1], color, remaining[0], remaining[1], distance[0], distance[1]));
-
-  setVisible(d >= MANEUVER_TRANSITION_THRESHOLD);
-  update();
 }
