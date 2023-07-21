@@ -131,7 +131,7 @@ pipeline {
         stage('scons build test') {
           agent {
             dockerfile {
-              filename 'Dockerfile.openpilot-base'
+              filename 'Dockerfile.openpilot_base'
               args '--user=root'
             }
           }
