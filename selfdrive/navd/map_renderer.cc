@@ -89,8 +89,13 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online, QObject
     timer->start(0);
   }
 
-  // release map before the application quit the main event loop.
-  QObject::connect(qApp, &QApplication::aboutToQuit, [this]() { m_map.reset(nullptr); });
+  // release map-related variables before the application quit the main event loop.
+  QObject::connect(qApp, &QApplication::aboutToQuit, [this]() {
+    m_map.reset(nullptr);
+    fbo.reset(nullptr);
+    surface.reset(nullptr);
+    ctx.reset(nullptr);
+  });
 }
 
 void MapRenderer::msgUpdate() {
