@@ -143,10 +143,9 @@ class UploadQueueCache:
 
 def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> None:
   end_event = threading.Event()
-  ready_event = threading.Event()
 
   threads = [
-    threading.Thread(target=ws_manage, args=(ws, end_event, ready_event), name='ws_manage'),
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
@@ -156,9 +155,6 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
     threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
     for x in range(HANDLER_THREADS)
   ]
-
-  if not ready_event.wait(5):
-    cloudlog.warning("athena.ws_manage.timeout")
 
   for thread in threads:
     thread.start()
@@ -764,7 +760,7 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       end_event.set()
 
 
-def ws_manage(ws: WebSocket, end_event: threading.Event, ready_event: threading.Event) -> None:
+def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
   params = Params()
   onroad_prev = None
   sock = ws.sock
@@ -774,10 +770,9 @@ def ws_manage(ws: WebSocket, end_event: threading.Event, ready_event: threading.
     if onroad != onroad_prev:
       onroad_prev = onroad
 
+      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 20000 if onroad else 55000)  # ms
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 5 if onroad else 30)      # s
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
-      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 20000 if onroad else 55000)  # ms
-      ready_event.set()
 
     if end_event.wait(5):
       break
