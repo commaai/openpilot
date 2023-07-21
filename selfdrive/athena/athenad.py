@@ -762,7 +762,7 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
 
 def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
   params = Params()
-  onroad_prev = False
+  onroad_prev = None
   sock = ws.sock
 
   while not end_event.wait(5):
