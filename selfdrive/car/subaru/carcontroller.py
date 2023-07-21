@@ -27,6 +27,7 @@ class CarController:
 
     # *** steering ***
     if (self.frame % self.p.STEER_STEP) == 0:
+      # angle based steering
       if self.CP.carFingerprint in LKAS_ANGLE:
         if CC.latActive:
           apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, CarControllerParams)
@@ -36,6 +37,8 @@ class CarController:
         can_sends.append(subarucan.create_steering_control_angle(self.packer, apply_steer, CC.latActive))
 
         new_actuators.steeringAngleDeg = apply_steer
+      
+      # torque based steering
       else:
         apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
 
