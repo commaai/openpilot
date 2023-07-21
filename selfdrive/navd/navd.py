@@ -102,6 +102,7 @@ class RouteEngine:
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
       self.clear_route()
+      self.reset_recompute_limits()
       return
 
     should_recompute = self.should_recompute()
@@ -265,8 +266,7 @@ class RouteEngine:
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
-        self.recompute_backoff = 0
-        self.recompute_countdown = 0
+        self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
         Params().remove("NavDestination")
@@ -292,6 +292,10 @@ class RouteEngine:
     self.route_geometry = None
     self.step_idx = None
     self.nav_destination = None
+
+  def reset_recompute_limits(self):
+    self.recompute_backoff = 0
+    self.recompute_countdown = 0
 
   def should_recompute(self):
     if self.step_idx is None or self.route is None:
