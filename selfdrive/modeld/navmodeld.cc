@@ -6,6 +6,7 @@
 
 #include "cereal/visionipc/visionipc_client.h"
 #include "common/swaglog.h"
+#include "common/params.h"
 #include "common/util.h"
 #include "selfdrive/modeld/models/nav.h"
 
@@ -40,6 +41,10 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
 
 int main(int argc, char **argv) {
   setpriority(PRIO_PROCESS, 0, -15);
+
+  LOGW("navmodeld waiting for dmonitoringmodeld to initialize");
+  Params().getBool("DmModelInitialized", true);
+  LOGW("navmodeld initializing model");
 
   // init the models
   NavModelState model;
