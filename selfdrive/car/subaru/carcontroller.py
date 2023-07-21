@@ -21,6 +21,8 @@ class CarController:
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
+    new_actuators = actuators.copy()
+
     can_sends = []
 
     # *** steering ***
@@ -32,6 +34,8 @@ class CarController:
           apply_steer = CS.out.steeringAngleDeg
 
         can_sends.append(subarucan.create_steering_control_angle(self.packer, apply_steer, CC.latActive))
+
+        new_actuators.steeringAngleDeg = apply_steer
       else:
         apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
 
@@ -47,6 +51,9 @@ class CarController:
           can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
         else:
           can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
+        
+        new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
+        new_actuators.steerOutputCan = self.apply_steer_last
 
       self.apply_steer_last = apply_steer
 
@@ -85,10 +92,6 @@ class CarController:
 
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
-
-    new_actuators = actuators.copy()
-    new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
-    new_actuators.steerOutputCan = self.apply_steer_last
 
     self.frame += 1
     return new_actuators, can_sends
