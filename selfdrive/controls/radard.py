@@ -8,9 +8,108 @@ from cereal import car
 from common.numpy_fast import interp
 from common.params import Params
 from common.realtime import Ratekeeper, Priority, config_realtime_process
-from selfdrive.controls.lib.radar_helpers import Cluster, Track, RADAR_TO_CAMERA
 from system.swaglog import cloudlog
-from third_party.cluster.fastcluster_py import cluster_points_centroid
+
+from common.kalman.simple_kalman import KF1D
+
+
+# Default lead acceleration decay set to 50% at 1s
+_LEAD_ACCEL_TAU = 1.5
+
+# radar tracks
+SPEED, ACCEL = 0, 1   # Kalman filter states enum
+
+# stationary qualification parameters
+v_ego_stationary = 4.   # no stationary object flag below this speed
+
+RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
+RADAR_TO_CAMERA = 1.52   # RADAR is ~ 1.5m ahead from center of mesh frame
+
+
+def get_RadarState_from_vision(lead_msg, v_ego, model_v_ego):
+  lead_v_rel_pred = lead_msg.v[0] - model_v_ego
+  return {
+    "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
+    "yRel": float(-lead_msg.y[0]),
+    "vRel": float(lead_v_rel_pred),
+    "vLead": float(v_ego + lead_v_rel_pred),
+    "vLeadK": float(v_ego + lead_v_rel_pred),
+    "aLeadK": 0.0,
+    "aLeadTau": 0.3,
+    "fcw": False,
+    "modelProb": float(lead_msg.prob),
+    "radar": False,
+    "status": True
+  }
+
+class Track():
+  def __init__(self, v_lead, kalman_params):
+    self.cnt = 0
+    self.aLeadTau = _LEAD_ACCEL_TAU
+    self.K_A = kalman_params.A
+    self.K_C = kalman_params.C
+    self.K_K = kalman_params.K
+    self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
+
+  def update(self, d_rel, y_rel, v_rel, v_lead, measured):
+    # relative values, copy
+    self.dRel = d_rel   # LONG_DIST
+    self.yRel = y_rel   # -LAT_DIST
+    self.vRel = v_rel   # REL_SPEED
+    self.vLead = v_lead
+    self.measured = measured   # measured or estimate
+
+    # computed velocity and accelerations
+    if self.cnt > 0:
+      self.kf.update(self.vLead)
+
+    self.vLeadK = float(self.kf.x[SPEED][0])
+    self.aLeadK = float(self.kf.x[ACCEL][0])
+
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = _LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
+
+    self.cnt += 1
+
+  def get_key_for_cluster(self):
+    # Weigh y higher since radar is inaccurate in this dimension
+    return [self.dRel, self.yRel*2, self.vRel]
+
+  def reset_a_lead(self, aLeadK, aLeadTau):
+    self.kf = KF1D([[self.vLead], [aLeadK]], self.K_A, self.K_C, self.K_K)
+    self.aLeadK = aLeadK
+    self.aLeadTau = aLeadTau
+
+
+  def get_RadarState(self, model_prob=0.0):
+    return {
+      "dRel": float(self.dRel),
+      "yRel": float(self.yRel),
+      "vRel": float(self.vRel),
+      "vLead": float(self.vLead),
+      "vLeadK": float(self.vLeadK),
+      "aLeadK": float(self.aLeadK),
+      "status": True,
+      "fcw": self.is_potential_fcw(model_prob),
+      "modelProb": model_prob,
+      "radar": True,
+      "aLeadTau": float(self.aLeadTau)
+    }
+
+  def __str__(self):
+    ret = f"x: {self.dRel:4.1f}  y: {self.yRel:4.1f}  v: {self.vRel:4.1f}  a: {self.aLeadK:4.1f}"
+    return ret
+
+  def potential_low_speed_lead(self, v_ego):
+    # stop for stuff in front of you and low speed, even without model confirmation
+    # Radar points closer than 0.75, are almost always glitches on toyota radars
+    return abs(self.yRel) < 1.0 and (v_ego < v_ego_stationary) and (0.75 < self.dRel < 25)
+
+  def is_potential_fcw(self, model_prob):
+    return model_prob > .9
 
 
 class KalmanParams():
@@ -40,8 +139,7 @@ def laplacian_pdf(x, mu, b):
   return math.exp(-abs(x-mu)/b)
 
 
-def match_vision_to_cluster(v_ego, lead, clusters):
-  # match vision point to best statistical cluster match
+def match_vision_to_track(v_ego, lead, tracks):
   offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
@@ -52,39 +150,39 @@ def match_vision_to_cluster(v_ego, lead, clusters):
     # This is isn't exactly right, but good heuristic
     return prob_d * prob_y * prob_v
 
-  cluster = max(clusters, key=prob)
+  track = max(tracks.values(), key=prob)
 
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
-  dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(cluster.vRel + v_ego - lead.v[0]) < 10) or (v_ego + cluster.vRel > 3)
+  dist_sane = abs(track.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
+  vel_sane = (abs(track.vRel + v_ego - lead.v[0]) < 10) or (v_ego + track.vRel > 3)
   if dist_sane and vel_sane:
-    return cluster
+    return track
   else:
     return None
 
 
-def get_lead(v_ego, ready, clusters, lead_msg, model_v_ego, low_speed_override=True):
+def get_lead(v_ego, ready, tracks, lead_msg, model_v_ego, low_speed_override=True):
   # Determine leads, this is where the essential logic happens
-  if len(clusters) > 0 and ready and lead_msg.prob > .5:
-    cluster = match_vision_to_cluster(v_ego, lead_msg, clusters)
+  if len(tracks) > 0 and ready and lead_msg.prob > .5:
+    track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
-    cluster = None
+    track = None
 
   lead_dict = {'status': False}
-  if cluster is not None:
-    lead_dict = cluster.get_RadarState(lead_msg.prob)
-  elif (cluster is None) and ready and (lead_msg.prob > .5):
-    lead_dict = Cluster().get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
+  if track is not None:
+    lead_dict = track.get_RadarState(lead_msg.prob)
+  elif (track is None) and ready and (lead_msg.prob > .5):
+    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
-    low_speed_clusters = [c for c in clusters if c.potential_low_speed_lead(v_ego)]
-    if len(low_speed_clusters) > 0:
-      closest_cluster = min(low_speed_clusters, key=lambda c: c.dRel)
+    low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
+    if len(low_speed_tracks) > 0:
+      closest_track = min(low_speed_tracks, key=lambda c: c.dRel)
 
-      # Only choose new cluster if it is actually closer than the previous one
-      if (not lead_dict['status']) or (closest_cluster.dRel < lead_dict['dRel']):
-        lead_dict = closest_cluster.get_RadarState()
+      # Only choose new track if it is actually closer than the previous one
+      if (not lead_dict['status']) or (closest_track.dRel < lead_dict['dRel']):
+        lead_dict = closest_track.get_RadarState()
 
   return lead_dict
 
@@ -132,34 +230,6 @@ class RadarD():
         self.tracks[ids] = Track(v_lead, self.kalman_params)
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
-    idens = list(sorted(self.tracks.keys()))
-    track_pts = [self.tracks[iden].get_key_for_cluster() for iden in idens]
-
-    # If we have multiple points, cluster them
-    if len(track_pts) > 1:
-      cluster_idxs = cluster_points_centroid(track_pts, 2.5)
-      clusters = [None] * (max(cluster_idxs) + 1)
-
-      for idx in range(len(track_pts)):
-        cluster_i = cluster_idxs[idx]
-        if clusters[cluster_i] is None:
-          clusters[cluster_i] = Cluster()
-        clusters[cluster_i].add(self.tracks[idens[idx]])
-    elif len(track_pts) == 1:
-      # FIXME: cluster_point_centroid hangs forever if len(track_pts) == 1
-      cluster_idxs = [0]
-      clusters = [Cluster()]
-      clusters[0].add(self.tracks[idens[0]])
-    else:
-      clusters = []
-
-    # if a new point, reset accel to the rest of the cluster
-    for idx in range(len(track_pts)):
-      if self.tracks[idens[idx]].cnt <= 1:
-        aLeadK = clusters[cluster_idxs[idx]].aLeadK
-        aLeadTau = clusters[cluster_idxs[idx]].aLeadTau
-        self.tracks[idens[idx]].reset_a_lead(aLeadK, aLeadTau)
-
     # *** publish radarState ***
     dat = messaging.new_message('radarState')
     dat.valid = sm.all_checks() and len(rr.errors) == 0
@@ -174,8 +244,8 @@ class RadarD():
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, leads_v3[0], model_v_ego, low_speed_override=True)
-      radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, leads_v3[1], model_v_ego, low_speed_override=False)
+      radarState.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, low_speed_override=True)
+      radarState.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, low_speed_override=False)
     return dat
 
 

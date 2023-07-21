@@ -29,7 +29,10 @@ class Coordinate:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
   def __str__(self) -> str:
-    return f"({self.latitude}, {self.longitude})"
+    return f'Coordinate({self.latitude}, {self.longitude})'
+
+  def __repr__(self) -> str:
+    return self.__str__()
 
   def __eq__(self, other) -> bool:
     if not isinstance(other, Coordinate):
@@ -128,6 +131,10 @@ def maxspeed_to_ms(maxspeed: Dict[str, Union[str, float]]) -> float:
   return SPEED_CONVERSIONS[unit] * speed
 
 
+def field_valid(dat: dict, field: str) -> bool:
+  return field in dat and dat[field] is not None
+
+
 def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
   if not len(banners):
     return
@@ -144,19 +151,19 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
 
   # Primary
   p = current_banner['primary']
-  if 'text' in p:
+  if field_valid(p, 'text'):
     instruction.maneuverPrimaryText = p['text']
-  if 'type' in p:
+  if field_valid(p, 'type'):
     instruction.maneuverType = p['type']
-  if 'modifier' in p:
+  if field_valid(p, 'modifier'):
     instruction.maneuverModifier = p['modifier']
 
   # Secondary
-  if 'secondary' in current_banner:
+  if field_valid(current_banner, 'secondary'):
     instruction.maneuverSecondaryText = current_banner['secondary']['text']
 
   # Lane lines
-  if 'sub' in current_banner:
+  if field_valid(current_banner, 'sub'):
     lanes = []
     for component in current_banner['sub']['components']:
       if component['type'] != 'lane':
@@ -167,7 +174,7 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
         'directions': [string_to_direction(d) for d in component['directions']],
       }
 
-      if 'active_direction' in component:
+      if field_valid(component, 'active_direction'):
         lane['activeDirection'] = string_to_direction(component['active_direction'])
 
       lanes.append(lane)

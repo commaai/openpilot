@@ -301,14 +301,14 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       }
     }
 
+    if (stream_thread_) {
+      emit segmentsMerged();
+    }
     updateEvents([&]() {
       events_.swap(new_events_);
       segments_merged_ = segments_need_merge;
       return true;
     });
-    if (stream_thread_) {
-      emit segmentsMerged();
-    }
   }
 }
 

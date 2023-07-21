@@ -34,7 +34,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
-  QObject::connect(onroad, &OnroadWindow::mapWindowShown, this, [=] { sidebar->hide(); });
+  QObject::connect(onroad, &OnroadWindow::mapPanelRequested, this, [=] { sidebar->hide(); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
@@ -53,6 +53,10 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
+}
+
+void HomeWindow::showMapPanel(bool show) {
+  onroad->showMapPanel(show);
 }
 
 void HomeWindow::updateState(const UIState &s) {

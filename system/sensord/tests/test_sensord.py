@@ -41,33 +41,33 @@ SENSOR_CONFIGURATIONS = (
 )
 
 Sensor = log.SensorEventData.SensorSource
-SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
+SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max', 'expected_freq'])
 ALL_SENSORS = {
   Sensor.rpr0521: {
-    SensorConfig("light", 0, 1023),
+    SensorConfig("light", 0, 1023, 100),
   },
 
   Sensor.lsm6ds3: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 100),
+    SensorConfig("gyroUncalibrated", 0, .2, 100),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.lsm6ds3trc: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 104),
+    SensorConfig("gyroUncalibrated", 0, .2, 104),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("magneticUncalibrated", 0, 300),
-    SensorConfig("temperature", 0, 60),
+    SensorConfig("acceleration", 5, 15, 100),
+    SensorConfig("gyroUncalibrated", 0, .2, 100),
+    SensorConfig("magneticUncalibrated", 0, 300, 100),
+    SensorConfig("temperature", 0, 60, 100),
   },
 
   Sensor.mmc5603nj: {
-    SensorConfig("magneticUncalibrated", 0, 300),
+    SensorConfig("magneticUncalibrated", 0, 300, 100),
   }
 }
 
@@ -235,7 +235,7 @@ class TestSensord(unittest.TestCase):
 
         key = (sensor, s.type)
         val_cnt = len(sensor_values[key])
-        min_samples = self.sample_secs * 100  # Hz
+        min_samples = self.sample_secs * s.expected_freq
         err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
         assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
 

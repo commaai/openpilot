@@ -390,7 +390,7 @@ kj::Array<capnp::word> UbloxMsgParser::parse_glonass_ephemeris(ubx_t::rxm_sfrbx_
     eph.setP4(data->p4());
     eph.setSvURA(glonass_URA_lookup.at(data->f_t()));
     if (msg->sv_id() != data->n()) {
-      LOGE("SV_ID != SLOT_NUMBER: %d %d", msg->sv_id(), data->n())
+      LOGE("SV_ID != SLOT_NUMBER: %d %d", msg->sv_id(), data->n());
     }
     eph.setSvType(data->m());
   }

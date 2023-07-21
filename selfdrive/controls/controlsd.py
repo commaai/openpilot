@@ -7,7 +7,7 @@ from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
-from common.params import Params, put_nonblocking
+from common.params import Params, put_nonblocking, put_bool_nonblocking
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from common.conversions import Conversions as CV
@@ -373,7 +373,7 @@ class Controls:
     else:
       self.logged_comm_issue = None
 
-    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and not SIMULATION:
+    if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
@@ -411,7 +411,7 @@ class Controls:
         pass
 
     # TODO: fix simulator
-    if not SIMULATION:
+    if not SIMULATION or REPLAY:
       if not NOSENSOR:
         if not self.sm['liveLocationKalman'].gpsOK and self.sm['liveLocationKalman'].inputsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
@@ -436,7 +436,7 @@ class Controls:
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > (6. if REPLAY else 3.5)
-      if all_valid or timed_out or SIMULATION:
+      if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
           self.sm.ignore_alive.append('roadCameraState')
@@ -448,7 +448,7 @@ class Controls:
 
         self.initialized = True
         self.set_initial_state()
-        Params().put_bool("ControlsReady", True)
+        put_bool_nonblocking("ControlsReady", True)
 
     # Check for CAN timeout
     if not can_strs:

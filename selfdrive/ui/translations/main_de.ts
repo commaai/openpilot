@@ -403,6 +403,10 @@
         <source>Waiting for GPS</source>
         <translation>Warten auf GPS</translation>
     </message>
+    <message>
+        <source>Waiting for internet</source>
+        <translation type="unfinished">Auf Internet warten</translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
@@ -554,12 +558,16 @@
         <translation>Fernzugriff</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1 Jahr Speicherplatz</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>Entwickler Vorteile</translation>
+        <source>Turn-by-turn navigation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1 year of drive storage</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1088,10 +1096,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>Aktiviere den experimentellen Openpilot Tempomaten für experimentelle Funktionen.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1125,6 +1129,18 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
