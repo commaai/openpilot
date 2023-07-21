@@ -403,8 +403,8 @@
         <translation>等待 GPS</translation>
     </message>
     <message>
-        <source>Waiting for internet</source>
-        <translation type="unfinished">等待网络连接</translation>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
