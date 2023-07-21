@@ -289,11 +289,11 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
   cloudlog.info("radard is importing %s", CP.carName)
   RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
 
-  # *** setup messaging
+  # setup messaging
   if can_sock is None:
     can_sock = messaging.sub_sock('can')
   if sm is None:
-    sm = messaging.SubMaster(['modelV2', 'carState'], ignore_avg_freq=['modelV2', 'carState'])  # Can't check average frequency, since radar determines timing
+    sm = messaging.SubMaster(['modelV2', 'carState'], poll=["modelV2"])
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
@@ -302,19 +302,17 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
   RD = RadarD(CP.radarTimeStep, RI.delay)
 
-  while 1:
-    can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    rr = RI.update(can_strings)
+  while True:
+    sm.update()
 
-    if rr is None:
-      continue
+    if sm.updated['modelV2']:
+      can_strings = messaging.drain_sock_raw(can_sock)
+      rr = RI.update(can_strings)
 
-    sm.update(0)
+      RD.update(sm, rr)
+      RD.publish(pm, -rk.remaining*1000.0)
 
-    RD.update(sm, rr)
-    RD.publish(pm, -rk.remaining*1000.0)
-
-    rk.monitor_time()
+      rk.monitor_time()
 
 
 def main(sm: messaging.SubMaster = None, pm: messaging.PubMaster = None, can_sock: messaging.SubSocket = None):
