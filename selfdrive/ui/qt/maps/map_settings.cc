@@ -338,23 +338,24 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
   }
 
   // set last activity time.
-  auto new_locations = doc.array();
-  for (QJsonValueRef location : new_locations) {
+  auto remote_locations = doc.array();
+  for (QJsonValueRef loc : remote_locations) {
     qint64 sec = 0;
     auto it = std::find_if(locations.begin(), locations.end(),
-                           [location](const QJsonValue &l) { return locationEqual(location, l); });
+                           [loc](const QJsonValue &l) { return locationEqual(loc, l); });
     if (it != locations.end()) {
       auto tm = it->toObject().value("time");
-      if (!tm.isUndefined() && !tm.isNull())
+      if (!tm.isUndefined() && !tm.isNull()) {
         sec = tm.toVariant().toLongLong();
+      }
     }
 
-    auto obj = location.toObject();
+    auto obj = loc.toObject();
     obj.insert("time", sec);
-    location = obj;
+    loc = obj;
   }
 
-  locations = new_locations;
+  locations = remote_locations;
   sortLocations();
   emit locationsUpdated();
 }
