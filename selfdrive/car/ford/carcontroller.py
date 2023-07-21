@@ -90,6 +90,8 @@ class CarController:
       gas = accel
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
+      else:
+        gas = 2.5
 
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
       can_sends.append(create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=40 * CV.KPH_TO_MS))
