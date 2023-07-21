@@ -5,8 +5,8 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "common/swaglog.h"
 #include "common/params.h"
+#include "common/swaglog.h"
 #include "common/util.h"
 #include "selfdrive/modeld/models/nav.h"
 
