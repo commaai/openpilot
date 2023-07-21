@@ -3,8 +3,10 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import Callable, cast, Optional
+from typing import Callable, cast, List, Optional, Tuple
 from unittest.mock import MagicMock
+
+from websocket import WebSocket
 
 from common.params import Params
 from common.timeout import Timeout
@@ -17,6 +19,14 @@ def wifi_radio(on: bool) -> None:
     return
   print(f"wifi {'on' if on else 'off'}")
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
+
+
+def mock_ws_manage(sockopts: List[Tuple[int, int, int]]):
+  def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
+    for level, optname, value in sockopts:
+      ws.sock.setsockopt(level, optname, value)
+    end_event.wait()
+  return ws_manage
 
 
 class TestAthenadPing(unittest.TestCase):
