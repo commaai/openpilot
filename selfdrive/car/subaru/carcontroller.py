@@ -30,12 +30,13 @@ class CarController:
       # angle based steering
       if self.CP.carFingerprint in LKAS_ANGLE:
         if CC.latActive:
-          apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, CarControllerParams)
+          apply_steer = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_steer_last, CS.out.vEgoRaw, self.p)
         else:
           apply_steer = CS.out.steeringAngleDeg
 
         can_sends.append(subarucan.create_steering_control_angle(self.packer, apply_steer, CC.latActive))
 
+        self.apply_steer_last = apply_steer
         new_actuators.steeringAngleDeg = apply_steer
       
       # torque based steering
@@ -43,9 +44,7 @@ class CarController:
         apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
 
         # limits due to driver torque
-
-        new_steer = int(round(apply_steer))
-        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
+        apply_steer = apply_driver_steer_torque_limits(apply_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
         if not CC.latActive:
           apply_steer = 0
@@ -54,11 +53,10 @@ class CarController:
           can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
         else:
           can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
-        
+
+        self.apply_steer_last = apply_steer
         new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
         new_actuators.steerOutputCan = self.apply_steer_last
-
-      self.apply_steer_last = apply_steer
 
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
