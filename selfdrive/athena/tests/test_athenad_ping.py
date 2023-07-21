@@ -21,7 +21,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-def mock_ws_manage(sockopts: List[Tuple[int, int, int]]):
+def custom_ws_manage(sockopts: List[Tuple[int, int, int]]):
   def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     for level, optname, value in sockopts:
       ws.sock.setsockopt(level, optname, value)
@@ -37,6 +37,10 @@ class TestAthenadPing(unittest.TestCase):
   exit_event: threading.Event
 
   _create_connection: Callable
+  _ws_manage: Callable
+
+  mock_create_connection: MagicMock
+  mock_ws_manage: MagicMock
 
   def _get_ping_time(self) -> Optional[str]:
     return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
@@ -52,12 +56,17 @@ class TestAthenadPing(unittest.TestCase):
     cls.params = Params()
     cls.dongle_id = cls.params.get("DongleId", encoding="utf-8")
     cls._create_connection = athenad.create_connection
-    athenad.create_connection = MagicMock(wraps=cls._create_connection)
+    cls._ws_manage = athenad.ws_manage
+    cls.mock_create_connection = MagicMock(wraps=cls._create_connection)
+    cls.mock_ws_manage = MagicMock(side_effect=cls._ws_manage)
+    athenad.create_connection = cls.mock_create_connection
+    athenad.ws_manage = cls.mock_ws_manage
 
   @classmethod
   def tearDownClass(cls) -> None:
     wifi_radio(True)
     athenad.create_connection = cls._create_connection
+    athenad.ws_manage = cls._ws_manage
 
   def setUp(self) -> None:
     wifi_radio(True)
@@ -66,15 +75,15 @@ class TestAthenadPing(unittest.TestCase):
     self.exit_event = threading.Event()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
-    athenad.create_connection.reset_mock()
+    self.mock_create_connection.reset_mock()
+    self.mock_ws_manage.reset_mock()
 
   def tearDown(self) -> None:
     if self.athenad.is_alive():
       self.exit_event.set()
       self.athenad.join()
 
-  @unittest.skipIf(not TICI, "only run on desk")
-  def test_timeout(self) -> None:
+  def assertTimeout(self, reconnect_time: float) -> None:
     self.athenad.start()
 
     time.sleep(1)
@@ -94,7 +103,7 @@ class TestAthenadPing(unittest.TestCase):
       wifi_radio(False)
       print("waiting for reconnect attempt")
       start_time = time.monotonic()
-      with Timeout(180, "no reconnect attempt"):
+      with Timeout(reconnect_time, "no reconnect attempt"):
         while not athenad.create_connection.called:
           time.sleep(0.1)
         print(f"reconnect attempt after {time.monotonic() - start_time:.2f}s")
@@ -106,6 +115,17 @@ class TestAthenadPing(unittest.TestCase):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
+
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_timeout(self) -> None:
+    # default sockopts
+    self.assertTimeout(70)
+
+    # more correct sockopts
+    # self.assertTimeout(70)
+
+    # improved sockopts
+    # self.assertTimeout(40)
 
 
 if __name__ == "__main__":
