@@ -318,7 +318,7 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
     rk.monitor_time()
 
 
-def main(sm: messaging.SubMaster = None, pm: messaging.PubMaster = None, can_sock: messaging.SubSocket = None):
+def main(sm: Optional[messaging.SubMaster] = None, pm: Optional[messaging.PubMaster] = None, can_sock: messaging.SubSocket = None):
   radard_thread(sm, pm, can_sock)
 
 
