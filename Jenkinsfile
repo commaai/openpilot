@@ -138,7 +138,6 @@ pipeline {
           steps {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
-            sh "git lfs pull"
             sh "scons --clean && scons --no-cache -j42"
             sh "scons --clean && scons --no-cache --random -j42"
           }
