@@ -190,7 +190,7 @@ void loggerd_thread() {
   typedef struct QlogState {
     std::string name;
     int counter, freq;
-    bool encoder;
+    bool encoder, user_flag;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
@@ -212,6 +212,7 @@ void loggerd_thread() {
       .counter = 0,
       .freq = it.decimation,
       .encoder = encoder,
+      .user_flag = (strcmp(it.name, "userFlag") == 0),
     };
   }
 
@@ -236,17 +237,16 @@ void loggerd_thread() {
     for (auto sock : poller->poll(1000)) {
       if (do_exit) break;
 
+      QlogState &qs = qlog_states[sock];
+      if (qs.user_flag) {
+        handle_user_flag(&s);
+      }
+
       // drain socket
       int count = 0;
-      QlogState &qs = qlog_states[sock];
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-
-        if (qs.name == "userFlag") {
-          handle_user_flag(&s);
-        }
-
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock], encoder_infos_dict[qs.name]);
