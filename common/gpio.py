@@ -34,7 +34,7 @@ def get_irq_action(irq: int) -> List[str]:
   except FileNotFoundError:
     return []
 
-def get_irqs_for_action(action: str) -> List[int]:
+def get_irqs_for_action(action: str) -> List[str]:
   ret = []
   with open("/proc/interrupts") as f:
     for l in f.readlines():
