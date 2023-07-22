@@ -57,9 +57,10 @@ source_list = ['lat_mpc.py',
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
-lenv.Command(generated_files,
-             source_list,
-             f"cd {Dir('.').abspath} && python3 lat_mpc.py")
+generated_lat = lenv.Command(generated_files,
+                             source_list,
+                             f"cd {Dir('.').abspath} && python3 lat_mpc.py")
+lenv.Depends(generated_lat, "#common")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")

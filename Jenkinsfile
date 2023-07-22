@@ -134,6 +134,28 @@ pipeline {
         }
         */
 
+        stage('scons build test') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile.openpilot_base'
+              args '--user=root'
+            }
+          }
+          steps {
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --depth=1 --recursive"
+            sh "scons --clean && scons --no-cache -j42"
+            sh "scons --clean && scons --no-cache --random -j42"
+          }
+
+          post {
+            always {
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
+        }
+
         stage('tizi-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
