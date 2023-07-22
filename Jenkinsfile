@@ -142,6 +142,13 @@ pipeline {
             sh "scons --clean && scons --no-cache -j42"
             sh "scons --clean && scons --no-cache --random -j42"
           }
+
+          post {
+            always {
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
         }
 
         stage('tizi-tests') {
