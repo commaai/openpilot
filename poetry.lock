@@ -3058,11 +3058,11 @@ pypi = ["Pygments", "docutils", "twine", "wheel"]
 
 [[package]]
 name = "parameterized"
-version = "0.9.0"
+version = "0.8.1"
 description = "Parameterized testing with any Python test framework"
 category = "dev"
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 
 [package.extras]
 dev = ["jinja2"]
@@ -5213,6 +5213,7 @@ python-versions = "~3.11"
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 content-hash = "4d0cc4b21d5c400e874754367d7dcf9ada3b39c94cbafa27984d695daae5ee84"
 =======
 content-hash = "60163acd7eb0fcf3a33514a35775b7ffca9ae77c6cbb18617a1fc9a05b61bbf6"
@@ -5226,6 +5227,9 @@ content-hash = "4426397c4c58b95c7b949324a4bd4a00404e83fa093f4e23334f22ce387c0e66
 =======
 content-hash = "f3d069b73ebccda4632db6d84fe59536fe440a038b9d18095458d9878285b62e"
 >>>>>>> 03c089e8d (Unpin xx)
+=======
+content-hash = "b9c22ca5461c55a0752387e33f158f6def2febcd0211d5f40870bd5e90f6c775"
+>>>>>>> 8ca60c44e (pin parametrized)
 
 [metadata.files]
 adal = [
@@ -8057,8 +8061,8 @@ panflute = [
     {file = "panflute-2.3.0.tar.gz", hash = "sha256:cefd9dfc48ccd9732a53db57610701d22806da397a8a97e5cc8dc070b55865ca"},
 ]
 parameterized = [
-    {file = "parameterized-0.9.0-py2.py3-none-any.whl", hash = "sha256:4e0758e3d41bea3bbd05ec14fc2c24736723f243b28d702081aef438c9372b1b"},
-    {file = "parameterized-0.9.0.tar.gz", hash = "sha256:7fc905272cefa4f364c1a3429cbbe9c0f98b793988efb5bf90aac80f08db09b1"},
+    {file = "parameterized-0.8.1-py2.py3-none-any.whl", hash = "sha256:9cbb0b69a03e8695d68b3399a8a5825200976536fe1cb79db60ed6a4c8c9efe9"},
+    {file = "parameterized-0.8.1.tar.gz", hash = "sha256:41bbff37d6186430f77f900d777e5bb6a24928a1c46fb1de692f8b52b8833b5c"},
 ]
 paramiko = [
     {file = "paramiko-3.2.0-py3-none-any.whl", hash = "sha256:df0f9dd8903bc50f2e10580af687f3015bf592a377cd438d2ec9546467a14eb8"},
