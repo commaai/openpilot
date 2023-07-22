@@ -22,7 +22,7 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, subaddr=None, com_cont_req=b
       for _, _ in query.get_data(timeout).items():
         cloudlog.warning("communication control disable tx/rx ...")
 
-        query = IsoTpParallelQuery(sendcan, logcan, bus, [addr, subaddr], [com_cont_req], [COM_CONT_RESPONSE], debug=debug)
+        query = IsoTpParallelQuery(sendcan, logcan, bus, [(addr, subaddr)], [com_cont_req], [COM_CONT_RESPONSE], debug=debug)
         query.get_data(0)
 
         cloudlog.warning("ecu disabled")

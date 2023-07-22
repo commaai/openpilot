@@ -275,7 +275,9 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    disable_ecu(logcan, sendcan, bus=0, addr=0x750, subaddr=0xf, com_cont_req=b'\x28\x03\x01')
+    # a diagnostic mode of SESSION_TYPE.PROGRAMMING disabled the ECU on its own. car did not accept DISABLE_RX_DISABLE_TX, but it did not matter.
+    # a diagnostic mode of SESSION_TYPE.EXTENDED_DIAGNOSTIC and CONTROL_TYPE.ENABLE_RX_DISABLE_TX did work, so use that
+    disable_ecu(logcan, sendcan, bus=0, addr=0x750, subaddr=0xf, com_cont_req=b'\x28\x01\x01')
 
   # returns a car.CarState
   def _update(self, c):

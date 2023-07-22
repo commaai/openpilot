@@ -182,7 +182,7 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     if self.frame % 20 == 0:
-      can_sends.append([0x750, 0, b"\x0f\x02\x3E\x80\x00\x00\x00\x00", 0])
+      can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
