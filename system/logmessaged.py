@@ -14,6 +14,9 @@ def main() -> NoReturn:
 
   ctx = zmq.Context.instance()
   sock = ctx.socket(zmq.PULL)
+  # Remove message dropping
+  sock.setsockopt(zmq.RCVHWM, 0)
+
   sock.bind("ipc:///tmp/logmessage")
 
   # and we publish them

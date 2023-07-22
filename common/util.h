@@ -185,9 +185,13 @@ class LogState {
     zctx = zmq_ctx_new();
     sock = zmq_socket(zctx, ZMQ_PUSH);
 
-    // Timeout on shutdown for messages to be received by the logging process
+    // Timeout on shutdown for messages to be received by the logging process, so zmq will not block in dtor
     int timeout = 100;
     zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
+
+    // Increase send buffer
+    int high_watermark = 10000;
+    zmq_setsockopt(sock, ZMQ_SNDHWM, &high_watermark, sizeof(high_watermark));
 
     zmq_connect(sock, endpoint);
     initialized = true;
