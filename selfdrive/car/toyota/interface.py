@@ -240,7 +240,7 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
     # openpilot longitudinal behind experimental long toggle:
     #  - TSS2 radar ACC cars w/ smartDSU installed
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or experimental_long
+    ret.openpilotLongitudinalControl = True  # use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or experimental_long
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
