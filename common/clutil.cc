@@ -39,7 +39,7 @@ void cl_print_info(cl_platform_id platform, cl_device_id device) {
   LOGD("name: %s", get_device_info(device, CL_DEVICE_NAME).c_str());
   LOGD("device version: %s", get_device_info(device, CL_DEVICE_VERSION).c_str());
   LOGD("max work group size: %zu", work_group_size);
-  LOGD("type = %lu = %s", device_type, type_str);
+  LOGD("type = %d, %s", (int)device_type, type_str);
 }
 
 void cl_print_build_errors(cl_program program, cl_device_id device) {
