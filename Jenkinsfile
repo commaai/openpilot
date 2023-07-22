@@ -18,6 +18,12 @@ export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
+
+  if ! systemctl is-active --quiet systemd-resolved; then
+    echo "restarting resolved"
+    sudo systemctl start systemd-resolved
+    sleep 3
+  fi
 fi
 if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
