@@ -70,8 +70,8 @@ private:
   QLabel *error;
   MapInstructions* map_instructions;
   MapETA* map_eta;
-  QPushButton *settings_btn;
-  QPixmap directions_icon, settings_icon;
+//  QPushButton *settings_btn;
+//  QPixmap directions_icon, settings_icon;
 
   // Blue with normal nav, green when nav is input into the model
   QColor getNavPathColor(bool nav_enabled) {

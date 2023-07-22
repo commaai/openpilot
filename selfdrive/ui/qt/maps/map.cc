@@ -34,28 +34,28 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   map_eta->setFixedHeight(120);
 
-  // Settings button
-  QSize icon_size(120, 120);
-  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
-  settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
-
-  settings_btn = new QPushButton(directions_icon, "", this);
-  settings_btn->setIconSize(icon_size);
-  settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  settings_btn->setStyleSheet(R"(
-    QPushButton {
-      background-color: #96000000;
-      border-radius: 50px;
-      padding: 24px;
-      margin-left: 30px;
-    }
-    QPushButton:pressed {
-      background-color: #D9000000;
-    }
-  )");
-  QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
-    emit requestSettings(true);
-  });
+//  // Settings button
+//  QSize icon_size(120, 120);
+//  directions_icon = loadPixmap("../assets/navigation/icon_directions_outlined.svg", icon_size);
+//  settings_icon = loadPixmap("../assets/navigation/icon_settings.svg", icon_size);
+//
+//  settings_btn = new QPushButton(directions_icon, "", this);
+//  settings_btn->setIconSize(icon_size);
+//  settings_btn->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+//  settings_btn->setStyleSheet(R"(
+//    QPushButton {
+//      background-color: #96000000;
+//      border-radius: 50px;
+//      padding: 24px;
+//      margin-left: 30px;
+//    }
+//    QPushButton:pressed {
+//      background-color: #D9000000;
+//    }
+//  )");
+//  QObject::connect(settings_btn, &QPushButton::clicked, [=]() {
+//    emit requestSettings(true);
+//  });
 
   error = new QLabel(this);
   error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgb(0, 0, 0, 150);)");
@@ -64,7 +64,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   overlay_layout->addWidget(error);
   overlay_layout->addWidget(map_instructions);
   overlay_layout->addStretch(1);
-  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
+//  overlay_layout->addWidget(settings_btn, Qt::AlignLeft);
   overlay_layout->addSpacing(UI_BORDER_SIZE);
   overlay_layout->addWidget(map_eta);
 
@@ -253,9 +253,9 @@ void MapWindow::updateState(const UIState &s) {
       clearRoute();
     }
 
-    if (isVisible()) {
-      settings_btn->setIcon(map_eta->isVisible() ? settings_icon : directions_icon);
-    }
+//    if (isVisible()) {
+//      settings_btn->setIcon(map_eta->isVisible() ? settings_icon : directions_icon);
+//    }
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
