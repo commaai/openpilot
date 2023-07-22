@@ -19,7 +19,7 @@ source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
 
-  if systemctl is-active --quiet weston-ready; then
+  if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
     sudo systemctl start systemd-resolved
     sleep 3
