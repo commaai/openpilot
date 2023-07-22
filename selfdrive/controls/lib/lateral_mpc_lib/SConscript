@@ -47,7 +47,6 @@ acados_dir = '#third_party/acados'
 acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
 
 source_lat = 'lat_mpc.py'
-
 source_list = [source_lat,
   '#/selfdrive/modeld/constants.py',
   f'{acados_dir}/include/acados_c/ocp_nlp_interface.h',
@@ -60,8 +59,8 @@ lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
 generated_lat = lenv.Command(generated_files,
-                  source_list,
-                  f"cd {Dir('.').abspath} && python3 {source_lat}")
+                             source_list,
+                             f"cd {Dir('.').abspath} && python3 {source_lat}")
 lenv.Depends(generated_lat, "#common")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
