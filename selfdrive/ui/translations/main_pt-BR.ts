@@ -404,8 +404,8 @@
         <translation>Esperando por GPS</translation>
     </message>
     <message>
-        <source>Waiting for internet</source>
-        <translation type="unfinished">Esperando pela internet</translation>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -56,7 +56,7 @@ if __name__ == "__main__":
     pr_err /= len(car)
     speed_err /= len(car)
     print("avg psuedorange err %f avg speed err %f" % (pr_err, speed_err))
-    for c in sorted(car, key=lambda x: abs(x[1] - x[3] - pr_err)):  # type: ignore
+    for c in sorted(car, key=lambda x: abs(x[1] - x[3] - pr_err)):
       svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed, cno = c
       print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   meas_err: %10.3f speed_err: %8.3f cno: %d" %
         (svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed,
