@@ -6,6 +6,7 @@ from selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControlle
                                         MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.disable_ecu import disable_ecu
 
 EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
@@ -238,6 +239,8 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
+    ret.radarUnavailable = True
+
     if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
@@ -269,6 +272,10 @@ class CarInterface(CarInterfaceBase):
       tune.kiV = [0.54, 0.36]
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    disable_ecu(logcan, sendcan, bus=0, addr=0x750, subaddr=0xf, com_cont_req=b'\x28\x03\x01')
 
   # returns a car.CarState
   def _update(self, c):

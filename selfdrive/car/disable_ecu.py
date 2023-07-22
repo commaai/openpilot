@@ -7,22 +7,22 @@ EXT_DIAG_RESPONSE = b'\x50\x03'
 COM_CONT_RESPONSE = b''
 
 
-def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, com_cont_req=b'\x28\x83\x01', timeout=0.1, retry=10, debug=False):
+def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, subaddr=None, com_cont_req=b'\x28\x83\x01', timeout=0.1, retry=10, debug=False):
   """Silence an ECU by disabling sending and receiving messages using UDS 0x28.
   The ECU will stay silent as long as openpilot keeps sending Tester Present.
 
   This is used to disable the radar in some cars. Openpilot will emulate the radar.
   WARNING: THIS DISABLES AEB!"""
-  cloudlog.warning(f"ecu disable {hex(addr)} ...")
+  cloudlog.warning(f"ecu disable {hex(addr), subaddr} ...")
 
   for i in range(retry):
     try:
-      query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [(addr, subaddr)], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
 
       for _, _ in query.get_data(timeout).items():
         cloudlog.warning("communication control disable tx/rx ...")
 
-        query = IsoTpParallelQuery(sendcan, logcan, bus, [addr], [com_cont_req], [COM_CONT_RESPONSE], debug=debug)
+        query = IsoTpParallelQuery(sendcan, logcan, bus, [addr, subaddr], [com_cont_req], [COM_CONT_RESPONSE], debug=debug)
         query.get_data(0)
 
         cloudlog.warning("ecu disabled")
@@ -44,5 +44,5 @@ if __name__ == "__main__":
   time.sleep(1)
 
   # honda bosch radar disable
-  disabled = disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03', timeout=0.5, debug=False)
+  disabled = disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x03\x01', timeout=0.5, debug=False)
   print(f"disabled: {disabled}")
