@@ -173,6 +173,9 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
 }
 
 void handle_user_flag(LoggerdState *s) {
+  static int prev_segment = -1;
+  if (s->rotate_segment == prev_segment) return;
+
   LOGW("preserving %s", s->segment_path);
 
 #ifdef __APPLE__
@@ -183,6 +186,7 @@ void handle_user_flag(LoggerdState *s) {
   if (ret) {
     LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->segment_path, strerror(errno));
   }
+  prev_segment = s->rotate_segment.load();
 }
 
 void loggerd_thread() {
