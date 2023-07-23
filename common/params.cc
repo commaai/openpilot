@@ -156,7 +156,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LiveTorqueCarParams", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LongitudinalPersonality", PERSISTENT},
-    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | DONT_REMOVE_ON_CLEAR},
+    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | DONT_REMOVE},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
@@ -193,15 +193,15 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
-    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION | DONT_REMOVE_ON_CLEAR},
-    {"UpdateFailedCount", CLEAR_ON_MANAGER_START | DONT_REMOVE_ON_CLEAR},
+    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION | DONT_REMOVE},
+    {"UpdateFailedCount", CLEAR_ON_MANAGER_START | DONT_REMOVE},
     {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
     {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
-    {"UpdaterState", CLEAR_ON_MANAGER_START | DONT_REMOVE_ON_CLEAR},
+    {"UpdaterState", CLEAR_ON_MANAGER_START | DONT_REMOVE},
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
@@ -269,8 +269,17 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 }
 
 int Params::remove(const std::string &key) {
+  auto it = keys.find(key);
+  if (it == keys.end()) return -1;
+
+  int result = -1;
   FileLock file_lock(params_path + "/.lock");
-  int result = unlink(getParamPath(key).c_str());
+  if (it->second & DONT_REMOVE) {
+    // clear content
+    result = fclose(fopen(getParamPath(key).c_str(), "w"));
+  } else {
+    result = unlink(getParamPath(key).c_str());
+  }
   if (result != 0) {
     return result;
   }
@@ -316,7 +325,7 @@ void Params::clearAll(ParamKeyType key_type) {
       if (de->d_type != DT_DIR) {
         auto it = keys.find(de->d_name);
         if (it == keys.end() || (it->second & key_type)) {
-          if (it != keys.end() && (it->second & DONT_REMOVE_ON_CLEAR)) {
+          if (it != keys.end() && (it->second & DONT_REMOVE)) {
             // clear the content
             fclose(fopen(getParamPath(de->d_name).c_str(), "w"));
           } else {

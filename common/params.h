@@ -9,7 +9,7 @@ enum ParamKeyType {
   CLEAR_ON_MANAGER_START = 0x04,
   CLEAR_ON_ONROAD_TRANSITION = 0x08,
   CLEAR_ON_OFFROAD_TRANSITION = 0x10,
-  DONT_REMOVE_ON_CLEAR = 0x20,
+  DONT_REMOVE = 0x20,
   DONT_LOG = 0x40,
   ALL = 0xFFFFFFFF
 };
@@ -43,7 +43,6 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return put(key.c_str(), val ? "1" : "0", 1);
   }
-  inline void clear_content(const std::string &key) { put(key, ""); }
 
 private:
   std::string params_path;

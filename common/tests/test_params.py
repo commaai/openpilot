@@ -77,6 +77,13 @@ class TestParams(unittest.TestCase):
     self.params.remove("CarParams")
     assert self.params.get("CarParams") is None
 
+  def test_dont_remove(self):
+    self.params.put("NavDestination", "test")
+    assert self.params.get("NavDestination") == b"test"
+    self.params.remove("NavDestination")
+    assert self.params.get("NavDestination") is None
+    assert os.path.isfile(self.params.get_param_path("NavDestination"))
+
   def test_get_bool(self):
     self.params.remove("IsMetric")
     self.assertFalse(self.params.get_bool("IsMetric"))
