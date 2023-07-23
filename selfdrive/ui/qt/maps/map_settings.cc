@@ -60,7 +60,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   current_widget = new DestinationWidget(this);
   QObject::connect(current_widget, &DestinationWidget::actionClicked, [=]() {
     if (current_destination.empty()) return;
-    params.put("NavDestination", "");
+    params.remove("NavDestination");
     updateCurrentRoute();
   });
   frame->addWidget(current_widget);
