@@ -28,7 +28,8 @@ class NavigationRequest : public QObject {
 public:
   static NavigationRequest *instance();
   QJsonArray currentLocations() const { return locations; };
-  void setLastActivity(const QJsonObject &location, qint64 sec);
+  qint64 getLastActivity(const QJsonObject &loc) const;
+  void setLastActivity(const QJsonObject &loc, qint64 sec);
 
 signals:
   void locationsUpdated();

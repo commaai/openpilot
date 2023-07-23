@@ -340,18 +340,8 @@ void NavigationRequest::parseLocationsResponse(const QString &response, bool suc
   // set last activity time.
   auto remote_locations = doc.array();
   for (QJsonValueRef loc : remote_locations) {
-    qint64 sec = 0;
-    auto it = std::find_if(locations.begin(), locations.end(),
-                           [loc](const QJsonValue &l) { return locationEqual(loc, l); });
-    if (it != locations.end()) {
-      auto tm = it->toObject().value("time");
-      if (!tm.isUndefined() && !tm.isNull()) {
-        sec = tm.toVariant().toLongLong();
-      }
-    }
-
     auto obj = loc.toObject();
-    obj.insert("time", sec);
+    obj.insert("time", getLastActivity(obj));
     loc = obj;
   }
 
@@ -377,9 +367,22 @@ void NavigationRequest::sortLocations() {
   });
 }
 
-void NavigationRequest::setLastActivity(const QJsonObject &location, qint64 sec) {
+qint64 NavigationRequest::getLastActivity(const QJsonObject &loc) const {
+  qint64 last_activity = 0;
   auto it = std::find_if(locations.begin(), locations.end(),
-                         [&location](const QJsonValue &l) { return locationEqual(location, l); });
+                         [&loc](const QJsonValue &l) { return locationEqual(loc, l); });
+  if (it != locations.end()) {
+    auto tm = it->toObject().value("time");
+    if (!tm.isUndefined() && !tm.isNull()) {
+      last_activity = tm.toVariant().toLongLong();
+    }
+  }
+  return last_activity;
+}
+
+void NavigationRequest::setLastActivity(const QJsonObject &loc, qint64 sec) {
+  auto it = std::find_if(locations.begin(), locations.end(),
+                         [&loc](const QJsonValue &l) { return locationEqual(loc, l); });
   if (it != locations.end()) {
     auto obj = it->toObject();
     obj.insert("time", sec);
