@@ -156,7 +156,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LiveTorqueCarParams", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LongitudinalPersonality", PERSISTENT},
-    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | DONT_REMOVE_ON_CLEAR},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
@@ -193,15 +193,15 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
-    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
+    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION | DONT_REMOVE_ON_CLEAR},
+    {"UpdateFailedCount", CLEAR_ON_MANAGER_START | DONT_REMOVE_ON_CLEAR},
     {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
     {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
-    {"UpdaterState", CLEAR_ON_MANAGER_START},
+    {"UpdaterState", CLEAR_ON_MANAGER_START | DONT_REMOVE_ON_CLEAR},
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
@@ -316,7 +316,12 @@ void Params::clearAll(ParamKeyType key_type) {
       if (de->d_type != DT_DIR) {
         auto it = keys.find(de->d_name);
         if (it == keys.end() || (it->second & key_type)) {
-          unlink(getParamPath(de->d_name).c_str());
+          if (it != keys.end() && (it->second & DONT_REMOVE_ON_CLEAR)) {
+            // clear the content
+            fclose(fopen(getParamPath(de->d_name).c_str(), "w"));
+          } else {
+            unlink(getParamPath(de->d_name).c_str());
+          }
         }
       }
     }

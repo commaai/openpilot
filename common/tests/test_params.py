@@ -29,7 +29,9 @@ class TestParams(unittest.TestCase):
   def test_params_get_cleared_manager_start(self):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")
+    self.params.put("NavDestination", "test")
     assert self.params.get("CarParams") == b"test"
+    assert self.params.get("NavDestination") == b"test"
 
     undefined_param = self.params.get_param_path(uuid.uuid4().hex)
     with open(undefined_param, "w") as f:
@@ -39,6 +41,8 @@ class TestParams(unittest.TestCase):
     self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
+    assert self.params.get("NavDestination") is None
+    assert os.path.isfile(self.params.get_param_path("NavDestination"))
     assert not os.path.isfile(undefined_param)
 
   def test_params_two_things(self):
