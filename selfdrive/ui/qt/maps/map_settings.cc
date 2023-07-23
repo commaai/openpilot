@@ -60,7 +60,7 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   current_widget = new DestinationWidget(this);
   QObject::connect(current_widget, &DestinationWidget::actionClicked, [=]() {
     if (current_destination.empty()) return;
-    params.remove("NavDestination");
+    params.put("NavDestination", "");
     updateCurrentRoute();
   });
   frame->addWidget(current_widget);
@@ -298,6 +298,7 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
     }
     {
       auto param_watcher = new ParamWatcher(this);
+      param_watcher->addParam("NavDestination");
       QObject::connect(param_watcher, &ParamWatcher::paramChanged, this, &NavigationRequest::nextDestinationUpdated);
 
       // Destination set while offline
@@ -318,6 +319,7 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
 
         // athena can set destination at any time
         param_watcher->addParam("NavDestination");
+        emit nextDestinationUpdated();
       });
     }
   }
