@@ -1,4 +1,4 @@
-from functools import cache
+from functools import lru_cache
 from typing import Optional, List
 
 def gpio_init(pin: int, output: bool) -> None:
@@ -25,7 +25,7 @@ def gpio_read(pin: int) -> Optional[bool]:
 
   return val
 
-@cache
+@lru_cache(maxsize=None)
 def get_irq_action(irq: int) -> List[str]:
   try:
     with open(f"/sys/kernel/irq/{irq}/actions") as f:
