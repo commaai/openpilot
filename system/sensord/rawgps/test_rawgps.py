@@ -67,7 +67,7 @@ class TestRawgpsd(unittest.TestCase):
         os.system("sudo systemctl stop systemd-resolved")
       with self.subTest(internet=internet):
         managed_processes['rawgpsd'].start()
-        assert self._wait_for_output(10)
+        assert self._wait_for_output(7)
         managed_processes['rawgpsd'].stop()
 
   def test_turns_off_gnss(self):
