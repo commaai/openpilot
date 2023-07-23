@@ -121,8 +121,10 @@ class TestRawgpsd(unittest.TestCase):
     managed_processes['rawgpsd'].start()
     self._wait_for_output(17)
     assert self.sm.updated['qcomGnss']
+    self.check_assistance(False)
+
     os.system("sudo systemctl restart systemd-resolved")
-    self._wait_for_output(15)
+    time.sleep(15)
     managed_processes['rawgpsd'].stop()
     self.check_assistance(True)
 
