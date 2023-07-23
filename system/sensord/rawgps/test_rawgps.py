@@ -23,7 +23,7 @@ class TestRawgpsd(unittest.TestCase):
       raise unittest.SkipTest
 
     os.system("sudo systemctl start systemd-resolved")
-    #os.system("sudo systemctl restart ModemManager lte")
+    os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
     cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
@@ -119,8 +119,9 @@ class TestRawgpsd(unittest.TestCase):
     managed_processes['rawgpsd'].start()
     self._wait_for_output(17)
     assert self.sm.updated['qcomGnss']
+
     os.system("sudo systemctl restart systemd-resolved")
-    self._wait_for_output(15)
+    time.sleep(15)
     managed_processes['rawgpsd'].stop()
     self.check_assistance(True)
 
