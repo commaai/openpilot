@@ -402,6 +402,10 @@
         <source>Waiting for GPS</source>
         <translation>等待 GPS</translation>
     </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>

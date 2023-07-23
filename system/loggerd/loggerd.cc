@@ -1,3 +1,5 @@
+#include <sys/xattr.h>
+
 #include <unordered_map>
 
 #include "system/loggerd/encoder/encoder.h"
@@ -170,6 +172,19 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   return bytes_count;
 }
 
+void handle_user_flag(LoggerdState *s) {
+  LOGW("preserving %s", s->segment_path);
+
+#ifdef __APPLE__
+  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
+#else
+  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0);
+#endif
+  if (ret) {
+    LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->segment_path, strerror(errno));
+  }
+}
+
 void loggerd_thread() {
   // setup messaging
   typedef struct QlogState {
@@ -227,6 +242,10 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
+
+        if (qs.name == "userFlag") {
+          handle_user_flag(&s);
+        }
 
         if (qs.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
