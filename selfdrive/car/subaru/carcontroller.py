@@ -3,12 +3,10 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, STEER_LIMITED, CarControllerParams, SubaruFlags
 
-MAX_STEER_RATE = 40  # deg/s
-MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
+MAX_STEER_RATE = 100  # deg/s
+MAX_STEER_RATE_FRAMES = 9  # tx control frames needed before torque can be cut
 
-MAX_STEER_ANGLE = 90
-MAX_STEER_ANGLE_FRAMES = 8
-
+MAX_STEER_ANGLE = 88
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -19,7 +17,6 @@ class CarController:
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
     self.steer_rate_counter = 0
-    self.steer_angle_counter = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -40,6 +37,8 @@ class CarController:
       new_steer = int(round(apply_steer))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
+      print(actuators.steer, self.steer_rate_counter, CC.latActive, CS.out.steerFaultTemporary, CS.out.steerFaultPermanent, f"{CS.out.steeringRateDeg:6.1f}")
+
       apply_steer_req = 1
 
       if not CC.latActive:
@@ -52,24 +51,18 @@ class CarController:
           self.steer_rate_counter += 1
         else:
           self.steer_rate_counter = 0
-        
+
         if abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE:
-          self.steer_angle_counter += 1
-        else:
-          self.steer_angle_counter = 0
-        
+          apply_steer_req = 0
+
         if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
           apply_steer_req = 0
           self.steer_rate_counter = 0
         
-        if self.steer_angle_counter > MAX_STEER_ANGLE_FRAMES:
-          apply_steer_req = 0
-          self.steer_angle_counter = 0
-
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, apply_steer_req))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, apply_steer_req, set_1=1))
 
       self.apply_steer_last = apply_steer
 

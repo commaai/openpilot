@@ -14,6 +14,8 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
     self.prev_angle = 0
+    self.prev_angle_counter = 0
+    self.prev_rate = 0
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -49,10 +51,18 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
+    
+    # have not found a steering rate message. calculate it manually
+    angle_counter = cp.vl["Steering_Torque"]["COUNTER"]
+    STEERING_FREQUENCY = 2
 
-    # Circle Buffer
-    ret.steeringRateDeg = (ret.steeringAngleDeg - self.prev_angle) / DT_CTRL
-    self.prev_angle = ret.steeringAngleDeg
+    if angle_counter != self.prev_angle_counter:
+      ret.steeringRateDeg = (ret.steeringAngleDeg - self.prev_angle) / (DT_CTRL * STEERING_FREQUENCY)
+      self.prev_angle = ret.steeringAngleDeg
+      self.prev_angle_counter = angle_counter
+      self.prev_rate = ret.steeringRateDeg
+    else:
+      ret.steeringRateDeg = self.prev_rate
 
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
