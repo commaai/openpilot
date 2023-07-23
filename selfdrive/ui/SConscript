@@ -29,7 +29,8 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/
 qt_env['CPPDEFINES'] = []
 if maps:
   base_libs += ['qmapboxgl']
-  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
+                  "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
@@ -104,7 +105,7 @@ if GetOption('extras'):
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
+    ("openpilot_nightly", "nightly"),
     ("openpilot_internal", "master"),
     ("dashcam", dashcam),
     ("dashcam_test", f"{dashcam}-staging"),

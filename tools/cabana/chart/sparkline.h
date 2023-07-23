@@ -10,6 +10,9 @@ class Sparkline {
 public:
   void update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size);
   const QSize size() const { return pixmap.size() / pixmap.devicePixelRatio(); }
+  inline double freq() const {
+    return values.empty() ? 0 : values.size() / std::max(values.back().x() - values.front().x(), 1.0);
+  }
 
   QPixmap pixmap;
   double min_val = 0;

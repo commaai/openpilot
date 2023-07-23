@@ -137,7 +137,7 @@ class UploadQueueCache:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
-def handle_long_poll(ws: WebSocket) -> None:
+def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> None:
   end_event = threading.Event()
 
   threads = [
@@ -156,6 +156,8 @@ def handle_long_poll(ws: WebSocket) -> None:
   try:
     while not end_event.is_set():
       time.sleep(0.1)
+      if exit_event is not None and exit_event.is_set():
+        end_event.set()
   except (KeyboardInterrupt, SystemExit):
     end_event.set()
     raise
@@ -758,7 +760,7 @@ def backoff(retries: int) -> int:
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def main():
+def main(exit_event: Optional[threading.Event] = None):
   try:
     set_core_affinity([0, 1, 2, 3])
   except Exception:
@@ -771,26 +773,34 @@ def main():
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
 
+  conn_start = None
   conn_retries = 0
-  while 1:
+  while exit_event is None or not exit_event.is_set():
     try:
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
+      if conn_start is None:
+        conn_start = time.monotonic()
+
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                     duration=time.monotonic() - conn_start)
+      conn_start = None
 
       conn_retries = 0
       cur_upload_items.clear()
 
-      handle_long_poll(ws)
+      handle_long_poll(ws, exit_event)
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
       params.remove("LastAthenaPingTime")
-    except socket.timeout:
+    # TODO: socket.timeout and TimeoutError are now the same exception since python3.10
+    # Remove the socket.timeout case once we have fully moved to python3.11
+    except socket.timeout: # pylint: disable=duplicate-except
       params.remove("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")

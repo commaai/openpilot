@@ -1,5 +1,6 @@
 moc_*
 *.moc
 
+mapsd
 map_renderer
 libmap_renderer.so

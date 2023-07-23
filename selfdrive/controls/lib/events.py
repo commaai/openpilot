@@ -193,7 +193,7 @@ class StartupAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str = "Always keep hands on wheel and eyes on road", alert_status=AlertStatus.normal):
     super().__init__(alert_text_1, alert_text_2,
                      alert_status, AlertSize.mid,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 10.),
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
 
 
 # ********** helper functions **********
@@ -954,3 +954,36 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
 }
+
+
+if __name__ == '__main__':
+  # print all alerts by type and priority
+  from cereal.services import service_list
+  from collections import defaultdict, OrderedDict
+
+  event_names = {v: k for k, v in EventName.schema.enumerants.items()}
+  alerts_by_type: Dict[str, Dict[int, List[str]]] = defaultdict(lambda: defaultdict(list))
+
+  CP = car.CarParams.new_message()
+  CS = car.CarState.new_message()
+  sm = messaging.SubMaster(list(service_list.keys()))
+
+  for i, alerts in EVENTS.items():
+    for et, alert in alerts.items():
+      if callable(alert):
+        alert = alert(CP, CS, sm, False, 1)
+      priority = alert.priority
+      alerts_by_type[et][priority].append(event_names[i])
+
+  all_alerts = {}
+  for et, priority_alerts in alerts_by_type.items():
+    all_alerts[et] = OrderedDict([
+      (str(priority), l)
+      for priority, l in sorted(priority_alerts.items(), key=lambda x: -int(x[0]))
+    ])
+
+  for status, evs in sorted(all_alerts.items(), key=lambda x: x[0]):
+    print(f"**** {status} ****")
+    for p, alert_list in evs.items():
+      print(f"  {p}:")
+      print("   ", ', '.join(alert_list), "\n")

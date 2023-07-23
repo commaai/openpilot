@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
@@ -33,7 +33,7 @@ class CAR:
 @dataclass
 class NissanCarInfo(CarInfo):
   package: str = "ProPILOT Assist"
-  car_parts: CarParts = CarParts.common([CarHarness.nissan_a])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
 
 CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
@@ -79,8 +79,8 @@ FINGERPRINTS = {
   ]
 }
 
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
 
 NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
 NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
