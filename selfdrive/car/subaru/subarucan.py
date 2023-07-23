@@ -4,10 +4,10 @@ from selfdrive.car.subaru.values import CanBus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def create_steering_control(packer, apply_steer, apply_steer_req):
+def create_steering_control(packer, apply_steer, steer_req):
   values = {
     "LKAS_Output": apply_steer,
-    "LKAS_Request": apply_steer_req,
+    "LKAS_Request": steer_req,
     "SET_1": 1
   }
   return packer.make_can_msg("ES_LKAS", 0, values)
