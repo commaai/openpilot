@@ -187,12 +187,12 @@ void handle_user_flag(LoggerdState *s) {
 
 void loggerd_thread() {
   // setup messaging
-  typedef struct QlogState {
+  typedef struct ServiceState {
     std::string name;
     int counter, freq;
     bool encoder, user_flag;
-  } QlogState;
-  std::unordered_map<SubSocket*, QlogState> qlog_states;
+  } ServiceState;
+  std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
@@ -207,7 +207,7 @@ void loggerd_thread() {
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
-    qlog_states[sock] = {
+    service_state[sock] = {
       .name = it.name,
       .counter = 0,
       .freq = it.decimation,
@@ -237,8 +237,8 @@ void loggerd_thread() {
     for (auto sock : poller->poll(1000)) {
       if (do_exit) break;
 
-      QlogState &qs = qlog_states[sock];
-      if (qs.user_flag) {
+      ServiceState &service = service_state[sock];
+      if (service.user_flag) {
         handle_user_flag(&s);
       }
 
@@ -246,10 +246,10 @@ void loggerd_thread() {
       int count = 0;
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
-        const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        if (qs.encoder) {
+        const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
+        if (service.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock], encoder_infos_dict[qs.name]);
+          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
@@ -265,7 +265,7 @@ void loggerd_thread() {
 
         count++;
         if (count >= 200) {
-          LOGD("large volume of '%s' messages", qs.name.c_str());
+          LOGD("large volume of '%s' messages", service.name.c_str());
           break;
         }
       }
@@ -282,7 +282,7 @@ void loggerd_thread() {
   }
 
   // messaging cleanup
-  for (auto &[sock, qs] : qlog_states) delete sock;
+  for (auto &[sock, service] : service_state) delete sock;
 }
 
 int main(int argc, char** argv) {
