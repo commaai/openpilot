@@ -25,7 +25,6 @@ class TestRawgpsd(unittest.TestCase):
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
-    cls.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   @classmethod
   def tearDownClass(cls):
@@ -35,6 +34,7 @@ class TestRawgpsd(unittest.TestCase):
 
   def setUp(self):
     at_cmd("AT+QGPSDEL=0")
+    self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def tearDown(self):
     managed_processes['rawgpsd'].stop()
