@@ -220,11 +220,10 @@ class CarInterface(CarInterfaceBase):
 
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    if candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR):
-      if not (ret.flags & ToyotaFlags.SMART_DSU):
-        if Ecu.dsu in found_ecus:
-          ret.experimentalLongitudinalAvailable = True
-        ret.enableDsu = experimental_long or (Ecu.dsu not in found_ecus and len(found_ecus) > 0)
+    if candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU):
+      if Ecu.dsu in found_ecus:
+        ret.experimentalLongitudinalAvailable = True
+      ret.enableDsu = experimental_long or (Ecu.dsu not in found_ecus and len(found_ecus) > 0)
 
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
