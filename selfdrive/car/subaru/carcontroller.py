@@ -3,7 +3,7 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, STEER_LIMITED, CarControllerParams, SubaruFlags
 
-MAX_STEER_RATE = 20  # deg/s
+MAX_STEER_RATE = 40 # deg/s
 MAX_STEER_RATE_FRAMES = 8  # tx control frames needed before torque can be cut
 
 MAX_STEER_ANGLE = 88
@@ -37,14 +37,13 @@ class CarController:
       new_steer = int(round(apply_steer))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
 
-      print(MAX_STEER_RATE, MAX_STEER_RATE_FRAMES)
-      print(actuators.steer, self.steer_rate_counter, CC.latActive, CS.out.steerFaultTemporary, CS.out.steerFaultPermanent, f"{CS.out.steeringRateDeg:6.1f}")
-
       apply_steer_req = 1
 
       if not CC.latActive:
         apply_steer = 0
         apply_steer_req = 0
+
+      print(CS.out.steeringRateDeg)
 
       if self.CP.carFingerprint in STEER_LIMITED:
         # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
@@ -52,14 +51,15 @@ class CarController:
           self.steer_rate_counter += 1
         else:
           self.steer_rate_counter = 0
-
-        if abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE:
-          apply_steer_req = 0
-
+        
         if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
           apply_steer_req = 0
           self.steer_rate_counter = 0
-        
+
+        # Any steering past 90 appears to cause temp fault
+        if abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE:
+          apply_steer_req = 0
+
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
       else:
