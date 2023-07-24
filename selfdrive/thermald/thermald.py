@@ -124,6 +124,7 @@ def hw_state_thread(end_event, hw_queue):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
           else:
             if not modem_restarted:
+              # TODO: we may be able to remove this with a MM update
               # ModemManager's probing on startup can fail
               # rarely, restart the service to probe again.
               modem_missing_count += 1
