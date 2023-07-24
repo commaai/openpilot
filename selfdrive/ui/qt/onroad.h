@@ -54,9 +54,6 @@ class MapSettingsButton : public QPushButton {
 public:
   explicit MapSettingsButton(QWidget *parent = 0);
 
-signals:
-  void toggleMapSettings();
-
 private:
   void paintEvent(QPaintEvent *event) override;
 
@@ -83,16 +80,13 @@ class AnnotatedCameraWidget : public CameraWidget {
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
-
-signals:
-  void toggleMapSettings();
+  MapSettingsButton *map_settings_btn;
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 
   ExperimentalButton *experimental_btn;
-  MapSettingsButton *map_settings_btn;
   QPixmap dm_img;
   float speed;
   QString speedUnit;

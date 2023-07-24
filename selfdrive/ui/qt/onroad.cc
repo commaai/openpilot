@@ -92,7 +92,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
       map = m;
 
       QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
-      QObject::connect(nvg, &AnnotatedCameraWidget::toggleMapSettings, m, &MapPanel::toggleMapSettings);
+      QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
+      nvg->map_settings_btn->setVisible(true);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
@@ -225,8 +226,10 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 // MapSettingsButton
 MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
-
   settings_img = loadPixmap("../assets/navigation/nav-settings.png", {136, 136});
+
+  // hidden by default, made visible if map is created (has prime or mapbox token)
+  setVisible(false);
 }
 
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
@@ -256,7 +259,6 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
   map_settings_btn = new MapSettingsButton(this);
-  QObject::connect(map_settings_btn, &MapSettingsButton::clicked, this, &AnnotatedCameraWidget::toggleMapSettings);
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
