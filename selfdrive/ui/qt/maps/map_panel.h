@@ -17,7 +17,6 @@ public slots:
   void requestVisible(bool visible);
   void toggleMapSettings();
 
-
 private:
   QStackedLayout *content_stack;
 };
