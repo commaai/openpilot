@@ -279,7 +279,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.enableDsu and CP.flags & ToyotaFlags.SMART_DSU == 0:
+    if CP.enableDsu and not (CP.flags & ToyotaFlags.SMART_DSU):
       disable_ecu(logcan, sendcan, bus=0, addr=0x791, com_cont_req=b'\x28\x01\x01')
 
   # returns a car.CarState
