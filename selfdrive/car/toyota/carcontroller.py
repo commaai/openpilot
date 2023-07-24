@@ -181,7 +181,7 @@ class CarController:
       if self.frame % fr_step == 0 and self.CP.enableDsu and self.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
-    if self.CP.enableDsu and not (self.CP.flags & ToyotaFlags.SMART_DSU) and self.frame % 20 == 0:
+    if self.CP.enableDsu and self.frame % 20 == 0:
       can_sends.append([0x791, 0, b"\x02\x3E\x00\x00\x00\x00\x00\x00", 0])
 
     new_actuators = actuators.copy()
