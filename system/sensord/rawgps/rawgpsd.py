@@ -149,7 +149,7 @@ def downloader_loop(event):
     time.sleep(10)
 
 def inject_assistance():
-  for _ in range(3):
+  for _ in range(5):
     try:
       cmd = f"mmcli -m any --timeout 30 --location-inject-assistance-data={ASSIST_DATA_FILE}"
       subprocess.check_output(cmd, stderr=subprocess.PIPE, shell=True)
@@ -163,6 +163,7 @@ def inject_assistance():
         output=e.output,
         returncode=e.returncode
       )
+    time.sleep(0.2)
   cloudlog.error("failed to load assistance after retry")
 
 def setup_quectel(diag: ModemDiag) -> bool:
