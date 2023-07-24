@@ -49,8 +49,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
   void setError(const QString &err_str);
 
-  bool m_sourceAdded = false;
-
   bool loaded_once = false;
   bool allow_open = true;
 

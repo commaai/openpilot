@@ -64,9 +64,10 @@ source_list = ['long_mpc.py',
 lenv = env.Clone()
 lenv.Clean(generated_files, Dir(gen))
 
-lenv.Command(generated_files,
-             source_list,
-             f"cd {Dir('.').abspath} && python3 long_mpc.py")
+generated_long = lenv.Command(generated_files,
+                              source_list,
+                              f"cd {Dir('.').abspath} && python3 long_mpc.py")
+lenv.Depends(generated_long, "#cereal")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
