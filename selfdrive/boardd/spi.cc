@@ -236,9 +236,12 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
       std::this_thread::yield();
 
       if (ret == SpiError::NACK) {
-        // prevent busy wait while the panda is NACK'ing
+        // prevent busy waiting while the panda is NACK'ing
+        // due to full TX buffers
         nack_count += 1;
-        usleep(std::clamp(nack_count*10, 200, 2000));
+        if (nack_count > 3) {
+          usleep(std::clamp(nack_count*10, 200, 2000));
+        }
       }
     }
   } while (ret < 0 && connected && !timed_out);
@@ -260,7 +263,6 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   spi_ioc_transfer transfer = {
     .tx_buf = (uint64_t)tx_buf,
     .rx_buf = (uint64_t)rx_buf,
-    .delay_usecs = 10,
     .len = length
   };
   tx_buf[0] = tx;
@@ -284,9 +286,6 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
       LOGD("SPI: timed out waiting for ACK");
       return SpiError::ACK_TIMEOUT;
     }
-
-    // backoff
-    transfer.delay_usecs = std::clamp(transfer.delay_usecs*2, 10, 250);
   }
 
   return 0;
