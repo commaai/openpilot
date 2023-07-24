@@ -43,8 +43,6 @@ class CarController:
         apply_steer = 0
         apply_steer_req = 0
 
-      print(CS.out.steeringRateDeg)
-
       if self.CP.carFingerprint in STEER_LIMITED:
         # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
         if abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
