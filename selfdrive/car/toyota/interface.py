@@ -223,8 +223,7 @@ class CarInterface(CarInterfaceBase):
     if candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR):
       if Ecu.dsu in found_ecus:
         ret.experimentalLongitudinalAvailable = True
-        if experimental_long:
-          ret.enableDsu = True
+        ret.enableDsu = experimental_long
       else:
         ret.enableDsu = len(found_ecus) > 0 and not (ret.flags & ToyotaFlags.SMART_DSU)
 
