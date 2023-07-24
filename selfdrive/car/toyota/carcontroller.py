@@ -7,7 +7,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
-                                        UNSUPPORTED_DSU_CAR, ToyotaFlags
+                                        UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
 SteerControlType = car.CarParams.SteerControlType
