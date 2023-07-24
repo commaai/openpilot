@@ -17,13 +17,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     content_stack->setCurrentIndex(0);
   });
-//  QObject::connect(map, &MapWindow::requestVisible, this, &MapPanel::requestVisible);
-  QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
-    // when we show the map for a new route, signal HomeWindow to hide the sidebar
-    if (visible) { emit mapPanelRequested(); }
-    setVisible(visible);
-  });
-//  QObject::connect(map, &MapWindow::requestSettings, this, &MapPanel::requestMapSettings);
+  QObject::connect(map, &MapWindow::requestVisible, this, &MapPanel::requestVisible);
   QObject::connect(map, &MapWindow::requestSettings, [=](bool settings) {
     content_stack->setCurrentIndex(settings ? 1 : 0);
   });
@@ -37,38 +31,16 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 }
 
 void MapPanel::requestVisible(bool visible) {
+  // when we show the map for a new route, signal HomeWindow to hide the sidebar
   if (visible && !isVisible()) {
-    qDebug() << "emit mapPanelRequested()";
     emit mapPanelRequested();
   }
-
-//  if (visible != isVisible()) {
-//    // signal HomeWindow to hide the sidebar and switch to map window if showing
-//    if (visible) {
-//      emit mapPanelRequested();
-//      content_stack->setCurrentIndex(0);
-//    }
-//    setVisible(visible);
-//  }
-    setVisible(visible);
+  setVisible(visible);
 }
 
 void MapPanel::toggleMapSettings() {
-//  emit mapPanelRequested();
-//  setVisible(true);
+  // show settings if not visible, then toggle between map and settings
+  int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
+  content_stack->setCurrentIndex(new_index);
   requestVisible(true);
-//  requestVisible(true);
-//  if (!isVisible()) {
-//    emit mapPanelRequested(); qDebug() << "emit mapPanelRequested()";
-//    setVisible(true);
-//  }
-  int index = isVisible() ? ((content_stack->currentIndex() + 1) % 2) : 1;
-  content_stack->setCurrentIndex(index);
 }
-
-//void MapPanel::requestMapSettings(bool settings) {
-//  content_stack->setCurrentIndex(settings ? 1 : 0);
-////  emit mapPanelRequested();
-////  setVisible(true);
-////  content_stack->setCurrentIndex(1);
-//}
