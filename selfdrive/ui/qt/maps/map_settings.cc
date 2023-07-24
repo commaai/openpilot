@@ -8,7 +8,6 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
-  setContentsMargins(0, 0, 0, 0);
   setAttribute(Qt::WA_NoMousePropagation);
 
   auto *frame = new QVBoxLayout(this);
@@ -58,9 +57,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   frame->addLayout(heading_frame);
   frame->addSpacing(32);
 
-  current_widget = new DestinationWidget(this);
+  current_widget = new DestinationWidget(DestinationWidget::Current, this);
   QObject::connect(current_widget, &DestinationWidget::actionClicked, [=]() {
-    if (current_destination.empty()) return;
     params.remove("NavDestination");
     updateCurrentRoute();
   });
@@ -71,8 +69,8 @@ MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
   destinations_layout = new QVBoxLayout(destinations_container);
   destinations_layout->setContentsMargins(0, 32, 0, 32);
   destinations_layout->setSpacing(20);
-  destinations_layout->addWidget(home_widget = new DestinationWidget(this));
-  destinations_layout->addWidget(work_widget = new DestinationWidget(this));
+  destinations_layout->addWidget(home_widget = new DestinationWidget(DestinationWidget::Home, this));
+  destinations_layout->addWidget(work_widget = new DestinationWidget(DestinationWidget::Work, this));
   QObject::connect(home_widget, &DestinationWidget::navigateTo, this, &MapSettings::navigateTo);
   QObject::connect(work_widget, &DestinationWidget::navigateTo, this, &MapSettings::navigateTo);
   destinations_layout->addStretch();
@@ -94,6 +92,7 @@ void MapSettings::showEvent(QShowEvent *event) {
 }
 
 void MapSettings::updateCurrentRoute() {
+  current_destination = {};
   auto dest = QString::fromStdString(params.get("NavDestination"));
   if (dest.size()) {
     QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
@@ -102,11 +101,8 @@ void MapSettings::updateCurrentRoute() {
       return;
     }
     current_destination = doc.object();
-    current_widget->set(current_destination, true);
-  } else {
-    current_destination = {};
-    current_widget->unset("", true);
   }
+  current_widget->set(current_destination);
   if (isVisible()) refresh();
 }
 
@@ -127,8 +123,8 @@ void MapSettings::refresh() {
     return w;
   };
 
-  home_widget->unset(NAV_FAVORITE_LABEL_HOME);
-  work_widget->unset(NAV_FAVORITE_LABEL_WORK);
+  home_widget->set({});
+  work_widget->set({});
 
   int n = 0;
   for (auto location : current_locations) {
@@ -140,7 +136,7 @@ void MapSettings::refresh() {
       if (label == NAV_FAVORITE_LABEL_WORK) w = work_widget;
     }
     w = w ? w : get_w(n++);
-    w->set(dest, false);
+    w->set(dest);
     w->setVisible(dest != current_destination);
   }
   for (; n < widgets.size(); ++n) widgets[n]->setVisible(false);
@@ -155,9 +151,7 @@ void MapSettings::navigateTo(const QJsonObject &place) {
   emit closeSettings();
 }
 
-DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
-  setContentsMargins(0, 0, 0, 0);
-
+DestinationWidget::DestinationWidget(DestinationWidget::Type type, QWidget *parent) : type(type), QPushButton(parent) {
   auto *frame = new QHBoxLayout(this);
   frame->setContentsMargins(32, 24, 32, 24);
   frame->setSpacing(32);
@@ -166,6 +160,7 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   icon->setAlignment(Qt::AlignCenter);
   icon->setFixedSize(96, 96);
   icon->setObjectName("icon");
+  icon->setPixmap(typeIcon(type));
   frame->addWidget(icon);
 
   auto *inner_frame = new QVBoxLayout;
@@ -186,94 +181,52 @@ DestinationWidget::DestinationWidget(QWidget *parent) : QPushButton(parent) {
   action = new QPushButton(this);
   action->setFixedSize(96, 96);
   action->setObjectName("action");
-  action->setStyleSheet("font-size: 65px; font-weight: 600;");
-  QObject::connect(action, &QPushButton::clicked, this, &QPushButton::clicked);
+  action->setAttribute(Qt::WA_TransparentForMouseEvents, type != Type::Current);
   QObject::connect(action, &QPushButton::clicked, this,  &DestinationWidget::actionClicked);
   frame->addWidget(action);
 
   setFixedHeight(164);
+  setProperty("current", type == Type::Current);
   setStyleSheet(R"(
     DestinationWidget { background-color: #202123; border-radius: 10px; }
     QLabel { color: #FFFFFF; font-size: 48px; font-weight: 400; }
+    #subtitle, QLabel:disabled { color: #9BA0A5; }
     #icon { background-color: #3B4356; border-radius: 48px; }
-    #subtitle { color: #9BA0A5; }
-    #action { border: none; border-radius: 48px; color: #FFFFFF; padding-bottom: 4px; }
+    #action { font-size: 65px; font-weight: 600; color: #FFFFFF; padding-bottom: 4px; }
 
-    /* current destination */
     [current="true"] { background-color: #E8E8E8; }
     [current="true"] QLabel { color: #000000; }
+    [current="true"] QLabel:disabled { color: #A0000000; }
     [current="true"] #icon { background-color: #42906B; }
     [current="true"] #subtitle { color: #333333; }
     [current="true"] #action { color: #202123; }
-
-    /* no saved destination */
-    [set="false"] QLabel { color: #9BA0A5; }
-    [current="true"][set="false"] QLabel { color: #A0000000; }
-
-    /* pressed */
     [current="false"]:pressed { background-color: #18191B; }
     [current="true"] #action:pressed { background-color: #D6D6D6; }
   )");
   QObject::connect(this, &QPushButton::clicked, [this]() { if (!dest.isEmpty()) emit navigateTo(dest); });
 }
 
-void DestinationWidget::set(const QJsonObject &destination, bool current) {
-  if (dest == destination) return;
-
-  dest = destination;
-  setProperty("current", current);
-  setProperty("set", true);
-
-  auto icon_pixmap = current ? icons().directions : icons().recent;
-  auto title_text = destination["place_name"].toString();
-  auto subtitle_text = destination["place_details"].toString();
-
-  if (destination["save_type"] == NAV_TYPE_FAVORITE) {
-    if (destination["label"] == NAV_FAVORITE_LABEL_HOME) {
-      icon_pixmap = icons().home;
-      subtitle_text = title_text + ", " + subtitle_text;
-      title_text = tr("Home");
-    } else if (destination["label"] == NAV_FAVORITE_LABEL_WORK) {
-      icon_pixmap = icons().work;
-      subtitle_text = title_text + ", " + subtitle_text;
-      title_text = tr("Work");
+void DestinationWidget::set(const QJsonObject &destination) {
+  if (type == Type::Home || type == Type::Work) {
+    if (!destination.isEmpty()) {
+      title->setText(type == Type::Home ? tr("Home") : tr("Work"));
+      subtitle->setText(destination["place_name"].toString() + "," + destination["place_details"].toString());
     } else {
-      icon_pixmap = icons().favorite;
+      title->setText(tr("No %1 location set").arg(type == Type::Home ? tr("home") : tr("work")));
+    }
+  } else {
+    title->setText(destination.isEmpty() ? tr("No destination set") : destination["place_name"].toString());
+    subtitle->setText(destination["place_details"].toString());
+    if (type == Type::Recent) {
+      icon->setPixmap(typeIcon((destination["save_type"] == NAV_TYPE_FAVORITE ? Type::Favorite : Type::Recent)));
     }
   }
-
-  icon->setPixmap(icon_pixmap);
-
-  title->setText(title_text);
-  subtitle->setText(subtitle_text);
-  subtitle->setVisible(true);
-
+  dest = destination;
   // TODO: use pixmap
-  action->setAttribute(Qt::WA_TransparentForMouseEvents, !current);
-  action->setText(current ? "×" : "→");
-  action->setVisible(true);
-
-  setStyleSheet(styleSheet());
-}
-
-void DestinationWidget::unset(const QString &label, bool current) {
-  dest = {};
-  setProperty("current", current);
-  setProperty("set", false);
-
-  if (label.isEmpty()) {
-    icon->setPixmap(icons().directions);
-    title->setText(tr("No destination set"));
-  } else {
-    QString title_text = label == NAV_FAVORITE_LABEL_HOME ? tr("home") : tr("work");
-    icon->setPixmap(label == NAV_FAVORITE_LABEL_HOME ? icons().home : icons().work);
-    title->setText(tr("No %1 location set").arg(title_text));
-  }
-
-  subtitle->setVisible(false);
-  action->setVisible(false);
-
-  setStyleSheet(styleSheet());
+  action->setText(type == Type::Current ? "×" : "→");
+  action->setVisible(!dest.isEmpty());
+  subtitle->setVisible(!dest.isEmpty());
+  setEnabled(!dest.isEmpty());
   setVisible(true);
 }
 

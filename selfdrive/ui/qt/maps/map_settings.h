@@ -13,8 +13,6 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 const QString NAV_TYPE_FAVORITE = "favorite";
-const QString NAV_TYPE_RECENT = "recent";
-
 const QString NAV_FAVORITE_LABEL_HOME = "home";
 const QString NAV_FAVORITE_LABEL_WORK = "work";
 
@@ -44,7 +42,6 @@ class MapSettings : public QFrame {
   Q_OBJECT
 public:
   explicit MapSettings(bool closeable = false, QWidget *parent = nullptr);
-
   void navigateTo(const QJsonObject &place);
   void updateLocations(const QJsonArray &locations);
   void updateCurrentRoute();
@@ -69,31 +66,27 @@ signals:
 class DestinationWidget : public QPushButton {
   Q_OBJECT
 public:
-  explicit DestinationWidget(QWidget *parent = nullptr);
-  void set(const QJsonObject &location, bool current = false);
-  void unset(const QString &label, bool current = false);
+  enum Type { Home, Work, Favorite, Recent, Current };
+  explicit DestinationWidget(Type type = Type::Recent, QWidget *parent = nullptr);
+  void set(const QJsonObject &location);
 
 signals:
   void actionClicked();
   void navigateTo(const QJsonObject &destination);
 
 private:
-  struct NavIcons {
-    QPixmap home, work, favorite, recent, directions;
-  };
-
-  static NavIcons icons() {
-    static NavIcons nav_icons {
+  static QPixmap typeIcon(Type type) {
+    static QPixmap nav_icons[] {
       loadPixmap("../assets/navigation/icon_home.svg", {48, 48}),
       loadPixmap("../assets/navigation/icon_work.svg", {48, 48}),
       loadPixmap("../assets/navigation/icon_favorite.svg", {48, 48}),
       loadPixmap("../assets/navigation/icon_recent.svg", {48, 48}),
       loadPixmap("../assets/navigation/icon_directions.svg", {48, 48}),
     };
-    return nav_icons;
+    return nav_icons[type];
   }
 
-private:
+  Type type;
   QLabel *icon, *title, *subtitle;
   QPushButton *action;
   QJsonObject dest;
