@@ -8,7 +8,6 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 MapSettings::MapSettings(bool closeable, QWidget *parent) : QFrame(parent) {
-  close_icon = loadPixmap("../assets/icons/close.svg", {100, 100});
   setContentsMargins(0, 0, 0, 0);
 
   auto *frame = new QVBoxLayout(this);

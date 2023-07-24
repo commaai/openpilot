@@ -234,7 +234,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
-      Params().put("LanguageSetting", langs[selection].toStdString());
+      params.put("LanguageSetting", langs[selection].toStdString());
       qApp->exit(18);
       watchdog_kick(0);
     }
@@ -278,7 +278,7 @@ void DevicePanel::updateCalibDescription() {
   QString desc =
       tr("openpilot requires the device to be mounted within 4° left or right and "
          "within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.");
-  std::string calib_bytes = Params().get("CalibrationParams");
+  std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
       AlignedBuffer aligned_buf;
@@ -303,7 +303,7 @@ void DevicePanel::reboot() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        Params().putBool("DoReboot", true);
+        params.putBool("DoReboot", true);
       }
     }
   } else {
@@ -316,7 +316,7 @@ void DevicePanel::poweroff() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
-        Params().putBool("DoShutdown", true);
+        params.putBool("DoShutdown", true);
       }
     }
   } else {

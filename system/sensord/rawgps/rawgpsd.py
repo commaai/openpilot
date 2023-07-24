@@ -162,7 +162,9 @@ def inject_assistance():
       returncode=e.returncode
     )
 
-def setup_quectel(diag: ModemDiag):
+def setup_quectel(diag: ModemDiag) -> bool:
+  ret = False
+
   # enable OEMDRE in the NV
   # TODO: it has to reboot for this to take effect
   DIAG_NV_READ_F = 38
@@ -186,7 +188,9 @@ def setup_quectel(diag: ModemDiag):
   at_cmd("AT+QGPSXTRA=1")
   at_cmd("AT+QGPSSUPLURL=\"NULL\"")
   if os.path.exists(ASSIST_DATA_FILE):
+    ret = True
     inject_assistance()
+    os.remove(ASSIST_DATA_FILE)
   #at_cmd("AT+QGPSXTRADATA?")
   time_str = datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
   at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
@@ -212,6 +216,8 @@ def setup_quectel(diag: ModemDiag):
     GPSDIAG_OEM_DRE_ON,
     0,0
   ))
+
+  return ret
 
 def teardown_quectel(diag):
   at_cmd("AT+QGPSCFG=\"outport\",\"none\"")
@@ -260,8 +266,8 @@ def main() -> NoReturn:
 
   # connect to modem
   diag = ModemDiag()
-  setup_quectel(diag)
-  want_assistance = True
+  r = setup_quectel(diag)
+  want_assistance = not r
   current_gps_time = utc_to_gpst(GPSTime.from_datetime(datetime.utcnow()))
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.UBLOX_PWR_EN, True)
@@ -270,12 +276,9 @@ def main() -> NoReturn:
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
 
   while 1:
-    if os.path.exists(ASSIST_DATA_FILE):
-      if want_assistance:
-        setup_quectel(diag)
-        want_assistance = False
-      else:
-        os.remove(ASSIST_DATA_FILE)
+    if os.path.exists(ASSIST_DATA_FILE) and want_assistance:
+      setup_quectel(diag)
+      want_assistance = False
 
     opcode, payload = diag.recv()
     if opcode != DIAG_LOG_F:
