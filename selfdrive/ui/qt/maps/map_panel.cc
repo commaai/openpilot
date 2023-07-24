@@ -37,15 +37,12 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 }
 
 void MapPanel::requestVisible(bool visible) {
-  if (visible != isVisible()) {
-    // signal HomeWindow to hide the sidebar and switch to map window if showing
-    // TODO: perhaps showEvent is better
-    if (visible) {
-      emit mapPanelRequested();
-      content_stack->setCurrentIndex(0);
-    }
-    setVisible(visible);
+  // signal HomeWindow to hide the sidebar and switch to map window if showing
+  if (visible) {
+    emit mapPanelRequested();
+    content_stack->setCurrentIndex(0);
   }
+  setVisible(visible);
 }
 
 void MapPanel::toggleMapSettings() {
