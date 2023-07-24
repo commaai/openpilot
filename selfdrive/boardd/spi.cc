@@ -242,7 +242,6 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
         if (nack_count > 3) {
           usleep(std::clamp(nack_count*10, 200, 2000));
         }
-        LOGE("nack sleep %d %d", endpoint, nack_count);
       }
     }
   } while (ret < 0 && connected && !timed_out);
