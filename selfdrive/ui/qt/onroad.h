@@ -55,7 +55,7 @@ public:
   explicit MapSettingsButton(QWidget *parent = 0);
 
 signals:
-  void mapSettingsRequested();
+  void toggleMapSettings();
 
 private:
   void paintEvent(QPaintEvent *event) override;
@@ -85,7 +85,7 @@ public:
   void updateState(const UIState &s);
 
 signals:
-  void mapSettingsRequested();
+  void toggleMapSettings();
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
