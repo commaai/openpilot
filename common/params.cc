@@ -270,20 +270,17 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 
 int Params::remove(const std::string &key) {
   auto it = keys.find(key);
-  if (it == keys.end()) return -1;
-
-  int result = -1;
-  FileLock file_lock(params_path + "/.lock");
-  if (it->second & DONT_REMOVE) {
+  if (it != keys.end() && it->second & DONT_REMOVE) {
     // clear content
-    result = fclose(fopen(getParamPath(key).c_str(), "w"));
+    return put(key, "");
   } else {
-    result = unlink(getParamPath(key).c_str());
-  }
-  if (result != 0) {
+    FileLock file_lock(params_path + "/.lock");
+    int result = unlink(getParamPath(key).c_str());
+    if (result == 0) {
+      result = fsync_dir(getParamPath());
+    }
     return result;
   }
-  return fsync_dir(getParamPath());
 }
 
 std::string Params::get(const std::string &key, bool block) {
@@ -315,8 +312,6 @@ std::map<std::string, std::string> Params::readAll() {
 }
 
 void Params::clearAll(ParamKeyType key_type) {
-  FileLock file_lock(params_path + "/.lock");
-
   // 1) delete params of key_type
   // 2) delete files that are not defined in the keys.
   if (DIR *d = opendir(getParamPath().c_str())) {
@@ -325,17 +320,10 @@ void Params::clearAll(ParamKeyType key_type) {
       if (de->d_type != DT_DIR) {
         auto it = keys.find(de->d_name);
         if (it == keys.end() || (it->second & key_type)) {
-          if (it != keys.end() && (it->second & DONT_REMOVE)) {
-            // clear the content
-            fclose(fopen(getParamPath(de->d_name).c_str(), "w"));
-          } else {
-            unlink(getParamPath(de->d_name).c_str());
-          }
+          this->remove(de->d_name);
         }
       }
     }
     closedir(d);
   }
-
-  fsync_dir(getParamPath());
 }
