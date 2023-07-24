@@ -226,7 +226,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 // MapSettingsButton
 MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
-  settings_img = loadPixmap("../assets/navigation/nav-settings.png", {136, 136});
+  settings_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
 
   // hidden by default, made visible if map is created (has prime or mapbox token)
   setVisible(false);
@@ -244,7 +244,7 @@ void MapSettingsButton::paintEvent(QPaintEvent *event) {
   p.setBrush(QColor(0, 0, 0, 166));
   p.drawEllipse(center, btn_size / 2, btn_size / 2);
   p.setOpacity(isDown() ? 0.6 : 1.0);
-  p.drawPixmap((btn_size - 136) / 2, (btn_size - 136) / 2, settings_img);
+  p.drawPixmap((btn_size - img_size) / 2, (btn_size - img_size) / 2, settings_img);
 }
 
 
