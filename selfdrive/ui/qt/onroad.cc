@@ -93,7 +93,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
       QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
       QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
-      nvg->map_settings_btn->setVisible(true);
+      nvg->map_settings_btn->setEnabled(true);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
@@ -230,6 +230,7 @@ MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
 
   // hidden by default, made visible if map is created (has prime or mapbox token)
   setVisible(false);
+  setEnabled(false);
 }
 
 void MapSettingsButton::paintEvent(QPaintEvent *event) {
@@ -305,11 +306,16 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideDM", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
+  setProperty("hideLowerIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
+
+  // hide map settings button for alerts
+  if (map_settings_btn->isEnabled()) {
+    map_settings_btn->setVisible(!hideLowerIcons);
+  }
 
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
@@ -677,7 +683,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideDM && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideLowerIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }

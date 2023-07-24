@@ -73,7 +73,7 @@ class AnnotatedCameraWidget : public CameraWidget {
   Q_PROPERTY(bool is_metric MEMBER is_metric);
 
   Q_PROPERTY(bool dmActive MEMBER dmActive);
-  Q_PROPERTY(bool hideDM MEMBER hideDM);
+  Q_PROPERTY(bool hideLowerIcons MEMBER hideLowerIcons);
   Q_PROPERTY(bool rightHandDM MEMBER rightHandDM);
   Q_PROPERTY(int status MEMBER status);
 
@@ -95,7 +95,7 @@ private:
   bool is_cruise_set = false;
   bool is_metric = false;
   bool dmActive = false;
-  bool hideDM = false;
+  bool hideLowerIcons = false;
   bool rightHandDM = false;
   float dm_fade_state = 1.0;
   bool has_us_speed_limit = false;
