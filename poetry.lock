@@ -1340,7 +1340,7 @@ tests = ["pytest"]
 name = "hexdump"
 version = "3.3"
 description = "dump binary data to hex format and restore from there"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 
@@ -1775,6 +1775,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "json-rpc"
+version = "1.15.0"
+description = "JSON-RPC transport implementation"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "json5"
 version = "0.9.14"
 description = "A Python implementation of the JSON5 data format."
@@ -2119,6 +2127,14 @@ description = "A fast and thorough lazy object proxy."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "libusb1"
+version = "3.0.0"
+description = "Pure-python wrapper for libusb-1.0"
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "lit"
@@ -4111,10 +4127,10 @@ setuptools = "*"
 [[package]]
 name = "sconscontrib"
 version = "1.0"
-description = ""
+description = "Contributed builders and other useful logic for the SCons build system.,"
 category = "main"
 optional = false
-python-versions = ">=3.6, <4"
+python-versions = "<4,>=3.6"
 develop = false
 
 [package.dependencies]
@@ -5193,7 +5209,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "a5034d1492763636d2e030f000f7ba8eb47fdf1f5a8bbfe737e43f4670d19d27"
+content-hash = "73876a0777273f5be78264e5bb56b3229bb62f8863027fd4d8397e190afa886a"
 
 [metadata.files]
 adal = [
@@ -6878,6 +6894,10 @@ joblib = [
 json-logging-py = [
     {file = "json-logging-py-0.2.tar.gz", hash = "sha256:118b1fe1f4eacaea6370e5b9710d0f6d0c0a4599aef9d5b9875a6a579974fc9a"},
 ]
+json-rpc = [
+    {file = "json-rpc-1.15.0.tar.gz", hash = "sha256:e6441d56c1dcd54241c937d0a2dcd193bdf0bdc539b5316524713f554b7f85b9"},
+    {file = "json_rpc-1.15.0-py2.py3-none-any.whl", hash = "sha256:4a4668bbbe7116feb4abbd0f54e64a4adcf4b8f648f19ffa0848ad0f6606a9bf"},
+]
 json5 = [
     {file = "json5-0.9.14-py2.py3-none-any.whl", hash = "sha256:740c7f1b9e584a468dbb2939d8d458db3427f2c93ae2139d05f47e453eae964f"},
     {file = "json5-0.9.14.tar.gz", hash = "sha256:9ed66c3a6ca3510a976a9ef9b8c0787de24802724ab1860bc0153c7fdd589b02"},
@@ -7066,6 +7086,12 @@ lazy-object-proxy = [
     {file = "lazy_object_proxy-1.9.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:09763491ce220c0299688940f8dc2c5d05fd1f45af1e42e636b2e8b2303e4382"},
     {file = "lazy_object_proxy-1.9.0-cp39-cp39-win32.whl", hash = "sha256:9090d8e53235aa280fc9239a86ae3ea8ac58eff66a705fa6aa2ec4968b95c821"},
     {file = "lazy_object_proxy-1.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:db1c1722726f47e10e0b5fdbf15ac3b8adb58c091d12b3ab713965795036985f"},
+]
+libusb1 = [
+    {file = "libusb1-3.0.0-py3-none-any.whl", hash = "sha256:0e652b04cbe85ec8e74f9ee82b49f861fb14b5320ae51399387ad2601ccc0500"},
+    {file = "libusb1-3.0.0-py3-none-win32.whl", hash = "sha256:083f75e5d15cb5e2159e64c308c5317284eae926a820d6dce53a9505d18be3b2"},
+    {file = "libusb1-3.0.0-py3-none-win_amd64.whl", hash = "sha256:6f6bb010632ada35c661d17a65e135077beef0fbb2434d5ffdb3a4a911fd9490"},
+    {file = "libusb1-3.0.0.tar.gz", hash = "sha256:5792a9defee40f15d330a40d9b1800545c32e47ba7fc66b6f28f133c9fcc8538"},
 ]
 lit = [
     {file = "lit-16.0.6.tar.gz", hash = "sha256:84623c9c23b6b14763d637f4e63e6b721b3446ada40bf7001d8fee70b8e77a9a"},
