@@ -22,6 +22,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     if (visible) { emit mapPanelRequested(); }
     setVisible(visible);
   });
+//  QObject::connect(map, &MapWindow::requestSettings, this, &MapPanel::requestMapSettings);
   QObject::connect(map, &MapWindow::requestSettings, [=](bool settings) {
     content_stack->setCurrentIndex(settings ? 1 : 0);
   });
@@ -34,7 +35,13 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   content_stack->addWidget(settings);
 }
 
-void MapPanel::mapSettingsRequested() {
+void MapPanel::toggleMapSettings() {
+  emit mapPanelRequested();
+  setVisible(true);
+  content_stack->setCurrentIndex((content_stack->currentIndex() + 1) % 2);
+}
+
+void MapPanel::requestMapSettings(bool settings) {  // TODO rename requestMapSettings
   emit mapPanelRequested();
   setVisible(true);
   content_stack->setCurrentIndex(1);

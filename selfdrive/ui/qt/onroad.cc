@@ -92,7 +92,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
       map = m;
 
       QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
-      QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, m, &MapPanel::mapSettingsRequested);
+//      QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, m, &MapPanel::mapSettingsRequested);
+      QObject::connect(nvg, &AnnotatedCameraWidget::mapSettingsRequested, m, &MapPanel::toggleMapSettings);
 
       m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
       split->insertWidget(0, m);
