@@ -267,7 +267,7 @@ NavManager *NavManager::instance() {
 
 NavManager::NavManager(QObject *parent) : QObject(parent) {
   locations = QJsonDocument::fromJson(params.get("NavPastDestinations").c_str()).array();
-  current_dest = QJsonDocument::fromJson(params.get("NavDestination").c_str()).object();
+  current_dest = getNavDestination();
   if (auto dongle_id = getDongleId()) {
     {
       // Fetch favorite and recent locations
@@ -297,11 +297,19 @@ NavManager::NavManager(QObject *parent) : QObject(parent) {
 
         // athena can set destination at any time
         param_watcher->addParam("NavDestination");
-        current_dest = QJsonDocument::fromJson(params.get("NavDestination").c_str()).object();
-        emit updated();
+        auto dest = getNavDestination();
+        if (current_dest != dest) {
+          current_dest = dest;
+          emit updated();
+        }
       });
     }
   }
+
+  QObject::connect(uiState(), &UIState::offroadTransition, [this]() {
+    current_dest = getNavDestination();
+    emit updated();
+  });
 }
 
 static void swap(QJsonValueRef v1, QJsonValueRef v2) { std::swap(v1, v2); }

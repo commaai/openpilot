@@ -37,6 +37,9 @@ signals:
 private:
   NavManager(QObject *parent);
   void parseLocationsResponse(const QString &response, bool success);
+  QJsonObject getNavDestination() {
+    return QJsonDocument::fromJson(params.get("NavDestination").c_str()).object();
+  }
 
   Params params;
   QString prev_response;
@@ -82,7 +85,7 @@ private:
     QPixmap home, work, favorite, recent, directions;
   };
 
-  static NavIcons icons() {
+  static NavIcons &icons() {
     static NavIcons nav_icons {
       loadPixmap("../assets/navigation/icon_home.svg", {48, 48}),
       loadPixmap("../assets/navigation/icon_work.svg", {48, 48}),
