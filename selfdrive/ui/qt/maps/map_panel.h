@@ -15,7 +15,7 @@ signals:
 
 public slots:
   void requestVisible(bool visible);
-  void requestMapSettings(bool settings);
+//  void requestMapSettings(bool settings);
   void toggleMapSettings();
 
 
