@@ -42,6 +42,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
+  DISABLE_DSU = 4
 
 
 class CAR:
