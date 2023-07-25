@@ -80,6 +80,7 @@ class AnnotatedCameraWidget : public CameraWidget {
 public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
+
   MapSettingsButton *map_settings_btn;
 
 private:
