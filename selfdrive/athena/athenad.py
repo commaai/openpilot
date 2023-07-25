@@ -42,6 +42,10 @@ from selfdrive.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
+
+# missing in pysocket
+TCP_USER_TIMEOUT = 18
+
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {8022}
@@ -141,6 +145,7 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
   end_event = threading.Event()
 
   threads = [
+    threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
@@ -154,8 +159,7 @@ def handle_long_poll(ws: WebSocket, exit_event: Optional[threading.Event]) -> No
   for thread in threads:
     thread.start()
   try:
-    while not end_event.is_set():
-      time.sleep(0.1)
+    while not end_event.wait(0.1):
       if exit_event is not None and exit_event.is_set():
         end_event.set()
   except (KeyboardInterrupt, SystemExit):
@@ -754,6 +758,25 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
       end_event.set()
+
+
+def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
+  params = Params()
+  onroad_prev = None
+  sock = ws.sock
+
+  while True:
+    onroad = params.get_bool("IsOnroad")
+    if onroad != onroad_prev:
+      onroad_prev = onroad
+
+      sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 0)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
+      sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+
+    if end_event.wait(5):
+      break
 
 
 def backoff(retries: int) -> int:
