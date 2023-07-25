@@ -16,7 +16,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
 MAX_STEER_RATE = 100  # deg/s
-MAX_steer_rate_counter = 18  # tx control frames needed before torque can be cut
+MAX_STEER_RATE_COUNTER = 18  # tx control frames needed before torque can be cut
 
 # EPS allows user torque above threshold for 50 frames before permanently faulting
 MAX_USER_TORQUE = 500
@@ -57,7 +57,7 @@ class CarController:
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
     self.steer_rate_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, CC.latActive,
-                                                                      self.steer_rate_counter, MAX_steer_rate_counter)
+                                                                      self.steer_rate_counter, MAX_STEER_RATE_COUNTER)
 
     if not apply_steer_req:
       apply_steer = 0
