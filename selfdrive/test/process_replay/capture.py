@@ -21,7 +21,7 @@ class FdRedirect:
 
   def read(self) -> bytes:
     with os.fdopen(self.fifo_fd, "rb", closefd=False) as f:
-      return f.read()
+      return f.read() or b""
   
   def link(self) -> None:
     os.dup2(self.fifo_fd, self.source_fd)
