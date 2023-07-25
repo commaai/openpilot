@@ -226,7 +226,7 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 // MapSettingsButton
 MapSettingsButton::MapSettingsButton(QWidget *parent) : QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
-  settings_img = loadPixmap("../assets/navigation/nav-settings.png", {img_size, img_size});
+  settings_img = loadPixmap("../assets/navigation/icon_directions_outlined.svg", {img_size, img_size});
 
   // hidden by default, made visible if map is created (has prime or mapbox token)
   setVisible(false);
