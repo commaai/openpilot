@@ -306,7 +306,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("speed", cur_speed);
   setProperty("setSpeed", set_speed);
   setProperty("speedUnit", s.scene.is_metric ? tr("km/h") : tr("mph"));
-  setProperty("hideLowerIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
+  setProperty("hideBottomIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
   // update engageability/experimental mode button
@@ -314,7 +314,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // hide map settings button for alerts
   if (map_settings_btn->isEnabled()) {
-    map_settings_btn->setVisible(!hideLowerIcons);
+    map_settings_btn->setVisible(!hideBottomIcons);
   }
 
   // update DM icon
@@ -683,7 +683,7 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   // DMoji
-  if (!hideLowerIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
+  if (!hideBottomIcons && (sm.rcv_frame("driverStateV2") > s->scene.started_frame)) {
     update_dmonitoring(s, sm["driverStateV2"].getDriverStateV2(), dm_fade_state, rightHandDM);
     drawDriverState(painter, s);
   }
