@@ -78,17 +78,6 @@ QString MapInstructions::getDistance(float d) {
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
 
-  // Show instruction text
-  QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
-  QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
-
-  primary->setText(primary_str);
-  secondary->setVisible(secondary_str.length() > 0);
-  secondary->setText(secondary_str);
-  // Hide distance after arrival
-  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
-  distance->setText(getDistance(instruction.getManeuverDistance()));
-
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
   QString modifier = QString::fromStdString(instruction.getManeuverModifier());
@@ -103,6 +92,17 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
   }
+
+  // Show instruction text
+  QString primary_str = QString::fromStdString(instruction.getManeuverPrimaryText());
+  QString secondary_str = QString::fromStdString(instruction.getManeuverSecondaryText());
+
+  primary->setText(primary_str);
+  secondary->setVisible(secondary_str.length() > 0);
+  secondary->setText(secondary_str);
+  // Hide distance after arrival
+  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
+  distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show lanes
   auto lanes = instruction.getLanes();
