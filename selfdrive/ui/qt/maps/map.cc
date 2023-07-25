@@ -189,10 +189,10 @@ void MapWindow::updateState(const UIState &s) {
 
     // Only open the map on setting destination the first time
     if (allow_open) {
+      emit requestSettings(false);
       emit requestVisible(true); // Show map on destination set/change
       allow_open = false;
     }
-    emit requestSettings(false);
   }
 
   loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
