@@ -1064,20 +1064,12 @@ This may take up to a minute.</source>
         <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。この実験モードを有効にすると、以下のくつろげる段階ではない開発中の機能を利用する事ができます。</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 エンドツーエンドアクセル制御 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>openpilotにアクセルとブレーキを任せます。openpilotは赤信号や一時停止サインでの停止を含み、人間と同じように考えて運転を行います。openpilotが運転速度を決定するため、あなたが設定する速度は上限速度になります。この機能は実験段階のため、openpilotの運転ミスに常に備えて注意してください。</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
         <translation>新しい運転画面</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>新しい運転画面では、低速時に広角カメラの映像を表示することで、曲がる際の道路の視覚を向上します。実験段階を表すマークが右上に表示されます。</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1128,11 +1120,19 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This generally improves behavior and allows openpilot to keep left or right appropriately at forks/exits and take turns. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected.</source>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <source>End-to-End Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits/forks.These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
