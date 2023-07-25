@@ -309,15 +309,15 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("hideBottomIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
+  // update engageability/experimental mode button
+  experimental_btn->updateState(s);
+
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
   setProperty("dmActive", dm_state.getIsActiveMode());
   setProperty("rightHandDM", dm_state.getIsRHD());
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
-
-  // update engageability/experimental mode button
-  experimental_btn->updateState(s);
 
   // hide map settings button for alerts and flip for right hand DM
   if (map_settings_btn->isEnabled()) {
