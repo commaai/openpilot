@@ -33,3 +33,11 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   });
   content_stack->addWidget(settings);
 }
+
+void MapPanel::toggleMapSettings() {
+  // show settings if not visible, then toggle between map and settings
+  int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
+  content_stack->setCurrentIndex(new_index);
+  emit mapPanelRequested();
+  show();
+}
