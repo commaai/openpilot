@@ -238,9 +238,9 @@ class RouteEngine:
     print(self.step_idx)
     # Banner instructions are for the following step, don't use empty last step
     banner_step = step
-    if not len(banner_step['bannerInstructions']) and len(self.route) > 1 and len(self.route) - 1 == self.step_idx:
+    if not len(banner_step['bannerInstructions']) and len(self.route) - 1 == self.step_idx:
       print('using step_idx', self.step_idx - 1)
-      banner_step = self.route[self.step_idx - 1]
+      banner_step = self.route[max(self.step_idx - 1, 0)]
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
