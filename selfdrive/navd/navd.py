@@ -10,7 +10,6 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import log
 from common.api import Api
-from common.numpy_fast import clip
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.coordinates import ecef2geodetic
@@ -169,9 +168,6 @@ class RouteEngine:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
-        if len(self.route) > 1 and not len(self.route[-1]['bannerInstructions']):
-          self.route[-1]['bannerInstructions'] = self.route[-2]['bannerInstructions']
-
         self.route_geometry = []
 
         maxspeed_idx = 0
@@ -226,23 +222,8 @@ class RouteEngine:
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Banner instructions are for the following step, don't use empty last step
-    # print([i['bannerInstructions'] for i in self.route])
-    # print(self.route)
-    print('---')
-    for _step in self.route:
-      print('maneuver', _step['maneuver'], _step['distance'], _step['duration'])
-      print('bannerInstructions', _step['bannerInstructions'])
-      print()
-    print('---')
-    # banner_step = self.route[np.clip(self.step_idx, 0, len(self.route) - 2)]
-
-    # if not len(banner_step['bannerInstructions']) and self.step_idx == (len(self.route) - 1):
-
-    print(self.step_idx)
-    # Banner instructions are for the following step, don't use empty last step
     banner_step = step
     if not len(banner_step['bannerInstructions']) and len(self.route) - 1 == self.step_idx:
-      print('using step_idx', self.step_idx - 1)
       banner_step = self.route[max(self.step_idx - 1, 0)]
 
     # Current instruction
