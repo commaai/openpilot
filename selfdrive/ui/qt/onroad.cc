@@ -252,7 +252,7 @@ void MapSettingsButton::paintEvent(QPaintEvent *event) {
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
-  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  main_layout = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
   main_layout->setSpacing(0);
 
@@ -309,20 +309,22 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   setProperty("hideBottomIcons", (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE));
   setProperty("status", s.status);
 
-  // update engageability/experimental mode button
-  experimental_btn->updateState(s);
-
-  // hide map settings button for alerts
-  if (map_settings_btn->isEnabled()) {
-    map_settings_btn->setVisible(!hideBottomIcons);
-  }
-
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
   setProperty("dmActive", dm_state.getIsActiveMode());
-  setProperty("rightHandDM", dm_state.getIsRHD());
+//  setProperty("rightHandDM", dm_state.getIsRHD());
+  setProperty("rightHandDM", Params().getBool("Test"));
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
+
+  // update engageability/experimental mode button
+  experimental_btn->updateState(s);
+
+  // hide map settings button for alerts and flip for right hand DM
+  if (map_settings_btn->isEnabled()) {
+    map_settings_btn->setVisible(!hideBottomIcons);
+    main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
+  }
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
