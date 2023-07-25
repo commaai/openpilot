@@ -61,7 +61,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     QHBoxLayout *title_layout = new QHBoxLayout;
     {
       QLabel *title = new QLabel(tr("Ready to upload"));
-      title->setStyleSheet("font-size: 60px; font-weight: 600;");
+      title->setStyleSheet("font-size: 64px; font-weight: 600;");
       title->setWordWrap(true);
       title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
       title_layout->addWidget(title);
@@ -69,7 +69,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
 
       QLabel *icon = new QLabel;
       QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
-      icon->setPixmap(pixmap->scaledToWidth(85, Qt::SmoothTransformation));
+      icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
     }
     uploading_layout->addLayout(title_layout);
@@ -98,6 +98,6 @@ void WiFiPromptWidget::updateState(const UIState &s) {
 
   auto network_type = sm["deviceState"].getDeviceState().getNetworkType();
   auto uploading = network_type == cereal::DeviceState::NetworkType::WIFI ||
-      network_type == cereal::DeviceState::NetworkType::ETHERNET || true;
+      network_type == cereal::DeviceState::NetworkType::ETHERNET;
   stack->setCurrentIndex(uploading ? 1 : 0);
 }
