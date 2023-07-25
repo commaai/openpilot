@@ -1192,12 +1192,12 @@ Isso pode levar até um minuto.</translation>
         <translation>Abrir Configurações</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>Subindo dados</translation>
+        <source>Ready to upload</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>Seus dados são utilizados para treinar modelos de direção e ajudar a melhorar o openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
