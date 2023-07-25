@@ -219,7 +219,7 @@ class RouteEngine:
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
-    # Banner instructions are for the following step, don't use empty last step
+    # Banner instructions are for the following maneuver step, don't use empty last step
     banner_step = step
     if not len(banner_step['bannerInstructions']) and self.step_idx == len(self.route) - 1:
       banner_step = self.route[max(self.step_idx - 1, 0)]
