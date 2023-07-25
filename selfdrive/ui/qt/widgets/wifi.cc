@@ -60,8 +60,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
     {
-      QLabel *title = new QLabel(tr("Ready to Upload"));
-      title->setStyleSheet("font-size: 64px; font-weight: 600;");
+      QLabel *title = new QLabel(tr("Ready to upload"));
+      title->setStyleSheet("font-size: 60px; font-weight: 600;");
       title->setWordWrap(true);
       title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
       title_layout->addWidget(title);
@@ -69,12 +69,12 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
 
       QLabel *icon = new QLabel;
       QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
-      icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
+      icon->setPixmap(pixmap->scaledToWidth(85, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
     }
     uploading_layout->addLayout(title_layout);
 
-    QLabel *desc = new QLabel(tr("Training data is pulled periodically while your device is on Wi-Fi. Your data is used to train driving models and help improve openpilot"));
+    QLabel *desc = new QLabel(tr("Training data will be pulled periodically while your device is on Wi-Fi"));
     desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);
@@ -98,6 +98,6 @@ void WiFiPromptWidget::updateState(const UIState &s) {
 
   auto network_type = sm["deviceState"].getDeviceState().getNetworkType();
   auto uploading = network_type == cereal::DeviceState::NetworkType::WIFI ||
-      network_type == cereal::DeviceState::NetworkType::ETHERNET;
+      network_type == cereal::DeviceState::NetworkType::ETHERNET || true;
   stack->setCurrentIndex(uploading ? 1 : 0);
 }
