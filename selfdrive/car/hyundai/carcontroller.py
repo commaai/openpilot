@@ -48,7 +48,7 @@ class CarController:
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
-    self.angle_limit_frames = 0
+    self.angle_limit_counter = 0
     self.frame = 0
 
     self.accel_last = 0
@@ -65,8 +65,8 @@ class CarController:
     apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     # >90 degree steering fault prevention
-    self.angle_limit_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
-                                                                      self.angle_limit_frames, MAX_ANGLE_FRAMES,
+    self.angle_limit_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
+                                                                      self.angle_limit_counter, MAX_ANGLE_FRAMES,
                                                                       MAX_ANGLE_CONSECUTIVE_FRAMES)
     
     if not CC.latActive:
