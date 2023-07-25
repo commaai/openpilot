@@ -3,8 +3,6 @@
 #include <QHBoxLayout>
 #include <QWidget>
 
-#include "selfdrive/ui/qt/maps/map.h"
-#include "selfdrive/ui/qt/maps/map_settings.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
 
@@ -12,7 +10,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   content_stack = new QStackedLayout(this);
   content_stack->setContentsMargins(0, 0, 0, 0);
 
-  auto map = new MapWindow(mapboxSettings);
+  map = new MapWindow(mapboxSettings);
   QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
   QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     content_stack->setCurrentIndex(0);
@@ -22,12 +20,12 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     if (visible) { emit mapPanelRequested(); }
     setVisible(visible);
   });
-  QObject::connect(map, &MapWindow::requestSettings, [=](bool settings) {
-    content_stack->setCurrentIndex(settings ? 1 : 0);
+  QObject::connect(map, &MapWindow::requestSettings, [=](bool _settings) {
+    content_stack->setCurrentIndex(_settings ? 1 : 0);
   });
   content_stack->addWidget(map);
 
-  auto settings = new MapSettings(true, parent);
+  settings = new MapSettings(true, parent);
   QObject::connect(settings, &MapSettings::closeSettings, [=]() {
     content_stack->setCurrentIndex(0);
   });
@@ -36,8 +34,15 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
 void MapPanel::toggleMapSettings() {
   // show settings if not visible, then toggle between map and settings
-  int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
-  content_stack->setCurrentIndex(new_index);
+  if (isVisible()) {
+    content_stack->setCurrentWidget(settings);
+  } else {
+    if (content_stack->currentWidget() == map) {
+      content_stack->setCurrentWidget(settings);
+    } else {
+      content_stack->setCurrentWidget(map);
+    }
+  }
   emit mapPanelRequested();
   show();
 }
