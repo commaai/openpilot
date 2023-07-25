@@ -164,7 +164,7 @@ pipeline {
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
               ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-              ["test sensord", "cd system/sensord/tests && pytest -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
               ["test camerad", "pytest system/camerad/test/test_camerad.py"],
               ["test exposure", "pytest system/camerad/test/test_exposure.py"],
               ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
@@ -237,11 +237,11 @@ pipeline {
           steps {
             phone_steps("tici-lsmc", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd system/sensord/tests && pytest -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
             phone_steps("tici-bmx-lsm", [
               ["build", "cd selfdrive/manager && ./build.py"],
-              ["test sensord", "cd system/sensord/tests && pytest -m unittest test_sensord.py"],
+              ["test sensord", "cd system/sensord/tests && pytest test_sensord.py"],
             ])
           }
         }
