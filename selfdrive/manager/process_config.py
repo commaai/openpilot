@@ -43,8 +43,8 @@ procs = [
 
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], enabled=(not PC or WEBCAM), callback=driverview),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], callback=iscar),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd", "--stream"], callback=notcar),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"]),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], callback=notcar),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], onroad=False, callback=logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"]),
   NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"]),
