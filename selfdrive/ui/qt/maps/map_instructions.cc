@@ -102,6 +102,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setVisible(true);
   }
 
+  // Hide distance after arrival
+  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
+
   // Show lanes
   auto lanes = instruction.getLanes();
   for (int i = 0; i < lanes.size(); ++i) {
