@@ -24,6 +24,7 @@ class CarController:
     self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
     self.balance_pid = PIDController(1300, k_i=0, k_d=280, rate=1/DT_CTRL)
     self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
+    self.wheeled_speed_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
@@ -49,7 +50,7 @@ class CarController:
       # Read these from the joystick
       # TODO: this isn't acceleration, okay?
       speed_desired = CC.actuators.accel / 5.
-      speed_diff_desired = -CC.actuators.steer
+      speed_diff_desired = -CC.actuators.steer / 2.
 
       speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - speed_measured
@@ -64,7 +65,7 @@ class CarController:
         angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
         torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
       else:
-        torque = self.speed_pid.update(speed_error, freeze_integrator=False)
+        torque = self.wheeled_speed_pid.update(speed_error, freeze_integrator=False)
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired
