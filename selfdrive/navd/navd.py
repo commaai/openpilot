@@ -169,6 +169,9 @@ class RouteEngine:
       r = resp.json()
       if len(r['routes']):
         self.route = r['routes'][0]['legs'][0]['steps']
+        if len(self.route) > 1 and not len(self.route[-1]['bannerInstructions']):
+          self.route[-1]['bannerInstructions'] = self.route[-2]['bannerInstructions']
+
         self.route_geometry = []
 
         maxspeed_idx = 0
