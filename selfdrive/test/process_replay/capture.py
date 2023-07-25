@@ -2,7 +2,6 @@ import os
 import sys
 
 from typing import Tuple
-from ipykernel.iostream import OutStream
 
 class FdRedirect:
   def __init__(self, file_prefix: str, fd: int):
@@ -39,11 +38,16 @@ class ProcessOutputCapture:
     self.stderr_redirect.purge()
 
   def link_with_current_proc(self) -> None:
-    # prevent ipykernel from redirecting stdout/stderr of python subprocesses
-    if isinstance(sys.stdout, OutStream):
-      sys.stdout = sys.__stdout__
-    if isinstance(sys.stderr, OutStream):
-      sys.stderr = sys.__stderr__
+    try: 
+      # prevent ipykernel from redirecting stdout/stderr of python subprocesses
+      from ipykernel.iostream import OutStream
+      if isinstance(sys.stdout, OutStream):
+        sys.stdout = sys.__stdout__
+      if isinstance(sys.stderr, OutStream):
+        sys.stderr = sys.__stderr__
+    except ImportError:
+      pass
+
     # link stdout/stderr to the fifo
     self.stdout_redirect.link()
     self.stderr_redirect.link()
