@@ -312,8 +312,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // update DM icon
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
   setProperty("dmActive", dm_state.getIsActiveMode());
-//  setProperty("rightHandDM", dm_state.getIsRHD());
-  setProperty("rightHandDM", Params().getBool("Test"));
+  setProperty("rightHandDM", dm_state.getIsRHD());
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
 
