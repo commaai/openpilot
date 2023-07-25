@@ -36,7 +36,7 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
 void MapPanel::toggleMapSettings() {
   // show settings if not visible, then toggle between map and settings
-  int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
+  int new_index = isVisible ? (content_stack->currentIndex() == 0 ? 1 : 0) : 1;
   content_stack->setCurrentIndex(new_index);
   emit mapPanelRequested();
   show();
