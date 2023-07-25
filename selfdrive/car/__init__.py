@@ -132,21 +132,20 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
-def steering_rate_fault_avoidance(measured_steering_rate, max_steer_rate, current_over_rate_frames, max_over_rate_frames, apply_steer_req):
-  # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-  if apply_steer_req and abs(measured_steering_rate) >= max_steer_rate:
-    current_over_rate_frames += 1
+def common_fault_avoidance(measured_value, max_value, request, current_request_frames=0, max_request_frames=1, cut_request_frames=1):
+  # Count up to max_request_frames, at which point we need to cut the request for cut_request_frames to avoid a steering fault
+  if request and abs(measured_value) >= max_value:
+    current_request_frames += 1
   else:
-    current_over_rate_frames = 0
+    current_request_frames = 0
 
-  if current_over_rate_frames > max_over_rate_frames:
-    apply_steer_req = 0
-    current_over_rate_frames = 0
+  if current_request_frames >= max_request_frames:
+    request = 0
 
-  return current_over_rate_frames, apply_steer_req
-
-def steering_angle_fault_avoidance(measured_steering_angle, max_steer_angle, current_over_frames, max_over_frames, apply_steer_req):
+  if current_request_frames >= max_request_frames + cut_request_frames:
+    current_request_frames = 0
   
+  return current_request_frames, request
 
 def crc8_pedal(data):
   crc = 0xFF    # standard init value

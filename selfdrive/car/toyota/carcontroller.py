@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
-from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
-                          create_gas_interceptor_command, make_can_msg, steering_rate_fault_avoidance
+from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
+                          create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -37,7 +37,7 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
-    self.steer_rate_counter = 0
+    self.steer_rate_frames = 0
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -62,9 +62,8 @@ class CarController:
       apply_steer = 0
       apply_steer_req = 0
     
-    self.steer_rate_counter, apply_steer_req = \
-      steering_rate_fault_avoidance(CS.out.steeringRateDeg, self.steer_rate_counter, apply_steer_req,
-                                            MAX_STEER_RATE, MAX_STEER_RATE_FRAMES)
+    self.steer_rate_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, apply_steer_req,
+                                                                      self.steer_rate_frames, MAX_STEER_RATE_FRAMES)
 
     # *** steer angle ***
     if self.CP.steerControlType == SteerControlType.angle:

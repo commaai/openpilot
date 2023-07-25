@@ -1,5 +1,5 @@
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits
+from selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, STEER_LIMITED, CarControllerParams, SubaruFlags
 
@@ -16,7 +16,7 @@ class CarController:
 
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
-    self.steer_rate_counter = 0
+    self.steer_rate_frames = 0
 
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
@@ -44,19 +44,11 @@ class CarController:
         apply_steer_req = 0
 
       if self.CP.carFingerprint in STEER_LIMITED:
-        # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-        if abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-          self.steer_rate_counter += 1
-        else:
-          self.steer_rate_counter = 0
-        
-        if self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-          apply_steer_req = 0
-          self.steer_rate_counter = 0
+        self.steer_rate_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, apply_steer_req,
+                                                                          self.steer_rate_frames, MAX_STEER_RATE_FRAMES)
 
         # Any steering past 90 appears to cause temp fault
-        if abs(CS.out.steeringAngleDeg) > MAX_STEER_ANGLE:
-          apply_steer_req = 0
+        _, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_STEER_ANGLE, apply_steer_req)
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
