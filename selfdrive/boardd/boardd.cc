@@ -199,7 +199,7 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
-  if (!panda->up_to_date()) {
+  if (!panda->up_to_date() && !getenv("BOARDD_SKIP_FW_CHECK")) {
     throw std::runtime_error("Panda firmware out of date. Run pandad.py to update.");
   }
 
