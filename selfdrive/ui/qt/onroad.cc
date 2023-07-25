@@ -664,21 +664,20 @@ void AnnotatedCameraWidget::paintGL() {
   if (s->worldObjectsVisible()) {
     if (sm.rcv_frame("modelV2") > s->scene.started_frame) {
       update_model(s, model, sm["uiPlan"].getUiPlan());
+      drawLaneLines(painter, s);
+
       if (sm.rcv_frame("radarState") > s->scene.started_frame) {
         update_leads(s, radar_state, model.getPosition());
-      }
-    }
-
-    drawLaneLines(painter, s);
-
-    if (s->scene.longitudinal_control) {
-      auto lead_one = radar_state.getLeadOne();
-      auto lead_two = radar_state.getLeadTwo();
-      if (lead_one.getStatus()) {
-        drawLead(painter, lead_one, s->scene.lead_vertices[0]);
-      }
-      if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
-        drawLead(painter, lead_two, s->scene.lead_vertices[1]);
+        if (s->scene.longitudinal_control) {
+          auto lead_one = radar_state.getLeadOne();
+          auto lead_two = radar_state.getLeadTwo();
+          if (lead_one.getStatus()) {
+            drawLead(painter, lead_one, s->scene.lead_vertices[0]);
+          }
+          if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
+            drawLead(painter, lead_two, s->scene.lead_vertices[1]);
+          }
+        }
       }
     }
   }
