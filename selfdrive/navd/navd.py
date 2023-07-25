@@ -102,6 +102,7 @@ class RouteEngine:
 
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
+      print('clearing route from no param')
       self.clear_route()
       self.reset_recompute_limits()
       return
@@ -212,6 +213,7 @@ class RouteEngine:
 
     if self.step_idx is None:
       msg.valid = False
+      print(msg)
       self.pm.send('navInstruction', msg)
       return
 
@@ -221,7 +223,24 @@ class RouteEngine:
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
     # Banner instructions are for the following step, don't use empty last step
-    banner_step = self.route[clip(self.step_idx, 0, len(self.route) - 2)]
+    # print([i['bannerInstructions'] for i in self.route])
+    # print(self.route)
+    print('---')
+    for _step in self.route:
+      print('maneuver', _step['maneuver'], _step['distance'], _step['duration'])
+      print('bannerInstructions', _step['bannerInstructions'])
+      print()
+    print('---')
+    # banner_step = self.route[np.clip(self.step_idx, 0, len(self.route) - 2)]
+
+    # if not len(banner_step['bannerInstructions']) and self.step_idx == (len(self.route) - 1):
+
+    print(self.step_idx)
+    # Banner instructions are for the following step, don't use empty last step
+    banner_step = step
+    if not len(banner_step['bannerInstructions']) and len(self.route) > 1 and len(self.route) - 1 == self.step_idx:
+      print('using step_idx', self.step_idx - 1)
+      banner_step = self.route[self.step_idx - 1]
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
@@ -264,6 +283,7 @@ class RouteEngine:
       elif step['speedLimitSign'] == 'vienna':
         msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.vienna
 
+    print(msg)
     self.pm.send('navInstruction', msg)
 
     # Transition to next route segment
@@ -273,11 +293,12 @@ class RouteEngine:
         self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
+          Params().remove("NavDestination")
+          print('destination reached! clearing route!')
           self.clear_route()
 
   def send_route(self):

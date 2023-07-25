@@ -147,6 +147,7 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
       current_banner = banner
 
   # Only show banner when close enough to maneuver
+  print(distance_to_maneuver, current_banner['distanceAlongGeometry'])
   instruction.showFull = distance_to_maneuver < current_banner['distanceAlongGeometry']
 
   # Primary
