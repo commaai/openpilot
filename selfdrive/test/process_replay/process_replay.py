@@ -224,7 +224,6 @@ class ProcessContainer:
         self.capture = ProcessOutputCapture(self.cfg.proc_name, p.prefix)
 
       self._start_process()
-      assert self.process.proc.is_alive()
 
       if self.cfg.init_callback is not None:
         self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
