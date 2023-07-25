@@ -1,6 +1,6 @@
 Version 0.9.4 (2023-XX-XX)
 ========================
-* Navigate on openpilot in experimental mode
+* Navigate on openpilot in Experimental mode
   * When navigation has a destination, openpilot will input the map information into the model, generally improving behavior
   * When navigating on openpilot, openpilot will keep left or right appropriately at forks/exits
   * When navigating on openpilot, lane change behavior is unchanged and still activated by the driver
