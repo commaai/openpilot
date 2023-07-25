@@ -13,6 +13,9 @@ public:
 signals:
   void mapPanelRequested();
 
+public slots:
+  void toggleMapSettings();
+
 private:
   QStackedLayout *content_stack;
 };

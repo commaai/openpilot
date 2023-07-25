@@ -49,8 +49,6 @@ private:
   void pinchTriggered(QPinchGesture *gesture);
   void setError(const QString &err_str);
 
-  bool m_sourceAdded = false;
-
   bool loaded_once = false;
   bool allow_open = true;
 
@@ -70,8 +68,6 @@ private:
   QLabel *error;
   MapInstructions* map_instructions;
   MapETA* map_eta;
-  QPushButton *settings_btn;
-  QPixmap directions_icon, settings_icon;
 
   // Blue with normal nav, green when nav is input into the model
   QColor getNavPathColor(bool nav_enabled) {
