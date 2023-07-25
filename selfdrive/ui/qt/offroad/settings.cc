@@ -144,7 +144,7 @@ void TogglesPanel::updateToggles() {
 					  "These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc."))
                                   .arg(tr("New Driving Visualization"))
                                   .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."
-				          "When the map is being correctly input into the driving model, the driving path on the map will turn green."));
+				          "When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green."));
 
   const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
