@@ -67,6 +67,12 @@ class CarController:
     if not CC.latActive:
       apply_steer = 0
 
+    # >90 degree steering fault prevention
+    self.angle_limit_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
+                                                                      self.angle_limit_frames, MAX_ANGLE_FRAMES, MAX_ANGLE_CONSECUTIVE_FRAMES)
+    
+    torque_fault = CC.latActive and not apply_steer_req
+
     self.apply_steer_last = apply_steer
 
     # accel + longitudinal
@@ -93,12 +99,6 @@ class CarController:
       # for blinkers
       if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
-
-    # >90 degree steering fault prevention
-    self.angle_limit_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
-                                                                        self.angle_limit_frames, MAX_ANGLE_FRAMES, MAX_ANGLE_CONSECUTIVE_FRAMES)
-    
-    torque_fault = CC.latActive and not apply_steer_req
 
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
