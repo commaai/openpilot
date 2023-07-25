@@ -148,5 +148,6 @@ private:
 
 private slots:
   void offroadTransition(bool offroad);
+  void primeTypeChanged(int prime_type);
   void updateState(const UIState &s);
 };
