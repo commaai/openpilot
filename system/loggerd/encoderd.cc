@@ -160,11 +160,9 @@ int main(int argc, char* argv[]) {
     std::string arg1(argv[1]);
     if (arg1 == "--stream") {
       encoderd_thread(stream_cameras_logged);
-      LOGE("streaming!");
     }
   } else {
     encoderd_thread(cameras_logged);
-    LOGE("normal!");
   }
     return 0;  
 }
