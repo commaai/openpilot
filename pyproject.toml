@@ -175,6 +175,7 @@ tritonclient = {version = "2.28.0", extras = ["http"]}
 transformers = "*"
 timm = "==0.9.2"
 PyNvCodec = { git = "https://github.com/NVIDIA/VideoProcessingFramework.git", rev = "3347e55" }
+apex = { url = "https://github.com/commaai/apex/releases/download/pytorch2.0.1%2Bcu11.8/apex-0.1-cp311-cp311-linux_x86_64.whl" }
 
 
 [build-system]
