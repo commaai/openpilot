@@ -57,13 +57,12 @@ class CarController:
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
     apply_steer_req = 1
-
-    if not lat_active:
-      apply_steer = 0
-      apply_steer_req = 0
     
     self.steer_rate_frames, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, apply_steer_req,
                                                                       self.steer_rate_frames, MAX_STEER_RATE_FRAMES)
+
+    if not apply_steer_req:
+      apply_steer = 0
 
     # *** steer angle ***
     if self.CP.steerControlType == SteerControlType.angle:
