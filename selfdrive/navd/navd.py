@@ -212,7 +212,6 @@ class RouteEngine:
 
     if self.step_idx is None:
       msg.valid = False
-      print(msg)
       self.pm.send('navInstruction', msg)
       return
 
@@ -267,7 +266,6 @@ class RouteEngine:
       elif step['speedLimitSign'] == 'vienna':
         msg.navInstruction.speedLimitSign = log.NavInstruction.SpeedLimitSign.vienna
 
-    print(msg)
     self.pm.send('navInstruction', msg)
 
     # Transition to next route segment
@@ -277,12 +275,11 @@ class RouteEngine:
         self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
+        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
-          Params().remove("NavDestination")
-          print('destination reached! clearing route!')
           self.clear_route()
 
   def send_route(self):
