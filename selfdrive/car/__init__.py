@@ -139,7 +139,7 @@ def common_fault_avoidance(measured_value, max_value, request, current_request_f
   else:
     current_request_frames = 0
 
-  if current_request_frames >= max_request_frames:
+  if current_request_frames > max_request_frames:
     request = 0
 
   if current_request_frames >= max_request_frames + cut_request_frames:
