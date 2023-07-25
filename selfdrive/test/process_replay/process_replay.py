@@ -6,7 +6,6 @@ import json
 import heapq
 import signal
 import platform
-import multiprocessing
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Callable, Union, Any, Iterable, Tuple
@@ -26,6 +25,7 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.helpers import OpenpilotPrefix, DummySocket
 from selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from selfdrive.test.process_replay.migration import migrate_all
+from selfdrive.test.process_replay.capture import ProcessOutputCapture
 from tools.lib.logreader import LogReader
 
 # Numpy gives different results based on CPU features after version 19
@@ -34,58 +34,14 @@ PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
 
-class ProcessOutputProxy:
-  def __init__(self, proc_name, prefix, capture_stdout, capture_stderr):
-    self.stdout_fifo_fname = None
-    self.stdout_fifo_fd = None
-    self.stderr_fifo_fname = None
-    self.stderr_fifo_fd = None
+class LauncherWithCapture:
+  def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
+    self.capture = capture
+    self.launcher = launcher
 
-    if capture_stdout:
-      self.stdout_fifo_fname = os.path.join("/tmp", f"{prefix}_{proc_name}.stdout")
-      os.unlink(self.stdout_fifo_fname)
-      self.stdout_fifo_fd = os.mkfifo(self.stdout_fifo_fname)
-    if capture_stderr:
-      self.stderr_fifo_fname = os.path.join("/tmp", f"{prefix}_{proc_name}.stderr")
-      os.unlink(self.stderr_fifo_fname)
-      self.stderr_fifo_fd = os.mkfifo(self.stdout_fifo_fname)
-
-  def __del__(self):
-    if self.stdout_fifo_fd is not None:
-      os.close(self.stdout_fifo_fd)
-      os.unlink(self.stdout_fifo_fname)
-    if self.stderr_fifo_fd is not None:
-      os.close(self.stderr_fifo_fd)
-      os.unlink(self.stderr_fifo_fname)
-  
-  def _read_fd(self, fd):
-    buf_size = 1024
-    buf = None
-    total_buf = b""
-    while buf is None and len(buf) != 0:
-      buf = os.read(fd, buf_size)
-      total_buf += buf
-
-    return total_buf
-
-  def link_with_current_proc(self):
-    if self.stdout_fifo_fd is not None:
-      os.dup2(self.stdout_fifo_fd, 1)
-      os.close(self.stdout_fifo_fd)
-    if self.stderr_fifo_fd is not None:
-      os.dup2(self.stderr_fifo_fd, 2)
-      os.close(self.stderr_fifo_fd)
-
-  def read_outputs(self):
-    out_str = None
-    err_str = None
-
-    if self.stdout_fifo_fd is not None:
-      out_str = self.read_fd(self.stdout_fifo_fd)
-    if self.stderr_fifo_fd is not None:
-      err_str = self.read_fd(self.stderr_fifo_fd)
-
-    return out_str, err_str
+  def __call__(self, *args, **kwargs):
+    self.capture.link_with_current_proc()
+    self.launcher(*args, **kwargs)
 
 
 class ReplayContext:
@@ -188,6 +144,7 @@ class ProcessContainer:
     self.sockets: Optional[List[messaging.SubSocket]] = None
     self.rc: Optional[ReplayContext] = None 
     self.vipc_server: Optional[VisionIpcServer] = None
+    self.capture: Optional[ProcessOutputCapture] = None
 
   @property
   def has_empty_queue(self) -> bool:
@@ -235,12 +192,18 @@ class ProcessContainer:
 
     self.vipc_server = vipc_server
 
+  def _start_process(self):
+    if self.capture is not None:
+      self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)
+    self.process.prepare()
+    self.process.start()
+
   def start(
-    self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], fingerprint: Optional[str],
-    output_proxy: Optional[ProcessOutputProxy] = None
+    self, params_config: Dict[str, Any], environ_config: Dict[str, Any], 
+    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], 
+    fingerprint: Optional[str], capture_output: bool
   ):
-    with self.prefix:
+    with self.prefix as p:
       self._setup_env(params_config, environ_config)
 
       if self.cfg.config_callback is not None:
@@ -257,8 +220,11 @@ class ProcessContainer:
         self._setup_vision_ipc(all_msgs)
         assert self.vipc_server is not None
 
-      self.process.prepare()
-      self.process.start()
+      if capture_output:
+        self.capture = ProcessOutputCapture(self.cfg.proc_name, p.prefix)
+
+      self._start_process()
+      assert self.process.proc.is_alive()
 
       if self.cfg.init_callback is not None:
         self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
@@ -654,7 +620,8 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 
 def replay_process(
   cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
-  fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None, disable_progress: bool = False
+  fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None,
+  captured_output_store: Optional[Dict[str, str]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)
@@ -662,7 +629,7 @@ def replay_process(
     cfgs = [cfg]
 
   all_msgs = migrate_all(lr, old_logtime=True, camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
-  process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, disable_progress)
+  process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress)
 
   if return_all_logs:
     keys = {m.which() for m in process_logs}
@@ -678,7 +645,7 @@ def replay_process(
 
 def _replay_multi_process(
   cfgs: List[ProcessConfig], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]],
-  fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], disable_progress: bool
+  fingerprint: Optional[str], custom_params: Optional[Dict[str, Any]], captured_output_store: Optional[Dict[str, str]], disable_progress: bool
 ) -> List[capnp._DynamicStructReader]:
   if fingerprint is not None:
     params_config = generate_params_config(lr=lr, fingerprint=fingerprint, custom_params=custom_params)
@@ -703,7 +670,7 @@ def _replay_multi_process(
     containers = []
     for cfg in cfgs:
       container = ProcessContainer(cfg)
-      container.start(params_config, env_config, all_msgs, fingerprint)
+      container.start(params_config, env_config, all_msgs, fingerprint, captured_output_store is not None)
       containers.append(container)
 
     all_pubs = set([pub for container in containers for pub in container.pubs])
@@ -738,6 +705,10 @@ def _replay_multi_process(
   finally:
     for container in containers:
       container.stop()
+      if captured_output_store is not None:
+        assert container.capture is not None
+        out, err = container.capture.read_outerr()
+        captured_output_store[container.cfg.proc_name] = {"out": out, "err": err}
 
   return log_msgs
 
