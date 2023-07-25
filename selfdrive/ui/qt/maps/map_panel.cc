@@ -17,7 +17,11 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   QObject::connect(device(), &Device::interactiveTimeout, [=]() {
     content_stack->setCurrentIndex(0);
   });
-  QObject::connect(map, &MapWindow::requestVisible, this, &MapPanel::requestVisible);
+  QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
+    // when we show the map for a new route, signal HomeWindow to hide the sidebar
+    if (visible) { emit mapPanelRequested(); }
+    setVisible(visible);
+  });
   QObject::connect(map, &MapWindow::requestSettings, [=](bool settings) {
     content_stack->setCurrentIndex(settings ? 1 : 0);
   });
@@ -30,17 +34,10 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
   content_stack->addWidget(settings);
 }
 
-void MapPanel::requestVisible(bool visible) {
-  // when we show the map for a new route, signal HomeWindow to hide the sidebar
-  if (visible && !isVisible()) {
-    emit mapPanelRequested();
-  }
-  setVisible(visible);
-}
-
 void MapPanel::toggleMapSettings() {
   // show settings if not visible, then toggle between map and settings
   int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
   content_stack->setCurrentIndex(new_index);
-  requestVisible(true);
+  emit mapPanelRequested();
+  show();
 }

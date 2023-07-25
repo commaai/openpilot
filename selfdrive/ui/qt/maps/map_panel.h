@@ -14,7 +14,6 @@ signals:
   void mapPanelRequested();
 
 public slots:
-  void requestVisible(bool visible);
   void toggleMapSettings();
 
 private:
