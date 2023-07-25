@@ -85,8 +85,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  // Hide distance after arrival
-  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
   distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
@@ -103,6 +101,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
   }
+
+  // Hide distance after arrival
+  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
 
   // Show lanes
   auto lanes = instruction.getLanes();
