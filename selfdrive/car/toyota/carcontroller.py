@@ -1,7 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, \
-                          create_gas_interceptor_command, make_can_msg
+                          create_gas_interceptor_command, make_can_msg, steering_rate_fault_avoidance
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
@@ -56,19 +56,15 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
-    # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
-    if lat_active and abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE:
-      self.steer_rate_counter += 1
-    else:
-      self.steer_rate_counter = 0
-
     apply_steer_req = 1
+
     if not lat_active:
       apply_steer = 0
       apply_steer_req = 0
-    elif self.steer_rate_counter > MAX_STEER_RATE_FRAMES:
-      apply_steer_req = 0
-      self.steer_rate_counter = 0
+    
+    self.steer_rate_counter, apply_steer_req = \
+      steering_rate_fault_avoidance(CS.out.steeringRateDeg, self.steer_rate_counter, apply_steer_req,
+                                            MAX_STEER_RATE, MAX_STEER_RATE_FRAMES)
 
     # *** steer angle ***
     if self.CP.steerControlType == SteerControlType.angle:
