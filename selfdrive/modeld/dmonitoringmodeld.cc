@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
@@ -48,6 +49,8 @@ int main(int argc, char **argv) {
   // init the models
   DMonitoringModelState model;
   dmonitoring_init(&model);
+
+  Params().putBool("DmModelInitialized", true);
 
   LOGW("connecting to driver stream");
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_DRIVER, true);
