@@ -210,7 +210,7 @@ class RadarD:
     radar_points = []
     radar_errors = []
     no_radar = rr is None
-    if not no_radar:
+    if rr is not None:
       radar_points = rr.points
       radar_errors = rr.errors
 
