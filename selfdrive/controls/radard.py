@@ -219,26 +219,31 @@ class RadarD:
     if sm.updated['modelV2']:
       self.ready = True
 
-    ar_pts = {}
-    for pt in radar_points:
-      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
+    if len(radar_points) != 0:
+      ar_pts = {}
+      for pt in radar_points:
+        ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
 
-    # *** remove missing points from meta data ***
-    for ids in list(self.tracks.keys()):
-      if ids not in ar_pts:
-        self.tracks.pop(ids, None)
+      # *** remove missing points from meta data ***
+      for ids in list(self.tracks.keys()):
+        if ids not in ar_pts:
+          self.tracks.pop(ids, None)
 
-    # *** compute the tracks ***
-    for ids in ar_pts:
-      rpt = ar_pts[ids]
+      # *** compute the tracks ***
+      for ids in ar_pts:
+        rpt = ar_pts[ids]
 
-      # align v_ego by a fixed time to align it with the radar measurement
-      v_lead = rpt[2] + self.v_ego_hist[0]
+        # align v_ego by a fixed time to align it with the radar measurement
+        v_lead = rpt[2] + self.v_ego_hist[0]
 
-      # create the track if it doesn't exist or it's a new track
-      if ids not in self.tracks:
-        self.tracks[ids] = Track(v_lead, self.kalman_params)
-      self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
+        # create the track if it doesn't exist or it's a new track
+        if ids not in self.tracks:
+          self.tracks[ids] = Track(v_lead, self.kalman_params)
+        self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
+    else:
+      # *** no radar points, keep existing tracks, update v_lead
+      for track in self.tracks.values():
+        track.vLead = track.vRel + self.v_ego_hist[0]
 
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks() and len(radar_errors) == 0
