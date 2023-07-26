@@ -1,3 +1,8 @@
+#include <sys/xattr.h>
+
+#include <unordered_map>
+
+#include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/video_writer.h"
 
@@ -58,18 +63,13 @@ struct RemoteEncoder {
   bool seen_first_packet = false;
 };
 
-int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re) {
-  const LogCameraInfo &cam_info = (name == "driverEncodeData") ? cameras_logged[1] :
-    ((name == "wideRoadEncodeData") ? cameras_logged[2] :
-    ((name == "qRoadEncodeData") ? qcam_info : cameras_logged[0]));
+int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
   int bytes_count = 0;
 
   // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (name == "driverEncodeData") ? event.getDriverEncodeData() :
-    ((name == "wideRoadEncodeData") ? event.getWideRoadEncodeData() :
-    ((name == "qRoadEncodeData") ? event.getQRoadEncodeData() : event.getRoadEncodeData()));
+  auto edata = (event.*(encoder_info.get_encode_data_func))();
   auto idx = edata.getIdx();
   auto flags = idx.getFlags();
 
@@ -95,7 +95,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto &qmsg: re.q) {
-          bytes_count += handle_encoder_msg(s, qmsg, name, re);
+          bytes_count += handle_encoder_msg(s, qmsg, name, re, encoder_info);
         }
         re.q.clear();
       }
@@ -111,10 +111,10 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
           re.dropped_frames = 0;
         }
         // if we aren't actually recording, don't create the writer
-        if (cam_info.record) {
+        if (encoder_info.record) {
           re.writer.reset(new VideoWriter(s->segment_path,
-            cam_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-            cam_info.frame_width, cam_info.frame_height, cam_info.fps, idx.getType()));
+            encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+            encoder_info.frame_width, encoder_info.frame_height, encoder_info.fps, idx.getType()));
           // write the header
           auto header = edata.getHeader();
           re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
@@ -142,10 +142,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     MessageBuilder bmsg;
     auto evt = bmsg.initEvent(event.getValid());
     evt.setLogMonoTime(event.getLogMonoTime());
-    if (name == "driverEncodeData") { evt.setDriverEncodeIdx(idx); }
-    if (name == "wideRoadEncodeData") { evt.setWideRoadEncodeIdx(idx); }
-    if (name == "qRoadEncodeData") { evt.setQRoadEncodeIdx(idx); }
-    if (name == "roadEncodeData") { evt.setRoadEncodeIdx(idx); }
+    (evt.*(encoder_info.set_encode_idx_func))(idx);
     auto new_msg = bmsg.toBytes();
     logger_log(&s->logger, (uint8_t *)new_msg.begin(), new_msg.size(), true);   // always in qlog?
     bytes_count += new_msg.size();
@@ -175,14 +172,31 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
   return bytes_count;
 }
 
+void handle_user_flag(LoggerdState *s) {
+  static int prev_segment = -1;
+  if (s->rotate_segment == prev_segment) return;
+
+  LOGW("preserving %s", s->segment_path);
+
+#ifdef __APPLE__
+  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0, 0);
+#else
+  int ret = setxattr(s->segment_path, PRESERVE_ATTR_NAME, &PRESERVE_ATTR_VALUE, 1, 0);
+#endif
+  if (ret) {
+    LOGE("setxattr %s failed for %s: %s", PRESERVE_ATTR_NAME, s->segment_path, strerror(errno));
+  }
+  prev_segment = s->rotate_segment.load();
+}
+
 void loggerd_thread() {
   // setup messaging
-  typedef struct QlogState {
+  typedef struct ServiceState {
     std::string name;
     int counter, freq;
-    bool encoder;
-  } QlogState;
-  std::unordered_map<SubSocket*, QlogState> qlog_states;
+    bool encoder, user_flag;
+  } ServiceState;
+  std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
   std::unique_ptr<Context> ctx(Context::create());
@@ -197,11 +211,12 @@ void loggerd_thread() {
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
-    qlog_states[sock] = {
+    service_state[sock] = {
       .name = it.name,
       .counter = 0,
       .freq = it.decimation,
       .encoder = encoder,
+      .user_flag = (strcmp(it.name, "userFlag") == 0),
     };
   }
 
@@ -211,11 +226,12 @@ void loggerd_thread() {
   logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
-  // init encoders
-  s.last_camera_seen_tms = millis_since_boot();
+  std::map<std::string, EncoderInfo> encoder_infos_dict;
   for (const auto &cam : cameras_logged) {
-    s.max_waiting++;
-    if (cam.has_qcamera) { s.max_waiting++; }
+    for (const auto &encoder_info: cam.encoder_infos) {
+      encoder_infos_dict[encoder_info.publish_name] = encoder_info;
+      s.max_waiting++;
+    }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
@@ -225,16 +241,19 @@ void loggerd_thread() {
     for (auto sock : poller->poll(1000)) {
       if (do_exit) break;
 
+      ServiceState &service = service_state[sock];
+      if (service.user_flag) {
+        handle_user_flag(&s);
+      }
+
       // drain socket
       int count = 0;
-      QlogState &qs = qlog_states[sock];
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
-        const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-
-        if (qs.encoder) {
+        const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
+        if (service.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, qs.name, remote_encoders[sock]);
+          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
         } else {
           logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
@@ -250,7 +269,7 @@ void loggerd_thread() {
 
         count++;
         if (count >= 200) {
-          LOGD("large volume of '%s' messages", qs.name.c_str());
+          LOGD("large volume of '%s' messages", service.name.c_str());
           break;
         }
       }
@@ -267,7 +286,7 @@ void loggerd_thread() {
   }
 
   // messaging cleanup
-  for (auto &[sock, qs] : qlog_states) delete sock;
+  for (auto &[sock, service] : service_state) delete sock;
 }
 
 int main(int argc, char** argv) {

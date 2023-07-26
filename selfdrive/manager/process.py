@@ -91,7 +91,7 @@ class ManagerProcess(ABC):
     pass
 
   def restart(self) -> None:
-    self.stop()
+    self.stop(sig=signal.SIGKILL)
     self.start()
 
   def check_watchdog(self, started: bool) -> None:
@@ -100,29 +100,30 @@ class ManagerProcess(ABC):
 
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
-      # TODO: why can't pylint find struct.unpack?
-      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0] # pylint: disable=no-member
+      with open(fn, "rb") as f:
+        # TODO: why can't pylint find struct.unpack?
+        self.last_watchdog_time = struct.unpack('Q', f.read())[0] # pylint: disable=no-member
     except Exception:
       pass
 
     dt = sec_since_boot() - self.last_watchdog_time / 1e9
 
     if dt > self.watchdog_max_dt:
-      # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG:
         cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool=True, block: bool=True) -> Optional[int]:
+  def stop(self, retry: bool = True, block: bool = True, sig: Optional[signal.Signals] = None) -> Optional[int]:
     if self.proc is None:
       return None
 
     if self.proc.exitcode is None:
       if not self.shutting_down:
         cloudlog.info(f"killing {self.name}")
-        sig = signal.SIGKILL if self.sigkill else signal.SIGINT
+        if sig is None:
+          sig = signal.SIGKILL if self.sigkill else signal.SIGINT
         self.signal(sig)
         self.shutting_down = True
 
@@ -257,14 +258,16 @@ class DaemonProcess(ManagerProcess):
     self.enabled = enabled
     self.onroad = True
     self.offroad = True
+    self.params = None
 
   def prepare(self) -> None:
     pass
 
   def start(self) -> None:
-    params = Params()
-    pid = params.get(self.param_name, encoding='utf-8')
+    if self.params is None:
+      self.params = Params()
 
+    pid = self.params.get(self.param_name, encoding='utf-8')
     if pid is not None:
       try:
         os.kill(int(pid), 0)
@@ -283,9 +286,9 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    params.put(self.param_name, str(proc.pid))
+    self.params.put(self.param_name, str(proc.pid))
 
-  def stop(self, retry=True, block=True) -> None:
+  def stop(self, retry=True, block=True, sig=None) -> None:
     pass
 
 

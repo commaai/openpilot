@@ -16,11 +16,11 @@
 #include "common/params.h"
 #include "common/timing.h"
 
-const int bdr_s = 30;
-const int header_h = 420;
-const int footer_h = 280;
+const int UI_BORDER_SIZE = 30;
+const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
+const int BACKLIGHT_OFFROAD = 50;
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
@@ -40,6 +40,7 @@ struct Alert {
   QString text2;
   QString type;
   cereal::ControlsState::AlertSize size;
+  cereal::ControlsState::AlertStatus status;
   AudibleAlert sound;
 
   bool equal(const Alert &a2) {
@@ -48,34 +49,43 @@ struct Alert {
 
   static Alert get(const SubMaster &sm, uint64_t started_frame) {
     const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    if (sm.updated("controlsState")) {
-      return {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-              cs.getAlertType().cStr(), cs.getAlertSize(),
-              cs.getAlertSound()};
-    } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
+    const uint64_t controls_frame = sm.rcv_frame("controlsState");
+
+    Alert alert = {};
+    if (controls_frame >= started_frame) {  // Don't get old alert.
+      alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+               cs.getAlertType().cStr(), cs.getAlertSize(),
+               cs.getAlertStatus(),
+               cs.getAlertSound()};
+    }
+
+    if (!sm.updated("controlsState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
       const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
 
       // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < started_frame) {
+      if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
-        return {"openpilot Unavailable", "Waiting for controls to start",
-                "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                AudibleAlert::NONE};
+        alert = {"openpilot Unavailable", "Waiting for controls to start",
+                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                 cereal::ControlsState::AlertStatus::NORMAL,
+                 AudibleAlert::NONE};
       } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-          return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                  "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                  AudibleAlert::WARNING_IMMEDIATE};
+          alert = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                   "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                   cereal::ControlsState::AlertStatus::CRITICAL,
+                   AudibleAlert::WARNING_IMMEDIATE};
         } else {
-          return {"Controls Unresponsive", "Reboot Device",
-                  "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
-                  AudibleAlert::NONE};
+          alert = {"Controls Unresponsive", "Reboot Device",
+                   "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
+                   cereal::ControlsState::AlertStatus::NORMAL,
+                   AudibleAlert::NONE};
         }
       }
     }
-    return {};
+    return alert;
   }
 };
 
@@ -83,16 +93,18 @@ typedef enum UIStatus {
   STATUS_DISENGAGED,
   STATUS_OVERRIDE,
   STATUS_ENGAGED,
-  STATUS_WARNING,
-  STATUS_ALERT,
 } UIStatus;
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
-  [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
-  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
+};
+
+static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
+  {cereal::ControlsState::AlertStatus::NORMAL, QColor(0x15, 0x15, 0x15, 0xf1)},
+  {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xDA, 0x6F, 0x25, 0xf1)},
+  {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xC9, 0x22, 0x31, 0xf1)},
 };
 
 typedef struct UIScene {
@@ -119,6 +131,8 @@ typedef struct UIScene {
   float driver_pose_sins[3];
   float driver_pose_coss[3];
   vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
+
+  bool navigate_on_openpilot = false;
 
   float light_sensor;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
@@ -148,7 +162,6 @@ public:
   UIStatus status;
   UIScene scene = {};
 
-  bool awake;
   QString language;
 
   QTransform car_space_transform;
@@ -175,28 +188,35 @@ class Device : public QObject {
 
 public:
   Device(QObject *parent = 0);
+  bool isAwake() { return awake; }
+  void setOffroadBrightness(int brightness) {
+    offroad_brightness = std::clamp(brightness, 0, 100);
+  }
 
 private:
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
+
+  int offroad_brightness = BACKLIGHT_OFFROAD;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
   QFuture<void> brightness_future;
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
-  bool motionTriggered(const UIState &s);
   void setAwake(bool on);
 
 signals:
   void displayPowerChanged(bool on);
-  void interactiveTimout();
+  void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimout();
+  void resetInteractiveTimeout();
   void update(const UIState &s);
 };
+
+Device *device();
 
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);

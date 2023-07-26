@@ -1,10 +1,12 @@
 # functions common among cars
-import capnp
 from collections import namedtuple
+from typing import Dict, Optional
+
+import capnp
 
 from cereal import car
 from common.numpy_fast import clip, interp
-from typing import Dict
+
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -175,3 +177,15 @@ def get_safety_config(safety_model, safety_param = None):
   if safety_param is not None:
     ret.safetyParam = safety_param
   return ret
+
+
+class CanBusBase:
+  offset: int
+
+  def __init__(self, CP, fingerprint: Optional[Dict[int, Dict[int, int]]]) -> None:
+    if CP is None:
+      assert fingerprint is not None
+      num = max([k for k, v in fingerprint.items() if len(v)], default=0) // 4 + 1
+    else:
+      num = len(CP.safetyConfigs)
+    self.offset = 4 * (num - 1)

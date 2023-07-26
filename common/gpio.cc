@@ -53,7 +53,7 @@ int gpiochip_get_ro_value_fd(const char* consumer_label, int gpiochiop_id, int p
   std::string gpiochip_path = "/dev/gpiochip" + std::to_string(gpiochiop_id);
   int fd = open(gpiochip_path.c_str(), O_RDONLY);
   if (fd < 0) {
-    LOGE("Error opening gpiochip0 fd")
+    LOGE("Error opening gpiochip0 fd");
     return -1;
   }
 
