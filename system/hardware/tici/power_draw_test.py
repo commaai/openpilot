@@ -4,7 +4,7 @@ import time
 import numpy as np
 from system.hardware.tici.hardware import Tici
 from system.hardware.tici.pins import GPIO
-from common.gpio import gpio_init, gpio_set
+from common.gpio import gpio_init, gpio_set, gpio_export
 
 def read_power():
   with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/in1_input") as f:
@@ -32,13 +32,6 @@ def read_power_avg():
   power_total, power_som = np.mean([x[0] for x in pwrs]), np.mean([x[1] for x in pwrs])
   return "total %7.2f mW  SOM %7.2f mW" % (power_total, power_som)
 
-
-def gpio_export(pin):
-  try:
-    with open("/sys/class/gpio/export", 'w') as f:
-      f.write(str(pin))
-  except Exception:
-    print(f"Failed to export gpio {pin}")
 
 if __name__ == "__main__":
   gpio_export(GPIO.CAM0_AVDD_EN)
