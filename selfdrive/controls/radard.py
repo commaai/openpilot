@@ -209,7 +209,8 @@ class RadarD:
 
     radar_points = []
     radar_errors = []
-    if rr is not None:
+    no_radar = rr is None
+    if not no_radar:
       radar_points = rr.points
       radar_errors = rr.errors
 
@@ -219,7 +220,7 @@ class RadarD:
     if sm.updated['modelV2']:
       self.ready = True
 
-    if len(radar_points) != 0:
+    if not no_radar:
       ar_pts = {}
       for pt in radar_points:
         ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
