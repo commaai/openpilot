@@ -53,6 +53,8 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libncurses5-dev \
+    libncursesw5-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
@@ -86,6 +88,7 @@ function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
   $SUDO apt-get install -y --no-install-recommends \
+    g++-12 \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \

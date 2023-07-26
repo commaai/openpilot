@@ -102,6 +102,7 @@ class RouteEngine:
     new_destination = coordinate_from_param("NavDestination", self.params)
     if new_destination is None:
       self.clear_route()
+      self.reset_recompute_limits()
       return
 
     should_recompute = self.should_recompute()
@@ -218,15 +219,24 @@ class RouteEngine:
     along_geometry = distance_along_geometry(geometry, self.last_position)
     distance_to_maneuver_along_geometry = step['distance'] - along_geometry
 
+    # Banner instructions are for the following maneuver step, don't use empty last step
+    banner_step = step
+    if not len(banner_step['bannerInstructions']) and self.step_idx == len(self.route) - 1:
+      banner_step = self.route[max(self.step_idx - 1, 0)]
+
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    parse_banner_instructions(msg.navInstruction, banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
     total_distance = step['distance'] * remaining
     total_time = step['duration'] * remaining
-    total_time_typical = step['duration_typical'] * remaining
+
+    if step['duration_typical'] is None:
+      total_time_typical = total_time
+    else:
+      total_time_typical = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
@@ -261,15 +271,14 @@ class RouteEngine:
     if distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD:
       if self.step_idx + 1 < len(self.route):
         self.step_idx += 1
-        self.recompute_backoff = 0
-        self.recompute_countdown = 0
+        self.reset_recompute_limits()
       else:
         cloudlog.warning("Destination reached")
-        Params().remove("NavDestination")
 
         # Clear route if driving away from destination
         dist = self.nav_destination.distance_to(self.last_position)
         if dist > REROUTE_DISTANCE:
+          self.params.remove("NavDestination")
           self.clear_route()
 
   def send_route(self):
@@ -288,6 +297,10 @@ class RouteEngine:
     self.route_geometry = None
     self.step_idx = None
     self.nav_destination = None
+
+  def reset_recompute_limits(self):
+    self.recompute_backoff = 0
+    self.recompute_countdown = 0
 
   def should_recompute(self):
     if self.step_idx is None or self.route is None:

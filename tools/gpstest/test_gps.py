@@ -5,7 +5,7 @@ import struct
 
 from common.params import Params
 import cereal.messaging as messaging
-import selfdrive.sensord.pigeond as pd
+import system.sensord.pigeond as pd
 from system.hardware import TICI
 from selfdrive.test.helpers import with_processes
 

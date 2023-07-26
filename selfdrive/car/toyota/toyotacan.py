@@ -9,20 +9,20 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer, steer_req, raw_cnt):
+def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
-    "COUNTER": raw_cnt + 128,
+    "COUNTER": frame + 128,
     "SETME_X1": 1,
     "SETME_X3": 3,
     "PERCENTAGE": 100,
-    "SETME_X64": 0x64,
+    "SETME_X64": setme_x64,
     "ANGLE": 0,
-    "STEER_ANGLE_CMD": steer,
+    "STEER_ANGLE_CMD": steer_angle,
     "STEER_REQUEST": steer_req,
     "STEER_REQUEST_2": steer_req,
-    "BIT": 0,
+    "CLEAR_HOLD_STEERING_ALERT": 0,
   }
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
@@ -46,7 +46,7 @@ def create_acc_cancel_command(packer):
   values = {
     "GAS_RELEASED": 0,
     "CRUISE_ACTIVE": 0,
-    "STANDSTILL_ON": 0,
+    "ACC_BRAKING": 0,
     "ACCEL_NET": 0,
     "CRUISE_STATE": 0,
     "CANCEL_REQ": 1,
@@ -87,7 +87,7 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
     "LANE_SWAY_SENSITIVITY": 2,
     "LANE_SWAY_TOGGLE": 1,
     "LDA_ON_MESSAGE": 0,
-    "LDA_SPEED_TOO_LOW": 0,
+    "LDA_MESSAGES": 0,
     "LDA_SA_TOGGLE": 1,
     "LDA_SENSITIVITY": 2,
     "LDA_UNAVAILABLE": 0,
@@ -99,6 +99,13 @@ def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_dep
 
   # lane sway functionality
   # not all cars have LKAS_HUD — update with camera values if available
-  values.update(stock_lkas_hud)
+  if len(stock_lkas_hud):
+    values.update({s: stock_lkas_hud[s] for s in [
+      "LANE_SWAY_FLD",
+      "LANE_SWAY_BUZZER",
+      "LANE_SWAY_WARNING",
+      "LANE_SWAY_SENSITIVITY",
+      "LANE_SWAY_TOGGLE",
+    ]})
 
   return packer.make_can_msg("LKAS_HUD", 0, values)

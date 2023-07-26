@@ -15,7 +15,7 @@ def mock_sec_since_boot():
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
     from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING
+                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
 TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3
@@ -116,10 +116,9 @@ class TestPowerMonitoring(unittest.TestCase):
           self.assertFalse(pm.should_shutdown(ignition, True, start_time, False))
       self.assertTrue(pm.should_shutdown(ignition, True, start_time, False))
 
-  # Test to check policy of stopping charging when the car voltage is too low
   def test_car_voltage(self):
     POWER_DRAW = 0 # To stop shutting down for other reasons
-    TEST_TIME = 100
+    TEST_TIME = 350
     VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 50
     with pm_patch("VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True), pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
@@ -130,8 +129,9 @@ class TestPowerMonitoring(unittest.TestCase):
         pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
         if i % 10 == 0:
           self.assertEqual(pm.should_shutdown(ignition, True, start_time, True),
-                           (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3 and
-                            (ssb - start_time) > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S))
+                           (pm.car_voltage_mV < VBATT_PAUSE_CHARGING * 1e3 and
+                            (ssb - start_time) > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S and
+                             (ssb - start_time) > DELAY_SHUTDOWN_TIME_S))
       self.assertTrue(pm.should_shutdown(ignition, True, start_time, True))
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
@@ -177,6 +177,26 @@ class TestPowerMonitoring(unittest.TestCase):
         if i % 10 == 0:
           self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
       self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
+      
+  def test_delay_shutdown_time(self):
+    pm = PowerMonitoring()
+    pm.car_battery_capacity_uWh = 0
+    ignition = False
+    in_car = True 
+    offroad_timestamp = ssb
+    started_seen = True
+    pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
+
+    while ssb < offroad_timestamp + DELAY_SHUTDOWN_TIME_S:
+      self.assertFalse(pm.should_shutdown(ignition, in_car, 
+                                          offroad_timestamp, 
+                                          started_seen), 
+                       f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time")
+    self.assertTrue(pm.should_shutdown(ignition, in_car, 
+                                       offroad_timestamp, 
+                                       started_seen),
+                    f"Should shutdown after {DELAY_SHUTDOWN_TIME_S} seconds offroad time")
+
 
 if __name__ == "__main__":
   unittest.main()

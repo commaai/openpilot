@@ -8,7 +8,7 @@ from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+from selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 
 class Plant:
@@ -99,13 +99,13 @@ class Plant:
     # Simulate model predicting slightly faster speed
     # this is to ensure lead policy is effective when model
     # does not predict slowdown in e2e mode
-    position = log.ModelDataV2.XYZTData.new_message()
+    position = log.XYZTData.new_message()
     position.x = [float(x) for x in (self.speed + 0.5) * np.array(T_IDXS)]
     model.modelV2.position = position
-    velocity = log.ModelDataV2.XYZTData.new_message()
+    velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(T_IDXS)]
     model.modelV2.velocity = velocity
-    acceleration = log.ModelDataV2.XYZTData.new_message()
+    acceleration = log.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(T_IDXS)]
     model.modelV2.acceleration = acceleration
 

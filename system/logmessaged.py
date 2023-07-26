@@ -28,6 +28,11 @@ def main() -> NoReturn:
       if level >= log_level:
         log_handler.emit(record)
 
+      if len(record) > 2*1024*1024:
+        print("WARNING: log too big to publish", len(record))
+        print(print(record[:100]))
+        continue
+
       # then we publish them
       msg = messaging.new_message()
       msg.logMessage = record
@@ -40,8 +45,12 @@ def main() -> NoReturn:
   finally:
     sock.close()
     ctx.term()
-    log_handler.close()
 
+    # can hit this if interrupted during a rollover
+    try:
+      log_handler.close()
+    except ValueError:
+      pass
 
 if __name__ == "__main__":
   main()

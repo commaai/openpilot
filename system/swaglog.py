@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import warnings
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
 
@@ -71,8 +72,15 @@ class UnixDomainSocketHandler(logging.Handler):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
     self.pid = None
+
     self.zctx = None
     self.sock = None
+
+  def __del__(self):
+    if self.sock is not None:
+      self.sock.close()
+    if self.zctx is not None:
+      self.zctx.term()
 
   def connect(self):
     self.zctx = zmq.Context.instance()
@@ -83,6 +91,8 @@ class UnixDomainSocketHandler(logging.Handler):
 
   def emit(self, record):
     if os.getpid() != self.pid:
+      # TODO suppresses warning about forking proc with zmq socket, fix root cause
+      warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
       self.connect()
 
     msg = self.format(record).rstrip('\n')
@@ -94,11 +104,6 @@ class UnixDomainSocketHandler(logging.Handler):
       # drop :/
       pass
 
-  def __del__(self):
-    if self.sock is not None:
-      self.sock.close()
-    if self.zctx is not None:
-      self.zctx.term()
 
 def add_file_handler(log):
   """

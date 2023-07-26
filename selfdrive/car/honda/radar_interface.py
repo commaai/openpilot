@@ -21,7 +21,7 @@ class RadarInterface(RadarInterfaceBase):
     self.track_id = 0
     self.radar_fault = False
     self.radar_wrong_config = False
-    self.radar_off_can = CP.radarOffCan
+    self.radar_off_can = CP.radarUnavailable
     self.radar_ts = CP.radarTimeStep
 
     self.delay = int(round(0.1 / CP.radarTimeStep))   # 0.1s delay of radar
