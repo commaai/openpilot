@@ -25,7 +25,7 @@ def gpio_read(pin: int) -> Optional[bool]:
 
   return val
 
-def gpio_export(pin: int):
+def gpio_export(pin: int) -> None:
   try:
     with open("/sys/class/gpio/export", 'w') as f:
       f.write(str(pin))
