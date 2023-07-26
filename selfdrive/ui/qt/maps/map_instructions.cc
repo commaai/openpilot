@@ -120,9 +120,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
     // TODO: Make more images based on active direction and combined directions
     QString fn = "lane_direction_";
-    if (left) {
+    if (left && (lanes[i].getActiveDirection() == cereal::NavInstruction::Direction::LEFT || !active)) {
       fn += "turn_left";
-    } else if (right) {
+    } else if (right && (lanes[i].getActiveDirection() == cereal::NavInstruction::Direction::RIGHT || !active)) {
       fn += "turn_right";
     } else if (straight) {
       fn += "turn_straight";
