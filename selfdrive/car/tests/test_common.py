@@ -49,10 +49,16 @@ class TestCommon(unittest.TestCase):
     history = self._run_common_fault_avoidance(sequence, 90, 5, request=request)
     self.assertEqual(history, list(request))
 
-    # in case you need two consecutive frames (hyundai)
+    # in case you need two consecutive frames (hyundai max angle)
     sequence = (89,) * 10 + (91,) * 40
     history = self._run_common_fault_avoidance(sequence, 90, 5, 2)
     self._run_history_check(history, 5, 2)
+
+    # zero tolerance policy (max_request_frames = 0) (subaru max angle)
+    sequence = (89,) * 10 + (91,) * 40
+    history = self._run_common_fault_avoidance(sequence, 90, 0)
+    self.assertTrue(all(history[0:10]))
+    self.assertFalse(any(history[10:]))
 
 
 if __name__ == "__main__":
