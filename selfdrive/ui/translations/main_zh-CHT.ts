@@ -402,6 +402,10 @@
         <source>Waiting for GPS</source>
         <translation>等待 GPS</translation>
     </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
@@ -555,15 +559,15 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>24/7 LTE 連線</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>導航功能</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>一年的行駛記錄儲存空間</translation>
     </message>
 </context>
 <context>
@@ -1062,10 +1066,6 @@ This may take up to a minute.</source>
         <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮端到端縱向控制🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>讓駕駛模型來控制油門及煞車。openpilot將會模擬人類的駕駛行為，包含在看見紅燈及停止標示時停車。由於車速將由駕駛模型決定，因此您設定的時速將成為速度上限。本功能仍在早期實驗階段，請預期模型有犯錯的可能性。</translation>
     </message>
@@ -1074,20 +1074,12 @@ This may take up to a minute.</source>
         <translation>新的駕駛視覺介面</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation>因車輛使用內建ACC系統，無法在本車輛上啟動實驗模式。</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>openpilot 縱向控制可能會在未來的更新中提供。</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1124,6 +1116,26 @@ This may take up to a minute.</source>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本，以及實驗模式。</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits/forks.These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1176,12 +1188,12 @@ This may take up to a minute.</source>
         <translation>開啟設置</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>正在上傳訓練數據</translation>
+        <source>Ready to upload</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>您的數據將用於訓練駕駛模型並協助改進 openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

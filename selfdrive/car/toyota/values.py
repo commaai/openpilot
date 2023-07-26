@@ -197,7 +197,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
   ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
-  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
+  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
@@ -272,9 +272,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # Responds to KWP (0x1a8881):
     # - Body Control Module ((0x750, 0x40))
 
-    # Hybrid control computer can be on one of two addresses
+    # Hybrid control computer can be on 0x7e2 (KWP) or 0x7d2 (UDS) depending on platform
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     # TODO: if these duplicate ECUs always exist together, remove one
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
@@ -1643,13 +1642,20 @@ FW_VERSIONS = {
   CAR.RAV4H_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
+      b'\x01F15264283300\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
+      b'8965B42371\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896634AE1001\x00\x00\x00\x00',
       b'\x01896634AF0000\x00\x00\x00\x00',
+    ],
+    (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
+      b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
+      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
@@ -2123,15 +2129,16 @@ FW_VERSIONS = {
       b'F152648811\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
-      b'8965B48271\x00\x00\x00\x00\x00\x00',
       b'8965B48261\x00\x00\x00\x00\x00\x00',
+      b'8965B48271\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.PRIUS_TSS2: {

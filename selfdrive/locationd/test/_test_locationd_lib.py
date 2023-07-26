@@ -40,7 +40,8 @@ void localizer_handle_msg_bytes(Localizer_t localizer, const char *data, size_t 
 
   def localizer_get_msg(self, t=0, inputsOK=True, sensorsOK=True, gpsOK=True, msgValid=True):
     self.lib.localizer_get_message_bytes(self.localizer, inputsOK, sensorsOK, gpsOK, msgValid, self.ffi.addressof(self.msg_buff, 0), self.buff_size)
-    return log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8)
+    with log.Event.from_bytes(self.ffi.buffer(self.msg_buff), nesting_limit=self.buff_size // 8) as log_evt:
+      return log_evt
 
   def test_liblocalizer(self):
     msg = messaging.new_message('liveCalibration')

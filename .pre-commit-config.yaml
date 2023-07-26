@@ -32,6 +32,7 @@ repos:
         entry: mypy
         language: system
         types: [python]
+        args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/PyCQA/flake8
     rev: 6.0.0
