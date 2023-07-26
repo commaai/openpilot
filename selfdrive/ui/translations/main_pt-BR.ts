@@ -354,33 +354,6 @@
         <source>hr</source>
         <translation>hr</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">mi</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation type="vanished"> km</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation type="vanished"> m</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation type="vanished"> milha</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation type="vanished"> pés</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>

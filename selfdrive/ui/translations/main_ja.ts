@@ -353,33 +353,6 @@
         <source>hr</source>
         <translation>時間</translation>
     </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">ﾏｲﾙ</translation>
-    </message>
-</context>
-<context>
-    <name>MapInstructions</name>
-    <message>
-        <source> km</source>
-        <translation type="vanished"> ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> m</source>
-        <translation type="vanished"> ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source> mi</source>
-        <translation type="vanished"> ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source> ft</source>
-        <translation type="vanished"> ﾌｨｰﾄ</translation>
-    </message>
 </context>
 <context>
     <name>MapSettings</name>
