@@ -22,6 +22,5 @@ private:
 public:
   MapInstructions(QWidget * parent=nullptr);
   void buildPixmapCache();
-  QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };

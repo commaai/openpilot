@@ -355,30 +355,30 @@
     </message>
     <message>
         <source>km</source>
-        <translation>ｷﾛﾒｰﾄﾙ</translation>
+        <translation type="vanished">ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>ﾏｲﾙ</translation>
+        <translation type="vanished">ﾏｲﾙ</translation>
     </message>
 </context>
 <context>
     <name>MapInstructions</name>
     <message>
         <source> km</source>
-        <translation> ｷﾛﾒｰﾄﾙ</translation>
+        <translation type="vanished"> ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
         <source> m</source>
-        <translation> ﾒｰﾄﾙ</translation>
+        <translation type="vanished"> ﾒｰﾄﾙ</translation>
     </message>
     <message>
         <source> mi</source>
-        <translation> ﾏｲﾙ</translation>
+        <translation type="vanished"> ﾏｲﾙ</translation>
     </message>
     <message>
         <source> ft</source>
-        <translation> ﾌｨｰﾄ</translation>
+        <translation type="vanished"> ﾌｨｰﾄ</translation>
     </message>
 </context>
 <context>
@@ -615,6 +615,22 @@
         <translation>
             <numerusform>%n 日前</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation type="unfinished">ｷﾛﾒｰﾄﾙ</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation type="unfinished">ﾏｲﾙ</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

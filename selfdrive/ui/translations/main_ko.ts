@@ -355,30 +355,30 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation type="vanished">km</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation type="vanished">mi</translation>
     </message>
 </context>
 <context>
     <name>MapInstructions</name>
     <message>
         <source> km</source>
-        <translation> km</translation>
+        <translation type="vanished"> km</translation>
     </message>
     <message>
         <source> m</source>
-        <translation> m</translation>
+        <translation type="vanished"> m</translation>
     </message>
     <message>
         <source> mi</source>
-        <translation> mi</translation>
+        <translation type="vanished"> mi</translation>
     </message>
     <message>
         <source> ft</source>
-        <translation> ft</translation>
+        <translation type="vanished"> ft</translation>
     </message>
 </context>
 <context>
@@ -616,6 +616,22 @@
         <translation>
             <numerusform>%n 일전</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>km</source>
+        <translation type="unfinished">km</translation>
+    </message>
+    <message>
+        <source>m</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>mi</source>
+        <translation type="unfinished">mi</translation>
+    </message>
+    <message>
+        <source>ft</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

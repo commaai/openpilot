@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/ui.h"
 
 const QString ICON_SUFFIX = ".png";
@@ -65,22 +66,6 @@ void MapInstructions::buildPixmapCache() {
   }
 }
 
-QString MapInstructions::getDistance(float d) {
-  auto round_distance = [](float d) -> float {
-    return d > 10 ? std::nearbyint(d) : std::nearbyint(d * 10) / 10.0;
-  };
-
-  d = std::max(d, 0.0f);
-  if (uiState()->scene.is_metric) {
-    return (d > 500) ? QString::number(round_distance(d / 1000)) + tr(" km")
-                     : QString::number(std::nearbyint(d)) + tr(" m");
-  } else {
-    float feet = d * METER_TO_FOOT;
-    return (feet > 500) ? QString::number(round_distance(d * METER_TO_MILE)) + tr(" mi")
-                        : QString::number(std::nearbyint(d)) + tr(" ft");
-  }
-}
-
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
   setUpdatesEnabled(false);
 
@@ -91,7 +76,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  distance->setText(getDistance(instruction.getManeuverDistance()));
+
+  auto distance_str_pair = map_format_distance(instruction.getManeuverDistance(), uiState()->scene.is_metric);
+  distance->setText(QString("%1 %2").arg(distance_str_pair.first, distance_str_pair.second));
 
   // Show arrow with direction
   QString type = QString::fromStdString(instruction.getManeuverType());
