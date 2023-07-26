@@ -261,6 +261,7 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
 
 void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
+    LOGD("Initializing navLayer");
     QVariantMap nav;
     nav["id"] = "navLayer";
     nav["type"] = "line";
