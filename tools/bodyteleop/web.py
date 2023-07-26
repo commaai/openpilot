@@ -11,7 +11,7 @@ from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from tools.joystick.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
+from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
 os.environ['MKL_NUM_THREADS'] = '1'
