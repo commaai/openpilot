@@ -1,11 +1,11 @@
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 from typing import Dict, List, Union
 
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import dbc_dict
+from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -21,6 +21,14 @@ class CarControllerParams:
   STEER_STEP = 1
   STEER_MAX = 1500
   STEER_ERROR_MAX = 350     # max delta between torque cmd and torque motor
+
+  # Lane Tracing Assist (LTA) control limits
+  # Assuming a steering ratio of 13.7:
+  # Limit to ~2.0 m/s^3 up (7.5 deg/s), ~3.5 m/s^3 down (13 deg/s) at 75 mph
+  # Worst case, the low speed limits will allow ~4.0 m/s^3 up (15 deg/s) and ~4.9 m/s^3 down (18 deg/s) at 75 mph,
+  # however the EPS has its own internal limits at all speeds which are less than that
+  ANGLE_RATE_LIMIT_UP = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.3, 0.15])
+  ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
     if CP.lateralTuning.which == 'torque':
@@ -102,7 +110,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = CarParts.common([CarHarness.toyota])
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota]))
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -135,7 +143,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Toyota Corolla Hybrid 2020-22"),
     ToyotaCarInfo("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
     ToyotaCarInfo("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
-    ToyotaCarInfo("Lexus UX Hybrid 2019-22"),
+    ToyotaCarInfo("Lexus UX Hybrid 2019-23"),
   ],
   CAR.HIGHLANDER: ToyotaCarInfo("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
   CAR.HIGHLANDER_TSS2: ToyotaCarInfo("Toyota Highlander 2020-23"),
@@ -189,7 +197,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
     ToyotaCarInfo("Lexus RX Hybrid 2017-19"),
   ],
   CAR.LEXUS_RX_TSS2: ToyotaCarInfo("Lexus RX 2020-22"),
-  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-21"),
+  CAR.LEXUS_RXH_TSS2: ToyotaCarInfo("Lexus RX Hybrid 2020-22"),
 }
 
 # (addr, cars, bus, 1/freq*100, vl)
@@ -215,6 +223,9 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
+# Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
+# Toyota diagnostic software first gets the supported data ids, then queries them one by one.
+# For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
 TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
 TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
 
@@ -255,13 +266,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP:
+    # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # Responds to KWP (0x1a8881):
+    # - Body Control Module ((0x750, 0x40))
 
-    # Hybrid control computer can be on one of two addresses
+    # Hybrid control computer can be on 0x7e2 (KWP) or 0x7d2 (UDS) depending on platform
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    (Ecu.hybrid, 0x7d2, None),  # Hybrid Control Assembly & Computer
     # TODO: if these duplicate ECUs always exist together, remove one
     (Ecu.srs, 0x780, None),     # SRS Airbag
     (Ecu.srs, 0x784, None),     # SRS Airbag 2
@@ -426,6 +438,7 @@ FW_VERSIONS = {
       b'\x018966333Q6000\x00\x00\x00\x00',
       b'\x018966333Q6200\x00\x00\x00\x00',
       b'\x018966333Q6300\x00\x00\x00\x00',
+      b'\x018966333Q6500\x00\x00\x00\x00',
       b'\x018966333W6000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -972,6 +985,7 @@ FW_VERSIONS = {
       b'8965B16170\x00\x00\x00\x00\x00\x00',
       b'8965B76012\x00\x00\x00\x00\x00\x00',
       b'8965B76050\x00\x00\x00\x00\x00\x00',
+      b'8965B76091\x00\x00\x00\x00\x00\x00',
       b'\x018965B12350\x00\x00\x00\x00\x00\x00',
       b'\x018965B12470\x00\x00\x00\x00\x00\x00',
       b'\x018965B12490\x00\x00\x00\x00\x00\x00',
@@ -1002,12 +1016,14 @@ FW_VERSIONS = {
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
       b'F152676304\x00\x00\x00\x00\x00\x00',
+      b'F152676371\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
       b'\x018821F3301200\x00\x00\x00\x00',
       b'\x018821F3301300\x00\x00\x00\x00',
       b'\x018821F3301400\x00\x00\x00\x00',
+      b'\x018821F6201400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F12010D0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
@@ -1024,6 +1040,7 @@ FW_VERSIONS = {
       b'\x028646F76020C0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F7603100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F7603200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F7605100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
   CAR.HIGHLANDER: {
@@ -1625,12 +1642,20 @@ FW_VERSIONS = {
   CAR.RAV4H_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
+      b'\x01F15264283300\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
+      b'8965B42371\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x700, None): [
       b'\x01896634AE1001\x00\x00\x00\x00',
+      b'\x01896634AF0000\x00\x00\x00\x00',
+    ],
+    (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
+      b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
+      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
@@ -1871,9 +1896,11 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\x0237887000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02378A0000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\x02378F4000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'F152678210\x00\x00\x00\x00\x00\x00',
+      b'F152678211\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B78120\x00\x00\x00\x00\x00\x00',
@@ -1884,6 +1911,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F78030A0\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F7803100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_NXH: {
@@ -2101,15 +2129,16 @@ FW_VERSIONS = {
       b'F152648811\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
-      b'8965B48271\x00\x00\x00\x00\x00\x00',
       b'8965B48261\x00\x00\x00\x00\x00\x00',
+      b'8965B48271\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
-      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F4810100\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
+      b'\x028646F4810200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F4810300\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.PRIUS_TSS2: {
@@ -2117,6 +2146,7 @@ FW_VERSIONS = {
       b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C6000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
+      b'\x028966347C7000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C8000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x038966347C0000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4710101\x00\x00\x00\x00',
       b'\x038966347C1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00897CF4710101\x00\x00\x00\x00',

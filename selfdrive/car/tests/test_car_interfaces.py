@@ -1,35 +1,55 @@
 #!/usr/bin/env python3
 import math
 import unittest
+import hypothesis.strategies as st
 from hypothesis import given, settings
 import importlib
 from parameterized import parameterized
 
 from cereal import car
+from common.realtime import DT_CTRL
 from selfdrive.car import gen_empty_fingerprint
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS, all_known_cars
-from selfdrive.test.fuzzy_generation import get_random_msg
+from selfdrive.car.fingerprints import all_known_cars
+from selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+
+
+def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
+  # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
+  fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
+                                                                     st.integers(min_value=0, max_value=64)) for key in
+                                                gen_empty_fingerprint()})
+
+  # just the most important fields
+  car_fw_strategy = st.lists(st.fixed_dictionaries({
+    'ecu': st.sampled_from(list(car.CarParams.Ecu.schema.enumerants.keys())),
+    # TODO: only use reasonable addrs for the paired ecu and brand/platform
+    'address': st.integers(min_value=0, max_value=0x800),
+  }))
+
+  params_strategy = st.fixed_dictionaries({
+    'fingerprints': fingerprint_strategy,
+    'car_fw': car_fw_strategy,
+    'experimental_long': st.booleans(),
+  })
+
+  params: dict = draw(params_strategy)
+  params['car_fw'] = [car.CarParams.CarFw(**fw) for fw in params['car_fw']]
+  return params
 
 
 class TestCarInterfaces(unittest.TestCase):
 
-  @parameterized.expand([(car,) for car in all_known_cars()])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=5)
-  @given(cc_msg=get_random_msg(car.CarControl, real_floats=True))
-  def test_car_interfaces(self, car_name, cc_msg):
-    if car_name in FINGERPRINTS:
-      fingerprint = FINGERPRINTS[car_name][0]
-    else:
-      fingerprint = {}
-
+  @given(data=st.data())
+  def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
-    fingerprints = gen_empty_fingerprint()
-    fingerprints.update({k: fingerprint for k in fingerprints.keys()})
 
-    car_fw = []
+    args = get_fuzzy_car_interface_args(data.draw)
 
-    car_params = CarInterface.get_params(car_name, fingerprints, car_fw, experimental_long=False, docs=False)
+    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
+                                         experimental_long=args['experimental_long'], docs=False)
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -60,19 +80,23 @@ class TestCarInterfaces(unittest.TestCase):
       elif tune.which() == 'indi':
         self.assertTrue(len(tune.indi.outerLoopGainV))
 
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
+    now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, 0)
-      car_interface.apply(CC, 0)
+      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC, now_nanos)
+      now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, 0)
-      car_interface.apply(CC, 0)
+      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC, now_nanos)
+      now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface

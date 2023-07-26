@@ -673,7 +673,7 @@ void Localizer::configure_gnss_source(LocalizerGnssSource source) {
 int Localizer::locationd_thread() {
   LocalizerGnssSource source;
   const char* gps_location_socket;
-  if (Params().getBool("UbloxAvailable", true)) {
+  if (Params().getBool("UbloxAvailable")) {
     source = LocalizerGnssSource::UBLOX;
     gps_location_socket = "gpsLocationExternal";
   } else {

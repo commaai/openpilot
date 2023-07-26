@@ -8,6 +8,7 @@ from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
@@ -27,13 +28,18 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.dashcamOnly = True
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.steerControlType = SteerControlType.angle
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+
+      # LTA control can be more delayed and winds up more often
+      ret.steerActuatorDelay = 0.25
+      ret.steerLimitTimer = 0.8
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    ret.steerLimitTimer = 0.4
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
+
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
@@ -207,13 +213,29 @@ class CarInterface(CarInterfaceBase):
     if 0x2FF in fingerprint[0]:
       ret.flags |= ToyotaFlags.SMART_DSU.value
 
+    # No radar dbc for cars without DSU which are not TSS 2.0
+    # TODO: make an adas dbc file for dsu-less models
+    ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
+
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
-    # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = bool(ret.flags & ToyotaFlags.SMART_DSU) or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+    # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
+    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
+    use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
+    if candidate in RADAR_ACC_CAR:
+      ret.experimentalLongitudinalAvailable = use_sdsu
+      use_sdsu = use_sdsu and experimental_long
+
+    # openpilot longitudinal enabled by default:
+    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
+    #  - cars w/ DSU disconnected
+    #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
+    # openpilot longitudinal behind experimental long toggle:
+    #  - TSS2 radar ACC cars w/ smartDSU installed
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -254,6 +276,11 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret)
+
+    # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
+    # the more accurate angle sensor signal is initialized
+    if self.CP.steerControlType == SteerControlType.angle and not self.CS.accurate_steer_angle_seen:
+      events.add(EventName.vehicleSensorsInvalid)
 
     if self.CP.openpilotLongitudinalControl:
       if ret.cruiseState.standstill and not ret.brakePressed and not self.CP.enableGasInterceptor:

@@ -8,11 +8,8 @@
 
 class V4LEncoder : public VideoEncoder {
 public:
-  V4LEncoder(const char* filename, CameraType type, int in_width, int in_height, int fps,
-             int bitrate, cereal::EncodeIndex::Type codec, int out_width, int out_height, const char* publish_name) :
-             VideoEncoder(filename, type, in_width, in_height, fps, bitrate, codec, out_width, out_height, publish_name) { encoder_init(); }
+  V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~V4LEncoder();
-  void encoder_init();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
   void encoder_open(const char* path);
   void encoder_close();
