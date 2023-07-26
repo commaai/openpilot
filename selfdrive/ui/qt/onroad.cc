@@ -125,7 +125,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
 void OnroadWindow::primeTypeChanged(int prime_type) {
 #ifdef ENABLE_MAPS
-  if (map && !(prime_type || !MAPBOX_TOKEN.isEmpty())) {
+  if (map && (!prime_type && MAPBOX_TOKEN.isEmpty())) {
     nvg->map_settings_btn->setEnabled(false);
     nvg->map_settings_btn->setVisible(false);
     map->deleteLater();
