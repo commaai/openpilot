@@ -25,6 +25,14 @@ if [ -f /TICI ]; then
     sudo systemctl start systemd-resolved
     sleep 3
   fi
+
+  # restart aux USB
+  if [ -e /sys/bus/usb/drivers/hub/3-0:1.0 ]; then
+    echo "restarting aux usb"
+    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/unbind
+    sleep 0.5
+    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/bind
+  fi
 fi
 if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
