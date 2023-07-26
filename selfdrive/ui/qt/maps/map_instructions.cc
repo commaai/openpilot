@@ -1,7 +1,5 @@
 #include "selfdrive/ui/qt/maps/map_instructions.h"
 
-#include <cmath>
-
 #include <QDir>
 #include <QVBoxLayout>
 

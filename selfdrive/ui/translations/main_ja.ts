@@ -591,19 +591,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation type="unfinished">ｷﾛﾒｰﾄﾙ</translation>
+        <translation>ｷﾛﾒｰﾄﾙ</translation>
     </message>
     <message>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation>ﾒｰﾄﾙ</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation type="unfinished">ﾏｲﾙ</translation>
+        <translation>ﾏｲﾙ</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation type="unfinished"></translation>
+        <translation>ﾌｨｰﾄ</translation>
     </message>
 </context>
 <context>
