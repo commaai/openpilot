@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/maps/map_instructions.h"
 
+#include <cmath>
+
 #include <QDir>
 #include <QVBoxLayout>
 
@@ -64,14 +66,18 @@ void MapInstructions::buildPixmapCache() {
 }
 
 QString MapInstructions::getDistance(float d) {
+  auto round_distance = [](float d) -> float {
+    return d > 10 ? std::nearbyint(d) : std::nearbyint(d * 10) / 10.0;
+  };
+
   d = std::max(d, 0.0f);
   if (uiState()->scene.is_metric) {
-    return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
-                     : QString::number(50 * int(d / 50)) + tr(" m");
+    return (d > 500) ? QString::number(round_distance(d / 1000)) + tr(" km")
+                     : QString::number(std::nearbyint(d)) + tr(" m");
   } else {
     float feet = d * METER_TO_FOOT;
-    return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
-                        : QString::number(50 * int(feet / 50)) + tr(" ft");
+    return (feet > 500) ? QString::number(round_distance(d * METER_TO_MILE)) + tr(" mi")
+                        : QString::number(std::nearbyint(d)) + tr(" ft");
   }
 }
 
