@@ -62,7 +62,7 @@ jobs:
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "pre-commit run --all"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
   build_all:
     name: build all
