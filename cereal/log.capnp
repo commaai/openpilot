@@ -132,7 +132,6 @@ struct FrameData {
   frameIdSensor @25 :UInt32;
 
   frameType @7 :FrameType;
-  frameLength @3 :Int32;
 
   # Timestamps
   timestampEof @2 :UInt64;
@@ -167,6 +166,7 @@ struct FrameData {
     ox03c10 @2;
   }
 
+  frameLengthDEPRECATED @3 :Int32;
   globalGainDEPRECATED @5 :Int32;
   androidCaptureResultDEPRECATED @9 :AndroidCaptureResult;
   lensPosDEPRECATED @11 :Int32;
@@ -522,6 +522,10 @@ struct PandaState @0xa7649e2575e4591e {
     canfdEnabled @18 :Bool;
     brsEnabled @19 :Bool;
     canfdNonIso @20 :Bool;
+    irq0CallRate @21 :UInt32;
+    irq1CallRate @22 :UInt32;
+    irq2CallRate @23 :UInt32;
+    canCoreResetCnt @24 :UInt32;
 
     enum LecErrorCode {
       noError @0;
@@ -859,9 +863,13 @@ struct ModelDataV2 {
   leadsV3 @18 :List(LeadDataV3);
 
   meta @12 :MetaData;
+  confidence @23: ConfidenceClass;
 
   # Model perceived motion
   temporalPose @21 :Pose;
+
+  navEnabled @22 :Bool;
+  locationMonoTime @24 :UInt64;
 
 
   struct LeadDataV2 {
@@ -905,6 +913,12 @@ struct ModelDataV2 {
     brakeDisengageProbDEPRECATED @2 :Float32;
     gasDisengageProbDEPRECATED @3 :Float32;
     steerOverrideProbDEPRECATED @4 :Float32;
+  }
+
+  enum ConfidenceClass {
+    red @0;
+    yellow @1;
+    green @2;
   }
 
   struct DisengagePredictions {
@@ -1052,6 +1066,13 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   curvatureRates @28 :List(Float32);
 
   solverExecutionTime @30 :Float32;
+  solverCost @32 :Float32;
+  solverState @33 :SolverState;
+
+  struct SolverState {
+    x @0 :List(List(Float32));
+    u @1 :List(Float32);
+  }
 
   enum Desire {
     none @0;
@@ -1225,6 +1246,8 @@ struct GnssMeasurements {
     svId @1 :UInt8;
     type @2 :EphemerisType;
     source @3 :EphemerisSource;
+    gpsWeek @4 : UInt16;
+    tow @5 :Float64;
   }
 
   struct CorrectedMeasurement {
@@ -1797,6 +1820,9 @@ struct QcomGnss @0xde94674b07ae51c1 {
     elevationDot @20 :Float32;
     elevationUncertainty @21 :Float32;
     velocityCoeff @22 :List(Float64);
+
+    gpsWeek @23 :UInt16;
+    gpsTow @24 :Float64;
   }
 }
 
@@ -1946,6 +1972,7 @@ struct LiveParametersData {
   stiffnessFactorStd @12 :Float32;
   steerRatioStd @13 :Float32;
   roll @14 :Float32;
+  filterState @15 :LiveLocationKalman.Measurement;
 
   yawRateDEPRECATED @7 :Float32;
 }
@@ -2091,6 +2118,7 @@ struct MapRenderState {
 
 struct NavModelData {
   frameId @0 :UInt32;
+  locationMonoTime @6 :UInt64;
   modelExecutionTime @1 :Float32;
   dspExecutionTime @2 :Float32;
   features @3 :List(Float32);

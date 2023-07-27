@@ -30,6 +30,7 @@
 #define FAULT_INTERRUPT_RATE_UART_7         (1U << 24)
 #define FAULT_SIREN_MALFUNCTION             (1U << 25)
 #define FAULT_HEARTBEAT_LOOP_WATCHDOG       (1U << 26)
+#define FAULT_LOGGING_RATE_LIMIT            (1U << 27)
 
 // Permanent faults
 #define PERMANENT_FAULTS 0U

@@ -6,15 +6,17 @@
 #include <exception>
 #include <filesystem>
 
-#include <sys/eventfd.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <poll.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "cereal/messaging/event.h"
+
+#ifndef __APPLE__
+#include <sys/eventfd.h>
 
 void event_state_shm_mmap(std::string endpoint, std::string identifier, char **shm_mem, std::string *shm_path) {
   const char* op_prefix = std::getenv("OPENPILOT_PREFIX");
@@ -136,8 +138,7 @@ void Event::wait(int timeout_sec) const {
 
   int event_count;
   struct pollfd fds = { this->event_fd, POLLIN, 0 };
-
-  struct timespec timeout = { timeout_sec, 0 };
+  struct timespec timeout = { timeout_sec, 0 };;
 
   sigset_t signals;
   sigfillset(&signals);
@@ -159,6 +160,7 @@ bool Event::peek() const {
   throw_if_invalid();
 
   int event_count;
+
   struct pollfd fds = { this->event_fd, POLLIN, 0 };
 
   // poll with timeout zero to return status immediately
@@ -206,3 +208,29 @@ int Event::wait_for_one(const std::vector<Event>& events, int timeout_sec) {
 
   throw std::runtime_error("Event poll failed, no events ready");
 }
+#else
+// Stub implementation for Darwin, which does not support eventfd
+void event_state_shm_mmap(std::string endpoint, std::string identifier, char **shm_mem, std::string *shm_path) {}
+
+SocketEventHandle::SocketEventHandle(std::string endpoint, std::string identifier, bool override) {
+  std::cerr << "SocketEventHandle not supported on macOS" << std::endl;
+  assert(false);
+}
+SocketEventHandle::~SocketEventHandle() {}
+bool SocketEventHandle::is_enabled() { return this->state->enabled; }
+void SocketEventHandle::set_enabled(bool enabled) {}
+Event SocketEventHandle::recv_called() { return Event(); }
+Event SocketEventHandle::recv_ready() { return Event(); }
+void SocketEventHandle::toggle_fake_events(bool enabled) {}
+void SocketEventHandle::set_fake_prefix(std::string prefix) {}
+std::string SocketEventHandle::fake_prefix() { return ""; }
+
+Event::Event(int fd): event_fd(fd) {}
+void Event::set() const {}
+int Event::clear() const { return 0; }
+void Event::wait(int timeout_sec) const {}
+bool Event::peek() const { return false; }
+bool Event::is_valid() const { return false; }
+int Event::fd() const { return this->event_fd; }
+int Event::wait_for_one(const std::vector<Event>& events, int timeout_sec) { return -1; }
+#endif

@@ -83,7 +83,7 @@ BU_: XXX DSU HCU EPS IPAS CGW BGM
 BO_ 36 KINEMATICS: 8 XXX
  SG_ ACCEL_Y : 33|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
  SG_ YAW_RATE : 1|10@0+ (0.244,-125) [0|65535] "deg/s" XXX
- SG_ STEERING_TORQUE : 17|10@0+ (1,-512) [0|65535] "" XXX
+ SG_ ACCEL_X : 17|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
 
 BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
  SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
@@ -286,7 +286,7 @@ BO_ 1042 LKAS_HUD: 8 DSU
  SG_ LDA_UNAVAILABLE : 16|1@0+ (1,0) [0|1] "" XXX
  SG_ LDA_SENSITIVITY : 18|2@0+ (1,0) [0|3] "" XXX
  SG_ LDA_SA_TOGGLE : 20|2@0+ (1,0) [0|3] "" XXX
- SG_ LDA_SPEED_TOO_LOW : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ LDA_MESSAGES : 23|3@0+ (1,0) [0|1] "" XXX
  SG_ LDA_ON_MESSAGE : 31|2@0+ (1,0) [0|3] "" XXX
  SG_ REPEATED_BEEPS : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ LANE_SWAY_TOGGLE : 43|1@0+ (1,0) [0|1] "" XXX
@@ -309,6 +309,11 @@ BO_ 1043 TIME : 8 CGW
  SG_ GMTDIFF_HOURS : 54|4@0+ (1,0) [0|0] "hours" XXX
  SG_ GMTDIFF_MINUTES : 50|6@0+ (1,0) [0|0] "minutes" XXX
  SG_ SUMMER : 60|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1044 AUTO_HIGH_BEAM: 8 FCM
+ SG_ AHB_DUTY : 47|8@0+ (0.5,0) [0|0] "%" Vector__XXX
+ SG_ F_AHB : 55|4@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_AHB : 51|4@0+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 1083 AUTOPARK_STATUS: 8 IPAS
  SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
@@ -468,7 +473,7 @@ CM_ SG_ 1042 LDA_SENSITIVITY "LDA Sensitivity";
 CM_ SG_ 1042 LDA_ON_MESSAGE "Display LDA Turned ON message";
 CM_ SG_ 1042 REPEATED_BEEPS "LDA audible warning";
 CM_ SG_ 1042 LDA_UNAVAILABLE_QUIET "LDA toggles and sensitivity settings are greyed out if set to 1";
-CM_ SG_ 1042 LDA_SPEED_TOO_LOW "length is 3 bits in the leaked DBC, displays LDA unavailable below approx 50 km/h if set to 1";
+CM_ SG_ 1042 LDA_MESSAGES "Various LDA Messages";
 CM_ SG_ 1042 LDA_FRONT_CAMERA_BLOCKED "originally LDAFCVB, LDA related settings are greyed out if set to 1";
 CM_ SG_ 1042 TAKE_CONTROL "Please Control Steering Wheel warning";
 CM_ SG_ 1042 LANE_SWAY_TOGGLE "Lane Sway Warning System SWS Switch";
@@ -532,7 +537,7 @@ VAL_ 1042 LEFT_LINE 3 "orange" 2 "faded" 1 "solid" 0 "none";
 VAL_ 1042 LDA_ON_MESSAGE 2 "Lane Departure Alert Turned ON, Steering Assist Inactive" 1 "Lane Departure Alert Turned ON, Steering Assist Active" 0 "clear";
 VAL_ 1042 LDA_SA_TOGGLE  2 "steering assist off" 1 "steering assist on";
 VAL_ 1042 LDA_SENSITIVITY 2 "standard" 1 "high" 0 "undefined";
-VAL_ 1042 LDA_SPEED_TOO_LOW 1 "lda unavailable, speed too low" 0 "ok";
+VAL_ 1042 LDA_MESSAGES 4 "lda unavailable at this speed" 1 "lda unavailable below approx 50km/h" 0 "ok";
 VAL_ 1042 LDA_FRONT_CAMERA_BLOCKED 1 "lda unavailable" 0 "ok";
 VAL_ 1042 TAKE_CONTROL 1 "take control" 0 "ok";
 VAL_ 1042 LANE_SWAY_WARNING 3 "ok" 2 "orange please take a break" 1 "prompt would you like to take a break" 0 "ok";

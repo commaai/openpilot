@@ -4,7 +4,7 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import CAR, Ecu
+from selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu
 from selfdrive.car.interfaces import CarInterfaceBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -15,11 +15,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
-
-    # These cars are dashcam only for lack of test coverage.
-    # Once a user confirms each car works and a test route is
-    # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.FOCUS_MK4}
+    ret.dashcamOnly = candidate in {CAR.F_150_MK14}
 
     ret.radarUnavailable = True
     ret.steerControlType = car.CarParams.SteerControlType.angle
@@ -37,6 +33,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_LONG_CONTROL
       ret.openpilotLongitudinalControl = True
 
+    if candidate in CANFD_CAR:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_FORD_CANFD
+
     if candidate == CAR.BRONCO_SPORT_MK1:
       ret.wheelbase = 2.67
       ret.steerRatio = 17.7
@@ -51,6 +50,12 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.025
       ret.steerRatio = 16.8
       ret.mass = 2050 + STD_CARGO_KG
+
+    elif candidate == CAR.F_150_MK14:
+      # required trim only on SuperCrew
+      ret.wheelbase = 3.69
+      ret.steerRatio = 17.0
+      ret.mass = 2000 + STD_CARGO_KG
 
     elif candidate == CAR.FOCUS_MK4:
       ret.wheelbase = 2.7

@@ -54,7 +54,7 @@ class LstSqComputer():
     code += "\n#define KDIM %d\n" % K
     code += "extern \"C\" {\n"
     code += sympy_code
-    code += "\n" + open(os.path.join(TEMPLATE_DIR, "compute_pos.c")).read() + "\n"
+    code += "\n" + open(os.path.join(TEMPLATE_DIR, "compute_pos.c"), encoding='utf-8').read() + "\n"
     code += "}\n"
 
     header += "\nvoid compute_pos(double *to_c, double *in_poses, double *in_img_positions, double *param, double *pos);\n"

@@ -36,7 +36,7 @@ class FeatureHandler():
     c_code += "#include <string.h>\n"
     c_code += "#define K %d\n" % K
     c_code += "extern \"C\" {\n"
-    c_code += "\n" + open(os.path.join(TEMPLATE_DIR, "feature_handler.c")).read()
+    c_code += "\n" + open(os.path.join(TEMPLATE_DIR, "feature_handler.c"), encoding='utf-8').read()
     c_code += "\n}\n"
 
     filename = f"{FeatureHandler.name}_{K}"
@@ -98,7 +98,7 @@ class FeatureHandler():
     real = np.isfinite(last_idxs)
     self.tracks[last_idxs[real].astype(int)] = self.tracks[real]
 
-    mask = np.ones(self.MAX_TRACKS, np.bool)
+    mask = np.ones(self.MAX_TRACKS, bool)
     mask[last_idxs[real].astype(int)] = 0
     empty_idxs = np.arange(self.MAX_TRACKS)[mask]
 

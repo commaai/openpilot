@@ -4,7 +4,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \
                                        create_lat_ctl_msg, create_lat_ctl2_msg, create_lka_msg, create_lkas_ui_msg
-from selfdrive.car.ford.values import CANFD_CARS, CarControllerParams
+from selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -43,6 +43,7 @@ class CarController:
 
     main_on = CS.out.cruiseState.available
     steer_alert = hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw)
+    fcw_alert = hud_control.visualAlert == VisualAlert.fcw
 
     ### acc buttons ###
     if CC.cruiseControl.cancel:
@@ -68,7 +69,7 @@ class CarController:
 
       self.apply_curvature_last = apply_curvature
 
-      if self.CP.carFingerprint in CANFD_CARS:
+      if self.CP.carFingerprint in CANFD_CAR:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
         counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
@@ -100,7 +101,7 @@ class CarController:
     # send acc ui msg at 5Hz or if ui state changes
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
-                                         CS.out.cruiseState.standstill, hud_control,
+                                         fcw_alert, CS.out.cruiseState.standstill, hud_control,
                                          CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on

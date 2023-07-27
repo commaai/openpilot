@@ -9,8 +9,8 @@ def write_code(folder, name, code, header):
   if not os.path.exists(folder):
     os.mkdir(folder)
 
-  open(os.path.join(folder, f"{name}.cpp"), 'w').write(code)
-  open(os.path.join(folder, f"{name}.h"), 'w').write(header)
+  open(os.path.join(folder, f"{name}.cpp"), 'w', encoding='utf-8').write(code)
+  open(os.path.join(folder, f"{name}.h"), 'w', encoding='utf-8').write(header)
 
 
 def load_code(folder, name, lib_name=None):
@@ -20,7 +20,7 @@ def load_code(folder, name, lib_name=None):
   shared_fn = os.path.join(folder, f"lib{lib_name}.{shared_ext}")
   header_fn = os.path.join(folder, f"{name}.h")
 
-  with open(header_fn) as f:
+  with open(header_fn, encoding='utf-8') as f:
     header = f.read()
 
   # is the only thing that can be parsed by cffi

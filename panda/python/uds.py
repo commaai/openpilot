@@ -229,7 +229,10 @@ class NegativeResponseError(Exception):
 class InvalidServiceIdError(Exception):
   pass
 
-class InvalidSubFunctioneError(Exception):
+class InvalidSubFunctionError(Exception):
+  pass
+
+class InvalidSubAddressError(Exception):
   pass
 
 _negative_response_codes = {
@@ -299,12 +302,12 @@ def get_dtc_status_names(status):
 
 class CanClient():
   def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], List[Tuple[int, int, bytes, int]]],
-               tx_addr: int, rx_addr: int, bus: int, sub_addr: int = None, debug: bool = False):
+               tx_addr: int, rx_addr: int, bus: int, sub_addr: Optional[int] = None, debug: bool = False):
     self.tx = can_send
     self.rx = can_recv
     self.tx_addr = tx_addr
     self.rx_addr = rx_addr
-    self.rx_buff = deque()  # type: Deque[bytes]
+    self.rx_buff: Deque[bytes] = deque()
     self.sub_addr = sub_addr
     self.bus = bus
     self.debug = debug
@@ -345,6 +348,8 @@ class CanClient():
 
             # Cut off sub addr in first byte
             if self.sub_addr is not None:
+              if rx_data[0] != self.sub_addr:
+                raise InvalidSubAddressError(f"isotp - rx: invalid sub-address: {rx_data[0]}, expected: {self.sub_addr}")
               rx_data = rx_data[1:]
 
             self.rx_buff.append(rx_data)
@@ -468,7 +473,7 @@ class IsoTpMessage():
     # assert len(rx_data) == self.max_len, f"isotp - rx: invalid CAN frame length: {len(rx_data)}"
 
     if rx_data[0] >> 4 == ISOTP_FRAME_TYPE.SINGLE:
-      self.rx_len = rx_data[0] & 0xFF
+      self.rx_len = rx_data[0] & 0x0F
       assert self.rx_len < self.max_len, f"isotp - rx: invalid single frame length: {self.rx_len}"
       self.rx_dat = rx_data[1:1 + self.rx_len]
       self.rx_idx = 0
@@ -566,7 +571,7 @@ def get_rx_addr_for_tx_addr(tx_addr, rx_offset=0x8):
 
 
 class UdsClient():
-  def __init__(self, panda, tx_addr: int, rx_addr: int = None, bus: int = 0, sub_addr: int = None, timeout: float = 1,
+  def __init__(self, panda, tx_addr: int, rx_addr: Optional[int] = None, bus: int = 0, sub_addr: Optional[int] = None, timeout: float = 1,
                debug: bool = False, tx_timeout: float = 1, response_pending_timeout: float = 10):
     self.bus = bus
     self.tx_addr = tx_addr
@@ -579,7 +584,7 @@ class UdsClient():
     self.response_pending_timeout = response_pending_timeout
 
   # generic uds request
-  def _uds_request(self, service_type: SERVICE_TYPE, subfunction: int = None, data: bytes = None) -> bytes:
+  def _uds_request(self, service_type: SERVICE_TYPE, subfunction: Optional[int] = None, data: Optional[bytes] = None) -> bytes:
     req = bytes([service_type])
     if subfunction is not None:
       req += bytes([subfunction])
@@ -630,7 +635,7 @@ class UdsClient():
         resp_sfn = resp[1] if len(resp) > 1 else None
         if subfunction != resp_sfn:
           resp_sfn_hex = hex(resp_sfn) if resp_sfn is not None else None
-          raise InvalidSubFunctioneError(f'invalid response subfunction: {resp_sfn_hex:x}')
+          raise InvalidSubFunctionError(f'invalid response subfunction: {resp_sfn_hex}')
 
       # return data (exclude service id and sub-function id)
       return resp[(1 if subfunction is None else 2):]
@@ -667,7 +672,7 @@ class UdsClient():
   def tester_present(self, ):
     self._uds_request(SERVICE_TYPE.TESTER_PRESENT, subfunction=0x00)
 
-  def access_timing_parameter(self, timing_parameter_type: TIMING_PARAMETER_TYPE, parameter_values: bytes = None):
+  def access_timing_parameter(self, timing_parameter_type: TIMING_PARAMETER_TYPE, parameter_values: Optional[bytes] = None):
     write_custom_values = timing_parameter_type == TIMING_PARAMETER_TYPE.SET_TO_GIVEN_VALUES
     read_values = (timing_parameter_type == TIMING_PARAMETER_TYPE.READ_CURRENTLY_ACTIVE or
                    timing_parameter_type == TIMING_PARAMETER_TYPE.READ_EXTENDED_SET)
@@ -710,7 +715,7 @@ class UdsClient():
       "data": resp[2:],  # TODO: parse the reset of response
     }
 
-  def link_control(self, link_control_type: LINK_CONTROL_TYPE, baud_rate_type: BAUD_RATE_TYPE = None):
+  def link_control(self, link_control_type: LINK_CONTROL_TYPE, baud_rate_type: Optional[BAUD_RATE_TYPE] = None):
     data: Optional[bytes]
 
     if link_control_type == LINK_CONTROL_TYPE.VERIFY_BAUDRATE_TRANSITION_WITH_FIXED_BAUDRATE:

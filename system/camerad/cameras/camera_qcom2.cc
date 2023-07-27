@@ -496,7 +496,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
-    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj)
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
   sync_objs[i] = sync_create.sync_obj;
 
@@ -1242,10 +1242,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-  if (c == &s->road_cam) {
-    framed.setTransform(b->yuv_transform.v);
-    LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
-  }
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);

@@ -1,5 +1,4 @@
 import struct
-from typing import List
 
 from .base import BaseHandle, BaseSTBootloaderHandle, TIMEOUT
 from .constants import McuType
@@ -17,7 +16,7 @@ class PandaUsbHandle(BaseHandle):
   def controlRead(self, request_type: int, request: int, value: int, index: int, length: int, timeout: int = TIMEOUT):
     return self._libusb_handle.controlRead(request_type, request, value, index, length, timeout)
 
-  def bulkWrite(self, endpoint: int, data: List[int], timeout: int = TIMEOUT) -> int:
+  def bulkWrite(self, endpoint: int, data: bytes, timeout: int = TIMEOUT) -> int:
     return self._libusb_handle.bulkWrite(endpoint, data, timeout)  # type: ignore
 
   def bulkRead(self, endpoint: int, length: int, timeout: int = TIMEOUT) -> bytes:

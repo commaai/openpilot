@@ -1,8 +1,9 @@
-#include <cassert>
-#include <utility>
 #include <algorithm>
-#include <map>
+#include <cassert>
 #include <cmath>
+#include <map>
+#include <stdexcept>
+#include <utility>
 
 #include "opendbc/can/common.h"
 

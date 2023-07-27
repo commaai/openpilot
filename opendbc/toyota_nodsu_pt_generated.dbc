@@ -83,7 +83,7 @@ BU_: XXX DSU HCU EPS IPAS CGW BGM
 BO_ 36 KINEMATICS: 8 XXX
  SG_ ACCEL_Y : 33|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
  SG_ YAW_RATE : 1|10@0+ (0.244,-125) [0|65535] "deg/s" XXX
- SG_ STEERING_TORQUE : 17|10@0+ (1,-512) [0|65535] "" XXX
+ SG_ ACCEL_X : 17|10@0+ (0.03589,-18.375) [0|65535] "m/s^2" XXX
 
 BO_ 37 STEER_ANGLE_SENSOR: 8 XXX
  SG_ STEER_ANGLE : 3|12@0- (1.5,0) [-500|500] "deg" XXX
@@ -286,7 +286,7 @@ BO_ 1042 LKAS_HUD: 8 DSU
  SG_ LDA_UNAVAILABLE : 16|1@0+ (1,0) [0|1] "" XXX
  SG_ LDA_SENSITIVITY : 18|2@0+ (1,0) [0|3] "" XXX
  SG_ LDA_SA_TOGGLE : 20|2@0+ (1,0) [0|3] "" XXX
- SG_ LDA_SPEED_TOO_LOW : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ LDA_MESSAGES : 23|3@0+ (1,0) [0|1] "" XXX
  SG_ LDA_ON_MESSAGE : 31|2@0+ (1,0) [0|3] "" XXX
  SG_ REPEATED_BEEPS : 32|1@0+ (1,0) [0|1] "" XXX
  SG_ LANE_SWAY_TOGGLE : 43|1@0+ (1,0) [0|1] "" XXX
@@ -309,6 +309,11 @@ BO_ 1043 TIME : 8 CGW
  SG_ GMTDIFF_HOURS : 54|4@0+ (1,0) [0|0] "hours" XXX
  SG_ GMTDIFF_MINUTES : 50|6@0+ (1,0) [0|0] "minutes" XXX
  SG_ SUMMER : 60|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1044 AUTO_HIGH_BEAM: 8 FCM
+ SG_ AHB_DUTY : 47|8@0+ (0.5,0) [0|0] "%" Vector__XXX
+ SG_ F_AHB : 55|4@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_AHB : 51|4@0+ (1,0) [0|0] "" Vector__XXX
 
 BO_ 1083 AUTOPARK_STATUS: 8 IPAS
  SG_ STATE : 7|4@0+ (1,0) [0|15] "" XXX
@@ -468,7 +473,7 @@ CM_ SG_ 1042 LDA_SENSITIVITY "LDA Sensitivity";
 CM_ SG_ 1042 LDA_ON_MESSAGE "Display LDA Turned ON message";
 CM_ SG_ 1042 REPEATED_BEEPS "LDA audible warning";
 CM_ SG_ 1042 LDA_UNAVAILABLE_QUIET "LDA toggles and sensitivity settings are greyed out if set to 1";
-CM_ SG_ 1042 LDA_SPEED_TOO_LOW "length is 3 bits in the leaked DBC, displays LDA unavailable below approx 50 km/h if set to 1";
+CM_ SG_ 1042 LDA_MESSAGES "Various LDA Messages";
 CM_ SG_ 1042 LDA_FRONT_CAMERA_BLOCKED "originally LDAFCVB, LDA related settings are greyed out if set to 1";
 CM_ SG_ 1042 TAKE_CONTROL "Please Control Steering Wheel warning";
 CM_ SG_ 1042 LANE_SWAY_TOGGLE "Lane Sway Warning System SWS Switch";
@@ -532,7 +537,7 @@ VAL_ 1042 LEFT_LINE 3 "orange" 2 "faded" 1 "solid" 0 "none";
 VAL_ 1042 LDA_ON_MESSAGE 2 "Lane Departure Alert Turned ON, Steering Assist Inactive" 1 "Lane Departure Alert Turned ON, Steering Assist Active" 0 "clear";
 VAL_ 1042 LDA_SA_TOGGLE  2 "steering assist off" 1 "steering assist on";
 VAL_ 1042 LDA_SENSITIVITY 2 "standard" 1 "high" 0 "undefined";
-VAL_ 1042 LDA_SPEED_TOO_LOW 1 "lda unavailable, speed too low" 0 "ok";
+VAL_ 1042 LDA_MESSAGES 4 "lda unavailable at this speed" 1 "lda unavailable below approx 50km/h" 0 "ok";
 VAL_ 1042 LDA_FRONT_CAMERA_BLOCKED 1 "lda unavailable" 0 "ok";
 VAL_ 1042 TAKE_CONTROL 1 "take control" 0 "ok";
 VAL_ 1042 LANE_SWAY_WARNING 3 "ok" 2 "orange please take a break" 1 "prompt would you like to take a break" 0 "ok";
@@ -560,7 +565,7 @@ BO_ 401 STEERING_LTA: 8 XXX
  SG_ STEER_ANGLE_CMD : 15|16@0- (0.0573,0) [-540|540] "" XXX
  SG_ STEER_REQUEST_2 : 25|1@0+ (1,0) [0|1] "" XXX
  SG_ LKA_ACTIVE : 26|1@0+ (1,0) [0|1] "" XXX
- SG_ BIT : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ CLEAR_HOLD_STEERING_ALERT : 30|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 6|6@0+ (1,0) [0|255] "" XXX
  SG_ STEER_REQUEST : 0|1@0+ (1,0) [0|1] "" XXX
  SG_ SETME_X1 : 7|1@0+ (1,0) [0|1] "" XXX
@@ -577,6 +582,16 @@ BO_ 610 EPS_STATUS: 8 EPS
  SG_ TYPE : 24|1@0+ (1,0) [0|1] "" XXX
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
 
+BO_ 881 LTA_RELATED: 8 FCM
+ SG_ GAS_PEDAL : 15|8@0+ (0.005,0) [0|1] "" XXX
+ SG_ STEER_ANGLE : 23|16@0- (0.0573,0) [-500|500] "" XXX
+ SG_ TURN_SIGNALS : 35|2@0+ (1,0) [0|3] "" XXX
+ SG_ UNKNOWN_2 : 58|1@0+ (1,0) [0|1] "" XXX
+ SG_ LDA_SA_TOGGLE : 59|1@0+ (1,0) [0|1] "" XXX
+ SG_ LTA_STEER_REQUEST : 60|1@0+ (1,0) [0|1] "" XXX
+ SG_ UNKNOWN : 61|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEERING_PRESSED : 63|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 1014 BSM: 8 XXX
  SG_ L_ADJACENT : 0|1@0+ (1,0) [0|1] "" XXX
  SG_ L_APPROACHING : 8|1@0+ (1,0) [0|1] "" XXX
@@ -589,13 +604,22 @@ CM_ SG_ 401 PERCENTAGE "driver override percentage (0-100), very close to steeri
 CM_ SG_ 401 SETME_X64 "ramps to 0 smoothly then back on falling edge of STEER_REQUEST if BIT isn't 1";
 CM_ SG_ 401 ANGLE "angle of car relative to lane center on LTA camera";
 CM_ SG_ 401 STEER_ANGLE_CMD "desired angle, OEM steers up to 95 degrees, no angle limit but torque will bottom out";
-CM_ SG_ 401 BIT "has correlation to STEER_REQUEST";
+CM_ SG_ 401 CLEAR_HOLD_STEERING_ALERT "set to 1 when user clears LKAS_HUD->LDA_ALERT ('Hold Steering') by applying torque to steering wheel";
 CM_ SG_ 401 STEER_REQUEST "enable bit for steering, 1 to steer, 0 to not";
 CM_ SG_ 401 STEER_REQUEST_2 "enable bit for steering, 1 to steer, 0 to not";
 CM_ SG_ 401 LKA_ACTIVE "1 when using LTA for LKA";
+CM_ SG_ 401 SETME_X1 "usually 1, seen at 0 on some South American Corollas indicating lack of stock Lane Tracing Assist";
+CM_ SG_ 401 SETME_X3 "almost completely correlates with Toyota Safety Sense version, but may instead describe max torque when using LTA. if TSS 2.5 or 2022 RAV4, this is always 1. if TSS 2.0 this is always 3 (or 0 on Alphard, Highlander, NX)";
 CM_ SG_ 550 BRAKE_PRESSURE "seems prop to pedal force";
 CM_ SG_ 550 BRAKE_POSITION "seems proportional to pedal displacement, unclear the max value of 0x1c8";
 CM_ SG_ 610 TYPE "seems 1 on Corolla, 0 on all others";
+CM_ SG_ 881 GAS_PEDAL "not set on all cars, only seen on TSS 2.5 Camry Hybrid so far";
+CM_ SG_ 881 STEER_ANGLE "matches STEER_TORQUE_SENSOR->STEER_ANGLE";
+CM_ SG_ 881 TURN_SIGNALS "flipped on some cars";
+CM_ SG_ 881 LDA_SA_TOGGLE "not applicable for all cars";
+CM_ SG_ 881 LTA_STEER_REQUEST "only applicable for TSS 2.5: matches STEERING_LTA->STEER_REQUEST";
+CM_ SG_ 881 UNKNOWN "related to steering wheel angle";
+CM_ SG_ 881 STEERING_PRESSED "only applicable for TSS 2.5: low sensitivity steering wheel pressed by driver signal";
 CM_ SG_ 1014 L_ADJACENT "vehicle adjacent left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
 CM_ SG_ 1014 L_APPROACHING "vehicle approaching from left side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
 CM_ SG_ 1014 R_ADJACENT "vehicle adjacent right side of car. enabled above 10mph, regardless of ADJACENT_ENABLED or APPROACHING_ENABLED";
@@ -603,6 +627,7 @@ CM_ SG_ 1014 R_APPROACHING "vehicle approaching from right side of car. enabled 
 CM_ SG_ 1014 ADJACENT_ENABLED "when BSM is enabled in settings, this is on along with APPROACHING_ENABLED. this controls bsm alert visibility";
 CM_ SG_ 1014 APPROACHING_ENABLED "when BSM is enabled in settings, this is on along with ADJACENT_ENABLED. this controls bsm alert visibility";
 
+VAL_ 401 SETME_X3 3 "TSS 2.0" 1 "TSS 2.5 or 2022 RAV4" 0 "TSS 2.0 on Alphard, Highlander, NX";
 VAL_ 610 IPAS_STATE 5 "override" 3 "enabled" 1 "disabled";
 VAL_ 610 LKA_STATE 25 "temporary_fault" 17 "permanent_fault" 11 "lka_missing_unavailable2" 9 "temporary_fault2" 5 "active" 3 "lka_missing_unavailable" 1 "standby";
 VAL_ 610 LTA_STATE 25 "temporary_fault" 9 "temporary_fault2" 5 "active" 3 "lta_missing_unavailable" 1 "standby";

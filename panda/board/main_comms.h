@@ -167,6 +167,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xc2:
       COMPILE_TIME_ASSERT(sizeof(can_health_t) <= USBPACKET_MAX_SIZE);
       if (req->param1 < 3U) {
+        update_can_health_pkt(req->param1, 0U);
         can_health[req->param1].can_speed = (bus_config[req->param1].can_speed / 10U);
         can_health[req->param1].can_data_speed = (bus_config[req->param1].can_data_speed / 10U);
         can_health[req->param1].canfd_enabled = bus_config[req->param1].canfd_enabled;
@@ -180,6 +181,17 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xc3:
       (void)memcpy(resp, ((uint8_t *)UID_BASE), 12);
       resp_len = 12;
+      break;
+    case 0xc4:
+      // **** 0xc4: get interrupt call rate
+      if (req->param1 < NUM_INTERRUPTS) {
+        uint32_t load = interrupts[req->param1].call_rate;
+        resp[0] = (load & 0x000000FFU);
+        resp[1] = ((load & 0x0000FF00U) >> 8U);
+        resp[2] = ((load & 0x00FF0000U) >> 16U);
+        resp[3] = ((load & 0xFF000000U) >> 24U);
+        resp_len = 4U;
+      }
       break;
     // **** 0xd0: fetch serial (aka the provisioned dongle ID)
     case 0xd0:
@@ -477,6 +489,18 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);
       }
+      break;
+    // *** 0xfd: read logs
+    case 0xfd:
+      if (req->param1 == 1U) {
+        logging_init_read_index();
+      }
+
+      if (req->param2 != 0xFFFFU) {
+        logging_find_read_index(req->param2);
+      }
+
+      resp_len = logging_read(resp);
       break;
     default:
       print("NO HANDLER ");

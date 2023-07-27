@@ -48,7 +48,7 @@ THERMAL_BANDS = OrderedDict({
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 77
+OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
@@ -103,6 +103,8 @@ def hw_state_thread(end_event, hw_queue):
   modem_version = None
   modem_nv = None
   modem_configured = False
+  modem_restarted = False
+  modem_missing_count = 0
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -120,6 +122,16 @@ def hw_state_thread(end_event, hw_queue):
 
           if (modem_version is not None) and (modem_nv is not None):
             cloudlog.event("modem version", version=modem_version, nv=modem_nv)
+          else:
+            if not modem_restarted:
+              # TODO: we may be able to remove this with a MM update
+              # ModemManager's probing on startup can fail
+              # rarely, restart the service to probe again.
+              modem_missing_count += 1
+              if modem_missing_count > 3:
+                modem_restarted = True
+                cloudlog.event("restarting ModemManager")
+                os.system("sudo systemctl restart --no-block ModemManager")
 
         tx, rx = HARDWARE.get_modem_data_usage()
 
@@ -199,6 +211,7 @@ def thermald_thread(end_event, hw_queue):
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
+    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
 
@@ -212,7 +225,7 @@ def thermald_thread(end_event, hw_queue):
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
 
       # Setup fan handler on first connect to panda
-      if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+      if fan_controller is None and peripheral_panda_present:
         if TICI:
           fan_controller = TiciFanController()
 
@@ -277,7 +290,7 @@ def thermald_thread(end_event, hw_queue):
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = now > MIN_DATE
-    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]) and peripheral_panda_present)
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
@@ -295,7 +308,9 @@ def thermald_thread(end_event, hw_queue):
 
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
-    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
+    extra_text = f"{offroad_comp_temp:.1f}C"
+    show_alert = (not onroad_conditions["device_temp_good"] or not startup_conditions["device_temp_engageable"]) and onroad_conditions["ignition"]
+    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
     if TICI:

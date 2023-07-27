@@ -11,7 +11,7 @@ typedef void (*board_set_ir_power)(uint8_t percentage);
 typedef void (*board_set_fan_enabled)(bool enabled);
 typedef void (*board_set_phone_power)(bool enabled);
 typedef void (*board_set_siren)(bool enabled);
-typedef void (*board_board_tick)(bool ignition, bool usb_enum, bool heartbeat_seen, bool harness_inserted);
+typedef bool (*board_board_tick)(bool ignition, bool usb_enum, bool heartbeat_seen, bool harness_inserted);
 typedef bool (*board_read_som_gpio)(void);
 
 struct board {

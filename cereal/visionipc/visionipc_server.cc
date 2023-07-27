@@ -83,7 +83,13 @@ void VisionIpcServer::start_listener(){
 void VisionIpcServer::listener(){
   std::cout << "Starting listener for: " << name << std::endl;
 
-  std::string path = "/tmp/visionipc_" + name;
+  char* prefix = std::getenv("OPENPILOT_PREFIX");
+  std::string path = "/tmp/";
+  if (prefix) {
+    path = path + std::string(prefix) + "_";
+  }
+  path = path + "visionipc_" + name;
+
   int sock = ipc_bind(path.c_str());
   assert(sock >= 0);
 

@@ -11,7 +11,7 @@ from math import sin, cos, sqrt, fabs, atan2
 
 from .gps_time import GPSTime, utc_to_gpst
 from .constants import SPEED_OF_LIGHT, SECS_IN_MIN, SECS_IN_HR, SECS_IN_DAY, \
-                       SECS_IN_WEEK, EARTH_ROTATION_RATE, EARTH_GM
+                       EARTH_ROTATION_RATE, EARTH_GM
 from .helpers import get_constellation, get_prn_from_nmea_id
 
 import capnp
@@ -154,7 +154,7 @@ class GLONASSEphemeris(Ephemeris):
 
 class PolyEphemeris(Ephemeris):
   def __init__(self, prn: str, data, epoch: GPSTime, ephem_type: EphemerisType,
-               file_epoch: GPSTime=None, file_name: str=None, healthy=True, tgd=0,
+               file_epoch: Optional[GPSTime] = None, file_name: Optional[str] = None, healthy=True, tgd=0,
                max_time_diff: int=SECS_IN_HR):
     super().__init__(prn, epoch, ephem_type, healthy, max_time_diff=max_time_diff, file_epoch=file_epoch, file_name=file_name)
     self.data = data
@@ -479,17 +479,12 @@ def parse_rinex_nav_msg_glonass(file_name):
   return ephems
 
 
-def parse_qcom_ephem(qcom_poly, current_week):
+def parse_qcom_ephem(qcom_poly):
   svId = qcom_poly.svId
-  data = qcom_poly
-  t0 = data.t0
-  # fix glonass time
   prn = get_prn_from_nmea_id(svId)
-  if prn[0] == 'R':
-    # TODO should handle leap seconds better
-    epoch = GPSTime(current_week, (t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + 18)
-  else:
-    epoch = GPSTime(current_week, t0)
+  epoch = GPSTime(qcom_poly.gpsWeek, qcom_poly.gpsTow)
+
+  data = qcom_poly
   poly_data = {}
   poly_data['t0'] = epoch
   poly_data['xyz'] = np.array([

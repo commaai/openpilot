@@ -75,6 +75,44 @@ bool llcan_set_speed(CAN_TypeDef *CAN_obj, uint32_t speed, bool loopback, bool s
   return ret;
 }
 
+void llcan_irq_disable(CAN_TypeDef *CAN_obj) {
+  if (CAN_obj == CAN1) {
+    NVIC_DisableIRQ(CAN1_TX_IRQn);
+    NVIC_DisableIRQ(CAN1_RX0_IRQn);
+    NVIC_DisableIRQ(CAN1_SCE_IRQn);
+  } else if (CAN_obj == CAN2) {
+    NVIC_DisableIRQ(CAN2_TX_IRQn);
+    NVIC_DisableIRQ(CAN2_RX0_IRQn);
+    NVIC_DisableIRQ(CAN2_SCE_IRQn);
+  #ifdef CAN3
+    } else if (CAN_obj == CAN3) {
+      NVIC_DisableIRQ(CAN3_TX_IRQn);
+      NVIC_DisableIRQ(CAN3_RX0_IRQn);
+      NVIC_DisableIRQ(CAN3_SCE_IRQn);
+  #endif
+  } else {
+  }
+}
+
+void llcan_irq_enable(CAN_TypeDef *CAN_obj) {
+  if (CAN_obj == CAN1) {
+    NVIC_EnableIRQ(CAN1_TX_IRQn);
+    NVIC_EnableIRQ(CAN1_RX0_IRQn);
+    NVIC_EnableIRQ(CAN1_SCE_IRQn);
+  } else if (CAN_obj == CAN2) {
+    NVIC_EnableIRQ(CAN2_TX_IRQn);
+    NVIC_EnableIRQ(CAN2_RX0_IRQn);
+    NVIC_EnableIRQ(CAN2_SCE_IRQn);
+  #ifdef CAN3
+    } else if (CAN_obj == CAN3) {
+      NVIC_EnableIRQ(CAN3_TX_IRQn);
+      NVIC_EnableIRQ(CAN3_RX0_IRQn);
+      NVIC_EnableIRQ(CAN3_SCE_IRQn);
+  #endif
+  } else {
+  }
+}
+
 bool llcan_init(CAN_TypeDef *CAN_obj) {
   bool ret = true;
 
@@ -110,23 +148,10 @@ bool llcan_init(CAN_TypeDef *CAN_obj) {
     // enable certain CAN interrupts
     register_set_bits(&(CAN_obj->IER), CAN_IER_TMEIE | CAN_IER_FMPIE0 | CAN_IER_ERRIE | CAN_IER_LECIE | CAN_IER_BOFIE | CAN_IER_EPVIE | CAN_IER_EWGIE | CAN_IER_FOVIE0 | CAN_IER_FFIE0);
 
-    if (CAN_obj == CAN1) {
-      NVIC_EnableIRQ(CAN1_TX_IRQn);
-      NVIC_EnableIRQ(CAN1_RX0_IRQn);
-      NVIC_EnableIRQ(CAN1_SCE_IRQn);
-    } else if (CAN_obj == CAN2) {
-      NVIC_EnableIRQ(CAN2_TX_IRQn);
-      NVIC_EnableIRQ(CAN2_RX0_IRQn);
-      NVIC_EnableIRQ(CAN2_SCE_IRQn);
-    #ifdef CAN3
-      } else if (CAN_obj == CAN3) {
-        NVIC_EnableIRQ(CAN3_TX_IRQn);
-        NVIC_EnableIRQ(CAN3_RX0_IRQn);
-        NVIC_EnableIRQ(CAN3_SCE_IRQn);
-    #endif
-    } else {
-      print("Invalid CAN: initialization failed\n");
-    }
+    // clear overrun flag on init
+    CAN_obj->RF0R &= ~(CAN_RF0R_FOVR0);
+
+    llcan_irq_enable(CAN_obj);
   }
   return ret;
 }

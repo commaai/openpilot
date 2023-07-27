@@ -20,8 +20,8 @@ from .messaging cimport Event as cppEvent, SocketEventHandle as cppSocketEventHa
 
 class MessagingError(Exception):
   def __init__(self, endpoint=None):
-    suffix = "with {endpoint}" if endpoint else ""
-    message = f"Messaging failure {suffix}: {strerror(errno.errno)}"
+    suffix = f"with {endpoint.decode('utf-8')}" if endpoint else ""
+    message = f"Messaging failure {suffix}: {strerror(errno.errno).decode('utf-8')}"
     super().__init__(message)
 
 
