@@ -54,6 +54,7 @@ brew "protobuf-c"
 brew "swig"
 brew "gcc@12"
 cask "gcc-arm-embedded"
+brew "portaudio"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
