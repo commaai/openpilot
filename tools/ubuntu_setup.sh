@@ -69,6 +69,7 @@ function install_ubuntu_common_requirements() {
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
     clinfo \
+    portaudio19-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
