@@ -9,7 +9,7 @@ ARCH=$(uname -m)
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bashrc"
+  RC_FILE="$HOME/.bash_profile"
 fi
 
 # Install brew if required
