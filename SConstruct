@@ -117,9 +117,8 @@ else:
 
   # MacOS
   if arch == "Darwin":
-    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      f"#third_party/libyuv/{yuv_dir}/lib",
+      f"#third_party/libyuv/{arch}/lib",
       f"#third_party/acados/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
