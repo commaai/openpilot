@@ -571,6 +571,7 @@ python-versions = "*"
 [package.source]
 type = "url"
 url = "https://github.com/commaai/carla/releases/download/3.11.4/carla-0.9.14-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "casadi"
 version = "3.6.3"
@@ -2870,6 +2871,7 @@ numpy = [
 [package.source]
 type = "url"
 url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118-cp311/opencv_python_headless-4.5.5.64-cp311-cp311-manylinux_2_31_x86_64.whl"
+
 [[package]]
 name = "opencv-python-headless"
 version = "4.7.0.72"
@@ -4905,6 +4907,7 @@ opt-einsum = ["opt-einsum (>=3.3)"]
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "torchsummary"
 version = "1.5.1"
@@ -4933,6 +4936,7 @@ scipy = ["scipy"]
 [package.source]
 type = "url"
 url = "https://download.pytorch.org/whl/cu118/torchvision-0.15.2%2Bcu118-cp311-cp311-linux_x86_64.whl"
+
 [[package]]
 name = "tornado"
 version = "6.3.2"
@@ -5375,7 +5379,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "8286acbaad7dcd1f6e926bd52cdb61651f8b720af4e39cd5f609406a3f3d1ca8"
+content-hash = "118d8684050e21f64c9f0c10d0ab6fb53937cb8e31d05a4dd8225cca76b90bc4"
 
 [metadata.files]
 adal = [
