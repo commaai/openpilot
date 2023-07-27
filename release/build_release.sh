@@ -84,7 +84,7 @@ rm selfdrive/modeld/models/supercombo.onnx
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
-mv /tmp/panda/obj/* panda/board/obj/
+mv /tmp/panda_obj/* panda/board/obj/
 
 # Restore third_party
 git checkout third_party/
