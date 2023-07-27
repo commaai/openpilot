@@ -64,7 +64,7 @@ AddOption('--no-test',
           default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
-## Architechture name breakdown (arch)
+## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64
 ## - x86_64:  linux pc x64
