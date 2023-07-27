@@ -55,6 +55,7 @@ git commit -a -m "openpilot v$VERSION release"
 # Build panda firmware
 pushd panda/
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+rm -rf /tmp/panda_obj/
 mkdir /tmp/panda_obj/
 mv board/obj/panda.bin.signed board/obj/panda_h7.bin.signed board/obj/bootstub.panda.bin board/obj/bootstub.panda_h7.bin /tmp/panda_obj/
 popd
