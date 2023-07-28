@@ -6,6 +6,7 @@ from collections import defaultdict
 from typing import Any
 
 import cereal.messaging as messaging
+from common.params import Params
 from common.spinner import Spinner
 from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
@@ -62,6 +63,7 @@ def nav_model_replay(lr):
   try:
     assert "MAPBOX_TOKEN" in os.environ
     os.environ['MAP_RENDER_TEST_MODE'] = '1'
+    Params().put_bool('DmModelInitialized', True)
     managed_processes['mapsd'].start()
     managed_processes['navmodeld'].start()
 

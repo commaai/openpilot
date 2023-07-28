@@ -1,14 +1,19 @@
+import capnp
 import hypothesis.strategies as st
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from cereal import log
 
-class FuzzyGenerator:
-  def __init__(self, draw, real_floats):
-    self.draw = draw
-    self.real_floats=real_floats
+DrawType = Callable[[st.SearchStrategy], Any]
 
-  def generate_native_type(self, field):
-    def floats(**kwargs):
+
+class FuzzyGenerator:
+  def __init__(self, draw: DrawType, real_floats: bool):
+    self.draw = draw
+    self.real_floats = real_floats
+
+  def generate_native_type(self, field: str) -> st.SearchStrategy[Union[bool, int, float, str, bytes]]:
+    def floats(**kwargs) -> st.SearchStrategy[float]:
       allow_nan = not self.real_floats
       allow_infinity = not self.real_floats
       return st.floats(**kwargs, allow_nan=allow_nan, allow_infinity=allow_infinity)
@@ -38,14 +43,14 @@ class FuzzyGenerator:
     elif field == 'text':
       return st.text(max_size=1000)
     elif field == 'data':
-      return st.text(max_size=1000)
+      return st.binary(max_size=1000)
     elif field == 'anyPointer':
       return st.text()
     else:
       raise NotImplementedError(f'Invalid type : {field}')
 
-  def generate_field(self, field):
-    def rec(field_type):
+  def generate_field(self, field: capnp.lib.capnp._StructSchemaField) -> st.SearchStrategy:
+    def rec(field_type: capnp.lib.capnp._DynamicStructReader) -> st.SearchStrategy:
       if field_type.which() == 'struct':
         return self.generate_struct(field.schema.elementType if base_type == 'list' else field.schema)
       elif field_type.which() == 'list':
@@ -62,17 +67,18 @@ class FuzzyGenerator:
     else:
       return self.generate_struct(field.schema)
 
-  def generate_struct(self, schema, event=None):
-    full_fill = list(schema.non_union_fields) if schema.non_union_fields else []
-    single_fill = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
+  def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: Optional[str] = None) -> st.SearchStrategy[Dict[str, Any]]:
+    full_fill: List[str] = list(schema.non_union_fields)
+    single_fill: List[str] = [event] if event else [self.draw(st.sampled_from(schema.union_fields))] if schema.union_fields else []
     return st.fixed_dictionaries(dict((field, self.generate_field(schema.fields[field])) for field in full_fill + single_fill))
 
   @classmethod
-  def get_random_msg(cls, draw, struct, real_floats=False):
+  def get_random_msg(cls, draw: DrawType, struct: capnp.lib.capnp._StructModule, real_floats: bool = False) -> Dict[str, Any]:
     fg = cls(draw, real_floats=real_floats)
-    return draw(fg.generate_struct(struct.schema))
+    data: Dict[str, Any] = draw(fg.generate_struct(struct.schema))
+    return data
 
   @classmethod
-  def get_random_event_msg(cls, draw, events, real_floats=False):
+  def get_random_event_msg(cls, draw: DrawType, events: List[str], real_floats: bool = False) -> List[Dict[str, Any]]:
     fg = cls(draw, real_floats=real_floats)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
