@@ -139,8 +139,10 @@ class TorqueEstimator:
     torque_cache = params.get("LiveTorqueParameters")
     if params_cache is not None and torque_cache is not None:
       try:
-        cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
-        cache_CP = car.CarParams.from_bytes(params_cache)
+        with log.Event.from_bytes(torque_cache) as log_evt:
+          cache_ltp = log_evt.liveTorqueParameters
+        with car.CarParams.from_bytes(params_cache) as msg:
+          cache_CP = msg
         if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
           if cache_ltp.liveValid:
             initial_params = {
@@ -262,8 +264,8 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['liveTorqueParameters'])
 
   params = Params()
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-  estimator = TorqueEstimator(CP)
+  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
+    estimator = TorqueEstimator(CP)
 
   def cache_params(sig, frame):
     signal.signal(sig, signal.SIG_DFL)

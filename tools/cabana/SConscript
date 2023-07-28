@@ -29,7 +29,7 @@ cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "asset
 
 prev_moc_path = cabana_env['QT_MOCHPREFIX']
 cabana_env['QT_MOCHPREFIX'] = os.path.dirname(prev_moc_path) + '/cabana/moc_'
-cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc', 
+cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
                                                'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                                                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'util.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
@@ -38,6 +38,7 @@ cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs
 if GetOption('test'):
   cabana_env.Program('tests/test_cabana', ['tests/test_runner.cc', 'tests/test_cabana.cc', cabana_lib], LIBS=[cabana_libs])
 
-def generate_dbc_json(target, source, env):
-  env.Execute('tools/cabana/dbc/generate_dbc_json.py --out tools/cabana/dbc/car_fingerprint_to_dbc.json')
-cabana_env.Command('generate_dbc_json', [], generate_dbc_json)
+generate_dbc = cabana_env.Command('generate_dbc_json',
+                                   [],
+                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out tools/cabana/dbc/car_fingerprint_to_dbc.json")
+cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/boardd", "#opendbc", "#cereal"])

@@ -18,6 +18,12 @@ export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 source ~/.bash_profile
 if [ -f /TICI ]; then
   source /etc/profile
+
+  if ! systemctl is-active --quiet systemd-resolved; then
+    echo "restarting resolved"
+    sudo systemctl start systemd-resolved
+    sleep 3
+  fi
 fi
 if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
@@ -128,6 +134,28 @@ pipeline {
         }
         */
 
+        stage('scons build test') {
+          agent {
+            dockerfile {
+              filename 'Dockerfile.openpilot_base'
+              args '--user=root'
+            }
+          }
+          steps {
+            sh "git config --global --add safe.directory '*'"
+            sh "git submodule update --init --depth=1 --recursive"
+            sh "scons --clean && scons --no-cache -j42"
+            sh "scons --clean && scons --no-cache --random -j42"
+          }
+
+          post {
+            always {
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
+        }
+
         stage('tizi-tests') {
           agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
@@ -138,8 +166,9 @@ pipeline {
               ["test sensord", "cd system/sensord/tests && python -m unittest test_sensord.py"],
               ["test camerad", "python system/camerad/test/test_camerad.py"],
               ["test exposure", "python system/camerad/test/test_exposure.py"],
-              ["test amp", "python system/hardware/tici/tests/test_amplifier.py"],
-              ["test rawgpsd", "python system/sensord/rawgps/test_rawgps.py"],
+              ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
+              ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
+              ["test rawgpsd", "pytest system/sensord/rawgps/test_rawgps.py"],
             ])
           }
         }
@@ -181,6 +210,7 @@ pipeline {
               ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python system/loggerd/tests/test_encoder.py"],
               ["test pigeond", "python system/sensord/tests/test_pigeond.py"],
               ["test manager", "python selfdrive/manager/test/test_manager.py"],
+              ["test nav", "pytest selfdrive/navd/tests/"],
             ])
           }
         }

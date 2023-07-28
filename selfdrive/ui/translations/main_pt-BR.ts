@@ -403,6 +403,10 @@
         <source>Waiting for GPS</source>
         <translation>Esperando por GPS</translation>
     </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
@@ -552,19 +556,19 @@
     </message>
     <message>
         <source>Remote access</source>
-        <translation>Acesso remoto</translation>
+        <translation>Acesso remoto (proxy comma)</translation>
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectividade LTE (só nos EUA)</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>Navegação passo a passo</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>1 ano de dados em nuvem</translation>
     </message>
 </context>
 <context>
@@ -1066,10 +1070,6 @@ Isso pode levar até um minuto.</translation>
         <translation>openpilot por padrão funciona em &lt;b&gt;modo chill&lt;/b&gt;. modo Experimental ativa &lt;b&gt;recursos de nível-embrionário&lt;/b&gt; que não estão prontos para o modo chill. Recursos experimentais estão listados abaixo:</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 Controle Longitudinal de Ponta a Ponta 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>Deixe o modelo de IA controlar o acelerador e os freios. O openpilot irá dirigir como pensa que um humano faria, incluindo parar em sinais vermelhos e sinais de parada. Uma vez que o modelo de condução decide a velocidade a conduzir, a velocidade definida apenas funcionará como um limite superior. Este é um recurso de qualidade embrionária; erros devem ser esperados.</translation>
     </message>
@@ -1078,20 +1078,12 @@ Isso pode levar até um minuto.</translation>
         <translation>Nova Visualização de Condução</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>A visualização da direção fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será exibido no canto superior direito.</translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation>O modo Experimental está atualmente indisponível para este carro já que o ACC original do carro é usado para controle longitudinal.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>Ative o controle longitudinal experimental para permitir o modo Experimental.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1128,6 +1120,26 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>Uma versão embrionária do controle longitudinal openpilot pode ser testada em conjunto com o modo Experimental, em branches que não sejam de produção.</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>Navegação no openpilot</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>Habilite o controle longitudinal (embrionário) openpilot para permitir o modo Experimental.</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits/forks.These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
