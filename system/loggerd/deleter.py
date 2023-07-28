@@ -46,19 +46,20 @@ def get_preserved_segments(dirs_by_creation: List[str]) -> List[str]:
 
 
 def deleter_thread(exit_event):
+  dirs = []
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(ROOT)
-
-      # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_dirs = get_preserved_segments(dirs)
+      if not dirs:
+        dirs = listdir_by_creation(ROOT)
+        preserved_dirs = get_preserved_segments(dirs)
+        dirs.sort(key=lambda d: (d in DELETE_LAST, d in preserved_dirs))
 
       # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(ROOT, delete_dir)
+      while dirs:
+        delete_path = os.path.join(ROOT, dirs.pop(0))
 
         if any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
