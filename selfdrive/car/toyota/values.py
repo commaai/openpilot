@@ -42,6 +42,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
+  EV = 3
 
 
 class CAR:
@@ -82,6 +83,7 @@ class CAR:
   RAV4H_TSS2_2023 = "TOYOTA RAV4 HYBRID 2023"
   MIRAI = "TOYOTA MIRAI 2021"  # TSS 2.5
   SIENNA = "TOYOTA SIENNA 2018"
+  BZ4X = "TOYOTA BZ4X" # TSS 3
 
   # Lexus
   LEXUS_CTH = "LEXUS CT HYBRID 2018"
@@ -175,7 +177,8 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.RAV4H_TSS2_2023: ToyotaCarInfo("Toyota RAV4 Hybrid 2023"),
   CAR.MIRAI: ToyotaCarInfo("Toyota Mirai 2021"),
   CAR.SIENNA: ToyotaCarInfo("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED),
-
+  CAR.BZ4X: ToyotaCarInfo("Toyota bZ4X 2023", "TSS 3"),
+    
   # Lexus
   CAR.LEXUS_CTH: ToyotaCarInfo("Lexus CT Hybrid 2017-18", "Lexus Safety System+"),
   CAR.LEXUS_ES: ToyotaCarInfo("Lexus ES 2017-18"),
@@ -2217,6 +2220,25 @@ FW_VERSIONS = {
       b'\x028646FV201000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
+  CAR.BZ4X: {
+    (Ecu.engine, None, None): [
+      #Future
+    ],
+    (Ecu.eps, None, None): [
+      #Future
+    ],
+    (Ecu.fwdRadar, None, None): [
+      #Future
+    ],
+    (Ecu.fwdCamera, None, None): [
+      #Future
+    (Ecu.adas, None, None): [
+      b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', #SubaruSolterra
+      b'\xf1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x84\x10\x00\x00\x00\x00', #SubaruSolterra
+    ],
+  },
+
+  
 }
 
 STEER_THRESHOLD = 100
@@ -2281,6 +2303,9 @@ EPS_SCALE = defaultdict(lambda: 73, {CAR.PRIUS: 66, CAR.COROLLA: 88, CAR.LEXUS_I
 TSS2_CAR = {CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
             CAR.RAV4H_TSS2_2023, CAR.LEXUS_RX_TSS2, CAR.LEXUS_RXH_TSS2, CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2, CAR.PRIUS_TSS2, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2,
             CAR.MIRAI, CAR.LEXUS_NX_TSS2, CAR.LEXUS_NXH_TSS2, CAR.ALPHARD_TSS2, CAR.AVALON_TSS2, CAR.AVALONH_TSS2, CAR.ALPHARDH_TSS2, CAR.CHR_TSS2, CAR.CHRH_TSS2}
+
+# Toyota/Lexus/Subaru Safety Sense 3
+TSS3_CAR = {CAR.BZ4X}
 
 NO_DSU_CAR = TSS2_CAR | {CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH}
 
