@@ -2220,7 +2220,7 @@ FW_VERSIONS = {
       b'\x028646FV201000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
-  CAR.BZ4X: {
+  CAR.BZ4X: {{
     (Ecu.engine, None, None): [
       #Future
     ],
@@ -2232,14 +2232,13 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, None, None): [
       #Future
+    ]
     (Ecu.adas, None, None): [
       b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', #SubaruSolterra
       b'\xf1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x84\x10\x00\x00\x00\x00', #SubaruSolterra
     ],
   },
-
-  
-}
+},
 
 STEER_THRESHOLD = 100
 
@@ -2294,6 +2293,7 @@ DBC = {
   CAR.MIRAI: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARD_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
   CAR.ALPHARDH_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),
+  #FUTURE CAR.BZ4X: dbc_dict('toyota_', 'toyota_tss3_adas'),
 }
 
 # These cars have non-standard EPS torque scale factors. All others are 73
