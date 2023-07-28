@@ -1,6 +1,6 @@
 from common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
-from selfdrive.car import apply_driver_steer_torque_limits, apply_hysteresis
+from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 from selfdrive.controls.lib.drive_helpers import rate_limit
@@ -18,8 +18,6 @@ class CarController:
     self.cruise_button_prev = 0
     self.cruise_throttle_last = 0
     self.cruise_rpm_last = 0
-    self.throttle_steady = 0
-    self.rpm_steady = 0
 
     self.last_cancel_frame = 0
 
@@ -52,13 +50,12 @@ class CarController:
 
       self.apply_steer_last = apply_steer
 
-    ### LONG ###
+    # *** longitudinal ***
+    brake_cmd = False
+    brake_value = 0
 
     cruise_throttle = 0
     cruise_rpm = 0
-
-    brake_cmd = False
-    brake_value = 0
 
     if self.CP.openpilotLongitudinalControl:
 
@@ -67,10 +64,6 @@ class CarController:
       if CC.longActive and brake > 0:
         brake_value = clip(int(brake * CarControllerParams.BRAKE_SCALE), CarControllerParams.BRAKE_MIN, CarControllerParams.BRAKE_MAX)
         brake_cmd = True
-
-      # AEB passthrough
-      if CC.enabled and CS.out.stockAeb:
-        brake_cmd = False
 
       if CC.longActive and gas > 0:
         # calculate desired values
@@ -81,13 +74,6 @@ class CarController:
         cruise_throttle = clip(cruise_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
         cruise_rpm = clip(cruise_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
 
-        # hysteresis
-        cruise_throttle = apply_hysteresis(cruise_throttle, self.throttle_steady, CarControllerParams.THROTTLE_HYST)
-        self.throttle_steady = cruise_throttle
-
-        cruise_rpm = apply_hysteresis(cruise_rpm, self.rpm_steady, CarControllerParams.THROTTLE_HYST)
-        self.rpm_steady = cruise_rpm
-
         # rate limiting
         cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, -CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
         self.cruise_throttle_last = cruise_throttle
@@ -96,10 +82,10 @@ class CarController:
         self.cruise_rpm_last = cruise_rpm
       
       else:
-        cruise_throttle = 1818 # zero acceleration
+        cruise_throttle = CarControllerParams.THROTTLE_BASE # zero acceleration
       
-      if brake_value > 35:
-        cruise_throttle = 808 # for engine braking
+      if brake_value > CarControllerParams.ENGINE_BRAKE_THRESHOLD:
+        cruise_throttle = CarControllerParams.THROTTLE_ENGINE_BRAKE # for engine braking
       
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:

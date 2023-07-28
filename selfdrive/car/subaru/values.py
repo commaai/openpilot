@@ -31,10 +31,10 @@ class CarControllerParams:
 
   THROTTLE_MIN = 0              # min cruise_throttle
   THROTTLE_MAX = 3400           # max cruise_throttle
-  THROTTLE_BASE = 1810          # cruise_throttle, from stock drive
+  THROTTLE_BASE = 1818          # cruise_throttle, from stock drive
   THROTTLE_SCALE = 3000         # from testing
   THROTTLE_DELTA = 50
-  THROTTLE_HYST = 10            # filter out small changes
+  THROTTLE_ENGINE_BRAKE = 808
 
   RPM_MIN = 0                   # min cruise_rpm
   RPM_MAX = 3200                # max cruise_rpm
@@ -45,6 +45,7 @@ class CarControllerParams:
   BRAKE_MIN = 0
   BRAKE_MAX = 400
   BRAKE_SCALE = 1000            # from testing
+  ENGINE_BRAKE_THRESHOLD = 35
 
 
 class SubaruFlags(IntFlag):
