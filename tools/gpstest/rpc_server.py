@@ -17,7 +17,7 @@ ALT_DELTA = 30
 MATCH_NUM = 10
 REPORT_STATS = 10
 
-EPHEM_CACHE = "/data/params/d/LaikadEphemerisV2"
+EPHEM_CACHE = "/data/params/d/LaikadEphemerisV3"
 DOWNLOAD_CACHE = "/tmp/comma_download_cache"
 
 SERVER_LOG_FILE = "/tmp/fuzzy_server.log"

@@ -70,7 +70,7 @@ lenv.Program('_dmonitoringmodeld', [
 if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
 
-  tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTWG=1", "IMAGE=2", "GPU=1", "CLCACHE=0"]
+  tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]
   if not GetOption('pc_thneed'):
     # use FLOAT16 on device for speed + don't cache the CL kernels for space
     tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]

@@ -2,11 +2,13 @@
 from cereal import car
 from common.conversions import Conversions as CV
 from panda import Panda
-from selfdrive.car.toyota.values import Ecu, CAR, ToyotaFlags, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, CarControllerParams, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
+                                        MIN_ACC_SPEED, EPS_SCALE, EV_HYBRID_CAR, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
+SteerControlType = car.CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):
@@ -15,21 +17,32 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
     ret.safetyConfigs[0].safetyParam = EPS_SCALE[candidate]
 
-    if candidate in (CAR.RAV4, CAR.PRIUS_V, CAR.COROLLA, CAR.LEXUS_ESH, CAR.LEXUS_CTH):
+    # BRAKE_MODULE is on a different address for these cars
+    if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
 
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
-    ret.steerLimitTimer = 0.4
+    if candidate in ANGLE_CONTROL_CAR:
+      ret.dashcamOnly = True
+      ret.steerControlType = SteerControlType.angle
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_LTA
+
+      # LTA control can be more delayed and winds up more often
+      ret.steerActuatorDelay = 0.25
+      ret.steerLimitTimer = 0.8
+    else:
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+      ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+      ret.steerLimitTimer = 0.4
+
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
     stop_and_go = False
-    steering_angle_deadzone_deg = 0.0
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -40,9 +53,8 @@ class CarInterface(CarInterfaceBase):
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
-          steering_angle_deadzone_deg = 0.2
           ret.steerActuatorDelay = 0.25
-          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg)
+          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
     elif candidate == CAR.PRIUS_V:
       stop_and_go = True
@@ -102,7 +114,8 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022):
+    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
+                       CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
       stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
@@ -131,8 +144,9 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
 
-    elif candidate in (CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2, CAR.LEXUS_ESH):
-      stop_and_go = True
+    elif candidate in (CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2):
+      if candidate not in (CAR.LEXUS_ES,):  # TODO: LEXUS_ES may have sng
+        stop_and_go = True
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -194,14 +208,34 @@ class CarInterface(CarInterfaceBase):
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
-    # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
-    smartDsu = 0x2FF in fingerprint[0]
-    # In TSS2 cars the camera does long control
+
+    # Detect smartDSU, which intercepts ACC_CMD from the DSU (or radar) allowing openpilot to send it
+    if 0x2FF in fingerprint[0]:
+      ret.flags |= ToyotaFlags.SMART_DSU.value
+
+    # No radar dbc for cars without DSU which are not TSS 2.0
+    # TODO: make an adas dbc file for dsu-less models
+    ret.radarUnavailable = DBC[candidate]['radar'] is None or candidate in (NO_DSU_CAR - TSS2_CAR)
+
+    # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not smartDsu
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
-    # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
+
+    # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.
+    # since we don't yet parse radar on TSS2 radar-based ACC cars, gate longitudinal behind experimental toggle
+    use_sdsu = bool(ret.flags & ToyotaFlags.SMART_DSU)
+    if candidate in RADAR_ACC_CAR:
+      ret.experimentalLongitudinalAvailable = use_sdsu
+      use_sdsu = use_sdsu and experimental_long
+
+    # openpilot longitudinal enabled by default:
+    #  - non-(TSS2 radar ACC cars) w/ smartDSU installed
+    #  - cars w/ DSU disconnected
+    #  - TSS2 cars with camera sending ACC_CONTROL where we can block it
+    # openpilot longitudinal behind experimental long toggle:
+    #  - TSS2 radar ACC cars w/ smartDSU installed
+    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -242,6 +276,11 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret)
+
+    # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
+    # the more accurate angle sensor signal is initialized
+    if self.CP.steerControlType == SteerControlType.angle and not self.CS.accurate_steer_angle_seen:
+      events.add(EventName.vehicleSensorsInvalid)
 
     if self.CP.openpilotLongitudinalControl:
       if ret.cruiseState.standstill and not ret.brakePressed and not self.CP.enableGasInterceptor:

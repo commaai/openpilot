@@ -9,7 +9,7 @@ ARCH=$(uname -m)
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bashrc"
+  RC_FILE="$HOME/.bash_profile"
 fi
 
 # Install brew if required
@@ -45,14 +45,16 @@ brew "libarchive"
 brew "libusb"
 brew "libtool"
 brew "llvm"
-brew "openssl"
+brew "openssl@3.0"
 brew "pyenv"
 brew "qt@5"
 brew "zeromq"
 brew "protobuf"
 brew "protobuf-c"
 brew "swig"
+brew "gcc@12"
 cask "gcc-arm-embedded"
+brew "portaudio"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"
@@ -68,6 +70,7 @@ export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/bzip2/include"
 # pycurl curl/openssl backend dependencies
 export LDFLAGS="$LDFLAGS -L${BREW_PREFIX}/opt/openssl@3/lib"
 export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
+export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # openpilot environment
@@ -81,29 +84,6 @@ fi
 $ROOT/update_requirements.sh
 eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
-
-# install casadi
-VENV=`poetry env info --path`
-PYTHON_VER=3.8
-PYTHON_VERSION=$(cat $ROOT/.python-version)
-if [ ! -f "$VENV/include/casadi/casadi.hpp" ]; then
-  echo "-- casadi manual install"
-  cd /tmp/ && curl -L https://github.com/casadi/casadi/archive/refs/tags/ge6.tar.gz --output casadi.tar.gz
-  tar -xzf casadi.tar.gz
-  cd casadi-ge6/ && mkdir -p build && cd build
-  cmake .. \
-    -DWITH_PYTHON=ON \
-    -DWITH_EXAMPLES=OFF \
-    -DCMAKE_INSTALL_PREFIX:PATH=$VENV \
-    -DPYTHON_PREFIX:PATH=$VENV/lib/python$PYTHON_VER/site-packages \
-    -DPYTHON_LIBRARY:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/lib/libpython$PYTHON_VER.dylib \
-    -DPYTHON_EXECUTABLE:FILEPATH=$HOME/.pyenv/versions/$PYTHON_VERSION/bin/python \
-    -DPYTHON_INCLUDE_DIR:PATH=$HOME/.pyenv/versions/$PYTHON_VERSION/include/python$PYTHON_VER \
-    -DCMAKE_CXX_FLAGS="-ferror-limit=0" -DCMAKE_C_FLAGS="-ferror-limit=0"
-  CFLAGS="-ferror-limit=0" make -j$(nproc) && make install
-else
-  echo "----   casadi found in venv. skipping build   ----"
-fi
 
 echo
 echo "----   OPENPILOT SETUP DONE   ----"

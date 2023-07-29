@@ -68,13 +68,14 @@ def steer_rate_limit(old, new):
 
 
 class Camerad:
-  def __init__(self):
+  def __init__(self, dual_camera):
     self.frame_road_id = 0
     self.frame_wide_id = 0
     self.vipc_server = VisionIpcServer("camerad")
 
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 5, False, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
+    if dual_camera:
+      self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 5, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -254,7 +255,7 @@ class CarlaBridge:
     msg.liveCalibration.validBlocks = 20
     msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
     self.params.put("CalibrationParams", msg.to_bytes())
-    self.params.put_bool("WideCameraOnly", not arguments.dual_camera)
+    self.params.put_bool("DisengageOnAccelerator", True)
 
     self._args = arguments
     self._carla_objects = []
@@ -349,14 +350,13 @@ class CarlaBridge:
       camera.listen(callback)
       return camera
 
-    self._camerad = Camerad()
+    self._camerad = Camerad(self._args.dual_camera)
 
     if self._args.dual_camera:
-      road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
-      self._carla_objects.append(road_camera)
-
-    road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
-    self._carla_objects.append(road_wide_camera)
+      road_wide_camera = create_camera(fov=120, callback=self._camerad.cam_callback_wide_road)  # fov bigger than 120 shows unwanted artifacts
+      self._carla_objects.append(road_wide_camera)
+    road_camera = create_camera(fov=40, callback=self._camerad.cam_callback_road)
+    self._carla_objects.append(road_camera)
 
     vehicle_state = VehicleState()
 
@@ -545,23 +545,17 @@ if __name__ == "__main__":
   q: Any = Queue()
   args = parse_args()
 
-  try:
-    carla_bridge = CarlaBridge(args)
-    p = carla_bridge.run(q)
+  carla_bridge = CarlaBridge(args)
+  p = carla_bridge.run(q)
 
-    if args.joystick:
-      # start input poll for joystick
-      from tools.sim.lib.manual_ctrl import wheel_poll_thread
+  if args.joystick:
+    # start input poll for joystick
+    from tools.sim.lib.manual_ctrl import wheel_poll_thread
 
-      wheel_poll_thread(q)
-    else:
-      # start input poll for keyboard
-      from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
+    wheel_poll_thread(q)
+  else:
+    # start input poll for keyboard
+    from tools.sim.lib.keyboard_ctrl import keyboard_poll_thread
 
-      keyboard_poll_thread(q)
-    p.join()
-
-  finally:
-    # Try cleaning up the wide camera param
-    # in case users want to use replay after
-    Params().remove("WideCameraOnly")
+    keyboard_poll_thread(q)
+  p.join()

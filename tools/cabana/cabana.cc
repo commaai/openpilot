@@ -1,20 +1,23 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-#include "common/prefix.h"
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/route.h"
-#include "tools/cabana/streams/livestream.h"
+#include "tools/cabana/streamselector.h"
+#include "tools/cabana/streams/devicestream.h"
+#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
 
 int main(int argc, char *argv[]) {
   QCoreApplication::setApplicationName("Cabana");
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-  initApp(argc, argv);
+  initApp(argc, argv, false);
   QApplication app(argc, argv);
   app.setApplicationDisplayName("Cabana");
   app.setWindowIcon(QIcon(":cabana-icon.png"));
+
+  UnixSignalHandler signalHandler;
+  utils::setTheme(settings.theme);
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
@@ -23,22 +26,31 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"stream", "read can messages from live streaming"});
+  cmd_parser.addOption({"panda", "read can messages from panda"});
+  cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
   cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
   cmd_parser.process(app);
 
-  std::unique_ptr<OpenpilotPrefix> op_prefix;
-  std::unique_ptr<AbstractStream> stream;
+  QString dbc_file = cmd_parser.isSet("dbc") ? cmd_parser.value("dbc") : "";
 
+  AbstractStream *stream = nullptr;
   if (cmd_parser.isSet("stream")) {
-    stream.reset(new LiveStream(&app, cmd_parser.value("zmq")));
+    stream = new DeviceStream(&app, cmd_parser.value("zmq"));
+  } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
+    PandaStreamConfig config = {};
+    if (cmd_parser.isSet("panda-serial")) {
+      config.serial = cmd_parser.value("panda-serial");
+    }
+    try {
+      stream = new PandaStream(&app, config);
+    } catch (std::exception &e) {
+      qWarning() << e.what();
+      return 0;
+    }
   } else {
-    // TODO: Remove when OpenpilotPrefix supports ZMQ
-#ifndef __APPLE__
-    op_prefix.reset(new OpenpilotPrefix());
-#endif
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) {
       replay_flags |= REPLAY_FLAG_ECAM;
@@ -56,24 +68,30 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
 
-    auto replay_stream = new ReplayStream(replay_flags, &app);
-    stream.reset(replay_stream);
     if (route.isEmpty()) {
-      if (OpenRouteDialog dlg(nullptr); !dlg.exec()) {
+      StreamSelector dlg(&stream);
+      dlg.exec();
+      dbc_file = dlg.dbcFile();
+    } else {
+      auto replay_stream = new ReplayStream(&app);
+      if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
         return 0;
       }
-    } else if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"))) {
-      return 0;
+      stream = replay_stream;
     }
   }
 
   MainWindow w;
-
-  // Load DBC
-  if (cmd_parser.isSet("dbc")) {
-    w.loadFile(cmd_parser.value("dbc"));
+  if (!stream) {
+    stream = new DummyStream(&app);
   }
-
+  stream->start();
+  if (!dbc_file.isEmpty()) {
+    w.loadFile(dbc_file);
+  }
   w.show();
-  return app.exec();
+
+  int ret = app.exec();
+  delete can;
+  return ret;
 }

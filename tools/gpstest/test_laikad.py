@@ -4,7 +4,7 @@ import time
 import unittest
 
 import cereal.messaging as messaging
-import selfdrive.sensord.pigeond as pd
+import system.sensord.pigeond as pd
 
 from common.params import Params
 from system.hardware import TICI
@@ -39,7 +39,7 @@ class TestLaikad(unittest.TestCase):
 
   def setUp(self):
     # ensure laikad cold start
-    Params().remove("LaikadEphemerisV2")
+    Params().remove("LaikadEphemerisV3")
     os.environ["LAIKAD_NO_INTERNET"] = "1"
     managed_processes['laikad'].start()
 

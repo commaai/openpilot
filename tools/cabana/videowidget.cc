@@ -1,17 +1,17 @@
 #include "tools/cabana/videowidget.h"
 
-#include <QBuffer>
 #include <QButtonGroup>
-#include <QDateTime>
+#include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPixmap>
+#include <QStackedLayout>
 #include <QStyleOptionSlider>
-#include <QTimeEdit>
 #include <QTimer>
-#include <QToolTip>
 #include <QVBoxLayout>
 #include <QtConcurrent>
+
+const int MIN_VIDEO_HEIGHT = 100;
+const int THUMBNAIL_MARGIN = 3;
 
 static const QColor timeline_colors[] = {
   [(int)TimelineType::None] = QColor(111, 143, 175),
@@ -22,20 +22,11 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
 
-inline QString formatTime(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-}
-
-VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  QFrame *frame = new QFrame(this);
-  frame->setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
-  main_layout->addWidget(frame);
-
-  QVBoxLayout *frame_layout = new QVBoxLayout(frame);
+VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
+  setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
+  auto main_layout = new QVBoxLayout(this);
   if (!can->liveStreaming()) {
-    frame_layout->addWidget(createCameraWidget());
+    main_layout->addWidget(createCameraWidget());
   }
 
   // btn controls
@@ -47,20 +38,20 @@ VideoWidget::VideoWidget(QWidget *parent) : QWidget(parent) {
   QButtonGroup *group = new QButtonGroup(this);
   group->setExclusive(true);
   for (float speed : {0.1, 0.5, 1., 2.}) {
-    if (can->liveStreaming() && speed > 1) continue;
-
     QPushButton *btn = new QPushButton(QString("%1x").arg(speed), this);
     btn->setCheckable(true);
-    QObject::connect(btn, &QPushButton::clicked, [=]() { can->setSpeed(speed); });
+    QObject::connect(btn, &QPushButton::clicked, [speed]() { can->setSpeed(speed); });
     control_layout->addWidget(btn);
     group->addButton(btn);
     if (speed == 1.0) btn->setChecked(true);
   }
-  frame_layout->addLayout(control_layout);
+  main_layout->addLayout(control_layout);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
   QObject::connect(play_btn, &QPushButton::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
+  QObject::connect(&settings, &Settings::changed, this, &VideoWidget::updatePlayBtnState);
   updatePlayBtnState();
 
   setWhatsThis(tr(R"(
@@ -89,73 +80,57 @@ QWidget *VideoWidget::createCameraWidget() {
   QWidget *w = new QWidget(this);
   QVBoxLayout *l = new QVBoxLayout(w);
   l->setContentsMargins(0, 0, 0, 0);
-  cam_widget = new CameraWidget("camerad", can->visionStreamType(), false);
-  l->addWidget(cam_widget);
+
+  QStackedLayout *stacked = new QStackedLayout();
+  stacked->setStackingMode(QStackedLayout::StackAll);
+  stacked->addWidget(cam_widget = new CameraWidget("camerad", can->visionStreamType(), false));
+  cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
+  cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+  stacked->addWidget(alert_label = new InfoLabel(this));
+  l->addLayout(stacked);
 
   // slider controls
-  slider_layout = new QHBoxLayout();
-  time_label = new ElidedLabel("00:00");
-  time_label->setToolTip(tr("Click to set current time"));
-  slider_layout->addWidget(time_label);
+  auto slider_layout = new QHBoxLayout();
+  slider_layout->addWidget(time_label = new QLabel("00:00"));
 
   slider = new Slider(this);
   slider->setSingleStep(0);
   slider_layout->addWidget(slider);
 
-  end_time_label = new QLabel(this);
-  slider_layout->addWidget(end_time_label);
+  slider_layout->addWidget(end_time_label = new QLabel(this));
   l->addLayout(slider_layout);
 
-  cam_widget->setMinimumHeight(100);
-  cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
-
-  QObject::connect(time_label, &ElidedLabel::clicked, this, &VideoWidget::timeLabelClicked);
-  QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->value() / 1000.0); });
-  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value / 1000)); });
+  setMaximumTime(can->totalSeconds());
+  QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
+  QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(utils::formatSeconds(slider->currentSecond())); });
+  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(can, &AbstractStream::updated, this, &VideoWidget::updateState);
-  QObject::connect(can, &AbstractStream::streamStarted, [this]() {
-    end_time_label->setText(formatTime(can->totalSeconds()));
-    slider->setRange(0, can->totalSeconds() * 1000);
-  });
   return w;
 }
 
-void VideoWidget::timeLabelClicked() {
-  auto time_edit = new QTimeEdit(this);
-  auto init_date_time = can->currentDateTime();
-  time_edit->setDateTime(init_date_time);
-  time_edit->setDisplayFormat("hh:mm:ss");
-  time_label->setVisible(false);
-  slider_layout->insertWidget(0, time_edit);
-  QTimer::singleShot(0, [=]() { time_edit->setFocus(); });
-
-  QObject::connect(time_edit, &QTimeEdit::editingFinished, [=]() {
-    if (time_edit->dateTime() != init_date_time) {
-      int seconds = can->route()->datetime().secsTo(time_edit->dateTime());
-      can->seekTo(seconds);
-    }
-    time_edit->setVisible(false);
-    time_label->setVisible(true);
-    time_edit->deleteLater();
-  });
+void VideoWidget::setMaximumTime(double sec) {
+  maximum_time = sec;
+  end_time_label->setText(utils::formatSeconds(sec));
+  slider->setTimeRange(0, sec);
 }
 
-void VideoWidget::rangeChanged(double min, double max, bool is_zoomed) {
+void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
   if (can->liveStreaming()) return;
 
   if (!is_zoomed) {
     min = 0;
-    max = can->totalSeconds();
+    max = maximum_time;
   }
-  end_time_label->setText(formatTime(max));
-  slider->setRange(min * 1000, max * 1000);
+  end_time_label->setText(utils::formatSeconds(max));
+  slider->setTimeRange(min, max);
 }
 
 void VideoWidget::updateState() {
-  if (!slider->isSliderDown())
-    slider->setValue(can->currentSec() * 1000);
+  if (!slider->isSliderDown()) {
+    slider->setCurrentSecond(can->currentSec());
+  }
+  alert_label->showAlert(slider->alertInfo(can->currentSec()));
 }
 
 void VideoWidget::updatePlayBtnState() {
@@ -164,73 +139,79 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 // Slider
-Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
-  QTimer *timer = new QTimer(this);
-  timer->setInterval(2000);
+
+Slider::Slider(QWidget *parent) : thumbnail_label(parent), QSlider(Qt::Horizontal, parent) {
+  setMouseTracking(true);
+  auto timer = new QTimer(this);
   timer->callOnTimeout([this]() {
     timeline = can->getTimeline();
+    std::sort(timeline.begin(), timeline.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
     update();
   });
-  setMouseTracking(true);
-
-  QObject::connect(can, SIGNAL(streamStarted()), timer, SLOT(start()));
-  QObject::connect(can, &AbstractStream::streamStarted, this, &Slider::streamStarted);
+  timer->start(2000);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() {
+    if (!qlog_future) {
+      qlog_future = std::make_unique<QFuture<void>>(QtConcurrent::run(this, &Slider::parseQLog));
+    }
+  });
 }
 
 Slider::~Slider() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
+  abort_parse_qlog = true;
+  if (qlog_future) {
+    qlog_future->waitForFinished();
+  }
 }
 
-void Slider::streamStarted() {
-  abort_load_thumbnail = true;
-  thumnail_future.waitForFinished();
-  abort_load_thumbnail = false;
-  thumbnails.clear();
-  thumnail_future = QtConcurrent::run(this, &Slider::loadThumbnails);
+AlertInfo Slider::alertInfo(double seconds) {
+  std::lock_guard lk(thumbnail_lock);
+  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+  auto alert_it = alerts.lower_bound(mono_time);
+  bool has_alert = (alert_it != alerts.end()) && ((alert_it->first - mono_time) <= 1e8);
+  return has_alert ? alert_it->second : AlertInfo{};
 }
 
-void Slider::loadThumbnails() {
-  const auto segments = can->route()->segments();
-  for (auto it = segments.rbegin(); it != segments.rend() && !abort_load_thumbnail; ++it) {
+QPixmap Slider::thumbnail(double seconds)  {
+  std::lock_guard lk(thumbnail_lock);
+  uint64_t mono_time = (seconds + can->routeStartTime()) * 1e9;
+  auto it = thumbnails.lowerBound(mono_time);
+  return it != thumbnails.end() ? it.value() : QPixmap();
+}
+
+void Slider::setTimeRange(double min, double max) {
+  assert(min < max);
+  setRange(min * factor, max * factor);
+}
+
+void Slider::parseQLog() {
+  const auto &segments = can->route()->segments();
+  for (auto it = segments.rbegin(); it != segments.rend() && !abort_parse_qlog; ++it) {
+    LogReader log;
     std::string qlog = it->second.qlog.toStdString();
-    if (!qlog.empty()) {
-      LogReader log;
-      if (log.load(qlog, &abort_load_thumbnail, {cereal::Event::Which::THUMBNAIL}, true, 0, 3)) {
-        for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_load_thumbnail; ++ev) {
+    if (!qlog.empty() && log.load(qlog, &abort_parse_qlog, {cereal::Event::Which::THUMBNAIL, cereal::Event::Which::CONTROLS_STATE}, true, 0, 3)) {
+      if (it == segments.rbegin() && !log.events.empty()) {
+        double max_time = log.events.back()->mono_time / 1e9 - can->routeStartTime();
+        emit updateMaximumTime(max_time);
+      }
+      for (auto ev = log.events.cbegin(); ev != log.events.cend() && !abort_parse_qlog; ++ev) {
+        if ((*ev)->which == cereal::Event::Which::THUMBNAIL) {
           auto thumb = (*ev)->event.getThumbnail();
-          QString str = getThumbnailString(thumb.getThumbnail());
-          std::lock_guard lk(thumbnail_lock);
-          thumbnails[thumb.getTimestampEof()] = str;
+          auto data = thumb.getThumbnail();
+          if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
+            pm = pm.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
+            std::lock_guard lk(thumbnail_lock);
+            thumbnails[thumb.getTimestampEof()] = pm;
+          }
+        } else if ((*ev)->which == cereal::Event::Which::CONTROLS_STATE) {
+          auto cs = (*ev)->event.getControlsState();
+          if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
+              cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
+            std::lock_guard lk(thumbnail_lock);
+            alerts.emplace((*ev)->mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
+          }
         }
       }
     }
-  }
-}
-
-QString Slider::getThumbnailString(const capnp::Data::Reader &data) {
-  QPixmap thumb;
-  if (thumb.loadFromData(data.begin(), data.size(), "jpeg")) {
-    thumb = thumb.scaled({thumb.width()/3, thumb.height()/3}, Qt::KeepAspectRatio);
-    thumbnail_size = thumb.size();
-    QByteArray bytes;
-    QBuffer buffer(&bytes);
-    buffer.open(QIODevice::WriteOnly);
-    thumb.save(&buffer, "png");
-    return  QString("<img src='data:image/png;base64, %0'>").arg(QString(bytes.toBase64()));
-  }
-  return {};
-}
-
-void Slider::sliderChange(QAbstractSlider::SliderChange change) {
-  if (change == QAbstractSlider::SliderValueChange) {
-    int x = width() * ((value() - minimum()) / double(maximum() - minimum()));
-    if (x != slider_x) {
-      slider_x = x;
-      update();
-    }
-  } else {
-    QAbstractSlider::sliderChange(change);
   }
 }
 
@@ -238,13 +219,14 @@ void Slider::paintEvent(QPaintEvent *ev) {
   QPainter p(this);
   QRect r = rect().adjusted(0, 4, 0, -4);
   p.fillRect(r, timeline_colors[(int)TimelineType::None]);
-  double min = minimum() / 1000.0;
-  double max = maximum() / 1000.0;
+  double min = minimum() / factor;
+  double max = maximum() / factor;
+
   for (auto [begin, end, type] : timeline) {
     if (begin > max || end < min)
       continue;
-    r.setLeft(((std::max(min, (double)begin) - min) / (max - min)) * width());
-    r.setRight(((std::min(max, (double)end) - min) / (max - min)) * width());
+    r.setLeft(((std::max(min, begin) - min) / (max - min)) * width());
+    r.setRight(((std::min(max, end) - min) / (max - min)) * width());
     p.fillRect(r, timeline_colors[(int)type]);
   }
 
@@ -267,16 +249,87 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 }
 
 void Slider::mouseMoveEvent(QMouseEvent *e) {
-  QString thumb;
-  {
-    double seconds = (minimum() + e->pos().x() * ((maximum() - minimum()) / (double)width())) / 1000.0;
-    std::lock_guard lk(thumbnail_lock);
-    auto it = thumbnails.lowerBound((seconds + can->routeStartTime()) * 1e9);
-    if (it != thumbnails.end()) {
-      thumb = it.value();
-    }
+  int pos = std::clamp(e->pos().x(), 0, width());
+  double seconds = (minimum() + pos * ((maximum() - minimum()) / (double)width())) / factor;
+  QPixmap thumb = thumbnail(seconds);
+  if (!thumb.isNull()) {
+    int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, rect().right() - thumb.width() - THUMBNAIL_MARGIN);
+    int y = -thumb.height();
+    thumbnail_label.showPixmap(mapToParent({x, y}), utils::formatSeconds(seconds), thumb, alertInfo(seconds));
+  } else {
+    thumbnail_label.hide();
   }
-  QPoint pt = mapToGlobal({e->pos().x() - thumbnail_size.width() / 2, -thumbnail_size.height() - 30});
-  QToolTip::showText(pt, thumb, this, rect());
   QSlider::mouseMoveEvent(e);
+}
+
+bool Slider::event(QEvent *event) {
+  switch (event->type()) {
+    case QEvent::WindowActivate:
+    case QEvent::WindowDeactivate:
+    case QEvent::FocusIn:
+    case QEvent::FocusOut:
+    case QEvent::Leave:
+      thumbnail_label.hide();
+      break;
+    default:
+      break;
+  }
+  return QSlider::event(event);
+}
+
+// InfoLabel
+
+InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint) {
+  setAttribute(Qt::WA_ShowWithoutActivating);
+  setVisible(false);
+}
+
+void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert) {
+  second = sec;
+  pixmap = pm;
+  alert_info = alert;
+  resize(pm.size());
+  move(pt);
+  setVisible(true);
+  update();
+}
+
+void InfoLabel::showAlert(const AlertInfo &alert) {
+  alert_info = alert;
+  pixmap = {};
+  setVisible(!alert_info.text1.isEmpty());
+  update();
+}
+
+void InfoLabel::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.setPen(QPen(palette().color(QPalette::BrightText), 2));
+  if (!pixmap.isNull()) {
+    p.drawPixmap(0, 0, pixmap);
+    p.drawRect(rect());
+    p.drawText(rect().adjusted(0, 0, 0, -THUMBNAIL_MARGIN), second, Qt::AlignHCenter | Qt::AlignBottom);
+  }
+  if (alert_info.text1.size() > 0) {
+    QColor color = timeline_colors[(int)TimelineType::AlertInfo];
+    if (alert_info.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+      color = timeline_colors[(int)TimelineType::AlertWarning];
+    } else if (alert_info.status == cereal::ControlsState::AlertStatus::CRITICAL) {
+      color = timeline_colors[(int)TimelineType::AlertCritical];
+    }
+    color.setAlphaF(0.5);
+    QString text = alert_info.text1;
+    if (!alert_info.text2.isEmpty()) {
+      text += "\n" + alert_info.text2;
+    }
+
+    if (!pixmap.isNull()) {
+      QFont font;
+      font.setPixelSize(11);
+      p.setFont(font);
+    }
+    QRect text_rect = rect().adjusted(2, 2, -2, -2);
+    QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
+    p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
+    p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
+  }
 }

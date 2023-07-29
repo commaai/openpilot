@@ -165,7 +165,10 @@ void ConsoleUI::updateStatus() {
   sm.update(0);
 
   if (status != Status::Paused) {
-    status = (sm.updated("carState") || sm.updated("liveParameters")) ? Status::Playing : Status::Waiting;
+    auto events = replay->events();
+    uint64_t current_mono_time = replay->routeStartTime() + replay->currentSeconds() * 1e9;
+    bool playing = !events->empty() && events->back()->mono_time > current_mono_time;
+    status = playing ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
@@ -256,8 +259,8 @@ void ConsoleUI::updateTimeline() {
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
-    int start_pos = ((double)begin / total_sec) * width;
-    int end_pos = ((double)end / total_sec) * width;
+    int start_pos = (begin / total_sec) * width;
+    int end_pos = (end / total_sec) * width;
     if (type == TimelineType::Engaged) {
       mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
       mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
