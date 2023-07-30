@@ -270,7 +270,7 @@ A supported vehicle is one that just works when you install a comma three. All s
 <sup>3</sup>Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in North and South America/Southeast Asia. <br />
 <sup>4</sup>Requires a <a href="https://github.com/commaai/openpilot/wiki/GM#hardware" target="_blank">community built ASCM harness</a>. <b><i>NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>5</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>6</sup>Requires a <a href="https://comma.ai/shop/panda" target="_blank">red panda</a> for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. All the hardware needed is sold in the <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD kit</a>. <br />
+<sup>6</sup>Requires a comma 3X or <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD panda kit</a> for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. <br />
 <sup>7</sup>In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance. <br />
 <sup>8</sup>openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control. <br />
 <sup>9</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
