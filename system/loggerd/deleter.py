@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import glob
 import os
 import shutil
 import threading
 from typing import List
 
-from common.params import Params
 from system.swaglog import cloudlog
 from system.loggerd.config import ROOT, get_available_bytes, get_available_percent
 from system.loggerd.uploader import listdir_by_creation
@@ -54,21 +54,14 @@ def deleter_thread(exit_event):
 
     if out_of_percent or out_of_bytes:
       if not dirs:
-        dirs = listdir_by_creation(ROOT)
-        # Skip the last segment if onroad
-        if Params().get("IsOnroad"):
-          dirs = dirs[:-1]
-
+        dirs = [d for d in listdir_by_creation(ROOT) if not glob.glob(os.path.join(ROOT, d, "*.lock"))]
+        # skip deleting most recent N preserved segments (and their prior segment)
         preserved_dirs = get_preserved_segments(dirs)
         dirs.sort(key=lambda d: (d in DELETE_LAST, d in preserved_dirs))
 
       # remove the earliest directory we can
       while dirs:
         delete_path = os.path.join(ROOT, dirs.pop(0))
-
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
-          continue
-
         try:
           cloudlog.info(f"deleting {delete_path}")
           if os.path.isfile(delete_path):
