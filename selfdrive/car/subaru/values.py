@@ -276,6 +276,7 @@ FW_VERSIONS = {
       b'\xf3"f@\x07',
       b'\xe6!fp\x07',
       b'\xf3"fp\x07',
+      b'\xe6"f0\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
@@ -286,6 +287,7 @@ FW_VERSIONS = {
       b'\xe6\xf5D0\x00',
       b'\xe9\xf6F0\x00',
       b'\xe9\xf5B0\x00',
+      b'\xe9\xf6B0\x00',
     ],
   },
   CAR.FORESTER: {
