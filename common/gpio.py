@@ -25,6 +25,13 @@ def gpio_read(pin: int) -> Optional[bool]:
 
   return val
 
+def gpio_export(pin: int) -> None:
+  try:
+    with open("/sys/class/gpio/export", 'w') as f:
+      f.write(str(pin))
+  except Exception:
+    print(f"Failed to export gpio {pin}")
+
 @lru_cache(maxsize=None)
 def get_irq_action(irq: int) -> List[str]:
   try:
