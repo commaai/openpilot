@@ -19,6 +19,8 @@ class OpenpilotPrefix(object):
     except FileExistsError:
       pass
 
+    return self
+
   def __exit__(self, exc_type, exc_obj, exc_tb):
     if self.clean_dirs_on_exit:
       self.clean_dirs()

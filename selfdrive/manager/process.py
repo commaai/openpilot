@@ -196,6 +196,7 @@ class NativeProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
+    self.launcher = nativelauncher
 
   def prepare(self) -> None:
     pass
@@ -210,7 +211,7 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info(f"starting process {self.name}")
-    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.cmdline, cwd, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
@@ -227,6 +228,7 @@ class PythonProcess(ManagerProcess):
     self.unkillable = unkillable
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
+    self.launcher = launcher
 
   def prepare(self) -> None:
     if self.enabled:
@@ -242,7 +244,7 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=launcher, args=(self.module, self.name))
+    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
