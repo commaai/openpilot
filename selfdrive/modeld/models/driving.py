@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 from typing import Dict
+from cereal.visionipc.visionipc_pyx import VisionBuf # pylint: disable=no-name-in-module
 from selfdrive.modeld.runners.runmodel_pyx import ONNXModel, Runtime # pylint: disable=no-name-in-module
 from selfdrive.modeld.models.commonmodel_pyx import ModelFrame # pylint: disable=no-name-in-module
 from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
@@ -11,7 +12,8 @@ DESIRE_LEN = 8
 TRAFFIC_CONVENTION_LEN = 2
 DRIVING_STYLE_LEN = 12
 NAV_FEATURE_LEN = 256
-MODEL_OUTPUT_SIZE = 1000  # TODO: this is wrong
+OUTPUT_SIZE = 5990
+MODEL_OUTPUT_SIZE = 6120
 MODEL_FREQ = 20
 
 MODEL_WIDTH = 512
@@ -45,7 +47,7 @@ class ModelState:
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
-  def eval(self, buf:np.ndarray, wbuf:np.ndarray, transform:np.ndarray, transform_wide:np.ndarray, inputs:Dict[str, np.ndarray], prepare_only:bool):
+  def eval(self, buf:VisionBuf, wbuf:VisionBuf, transform:np.ndarray, transform_wide:np.ndarray, inputs:Dict[str, np.ndarray], prepare_only:bool):
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
     self.inputs['desire_pulse'][:-DESIRE_LEN] = self.inputs['desire_pulse'][DESIRE_LEN:]
@@ -57,13 +59,13 @@ class ModelState:
     self.inputs['nav_features'][:] = inputs['nav_features']
     # self.inputs['driving_style'][:] = inputs['driving_style']
 
-    # if getCLBuffer is not None, net_input_buf will be
-    frame = self.frame.prepare(buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, transform, self.model.getCLBuffer("input_imgs"))
+    # if getCLBuffer is not None, frame will be None
+    frame = self.frame.prepare(buf, transform.astype(np.float32).flatten(), self.model.getCLBuffer("input_imgs"))
     self.model.setInputBuffer("input_imgs", frame)
     logging.info("Image added")
 
     if wbuf is not None:
-      wide_frame = self.wide_frame.prepare(wbuf.buf_cl, wbuf.width, wbuf.height, wbuf.stride, wbuf.uv_offset, transform_wide, self.model.getCLBuffer("big_input_imgs"))
+      wide_frame = self.wide_frame.prepare(wbuf, transform_wide.astype(np.float32).flatten(), self.model.getCLBuffer("big_input_imgs"))
       self.model.setInputBuffer("big_input_imgs", wide_frame)
       logging.info("Extra image added")
 

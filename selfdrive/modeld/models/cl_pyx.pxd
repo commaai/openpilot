@@ -20,3 +20,6 @@ cdef class CLContext:
 
 cdef class CLMem:
   cdef _cl_mem ** mem;
+
+  @staticmethod
+  cdef create(void*)

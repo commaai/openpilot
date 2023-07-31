@@ -1,8 +1,13 @@
 # distutils: language = c++
 # cython: c_string_encoding=ascii, language_level=3
 
+import numpy as np
+cimport numpy as cnp
+from libcpp cimport float
+from libc.string cimport memcpy
+from cereal.visionipc.visionipc_pyx cimport VisionBuf
 from .cl_pyx cimport CLContext, CLMem
-from .commonmodel cimport ModelFrame as cppModelFrame
+from .commonmodel cimport mat3, ModelFrame as cppModelFrame
 
 cdef class ModelFrame:
   cdef cppModelFrame * frame
@@ -13,5 +18,10 @@ cdef class ModelFrame:
   def __dealloc__(self):
     del self.frame
 
-  # def prepare(self, CLMem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, float[:] projection, CLMem output):
-  #   return self.frame.prepare(*yuv_cl.mem, frame_width, frame_height, frame_stride, frame_uv_offset, projection, output.mem)
+  def prepare(self, VisionBuf buf, float[:] projection, CLMem output):
+    cdef mat3 cprojection
+    memcpy(cprojection.v, &projection[0], 9)
+    cdef float * data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, output.mem)
+    if not data:
+      return None
+    return np.asarray(<cnp.float32_t[:self.frame.buf_size]> data)

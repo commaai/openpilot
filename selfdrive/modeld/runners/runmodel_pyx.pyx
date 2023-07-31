@@ -10,7 +10,7 @@ from libcpp cimport bool, int, float
 
 from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from .runmodel cimport ONNXModel as cppONNXModel
-from selfdrive.modeld.models.cl_pyx cimport CLContext
+from selfdrive.modeld.models.cl_pyx cimport CLContext, CLMem
 
 class Runtime:
   CPU = USE_CPU_RUNTIME
@@ -34,6 +34,12 @@ cdef class ONNXModel:
 
   def setInputBuffer(self, string name, float[:] buffer):
     self.model.setInputBuffer(name, &buffer[0], len(buffer))
+
+  def getCLBuffer(self, string name):
+    cdef void * cl_buf = self.model.getCLBuffer(name)
+    if not cl_buf:
+      return None
+    return CLMem.create(cl_buf)
 
   def execute(self):
     self.model.execute()

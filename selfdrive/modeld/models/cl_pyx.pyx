@@ -9,5 +9,8 @@ cdef class CLContext:
     self.context = cl_create_context(self.device_id)
 
 cdef class CLMem:
-  def __cinit__(self):
-    self.mem = NULL
+  @staticmethod
+  cdef create(void * cmem):
+    mem = CLMem()
+    mem.mem = <_cl_mem**> cmem
+    return mem
