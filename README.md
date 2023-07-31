@@ -40,7 +40,7 @@ Running on a dedicated device in a car
 
 To use openpilot in a car, you need four things
 * A supported device to run this software: a [comma 3X](https://comma.ai/shop/comma-3x) or comma three.
-* This software. The setup procedure of the comma three/3X allows the user to enter a URL for custom software.
+* This software. The setup procedure of the comma 3/3X allows the user to enter a URL for custom software.
 The URL, openpilot.comma.ai will install the release version of openpilot. To install openpilot master, you can use installer.comma.ai/commaai/master, and replacing commaai with another GitHub username can install a fork.
 * One of [the 250+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, Ford and more. If your car is not supported but has adaptive cruise control and lane-keeping assist, it's likely able to run openpilot.
 * A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car.
