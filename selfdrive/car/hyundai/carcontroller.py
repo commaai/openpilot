@@ -4,6 +4,7 @@ from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
+from selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
@@ -70,7 +71,7 @@ class CarController:
     self.apply_steer_last = apply_steer
 
     # accel + longitudinal
-    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    accel = clip(actuators.accel, ACCEL_MIN, ACCEL_MAX)
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 
