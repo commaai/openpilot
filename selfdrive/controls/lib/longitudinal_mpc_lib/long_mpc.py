@@ -8,7 +8,7 @@ from system.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.radard import _LEAD_ACCEL_TAU
-from selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from selfdrive.car.interfaces import ACCEL_MIN
 
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
