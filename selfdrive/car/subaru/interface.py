@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    ret.dashcamOnly = candidate in PREGLOBAL_CARS
+    ret.dashcamOnly = candidate in PREGLOBAL_CARS or candidate in LKAS_ANGLE
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
