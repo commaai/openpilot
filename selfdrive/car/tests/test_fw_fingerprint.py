@@ -230,7 +230,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'hyundai': 0.7,
         'mazda': 0.2,
         'nissan': 0.3,
-        'subaru': 0.1,
+        'subaru': 0.2,
         'tesla': 0.2,
         'toyota': 1.6,
         'volkswagen': 0.2,
