@@ -62,7 +62,7 @@ class CarController:
 
     # steering torque
     new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
-    apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+    apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.CCP)
 
     if not CC.latActive:
       apply_steer = 0
