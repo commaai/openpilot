@@ -20,6 +20,7 @@ MIN_STEER_MSG_INTERVAL_MS = 15
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.CCP = CarControllerParams(CP)
     self.start_time = 0.
     self.apply_steer_last = 0
     self.apply_gas = 0
@@ -31,8 +32,6 @@ class CarController:
 
     self.lka_steering_cmd_counter = 0
     self.lka_icon_status_last = (False, False)
-
-    self.params = CarControllerParams(self.CP)
 
     self.packer_pt = CANPacker(DBC[self.CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[self.CP.carFingerprint]['radar'])
@@ -50,7 +49,7 @@ class CarController:
     can_sends = []
 
     # Steering (Active: 50Hz, inactive: 10Hz)
-    steer_step = self.params.STEER_STEP if CC.latActive else self.params.INACTIVE_STEER_STEP
+    steer_step = self.CCP.STEER_STEP if CC.latActive else self.CCP.INACTIVE_STEER_STEP
 
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       # Also send at 50Hz:
@@ -59,7 +58,7 @@ class CarController:
       #   openpilot can subtly drift, so this is activated throughout a drive to stay synced
       out_of_sync = self.lka_steering_cmd_counter % 4 != (CS.cam_lka_steering_cmd_counter + 1) % 4
       if CS.loopback_lka_steering_cmd_ts_nanos == 0 or out_of_sync:
-        steer_step = self.params.STEER_STEP
+        steer_step = self.CCP.STEER_STEP
 
     self.lka_steering_cmd_counter += 1 if CS.loopback_lka_steering_cmd_updated else 0
 
@@ -72,7 +71,7 @@ class CarController:
         self.lka_steering_cmd_counter = CS.pt_lka_steering_cmd_counter + 1
 
       if CC.latActive:
-        new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+        new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
         apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
       else:
         apply_steer = 0
@@ -88,20 +87,20 @@ class CarController:
         stopping = actuators.longControlState == LongCtrlState.stopping
         if not CC.longActive:
           # ASCM sends max regen when not enabled
-          self.apply_gas = self.params.INACTIVE_REGEN
+          self.apply_gas = self.CCP.INACTIVE_REGEN
           self.apply_brake = 0
         else:
-          self.apply_gas = int(round(interp(actuators.accel, self.params.GAS_LOOKUP_BP, self.params.GAS_LOOKUP_V)))
-          self.apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+          self.apply_gas = int(round(interp(actuators.accel, self.CCP.GAS_LOOKUP_BP, self.CCP.GAS_LOOKUP_V)))
+          self.apply_brake = int(round(interp(actuators.accel, self.CCP.BRAKE_LOOKUP_BP, self.CCP.BRAKE_LOOKUP_V)))
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
-            self.apply_gas = self.params.INACTIVE_REGEN
+            self.apply_gas = self.CCP.INACTIVE_REGEN
 
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        near_stop = CC.longActive and (CS.out.vEgo < self.CCP.NEAR_STOP_BRAKE_PHASE)
         friction_brake_bus = CanBus.CHASSIS
         # GM Camera exceptions
         # TODO: can we always check the longControlState?
@@ -134,7 +133,7 @@ class CarController:
           can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
           can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgo, idx))
 
-      if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
+      if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.CCP.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
 
     else:
@@ -162,13 +161,13 @@ class CarController:
     lka_icon_status = (lka_active, lka_critical)
 
     # SW_GMLAN not yet on cam harness, no HUD alerts
-    if self.CP.networkLocation != NetworkLocation.fwdCamera and (self.frame % self.params.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last):
+    if self.CP.networkLocation != NetworkLocation.fwdCamera and (self.frame % self.CCP.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last):
       steer_alert = hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw)
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status
 
     new_actuators = actuators.copy()
-    new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
     new_actuators.gas = self.apply_gas
     new_actuators.brake = self.apply_brake

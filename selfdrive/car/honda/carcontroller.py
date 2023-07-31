@@ -107,8 +107,8 @@ def rate_limit_steer(new_steer, last_steer):
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
+    self.CCP = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
-    self.params = CarControllerParams(CP)
     self.frame = 0
 
     self.braking = False
@@ -155,8 +155,8 @@ class CarController:
     # **** process the car messages ****
 
     # steer torque is converted back to CAN reference (positive when steering right)
-    apply_steer = int(interp(-limited_steer * self.params.STEER_MAX,
-                             self.params.STEER_LOOKUP_BP, self.params.STEER_LOOKUP_V))
+    apply_steer = int(interp(-limited_steer * self.CCP.STEER_MAX,
+                             self.CCP.STEER_LOOKUP_BP, self.CCP.STEER_LOOKUP_V))
 
     # Send CAN commands
     can_sends = []
@@ -173,7 +173,7 @@ class CarController:
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     # all of this is only relevant for HONDA NIDEC
-    max_accel = interp(CS.out.vEgo, self.params.NIDEC_MAX_ACCEL_BP, self.params.NIDEC_MAX_ACCEL_V)
+    max_accel = interp(CS.out.vEgo, self.CCP.NIDEC_MAX_ACCEL_BP, self.CCP.NIDEC_MAX_ACCEL_V)
     # TODO this 1.44 is just to maintain previous behavior
     pcm_speed_BP = [-wind_brake,
                     -wind_brake * (3 / 4),
@@ -190,14 +190,14 @@ class CarController:
                      clip(CS.out.vEgo + 0.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(1.0 * self.params.NIDEC_GAS_MAX)
+      pcm_accel = int(1.0 * self.CCP.NIDEC_GAS_MAX)
     else:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
-      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
+      pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.CCP.NIDEC_GAS_MAX)
 
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
@@ -214,8 +214,8 @@ class CarController:
         ts = self.frame * DT_CTRL
 
         if self.CP.carFingerprint in HONDA_BOSCH:
-          self.accel = clip(accel, self.params.BOSCH_ACCEL_MIN, self.params.BOSCH_ACCEL_MAX)
-          self.gas = interp(accel, self.params.BOSCH_GAS_LOOKUP_BP, self.params.BOSCH_GAS_LOOKUP_V)
+          self.accel = clip(accel, self.CCP.BOSCH_ACCEL_MIN, self.CCP.BOSCH_ACCEL_MAX)
+          self.gas = interp(accel, self.CCP.BOSCH_GAS_LOOKUP_BP, self.CCP.BOSCH_GAS_LOOKUP_V)
 
           stopping = actuators.longControlState == LongCtrlState.stopping
           self.stopping_counter = self.stopping_counter + 1 if stopping else 0
@@ -223,7 +223,7 @@ class CarController:
                                                         self.stopping_counter, self.CP.carFingerprint))
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
-          apply_brake = int(clip(apply_brake * self.params.NIDEC_BRAKE_MAX, 0, self.params.NIDEC_BRAKE_MAX - 1))
+          apply_brake = int(clip(apply_brake * self.CCP.NIDEC_BRAKE_MAX, 0, self.CCP.NIDEC_BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
           pcm_override = True
@@ -231,7 +231,7 @@ class CarController:
                                                          pcm_override, pcm_cancel_cmd, fcw_display,
                                                          self.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
-          self.brake = apply_brake / self.params.NIDEC_BRAKE_MAX
+          self.brake = apply_brake / self.CCP.NIDEC_BRAKE_MAX
 
           if self.CP.enableGasInterceptor:
             # way too aggressive at low speed without this
@@ -256,7 +256,7 @@ class CarController:
         self.speed = pcm_speed
 
         if not self.CP.enableGasInterceptor:
-          self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
+          self.gas = pcm_accel / self.CCP.NIDEC_GAS_MAX
 
     new_actuators = actuators.copy()
     new_actuators.speed = self.speed

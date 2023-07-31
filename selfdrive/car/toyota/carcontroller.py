@@ -30,7 +30,7 @@ MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some
 class CarController:
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
-    self.params = CarControllerParams(self.CP)
+    self.CCP = CarControllerParams(CP)
     self.frame = 0
     self.last_steer = 0
     self.last_angle = 0
@@ -53,7 +53,7 @@ class CarController:
     can_sends = []
 
     # *** steer torque ***
-    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
+    new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
     # Count up to MAX_STEER_RATE_FRAMES, at which point we need to cut torque to avoid a steering fault
@@ -95,7 +95,7 @@ class CarController:
     can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req))
     if self.frame % 2 == 0 and self.CP.carFingerprint in TSS2_CAR:
       lta_active = lat_active and self.CP.steerControlType == SteerControlType.angle
-      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
+      full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.CCP.STEER_MAX and
                                abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE)
       setme_x64 = 100 if lta_active and full_torque_condition else 0
       can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
@@ -116,7 +116,7 @@ class CarController:
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+    pcm_accel_cmd = clip(actuators.accel, self.CCP.ACCEL_MIN, self.CCP.ACCEL_MAX)
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -182,7 +182,7 @@ class CarController:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / self.params.STEER_MAX
+    new_actuators.steer = apply_steer / self.CCP.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.steeringAngleDeg = self.last_angle
     new_actuators.accel = self.accel
