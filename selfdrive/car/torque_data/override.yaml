@@ -7,6 +7,10 @@ NISSAN LEAF 2018 Instrument Cluster: [.nan, 1.5, .nan]
 NISSAN LEAF 2018: [.nan, 1.5, .nan]
 NISSAN ROGUE 2019: [.nan, 1.5, .nan]
 
+# New subarus angle based controllers
+SUBARU FORESTER 2022: [.nan, 3.0, .nan]
+SUBARU OUTBACK 7TH GEN: [.nan, 3.0, .nan]
+
 # Toyota LTA also has torque
 TOYOTA RAV4 2023: [.nan, 3.0, .nan]
 TOYOTA RAV4 HYBRID 2023: [.nan, 3.0, .nan]
