@@ -8,23 +8,23 @@ class FdRedirect:
     fname = os.path.join("/tmp", f"{file_prefix}.{fd}")
     if os.path.exists(fname):
       os.unlink(fname)
-    os.mkfifo(fname)
-    self.fifo_fd = os.open(fname, os.O_RDWR | os.O_NONBLOCK)
-    self.fifo_fname = fname
+    self.dest_fd = os.open(fname, os.O_WRONLY | os.O_CREAT)
+    self.dest_fname = fname
     self.source_fd = fd
-  
+    os.set_inheritable(self.dest_fd, True)
+
   def __del__(self):
-    os.close(self.fifo_fd)
+    os.close(self.dest_fd)
 
   def purge(self) -> None:
-    os.unlink(self.fifo_fname)
+    os.unlink(self.dest_fname)
 
   def read(self) -> bytes:
-    with os.fdopen(self.fifo_fd, "rb", closefd=False) as f:
+    with open(self.dest_fname, "rb") as f:
       return f.read() or b""
   
   def link(self) -> None:
-    os.dup2(self.fifo_fd, self.source_fd)
+    os.dup2(self.dest_fd, self.source_fd)
 
 
 class ProcessOutputCapture:
