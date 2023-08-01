@@ -14,8 +14,9 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 class CarController(CarControllerBase):
+  CCP: CarControllerParams
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
     self.packer_pt = CANPacker(dbc_name)
 

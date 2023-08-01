@@ -106,8 +106,9 @@ def rate_limit_steer(new_steer, last_steer):
 
 
 class CarController(CarControllerBase):
+  CCP: CarControllerParams
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
 
     self.braking = False
     self.brake_steady = 0.

@@ -17,7 +17,7 @@ MAX_TURN_INTEGRATOR = 0.1  # meters
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, None)
+    super().__init__(dbc_name, CP, VM)
 
     # Speed, balance and turn PIDs
     self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)

@@ -1,3 +1,5 @@
+import importlib
+
 import yaml
 import os
 import time
@@ -67,11 +69,14 @@ class CarControllerParamsBase(ABC):
 
 
 class CarControllerBase(ABC, Generic[CST]):
-  def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel, CCParams: Optional[Type[CarControllerParamsBase]] = None):
+  def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
     self.CP = CP
     self.VM = VM
-    if CCParams is not None:
-      self.CCP = CCParams(CP)
+    try:
+      CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
+      self.CCP = CarControllerParams(CP)
+    except (ImportError, AttributeError):
+      self.CCP = None
 
     self.frame = 0
     self.packer = CANPacker(dbc_name)

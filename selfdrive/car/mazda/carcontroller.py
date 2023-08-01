@@ -9,8 +9,9 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController(CarControllerBase):
+  CCP: CarControllerParams
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.apply_steer_last = 0
     self.brake_counter = 0
 

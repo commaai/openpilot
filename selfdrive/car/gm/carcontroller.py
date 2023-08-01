@@ -20,8 +20,10 @@ MIN_STEER_MSG_INTERVAL_MS = 15
 
 
 class CarController(CarControllerBase):
+  CCP: CarControllerParams
+
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.start_time = 0.
     self.apply_steer_last = 0
     self.apply_gas = 0
@@ -95,7 +97,7 @@ class CarController(CarControllerBase):
           # Don't allow any gas above inactive regen while stopping
           # FIXME: brakes aren't applied immediately when enabling at a stop
           if stopping:
-            self.apply_gas = self.params.INACTIVE_REGEN
+            self.apply_gas = self.CCP.INACTIVE_REGEN
 
         idx = (self.frame // 4) % 4
 
