@@ -3,7 +3,6 @@ from collections import namedtuple
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.carstate import CarState

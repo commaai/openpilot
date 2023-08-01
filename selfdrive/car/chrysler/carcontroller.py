@@ -1,4 +1,3 @@
-from opendbc.can.packer import CANPacker
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits
 from selfdrive.car.chrysler.carstate import CarState

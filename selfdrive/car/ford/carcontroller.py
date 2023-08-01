@@ -1,6 +1,5 @@
 from cereal import car
 from common.numpy_fast import clip
-from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.ford.carstate import CarState
 from selfdrive.car.ford.fordcan import CanBus, create_acc_msg, create_acc_ui_msg, create_button_msg, \

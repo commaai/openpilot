@@ -2,7 +2,6 @@ import numpy as np
 
 from common.params import Params
 from common.realtime import DT_CTRL
-from opendbc.can.packer import CANPacker
 from selfdrive.car.body import bodycan
 from selfdrive.car.body.values import SPEED_FROM_RPM
 from selfdrive.car.interfaces import CarControllerBase
