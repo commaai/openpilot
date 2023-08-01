@@ -63,8 +63,12 @@ class Track:
     self.dRel = d_rel   # LONG_DIST
     self.yRel = y_rel   # -LAT_DIST
     self.vRel = v_rel   # REL_SPEED
-    self.vLead = v_lead
     self.measured = measured   # measured or estimate
+
+    self.update_vlead(v_lead)
+
+  def update_vlead(self, v_lead: float):
+    self.vLead = v_lead
 
     # computed velocity and accelerations
     if self.cnt > 0:
@@ -244,7 +248,8 @@ class RadarD:
     else:
       # *** no radar points, keep existing tracks, update v_lead
       for track in self.tracks.values():
-        track.vLead = track.vRel + self.v_ego_hist[0]
+        v_lead = track.vRel + self.v_ego_hist[0]
+        track.update_vlead(v_lead)
 
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks() and len(radar_errors) == 0
