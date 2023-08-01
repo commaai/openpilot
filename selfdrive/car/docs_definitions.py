@@ -272,15 +272,14 @@ class CarInfo:
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      car_parts_docs = self.car_parts.all_parts()
 
-      tools_docs = [part for part in car_parts_docs if type(part) is Tool]
-      car_parts_docs = [part for part in car_parts_docs if type(part) is not Tool]
+      tools_docs = list(filter(lambda part: type(part) is Tool, self.car_parts.all_parts()))
+      parts_docs = list(filter(lambda part: type(part) is not Tool, self.car_parts.all_parts()))
 
       def display_func(parts):
         return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
       
-      hardware_col = f'<details><summary>Parts</summary><sub>{display_func(car_parts_docs)}<br>{buy_link}</sub></details>'
+      hardware_col = f'<details><summary>Parts</summary><sub>{display_func(parts_docs)}<br>{buy_link}</sub></details>'
       if len(tools_docs):
         hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
