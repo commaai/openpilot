@@ -9,7 +9,7 @@ from selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+    super().__init__(dbc_name, CP, VM, CarControllerParams)
     self.apply_angle_last = 0
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
