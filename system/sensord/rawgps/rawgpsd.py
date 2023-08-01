@@ -118,7 +118,7 @@ def gps_enabled() -> bool:
 def download_assistance():
   try:
     c = pycurl.Curl()
-    c.setopt(pycurl.URL, ASSISTANCE_URL + 'abc')
+    c.setopt(pycurl.URL, ASSISTANCE_URL)
     c.setopt(pycurl.NOBODY, 1)
     c.setopt(pycurl.CONNECTTIMEOUT, 2)
     c.perform()
