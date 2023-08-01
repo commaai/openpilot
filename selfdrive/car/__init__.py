@@ -132,26 +132,29 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
-def common_fault_avoidance(measured_value: float, max_value: float, request: int, current_request_frames: int = 0, 
-                                                         max_request_frames: int = 1, cut_request_frames: int = 1):
+def common_fault_avoidance(measured_value: float, max_value: float, request: bool, above_limit_frames: int,
+                           max_above_limit_frames: int, max_mismatching_frames: int = 1):
   """
   Several cars have the ability to work around their EPS limits by cutting the
   request bit of their LKAS message after a certain number of frames above the limit.
   """
-  
-  # Count up to max_request_frames, at which point we need to cut the request for cut_request_frames to avoid a fault
+
+  # Count up to max_above_limit_frames, at which point we need to cut the request for above_limit_frames to avoid a fault
   if request and abs(measured_value) >= max_value:
-    current_request_frames += 1
+    above_limit_frames += 1
   else:
-    current_request_frames = 0
+    above_limit_frames = 0
 
-  if current_request_frames > max_request_frames:
-    request = 0
+  # Once we cut the request bit, count additionally to max_mismatching_frames before setting the request bit high again.
+  # Some brands do not respect our workaround without multiple messages on the bus, for example
+  if above_limit_frames > max_above_limit_frames:
+    request = False
 
-  if current_request_frames >= max_request_frames + cut_request_frames:
-    current_request_frames = 0
-  
-  return current_request_frames, request
+  if above_limit_frames >= max_above_limit_frames + max_mismatching_frames:
+    above_limit_frames = 0
+
+  return above_limit_frames, request
+
 
 def crc8_pedal(data):
   crc = 0xFF    # standard init value
