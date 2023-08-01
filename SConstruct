@@ -117,9 +117,8 @@ else:
 
   # MacOS
   if arch == "Darwin":
-    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      f"#third_party/libyuv/{yuv_dir}/lib",
+      f"#third_party/libyuv/{arch}/lib",
       f"#third_party/acados/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
@@ -263,6 +262,7 @@ py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
+envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
 if arch == "Darwin":

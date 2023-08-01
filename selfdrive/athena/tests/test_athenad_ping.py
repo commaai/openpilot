@@ -37,6 +37,9 @@ class TestAthenadPing(unittest.TestCase):
   def _received_ping(self) -> bool:
     return self._get_ping_time() is not None
 
+  def _set_onroad(self, onroad: bool) -> None:
+    self.params.put_bool("IsOnroad", onroad)
+
   @classmethod
   def setUpClass(cls) -> None:
     cls.params = Params()
@@ -63,8 +66,7 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  @unittest.skipIf(not TICI, "only run on desk")
-  def test_timeout(self) -> None:
+  def assertTimeout(self, reconnect_time: float) -> None:
     self.athenad.start()
 
     time.sleep(1)
@@ -84,7 +86,7 @@ class TestAthenadPing(unittest.TestCase):
       wifi_radio(False)
       print("waiting for reconnect attempt")
       start_time = time.monotonic()
-      with Timeout(180, "no reconnect attempt"):
+      with Timeout(reconnect_time, "no reconnect attempt"):
         while not athenad.create_connection.called:
           time.sleep(0.1)
         print(f"reconnect attempt after {time.monotonic() - start_time:.2f}s")
@@ -96,6 +98,16 @@ class TestAthenadPing(unittest.TestCase):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
+
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_offroad(self) -> None:
+    self._set_onroad(False)
+    self.assertTimeout(100)  # expect approx 90s
+
+  @unittest.skipIf(not TICI, "only run on desk")
+  def test_onroad(self) -> None:
+    self._set_onroad(True)
+    self.assertTimeout(30)  # expect 20-30s
 
 
 if __name__ == "__main__":

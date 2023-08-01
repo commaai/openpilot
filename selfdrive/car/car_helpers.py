@@ -89,9 +89,9 @@ def fingerprint(logcan, sendcan, num_pandas):
 
     cached_params = params.get("CarParamsCache")
     if cached_params is not None:
-      cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carName == "mock":
-        cached_params = None
+      with car.CarParams.from_bytes(cached_params) as cached_params:
+        if cached_params.carName == "mock":
+          cached_params = None
 
     if cached_params is not None and len(cached_params.carFw) > 0 and \
        cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache:
@@ -177,7 +177,8 @@ def fingerprint(logcan, sendcan, num_pandas):
     source = car.CarParams.FingerprintSource.fixed
 
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
-                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, error=True)
+                 fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, fingerprints=finger,
+                 error=True)
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 

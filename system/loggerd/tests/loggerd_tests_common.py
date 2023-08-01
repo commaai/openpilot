@@ -7,10 +7,12 @@ import unittest
 from pathlib import Path
 from typing import Optional
 
+import system.loggerd.deleter as deleter
 import system.loggerd.uploader as uploader
+from system.loggerd.xattr_cache import setxattr
 
 
-def create_random_file(file_path: Path, size_mb: float, lock: bool = False, xattr: Optional[bytes] = None) -> None:
+def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: Optional[bytes] = None) -> None:
   file_path.parent.mkdir(parents=True, exist_ok=True)
 
   if lock:
@@ -25,8 +27,8 @@ def create_random_file(file_path: Path, size_mb: float, lock: bool = False, xatt
     for _ in range(chunks):
       f.write(data)
 
-  if xattr is not None:
-    uploader.setxattr(str(file_path), uploader.UPLOAD_ATTR_NAME, xattr)
+  if upload_xattr is not None:
+    setxattr(str(file_path), uploader.UPLOAD_ATTR_NAME, upload_xattr)
 
 class MockResponse():
   def __init__(self, text, status_code):
@@ -105,8 +107,11 @@ class UploaderTestCase(unittest.TestCase):
         raise
 
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
-                          xattr: Optional[bytes] = None) -> Path:
+                          upload_xattr: Optional[bytes] = None, preserve_xattr: Optional[bytes] = None) -> Path:
     file_path = self.root / f_dir / fn
-    create_random_file(file_path, size_mb, lock, xattr)
+    create_random_file(file_path, size_mb, lock, upload_xattr)
+
+    if preserve_xattr is not None:
+      setxattr(str(file_path.parent), deleter.PRESERVE_ATTR_NAME, preserve_xattr)
 
     return file_path
