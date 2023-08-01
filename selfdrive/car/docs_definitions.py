@@ -87,6 +87,8 @@ class CarHarness(EnumBase):
   toyota = BaseCarHarness("Toyota connector")
   subaru_a = BaseCarHarness("Subaru A connector")
   subaru_b = BaseCarHarness("Subaru B connector")
+  subaru_c = BaseCarHarness("Subaru C connector")
+  subaru_d = BaseCarHarness("Subaru D connector")
   fca = BaseCarHarness("FCA connector")
   ram = BaseCarHarness("Ram connector")
   vw = BaseCarHarness("VW connector")
