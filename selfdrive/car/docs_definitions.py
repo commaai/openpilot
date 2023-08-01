@@ -132,7 +132,7 @@ class Kit(EnumBase):
 
 
 class Tool(EnumBase):
-  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16 (deep)")
+  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16\" (deep)")
   pry_tool = BasePart("Pry Tool")
 
 
