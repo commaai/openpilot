@@ -82,7 +82,7 @@ elif system == "Linux":
   else:
     target = f"linux-{arch}"
 else:
-  raise Exception("Unsupported platform: ", platform.system())
+  raise Exception(f"Unsupported platform: {system}")
 
 assert target in ["larch64", "linux-aarch64", "linux-x86_64", "Darwin"]
 
@@ -413,7 +413,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (target in ['linux-x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if (target in ['linux-x86_64', 'linux-aarch64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 
