@@ -203,7 +203,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
-void fill_confidence(cereal::ModelDataV2::Builder &framed, std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> disengage_buffer) {
+void fill_confidence(cereal::ModelDataV2::Builder &framed, std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> &disengage_buffer) {
   if (framed.getFrameId() % (2*MODEL_FREQ) == 0) {
     // update every 2s to match predictions interval
     auto dbps = framed.getMeta().getDisengagePredictions().getBrakeDisengageProbs();
