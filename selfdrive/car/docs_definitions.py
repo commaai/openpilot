@@ -145,7 +145,9 @@ class PartType(Enum):
   mount = Mount
   tool = Tool
 
+
 DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
+
 
 @dataclass
 class CarParts:
@@ -278,7 +280,7 @@ class CarInfo:
 
       def display_func(parts):
         return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
-      
+
       hardware_col = f'<details><summary>Parts</summary><sub>{display_func(parts_docs)}<br>{buy_link}</sub></details>'
       if len(tools_docs):
         hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
