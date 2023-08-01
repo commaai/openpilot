@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -70,6 +70,8 @@ class SubaruCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.subaru_a]))
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.GLOBAL])
 
+  def init_make(self, CP: car.CarParams):
+    self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
