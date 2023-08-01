@@ -66,12 +66,12 @@ class CarController:
 
     # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,
-                                                                      self.angle_limit_counter, MAX_ANGLE_FRAMES,
-                                                                      MAX_ANGLE_CONSECUTIVE_FRAMES)
-    
+                                                                       self.angle_limit_counter, MAX_ANGLE_FRAMES,
+                                                                       MAX_ANGLE_CONSECUTIVE_FRAMES)
+
     if not CC.latActive:
       apply_steer = 0
-    
+
     # Hold torque with induced temporary fault when cutting the actuation bit
     torque_fault = CC.latActive and not apply_steer_req
 

@@ -56,6 +56,7 @@ class CarController:
     new_steer = int(round(actuators.steer * self.params.STEER_MAX))
     apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
 
+    # >100 degree/sec steering fault prevention
     self.steer_rate_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, CC.latActive,
                                                                       self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
 
@@ -66,7 +67,7 @@ class CarController:
     if self.CP.steerControlType == SteerControlType.angle:
       # If using LTA control, disable LKA and set steering angle command
       apply_steer = 0
-      apply_steer_req = 0
+      apply_steer_req = False
       if self.frame % 2 == 0:
         # EPS uses the torque sensor angle to control with, offset to compensate
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
