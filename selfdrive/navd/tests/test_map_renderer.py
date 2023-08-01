@@ -117,10 +117,10 @@ class TestMapRenderer(unittest.TestCase):
     self.location = location
 
     # run test
+    prev_frame_id = -1
     for i in range(30*LLK_DECIMATION):
       frame_expected = (i+1) % LLK_DECIMATION == 0
 
-      prev_frame_id = -1
       if self.sm.logMonoTime['mapRenderState'] == 0:
         prev_valid = False
         prev_frame_id = -1
