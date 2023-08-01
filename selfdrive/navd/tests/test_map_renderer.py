@@ -99,7 +99,7 @@ class TestMapRenderer(unittest.TestCase):
 
   def tearDown(self):
     managed_processes['mapsd'].stop()
-  
+
   def _setup_test(self):
     # start + sync up
     managed_processes['mapsd'].start()
