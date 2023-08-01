@@ -9,7 +9,6 @@ from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
-    self.CP = CP
     self.apply_steer_last = 0
     self.frame = 0
 

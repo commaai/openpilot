@@ -31,7 +31,6 @@ MAX_STEER_ANGLE = 94.9461  # deg
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
-    self.CP = CP
     self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0

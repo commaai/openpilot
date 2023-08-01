@@ -67,7 +67,8 @@ class CarControllerParamsBase(ABC):
 
 class CarControllerBase(ABC, Generic[CST]):
   def __init__(self, dbc_name, CP: car.CarParams, VM: VehicleModel):
-    pass
+    self.CP = CP
+    self.VM = VM
 
   @abstractmethod
   def update(self, CC: car.CarControl, CS: CST, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
