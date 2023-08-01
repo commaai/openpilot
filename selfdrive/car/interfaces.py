@@ -72,6 +72,8 @@ class CarControllerBase(ABC, Generic[CST]):
     if CCParams is not None:
       self.CCP = CCParams(CP)
 
+    self.frame = 0
+
   @abstractmethod
   def update(self, CC: car.CarControl, CS: CST, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:
     pass

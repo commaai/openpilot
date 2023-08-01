@@ -21,7 +21,6 @@ class CarController(CarControllerBase):
 
     self.apply_steer_last = 0
     self.gra_acc_counter_last = None
-    self.frame = 0
     self.eps_timer_soft_disable_alert = False
     self.hca_frame_timer_running = 0
     self.hca_frame_same_torque = 0

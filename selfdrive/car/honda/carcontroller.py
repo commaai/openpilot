@@ -110,7 +110,6 @@ class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM, CarControllerParams)
     self.packer = CANPacker(dbc_name)
-    self.frame = 0
 
     self.braking = False
     self.brake_steady = 0.

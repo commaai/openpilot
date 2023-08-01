@@ -29,7 +29,6 @@ class CarController(CarControllerBase):
     super().__init__(dbc_name, CP, VM)
     self.packer = CANPacker(dbc_name)
     self.CAN = CanBus(CP)
-    self.frame = 0
 
     self.apply_curvature_last = 0
     self.main_on_last = False
