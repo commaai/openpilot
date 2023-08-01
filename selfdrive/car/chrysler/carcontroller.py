@@ -17,7 +17,6 @@ class CarController(CarControllerBase):
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
 
-    self.packer = CANPacker(dbc_name)
 
   def update(self, CC, CS: CarState, now_nanos):
     can_sends = []

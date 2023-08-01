@@ -19,7 +19,6 @@ MAX_TURN_INTEGRATOR = 0.1  # meters
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
-    self.packer = CANPacker(dbc_name)
 
     # Speed, balance and turn PIDs
     self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
@@ -57,7 +56,7 @@ class CarController(CarControllerBase):
       speed_error = speed_desired - speed_measured
 
       if self.wheeled_body is None:
-        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or 
+        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
                              (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
         angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 

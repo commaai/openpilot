@@ -38,7 +38,6 @@ class CarController(CarControllerBase):
     self.standstill_req = False
     self.steer_rate_counter = 0
 
-    self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
 

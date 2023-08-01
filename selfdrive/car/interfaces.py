@@ -12,6 +12,7 @@ from common.conversions import Conversions as CV
 from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
+from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
 from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
@@ -78,6 +79,7 @@ class CarControllerBase(ABC, Generic[CST]):
       self.CCP = None
 
     self.frame = 0
+    self.packer = CANPacker(dbc_name)
 
   @abstractmethod
   def update(self, CC: car.CarControl, CS: CST, now_nanos) -> Tuple[car.CarControl.Actuators, List[bytes]]:

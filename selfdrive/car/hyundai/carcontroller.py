@@ -49,7 +49,6 @@ class CarController(CarControllerBase):
     super().__init__(dbc_name, CP, VM)
     self.CAN = CanBus(CP)
     self.CCP = CarControllerParams(CP)
-    self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
 
     self.accel_last = 0

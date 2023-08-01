@@ -17,7 +17,6 @@ class CarController(CarControllerBase):
     self.lkas_max_torque = 0
     self.apply_angle_last = 0
 
-    self.packer = CANPacker(dbc_name)
 
   def update(self, CC, CS: CarState, now_nanos):
     actuators = CC.actuators
