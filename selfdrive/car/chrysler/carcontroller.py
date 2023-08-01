@@ -19,7 +19,6 @@ class CarController(CarControllerBase):
     self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_name)
-    self.params = CarControllerParams(CP)
 
   def update(self, CC, CS: CarState, now_nanos):
     can_sends = []
@@ -47,7 +46,7 @@ class CarController(CarControllerBase):
         self.hud_count += 1
 
     # steering
-    if self.frame % self.params.STEER_STEP == 0:
+    if self.frame % self.CCP.STEER_STEP == 0:
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
@@ -68,8 +67,8 @@ class CarController(CarControllerBase):
       self.lkas_control_bit_prev = lkas_control_bit
 
       # steer torque
-      new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
+      new_steer = int(round(CC.actuators.steer * self.CCP.STEER_MAX))
+      apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.CCP)
       if not lkas_active or not lkas_control_bit:
         apply_steer = 0
       self.apply_steer_last = apply_steer
@@ -79,7 +78,7 @@ class CarController(CarControllerBase):
     self.frame += 1
 
     new_actuators = CC.actuators.copy()
-    new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 
     return new_actuators, can_sends

@@ -8,14 +8,13 @@ from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+    super().__init__(dbc_name, CP, VM, CarControllerParams)
     self.apply_steer_last = 0
     self.frame = 0
 
     self.cruise_button_prev = 0
     self.last_cancel_frame = 0
 
-    self.p = CarControllerParams(CP)
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
   def update(self, CC, CS: CarState, now_nanos):
@@ -26,13 +25,13 @@ class CarController(CarControllerBase):
     can_sends = []
 
     # *** steering ***
-    if (self.frame % self.p.STEER_STEP) == 0:
-      apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
+    if (self.frame % self.CCP.STEER_STEP) == 0:
+      apply_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
 
       # limits due to driver torque
 
       new_steer = int(round(apply_steer))
-      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
+      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.CCP)
 
       if not CC.latActive:
         apply_steer = 0
@@ -82,7 +81,7 @@ class CarController(CarControllerBase):
           can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 
     self.frame += 1

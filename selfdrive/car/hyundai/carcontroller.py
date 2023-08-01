@@ -48,7 +48,7 @@ class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
     self.CAN = CanBus(CP)
-    self.params = CarControllerParams(CP)
+    self.CCP = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
     self.frame = 0
@@ -63,8 +63,8 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
 
     # steering torque
-    new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-    apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
+    new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
+    apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.CCP)
 
     if not CC.latActive:
       apply_steer = 0
@@ -195,7 +195,7 @@ class CarController(CarControllerBase):
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
     new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / self.params.STEER_MAX
+    new_actuators.steer = apply_steer / self.CCP.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = accel
 
