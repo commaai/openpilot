@@ -144,9 +144,13 @@ def download_assistance():
 def downloader_loop(event):
   if os.path.exists(ASSIST_DATA_FILE):
     os.remove(ASSIST_DATA_FILE)
-  while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
-    download_assistance()
-    time.sleep(10)
+
+  try:
+    while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
+      download_assistance()
+      event.wait(timeout=10)
+  except KeyboardInterrupt:
+    pass
 
 def inject_assistance():
   for _ in range(5):
@@ -259,14 +263,20 @@ def main() -> NoReturn:
   stop_download_event = Event()
   assist_fetch_proc = Process(target=downloader_loop, args=(stop_download_event,))
   assist_fetch_proc.start()
-  def cleanup(proc):
+  def cleanup(sig, frame):
     cloudlog.warning("caught sig disabling quectel gps")
+
     gpio_set(GPIO.UBLOX_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
+
+    stop_download_event.set()
+    assist_fetch_proc.kill()
+    assist_fetch_proc.join()
+
     sys.exit(0)
-  signal.signal(signal.SIGINT, lambda sig, frame: cleanup(assist_fetch_proc))
-  signal.signal(signal.SIGTERM, lambda sig, frame: cleanup(assist_fetch_proc))
+  signal.signal(signal.SIGINT, cleanup)
+  signal.signal(signal.SIGTERM, cleanup)
 
   # connect to modem
   diag = ModemDiag()
