@@ -63,6 +63,7 @@ runmodel_lib = env.Library('runmodel', runmodel_objects)
 
 envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[runmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
+envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/cl_pyx.so', 'models/cl_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
 
 common_model = lenv.Object(common_src)

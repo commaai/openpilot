@@ -3,8 +3,7 @@ import logging
 import numpy as np
 from typing import Dict, Optional
 from cereal.messaging import PubMaster, SubMaster
-from cereal.visionipc import VisionIpcClient, VisionStreamType
-from cereal.visionipc.visionipc_pyx import VisionBuf # pylint: disable=no-name-in-module
+from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from common.filter_simple import FirstOrderFilter
 from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame

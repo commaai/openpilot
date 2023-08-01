@@ -451,3 +451,9 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
 
   pm.send("cameraOdometry", msg);
 }
+
+
+float *create_model_msg(float *net_outputs, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                        uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid) {
+  return nullptr;
+}
