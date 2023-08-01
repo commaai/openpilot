@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "selfdrive/modeld/models/dmonitoring.h"
@@ -49,6 +50,8 @@ int main(int argc, char **argv) {
   DMonitoringModelState model;
   dmonitoring_init(&model);
 
+  Params().putBool("DmModelInitialized", true);
+
   LOGW("connecting to driver stream");
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_DRIVER, true);
   while (!do_exit && !vipc_client.connect(false)) {
@@ -57,7 +60,7 @@ int main(int argc, char **argv) {
 
   // run the models
   if (vipc_client.connected) {
-    LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
+    LOGW("connected with buffer size: %zu", vipc_client.buffers[0].len);
     run_model(model, vipc_client);
   }
 

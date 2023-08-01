@@ -87,6 +87,8 @@ class CarHarness(EnumBase):
   toyota = BaseCarHarness("Toyota connector")
   subaru_a = BaseCarHarness("Subaru A connector")
   subaru_b = BaseCarHarness("Subaru B connector")
+  subaru_c = BaseCarHarness("Subaru C connector")
+  subaru_d = BaseCarHarness("Subaru D connector")
   fca = BaseCarHarness("FCA connector")
   ram = BaseCarHarness("Ram connector")
   vw = BaseCarHarness("VW connector")
@@ -129,6 +131,11 @@ class Kit(EnumBase):
   red_panda_kit = BasePart("CAN FD panda kit", parts=[Device.red_panda, Accessory.harness_box, Cable.usb_a_2_a_cable, Cable.usbc_otg_cable, Cable.obd_c_cable_1_5ft])
 
 
+class Tool(EnumBase):
+  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16\" (deep)")
+  pry_tool = BasePart("Pry Tool")
+
+
 class PartType(Enum):
   accessory = Accessory
   cable = Cable
@@ -136,6 +143,7 @@ class PartType(Enum):
   device = Device
   kit = Kit
   mount = Mount
+  tool = Tool
 
 
 DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
@@ -266,9 +274,16 @@ class CarInfo:
     if self.car_parts.parts:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
-      car_parts_docs = self.car_parts.all_parts()
-      parts = '<br>'.join([f"- {car_parts_docs.count(part)} {part.value.name}" for part in sorted(set(car_parts_docs), key=lambda part: str(part.value.name))])
-      hardware_col = f'<details><summary>View</summary><sub>{parts}<br>{buy_link}</sub></details>'
+
+      tools_docs = [part for part in self.car_parts.all_parts() if isinstance(part, Tool)]
+      parts_docs = [part for part in self.car_parts.all_parts() if not isinstance(part, Tool)]
+
+      def display_func(parts):
+        return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
+
+      hardware_col = f'<details><summary>Parts</summary><sub>{display_func(parts_docs)}<br>{buy_link}</sub></details>'
+      if len(tools_docs):
+        hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
     self.row: Dict[Enum, Union[str, Star]] = {
       Column.MAKE: self.make,
@@ -320,8 +335,6 @@ class CarInfo:
       exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
       if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
         sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
-      else:
-        sentence_builder += f" {exp_link}, with traffic light and stop sign handling, is not currently available for this car, but may be added in a future software update."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 

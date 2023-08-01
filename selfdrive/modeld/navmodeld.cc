@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "selfdrive/modeld/models/nav.h"
@@ -41,6 +42,13 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   setpriority(PRIO_PROCESS, 0, -15);
 
+  // there exists a race condition when two processes try to create a
+  // SNPE model runner at the same time, wait for dmonitoringmodeld to finish
+  LOGW("waiting for dmonitoringmodeld to initialize");
+  if (!Params().getBool("DmModelInitialized", true)) {
+    return 0;
+  }
+
   // init the models
   NavModelState model;
   navmodel_init(&model);
@@ -53,7 +61,7 @@ int main(int argc, char **argv) {
 
   // run the models
   if (vipc_client.connected) {
-    LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
+    LOGW("connected with buffer size: %zu", vipc_client.buffers[0].len);
     run_model(model, vipc_client);
   }
 
