@@ -132,6 +132,27 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
+def common_fault_avoidance(measured_value: float, max_value: float, request: int, current_request_frames: int = 0, 
+                                                         max_request_frames: int = 1, cut_request_frames: int = 1):
+  """
+  Several cars have the ability to work around their EPS limits by cutting the
+  request bit of their LKAS message after a certain number of frames above the limit.
+  """
+  
+  # Count up to max_request_frames, at which point we need to cut the request for cut_request_frames to avoid a fault
+  if request and abs(measured_value) >= max_value:
+    current_request_frames += 1
+  else:
+    current_request_frames = 0
+
+  if current_request_frames > max_request_frames:
+    request = 0
+
+  if current_request_frames >= max_request_frames + cut_request_frames:
+    current_request_frames = 0
+  
+  return current_request_frames, request
+
 def crc8_pedal(data):
   crc = 0xFF    # standard init value
   poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
