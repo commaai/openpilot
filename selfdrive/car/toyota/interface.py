@@ -278,7 +278,10 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def init(CP, logcan, sendcan):
     if CP.enableDsu:
+      disable_ecu(logcan, sendcan, bus=0, addr=0x791, com_cont_req=b'\x28\x00\x01')
       disable_ecu(logcan, sendcan, bus=0, addr=0x791, com_cont_req=b'\x28\x01\x01')
+      disable_ecu(logcan, sendcan, bus=0, addr=0x791, com_cont_req=b'\x28\x02\x01')
+      disable_ecu(logcan, sendcan, bus=0, addr=0x791, com_cont_req=b'\x28\x03\x01')
 
   # returns a car.CarState
   def _update(self, c):
