@@ -64,13 +64,18 @@ AddOption('--no-test',
           default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
+## Architecture name breakdown (arch)
+## - larch64: linux tici aarch64
+## - aarch64: linux pc aarch64
+## - x86_64:  linux pc x64
+## - Darwin:  mac x64 or arm64
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-
-if arch == "aarch64" and AGNOS:
+elif arch == "aarch64" and AGNOS:
   arch = "larch64"
+assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -132,21 +137,25 @@ else:
       f"{brew_prefix}/opt/openssl@3.0/include",
     ]
     lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
-  # Linux 86_64
+  # Linux
   else:
     libpath = [
-      "#third_party/acados/x86_64/lib",
-      "#third_party/snpe/x86_64-linux-clang",
-      "#third_party/libyuv/x64/lib",
-      "#third_party/mapbox-gl-native-qt/x86_64",
+      f"#third_party/acados/{arch}/lib",
+      f"#third_party/libyuv/{arch}/lib",
+      f"#third_party/mapbox-gl-native-qt/{arch}",
       "#cereal",
       "#common",
       "/usr/lib",
       "/usr/local/lib",
     ]
-    rpath += [
-      Dir("#third_party/snpe/x86_64-linux-clang").abspath,
-    ]
+
+    if arch == "x86_64":
+      libpath += [
+        f"#third_party/snpe/{arch}"
+      ]
+      rpath += [
+        Dir(f"#third_party/snpe/{arch}").abspath,
+      ]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -267,9 +276,6 @@ envCython["CCFLAGS"].remove("-Werror")
 envCython["LIBS"] = []
 if arch == "Darwin":
   envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
-elif arch == "aarch64":
-  envCython["LINKFLAGS"] = ["-shared"]
-  envCython["LIBS"] = [os.path.basename(py_include)]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
