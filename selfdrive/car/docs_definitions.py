@@ -132,7 +132,7 @@ class Kit(EnumBase):
 
 
 class Tool(EnumBase):
-  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16 (deep)")
+  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16\" (deep)")
   pry_tool = BasePart("Pry Tool")
 
 
@@ -145,7 +145,9 @@ class PartType(Enum):
   mount = Mount
   tool = Tool
 
+
 DEFAULT_CAR_PARTS: List[EnumBase] = [Device.three]
+
 
 @dataclass
 class CarParts:
@@ -273,12 +275,12 @@ class CarInfo:
       model_years = self.model + (' ' + self.years if self.years else '')
       buy_link = f'<a href="https://comma.ai/shop/comma-three.html?make={self.make}&model={model_years}">Buy Here</a>'
 
-      tools_docs = list(filter(lambda part: type(part) is Tool, self.car_parts.all_parts()))
-      parts_docs = list(filter(lambda part: type(part) is not Tool, self.car_parts.all_parts()))
+      tools_docs = [part for part in self.car_parts.all_parts() if isinstance(part, Tool)]
+      parts_docs = [part for part in self.car_parts.all_parts() if not isinstance(part, Tool)]
 
       def display_func(parts):
         return '<br>'.join([f"- {parts.count(part)} {part.value.name}" for part in sorted(set(parts), key=lambda part: str(part.value.name))])
-      
+
       hardware_col = f'<details><summary>Parts</summary><sub>{display_func(parts_docs)}<br>{buy_link}</sub></details>'
       if len(tools_docs):
         hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
