@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
+Import('env', 'target', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 
 libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon, 'atomic']
 
@@ -8,7 +8,7 @@ env.Program('camerad', [
     camera_obj,
   ], LIBS=libs)
 
-if GetOption("test") and arch == "x86_64":
+if GetOption("test") and target == "linux-x86_64":
   env.Program('test/ae_gray_test',
               ['test/ae_gray_test.cc', camera_obj],
               LIBS=libs)

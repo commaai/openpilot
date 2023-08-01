@@ -1,21 +1,21 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
+Import('qt_env', 'target', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-if arch == 'larch64':
+if target == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'aarch64', 'x86_64']
+maps_enabled = target in ['larch64', 'linux-aarch64', 'linux-x86_64']
 
-if maps and arch != 'larch64':
-  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+if maps_enabled and target != 'larch64':
+  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{target}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
-if arch == "Darwin":
+if target == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
@@ -27,7 +27,7 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/
                "qt/request_repeater.cc", "qt/qt_window.cc", "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 qt_env['CPPDEFINES'] = []
-if maps:
+if maps_enabled:
   base_libs += ['qmapboxgl']
   widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
                   "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
@@ -73,7 +73,7 @@ with open(File("translations/languages.json").abspath) as f:
   languages = json.loads(f.read())
 translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
 translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
-lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if target == 'larch64' else 'lrelease'
 
 lupdate = qt_env.Command(translation_sources, qt_src, "selfdrive/ui/update_translations.py")
 lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
@@ -131,5 +131,5 @@ if GetOption('extras'):
     assert f[0].get_size() < 300*1e3
 
 # build watch3
-if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
+if target != 'larch64' or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])

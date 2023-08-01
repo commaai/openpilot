@@ -1,12 +1,12 @@
 import os
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc',
+Import('env', 'qt_env', 'target', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations')
 
 base_frameworks = qt_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-if arch == "Darwin":
+if target == "Darwin":
   base_frameworks.append('OpenCL')
 else:
   base_libs.append('OpenCL')

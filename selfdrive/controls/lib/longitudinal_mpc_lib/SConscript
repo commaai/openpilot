@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'common')
+Import('env', 'envCython', 'target', 'common')
 
 gen = "c_generated_code"
 
@@ -70,7 +70,7 @@ lenv.Depends(generated_long, "#cereal")
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CCFLAGS"].append("-Wno-unused")
-if arch != "Darwin":
+if target != "Darwin":
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 build_files,

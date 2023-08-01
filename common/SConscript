@@ -1,10 +1,6 @@
-Import('env', 'envCython', 'arch', 'SHARED')
+Import('env', 'envCython', 'target')
 
-if SHARED:
-  fxn = env.SharedLibrary
-else:
-  fxn = env.Library
-
+# *** common
 common_libs = [
   'params.cc',
   'statlog.cc',
@@ -13,23 +9,24 @@ common_libs = [
   'i2c.cc',
   'watchdog.cc',
 ]
-
-if arch != "Darwin":
+if target != "Darwin":
   common_libs.append('gpio.cc')
 
-_common = fxn('common', common_libs, LIBS="json11")
+common = env.Library('common', common_libs, LIBS="json11")
 
-files = [
+# *** gpucommon
+gpucommon_files = [
   'clutil.cc',
 ]
+gpucommon = env.Library('gpucommon', gpucommon_files)
 
-_gpucommon = fxn('gpucommon', files)
-Export('_common', '_gpucommon')
-
+# *** tests
 if GetOption('test'):
-  env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[_common])
-  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[_common, 'json11', 'zmq', 'pthread'])
+  env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[common])
+  env.Program('tests/test_swaglog', ['tests/test_swaglog.cc'], LIBS=[common, 'json11', 'zmq', 'pthread'])
 
-# Cython
+# *** params & clock
 envCython.Program('clock.so', 'clock.pyx')
-envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [common, 'zmq', 'json11'])
+
+Export('common', 'gpucommon')

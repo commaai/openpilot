@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'target', 'cereal', 'messaging', 'common', 'visionipc')
 
 libs = [common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
@@ -6,10 +6,10 @@ libs = [common, cereal, messaging, visionipc,
         'yuv', 'OpenCL', 'pthread']
 
 src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
-if arch != "larch64":
+if target != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']
 
-if arch == "Darwin":
+if target == "Darwin":
   # fix OpenCL
   del libs[libs.index('OpenCL')]
   env['FRAMEWORKS'] = ['OpenCL']

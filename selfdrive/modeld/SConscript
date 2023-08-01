@@ -1,6 +1,6 @@
 import os
 
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+Import('env', 'target', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
 lenv = env.Clone()
 
 libs = [cereal, messaging, common, visionipc, gpucommon,
@@ -31,7 +31,7 @@ thneed_src = [
 
 use_thneed = not GetOption('no_thneed')
 
-if arch == "larch64":
+if target == "larch64":
   libs += ['gsl', 'CB', 'pthread', 'dl']
 
   if use_thneed:
@@ -50,12 +50,12 @@ else:
     lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
     lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
 
-  if arch == "Darwin":
+  if target == "Darwin":
     # fix OpenCL
     del libs[libs.index('OpenCL')]
     lenv['FRAMEWORKS'] = ['OpenCL']
 
-  if arch == "Darwin" or arch == "aarch64":
+  if target == "Darwin" or target == "linux-aarch64":
     # no SNPE on Mac and ARM Linux
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
@@ -68,7 +68,7 @@ lenv.Program('_dmonitoringmodeld', [
   ]+common_model, LIBS=libs)
 
 # build thneed model
-if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
+if use_thneed and target == "larch64" or GetOption('pc_thneed'):
   fn = File("models/supercombo").abspath
 
   tinygrad_opts = ["NATIVE_EXPLOG=1", "VALIDHACKS=1", "OPTLOCAL=1", "IMAGE=2", "GPU=1", "ENABLE_METHOD_CACHE=1"]

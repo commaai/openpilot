@@ -64,53 +64,57 @@ AddOption('--no-test',
           default=os.path.islink(Dir('#laika/').abspath),
           help='skip building test files')
 
-## Architecture name breakdown (arch)
-## - larch64: linux tici aarch64
-## - aarch64: linux pc aarch64
-## - x86_64:  linux pc x64
-## - Darwin:  mac x64 or arm64
-real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
-if platform.system() == "Darwin":
-  arch = "Darwin"
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and AGNOS:
-  arch = "larch64"
-assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
+# *** Target and Architecture
 
+## Target name breakdown (target)
+## - larch64: linux tici aarch64
+## - linux-aarch64: linux pc aarch64
+## - linux-x86_64:  linux pc x64
+## - Darwin:  mac x64 or arm64
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+system = platform.system()
+if system == "Darwin":
+  target = "Darwin"
+  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
+elif system == "Linux":
+  if arch == "aarch64" and AGNOS:
+    target = "larch64"
+  else:
+    target = f"linux-{arch}"
+else:
+  raise Exception("Unsupported platform: ", platform.system())
+
+assert target in ["larch64", "linux-aarch64", "linux-x86_64", "Darwin"]
+
+# *** Environment setup
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{target}/lib").abspath],
   "PYTHONPATH": Dir("#").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
   "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{target}/t_renderer"
 }
-
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
-if arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
+if target == "larch64":
+  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cpppath = [
     "#third_party/opencl/include",
   ]
-
   libpath = [
+    "#third_party/acados/larch64/lib",
+    "#third_party/snpe/larch64",
+    "#third_party/libyuv/larch64/lib",
     "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
-    f"#third_party/acados/{arch}/lib",
-  ]
-
-  libpath += [
-    "#third_party/snpe/larch64",
-    "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   rpath += ["/usr/local/lib"]
+  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 else:
   cflags = []
   cxxflags = []
@@ -121,10 +125,10 @@ else:
   ]
 
   # MacOS
-  if arch == "Darwin":
+  if target == "Darwin":
     libpath = [
-      f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/acados/{arch}/lib",
+      f"#third_party/libyuv/{target}/lib",
+      f"#third_party/acados/{target}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
@@ -140,21 +144,19 @@ else:
   # Linux
   else:
     libpath = [
-      f"#third_party/acados/{arch}/lib",
-      f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/mapbox-gl-native-qt/{arch}",
-      "#cereal",
-      "#common",
-      "/usr/lib",
+      f"#third_party/acados/{target}/lib",
+      f"#third_party/libyuv/{target}/lib",
+      f"#third_party/mapbox-gl-native-qt/{target}",
       "/usr/local/lib",
+      "/usr/lib",
     ]
 
-    if arch == "x86_64":
+    if target == "linux-x86_64":
       libpath += [
-        f"#third_party/snpe/{arch}"
+        f"#third_party/snpe/{target}"
       ]
       rpath += [
-        Dir(f"#third_party/snpe/{arch}").abspath,
+        Dir(f"#third_party/snpe/{target}").abspath,
       ]
 
 if GetOption('asan'):
@@ -167,11 +169,11 @@ else:
   ccflags = []
   ldflags = []
 
-# no --as-needed on mac linker
-if arch != "Darwin":
+## no --as-needed on mac linker
+if target != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
-# Enable swaglog include in submodules
+## Enable swaglog include in submodules
 cflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
 
@@ -231,19 +233,20 @@ env = Environment(
   tools=["default", "cython", "compilation_db"],
 )
 
-if arch == "Darwin":
-  # RPATH is not supported on macOS, instead use the linker flags
-  darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
-  env["LINKFLAGS"] += darwin_rpath_link_flags
+## RPATH is not supported on macOS, instead use the linker flags
+if target == "Darwin":
+  Darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
+  env["LINKFLAGS"] += Darwin_rpath_link_flags
 
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
-# Setup cache dir
+## Setup cache dir
 cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
+## Setup optional progress bar
 node_interval = 5
 node_count = 0
 def progress_function(node):
@@ -254,19 +257,7 @@ def progress_function(node):
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
-SHARED = False
-
-# TODO: this can probably be removed
-def abspath(x):
-  if arch == 'aarch64':
-    pth = os.path.join("/data/pythonpath", x[0].path)
-    env.Depends(pth, x)
-    return File(pth)
-  else:
-    # rpath works elsewhere
-    return x[0].path.rsplit("/", 1)[1][:-3]
-
-# Cython build environment
+# *** Cython build environment
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
@@ -274,19 +265,17 @@ envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-decla
 envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
-if arch == "Darwin":
-  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
+if target == "Darwin":
+  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + Darwin_rpath_link_flags
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
-Export('envCython')
-
-# Qt build environment
+# *** Qt build environment
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
 
 qt_libs = []
-if arch == "Darwin":
+if target == "Darwin":
   qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
@@ -306,15 +295,13 @@ else:
   ]
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
+  qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
+  if target == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
     qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
 
-# compatibility for older SCons versions
+## compatibility for older SCons versions
 try:
   qt_env.Tool('qt3')
 except SCons.Errors.UserError:
@@ -348,33 +335,30 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED')
+# *** Export environments and global variables
+Export('env', 'envCython', 'qt_env', 'target', 'system', 'arch')
 
+# *** Build common code
 SConscript(['common/SConscript'])
-Import('_common', '_gpucommon')
-
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon]
-
+Import('common', 'gpucommon')
+common = [common, 'json11']
 Export('common', 'gpucommon')
 
-# cereal and messaging are shared with the system
+# *** Build cereal and messaging
 SConscript(['cereal/SConscript'])
-if SHARED:
-  cereal = abspath([File('cereal/libcereal_shared.so')])
-  messaging = abspath([File('cereal/libmessaging_shared.so')])
-else:
-  cereal = [File('#cereal/libcereal.a')]
-  messaging = [File('#cereal/libmessaging.a')]
-  visionipc = [File('#cereal/libvisionipc.a')]
-
+cereal = [File('#cereal/libcereal.a')]
+messaging = [File('#cereal/libmessaging.a')]
+visionipc = [File('#cereal/libvisionipc.a')]
 Export('cereal', 'messaging', 'visionipc')
 
-# Build rednose library and ekf models
+# *** Build other submodules
+SConscript([
+  'body/board/SConscript',
+  'opendbc/can/SConscript',
+  'panda/SConscript',
+])
 
+# *** Build rednose library and ekf models
 rednose_deps = [
   "#selfdrive/locationd/models/constants.py",
   "#selfdrive/locationd/models/gnss_helpers.py",
@@ -389,7 +373,7 @@ rednose_config = {
   },
 }
 
-if arch != "larch64":
+if target != "larch64":
   rednose_config['to_build'].update({
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
     'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),
@@ -401,30 +385,21 @@ if arch != "larch64":
 Export('rednose_config')
 SConscript(['rednose/SConscript'])
 
-# Build system services
+# *** Build system services
 SConscript([
   'system/clocksd/SConscript',
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
 ])
-if arch != "Darwin":
+if target != "Darwin":
   SConscript([
     'system/camerad/SConscript',
     'system/sensord/SConscript',
     'system/logcatd/SConscript',
   ])
 
-# Build openpilot
-
-# build submodules
-SConscript([
-  'body/board/SConscript',
-  'cereal/SConscript',
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
-
+# *** Build openpilot
 SConscript(['third_party/SConscript'])
 
 SConscript(['common/kalman/SConscript'])
@@ -438,7 +413,7 @@ SConscript(['selfdrive/navd/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 SConscript(['selfdrive/ui/SConscript'])
 
-if (arch in ['x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
+if (target in ['linux-x86_64', 'Darwin'] and Dir('#tools/cabana/').exists()) or GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   SConscript(['tools/cabana/SConscript'])
 
