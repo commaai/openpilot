@@ -148,7 +148,7 @@ def common_fault_avoidance(measured_value: float, max_value: float, request: boo
   # Once we cut the request bit, count additionally to max_mismatching_frames before setting the request bit high again.
   # Some brands do not respect our workaround without multiple messages on the bus, for example
   if above_limit_frames > max_above_limit_frames:
-    request = 0
+    request = False
 
   if above_limit_frames >= max_above_limit_frames + max_mismatching_frames:
     above_limit_frames = 0
