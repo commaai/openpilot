@@ -203,35 +203,6 @@ def create_es_status(packer, es_status_msg, long_active, long_enabled, cruise_rp
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
-# disable cruise_activated feedback to eyesight to keep ready state
-def create_cruise_control(packer, cruise_control_msg):
-  values = {s: cruise_control_msg[s] for s in [
-    "CHECKSUM",
-    "COUNTER",
-    "Signal1",
-    "Cruise_On",
-    "Cruise_Activated",
-    "Signal2",
-  ]}
-
-  values["Cruise_Activated"] = 0
-
-  return packer.make_can_msg("CruiseControl", CanBus.camera, values)
-
-# give eyesight es_brake feedback
-def create_brake_status(packer, brake_status_msg, stock_brake_value):
-  values = {s: brake_status_msg[s] for s in [
-    "CHECKSUM",
-    "COUNTER",
-    "Signal1",
-    "ES_Brake",
-    "Signal2",
-    "Brake",
-    "Signal3",
-  ]}
-  values["ES_Brake"] = stock_brake_value > 0
-
-  return packer.make_can_msg("Brake_Status", CanBus.camera, values)
 
 def create_es_infotainment(packer, es_infotainment_msg, visual_alert):
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts

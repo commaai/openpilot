@@ -122,11 +122,6 @@ class CarController:
         if self.frame % 5 == 0:
           can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, self.CP.openpilotLongitudinalControl, cruise_rpm))
           can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value))
-          can_sends.append(subarucan.create_cruise_control(self.packer, CS.cruise_control_msg))
-
-        if self.frame % 2 == 0:
-          stock_brake_value = CS.es_brake_msg["Brake_Pressure"]
-          can_sends.append(subarucan.create_brake_status(self.packer, CS.brake_status_msg, stock_brake_value))
 
         if self.frame % 10 == 0:
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive, self.CP.openpilotLongitudinalControl, brake_cmd, brake_value, cruise_throttle))
