@@ -129,14 +129,8 @@ class Kit(EnumBase):
   red_panda_kit = BasePart("CAN FD panda kit", parts=[Device.red_panda, Accessory.harness_box, Cable.usb_a_2_a_cable, Cable.usbc_otg_cable, Cable.obd_c_cable_1_5ft])
 
 
-class Tools:
-  @staticmethod
-  def socket(size, modifier=None):
-    return BasePart(f"Socket Wrench {size}" + f' ({modifier})' if modifier is not None else '')
-
-
 class Tool(EnumBase):
-  socket_8mm_deep = Tools.socket("8mm or 5/16", "deep")
+  socket_8mm_deep = BasePart("Socket Wrench 8mm or 5/16 (deep)")
   pry_tool = BasePart("Pry Tool")
 
 
