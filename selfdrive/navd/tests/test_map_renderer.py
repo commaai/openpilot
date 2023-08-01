@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import os
-from typing import Any
 import unittest
-import time
 import requests
 import threading
 import http.server
-
 import cereal.messaging as messaging
+
+from typing import Any
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from selfdrive.manager.process_config import managed_processes
 
@@ -67,6 +66,12 @@ class MapBoxInternetDisabledServer(threading.Thread):
   def stop(self):
     self.server.shutdown()
 
+  def disable_internet(self):
+    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = False
+  
+  def enable_internet(self):
+    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
+
 
 class TestMapRenderer(unittest.TestCase):
   server = MapBoxInternetDisabledServer()
@@ -76,26 +81,26 @@ class TestMapRenderer(unittest.TestCase):
     assert "MAPBOX_TOKEN" in os.environ
     cls.original_token = os.environ["MAPBOX_TOKEN"]
     cls.server.start()
-    time.sleep(2) # wait for server to be fully started
 
   @classmethod
   def tearDownClass(cls) -> None:
     cls.server.stop()
 
   def setUp(self):
+    self.server.enable_internet()
+    os.environ['MAPS_HOST'] = 'http://localhost:5000'
+
     self.sm = messaging.SubMaster(['mapRenderState'])
     self.pm = messaging.PubMaster(['liveLocationKalman'])
     self.vipc = VisionIpcClient("navd", VisionStreamType.VISION_STREAM_MAP, True)
 
     if os.path.exists(CACHE_PATH):
       os.remove(CACHE_PATH)
-  
+
   def tearDown(self):
     managed_processes['mapsd'].stop()
-    time.sleep(2) # wait for server to be fully stopped
   
   def _setup_test(self):
-    os.environ['MAPS_HOST'] = 'http://localhost:5000'
     # start + sync up
     managed_processes['mapsd'].start()
 
@@ -104,17 +109,23 @@ class TestMapRenderer(unittest.TestCase):
     assert VisionIpcClient.available_streams("navd", False) == {VisionStreamType.VISION_STREAM_MAP, }
     assert self.vipc.connect(False)
     self.vipc.recv()
+
   
-  def _run_test(self, expect_valid):
+  def _run_test(self, expect_valid, location=LOCATION1):
     starting_frame_id = None
+
+    self.location = location
 
     # run test
     for i in range(30*LLK_DECIMATION):
       frame_expected = (i+1) % LLK_DECIMATION == 0
 
+      prev_frame_id = -1
       if self.sm.logMonoTime['mapRenderState'] == 0:
+        prev_valid = False
         prev_frame_id = -1
       else:
+        prev_valid = self.sm.valid['mapRenderState']
         prev_frame_id = self.sm['mapRenderState'].frameId
       
       if starting_frame_id is None:
@@ -131,8 +142,11 @@ class TestMapRenderer(unittest.TestCase):
 
       frames_since_test_start = self.sm['mapRenderState'].frameId - starting_frame_id
 
-      # give a few frames to go valid
-      if frames_since_test_start < 5:
+      # give a few frames to switch from valid to invalid, or vice versa
+      invalid_and_not_previously_valid = (expect_valid and not self.sm.valid['mapRenderState'] and not prev_valid)
+      valid_and_not_previously_invalid = (not expect_valid and self.sm.valid['mapRenderState'] and prev_valid)
+
+      if (invalid_and_not_previously_valid or valid_and_not_previously_invalid) and frames_since_test_start < 5:
         continue
 
       # check output
@@ -150,41 +164,29 @@ class TestMapRenderer(unittest.TestCase):
       assert self.vipc.timestamp_sof == llk.logMonoTime
       assert self.vipc.frame_id == self.sm['mapRenderState'].frameId
 
-  def disable_internet(self):
-    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = False
-  
-  def enable_internet(self):
-    MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
-
   def test_with_internet(self):
-    self.location = LOCATION1
-    self.enable_internet()
     self._setup_test()
     self._run_test(True)
 
   def test_with_no_internet(self):
-    self.location = LOCATION1
-    self.disable_internet()
+    self.server.disable_internet()
     self._setup_test()
     self._run_test(False)
     
   def test_recover_from_no_internet(self):
-    self.location = LOCATION1
-    self.enable_internet()
     self._setup_test()
     self._run_test(True)
 
-    self.disable_internet()
+    self.server.disable_internet()
 
     # change locations to force mapsd to refetch
-    self.location = LOCATION2
-    self._run_test(False)
+    self._run_test(False, LOCATION2)
 
-    self.enable_internet()
-    self._run_test(True)
+    self.server.enable_internet()
+    self._run_test(True, LOCATION2)
 
     self.location = LOCATION1
-    self._run_test(True)
+    self._run_test(True, LOCATION2)
 
 if __name__ == "__main__":
   unittest.main()
