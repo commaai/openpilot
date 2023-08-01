@@ -7,7 +7,7 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.volkswagen import mqbcan, pqcan
 from selfdrive.car.volkswagen.carstate import CarState
-from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS, CarControllerParams
+from selfdrive.car.volkswagen.values import CANBUS, PQ_CARS
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -15,7 +15,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.CCS = pqcan if CP.carFingerprint in PQ_CARS else mqbcan
     self.packer_pt = CANPacker(dbc_name)
 

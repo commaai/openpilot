@@ -7,7 +7,7 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.carstate import CarState
-from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.controls.lib.drive_helpers import rate_limit
 
@@ -108,7 +108,7 @@ def rate_limit_steer(new_steer, last_steer):
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.packer = CANPacker(dbc_name)
 
     self.braking = False

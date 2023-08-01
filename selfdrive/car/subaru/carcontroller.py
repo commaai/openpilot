@@ -3,12 +3,12 @@ from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.interfaces import CarControllerBase
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.carstate import CarState
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
 
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM, CarControllerParams)
+    super().__init__(dbc_name, CP, VM)
     self.apply_steer_last = 0
 
     self.cruise_button_prev = 0

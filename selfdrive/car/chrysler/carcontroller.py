@@ -3,7 +3,7 @@ from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits
 from selfdrive.car.chrysler.carstate import CarState
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
-from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from selfdrive.car.chrysler.values import RAM_CARS, ChryslerFlags
 from selfdrive.car.interfaces import CarControllerBase
 
 
