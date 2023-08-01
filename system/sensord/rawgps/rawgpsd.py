@@ -146,7 +146,7 @@ def downloader_loop(event):
     os.remove(ASSIST_DATA_FILE)
   while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
     download_assistance()
-    time.sleep(10)
+    event.wait(timeout=10)
 
 def inject_assistance():
   for _ in range(5):
@@ -261,9 +261,15 @@ def main() -> NoReturn:
   assist_fetch_proc.start()
   def cleanup(proc):
     cloudlog.warning("caught sig disabling quectel gps")
+
     gpio_set(GPIO.UBLOX_PWR_EN, False)
     teardown_quectel(diag)
     cloudlog.warning("quectel cleanup done")
+
+    stop_download_event.set()
+    assist_fetch_proc.kill()
+    assist_fetch_proc.join()
+
     sys.exit(0)
   signal.signal(signal.SIGINT, lambda sig, frame: cleanup(assist_fetch_proc))
   signal.signal(signal.SIGTERM, lambda sig, frame: cleanup(assist_fetch_proc))
