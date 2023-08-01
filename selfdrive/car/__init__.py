@@ -132,7 +132,7 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
-def common_fault_avoidance(measured_value: float, max_value: float, request: bool, above_limit_frames: int = 0,
+def common_fault_avoidance(measured_value: float, max_value: float, request: bool, above_limit_frames: int,
                            max_above_limit_frames: int = 1, max_mismatching_frames: int = 1):
   """
   Several cars have the ability to work around their EPS limits by cutting the
