@@ -26,6 +26,8 @@ V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
+RADAR_STATE_FREQUENCY = 20.  # Hz
+
 
 class KalmanParams:
   def __init__(self, dt: float):
@@ -315,8 +317,8 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
 
   RI = RadarInterface(CP)
 
-  rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  rk = Ratekeeper(RADAR_STATE_FREQUENCY, print_delay_threshold=None)
+  RD = RadarD(1 / RADAR_STATE_FREQUENCY, RI.delay)
 
   while True:
     sm.update()
