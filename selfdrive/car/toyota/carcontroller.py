@@ -8,7 +8,8 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_TRANSITION, UNSUPPORTED_DSU_CAR
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
+                                        UNSUPPORTED_DSU_CAR
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -29,7 +30,7 @@ MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+    super().__init__(dbc_name, CP, VM, CarControllerParams)
     self.last_steer = 0
     self.last_angle = 0
     self.alert_active = False
