@@ -72,11 +72,6 @@ if platform.system() == "Darwin":
 if arch == "aarch64" and AGNOS:
   arch = "larch64"
 
-# create symlink to lib dir of current arch, so the ACADOS_SOURCE_DIR would have valid structure
-acados_lib_path = Dir(f"#third_party/acados/lib")
-if not Dir(f"#third_party/acados/lib").exists():
-  os.symlink(Dir(f"#third_party/acados/{arch}/lib").abspath, acados_lib_path.abspath)
-
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
@@ -122,9 +117,8 @@ else:
 
   # MacOS
   if arch == "Darwin":
-    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      f"#third_party/libyuv/{yuv_dir}/lib",
+      f"#third_party/libyuv/{arch}/lib",
       f"#third_party/acados/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
@@ -268,6 +262,7 @@ py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
 envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
+envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
 if arch == "Darwin":

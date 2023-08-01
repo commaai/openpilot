@@ -142,7 +142,7 @@ class CarController(CarControllerBase):
           # cruise cancel
           if CC.cruiseControl.cancel:
             if self.CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS:
-              can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CAN, CS.cruise_info))
+              can_sends.append(hyundaicanfd.create_acc_cancel(self.packer, self.CP, self.CAN, CS.cruise_info))
               self.last_button_frame = self.frame
             else:
               for _ in range(20):

@@ -16,11 +16,13 @@ from selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
+  FORD.F_150_MK14,
   GM.CADILLAC_ATS,
   GM.HOLDEN_ASTRA,
   GM.MALIBU,
   GM.EQUINOX,
   HYUNDAI.GENESIS_G90,
+  HYUNDAI.IONIQ_6,
   HYUNDAI.KIA_OPTIMA_H,
   HONDA.ODYSSEY_CHN,
   VOLKSWAGEN.CRAFTER_MK2,  # need a route from an ACC-equipped Crafter
@@ -98,6 +100,8 @@ routes = [
   CarTestRoute("bf43d9df2b660eb0|2021-09-23--14-16-37", HYUNDAI.SANTA_FE_2022),
   CarTestRoute("37398f32561a23ad|2021-11-18--00-11-35", HYUNDAI.SANTA_FE_HEV_2022),
   CarTestRoute("656ac0d830792fcc|2021-12-28--14-45-56", HYUNDAI.SANTA_FE_PHEV_2022, segment=1),
+  CarTestRoute("de59124955b921d8|2023-06-24--00-12-50", HYUNDAI.KIA_CARNIVAL_4TH_GEN),
+  CarTestRoute("409c9409979a8abc|2023-07-11--09-06-44", HYUNDAI.KIA_CARNIVAL_4TH_GEN),  # Chinese model
   CarTestRoute("e0e98335f3ebc58f|2021-03-07--16-38-29", HYUNDAI.KIA_CEED),
   CarTestRoute("7653b2bce7bcfdaa|2020-03-04--15-34-32", HYUNDAI.KIA_OPTIMA_G4),
   CarTestRoute("018654717bc93d7d|2022-09-19--23-11-10", HYUNDAI.KIA_OPTIMA_G4_FL, segment=0),
@@ -230,6 +234,8 @@ routes = [
   CarTestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
   CarTestRoute("1bbe6bf2d62f58a8|2022-07-14--17-11-43", SUBARU.OUTBACK, segment=10),
   CarTestRoute("c56e69bbc74b8fad|2022-08-18--09-43-51", SUBARU.LEGACY, segment=3),
+  CarTestRoute("7fd1e4f3a33c1673|2022-12-04--15-09-53", SUBARU.FORESTER_2022, segment=4),
+  CarTestRoute("f3b34c0d2632aa83|2023-07-23--20-43-25", SUBARU.OUTBACK_2023, segment=7),
   # Pre-global, dashcam
   CarTestRoute("95441c38ae8c130e|2020-06-08--12-10-17", SUBARU.FORESTER_PREGLOBAL),
   CarTestRoute("df5ca7660000fba8|2020-06-16--17-37-19", SUBARU.LEGACY_PREGLOBAL),

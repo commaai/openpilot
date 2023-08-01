@@ -87,6 +87,8 @@ class CarHarness(EnumBase):
   toyota = BaseCarHarness("Toyota connector")
   subaru_a = BaseCarHarness("Subaru A connector")
   subaru_b = BaseCarHarness("Subaru B connector")
+  subaru_c = BaseCarHarness("Subaru C connector")
+  subaru_d = BaseCarHarness("Subaru D connector")
   fca = BaseCarHarness("FCA connector")
   ram = BaseCarHarness("Ram connector")
   vw = BaseCarHarness("VW connector")
@@ -149,7 +151,7 @@ class CarParts:
     return copy.deepcopy(self)
 
   @classmethod
-  def common(cls, add: List[EnumBase] = None, remove: List[EnumBase] = None):
+  def common(cls, add: Optional[List[EnumBase]] = None, remove: Optional[List[EnumBase]] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
@@ -320,8 +322,6 @@ class CarInfo:
       exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
       if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
         sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
-      else:
-        sentence_builder += f" {exp_link}, with traffic light and stop sign handling, is not currently available for this car, but may be added in a future software update."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
