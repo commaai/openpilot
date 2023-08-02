@@ -15,5 +15,5 @@ system/camerad/cameras/real_debayer.cl
 
 system/sensord/rawgps/*
 
-selfdrive/ui/qt/spinner_larch64
-selfdrive/ui/qt/text_larch64
+selfdrive/ui/qt/spinner_agnos-aarch64
+selfdrive/ui/qt/text_agnos-aarch64
