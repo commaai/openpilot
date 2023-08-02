@@ -10,13 +10,13 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   ARCHNAME="Darwin"
   ACADOS_FLAGS="$ACADOS_FLAGS -DCMAKE_OSX_ARCHITECTURES=arm64;x86_64 -DCMAKE_MACOSX_RPATH=1"
 elif [ -f /TICI ]; then
-  ARCHNAME="larch64"
+  ARCHNAME="agnos-aarch64"
   BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 elif [[ "$ARCH" == "aarch64" ]]; then
-  ARCHNAME="aarch64"
+  ARCHNAME="linux-aarch64"
   BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 else
-  ARCHNAME="x86_64"
+  ARCHNAME="linux-x86_64"
   BLAS_TARGET="X64_AUTOMATIC"
 fi
 

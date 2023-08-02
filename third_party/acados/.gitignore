@@ -1,5 +1,5 @@
 acados_repo/
 lib
-!x86_64/
-!larch64/
-!aarch64/
+!linux-x86_64/
+!agnos-aarch64/
+!linux-aarch64/

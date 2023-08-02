@@ -1,2 +1,2 @@
-x86_64 filter=lfs diff=lfs merge=lfs -text
-larch64 filter=lfs diff=lfs merge=lfs -text
+linux-x86_64 filter=lfs diff=lfs merge=lfs -text
+linux-aarch64 filter=lfs diff=lfs merge=lfs -text

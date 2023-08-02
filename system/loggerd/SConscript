@@ -6,7 +6,7 @@ libs = [common, cereal, messaging, visionipc,
         'yuv', 'OpenCL', 'pthread']
 
 src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
-if target != "larch64":
+if target != "agnos-aarch64":
   src += ['encoder/ffmpeg_encoder.cc']
 
 if target == "Darwin":

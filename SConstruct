@@ -67,10 +67,10 @@ AddOption('--no-test',
 # *** Target and Architecture
 
 ## Target name breakdown (target)
-## - larch64: linux tici aarch64
+## - agnos-aarch64: linux tici aarch64
 ## - linux-aarch64: linux pc aarch64
 ## - linux-x86_64:  linux pc x64
-## - Darwin:  mac x64 or arm64
+## - Darwin:        mac x64 or arm64
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 system = platform.system()
 if system == "Darwin":
@@ -78,13 +78,13 @@ if system == "Darwin":
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
 elif system == "Linux":
   if arch == "aarch64" and AGNOS:
-    target = "larch64"
+    target = "agnos-aarch64"
   else:
     target = f"linux-{arch}"
 else:
   raise Exception(f"Unsupported platform: {system}")
 
-assert target in ["larch64", "linux-aarch64", "linux-x86_64", "Darwin"]
+assert target in ["agnos-aarch64", "linux-aarch64", "linux-x86_64", "Darwin"]
 
 # *** Environment setup
 lenv = {
@@ -98,16 +98,16 @@ lenv = {
 }
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
-if target == "larch64":
+if target == "agnos-aarch64":
   cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
   cpppath = [
     "#third_party/opencl/include",
   ]
   libpath = [
-    "#third_party/acados/larch64/lib",
-    "#third_party/snpe/larch64",
-    "#third_party/libyuv/larch64/lib",
+    "#third_party/acados/agnos-aarch64/lib",
+    "#third_party/snpe/agnos-aarch64",
+    "#third_party/libyuv/agnos-aarch64/lib",
     "/usr/local/lib",
     "/usr/lib",
     "/system/vendor/lib64",
@@ -296,9 +296,9 @@ else:
   qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
 
   qt_libs = [f"Qt5{m}" for m in qt_modules] + ["GL"]
-  if target == "larch64":
+  if target == "agnos-aarch64":
     qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
+    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/agnos-aarch64/bin/").abspath)
 qt_env['QT3DIR'] = qt_env['QTDIR']
 
 ## compatibility for older SCons versions
@@ -373,7 +373,7 @@ rednose_config = {
   },
 }
 
-if target != "larch64":
+if target != "agnos-aarch64":
   rednose_config['to_build'].update({
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, [], rednose_deps),
     'lane': ('#selfdrive/locationd/models/lane_kf.py', True, [], rednose_deps),

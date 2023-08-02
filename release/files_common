@@ -441,7 +441,6 @@ third_party/acados/include/**
 third_party/acados/acados_template/**
 
 third_party/bootstrap/**
-third_party/qt5/larch64/bin/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh

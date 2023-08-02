@@ -1,8 +1,9 @@
-third_party/libyuv/larch64/**
-third_party/snpe/larch64**
+third_party/libyuv/agnos-aarch64/**
+third_party/snpe/agnos-aarch64/**
 third_party/snpe/aarch64-ubuntu-gcc7.5/*
 third_party/mapbox-gl-native-qt/include/*
-third_party/acados/larch64/**
+third_party/acados/agnos-aarch64/**
+third_party/qt5/agnos-aarch64/bin/**
 
 system/timezoned.py
 

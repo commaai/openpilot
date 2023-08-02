@@ -14,6 +14,6 @@ sensors = [
   'sensors/mmc5603nj_magn.cc',
 ]
 libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj', 'pthread']
-if target == "larch64":
+if target == "agnos-aarch64":
   libs.append('i2c')
 env.Program('_sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)
