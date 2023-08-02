@@ -201,7 +201,6 @@ env = Environment(
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
     "#third_party/json11",
-    "#third_party/curl/include",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
