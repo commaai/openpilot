@@ -37,17 +37,16 @@ class EncodedBodyVideo(MediaStreamTrack):
   def __init__(self):
     super().__init__()
     sock_name = 'livestreamDriverEncodeData'
-    # os.environ['ZMQ'] = '1'
-    # addr='192.168.1.101'
     messaging.context = messaging.Context()
     self.sock = messaging.sub_sock(sock_name, None, conflate=True)
     self.pts = 0
 
   async def recv(self) -> Packet:
-    msg = messaging.recv_one_or_none(self.sock)
-    while msg is None:
-      await asyncio.sleep(0.005)
+    while True:
       msg = messaging.recv_one_or_none(self.sock)
+      if msg is not None:
+        break
+      await asyncio.sleep(0.005)
 
     evta = getattr(msg, msg.which())
     self.last_idx = evta.idx.encodeId
@@ -68,7 +67,6 @@ class WebClientSpeaker(MediaBlackhole):
     self.stream = self.p.open(format=pyaudio.paInt16, channels=self.channels, rate=48000, frames_per_buffer=9600, output=True, stream_callback=self.pyaudio_callback)
 
   def pyaudio_callback(self, in_data, frame_count, time_info, status):
-    # print(self.buffer.getbuffer().nbytes)
     if self.buffer.getbuffer().nbytes < frame_count * self.channels * 2:
       buff = np.zeros((frame_count, 2), dtype=np.int16).tobytes()
     elif self.buffer.getbuffer().nbytes > 115200:  # 3x the usual read size

@@ -23,11 +23,11 @@ pcs = set()
 
 pm = messaging.PubMaster(['testJoystick'])
 sm = messaging.SubMaster(['carState', 'logMessage'])
-FIND_OBJ = 'person'
+TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
 
 async def index(request):
-  content = open(BASEDIR + "/tools/joystick/static/index.html", "r").read()
+  content = open(TELEOPDIR + "/static/index.html", "r").read()
   now = time.monotonic()
   request.app['mutable_vals']['last_send_time'] = now
   request.app['mutable_vals']['last_override_time'] = now
@@ -179,8 +179,8 @@ async def run(cmd):
 
 def main():
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
-  cert_path = BASEDIR + '/tools/joystick/cert.pem'
-  key_path = BASEDIR + '/tools/joystick/key.pem'
+  cert_path = TELEOPDIR + '/cert.pem'
+  key_path = TELEOPDIR + '/key.pem'
   if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
     asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
   else:
@@ -192,7 +192,7 @@ def main():
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/offer", offer)
   app.router.add_get("/", index)
-  app.router.add_static('/static', BASEDIR + '/tools/joystick/static')
+  app.router.add_static('/static', TELEOPDIR + '/static')
   app.on_startup.append(start_background_tasks)
   app.on_cleanup.append(stop_background_tasks)
   web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
