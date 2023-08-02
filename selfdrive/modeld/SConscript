@@ -26,6 +26,10 @@ runmodel_src = [
   'runners/thneedmodel.cc',
 ]
 
+driving_src = [
+  'models/driving.cc',
+]
+
 use_thneed = not GetOption('no_thneed')
 
 if arch == "larch64":
@@ -55,15 +59,13 @@ else:
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
-common_objects = env.SharedObject(common_src)
-common_lib = env.Library('commonmodel', common_objects)
-
-runmodel_objects = env.SharedObject(runmodel_src)
-runmodel_lib = env.Library('runmodel', runmodel_objects)
+runmodel_lib = env.Library('runmodel', env.SharedObject(runmodel_src))
+common_lib = env.Library('commonmodel', env.SharedObject(common_src))
+driving_lib = env.Library('driving', env.SharedObject(driving_src))
 
 envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[runmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
+envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'SNPE', 'capnp', 'kj', 'zmq', 'OpenCL'])
 envCython.Program('models/cl_pyx.so', 'models/cl_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
 
 common_model = lenv.Object(common_src)

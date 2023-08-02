@@ -4,6 +4,7 @@ import numpy as np
 from typing import Dict, Optional
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from common.params import Params
 from common.filter_simple import FirstOrderFilter
 from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
@@ -12,6 +13,7 @@ from common.transformations.orientation import rot_from_euler
 from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
 from selfdrive.modeld.runners.runmodel_pyx import ONNXModel, Runtime # pylint: disable=no-name-in-module
 from selfdrive.modeld.models.commonmodel_pyx import ModelFrame # pylint: disable=no-name-in-module
+from selfdrive.modeld.models.driving_pyx import PublishState, create_model_msg, create_pose_msg # pylint: disable=no-name-in-module
 from system.hardware import PC
 
 FEATURE_LEN = 128
@@ -40,6 +42,15 @@ def update_calibration(device_from_calib_euler:np.ndarray, wide_camera:bool, big
   camera_from_calib = cam_intrinsics @ view_frame_from_device_frame @ device_from_calib
   warp_matrix: np.ndarray = camera_from_calib @ calib_from_model
   return warp_matrix
+
+class FrameMeta:
+  frame_id: int = 0
+  timestamp_sof: int = 0
+  timestamp_eof: int = 0
+
+  def __init__(self, vipc=None):
+    if vipc is not None:
+      self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 class ModelState:
   frame: ModelFrame
@@ -122,8 +133,8 @@ if __name__ == '__main__':
     time.sleep(.1)
 
   vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True)
-  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False)
+  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
+  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
   logging.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
 
   # TODO: Is it safe to use blocking=True here?
@@ -138,7 +149,10 @@ if __name__ == '__main__':
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState"])
+  sm = SubMaster(["lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"])
+
+  state = PublishState()
+  params = Params()
 
   # setup filter to track dropped frames
   # TODO: I don't think the python version of FirstOrderFilter matches the c++ version exactly
@@ -150,16 +164,19 @@ if __name__ == '__main__':
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
+  nav_enabled = False
   live_calib_seen = False
   driving_style = np.array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32)
   nav_features = np.zeros(NAV_FEATURE_LEN, dtype=np.float32)
-  buf_main = None
-  buf_extra = None
+  buf_main, buf_extra = None, None
+  meta_main = FrameMeta()
+  meta_extra = FrameMeta()
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000:
+    while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
       buf_main = vipc_client_main.recv()
+      meta_main = FrameMeta(vipc_client_main)
       if buf_main is None:
         break
 
@@ -171,21 +188,23 @@ if __name__ == '__main__':
       # Keep receiving extra frames until frame id matches main camera
       while True:
         buf_extra = vipc_client_extra.recv()
-        if buf_extra is None or vipc_client_main.timestamp_sof < vipc_client_extra.timestamp_sof + 25000000:
+        meta_extra = FrameMeta(vipc_client_extra)
+        if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
           break
 
       if buf_extra is None:
         logging.error("vipc_client_extra no frame")
         continue
 
-      if abs(vipc_client_main.timestamp_sof - vipc_client_main.timestamp_sof) > 10000000:
+      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
         logging.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
-          vipc_client_main.frame_id, vipc_client_main.timestamp_sof / 1e9,
-          vipc_client_extra.frame_id, vipc_client_extra.timestamp_sof / 1e9))
+          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
+          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
 
     else:
       # Use single camera
       buf_extra = buf_main
+      meta_extra = meta_main
 
     # TODO: path planner timeout?
     sm.update(0)
@@ -205,8 +224,21 @@ if __name__ == '__main__':
     if desire >= 0 and desire < DESIRE_LEN:
       vec_desire[desire] = 1
 
+    # Enable/disable nav features
+    timestamp_llk = sm["navModel"].locationMonoTime
+    nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
+    use_nav = nav_valid and params.get_bool("ExperimentalMode")
+    if not nav_enabled and use_nav:
+      nav_enabled = True
+    elif nav_enabled and not use_nav:
+      nav_features[:] = 0
+      nav_enabled = False
+
+    if nav_enabled and sm.updated["navModel"]:
+      nav_features = np.array(sm["navModel"].features)
+
     # tracked dropped frames
-    vipc_dropped_frames = vipc_client_main.frame_id - last_vipc_frame_id - 1
+    vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       # frame_dropped_filter.reset(0)
@@ -229,13 +261,11 @@ if __name__ == '__main__':
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
-    """
-    if model_output:
-      model_publish(pm, vipc_client_main.frame_id, vipc_client_extra.frame_id, frame_id, frame_drop_ratio, *model_output, vipc_client_main.timestamp_eof, model_execution_time,
-                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()), live_calib_seen)
-      posenet_publish(pm, vipc_client_main.frame_id, vipc_dropped_frames, *model_output, vipc_client_main.timestamp_eof, live_calib_seen)
-    """
+    if model_output is not None:
+      pm.send("modelV2", create_model_msg(model_output, state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
+                                          meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen))
+      pm.send("cameraOdometry", create_pose_msg(model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen))
 
-    # print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n" % (mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio))
+    print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" % ((mt2 - mt1)*1000, (mt1 - last)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
     last = mt1
-    last_vipc_frame_id = vipc_client_main.frame_id
+    last_vipc_frame_id = meta_main.frame_id

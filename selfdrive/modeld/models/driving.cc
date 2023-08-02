@@ -453,7 +453,45 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
 }
 
 
-float *create_model_msg(float *net_outputs, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                        uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid) {
-  return nullptr;
+void fill_model_msg(MessageBuilder &msg, float *net_output_data, PublishState &ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
+                    uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, const bool nav_enabled, const bool valid) {
+  const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
+  auto framed = msg.initEvent(valid).initModelV2();
+  framed.setFrameId(vipc_frame_id);
+  framed.setFrameIdExtra(vipc_frame_id_extra);
+  framed.setFrameAge(frame_age);
+  framed.setFrameDropPerc(frame_drop * 100);
+  framed.setTimestampEof(timestamp_eof);
+  framed.setLocationMonoTime(timestamp_llk);
+  framed.setModelExecutionTime(model_execution_time);
+  framed.setNavEnabled(nav_enabled);
+  if (send_raw_pred) {
+    framed.setRawPredictions(kj::ArrayPtr<const float>(net_output_data, NET_OUTPUT_SIZE).asBytes());
+  }
+  fill_model(framed, *((ModelOutput*) net_output_data), ps);
+}
+
+void fill_pose_msg(MessageBuilder &msg, float *net_output_data, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames, uint64_t timestamp_eof, const bool valid) {
+    const ModelOutput &net_outputs = *((ModelOutput*) net_output_data);
+    const auto &v_mean = net_outputs.pose.velocity_mean;
+    const auto &r_mean = net_outputs.pose.rotation_mean;
+    const auto &t_mean = net_outputs.wide_from_device_euler.mean;
+    const auto &v_std = net_outputs.pose.velocity_std;
+    const auto &r_std = net_outputs.pose.rotation_std;
+    const auto &t_std = net_outputs.wide_from_device_euler.std;
+    const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+    const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
+
+    auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
+    posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
+    posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+    posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
+    posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
+    posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+    posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
+    posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
+    posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
+
+    posenetd.setTimestampEof(timestamp_eof);
+    posenetd.setFrameId(vipc_frame_id);
 }
