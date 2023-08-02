@@ -264,7 +264,7 @@ void loggerd_thread() {
 
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
-          LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
+          LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }
 
         count++;

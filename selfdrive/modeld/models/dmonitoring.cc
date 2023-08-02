@@ -1,7 +1,5 @@
 #include <cstring>
 
-#include "libyuv.h"
-
 #include "common/mat.h"
 #include "common/modeldata.h"
 #include "common/params.h"

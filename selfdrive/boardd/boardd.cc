@@ -155,7 +155,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
     }
     util::sleep_for(100);
   }
-  LOGW("got %d bytes CarParams", params.size());
+  LOGW("got %lu bytes CarParams", params.size());
 
   AlignedBuffer aligned_buf;
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
@@ -237,7 +237,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
       }
     } else {
-      LOGE("sendcan too old to send: %llu, %llu", nanos_since_boot(), event.getLogMonoTime());
+      LOGE("sendcan too old to send: %" PRIu64 ", %" PRIu64, nanos_since_boot(), event.getLogMonoTime());
     }
   }
 }
@@ -277,7 +277,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
       if (ignition) {
-        LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
+        LOGW("missed cycles (%lu) %lld", (unsigned long)(-1*remaining/dt), (long long)remaining);
       }
       next_frame_time = cur_time;
     }
