@@ -5,62 +5,66 @@ export let dcInterval = null;
 export let batteryInterval = null;
 export let last_ping = null;
 
+
 export function createPeerConnection(pc) {
-    var config = {
-        sdpSemantics: 'unified-plan'
-    };
+  var config = {
+    sdpSemantics: 'unified-plan'
+  };
 
-    pc = new RTCPeerConnection(config);
+  pc = new RTCPeerConnection(config);
 
-    // connect audio / video
-    pc.addEventListener('track', function(evt) {
-        console.log("Adding Tracks!")
-        if (evt.track.kind == 'video')
-            document.getElementById('video').srcObject = evt.streams[0];
-        else
-            document.getElementById('audio').srcObject = evt.streams[0];
-    });
-    return pc;
+  // connect audio / video
+  pc.addEventListener('track', function(evt) {
+    console.log("Adding Tracks!")
+    if (evt.track.kind == 'video')
+      document.getElementById('video').srcObject = evt.streams[0];
+    else
+      document.getElementById('audio').srcObject = evt.streams[0];
+  });
+  return pc;
 }
+
 
 export function negotiate(pc) {
-    return pc.createOffer({offerToReceiveAudio:true, offerToReceiveVideo:true}).then(function(offer) {
-        return pc.setLocalDescription(offer);
-    }).then(function() {
-        return new Promise(function(resolve) {
-            if (pc.iceGatheringState === 'complete') {
-                resolve();
-            } else {
-                function checkState() {
-                    if (pc.iceGatheringState === 'complete') {
-                        pc.removeEventListener('icegatheringstatechange', checkState);
-                        resolve();
-                    }
-                }
-                pc.addEventListener('icegatheringstatechange', checkState);
-            }
-        });
-    }).then(function() {
-        var offer = pc.localDescription;
-        return fetch('/offer', {
-            body: JSON.stringify({
-                sdp: offer.sdp,
-                type: offer.type,
-            }),
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            method: 'POST'
-        });
-    }).then(function(response) {
-        console.log(response);
-        return response.json();
-    }).then(function(answer) {
-        return pc.setRemoteDescription(answer);
-    }).catch(function(e) {
-        alert(e);
+  return pc.createOffer({offerToReceiveAudio:true, offerToReceiveVideo:true}).then(function(offer) {
+    return pc.setLocalDescription(offer);
+  }).then(function() {
+    return new Promise(function(resolve) {
+      if (pc.iceGatheringState === 'complete') {
+        resolve();
+      }
+      else {
+        function checkState() {
+          if (pc.iceGatheringState === 'complete') {
+            pc.removeEventListener('icegatheringstatechange', checkState);
+            resolve();
+          }
+        }
+        pc.addEventListener('icegatheringstatechange', checkState);
+      }
     });
+  }).then(function() {
+    var offer = pc.localDescription;
+    return fetch('/offer', {
+      body: JSON.stringify({
+        sdp: offer.sdp,
+        type: offer.type,
+      }),
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      method: 'POST'
+    });
+  }).then(function(response) {
+    console.log(response);
+    return response.json();
+  }).then(function(answer) {
+    return pc.setRemoteDescription(answer);
+  }).catch(function(e) {
+    alert(e);
+  });
 }
+
 
 function isMobile() {
     let check = false;
@@ -70,156 +74,144 @@ function isMobile() {
 
 
 export const constraints = {
-    audio: {
-        autoGainControl: false,
-        sampleRate: 48000,
-        sampleSize: 16,
-        echoCancellation: true,
-        noiseSuppression: true,
-        channelCount: 1
-    },
-    video: isMobile()
+  audio: {
+    autoGainControl: false,
+    sampleRate: 48000,
+    sampleSize: 16,
+    echoCancellation: true,
+    noiseSuppression: true,
+    channelCount: 1
+  },
+  video: isMobile()
 };
 
+
 export function createDummyVideoTrack() {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    
-    const frameWidth = 5; // Set the width of the frame
-    const frameHeight = 5; // Set the height of the frame
-    canvas.width = frameWidth;
-    canvas.height = frameHeight;
-    
-    context.fillStyle = 'black';
-    context.fillRect(0, 0, frameWidth, frameHeight);
-    
-    const stream = canvas.captureStream();
-    const videoTrack = stream.getVideoTracks()[0];
-    
-    return videoTrack;
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  
+  const frameWidth = 5; // Set the width of the frame
+  const frameHeight = 5; // Set the height of the frame
+  canvas.width = frameWidth;
+  canvas.height = frameHeight;
+  
+  context.fillStyle = 'black';
+  context.fillRect(0, 0, frameWidth, frameHeight);
+  
+  const stream = canvas.captureStream();
+  const videoTrack = stream.getVideoTracks()[0];
+  
+  return videoTrack;
 }
+
 
 export function start(pc, dc) {
-    pc = createPeerConnection(pc);
+  pc = createPeerConnection(pc);
 
-    if (constraints.audio || constraints.video) {
-        // add audio track
-        navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
-            stream.getTracks().forEach(function(track) {
-                pc.addTrack(track, stream);
-                // only audio?
-                // if (track.kind === 'audio'){
-                //     pc.addTrack(track, stream);
-                // }
-            });
-            return negotiate(pc);
-        }, function(err) {
-            alert('Could not acquire media: ' + err);
-        });
+  if (constraints.audio || constraints.video) {
+    // add audio track
+    navigator.mediaDevices.getUserMedia(constraints).then(function(stream) {
+      stream.getTracks().forEach(function(track) {
+        pc.addTrack(track, stream);
+        // only audio?
+        // if (track.kind === 'audio'){
+        //     pc.addTrack(track, stream);
+        // }
+      });
+        return negotiate(pc);
+      }, function(err) {
+        alert('Could not acquire media: ' + err);
+      });
 
-        // add a fake video?
-        // const dummyVideoTrack = createDummyVideoTrack();
-        // const dummyMediaStream = new MediaStream();
-        // dummyMediaStream.addTrack(dummyVideoTrack);
-        // pc.addTrack(dummyVideoTrack, dummyMediaStream);
+    // add a fake video?
+    // const dummyVideoTrack = createDummyVideoTrack();
+    // const dummyMediaStream = new MediaStream();
+    // dummyMediaStream.addTrack(dummyVideoTrack);
+    // pc.addTrack(dummyVideoTrack, dummyMediaStream);
 
-    } else {
-        negotiate(pc);
+  } else {
+    negotiate(pc);
+  }
+  
+  // setInterval(() => {pc.getStats(null).then((stats) => {stats.forEach((report) => console.log(report))})}, 10000)
+  // var video = document.querySelector('video');
+  // var print = function (e, f){console.log(e, f);  video.requestVideoFrameCallback(print);};
+  // video.requestVideoFrameCallback(print);
+
+
+  var parameters = {"ordered": true};
+  dc = pc.createDataChannel('data', parameters);
+  dc.onclose = function() {
+    console.log("data channel closed");
+    clearInterval(dcInterval);
+    clearInterval(batteryInterval);
+  };
+  function controlCommand() {
+    const {x, y} = getXY();
+    const dt = new Date().getTime();
+    var message = JSON.stringify({type: 'control_command', x, y, dt});
+    dc.send(message);
+  }
+
+  function batteryLevel() {
+    var message = JSON.stringify({type: 'battery_level'});
+    dc.send(message);
+  }
+  
+  dc.onopen = function() {
+    dcInterval = setInterval(controlCommand, 50);
+    batteryInterval = setInterval(batteryLevel, 10000);
+    controlCommand();
+    batteryLevel();
+    $(".sound").click((e)=>{
+      const sound = $(e.target).attr('id').replace('sound-', '')
+      dc.send(JSON.stringify({type: 'play_sound', sound}));
+    });
+  };
+
+  let val_print_idx = 0;
+  dc.onmessage = function(evt) {
+    const data = JSON.parse(evt.data);
+    if(val_print_idx == 0 && data.type === 'ping_time') {
+      const dt = new Date().getTime();
+      const pingtime = dt - data.incoming_time;
+      pingPoints.push({'x': dt, 'y': pingtime});
+        if (pingPoints.length > 1000) {
+        pingPoints.shift();
+      }
+      chartPing.update();
+      $("#ping-time").text((pingtime) + "ms");
+      last_ping = dt;
+      $(".pre-blob").addClass('blob');
     }
-    
-    // setInterval(() => {pc.getStats(null).then((stats) => {stats.forEach((report) => console.log(report))})}, 10000)
-    // var video = document.querySelector('video');
-    // var print = function (e, f){console.log(e, f);  video.requestVideoFrameCallback(print);};
-    // video.requestVideoFrameCallback(print);
-
-
-    var parameters = {"ordered": true};
-    dc = pc.createDataChannel('data', parameters);
-    dc.onclose = function() {
-        console.log("data channel closed");
-        clearInterval(dcInterval);
-        clearInterval(batteryInterval);
-    };
-    function controlCommand() {
-        const {x, y} = getXY();
-        const dt = new Date().getTime();
-        var message = JSON.stringify({type: 'control_command', x, y, dt});
-        dc.send(message);
+    val_print_idx = (val_print_idx + 1 ) % 20;
+    if(data.type === 'battery_level') {
+      $("#battery").text(data.value + "%");
+      batteryPoints.push({'x': new Date().getTime(), 'y': data.value});
+        if (batteryPoints.length > 1000) {
+        batteryPoints.shift();
+      }
+      chartBattery.update();
     }
-
-    function batteryLevel() {
-        var message = JSON.stringify({type: 'battery_level'});
-        dc.send(message);
-    }
-    
-    dc.onopen = function() {
-        dcInterval = setInterval(controlCommand, 50);
-        batteryInterval = setInterval(batteryLevel, 10000);
-        controlCommand();
-        batteryLevel();
-        $(".sound").click((e)=>{
-            const sound = $(e.target).attr('id').replace('sound-', '')
-            dc.send(JSON.stringify({type: 'play_sound', sound}));
-        });
-        $("#show-yolo").on("change", ()=>{
-            let showYolo = $("#show-yolo").prop('checked');
-            if (showYolo === false){
-                $("#find-person").prop('checked', false);
-                dc.send(JSON.stringify({type: 'find_person', 'value': false}));
-            }
-            dc.send(JSON.stringify({type: 'show_yolo', 'value': showYolo}));
-            $("#find-person").prop('disabled', !showYolo);
-        });
-        $("#find-person").on("change", ()=>{
-            let findPerson = $("#find-person").prop('checked');
-            dc.send(JSON.stringify({type: 'find_person', 'value': findPerson}));
-        });
-        
-    };
-    let val_print_idx = 0;
-    dc.onmessage = function(evt) {
-        const data = JSON.parse(evt.data);
-        if(val_print_idx == 0 && data.type === 'ping_time'){
-            const dt = new Date().getTime();
-            const pingtime = dt - data.incoming_time;
-            pingPoints.push({'x': dt, 'y': pingtime});
-              if (pingPoints.length > 1000) {
-              pingPoints.shift();
-            }          
-            chartPing.update();
-            $("#ping-time").text((pingtime) + "ms");
-            last_ping = dt;
-            $(".pre-blob").addClass('blob');
-        }
-        val_print_idx = (val_print_idx + 1 ) % 20;
-        if(data.type === 'battery_level'){
-            $("#battery").text(data.value + "%");
-            batteryPoints.push({'x': new Date().getTime(), 'y': data.value});
-              if (batteryPoints.length > 1000) {
-              batteryPoints.shift();
-            }          
-            chartBattery.update();
-            
-        }
-        
-    };
+  };
 }
 
+
 export function stop(pc, dc) {
-    if (dc) {
-        dc.close();
-    }
-    if (pc.getTransceivers) {
-        pc.getTransceivers().forEach(function(transceiver) {
-            if (transceiver.stop) {
-                transceiver.stop();
-            }
-        });
-    }
-    pc.getSenders().forEach(function(sender) {
-        sender.track.stop();
+  if (dc) {
+    dc.close();
+  }
+  if (pc.getTransceivers) {
+    pc.getTransceivers().forEach(function(transceiver) {
+      if (transceiver.stop) {
+        transceiver.stop();
+      }
     });
-    setTimeout(function() {
-        pc.close();
-    }, 500);
+  }
+  pc.getSenders().forEach(function(sender) {
+    sender.track.stop();
+  });
+  setTimeout(function() {
+    pc.close();
+  }, 500);
 }
