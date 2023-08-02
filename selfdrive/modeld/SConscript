@@ -4,7 +4,7 @@ Import('env', 'target', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc
 lenv = env.Clone()
 
 libs = [cereal, messaging, common, visionipc, gpucommon,
-        'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
+        'json11', 'OpenCL', 'SNPE', 'capnp', 'zmq', 'kj', 'yuv']
 
 def get_dlsym_offset():
   """Returns the offset between dlopen and dlsym in libdl.so"""

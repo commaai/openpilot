@@ -340,9 +340,6 @@ Export('env', 'envCython', 'qt_env', 'target', 'system', 'arch')
 
 # *** Build common code
 SConscript(['common/SConscript'])
-Import('common', 'gpucommon')
-common = [common, 'json11']
-Export('common', 'gpucommon')
 
 # *** Build cereal and messaging
 SConscript(['cereal/SConscript'])

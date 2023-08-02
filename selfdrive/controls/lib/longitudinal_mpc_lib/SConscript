@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'target', 'common')
+Import('env', 'envCython', 'target')
 
 gen = "c_generated_code"
 

@@ -1,6 +1,6 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
-libs = ['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj']
+libs = ['usb-1.0', common, cereal, messaging, 'json11', 'pthread', 'zmq', 'capnp', 'kj']
 panda = env.Library('panda', ['panda.cc', 'panda_comms.cc', 'spi.cc'])
 
 env.Program('boardd', ['main.cc', 'boardd.cc'], LIBS=[panda] + libs)
