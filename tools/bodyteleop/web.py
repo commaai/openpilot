@@ -44,7 +44,7 @@ async def control_body(data, app):
   if (data['type'] == 'control_command') and (app['mutable_vals']['prev_command'] == [data['x'], data['y']] and data['x'] == 0 and data['y'] == 0):
     return
 
-  print(data)
+  logger.info(str(data))
   x = max(-1.0, min(1.0, data['x']))
   y = max(-1.0, min(1.0, data['y']))
   dat = messaging.new_message('testJoystick')
@@ -112,6 +112,7 @@ async def offer(request):
         if sm.updated['carState']:
           channel.send(json.dumps({'type': 'battery_level', 'value': int(sm['carState'].fuelGauge * 100)}))
       if data['type'] == 'play_sound':
+        logger.info(f"Playing sound: {data['sound']}")
         await play_sound(data['sound'])
       if data['type'] == 'find_person':
         request.app['mutable_vals']['find_person'] = data['value']
@@ -125,7 +126,7 @@ async def offer(request):
 
   @pc.on('track')
   def on_track(track):
-    print(f"Track received: {track.kind}")
+    logger.info(f"Track received: {track.kind}")
     if track.kind == "audio":
       speaker.addTrack(track)
     elif track.kind == "video":
@@ -170,11 +171,11 @@ async def run(cmd):
     stderr=asyncio.subprocess.PIPE
   )
   stdout, stderr = await proc.communicate()
-  print("Created key and cert!")
+  logger.info("Created key and cert!")
   if stdout:
-    print(f'[stdout]\n{stdout.decode()}')
+    logger.info(f'[stdout]\n{stdout.decode()}')
   if stderr:
-    print(f'[stderr]\n{stderr.decode()}')
+    logger.info(f'[stderr]\n{stderr.decode()}')
 
 
 def main():
@@ -184,7 +185,7 @@ def main():
   if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
     asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
   else:
-    print("Certificate exists!")
+    logger.info("Certificate exists!")
   ssl_context = ssl.SSLContext()
   ssl_context.load_cert_chain(cert_path, key_path)
   app = web.Application()

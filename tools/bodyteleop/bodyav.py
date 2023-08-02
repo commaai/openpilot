@@ -24,7 +24,6 @@ def force_codec(pc, sender, forced_codec='video/VP9', stream_type="video"):
   codecs = RTCRtpSender.getCapabilities(stream_type).codecs
   codec = [codec for codec in codecs if codec.mimeType == forced_codec]
   transceiver = next(t for t in pc.getTransceivers() if t.sender == sender)
-  print("transceiver", transceiver, codec)
   transceiver.setCodecPreferences(codec)
 
 
@@ -139,7 +138,6 @@ class BodyMic(AudioStreamTrack):
 
 async def play_sound(sound):
   chunk = 5120
-  print("playing", sound)
   with wave.open(SOUNDS[sound], 'rb') as wf:
     def callback(in_data, frame_count, time_info, status):
       data = wf.readframes(frame_count)
