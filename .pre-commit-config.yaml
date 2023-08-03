@@ -17,7 +17,7 @@ repos:
     -   id: check-added-large-files
         args: ['--maxkb=100']
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
     -   id: codespell
         exclude: '^(third_party/)|(body/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
@@ -32,9 +32,10 @@ repos:
         entry: mypy
         language: system
         types: [python]
+        args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
 -   repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
     -   id: flake8
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
@@ -83,3 +84,7 @@ repos:
     rev: '1.5.0'
     hooks:
     -   id: poetry-check
+    -   id: poetry-lock
+        name: validate poetry lock
+        args: 
+        - --check

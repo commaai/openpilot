@@ -13,12 +13,6 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 
-constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
-constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
-constexpr float FCW_THRESHOLD_3MS2 = 0.7;
-
-std::array<float, 5> prev_brake_5ms2_probs = {0,0,0,0,0};
-std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
@@ -33,26 +27,30 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #else
   s->m = std::make_unique<SNPEModel>("models/supercombo.dlc",
 #endif
-   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, true, false, context);
+   &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME, false, context);
 
-#ifdef TEMPORAL
-  s->m->addRecurrent(&s->feature_buffer[0], TEMPORAL_SIZE);
-#endif
+  s->m->addInput("input_imgs", NULL, 0);
+  s->m->addInput("big_input_imgs", NULL, 0);
 
+  // TODO: the input is important here, still need to fix this
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
+  s->m->addInput("desire_pulse", s->pulse_desire, DESIRE_LEN*(HISTORY_BUFFER_LEN+1));
 #endif
 
 #ifdef TRAFFIC_CONVENTION
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+  s->m->addInput("traffic_convention", s->traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 
 #ifdef DRIVING_STYLE
-  s->m->addDrivingStyle(s->driving_style, DRIVING_STYLE_LEN);
+  s->m->addInput("driving_style", s->driving_style, DRIVING_STYLE_LEN);
 #endif
 
 #ifdef NAV
-  s->m->addNavFeatures(s->nav_features, NAV_FEATURE_LEN);
+  s->m->addInput("nav_features", s->nav_features, NAV_FEATURE_LEN);
+#endif
+
+#ifdef TEMPORAL
+  s->m->addInput("feature_buffer", &s->feature_buffer[0], TEMPORAL_SIZE);
 #endif
 
 }
@@ -89,13 +87,13 @@ LOGT("Desire enqueued");
   s->traffic_convention[1-rhd_idx] = 0.0;
 
   // if getInputBuf is not NULL, net_input_buf will be
-  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
-  s->m->addImage(net_input_buf, s->frame->buf_size);
+  auto net_input_buf = s->frame->prepare(buf->buf_cl, buf->width, buf->height, buf->stride, buf->uv_offset, transform, static_cast<cl_mem*>(s->m->getCLBuffer("input_imgs")));
+  s->m->setInputBuffer("input_imgs", net_input_buf, s->frame->buf_size);
   LOGT("Image added");
 
   if (wbuf != nullptr) {
-    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getExtraBuf()));
-    s->m->addExtra(net_extra_buf, s->wide_frame->buf_size);
+    auto net_extra_buf = s->wide_frame->prepare(wbuf->buf_cl, wbuf->width, wbuf->height, wbuf->stride, wbuf->uv_offset, transform_wide, static_cast<cl_mem*>(s->m->getCLBuffer("big_input_imgs")));
+    s->m->setInputBuffer("big_input_imgs", net_extra_buf, s->wide_frame->buf_size);
     LOGT("Extra image added");
   }
 
@@ -148,7 +146,7 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputL
   lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data) {
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data, PublishState &ps) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
   softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
 
@@ -170,18 +168,18 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
     //gas_pressed_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_pressed);
   }
 
-  std::memmove(prev_brake_5ms2_probs.data(), &prev_brake_5ms2_probs[1], 4*sizeof(float));
-  std::memmove(prev_brake_3ms2_probs.data(), &prev_brake_3ms2_probs[1], 2*sizeof(float));
-  prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
-  prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
+  std::memmove(ps.prev_brake_5ms2_probs.data(), &ps.prev_brake_5ms2_probs[1], 4*sizeof(float));
+  std::memmove(ps.prev_brake_3ms2_probs.data(), &ps.prev_brake_3ms2_probs[1], 2*sizeof(float));
+  ps.prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
+  ps.prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
   bool above_fcw_threshold = true;
-  for (int i=0; i<prev_brake_5ms2_probs.size(); i++) {
+  for (int i=0; i<ps.prev_brake_5ms2_probs.size(); i++) {
     float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
-    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
+    above_fcw_threshold = above_fcw_threshold && ps.prev_brake_5ms2_probs[i] > threshold;
   }
-  for (int i=0; i<prev_brake_3ms2_probs.size(); i++) {
-    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
+  for (int i=0; i<ps.prev_brake_3ms2_probs.size(); i++) {
+    above_fcw_threshold = above_fcw_threshold && ps.prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
   }
 
   auto disengage = meta.initDisengagePredictions();
@@ -197,6 +195,44 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   meta.setDesirePrediction(to_kj_array_ptr(desire_pred_softmax));
   meta.setDesireState(to_kj_array_ptr(desire_state_softmax));
   meta.setHardBrakePredicted(above_fcw_threshold);
+}
+
+void fill_confidence(cereal::ModelDataV2::Builder &framed, PublishState &ps) {
+  if (framed.getFrameId() % (2*MODEL_FREQ) == 0) {
+    // update every 2s to match predictions interval
+    auto dbps = framed.getMeta().getDisengagePredictions().getBrakeDisengageProbs();
+    auto dgps = framed.getMeta().getDisengagePredictions().getGasDisengageProbs();
+    auto dsps = framed.getMeta().getDisengagePredictions().getSteerOverrideProbs();
+
+    float any_dp[DISENGAGE_LEN];
+    float dp_ind[DISENGAGE_LEN];
+
+    for (int i = 0; i < DISENGAGE_LEN; i++) {
+      any_dp[i] = 1 - ((1-dbps[i])*(1-dgps[i])*(1-dsps[i])); // any disengage prob
+    }
+
+    dp_ind[0] = any_dp[0];
+    for (int i = 0; i < DISENGAGE_LEN-1; i++) {
+      dp_ind[i+1] = (any_dp[i+1] - any_dp[i]) / (1 - any_dp[i]); // independent disengage prob for each 2s slice
+    }
+
+    // rolling buf for 2, 4, 6, 8, 10s
+    std::memmove(&ps.disengage_buffer[0], &ps.disengage_buffer[DISENGAGE_LEN], sizeof(float) * DISENGAGE_LEN * (DISENGAGE_LEN-1));
+    std::memcpy(&ps.disengage_buffer[DISENGAGE_LEN * (DISENGAGE_LEN-1)], &dp_ind[0], sizeof(float) * DISENGAGE_LEN);
+  }
+
+  float score = 0;
+  for (int i = 0; i < DISENGAGE_LEN; i++) {
+    score += ps.disengage_buffer[i*DISENGAGE_LEN+DISENGAGE_LEN-1-i] / DISENGAGE_LEN;
+  }
+
+  if (score < RYG_GREEN) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::GREEN);
+  } else if (score < RYG_YELLOW) {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::YELLOW);
+  } else {
+    framed.setConfidence(cereal::ModelDataV2::ConfidenceClass::RED);
+  }
 }
 
 template<size_t size>
@@ -313,7 +349,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs, PublishState &ps) {
   const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
@@ -341,7 +377,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
   // meta
-  fill_meta(framed.initMeta(), net_outputs.meta);
+  fill_meta(framed.initMeta(), net_outputs.meta, ps);
+
+  // confidence
+  fill_confidence(framed, ps);
 
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
@@ -363,8 +402,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid) {
+                   const ModelOutput &net_outputs, ModelState &s, PublishState &ps, uint64_t timestamp_eof, uint64_t timestamp_llk,
+                   float model_execution_time, const bool nav_enabled, const bool valid) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent(valid).initModelV2();
@@ -373,11 +412,13 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id
   framed.setFrameAge(frame_age);
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
+  framed.setLocationMonoTime(timestamp_llk);
   framed.setModelExecutionTime(model_execution_time);
+  framed.setNavEnabled(nav_enabled);
   if (send_raw_pred) {
-    framed.setRawPredictions(raw_pred.asBytes());
+    framed.setRawPredictions((kj::ArrayPtr<const float>(s.output.data(), s.output.size())).asBytes());
   }
-  fill_model(framed, net_outputs);
+  fill_model(framed, net_outputs, ps);
   pm.send("modelV2", msg);
 }
 
@@ -390,15 +431,18 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   const auto &v_std = net_outputs.pose.velocity_std;
   const auto &r_std = net_outputs.pose.rotation_std;
   const auto &t_std = net_outputs.wide_from_device_euler.std;
+  const auto &road_transform_trans_mean = net_outputs.road_transform.position_mean;
+  const auto &road_transform_trans_std = net_outputs.road_transform.position_std;
 
   auto posenetd = msg.initEvent(valid && (vipc_dropped_frames < 1)).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
   posenetd.setWideFromDeviceEuler({t_mean.x, t_mean.y, t_mean.z});
+  posenetd.setRoadTransformTrans({road_transform_trans_mean.x, road_transform_trans_mean.y, road_transform_trans_mean.z});
   posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
   posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
   posenetd.setWideFromDeviceEulerStd({exp(t_std.x), exp(t_std.y), exp(t_std.z)});
-
+  posenetd.setRoadTransformTransStd({exp(road_transform_trans_std.x), exp(road_transform_trans_std.y), exp(road_transform_trans_std.z)});
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

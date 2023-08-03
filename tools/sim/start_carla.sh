@@ -15,7 +15,7 @@ if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   fi
 fi
 
-docker pull carlasim/carla:0.9.13
+docker pull carlasim/carla:0.9.14
 
 EXTRA_ARGS="-it"
 if [[ "$DETACH" ]]; then
@@ -30,5 +30,5 @@ docker run \
   --net=host \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   $EXTRA_ARGS \
-  carlasim/carla:0.9.13 \
+  carlasim/carla:0.9.14 \
   /bin/bash ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -benchmark -fps=20 -quality-level=Low

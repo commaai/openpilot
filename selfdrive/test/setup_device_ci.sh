@@ -33,6 +33,7 @@ echo tici-$(cat /proc/cmdline | sed -e 's/^.*androidboot.serialno=//' -e 's/ .*$
 sudo sed -i "s,/data/params/d/GithubSshKeys,/usr/comma/setup_keys," /etc/ssh/sshd_config
 sudo systemctl daemon-reload
 sudo systemctl restart ssh
+sudo systemctl restart NetworkManager
 sudo systemctl disable ssh-param-watcher.path
 sudo systemctl disable ssh-param-watcher.service
 sudo mount -o ro,remount /
