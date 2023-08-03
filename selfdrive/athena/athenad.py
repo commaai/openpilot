@@ -771,7 +771,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
       onroad_prev = onroad
 
       # Note: TCP_USER_TIMEOUT should be slightly less than TCP_KEEPIDLE +
-      # TCP_KEEPINTVL * TCP_KEEPCNT = 21 to avoid ignoring keep alives
+      # TCP_KEEPINTVL * TCP_KEEPCNT = 21 to avoid ignoring keep alive limits
       sock.setsockopt(socket.IPPROTO_TCP, TCP_USER_TIMEOUT, 16000 if onroad else 0)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
