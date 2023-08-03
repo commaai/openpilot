@@ -159,7 +159,7 @@ class TestAthenadMethods(unittest.TestCase):
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", f"{host}/qlog.bz2", {})
     self.assertEqual(resp['enqueued'], 1)
     self.assertNotIn('failed', resp)
-    self.assertDictContainsSubset({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}, resp['items'][0])
+    self.assertLessEqual({"path": fn, "url": f"{host}/qlog.bz2", "headers": {}}.items(), resp['items'][0].items())
     self.assertIsNotNone(resp['items'][0].get('id'))
     self.assertEqual(athenad.upload_queue.qsize(), 1)
 
@@ -376,6 +376,10 @@ class TestAthenadMethods(unittest.TestCase):
   def test_getSshAuthorizedKeys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
     self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
+
+  def test_getGithubUsername(self):
+    keys = dispatcher["getGithubUsername"]()
+    self.assertEqual(keys, MockParams().params["GithubUsername"].decode('utf-8'))
 
   def test_getVersion(self):
     resp = dispatcher["getVersion"]()

@@ -60,18 +60,18 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
 const float DC_GAIN_AR0231 = 2.5;
 const float DC_GAIN_OX03C10 = 7.32;
 
-const float DC_GAIN_ON_GREY_AR0231= 0.2;
+const float DC_GAIN_ON_GREY_AR0231 = 0.2;
 const float DC_GAIN_OFF_GREY_AR0231 = 0.3;
-const float DC_GAIN_ON_GREY_OX03C10= 0.25;
-const float DC_GAIN_OFF_GREY_OX03C10 = 0.35;
+const float DC_GAIN_ON_GREY_OX03C10 = 0.9;
+const float DC_GAIN_OFF_GREY_OX03C10 = 1.0;
 
 const int DC_GAIN_MIN_WEIGHT_AR0231 = 0;
 const int DC_GAIN_MAX_WEIGHT_AR0231 = 1;
-const int DC_GAIN_MIN_WEIGHT_OX03C10 = 16;
-const int DC_GAIN_MAX_WEIGHT_OX03C10 = 32;
+const int DC_GAIN_MIN_WEIGHT_OX03C10 = 1; // always on is fine
+const int DC_GAIN_MAX_WEIGHT_OX03C10 = 1;
 
 const float TARGET_GREY_FACTOR_AR0231 = 1.0;
-const float TARGET_GREY_FACTOR_OX03C10 = 0.02;
+const float TARGET_GREY_FACTOR_OX03C10 = 0.01;
 
 const float sensor_analog_gains_AR0231[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
@@ -101,7 +101,7 @@ const float ANALOG_GAIN_COST_LOW_AR0231 = 0.1;
 const float ANALOG_GAIN_COST_HIGH_AR0231 = 5.0;
 
 const int ANALOG_GAIN_MIN_IDX_OX03C10 = 0x0;
-const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x11; // 2.5x
+const int ANALOG_GAIN_REC_IDX_OX03C10 = 0x0; // 1x
 const int ANALOG_GAIN_MAX_IDX_OX03C10 = 0x36;
 const int ANALOG_GAIN_COST_DELTA_OX03C10 = -1;
 const float ANALOG_GAIN_COST_LOW_OX03C10 = 0.4;
@@ -496,7 +496,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
-    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj)
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
   sync_objs[i] = sync_create.sync_obj;
 
@@ -1172,25 +1172,21 @@ void CameraState::set_camera_exposure(float grey_frac) {
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, true);
   } else if (camera_id == CAMERA_ID_OX03C10) {
-    // t_HCG + t_LCG + t_VS on LPD, t_SPD on SPD
-    uint32_t hcg_time = std::max((dc_gain_weight * exposure_time / dc_gain_max_weight), 0);
-    uint32_t lcg_time = std::max(((dc_gain_max_weight - dc_gain_weight) * exposure_time / dc_gain_max_weight), 0);
-    // uint32_t spd_time = std::max(hcg_time / 16, (uint32_t)exposure_time_min);
-    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 128, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
-    uint32_t spd_time = vs_time;
+    // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
+    uint32_t hcg_time = exposure_time;
+    uint32_t lcg_time = hcg_time;
+    uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
+    uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
 
     uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
-    uint32_t min_gain = ox03c10_analog_gains_reg[0];
+
     struct i2c_random_wr_payload exp_reg_array[] = {
       {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
       {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
       {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
-      {0x35c1, vs_time>>8}, {0x35c2, vs_time&0xFF},
+      {0x35c2, vs_time&0xFF},
 
       {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-      {0x3588, min_gain>>8}, {0x3589, min_gain&0xFF},
-      {0x3548, min_gain>>8}, {0x3549, min_gain&0xFF},
-      {0x35c8, min_gain>>8}, {0x35c9, min_gain&0xFF},
     };
     sensors_i2c(exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, false);
   }
@@ -1246,10 +1242,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
     framed.setImage(get_raw_frame_image(b));
   }
   LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-  if (c == &s->road_cam) {
-    framed.setTransform(b->yuv_transform.v);
-    LOGT(c->buf.cur_frame_data.frame_id, "%s: Transformed", "RoadCamera");
-  }
 
   if (c->camera_id == CAMERA_ID_AR0231) {
     ar0231_process_registers(s, c, framed);

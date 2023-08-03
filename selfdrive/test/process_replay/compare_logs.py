@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import bz2
 import sys
 import math
 import capnp
@@ -10,16 +9,6 @@ from collections import Counter
 from tools.lib.logreader import LogReader
 
 EPSILON = sys.float_info.epsilon
-
-
-def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
-
-  if compress:
-    dat = bz2.compress(dat)
-
-  with open(dest, "wb") as f:
-    f.write(dat)
 
 
 def remove_ignored_fields(msg, ignore):
@@ -70,7 +59,10 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     field_tolerances = {}
   default_tolerance = EPSILON if tolerance is None else tolerance
 
-  log1, log2 = (list(filter(lambda m: m.which() not in ignore_msgs, log)) for log in (log1, log2))
+  log1, log2 = (
+    [m for m in log if m.which() not in ignore_msgs]
+    for log in (log1, log2)
+  )
 
   if len(log1) != len(log2):
     cnt1 = Counter(m.which() for m in log1)
@@ -80,7 +72,6 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
   diff = []
   for msg1, msg2 in zip(log1, log2):
     if msg1.which() != msg2.which():
-      print(msg1.which(), msg2.which())
       raise Exception("msgs not aligned between logs")
 
     msg1 = remove_ignored_fields(msg1, ignore_fields)

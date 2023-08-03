@@ -144,7 +144,7 @@ TEST_CASE("Route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE);
     REQUIRE(route.load());
-    REQUIRE(route.segments().size() == 11);
+    REQUIRE(route.segments().size() == 13);
     for (int i = 0; i < 2; ++i) {
       read_segment(i, route.at(i), flags);
     }
@@ -154,7 +154,7 @@ TEST_CASE("Route") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {}
+  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, {}, nullptr, flags) {}
   void test_seek();
   void testSeekTo(int seek_to);
 };

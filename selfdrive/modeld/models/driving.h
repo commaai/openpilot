@@ -1,10 +1,5 @@
 #pragma once
 
-// gate this here
-#define TEMPORAL
-#define DESIRE
-#define TRAFFIC_CONVENTION
-
 #include <array>
 #include <memory>
 
@@ -16,6 +11,12 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/models/nav.h"
 #include "selfdrive/modeld/runners/run.h"
+
+// gate this here
+#define TEMPORAL
+#define DESIRE
+#define TRAFFIC_CONVENTION
+#define NAV
 
 constexpr int FEATURE_LEN = 128;
 constexpr int HISTORY_BUFFER_LEN = 99;
@@ -37,6 +38,10 @@ constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_SELECTION = 3;
 // Padding to get output shape as multiple of 4
 constexpr int PAD_SIZE = 2;
+
+constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
+constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
+constexpr float FCW_THRESHOLD_3MS2 = 0.7;
 
 struct ModelOutputXYZ {
   float x;
@@ -177,6 +182,14 @@ struct ModelOutputTemporalPose {
 };
 static_assert(sizeof(ModelOutputTemporalPose) == sizeof(ModelOutputXYZ)*4);
 
+struct ModelOutputRoadTransform {
+  ModelOutputXYZ position_mean;
+  ModelOutputXYZ rotation_mean;
+  ModelOutputXYZ position_std;
+  ModelOutputXYZ rotation_std;
+};
+static_assert(sizeof(ModelOutputRoadTransform) == sizeof(ModelOutputXYZ)*4);
+
 struct ModelOutputDisengageProb {
   float gas_disengage;
   float brake_disengage;
@@ -236,6 +249,7 @@ struct ModelOutput {
   const ModelOutputPose pose;
   const ModelOutputWideFromDeviceEuler wide_from_device_euler;
   const ModelOutputTemporalPose temporal_pose;
+  const ModelOutputRoadTransform road_transform;
 };
 
 constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
@@ -269,12 +283,18 @@ struct ModelState {
 #endif
 };
 
+struct PublishState {
+  std::array<float, DISENGAGE_LEN * DISENGAGE_LEN> disengage_buffer = {};
+  std::array<float, 5> prev_brake_5ms2_probs = {};
+  std::array<float, 3> prev_brake_3ms2_probs = {};
+};
+
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelOutput *model_eval_frame(ModelState* s, VisionBuf* buf, VisionBuf* buf_wide,
                               const mat3 &transform, const mat3 &transform_wide, float *desire_in, bool is_rhd, float *driving_style, float *nav_features, bool prepare_only);
 void model_free(ModelState* s);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
-                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid);
+                   const ModelOutput &net_outputs, ModelState &s, PublishState &ps, uint64_t timestamp_eof, uint64_t timestamp_llk,
+                   float model_execution_time, const bool nav_enabled, const bool valid);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid);
