@@ -43,7 +43,7 @@ from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
 
-# missing in pysocket
+# TODO: use socket constant when mypy recognizes this as a valid attribute
 TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
