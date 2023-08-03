@@ -1,25 +1,19 @@
 # distutils: language = c++
 #cython: language_level=3
 
-from libcpp cimport int, float
-
-cdef extern from "<CL/cl.h>":
-  cdef unsigned long CL_DEVICE_TYPE_DEFAULT
-
-  struct _cl_device_id
-  struct _cl_context
-  struct _cl_mem
+from libcpp cimport int, float, long
+from cereal.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
+from cereal.visionipc.visionipc_pyx cimport CLContext as BaseCLContext
 
 cdef extern from "common/clutil.h":
-  _cl_device_id * cl_get_device_id(unsigned long)
-  _cl_context * cl_create_context(_cl_device_id*)
+  cl_device_id cl_get_device_id(unsigned long)
+  cl_context cl_create_context(cl_device_id)
 
-cdef class CLContext:
-  cdef _cl_device_id * device_id
-  cdef _cl_context * context
+cdef class CLContext(BaseCLContext):
+  pass
 
 cdef class CLMem:
-  cdef _cl_mem ** mem;
+  cdef cl_mem * mem;
 
   @staticmethod
   cdef create(void*)

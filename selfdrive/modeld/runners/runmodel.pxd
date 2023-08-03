@@ -3,7 +3,7 @@
 
 from libcpp.string cimport string
 from libcpp cimport bool, int, float
-from selfdrive.modeld.models.cl_pyx cimport _cl_context
+from cereal.visionipc.visionipc cimport cl_context
 
 cdef extern from "selfdrive/modeld/runners/runmodel.h":
   cdef int USE_CPU_RUNTIME
@@ -12,7 +12,7 @@ cdef extern from "selfdrive/modeld/runners/runmodel.h":
 
 cdef extern from "selfdrive/modeld/runners/onnxmodel.h":
   cdef cppclass ONNXModel:
-    ONNXModel(string, float*, size_t, int, bool, _cl_context*)
+    ONNXModel(string, float*, size_t, int, bool, cl_context)
     void addInput(string, float*, int)
     void setInputBuffer(string, float*, int)
     void * getCLBuffer(string)
