@@ -10,9 +10,8 @@ from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
-from selfdrive.modeld.models.cl_pyx import CLContext # pylint: disable=no-name-in-module
 from selfdrive.modeld.runners.runmodel_pyx import ONNXModel, Runtime # pylint: disable=no-name-in-module
-from selfdrive.modeld.models.commonmodel_pyx import ModelFrame # pylint: disable=no-name-in-module
+from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext # pylint: disable=no-name-in-module
 from selfdrive.modeld.models.driving_pyx import PublishState, create_model_msg, create_pose_msg # pylint: disable=no-name-in-module
 from system.hardware import PC
 
@@ -266,6 +265,6 @@ if __name__ == '__main__':
                                           meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen))
       pm.send("cameraOdometry", create_pose_msg(model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen))
 
-    print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" % ((mt2 - mt1)*1000, (mt1 - last)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
+    # print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" % ((mt2 - mt1)*1000, (mt1 - last)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
     last = mt1
     last_vipc_frame_id = meta_main.frame_id

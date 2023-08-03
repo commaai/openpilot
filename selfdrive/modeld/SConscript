@@ -66,7 +66,6 @@ driving_lib = env.Library('driving', env.SharedObject(driving_src))
 envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[runmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'SNPE', 'capnp', 'kj', 'zmq', 'OpenCL'])
-envCython.Program('models/cl_pyx.so', 'models/cl_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
 
 common_model = lenv.Object(common_src)
 

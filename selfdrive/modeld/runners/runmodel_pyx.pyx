@@ -10,7 +10,7 @@ from libcpp cimport bool, int, float
 
 from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from .runmodel cimport ONNXModel as cppONNXModel
-from selfdrive.modeld.models.cl_pyx cimport CLContext, CLMem
+from selfdrive.modeld.models.commonmodel_pyx cimport CLContext, CLMem
 
 class Runtime:
   CPU = USE_CPU_RUNTIME

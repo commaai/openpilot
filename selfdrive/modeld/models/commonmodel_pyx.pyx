@@ -5,9 +5,21 @@ import numpy as np
 cimport numpy as cnp
 from libcpp cimport float
 from libc.string cimport memcpy
-from cereal.visionipc.visionipc_pyx cimport VisionBuf
-from .cl_pyx cimport CLContext, CLMem
-from .commonmodel cimport mat3, ModelFrame as cppModelFrame
+from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
+from cereal.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
+from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context, mat3, ModelFrame as cppModelFrame
+
+cdef class CLContext(BaseCLContext):
+  def __cinit__(self):
+    self.device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT)
+    self.context = cl_create_context(self.device_id)
+
+cdef class CLMem:
+  @staticmethod
+  cdef create(void * cmem):
+    mem = CLMem()
+    mem.mem = <cl_mem*> cmem
+    return mem
 
 cdef class ModelFrame:
   cdef cppModelFrame * frame
