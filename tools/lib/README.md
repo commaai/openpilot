@@ -34,7 +34,7 @@ for msg in lr:
 
 ### MultiLogIterator
 
-`MultiLogIterator` is similar to `LogReader`, but reads multiple logs.
+`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
 
 ```python
 from tools.lib.route import Route
