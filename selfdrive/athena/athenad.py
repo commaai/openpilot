@@ -767,6 +767,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
     if onroad != onroad_prev:
       onroad_prev = onroad
 
+      # TODO: remove ignored attr-defined when mypy recognizes TCP_USER_TIMEOUT
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)  # type: ignore[attr-defined]
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
       sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
