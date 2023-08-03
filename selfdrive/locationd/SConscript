@@ -1,6 +1,6 @@
 Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
-loc_libs = [cereal, messaging, 'zmq', common, 'json11', 'capnp', 'kj', 'pthread']
+loc_libs = [cereal, messaging, common, 'zmq', 'json11', 'capnp', 'kj', 'pthread']
 
 ekf_sym_cc = env.SharedObject("#rednose/helpers/ekf_sym.cc")
 locationd_sources = ["locationd.cc", "models/live_kf.cc", ekf_sym_cc]
