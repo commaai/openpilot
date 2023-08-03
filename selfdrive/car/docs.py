@@ -31,6 +31,7 @@ def get_all_car_info() -> List[CarInfo]:
   for model, car_info in get_interface_attr("CAR_INFO", combine_brands=True).items():
     # If available, uses experimental longitudinal limits for the docs
     CP = interfaces[model][0].get_params(model, fingerprint=gen_empty_fingerprint(), car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
+    CP.openpilotLongitudinalControl = not CP.openpilotLongitudinalControl
 
     if CP.dashcamOnly or car_info is None:
       continue
