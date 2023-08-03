@@ -20,7 +20,7 @@ cdef class ModelFrame:
 
   def prepare(self, VisionBuf buf, float[:] projection, CLMem output):
     cdef mat3 cprojection
-    memcpy(cprojection.v, &projection[0], 9)
+    memcpy(cprojection.v, &projection[0], 9*sizeof(float))
     cdef float * data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, output.mem)
     if not data:
       return None
