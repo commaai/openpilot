@@ -118,18 +118,18 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, false});
-  sensors_init.push_back({&bmx055_gyro, false});
-  sensors_init.push_back({&bmx055_magn, false});
-  sensors_init.push_back({&bmx055_temp, false});
+  sensors_init.emplace_back(&bmx055_accel, false);
+  sensors_init.emplace_back(&bmx055_gyro, false);
+  sensors_init.emplace_back(&bmx055_magn, false);
+  sensors_init.emplace_back(&bmx055_temp, false);
 
-  sensors_init.push_back({&lsm6ds3_accel, true});
-  sensors_init.push_back({&lsm6ds3_gyro, true});
-  sensors_init.push_back({&lsm6ds3_temp, true});
+  sensors_init.emplace_back(&lsm6ds3_accel, true);
+  sensors_init.emplace_back(&lsm6ds3_gyro, true);
+  sensors_init.emplace_back(&lsm6ds3_temp, true);
 
-  sensors_init.push_back({&mmc5603nj_magn, false});
+  sensors_init.emplace_back(&mmc5603nj_magn, false);
 
-  sensors_init.push_back({&light, true});
+  sensors_init.emplace_back(&light, true);
 
   bool has_magnetometer = false;
 
