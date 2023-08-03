@@ -19,7 +19,7 @@ from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
-DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 RELEASES_URL="https://github.com/commaai/PlotJuggler/releases/download/latest"
 INSTALL_DIR = os.path.join(juggle_dir, "bin")
 PLOTJUGGLER_BIN = os.path.join(juggle_dir, "bin/plotjuggler")
