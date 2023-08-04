@@ -1,28 +1,11 @@
 # distutils: language = c++
 # cython: c_string_encoding=ascii, language_level=3
 
-import numpy as np
-cimport numpy as cnp
-from cython.view cimport array
-from libc.string cimport memcpy
 from libcpp.string cimport string
-from libcpp cimport bool, int, float
+from libc.string cimport memcpy
+from selfdrive.modeld.models.commonmodel_pyx cimport CLMem
 
-from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
-from .runmodel cimport ONNXModel as cppONNXModel
-from selfdrive.modeld.models.commonmodel_pyx cimport CLContext, CLMem
-
-class Runtime:
-  CPU = USE_CPU_RUNTIME
-  GPU = USE_GPU_RUNTIME
-  DSP = USE_DSP_RUNTIME
-
-cdef class ONNXModel:
-  cdef cppONNXModel * model
-
-  def __cinit__(self, string path, float[:] output, int runtime, bool use_tf8, CLContext context):
-    self.model = new cppONNXModel(path, &output[0], len(output), runtime, use_tf8, context.context)
-
+cdef class RunModel:
   def __dealloc__(self):
     del self.model
 

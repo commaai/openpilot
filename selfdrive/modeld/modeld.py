@@ -10,8 +10,8 @@ from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
-from selfdrive.modeld.runners.runmodel_pyx import ONNXModel, Runtime # pylint: disable=no-name-in-module
-from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext # pylint: disable=no-name-in-module
+from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel # pylint: disable=no-name-in-module
+from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=no-name-in-module
 from selfdrive.modeld.models.driving_pyx import PublishState, create_model_msg, create_pose_msg # pylint: disable=no-name-in-module
 from system.hardware import PC
 
