@@ -21,9 +21,9 @@ class TestAmplifier(unittest.TestCase):
     # clear dmesg
     subprocess.check_call("sudo dmesg -C", shell=True)
 
+    HARDWARE.reset_internal_panda()
     Panda.wait_for_panda(None, 30)
     self.panda = Panda()
-    self.panda.reset()
 
   def tearDown(self):
     HARDWARE.reset_internal_panda()
