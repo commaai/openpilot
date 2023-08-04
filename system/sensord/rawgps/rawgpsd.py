@@ -6,6 +6,7 @@ import itertools
 import math
 import time
 import pycurl
+import shutil
 import subprocess
 from datetime import datetime
 from multiprocessing import Process, Event
@@ -144,6 +145,10 @@ def download_assistance():
 def downloader_loop(event):
   if os.path.exists(ASSIST_DATA_FILE):
     os.remove(ASSIST_DATA_FILE)
+
+  alt_path = os.getenv("QCOM_ALT_ASSISTANCE_PATH", None)
+  if alt_path is not None and os.path.exists(alt_path):
+    shutil.copyfile(alt_path, ASSIST_DATA_FILE)
 
   try:
     while not os.path.exists(ASSIST_DATA_FILE) and not event.is_set():
