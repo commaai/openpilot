@@ -73,12 +73,16 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint8_t reset_buffer[9];
   int ret, len;
   // SET - RESET cycle
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET | 0b01);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET);
+  assert(ret >= 0);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_AUTO_SR_EN | 0b01);
   assert(ret >= 0);
   len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET | 0b01);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET);
+  assert(ret >= 0);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_AUTO_SR_EN | 0b01);
   assert(ret >= 0);
   len = read_register(MMC5603NJ_I2C_REG_XOUT0, reset_buffer, sizeof(reset_buffer));
   assert(len == sizeof(reset_buffer));
