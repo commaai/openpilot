@@ -3,15 +3,16 @@
 
 from libcpp cimport bool
 from libc.stdint cimport uint32_t, uint64_t
-from .driving cimport MessageBuilder, PublishState as cppPublishState
+from .driving cimport MessageBuilder, PublishState as cppPublishState, CPP_USE_THNEED
 from .driving cimport fill_model_msg, fill_pose_msg
+
+USE_THNEED = CPP_USE_THNEED
 
 cdef class PublishState:
   cdef cppPublishState state
 
 def create_model_msg(float[:] model_outputs, PublishState ps, uint32_t vipc_frame_id, uint32_t vipc_frame_id_extra, uint32_t frame_id, float frame_drop,
                      uint64_t timestamp_eof, uint64_t timestamp_llk, float model_execution_time, bool nav_enabled, bool valid):
-
   cdef MessageBuilder msg
   fill_model_msg(msg, &model_outputs[0], ps.state, vipc_frame_id, vipc_frame_id_extra, frame_id, frame_drop,
                  timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, valid)

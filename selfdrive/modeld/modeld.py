@@ -5,16 +5,20 @@ import numpy as np
 from typing import Dict, Optional
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from system.hardware import PC
 from common.params import Params
 from common.filter_simple import FirstOrderFilter
 from common.realtime import set_core_affinity, set_realtime_priority
 from common.transformations.model import medmodel_frame_from_calib_frame, sbigmodel_frame_from_calib_frame
 from common.transformations.camera import view_frame_from_device_frame, tici_fcam_intrinsics, tici_ecam_intrinsics
 from common.transformations.orientation import rot_from_euler
-from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel # pylint: disable=import-error, no-name-in-module
 from selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext, Runtime # pylint: disable=import-error, no-name-in-module
-from selfdrive.modeld.models.driving_pyx import PublishState, create_model_msg, create_pose_msg # pylint: disable=import-error, no-name-in-module
-from system.hardware import PC
+from selfdrive.modeld.models.driving_pyx import USE_THNEED, PublishState, create_model_msg, create_pose_msg # pylint: disable=import-error, no-name-in-module
+
+if USE_THNEED:
+  from selfdrive.modeld.runners.thneedmodel_pyx import ThneedModel as ModelRunner # pylint: disable=import-error, no-name-in-module
+else:
+  from selfdrive.modeld.runners.onnxmodel_pyx import ONNXModel as ModelRunner # pylint: disable=import-error, no-name-in-module
 
 FEATURE_LEN = 128
 HISTORY_BUFFER_LEN = 99
@@ -58,7 +62,7 @@ class ModelState:
   inputs: Dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
-  model: ONNXModel
+  model: ModelRunner
 
   def __init__(self, context: CLContext):
     self.frame = ModelFrame(context)
@@ -72,7 +76,7 @@ class ModelState:
       'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
-    self.model = ONNXModel("models/supercombo.onnx", self.output, Runtime.GPU, False, context)
+    self.model = ModelRunner(f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}", self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
     self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
@@ -113,8 +117,7 @@ class ModelState:
     return self.output
 
 
-
-if __name__ == '__main__':
+def main():
   if not PC:
     set_realtime_priority(54)
     set_core_affinity([7])
@@ -159,8 +162,8 @@ if __name__ == '__main__':
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / MODEL_FREQ)
   frame_id = 0
   last_vipc_frame_id = 0
-  last = 0.0
   run_count = 0
+  # last = 0.0
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
@@ -267,5 +270,9 @@ if __name__ == '__main__':
       pm.send("cameraOdometry", create_pose_msg(model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen))
 
     # print("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f" % ((mt2 - mt1)*1000, (mt1 - last)*1000, meta_extra.frame_id, frame_id, frame_drop_ratio))
-    last = mt1
+    # last = mt1
     last_vipc_frame_id = meta_main.frame_id
+
+
+if __name__ == "__main__":
+  main()
