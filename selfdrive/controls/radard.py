@@ -8,7 +8,7 @@ import capnp
 from cereal import messaging, log, car
 from common.numpy_fast import interp
 from common.params import Params
-from common.realtime import Ratekeeper, Priority, config_realtime_process
+from common.realtime import Ratekeeper, Priority, config_realtime_process, DT_MDL
 from system.swaglog import cloudlog
 
 from common.kalman.simple_kalman import KF1D
@@ -25,8 +25,6 @@ V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 
 RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
-
-RADAR_STATE_FREQUENCY = 20.  # Hz
 
 
 class KalmanParams:
@@ -213,15 +211,14 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+  def update(self, sm: messaging.SubMaster, radar_data: Optional[car.RadarData]):
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
     radar_points = []
     radar_errors = []
-    no_radar = rr is None
-    if rr is not None:
-      radar_points = rr.points
-      radar_errors = rr.errors
+    if radar_data is not None:
+      radar_points = radar_data.points
+      radar_errors = radar_data.errors
 
     if sm.updated['carState']:
       self.v_ego = sm['carState'].vEgo
@@ -229,7 +226,7 @@ class RadarD:
     if sm.updated['modelV2']:
       self.ready = True
 
-    if not no_radar:
+    if radar_data is not None:
       ar_pts = {}
       for pt in radar_points:
         ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
@@ -315,20 +312,20 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 
-  RI = RadarInterface(CP)
+  interface = RadarInterface(CP)
 
-  rk = Ratekeeper(RADAR_STATE_FREQUENCY, print_delay_threshold=None)
-  RD = RadarD(1 / RADAR_STATE_FREQUENCY, RI.delay)
+  rk = Ratekeeper(1 / DT_MDL, print_delay_threshold=None)
+  radar = RadarD(DT_MDL, interface.delay)
 
   while True:
     sm.update()
 
     if sm.updated['modelV2']:
       can_strings = messaging.drain_sock_raw(can_sock)
-      rr = RI.update(can_strings)
+      radar_data = interface.update(can_strings)
 
-      RD.update(sm, rr)
-      RD.publish(pm, -rk.remaining*1000.0)
+      radar.update(sm, radar_data)
+      radar.publish(pm, -rk.remaining*1000.0)
 
       rk.monitor_time()
 
