@@ -1,7 +1,7 @@
 # distutils: language = c++
+#cython: language_level=3
 
 from libcpp.string cimport string
-
 from cereal.visionipc.visionipc cimport cl_context
 
 cdef extern from "selfdrive/modeld/runners/snpemodel.h":

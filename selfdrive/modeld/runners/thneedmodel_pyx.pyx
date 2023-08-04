@@ -1,9 +1,8 @@
 # distutils: language = c++
-# cython: c_string_encoding=ascii
+# cython: c_string_encoding=ascii, language_level=3
 
 from libcpp cimport bool
 from libcpp.string cimport string
-
 from .thneedmodel cimport ThneedModel as cppThneedModel
 from selfdrive.modeld.models.commonmodel_pyx cimport CLContext
 from selfdrive.modeld.runners.runmodel_pyx cimport RunModel

@@ -50,13 +50,13 @@ else:
     del common_src[common_src.index('runners/snpemodel.cc')]
 
 onnxmodel_lib = env.Library('onnxmodel', env.SharedObject(['runners/onnxmodel.cc']))
-# snpemodel_lib = env.Library('snpemodel', env.SharedObject(['runners/snpemodel.cc']))
+snpemodel_lib = env.Library('snpemodel', env.SharedObject(['runners/snpemodel.cc']))
 common_lib = env.Library('commonmodel', env.SharedObject(common_src))
 driving_lib = env.Library('driving', env.SharedObject(['models/driving.cc']))
 
 envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=envCython["LIBS"]+[onnxmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
-# envCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=envCython["LIBS"]+[snpemodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
+envCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=envCython["LIBS"]+[snpemodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'SNPE', 'capnp', 'kj', 'zmq', 'OpenCL'])
 
