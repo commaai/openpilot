@@ -2,6 +2,7 @@
 import time
 import logging
 import numpy as np
+from pathlib import Path
 from typing import Dict, Optional
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
@@ -34,6 +35,8 @@ MODEL_WIDTH = 512
 MODEL_HEIGHT = 256
 MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
 BUF_SIZE = MODEL_FRAME_SIZE * 2
+
+MODEL_PATH = str(Path(__file__).parent / f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}")
 
 # NOTE: These are almost exactly the same as the numbers in modeld.cc, but to get perfect equivalence we might have to copy them exactly
 calib_from_medmodel = np.linalg.inv(medmodel_frame_from_calib_frame[:, :3])
@@ -76,7 +79,7 @@ class ModelState:
       'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
-    self.model = ModelRunner(f"selfdrive/models/supercombo.{'thneed' if USE_THNEED else 'onnx'}", self.output, Runtime.GPU, False, context)
+    self.model = ModelRunner(MODEL_PATH, self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
     self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():

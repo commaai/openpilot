@@ -53,6 +53,13 @@ if use_thneed and arch == "larch64" or GetOption('pc_thneed'):
   lenvCython['CFLAGS'].append("-DUSE_THNEED")
   lenvCython['CXXFLAGS'].append("-DUSE_THNEED")
 
+transform_path = File("transforms/transform.cl").abspath
+loadyuv_path = File("transforms/loadyuv.cl").abspath
+lenv['CXXFLAGS'].append(f'-DTRANSFORM_PATH=\\"{transform_path}\\"')
+lenv['CXXFLAGS'].append(f'-DLOADYUV_PATH=\\"{loadyuv_path}\\"')
+lenvCython['CXXFLAGS'].append(f'-DTRANSFORM_PATH=\\"{transform_path}\\"')
+lenvCython['CXXFLAGS'].append(f'-DLOADYUV_PATH=\\"{loadyuv_path}\\"')
+
 common_frameworks = []
 common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
 if arch == "Darwin":
@@ -60,10 +67,10 @@ if arch == "Darwin":
 else:
   common_libs.append('OpenCL')
 
-onnxmodel_lib = env.Library('onnxmodel', env.SharedObject(['runners/onnxmodel.cc']))
-snpemodel_lib = env.Library('snpemodel', env.SharedObject(['runners/snpemodel.cc']))
-commonmodel_lib = env.Library('commonmodel', env.SharedObject(common_src))
-driving_lib = env.Library('driving', env.SharedObject(['models/driving.cc']))
+onnxmodel_lib = lenv.Library('onnxmodel', lenv.SharedObject(['runners/onnxmodel.cc']))
+snpemodel_lib = lenv.Library('snpemodel', lenv.SharedObject(['runners/snpemodel.cc']))
+commonmodel_lib = lenv.Library('commonmodel', lenv.SharedObject(common_src))
+driving_lib = lenv.Library('driving', lenv.SharedObject(['models/driving.cc']))
 
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
 lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
