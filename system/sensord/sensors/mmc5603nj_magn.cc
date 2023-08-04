@@ -24,7 +24,7 @@ int MMC5603NJ_Magn::init() {
   }
 
   // Set compute measurement rate
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN | MMC5603NJ_AUTO_SR_EN);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN);
   if (ret < 0) {
     goto fail;
   }
@@ -70,13 +70,27 @@ fail:
 bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[9];
-  int len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
+  uint8_t reset_buffer[9];
+  int ret, len;
+  // SET - RESET cycle
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET);
+  assert(ret >= 0);
+  len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
+
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET);
+  assert(ret >= 0);
+  len = read_register(MMC5603NJ_I2C_REG_XOUT0, reset_buffer, sizeof(reset_buffer));
+  assert(len == sizeof(reset_buffer));
 
   float scale = 1.0 / 16384.0;
   float x = read_20_bit(buffer[6], buffer[1], buffer[0]) * scale;
   float y = read_20_bit(buffer[7], buffer[3], buffer[2]) * scale;
   float z = read_20_bit(buffer[8], buffer[5], buffer[4]) * scale;
+
+  float reset_x = read_20_bit(reset_buffer[6], reset_buffer[1], reset_buffer[0]) * scale;
+  float reset_y = read_20_bit(reset_buffer[7], reset_buffer[3], reset_buffer[2]) * scale;
+  float reset_z = read_20_bit(reset_buffer[8], reset_buffer[5], reset_buffer[4]) * scale;
 
   auto event = msg.initEvent().initMagnetometer();
   event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
@@ -86,9 +100,14 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   event.setTimestamp(start_time);
 
   float xyz[] = {x, y, z};
+  float reset_xyz[] = {reset_x, reset_y, reset_z};
   auto svec = event.initMagneticUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
+
+  auto svec_reset = event.initMagnetic();
+  svec_reset.setV(reset_xyz);
+  svec_reset.setStatus(true);
 
   return true;
 }
