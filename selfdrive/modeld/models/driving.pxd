@@ -1,9 +1,7 @@
 # distutils: language = c++
 #cython: language_level=3
 
-import numpy as np
-cimport numpy as cnp
-from libcpp cimport bool, float
+from libcpp cimport bool
 from libc.stdint cimport uint32_t, uint64_t
 
 cdef extern from "cereal/messaging/messaging.h":

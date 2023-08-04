@@ -49,16 +49,23 @@ else:
     del libs[libs.index('SNPE')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
+common_frameworks = []
+common_libs = envCython["LIBS"] + [gpucommon, common, 'zmq']
+if arch == "Darwin":
+  common_frameworks.append('OpenCL')
+else:
+  common_libs.append('OpenCL')
+
 onnxmodel_lib = env.Library('onnxmodel', env.SharedObject(['runners/onnxmodel.cc']))
 snpemodel_lib = env.Library('snpemodel', env.SharedObject(['runners/snpemodel.cc']))
-common_lib = env.Library('commonmodel', env.SharedObject(common_src))
+commonmodel_lib = env.Library('commonmodel', env.SharedObject(common_src))
 driving_lib = env.Library('driving', env.SharedObject(['models/driving.cc']))
 
-envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=envCython["LIBS"]+[gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=envCython["LIBS"]+[onnxmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=envCython["LIBS"]+[snpemodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'capnp', 'kj', 'zmq', 'OpenCL'])
+envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
+envCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+envCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
+envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=[driving_lib, cereal, messaging, *common_libs, 'capnp', 'kj'], FRAMEWORKS=common_frameworks)
 
 common_model = lenv.Object(common_src)
 

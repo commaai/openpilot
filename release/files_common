@@ -357,11 +357,10 @@ selfdrive/manager/test/test_manager.py
 selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
 selfdrive/modeld/SConscript
-selfdrive/modeld/modeld.cc
+selfdrive/modeld/modeld.py
 selfdrive/modeld/navmodeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
-selfdrive/modeld/modeld
 selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
 
@@ -397,7 +396,10 @@ selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
 
+<<<<<<< HEAD
 selfdrive/modeld/runners/__init__.py
+=======
+>>>>>>> 5218f309c (Fixed scons for macOS)
 selfdrive/modeld/runners/*.pxd
 selfdrive/modeld/runners/*.pyx
 

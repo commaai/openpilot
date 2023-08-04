@@ -1,9 +1,7 @@
 # distutils: language = c++
 # cython: c_string_encoding=ascii, language_level=3
 
-import numpy as np
-cimport numpy as cnp
-from libcpp cimport bool, float
+from libcpp cimport bool
 from libc.stdint cimport uint32_t, uint64_t
 from .driving cimport MessageBuilder, PublishState as cppPublishState
 from .driving cimport fill_model_msg, fill_pose_msg
