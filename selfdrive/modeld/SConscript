@@ -58,7 +58,7 @@ envCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=en
 envCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=envCython["LIBS"]+[onnxmodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=envCython["LIBS"]+[snpemodel_lib, gpucommon, common, 'zmq', 'OpenCL'])
 envCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=envCython["LIBS"]+[common_lib, gpucommon, common, 'zmq', 'OpenCL'])
-envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'SNPE', 'capnp', 'kj', 'zmq', 'OpenCL'])
+envCython.Program('models/driving_pyx.so', 'models/driving_pyx.pyx', LIBS=envCython["LIBS"]+[driving_lib, common_lib, cereal, messaging, gpucommon, common, 'capnp', 'kj', 'zmq', 'OpenCL'])
 
 common_model = lenv.Object(common_src)
 
@@ -95,7 +95,7 @@ if GetOption('pc_thneed'):
   common_model += llenv.Object(thneed_src_pc)
   libs += ['dl']
 
-llenv.Program('_modeld', [
-    "modeld.cc",
-    "models/driving.cc",
+lenv.Program('_navmodeld', [
+    "navmodeld.cc",
+    "models/nav.cc",
   ]+common_model, LIBS=libs + transformations)
