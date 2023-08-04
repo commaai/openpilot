@@ -13,16 +13,11 @@ from aiortc import RTCPeerConnection, RTCSessionDescription
 import cereal.messaging as messaging
 from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
-os.environ['MKL_NUM_THREADS'] = '1'
-
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)
 
 pcs = set()
-
-pm = messaging.PubMaster(['testJoystick'])
-sm = messaging.SubMaster(['carState', 'logMessage'])
+pm, sm = None, None
 TELEOPDIR = f"{BASEDIR}/tools/bodyteleop"
 
 
@@ -179,6 +174,9 @@ async def run(cmd):
 
 
 def main():
+  global pm, sm
+  pm = messaging.PubMaster(['testJoystick'])
+  sm = messaging.SubMaster(['carState', 'logMessage'])
   # App needs to be HTTPS for microphone and audio autoplay to work on the browser
   cert_path = TELEOPDIR + '/cert.pem'
   key_path = TELEOPDIR + '/key.pem'
