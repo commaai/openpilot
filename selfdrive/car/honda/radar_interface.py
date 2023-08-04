@@ -38,7 +38,7 @@ class RadarInterface(RadarInterfaceBase):
     # in Bosch radar and we are only steering for now, so sleep 0.05s to keep
     # radard at 20Hz and return no points
     if self.radar_off_can:
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
@@ -54,25 +54,32 @@ class RadarInterface(RadarInterfaceBase):
     ret = car.RadarData.new_message()
 
     for ii in sorted(updated_messages):
-      cpt = self.rcp.vl[ii]
-      if ii == 0x400:
-        # check for radar faults
-        self.radar_fault = cpt['RADAR_STATE'] != 0x79
-        self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
-      elif cpt['LONG_DIST'] < 255:
-        if ii not in self.pts or cpt['NEW_TRACK']:
-          self.pts[ii] = car.RadarData.RadarPoint.new_message()
-          self.pts[ii].trackId = self.track_id
-          self.track_id += 1
-        self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
-        self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
-        self.pts[ii].vRel = cpt['REL_SPEED']
-        self.pts[ii].aRel = float('nan')
-        self.pts[ii].yvRel = float('nan')
-        self.pts[ii].measured = True
-      else:
-        if ii in self.pts:
-          del self.pts[ii]
+      combined_vals = self.rcp.vl_all[ii]
+      n_vals_per_addr = len(list(combined_vals.values())[0])
+      cpts = [
+        {k: v[i] for k, v in  combined_vals.items()}
+        for i in range(n_vals_per_addr)
+      ]
+
+      for cpt in cpts:
+        if ii == 0x400:
+          # check for radar faults
+          self.radar_fault = cpt['RADAR_STATE'] != 0x79
+          self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
+        elif cpt['LONG_DIST'] < 255:
+          if ii not in self.pts or cpt['NEW_TRACK']:
+            self.pts[ii] = car.RadarData.RadarPoint.new_message()
+            self.pts[ii].trackId = self.track_id
+            self.track_id += 1
+          self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car
+          self.pts[ii].yRel = -cpt['LAT_DIST']  # in car frame's y axis, left is positive
+          self.pts[ii].vRel = cpt['REL_SPEED']
+          self.pts[ii].aRel = float('nan')
+          self.pts[ii].yvRel = float('nan')
+          self.pts[ii].measured = True
+        else:
+          if ii in self.pts:
+            del self.pts[ii]
 
     errors = []
     if not self.rcp.can_valid:
