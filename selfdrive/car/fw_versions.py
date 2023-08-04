@@ -242,8 +242,9 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, timeout=0.1, num_pand
 
     car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
     all_car_fw.extend(car_fw)
-    # Try to match using FW returned from this brand only
-    matches = match_fw_to_car(build_fw_dict(car_fw), log=False)
+
+    # If there is a platform match using this brand's FW, finish querying early
+    matches = match_fw_to_car(car_fw, log=False)
     if len(matches) == 1:
       break
 
