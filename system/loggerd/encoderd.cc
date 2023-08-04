@@ -60,7 +60,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     // init encoders
     if (encoders.empty()) {
       VisionBuf buf_info = vipc_client.buffers[0];
-      LOGW("encoder %s init %dx%d", cam_info.thread_name, buf_info.width, buf_info.height);
+      LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
       assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
@@ -81,7 +81,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       // detect loop around and drop the frames
       if (buf->get_frame_id() != extra.frame_id) {
         if (!lagging) {
-          LOGE("encoder %s lag  buffer id: %d  extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
+          LOGE("encoder %s lag  buffer id: %" PRIu64 " extra id: %d", cam_info.thread_name, buf->get_frame_id(), extra.frame_id);
           lagging = true;
         }
         continue;

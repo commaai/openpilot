@@ -114,3 +114,15 @@ frs = {
 
 output_logs = replay_process_with_name(['modeld', 'dmonitoringmodeld'], lr, frs=frs)
 ```
+
+To capture stdout/stderr of the replayed process, `captured_output_store` can be provided.
+
+```py
+output_store = dict()
+# pass dictionary by reference, it will be filled with standard outputs - even if process replay fails
+output_logs = replay_process_with_name(['radard', 'plannerd'], lr, captured_output_store=output_store)
+
+# entries with captured output in format { 'out': '...', 'err': '...' } will be added to provided dictionary for each replayed process
+print(output_store['radard']['out']) # radard stdout
+print(output_store['radard']['err']) # radard stderr
+```
