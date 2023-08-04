@@ -30,6 +30,7 @@ jobs:
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -37,6 +38,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Unit test
+      timeout-minutes: 2
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
                         apt-get update && \
@@ -50,6 +52,7 @@ jobs:
     env:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -71,6 +74,7 @@ jobs:
   docs:
     name: build docs
     runs-on: ubuntu-20.04
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -83,5 +87,3 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
-
-
