@@ -396,10 +396,7 @@ selfdrive/modeld/thneed/thneed_common.cc
 selfdrive/modeld/thneed/thneed_qcom2.cc
 selfdrive/modeld/thneed/serialize.cc
 
-<<<<<<< HEAD
 selfdrive/modeld/runners/__init__.py
-=======
->>>>>>> 5218f309c (Fixed scons for macOS)
 selfdrive/modeld/runners/*.pxd
 selfdrive/modeld/runners/*.pyx
 

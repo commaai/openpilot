@@ -35,7 +35,7 @@ BUF_SIZE = MODEL_FRAME_SIZE * 2
 calib_from_medmodel = np.linalg.inv(medmodel_frame_from_calib_frame[:, :3])
 calib_from_sbigmodel = np.linalg.inv(sbigmodel_frame_from_calib_frame[:, :3])
 
-def update_calibration(device_from_calib_euler:np.ndarray, wide_camera:bool, bigmodel_frame:bool) -> np.ndarray:
+def update_calibration(device_from_calib_euler: np.ndarray, wide_camera: bool, bigmodel_frame: bool) -> np.ndarray:
   cam_intrinsics = tici_ecam_intrinsics if wide_camera else tici_fcam_intrinsics
   calib_from_model = calib_from_sbigmodel if bigmodel_frame else calib_from_medmodel
   device_from_calib = rot_from_euler(device_from_calib_euler)
@@ -60,7 +60,7 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
   model: ONNXModel
 
-  def __init__(self, context:CLContext):
+  def __init__(self, context: CLContext):
     self.frame = ModelFrame(context)
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(DESIRE_LEN, dtype=np.float32)
@@ -78,7 +78,7 @@ class ModelState:
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
-  def eval(self, buf:VisionBuf, wbuf:VisionBuf, transform:np.ndarray, transform_wide:np.ndarray, inputs:Dict[str, np.ndarray], prepare_only:bool) -> Optional[np.ndarray]:
+  def eval(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray, inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[np.ndarray]:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire_pulse'][0] = 0
     self.inputs['desire_pulse'][:-DESIRE_LEN] = self.inputs['desire_pulse'][DESIRE_LEN:]
