@@ -99,15 +99,9 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
   event.setTimestamp(start_time);
 
-  float xyz[] = {x, y, z};
-  float reset_xyz[] = {reset_x, reset_y, reset_z};
+  float xyz[] = {x, y, z, reset_x, reset_y, reset_z};
   auto svec = event.initMagneticUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
-
-  auto svec_reset = event.initMagnetic();
-  svec_reset.setV(reset_xyz);
-  svec_reset.setStatus(true);
-
   return true;
 }
