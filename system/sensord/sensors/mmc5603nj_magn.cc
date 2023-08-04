@@ -12,10 +12,10 @@ int MMC5603NJ_Magn::init() {
   if (ret == -1) return -1;
 
   // Set 100 Hz
-  ret = set_register(MMC5603NJ_I2C_REG_ODR, 100);
-  if (ret < 0) {
-    goto fail;
-  }
+  // ret = set_register(MMC5603NJ_I2C_REG_ODR, 100);
+  // if (ret < 0) {
+  //   goto fail;
+  // }
 
   // Set BW to 0b01 for 1-150 Hz operation
   ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_1, 0b01);
@@ -23,17 +23,17 @@ int MMC5603NJ_Magn::init() {
     goto fail;
   }
 
-  // Set compute measurement rate
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN);
-  if (ret < 0) {
-    goto fail;
-  }
+  // // Set compute measurement rate
+  // ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN);
+  // if (ret < 0) {
+  //   goto fail;
+  // }
 
-  // Enable continuous mode, set every 100 measurements
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN | MMC5603NJ_EN_PRD_SET | 0b11);
-  if (ret < 0) {
-    goto fail;
-  }
+  // // Enable continuous mode, set every 100 measurements
+  // ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN | MMC5603NJ_EN_PRD_SET | 0b11);
+  // if (ret < 0) {
+  //   goto fail;
+  // }
 
 fail:
   return ret;
@@ -73,12 +73,12 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint8_t reset_buffer[9];
   int ret, len;
   // SET - RESET cycle
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET | 0b01);
   assert(ret >= 0);
   len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET | 0b01);
   assert(ret >= 0);
   len = read_register(MMC5603NJ_I2C_REG_XOUT0, reset_buffer, sizeof(reset_buffer));
   assert(len == sizeof(reset_buffer));
