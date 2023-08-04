@@ -76,7 +76,7 @@ class ModelState:
       'feature_buffer': np.zeros(HISTORY_BUFFER_LEN * FEATURE_LEN, dtype=np.float32),
     }
 
-    self.model = ModelRunner(f"models/supercombo.{'thneed' if USE_THNEED else 'onnx'}", self.output, Runtime.GPU, False, context)
+    self.model = ModelRunner(f"selfdrive/models/supercombo.{'thneed' if USE_THNEED else 'onnx'}", self.output, Runtime.GPU, False, context)
     self.model.addInput("input_imgs", None)
     self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
