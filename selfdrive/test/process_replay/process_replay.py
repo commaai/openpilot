@@ -464,8 +464,8 @@ CONFIGS = [
     subs=["radarState", "liveTracks"],
     ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("modelV2"),
-    unlocked_pubs=["can"],
+    should_recv_callback=MessageBasedRcvCallback("can"),
+    main_pub="can",
   ),
   ProcessConfig(
     proc_name="plannerd",
