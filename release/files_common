@@ -59,6 +59,7 @@ common/api/__init__.py
 release/*
 
 tools/__init__.py
+tools/bodyteleop/*
 tools/lib/*
 tools/joystick/*
 tools/replay/*.cc
