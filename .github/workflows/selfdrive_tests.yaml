@@ -103,7 +103,7 @@ jobs:
         restore-keys: macos_scons-
     - name: Cache dependencies
       id: dependency-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/github_brew_cache_entries.txt
@@ -372,7 +372,7 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      uses: actions/cache@v3
       with:
         path: /tmp/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
