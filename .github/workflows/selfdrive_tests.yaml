@@ -39,21 +39,26 @@ jobs:
       with:
         submodules: true
     - name: Build devel
+      timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      timeout-minutes: 1
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
+      timeout-minutes: 10
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
     - name: Run tests
+      timeout-minutes: 2
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         python -m unittest discover selfdrive/car"
     - name: pre-commit
+      timeout-minutes: 3
       run: |
         cd $GITHUB_WORKSPACE
         cp .pre-commit-config.yaml $STRIPPED_DIR
@@ -75,8 +80,10 @@ jobs:
       with:
         save-cache: true
     - name: Build openpilot with all flags
+      timeout-minutes: 12
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
+      timeout-minutes: 2
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
@@ -203,6 +210,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
+      timeout-minutes: 4
       run: ${{ env.RUN }} "pre-commit run --all"
 
   valgrind:
@@ -216,6 +224,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run valgrind
+      timeout-minutes: 1
       run: |
         ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
@@ -231,8 +240,10 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build openpilot
+      timeout-minutes: 10
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
+      timeout-minutes: 40
       run: |
         ${{ env.RUN }} "export SKIP_LONG_TESTS=1 && \
                         $UNIT_TEST common && \
@@ -285,6 +296,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
@@ -322,10 +334,12 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run model replay with ONNX
+      timeout-minutes: 2
       run: |
         ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
+      timeout-minutes: 3
       run: |
         ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
                            coverage xml"
@@ -344,6 +358,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test longitudinal
+      timeout-minutes: 3
       run: |
         ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         cd selfdrive/test/longitudinal_maneuvers && \
@@ -379,6 +394,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
+      timeout-minutes: 25
       run: |
         ${{ env.RUN }} "coverage run -m pytest selfdrive/car/tests/test_models.py && \
                         coverage xml && \
