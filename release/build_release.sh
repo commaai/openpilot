@@ -54,8 +54,6 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-export CERT=/data/pandaextra/certs/release
-export RELEASE=1
 scons -j$(nproc)
 
 # release panda fw
