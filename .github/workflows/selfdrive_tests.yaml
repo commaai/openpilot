@@ -2,8 +2,8 @@ name: selfdrive
 
 on:
   push:
-    branches-ignore:
-      - 'testing-closet*'
+    branches:
+      - master
   pull_request:
 
 concurrency:
