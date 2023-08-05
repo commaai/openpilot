@@ -43,7 +43,7 @@ from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
 
 
-# missing in pysocket
+# TODO: use socket constant when mypy recognizes this as a valid attribute
 TCP_USER_TIMEOUT = 18
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -820,10 +820,6 @@ def main(exit_event: Optional[threading.Event] = None):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
-      params.remove("LastAthenaPingTime")
-    # TODO: socket.timeout and TimeoutError are now the same exception since python3.10
-    # Remove the socket.timeout case once we have fully moved to python3.11
-    except socket.timeout: # pylint: disable=duplicate-except
       params.remove("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")

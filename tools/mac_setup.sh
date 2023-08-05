@@ -9,7 +9,7 @@ ARCH=$(uname -m)
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
 elif [[ $SHELL == "/bin/bash" ]]; then
-  RC_FILE="$HOME/.bashrc"
+  RC_FILE="$HOME/.bash_profile"
 fi
 
 # Install brew if required
@@ -54,6 +54,7 @@ brew "protobuf-c"
 brew "swig"
 brew "gcc@12"
 cask "gcc-arm-embedded"
+brew "portaudio"
 EOS
 
 echo "[ ] finished brew install t=$SECONDS"

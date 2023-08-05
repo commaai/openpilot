@@ -1130,12 +1130,12 @@ This may take up to a minute.</source>
         <translation>E2E 롱컨트롤</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits/forks.These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>내비게이션에 목적지가 있으면 openpilot이 지도 정보를 모델에 입력합니다. 이는 모델에 유용한 컨텍스트를 제공하고 openpilot이 분기점에서 적절하게 왼쪽 또는 오른쪽을 유지할 수 있도록 합니다. 차선 변경 기능은 여전히 운전자의 조작에 의해 활성화됩니다. 이것은 알파 상태의 기능입니다. 실수는 특히 출구 분기점 주변에서 발생될수 있으며 이러한 실수에는 의도하지 않은 차선 이탈, 늦은 출구 이용, 도로 가장자리의 분리대 또는 경계석을 향해 운전하는 등이 포함될 수 있습니다.</translation>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>주행 시각화는 저속으로 주행시 도로를 향한 광각 카메라로 전환되어 일부 회전을 더 잘 보여줍니다. 실험적 모드 로고도 우측 상단에 표시됩니다. 내비게이션 목적지가 설정되고 주행 모델에 입력되면 지도의 주행 경로가 녹색으로 바뀝니다.</translation>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
