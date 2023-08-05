@@ -2873,41 +2873,6 @@ type = "url"
 url = "https://github.com/commaai/opencv-python-builder/releases/download/4.5.5.64%2Bcu118-cp311/opencv_python_headless-4.5.5.64-cp311-cp311-manylinux_2_31_x86_64.whl"
 
 [[package]]
-name = "opencv-python-headless"
-version = "4.7.0.72"
-description = "Wrapper package for OpenCV python bindings."
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-numpy = [
-    {version = ">=1.21.2", markers = "python_version >= \"3.10\""},
-    {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\""},
-    {version = ">=1.22.0", markers = "python_version >= \"3.11\""},
-    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\" or python_version >= \"3.9\""},
-    {version = ">=1.17.0", markers = "python_version >= \"3.7\""},
-    {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
-]
-
-[[package]]
-name = "opencv-python-headless"
-version = "4.8.0.74"
-description = "Wrapper package for OpenCV python bindings."
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-numpy = [
-    {version = ">=1.21.2", markers = "python_version >= \"3.10\""},
-    {version = ">=1.21.4", markers = "python_version >= \"3.10\" and platform_system == \"Darwin\""},
-    {version = ">=1.19.3", markers = "python_version >= \"3.6\" and platform_system == \"Linux\" and platform_machine == \"aarch64\" or python_version >= \"3.9\""},
-    {version = ">=1.17.0", markers = "python_version >= \"3.7\""},
-    {version = ">=1.17.3", markers = "python_version >= \"3.8\""},
-]
-
-[[package]]
 name = "osmium"
 version = "3.6.0"
 description = "Python bindings for libosmium, the data processing library for OSM data"
@@ -5379,7 +5344,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "118d8684050e21f64c9f0c10d0ab6fb53937cb8e31d05a4dd8225cca76b90bc4"
+content-hash = "69c2551bd1bc6e457d47da4c67002a1b822b4de9e66fc0b6fd3548f4c7e8810a"
 
 [metadata.files]
 adal = [
@@ -6481,14 +6446,6 @@ fastcluster = [
     {file = "fastcluster-1.2.6-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9020899b67fe492d0ed87a3e993ec9962c5a0b51ea2df71d86b1766f065f1cef"},
     {file = "fastcluster-1.2.6-cp310-cp310-win32.whl", hash = "sha256:6cf156d4203708348522393c523c2e61c81f5a6a500e0411dcba2b064551ea2f"},
     {file = "fastcluster-1.2.6-cp310-cp310-win_amd64.whl", hash = "sha256:1801c9daa9aa5bbbb0830efe8bd3034b4b7a417e4b8dd353683999be29797df2"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:ce70c743490f6778b463524d1767a9ecccd31c8bd2dbb5739bb2174168c15d39"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ac1b84d4b28456a379a71451d13995eb3242143452ce9c861f8913360de842a3"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:55b49f6033c45a28f93540847b495ed0f718b5c3f4fef446cf77e3726662e1d5"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c1c776a4ec7594f47cd2e1e2da73a30134f1d402d7c93a81e3cb7c3d8e191173"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:aca61d16435bb7aea3901939d7d7d7e36aff9bb538123e649166a3014b280054"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:04ea4a68e0675072ca761bad33322a0e998cb43693fd41165bc420d7db40429a"},
-    {file = "fastcluster-1.2.6-cp311-cp311-win32.whl", hash = "sha256:773043d5db2790e1ff2a4e1eae0b6a60afb2a93ad2c74897a56c80bc800db04f"},
-    {file = "fastcluster-1.2.6-cp311-cp311-win_amd64.whl", hash = "sha256:841d128daa6597d13781793eb482b0b566bbd58d2a9d1e2cf1b58838773beb14"},
     {file = "fastcluster-1.2.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:cf5acfe1156849279ebd44a8d1fbcbe8b8e21334f7538eda782ae31e7dade9e2"},
     {file = "fastcluster-1.2.6-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cb27c13225f5f77f3c5986a27ca27277cce7db12844330cf535019cd38021257"},
     {file = "fastcluster-1.2.6-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5fe543b6d45da27e84e5af6248722475b88943d8ef40d835cbabbb0ba5ee786b"},
@@ -8120,22 +8077,7 @@ onnxruntime-gpu = [
     {file = "onnxruntime_gpu-1.15.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:58773200fbe3a840cab163fc9f196a3de376a2902d633a714ef13501910c4dfc"},
     {file = "onnxruntime_gpu-1.15.1-cp39-cp39-win_amd64.whl", hash = "sha256:b9fb31cb7608b4a0e84ba3325860f0b5159ccea5fe43e74eecf6f360021b987f"},
 ]
-opencv-python-headless = [
-    {file = "opencv-python-headless-4.7.0.72.tar.gz", hash = "sha256:eea59caa92b28b197f9d2a2dd8275ca3869718b2a857c8e53203de6ef3f9f4db"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-macosx_10_16_x86_64.whl", hash = "sha256:2f8b60bddd325411cf4664e4dbea729ce20f0c2ffeaedc5c6724b544fdf36e8a"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:6e13954f705e640e52962dfb252ee1f0a0af7b33cdbe8dd73f27e7e31172b7a2"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f448aea686069474e701223a2ed192df95f501a092b5e06e39171b4927564692"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:18dac3147863d2f4beef6b06b784ee115799a7842e2883adc4ae750c432613f9"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-win32.whl", hash = "sha256:f7f421a2099acbfb69db5e571abaf69a90f43846c3832452c19611efc2c6c926"},
-    {file = "opencv_python_headless-4.7.0.72-cp37-abi3-win_amd64.whl", hash = "sha256:388015ee96816b71e529fed6153aeb68420b69a80efad7aad5445fd7cd7a154c"},
-    {file = "opencv-python-headless-4.8.0.74.tar.gz", hash = "sha256:a72770b8f2e08358b1faa41c8372b17d040aa9bb3e446ab7090e358f6f4e91ba"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-macosx_10_16_x86_64.whl", hash = "sha256:f645b17667fc9bffec8c3b3a72a217430c8d7090ed3ebb80fd8efc657f372d6c"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:7c88744ce922b81747c86f2b7f1b3ec84ff2f53477ee9219a5e75ae2012b443f"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:34e92fef90e8f768d92dca875aefaff8b11556427f82484378a3848eb690d4c0"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f8a88620c43a5d17f7df8317767da93b935656ab9236df92e1e2e0dd23195756"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-win32.whl", hash = "sha256:b52a6eb2d92fff0f660e6aade958cb4373fbfcbafa0488f7ae88c4e6ce3f47f6"},
-    {file = "opencv_python_headless-4.8.0.74-cp37-abi3-win_amd64.whl", hash = "sha256:19d30269ae710f67e0ae549361a68b755e28599a572d5f72d0bbb177ab438a28"},
-]
+opencv-python-headless = []
 osmium = [
     {file = "osmium-3.6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0520d39797c17030c11427213421237aa17f327b076c5367dd2721e856a8aab7"},
     {file = "osmium-3.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e46615d9761f49ae86b7f891c1e00a7e010b85622d17d956029299407b86b0cb"},
@@ -8460,7 +8402,6 @@ pillow-avif-plugin = [
     {file = "pillow_avif_plugin-1.3.1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7a9b8e8943a8b9f860d2b03e0b9c9839bc59db22c5a0a55d66a534a3d4cea00b"},
     {file = "pillow_avif_plugin-1.3.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98dbb6b21ab5b7e0d80134721e756c956d4de2c6cb5c48bb32f78f97339425cb"},
     {file = "pillow_avif_plugin-1.3.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:c4d0b80ff0819de1ba6d401796bc900be252468621b6e734560eee2ea154dbb4"},
-    {file = "pillow_avif_plugin-1.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:c4ff1d331df8ca0f0c5c90d3f05b3a05325c40c9f330e0ad58eb70f7ede20157"},
     {file = "pillow_avif_plugin-1.3.1-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:0a02a436494e380fc99d5ff48be2ef15d42ce655614b9ebd80e106615eb3a594"},
     {file = "pillow_avif_plugin-1.3.1-cp37-cp37m-macosx_11_0_arm64.whl", hash = "sha256:fe8250efd581e362a135d63bbca62b0c78ef1e474582da4013c3a995bc1f40c2"},
     {file = "pillow_avif_plugin-1.3.1-cp37-cp37m-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:39e93224a3d0132a64e7d978e48b74f020c65fcb3a141641084d2a4357ed6ceb"},
