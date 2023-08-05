@@ -248,6 +248,9 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-bottom: 16px;
       padding-top: 16px;
     }
+    #forgetBtn:pressed {
+      background-color: #828282;
+    }
     #connecting {
       font-size: 32px;
       font-weight: 600;
@@ -283,6 +286,7 @@ void WifiUI::refresh() {
   scanningLabel->setVisible(is_empty);
   if (is_empty) return;
 
+  const bool is_tethering_enabled = wifi->isTetheringEnabled();
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
@@ -310,7 +314,7 @@ void WifiUI::refresh() {
     }
 
     // Forget button
-    if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
+    if (wifi->isKnownConnection(network.ssid) && !is_tethering_enabled) {
       QPushButton *forgetBtn = new QPushButton(tr("FORGET"));
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {

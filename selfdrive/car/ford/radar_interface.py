@@ -3,7 +3,8 @@ from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
 from common.conversions import Conversions as CV
-from selfdrive.car.ford.values import CANBUS, DBC, RADAR
+from selfdrive.car.ford.fordcan import CanBus
+from selfdrive.car.ford.values import DBC, RADAR
 from selfdrive.car.interfaces import RadarInterfaceBase
 
 DELPHI_ESR_RADAR_MSGS = list(range(0x500, 0x540))
@@ -12,18 +13,21 @@ DELPHI_MRR_RADAR_START_ADDR = 0x120
 DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 
-def _create_delphi_esr_radar_can_parser():
+def _create_delphi_esr_radar_can_parser(CP) -> CANParser:
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
   checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
-  return CANParser(RADAR.DELPHI_ESR, checks, CANBUS.radar)
+
+  return CANParser(RADAR.DELPHI_ESR, checks, CanBus(CP).radar)
 
 
-def _create_delphi_mrr_radar_can_parser():
+def _create_delphi_mrr_radar_can_parser(CP) -> CANParser:
   checks = []
+
   for i in range(1, DELPHI_MRR_RADAR_MSG_COUNT + 1):
     msg = f"MRR_Detection_{i:03d}"
     checks += [(msg, 20)]
-  return CANParser(RADAR.DELPHI_MRR, checks, CANBUS.radar)
+
+  return CANParser(RADAR.DELPHI_MRR, checks, CanBus(CP).radar)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -36,11 +40,11 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar is None or CP.radarUnavailable:
       self.rcp = None
     elif self.radar == RADAR.DELPHI_ESR:
-      self.rcp = _create_delphi_esr_radar_can_parser()
+      self.rcp = _create_delphi_esr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_ESR_RADAR_MSGS[-1]
       self.valid_cnt = {key: 0 for key in DELPHI_ESR_RADAR_MSGS}
     elif self.radar == RADAR.DELPHI_MRR:
-      self.rcp = _create_delphi_mrr_radar_can_parser()
+      self.rcp = _create_delphi_mrr_radar_can_parser(CP)
       self.trigger_msg = DELPHI_MRR_RADAR_START_ADDR + DELPHI_MRR_RADAR_MSG_COUNT - 1
     else:
       raise ValueError(f"Unsupported radar: {self.radar}")

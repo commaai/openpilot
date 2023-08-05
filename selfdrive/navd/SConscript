@@ -6,7 +6,7 @@ libs = ['qt_widgets', 'qt_util', 'qmapboxgl', common, messaging, cereal, visioni
 if arch == 'larch64':
   libs.append('EGL')
 
-if arch in ['larch64', 'x86_64']:
+if arch in ['larch64', 'aarch64', 'x86_64']:
   if arch == 'x86_64':
     rpath = Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath
     map_env["RPATH"] += [rpath, ]
@@ -17,4 +17,4 @@ if arch in ['larch64', 'x86_64']:
   map_env["RPATH"].append(Dir('.').abspath)
   map_env["LIBPATH"].append(Dir('.').abspath)
   maplib = map_env.SharedLibrary("maprender", ["map_renderer.cc"], LIBS=libs)
-  map_env.Program("map_renderer", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)
+  map_env.Program("mapsd", ["main.cc", ], LIBS=[maplib[0].get_path(), ] + libs)

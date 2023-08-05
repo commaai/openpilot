@@ -8,6 +8,7 @@
 int main(int argc, char *argv[]) {
   QCoreApplication app(argc, argv);
 
+  const QStringList base_blacklist = {"uiDebug", "userFlag"};
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
@@ -16,6 +17,8 @@ int main(int argc, char *argv[]) {
       {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER, "disable HW video decoding"},
       {"no-vipc", REPLAY_FLAG_NO_VIPC, "do not output video"},
+      {"all", REPLAY_FLAG_ALL_SERVICES, "do output all messages including " + base_blacklist.join(", ") + 
+                                        ". this may causes issues when used along with UI"}
   };
 
   QCommandLineParser parser;
@@ -56,7 +59,7 @@ int main(int argc, char *argv[]) {
     op_prefix.reset(new OpenpilotPrefix(prefix.toStdString()));
   }
 
-  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  Replay *replay = new Replay(route, allow, block, base_blacklist, nullptr, replay_flags, parser.value("data_dir"), &app);
   if (!parser.value("c").isEmpty()) {
     replay->setSegmentCacheLimit(parser.value("c").toInt());
   }

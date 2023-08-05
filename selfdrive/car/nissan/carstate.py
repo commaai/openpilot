@@ -160,6 +160,8 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_adas_can_parser(CP):
+    # this function generates lists for signal, messages and initial values
+
     if CP.carFingerprint == CAR.ALTIMA:
       messages = [
         ("LKAS", 100),
@@ -179,6 +181,7 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     messages = []
+
     if CP.carFingerprint in (CAR.ROGUE, CAR.XTRAIL):
       messages.append(("PRO_PILOT", 100))
     elif CP.carFingerprint == CAR.ALTIMA:

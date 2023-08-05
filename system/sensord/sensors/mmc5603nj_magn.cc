@@ -63,7 +63,7 @@ int MMC5603NJ_Magn::shutdown() {
   return ret;
 
 fail:
-  LOGE("Could not disable mmc5603nj auto set reset")
+  LOGE("Could not disable mmc5603nj auto set reset");
   return ret;
 }
 

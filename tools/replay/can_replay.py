@@ -8,20 +8,11 @@ from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from common.basedir import BASEDIR
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.plotjuggler.juggle import load_segment
 from tools.lib.logreader import logreader_from_route_or_segment
-from panda import Panda
-
-try:
-  # this bool can be replaced when mypy understands this pattern
-  panda_jungle_imported = True
-  from panda_jungle import PandaJungle  # pylint: disable=import-error  # type: ignore
-except ImportError:
-  PandaJungle = None
-  panda_jungle_imported = False
+from panda import Panda, PandaJungle
 
 
 def send_thread(s, flock):
@@ -93,10 +84,6 @@ if __name__ == "__main__":
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
   args = parser.parse_args()
-
-  if not panda_jungle_imported:
-    print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
-    print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
 
   print("Loading log...")
   if args.route_or_segment_name is None:

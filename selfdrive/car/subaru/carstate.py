@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
 
 
 class CarState(CarStateBase):
@@ -69,6 +69,7 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
+    cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     if self.car_fingerprint in PREGLOBAL_CARS:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
@@ -76,31 +77,37 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
       ret.cruiseState.standstill = cp_cam.vl["ES_DashStatus"]["Cruise_State"] == 3
-      ret.stockFcw = cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2
+      ret.stockFcw = (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 1) or \
+                     (cp_cam.vl["ES_LKAS_State"]["LKAS_Alert"] == 2)
+      # 8 is known AEB, there are a few other values related to AEB we ignore
+      ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
+                     (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
 
-    cp_es_distance = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
     self.es_distance_msg = copy.copy(cp_es_distance.vl["ES_Distance"])
     self.es_dashstatus_msg = copy.copy(cp_cam.vl["ES_DashStatus"])
     if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-      self.es_infotainmentstatus_msg = copy.copy(cp_cam.vl["INFOTAINMENT_STATUS"])
+      self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
     return ret
 
   @staticmethod
-  def get_common_global_signals():
+  def get_common_global_body_messages():
     messages = [
       ("CruiseControl", 20),
       ("Wheel_Speeds", 50),
       ("Brake_Status", 50),
     ]
+
     return messages
 
   @staticmethod
-  def get_global_es_distance_signals():
+  def get_common_global_es_messages():
     messages = [
+      ("ES_Brake", 20),
       ("ES_Distance", 20),
     ]
+
     return messages
 
   @staticmethod
@@ -120,7 +127,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint not in PREGLOBAL_CARS:
       if CP.carFingerprint not in GLOBAL_GEN2:
-        messages += CarState.get_common_global_signals()[1]
+        messages += CarState.get_common_global_body_messages()
 
       messages += [
         ("Dashlights", 10),
@@ -145,7 +152,7 @@ class CarState(CarStateBase):
           ("CruiseControl", 50),
         ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.main)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -161,19 +168,18 @@ class CarState(CarStateBase):
       ]
 
       if CP.carFingerprint not in GLOBAL_GEN2:
-        messages += CarState.get_global_es_distance_signals()
+        messages += CarState.get_common_global_es_messages()
 
       if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-        messages.append(("INFOTAINMENT_STATUS", 10))
+        messages.append(("ES_Infotainment", 10))
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.camera)
 
   @staticmethod
   def get_body_can_parser(CP):
-    messages = []
     if CP.carFingerprint in GLOBAL_GEN2:
-      messages = CarState.get_common_global_signals()
-      messages += CarState.get_global_es_distance_signals()
-      return CANParser(DBC[CP.carFingerprint]["pt"], messages, 1)
+      messages = CarState.get_common_global_body_messages()
+      messages += CarState.get_common_global_es_messages()
+      return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
 
     return None
