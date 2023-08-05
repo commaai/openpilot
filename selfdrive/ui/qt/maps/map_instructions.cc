@@ -117,6 +117,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
     }
 
+    // active direction has precedence
     const auto active_direction = lanes[i].getActiveDirection();
     bool active_left = active_direction == cereal::NavInstruction::Direction::LEFT;
     bool active_right = active_direction == cereal::NavInstruction::Direction::RIGHT;
