@@ -103,7 +103,7 @@ jobs:
         restore-keys: macos_scons-
     - name: Cache dependencies
       id: dependency-cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/github_brew_cache_entries.txt
