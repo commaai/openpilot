@@ -1,15 +1,15 @@
 {
-	"name": "openpilot devcontainer",
-	"build": {
-		"context": "..",
-		"dockerfile": "../Dockerfile.openpilot_base"
-	},
-	"privileged": true,
-	"containerEnv": {
-		"DISPLAY": "${localEnv:DISPLAY}"
-	},
-	"runArgs": [
-		"--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw",
-		"--volume=${localEnv:XAUTHORITY}:/root/.Xauthority"
-	]
+  "name": "openpilot devcontainer",
+  "build": {
+    "context": "..",
+    "dockerfile": "../Dockerfile.openpilot_base"
+  },
+  "privileged": true,
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}"
+  },
+  "runArgs": [
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw",
+    "--volume=${localEnv:XAUTHORITY}:/root/.Xauthority"
+  ]
 }
