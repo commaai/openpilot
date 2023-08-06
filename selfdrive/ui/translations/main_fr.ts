@@ -117,6 +117,33 @@
     </message>
 </context>
 <context>
+    <name>DestinationWidget</name>
+    <message>
+        <source>Home</source>
+        <translation>Domicile</translation>
+    </message>
+    <message>
+        <source>Work</source>
+        <translation>Travail</translation>
+    </message>
+    <message>
+        <source>No destination set</source>
+        <translation>Aucune destination définie</translation>
+    </message>
+    <message>
+        <source>home</source>
+        <translation>domicile</translation>
+    </message>
+    <message>
+        <source>work</source>
+        <translation>travail</translation>
+    </message>
+    <message>
+        <source>No %1 location set</source>
+        <translation>Aucun lieu %1 défini</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -356,42 +383,14 @@
     </message>
 </context>
 <context>
-    <name>MapPanel</name>
+    <name>MapSettings</name>
     <message>
-        <source>Current Destination</source>
-        <translation>Destination actuelle</translation>
+        <source>NAVIGATION</source>
+        <translation>NAVIGATION</translation>
     </message>
     <message>
-        <source>CLEAR</source>
-        <translation>EFFACER</translation>
-    </message>
-    <message>
-        <source>Recent Destinations</source>
-        <translation>Destinations récentes</translation>
-    </message>
-    <message>
-        <source>Try the Navigation Beta</source>
-        <translation>Essayez la navigation beta</translation>
-    </message>
-    <message>
-        <source>Get turn-by-turn directions displayed and more with a comma
-prime subscription. Sign up now: https://connect.comma.ai</source>
-        <translation>Obtenez des instructions de navigation et plus encore avec un abonnement comma
-prime. Abonnez-vous maintenant : https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>No home
-location set</source>
-        <translation>Aucun domicile défini</translation>
-    </message>
-    <message>
-        <source>No work
-location set</source>
-        <translation>Aucun lieu de travail défini</translation>
-    </message>
-    <message>
-        <source>no recent destinations</source>
-        <translation>pas de destinations récentes</translation>
+        <source>Manage at connect.comma.ai</source>
+        <translation>Gérer sur connect.comma.ai</translation>
     </message>
 </context>
 <context>
@@ -403,6 +402,10 @@ location set</source>
     <message>
         <source>Waiting for GPS</source>
         <translation>En attente du GPS</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation>En attente d&apos;un trajet</translation>
     </message>
 </context>
 <context>
@@ -433,6 +436,63 @@ location set</source>
     <message>
         <source>Wrong password</source>
         <translation>Mot de passe incorrect</translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
+        <translation>Température de l&apos;appareil trop élevée. Le système doit refroidir avant de démarrer. Température actuelle de l&apos;appareil : %1</translation>
+    </message>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation>Connectez-vous immédiatement à internet pour vérifier les mises à jour. Si vous ne vous connectez pas à internet, openpilot ne s&apos;engagera pas dans %1</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>Connectez l&apos;appareil à internet pour vérifier les mises à jour. openpilot ne démarrera pas automatiquement tant qu&apos;il ne se connecte pas à internet pour vérifier les mises à jour.</translation>
+    </message>
+    <message>
+        <source>Unable to download updates
+%1</source>
+        <translation>Impossible de télécharger les mises à jour
+%1</translation>
+    </message>
+    <message>
+        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
+        <translation>Paramètres de date et d&apos;heure invalides, le système ne démarrera pas. Connectez l&apos;appareil à Internet pour régler l&apos;heure.</translation>
+    </message>
+    <message>
+        <source>Taking camera snapshots. System won&apos;t start until finished.</source>
+        <translation>Capture de clichés photo. Le système ne démarrera pas tant qu&apos;il n&apos;est pas terminé.</translation>
+    </message>
+    <message>
+        <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
+        <translation>Une mise à jour du système d&apos;exploitation de votre appareil est en cours de téléchargement en arrière-plan. Vous serez invité à effectuer la mise à jour lorsqu&apos;elle sera prête à être installée.</translation>
+    </message>
+    <message>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>L&apos;appareil n&apos;a pas réussi à s&apos;enregistrer. Il ne se connectera pas aux serveurs de comma.ai, n&apos;enverra rien et ne recevra aucune assistance de comma.ai. S&apos;il s&apos;agit d&apos;un appareil officiel, visitez https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
+        <translation>Le disque NVMe n&apos;est pas monté.</translation>
+    </message>
+    <message>
+        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
+        <translation>Disque NVMe non supporté détecté. L&apos;appareil peut consommer beaucoup plus d&apos;énergie et surchauffer en raison du NVMe non supporté.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>openpilot n&apos;a pas pu identifier votre voiture. Votre voiture n&apos;est pas supportée ou ses ECUs ne sont pas reconnues. Veuillez soumettre un pull request pour ajouter les versions de firmware au véhicule approprié. Besoin d&apos;aide ? Rejoignez discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>openpilot n&apos;a pas pu identifier votre voiture. Vérifiez l&apos;intégrité des câbles et assurez-vous que toutes les connexions sont correctes, en particulier l&apos;alimentation du comma est totalement insérée dans le port OBD-II du véhicule. Besoin d&apos;aide ? Rejoignez discord.comma.ai.</translation>
+    </message>
+    <message>
+        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>openpilot a détecté un changement dans la position de montage de l&apos;appareil. Assurez-vous que l&apos;appareil est totalement inséré dans le support et que le support est fermement fixé au pare-brise.</translation>
     </message>
 </context>
 <context>
@@ -499,12 +559,16 @@ location set</source>
         <translation>Accès à distance</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>1 an de stockage</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation>Connexion LTE 24/7</translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>Avantages pour les développeurs</translation>
+        <source>1 year of drive storage</source>
+        <translation>1 an de stockage de trajets</translation>
+    </message>
+    <message>
+        <source>Turn-by-turn navigation</source>
+        <translation>Navigation étape par étape</translation>
     </message>
 </context>
 <context>
@@ -620,10 +684,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Software</source>
         <translation>Logiciel</translation>
-    </message>
-    <message>
-        <source>Navigation</source>
-        <translation>Navigation</translation>
     </message>
 </context>
 <context>
@@ -1042,20 +1102,12 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Par défaut, openpilot conduit en &lt;b&gt;mode détente&lt;/b&gt;. Le mode expérimental permet d&apos;activer des &lt;b&gt;fonctionnalités alpha&lt;/b&gt; qui ne sont pas prêtes pour le mode détente. Les fonctionnalités expérimentales sont listées ci-dessous :</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 Contrôle longitudinal de bout en bout 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>Laissez le modèle de conduite contrôler l&apos;accélérateur et les freins. openpilot conduira comme il pense qu&apos;un humain le ferait, y compris s&apos;arrêter aux feux rouges et aux panneaux stop. Comme le modèle de conduite décide de la vitesse à adopter, la vitesse définie ne servira que de limite supérieure. Cette fonctionnalité est de qualité alpha ; des erreurs sont à prévoir.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
         <translation>Nouvelle visualisation de la conduite</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>À faible vitesse, la visualisation de la conduite utilisera la caméra à grand angle orientée vers la route pour mieux montrer certains virages. Le logo du mode expérimental sera également affiché dans le coin supérieur droit.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1070,8 +1122,24 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Une version alpha du contrôle longitudinal openpilot peut être testée, avec le mode expérimental, sur des branches non publiées.</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>Activez le contrôle longitudinal expérimental pour permettre le mode expérimental.</translation>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>Contrôle longitudinal de bout en bout</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>Navigation avec openpilot</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>Lorsque la navigation dispose d&apos;une destination, openpilot entrera les informations de la carte dans le modèle. Cela fournit un contexte utile pour le modèle et permet à openpilot de se diriger à gauche ou à droite de manière appropriée aux bifurcations/sorties. Le comportement relatif au changement de voie reste inchangé et doit toujours être activé par le conducteur. Il s&apos;agit d&apos;une fonctionnalité alpha ; il faut s&apos;attendre à des erreurs, en particulier aux abords des sorties et des bifurcations. Ces erreurs peuvent inclure des franchissements involontaires de passages piétons, des prises de sortie tardives, la conduite vers des zones de séparation de type zebras, etc.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>La visualisation de la conduite passera sur la caméra grand angle dirigée vers la route à faible vitesse afin de mieux montrer certains virages. Le logo du mode expérimental s&apos;affichera également dans le coin supérieur droit. Lorsqu&apos;une destination de navigation est définie et que le modèle de conduite l&apos;utilise comme entrée, la trajectoire de conduite sur la carte deviendra verte.</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>Activer le contrôle longitudinal d&apos;openpilot (en alpha) pour autoriser le mode expérimental.</translation>
     </message>
 </context>
 <context>
@@ -1124,12 +1192,12 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Ouvrir les paramètres</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>Téléchargement des données d&apos;entraînement</translation>
+        <source>Ready to upload</source>
+        <translation>Prêt à uploader</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>Vos données sont utilisées pour former des modèles de conduite et aider à améliorer openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>Les données d&apos;entraînement seront envoyées périodiquement lorsque votre appareil est connecté au réseau Wi-Fi</translation>
     </message>
 </context>
 <context>
