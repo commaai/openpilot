@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=panda/"
+addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
 
 [tool.poetry]
 name = "openpilot"
