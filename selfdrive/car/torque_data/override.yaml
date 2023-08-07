@@ -54,6 +54,7 @@ KIA NIRO EV 2ND GEN: [2.05, 2.5, 0.14]
 GENESIS GV80 2023: [2.5, 2.5, 0.1]
 KIA CARNIVAL 4TH GEN: [1.75, 1.75, 0.15]
 GMC ACADIA DENALI 2018: [1.6, 1.6, 0.2]
+LEXUS IS 2023: [2.0, 2.0, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]
