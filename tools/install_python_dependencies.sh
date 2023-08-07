@@ -2,6 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT=$DIR/../
 cd $DIR
 
 RC_FILE="${HOME}/.$(basename ${SHELL})rc"
@@ -32,7 +33,7 @@ fi
 
 export MAKEFLAGS="-j$(nproc)"
 
-PYENV_PYTHON_VERSION=$(cat .python-version)
+PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
 if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   # no pyenv update on mac
   if [ "$(uname)" == "Linux" ]; then
