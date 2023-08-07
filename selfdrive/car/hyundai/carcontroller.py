@@ -111,9 +111,7 @@ class CarController:
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled, apply_steer_req, apply_steer))
 
       # disable LFA on HDA2
-      # print('here', self.frame % 5 == 0, hda2)
       if self.frame % 5 == 0 and hda2:
-        print('making msg')
         can_sends.append(hyundaicanfd.create_cam_0x2a4(self.packer, self.CAN, CS.cam_0x2a4))
 
       # LFA and HDA icons
