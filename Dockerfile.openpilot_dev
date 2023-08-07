@@ -1,0 +1,5 @@
+FROM openpilot_base:latest
+
+RUN sed -i "s/\/tmp\/tools/\/workspaces\/openpilot\/tools/" /root/.bashrc
+RUN apt update && apt install -y vim net-tools usbutils htop
+RUN pip install ipython

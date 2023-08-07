@@ -1,18 +1,18 @@
 {
   "name": "openpilot devcontainer",
+  "initializeCommand": "docker build -t openpilot_base -f Dockerfile.openpilot_base .",
   "build": {
     "context": "..",
-    "dockerfile": "../Dockerfile.openpilot_base"
+    "dockerfile": "../Dockerfile.openpilot_dev"
   },
   "privileged": true,
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
-    "force_color_prompt": "1"
+    "force_color_prompt": "1",
+    "PYTHONPATH": "/workspaces/openpilot"
   },
   "runArgs": [
     "--volume=/tmp/.X11-unix:/tmp/.X11-unix:rw",
     "--volume=${localEnv:XAUTHORITY}:/root/.Xauthority"
-  ],
-  // TODO: this adds a "press any key to continue" prompt, we should get rid of that somehow
-  "postCreateCommand": "sed -i \"s/\\/tmp\\/tools/\\/workspaces\\/openpilot\\/tools/\" /root/.bashrc"
+  ]
 }
