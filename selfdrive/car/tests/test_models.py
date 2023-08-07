@@ -4,7 +4,7 @@ import os
 import importlib
 import unittest
 from collections import defaultdict, Counter
-from typing import List, Optional, Tuple
+from typing import List, Optional, Set, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
@@ -81,12 +81,12 @@ class TestCarModelBase(unittest.TestCase):
 
       car_fw = []
       can_msgs = []
-      fingerprint = defaultdict(dict)
+      cls.fingerprint = defaultdict(dict)
       for msg in lr:
         if msg.which() == "can":
           for m in msg.can:
             if m.src < 64:
-              fingerprint[m.src][m.address] = len(m.dat)
+              cls.fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
@@ -104,8 +104,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-    cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, car_fw, experimental_long, docs=False)
-    cls.fingerprint = fingerprint
+    cls.CP = cls.CarInterface.get_params(cls.car_model, cls.fingerprint, car_fw, experimental_long, docs=False)
     print(cls.CP.carFingerprint, cls.CP.openpilotLongitudinalControl, cls.CP.flags)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.car_model
@@ -209,7 +208,7 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
-    def test_car_controller(car_control):
+    def test_car_controller(car_control) -> Set[int]:
       now_nanos = 0
       msgs_sent = 0
       addrs_sent = set()
@@ -232,23 +231,24 @@ class TestCarModelBase(unittest.TestCase):
     # Make sure we can send all messages while inactive
     CC = car.CarControl.new_message()
     addrs = test_car_controller(CC)
+
+    # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
+    self.safety.set_cruise_engaged_prev(True)
+    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
+    addrs |= test_car_controller(CC)
+
+    # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
+    self.safety.set_controls_allowed(True)
+    CC = car.CarControl.new_message(cruiseControl={'resume': True})
+    addrs |= test_car_controller(CC)
+
     print(addrs)
+
     for addr in addrs:
+      # Skip diagnostic addresses (eg. tester present to radar)
       if addr >= 0x700:
         continue
       self.assertTrue(addr in self.fingerprint[0] or addr in self.fingerprint[1] or addr in self.fingerprint[2], addr)
-
-    # # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
-    # self.safety.set_cruise_engaged_prev(True)
-    # CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    # addrs = test_car_controller(CC)
-    # print(addrs)
-    #
-    # # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
-    # self.safety.set_controls_allowed(True)
-    # CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    # addrs = test_car_controller(CC)
-    # print(addrs)
 
   # def test_panda_safety_carstate(self):
   #   """
