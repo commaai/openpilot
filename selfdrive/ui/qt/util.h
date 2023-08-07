@@ -3,6 +3,7 @@
 #include <optional>
 
 #include <QDateTime>
+#include <QFileSystemWatcher>
 #include <QLayout>
 #include <QPainter>
 #include <QPixmap>
@@ -10,13 +11,13 @@
 #include <QWidget>
 
 #include "cereal/gen/cpp/car.capnp.h"
+#include "common/params.h"
 
 QString getVersion();
 QString getBrand();
 QString getUserAgent();
 std::optional<QString> getDongleId();
 QMap<QString, QString> getSupportedLanguages();
-void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 void sigTermHandler(int s);
@@ -30,3 +31,28 @@ QPixmap bootstrapPixmap(const QString &id);
 void drawRoundedRect(QPainter &painter, const QRectF &rect, qreal xRadiusTop, qreal yRadiusTop, qreal xRadiusBottom, qreal yRadiusBottom);
 QColor interpColor(float xv, std::vector<float> xp, std::vector<QColor> fp);
 bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params);
+
+struct InterFont : public QFont {
+  InterFont(int pixel_size, QFont::Weight weight = QFont::Normal) : QFont("Inter") {
+    setPixelSize(pixel_size);
+    setWeight(weight);
+  }
+};
+
+class ParamWatcher : public QObject {
+  Q_OBJECT
+
+public:
+  ParamWatcher(QObject *parent);
+  void addParam(const QString &param_name);
+
+signals:
+  void paramChanged(const QString &param_name, const QString &param_value);
+
+private:
+  void fileChanged(const QString &path);
+
+  QFileSystemWatcher *watcher;
+  QHash<QString, QString> params_hash;
+  Params params;
+};

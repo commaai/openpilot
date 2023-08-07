@@ -52,5 +52,5 @@ struct NavModelState {
 
 void navmodel_init(NavModelState* s);
 NavModelResult* navmodel_eval_frame(NavModelState* s, VisionBuf* buf);
-void navmodel_publish(PubMaster &pm, uint32_t frame_id, const NavModelResult &model_res, float execution_time);
+void navmodel_publish(PubMaster &pm, VisionIpcBufExtra &extra, const NavModelResult &model_res, float execution_time, bool route_valid);
 void navmodel_free(NavModelState* s);

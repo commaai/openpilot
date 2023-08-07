@@ -8,7 +8,7 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from common.gpio import gpio_set, gpio_init, get_irq_for_action
+from common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from system.hardware.base import HardwareBase, ThermalConfig
 from system.hardware.tici import iwlist
 from system.hardware.tici.pins import GPIO
@@ -61,17 +61,27 @@ MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
 def sudo_write(val, path):
-  os.system(f"sudo su -c 'echo {val} > {path}'")
+  try:
+    with open(path, 'w') as f:
+      f.write(str(val))
+  except PermissionError:
+    os.system(f"sudo chmod a+w {path}")
+    try:
+      with open(path, 'w') as f:
+        f.write(str(val))
+    except PermissionError:
+      # fallback for debugfs files
+      os.system(f"sudo su -c 'echo {val} > {path}'")
 
 
 def affine_irq(val, action):
-  irq = get_irq_for_action(action)
-  if len(irq) == 0:
+  irqs = get_irqs_for_action(action)
+  if len(irqs) == 0:
     print(f"No IRQs found for '{action}'")
     return
-  for i in irq:
-    sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
 
+  for i in irqs:
+    sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
 
 class Tici(HardwareBase):
   @cached_property
@@ -438,17 +448,17 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # GPU
-    affine_irq(5, "kgsl-3d0")
-
     # boardd core
     affine_irq(4, "spi_geni")         # SPI
     affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
     if "tici" in self.get_device_type():
-      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB
+      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB (also modem)
+
+    # GPU
+    affine_irq(5, "kgsl-3d0")
 
     # camerad core
-    camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid", "csid-lite", "ife-lite")
+    camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
       affine_irq(5, n)
 
@@ -472,13 +482,13 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # move these off the default core
-    affine_irq(1, "msm_drm")
-    affine_irq(1, "msm_vidc")
-    affine_irq(1, "i2c_geni")
-
     # mask off big cluster from default affinity
     sudo_write("f", "/proc/irq/default_smp_affinity")
+
+    # move these off the default core
+    affine_irq(1, "msm_drm")   # display
+    affine_irq(1, "msm_vidc")  # encoders
+    affine_irq(1, "i2c_geni")  # sensors
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216

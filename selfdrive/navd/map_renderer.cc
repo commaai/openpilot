@@ -70,8 +70,14 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    // Ignore expected signals
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
-    //LOGD("new state %d", change);
+    if (change != QMapboxGL::MapChange::MapChangeRegionWillChange &&
+        change != QMapboxGL::MapChange::MapChangeRegionDidChange &&
+        change != QMapboxGL::MapChange::MapChangeWillStartRenderingFrame &&
+        change != QMapboxGL::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
+      LOGD("New map state: %d", change);
+    }
   });
 
   QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
@@ -105,18 +111,20 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode
-      if (!loaded() && frame_id > 0) {
-        for (int i = 0; i < 5 && !loaded(); i++) {
-          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
-          QApplication::processEvents(QEventLoop::AllEvents, 100);
-          update();
+      // TODO: use the static rendering mode instead
+      // retry render a few times
+      for (int i = 0; i < 5 && !rendered(); i++) {
+        QApplication::processEvents(QEventLoop::AllEvents, 100);
+        update();
+        if (rendered()) {
+          LOGW("rendered after %d retries", i+1);
+          break;
         }
+      }
 
-        if (!loaded()) {
-          LOGE("failed to render map after retry");
-          publish(0, false);
-        }
+      // fallback to sending a blank frame
+      if (!rendered()) {
+        publish(0, false);
       }
     }
   }
@@ -162,6 +170,7 @@ void MapRenderer::update() {
 
   if ((vipc_server != nullptr) && loaded()) {
     publish((end_t - start_t) / 1000.0, true);
+    last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
   }
 }
 
@@ -176,12 +185,16 @@ void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> 
 
 void MapRenderer::publish(const double render_time, const bool loaded) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+
+  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  bool valid = loaded && (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
     .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
+    .valid = valid,
   };
 
   assert(cap.sizeInBytes() >= buf->len);
@@ -213,13 +226,10 @@ void MapRenderer::publish(const double render_time, const bool loaded) {
   }
 
   // Send state msg
-  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
-  bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
-
   MessageBuilder msg;
   auto evt = msg.initEvent();
   auto state = evt.initMapRenderState();
-  evt.setValid(loaded && localizer_valid);
+  evt.setValid(valid);
   state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
   state.setRenderTime(render_time);
   state.setFrameId(frame_id);
@@ -257,6 +267,7 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
 
 void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
+    LOGD("Initializing navLayer");
     QVariantMap nav;
     nav["id"] = "navLayer";
     nav["type"] = "line";

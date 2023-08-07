@@ -54,12 +54,6 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
 }
 
-void MessageBytesDelegate::setMultipleLines(bool v) {
-  if (std::exchange(multiple_lines, v) != multiple_lines) {
-    std::fill_n(size_cache, std::size(size_cache), QSize{});
-  }
-}
-
 int MessageBytesDelegate::widthForBytes(int n) const {
   int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
   return n * byte_size.width() + h_margin * 2;
@@ -73,19 +67,8 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   }
   int n = data.toByteArray().size();
   assert(n >= 0 && n <= 64);
-
-  QSize size = size_cache[n];
-  if (size.isEmpty()) {
-    if (!multiple_lines) {
-      size.setWidth(widthForBytes(n));
-      size.setHeight(byte_size.height() + 2 * v_margin);
-    } else {
-      size.setWidth(widthForBytes(8));
-      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
-    }
-    size_cache[n] = size;
-  }
-  return size;
+  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
+                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -238,7 +221,7 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
       new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {

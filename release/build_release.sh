@@ -55,8 +55,8 @@ git commit -a -m "openpilot v$VERSION release"
 # Build panda firmware
 pushd panda/
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
-mv board/obj/panda.bin.signed /tmp/panda.bin.signed
-mv board/obj/panda_h7.bin.signed /tmp/panda_h7.bin.signed
+mkdir /tmp/panda_obj/
+mv board/obj/panda.bin.signed board/obj/panda_h7.bin.signed board/obj/bootstub.panda.bin board/obj/bootstub.panda_h7.bin /tmp/panda_obj/
 popd
 
 # Build
@@ -84,8 +84,7 @@ rm selfdrive/modeld/models/supercombo.onnx
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
-mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
-mv /tmp/panda_h7.bin.signed panda/board/obj/panda_h7.bin.signed
+mv /tmp/panda_obj/* panda/board/obj/
 
 # Restore third_party
 git checkout third_party/
