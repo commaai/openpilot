@@ -77,7 +77,7 @@ if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
 fi
 
 # install python dependencies
-$ROOT/install_python_dependencies.sh
+$DIR/install_python_dependencies.sh
 eval "$(pyenv init --path)"
 echo "[ ] installed python dependencies t=$SECONDS"
 

@@ -139,7 +139,7 @@ else
 fi
 
 # python setup
-$ROOT/install_python_dependencies.sh
+$DIR/install_python_dependencies.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
