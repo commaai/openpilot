@@ -50,26 +50,14 @@ pip install poetry==1.5.1
 
 poetry config virtualenvs.prefer-active-python true --local
 
-if [[ -n "$XX" ]] || [[ "$(basename "$(dirname "$(pwd)")")" == "xx" ]]; then
-  XX=true
-fi
-
-POETRY_INSTALL_ARGS="--no-cache --no-root"
-
-if [ -n "$XX" ]; then
-  echo "WARNING: using xx dependency group, installing globally"
-  poetry config virtualenvs.create false --local
-  POETRY_INSTALL_ARGS="$POETRY_INSTALL_ARGS --with xx --sync"
-else
-  echo "PYTHONPATH=${PWD}" > .env
-  poetry self add poetry-dotenv-plugin@^0.1.0
-fi
+echo "PYTHONPATH=${PWD}" > .env
+poetry self add poetry-dotenv-plugin@^0.1.0
 
 echo "pip packages install..."
-poetry install $POETRY_INSTALL_ARGS
+poetry install --no-cache --no-root
 pyenv rehash
 
-[ -n "$XX" ] || [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
+[ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
 if [ "$(uname)" != "Darwin" ]; then
   echo "pre-commit hooks install..."
