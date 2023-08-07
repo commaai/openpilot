@@ -244,11 +244,12 @@ class TestCarModelBase(unittest.TestCase):
 
     print(addrs)
 
+    all_car_addrs = {addr for a in self.fingerprint.values() for addr in a}
     for addr in addrs:
       # Skip diagnostic addresses (eg. tester present to radar)
       if addr >= 0x700:
         continue
-      self.assertTrue(addr in self.fingerprint[0] or addr in self.fingerprint[1] or addr in self.fingerprint[2], addr)
+      self.assertIn(addr, all_car_addrs, f"Address {hex(addr)} not on any bus for route")
 
   # def test_panda_safety_carstate(self):
   #   """
