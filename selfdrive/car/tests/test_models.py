@@ -197,8 +197,13 @@ class TestCarModelBase(unittest.TestCase):
       # ensure all msgs defined in the addr checks are valid
       if self.car_model not in ignore_addr_checks_valid:
         self.safety.safety_tick_current_rx_checks()
+        # don't consider relay for reasonable fingerprinting time
+        # TODO: detect when relay has flipped to properly reset relay malfunction
+        if 5e6 > t:
+          self.safety.set_relay_malfunction(False)
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
+          self.assertFalse(self.safety.get_relay_malfunction())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_tx_cases(self, data=None):
