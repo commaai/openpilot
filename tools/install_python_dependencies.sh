@@ -3,7 +3,7 @@ set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT=$DIR/../
-cd $DIR
+cd $ROOT
 
 RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
@@ -51,7 +51,7 @@ pip install poetry==1.5.1
 
 poetry config virtualenvs.prefer-active-python true --local
 
-echo "PYTHONPATH=${PWD}" > .env
+echo "PYTHONPATH=${PWD}" > $ROOT/.env
 poetry self add poetry-dotenv-plugin@^0.1.0
 
 echo "pip packages install..."
@@ -64,7 +64,7 @@ if [ "$(uname)" != "Darwin" ]; then
   echo "pre-commit hooks install..."
   shopt -s nullglob
   for f in .pre-commit-config.yaml */.pre-commit-config.yaml; do
-    if [ -e "$DIR/$(dirname $f)/.git" ]; then
+    if [ -e "$ROOT/$(dirname $f)/.git" ]; then
       $RUN pre-commit install -c "$f"
     fi
   done
