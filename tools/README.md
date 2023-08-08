@@ -38,7 +38,7 @@ scons -u -j$(nproc)
 
 ### Dev Container
 
-openpilot supports VS Code's Dev Containers. Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in designated environment matching out primary development target, regardless of you local setup.
+openpilot supports VS Code's Dev Containers. Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of you local setup.
 
 Dev containers require Visual Studio Code, docker and `Dev Containers` extension. More detailed installation instructions can be found [here](https://code.visualstudio.com/docs/devcontainers/containers#_installation).
 
