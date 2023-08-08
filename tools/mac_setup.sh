@@ -28,7 +28,6 @@ if [[ $(command -v brew) == "" ]]; then
   fi
 fi
 
-# TODO: remove protobuf,protobuf-c,swig when casadi can be pip installed
 brew bundle --file=- <<-EOS
 brew "catch2"
 brew "cmake"
@@ -49,9 +48,6 @@ brew "openssl@3.0"
 brew "pyenv"
 brew "qt@5"
 brew "zeromq"
-brew "protobuf"
-brew "protobuf-c"
-brew "swig"
 brew "gcc@12"
 cask "gcc-arm-embedded"
 brew "portaudio"
