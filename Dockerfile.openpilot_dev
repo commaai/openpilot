@@ -1,4 +1,4 @@
-FROM openpilot_base:latest
+FROM ghcr.io/commaai/openpilot-base:latest
 
 RUN sed -i "s/\/tmp\/tools/\/workspaces\/openpilot\/tools/" /root/.bashrc
 RUN apt update && apt install -y vim net-tools usbutils htop
