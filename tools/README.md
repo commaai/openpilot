@@ -36,6 +36,14 @@ Build openpilot with this command:
 scons -u -j$(nproc)
 ```
 
+### Dev Container
+
+openpilot supports VS Code's Dev Containers. Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in designated environment matching out primary development target, regardless of you local setup.
+
+Dev containers require Visual Studio Code, docker and `Dev Containers` extension. More details installation instruction can be found [here](https://code.visualstudio.com/docs/devcontainers/containers#_installation).
+
+After installing prerequisites, start VS Code and run `Dev Containers: Open Folder in Container...` command from the Command Palette (`F1`) and select openpilot project directory.
+
 ### Windows
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
