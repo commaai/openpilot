@@ -255,7 +255,7 @@ position_report = """
   uint32      q_FltRawAlt;              /* Raw height-above-ellipsoid altitude in meters as computed by WLS */
   uint32      q_FltRawAltSigma;         /* Gaussian 1-sigma value for raw height-above-ellipsoid altitude in meters */
   uint32   align_Flt[14];
-  uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted 
+  uint32      q_FltPdop;                /* 3D position dilution of precision as computed from the unweighted
   uint32      q_FltHdop;                /* Horizontal position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint32      q_FltVdop;                /* Vertical position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint8       u_EllipseConfidence;      /* Statistical measure of the confidence (percentage) associated with the uncertainty ellipse values */
