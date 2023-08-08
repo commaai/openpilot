@@ -2,7 +2,7 @@
   "name": "openpilot devcontainer",
   "build": {
     "context": "..",
-    "dockerfile": "../Dockerfile.openpilot_dev"
+    "dockerfile": "Dockerfile"
   },
   "privileged": true,
   "containerEnv": {
