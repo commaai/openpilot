@@ -97,7 +97,7 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_cruise_signals():
+  def get_cruise_messages():
     messages = [
       ("DAS_3", 50),
       ("DAS_4", 50),
@@ -133,7 +133,7 @@ class CarState(CarStateBase):
         ("GEAR", 50),
         ("SPEED_1", 100),
       ]
-      messages += CarState.get_cruise_signals()
+      messages += CarState.get_cruise_messages()
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
@@ -144,6 +144,6 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in RAM_CARS:
-      messages += CarState.get_cruise_signals()
+      messages += CarState.get_cruise_messages()
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
