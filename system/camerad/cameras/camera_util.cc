@@ -98,7 +98,7 @@ void release_fd(int video0_fd, uint32_t handle) {
   release(video0_fd, handle);
 }
 
-void *MemoryManager::alloc(int size, uint32_t *handle) {
+void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
   lock.lock();
   void *ptr;
   if (!cached_allocations[size].empty()) {

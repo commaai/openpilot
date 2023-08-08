@@ -110,7 +110,7 @@ class Footnote(Enum):
 @dataclass
 class ToyotaCarInfo(CarInfo):
   package: str = "All"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota]))
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
 
 
 CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
@@ -745,6 +745,7 @@ FW_VERSIONS = {
       b'F152610040\x00\x00\x00\x00\x00\x00',
       b'F152610190\x00\x00\x00\x00\x00\x00',
       b'F152610200\x00\x00\x00\x00\x00\x00',
+      b'F152610220\x00\x00\x00\x00\x00\x00',
       b'F152610230\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.dsu, 0x791, None): [
