@@ -12,7 +12,7 @@ from selfdrive.car.interfaces import CarStateBase
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
+def get_can_messages(CP, gearbox_msg):
   messages = [
     ("ENGINE_DATA", 100),
     ("WHEEL_SPEEDS", 50),
@@ -61,6 +61,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       messages.append(("CRUISE_PARAMS", 50))
 
+  # TODO: clean this up
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.CIVIC_2022, CAR.HRV_3G):
     pass
   elif CP.carFingerprint in (CAR.ODYSSEY_CHN, CAR.FREED, CAR.HRV):
@@ -261,7 +262,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    messages = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
+    messages = get_can_messages(CP, self.gearbox_msg)
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, get_pt_bus(CP.carFingerprint))
 
   @staticmethod

@@ -22,12 +22,12 @@ def _create_radar_can_parser(car_fingerprint):
   #  ('LONG_DIST', 1074),
   #  ('LONG_DIST', 1075),
 
-  msgs = list(zip(RADAR_MSGS_C +
-                  RADAR_MSGS_D,
-                  [20] * msg_n +  # 20Hz (0.05s)
-                  [20] * msg_n))  # 20Hz (0.05s)
+  messages = list(zip(RADAR_MSGS_C +
+                      RADAR_MSGS_D,
+                      [20] * msg_n +  # 20Hz (0.05s)
+                      [20] * msg_n))  # 20Hz (0.05s)
 
-  return CANParser(DBC[car_fingerprint]['radar'], msgs, 1)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
 def _address_to_track(address):
   if address in RADAR_MSGS_C:

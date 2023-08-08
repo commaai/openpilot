@@ -15,9 +15,9 @@ DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 def _create_delphi_esr_radar_can_parser(CP) -> CANParser:
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
-  checks = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
+  messages = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
 
-  return CANParser(RADAR.DELPHI_ESR, checks, CanBus(CP).radar)
+  return CANParser(RADAR.DELPHI_ESR, messages, CanBus(CP).radar)
 
 
 def _create_delphi_mrr_radar_can_parser(CP) -> CANParser:
