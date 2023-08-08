@@ -22,7 +22,7 @@ class FdRedirect:
   def read(self) -> bytes:
     with open(self.dest_fname, "rb") as f:
       return f.read() or b""
-
+  
   def link(self) -> None:
     os.dup2(self.dest_fd, self.source_fd)
 
@@ -39,7 +39,7 @@ class ProcessOutputCapture:
 
   @no_type_check # ipython classes have incompatible signatures
   def link_with_current_proc(self) -> None:
-    try:
+    try: 
       # prevent ipykernel from redirecting stdout/stderr of python subprocesses
       from ipykernel.iostream import OutStream
       if isinstance(sys.stdout, OutStream):

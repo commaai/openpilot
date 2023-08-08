@@ -111,7 +111,7 @@ class TestLaikad(unittest.TestCase):
     laikad = Laikad()
     laikad.fetch_navs(gpstime, block=False)
     laikad.orbit_fetch_future.result(30)
-
+    
     # Get results and save orbits to laikad:
     laikad.fetch_navs(gpstime, block=False)
     ephem = laikad.astro_dog.navs['G01'][0]
@@ -238,7 +238,7 @@ class TestLaikad(unittest.TestCase):
           if len(out_msg.gnssMeasurements.ephemerisStatuses):
             seen_chip_eph = seen_chip_eph or any([x.source == 'gnssChip' for x in out_msg.gnssMeasurements.ephemerisStatuses])
             seen_internet_eph = seen_internet_eph or any([x.source == 'internet' for x in out_msg.gnssMeasurements.ephemerisStatuses])
-
+            
         self.assertTrue(has_navs or has_polys)
         self.assertTrue(has_fix)
         self.assertTrue(seen_chip_eph or auto_fetch_navs)
@@ -281,7 +281,7 @@ class TestLaikad(unittest.TestCase):
       self.assertTrue(any([x.source=='cache' for x in msg.gnssMeasurements.ephemerisStatuses]))
       self.assertIsNotNone(msg)
 
-      #TODO test cache with only orbits
+      #TODO test cache with only orbits 
       #with patch('selfdrive.locationd.laikad.get_orbit_data', return_value=None) as mock_method:
       #  # Verify no orbit downloads even if orbit fetch times is reset since the cache has recently been saved and we don't want to download high frequently
       #  laikad.astro_dog.orbit_fetched_times = TimeRangeHolder()
