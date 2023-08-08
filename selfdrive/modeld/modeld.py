@@ -244,7 +244,7 @@ def main():
       nav_features = np.array(sm["navModel"].features)
 
     # tracked dropped frames
-    vipc_dropped_frames = meta_main.frame_id - last_vipc_frame_id - 1
+    vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       # frame_dropped_filter.reset(0)
