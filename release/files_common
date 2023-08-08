@@ -60,6 +60,7 @@ release/*
 
 tools/__init__.py
 tools/lib/*
+tools/bodyteleop/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h

@@ -18,9 +18,9 @@ SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_nam
 UNKNOWN_BRAND = "unknown"
 
 try:
-  from xx.pipeline.c.CarState import migration
+  from xx.pipeline.lib.fingerprint import MIGRATION
 except ImportError:
-  migration = {}
+  MIGRATION = {}
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             break
 
           live_fingerprint = CP.carFingerprint
-          live_fingerprint = migration.get(live_fingerprint, live_fingerprint)
+          live_fingerprint = MIGRATION.get(live_fingerprint, live_fingerprint)
 
           if args.car is not None:
             live_fingerprint = args.car

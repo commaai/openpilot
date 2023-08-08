@@ -254,6 +254,7 @@ jobs:
                         $UNIT_TEST system/loggerd && \
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
+                        $UNIT_TEST selfdrive/test/longitudinal_maneuvers && \
                         $UNIT_TEST system/tests && \
                         $UNIT_TEST system/ubloxd && \
                         selfdrive/locationd/test/_test_locationd_lib.py && \
@@ -296,7 +297,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      timeout-minutes: 15
+      timeout-minutes: 20
       run: |
         ${{ env.RUN }} "CI=1 coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         coverage xml"
@@ -345,33 +346,6 @@ jobs:
                            coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
-
-  test_longitudinal:
-    name: longitudinal
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup
-    - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Test longitudinal
-      timeout-minutes: 3
-      run: |
-        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
-                        cd selfdrive/test/longitudinal_maneuvers && \
-                        coverage run ./test_longitudinal.py && \
-                        coverage xml"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
-    - uses: actions/upload-artifact@v2
-      if: always()
-      continue-on-error: true
-      with:
-        name: longitudinal
-        path: selfdrive/test/longitudinal_maneuvers/out/longitudinal/
 
   test_cars:
     name: cars
