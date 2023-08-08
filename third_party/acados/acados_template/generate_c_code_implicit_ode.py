@@ -33,7 +33,7 @@
 
 import os
 from casadi import *
-from .utils import ALLOWED_CASADI_VERSIONS, is_empty, casadi_length, casadi_version_warning
+from .utils import ALLOWED_CASADI_VERSIONS, casadi_length, casadi_version_warning
 
 def generate_c_code_implicit_ode( model, opts ):
 
@@ -56,7 +56,7 @@ def generate_c_code_implicit_ode( model, opts ):
 
     ## get model dimensions
     nx = casadi_length(x)
-    nu = casadi_length(u)
+    casadi_length(u)
     nz = casadi_length(z)
 
     ## generate jacobians

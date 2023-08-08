@@ -15,7 +15,7 @@ from tools.lib.helpers import save_log
 
 
 def regen_segment(
-  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
+  lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
   daemons: Union[str, Iterable[str]] = "all", disable_tqdm: bool = False
 ) -> List[capnp._DynamicStructReader]:
   if not isinstance(daemons, str) and not hasattr(daemons, "__iter__"):

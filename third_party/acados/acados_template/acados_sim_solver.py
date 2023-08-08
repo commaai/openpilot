@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.;
 #
 
-import sys, os, json
+import os, json
 
 import numpy as np
 
@@ -62,7 +62,7 @@ def make_sim_dims_consistent(acados_sim):
     # nu
     if is_column(model.u):
         dims.nu = model.u.shape[0]
-    elif model.u == None or model.u == []:
+    elif model.u is None or model.u == []:
         dims.nu = 0
     else:
         raise Exception("model.u should be column vector or None!")
@@ -70,7 +70,7 @@ def make_sim_dims_consistent(acados_sim):
     # nz
     if is_column(model.z):
         dims.nz = model.z.shape[0]
-    elif model.z == None or model.z == []:
+    elif model.z is None or model.z == []:
         dims.nz = 0
     else:
         raise Exception("model.z should be column vector or None!")
@@ -78,7 +78,7 @@ def make_sim_dims_consistent(acados_sim):
     # np
     if is_column(model.p):
         dims.np = model.p.shape[0]
-    elif model.p == None or model.p == []:
+    elif model.p is None or model.p == []:
         dims.np = 0
     else:
         raise Exception("model.p should be column vector or None!")
@@ -251,7 +251,7 @@ class AcadosSimSolver:
         # find out if acados was compiled with OpenMP
         try:
             self.__acados_lib_uses_omp = getattr(self.__acados_lib, 'omp_get_thread_num') is not None
-        except AttributeError as e:
+        except AttributeError:
             self.__acados_lib_uses_omp = False
         if self.__acados_lib_uses_omp:
             print('acados was compiled with OpenMP.')
@@ -266,7 +266,7 @@ class AcadosSimSolver:
             lib_ext = ''
         self.shared_lib_name = os.path.join(code_export_dir, f'{lib_prefix}acados_sim_solver_{model_name}{lib_ext}')
         print(f'self.shared_lib_name = "{self.shared_lib_name}"')
-        
+
         self.shared_lib = CDLL(self.shared_lib_name)
 
 

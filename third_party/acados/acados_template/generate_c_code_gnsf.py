@@ -66,7 +66,7 @@ def generate_c_code_gnsf( model, opts ):
     gnsf_nz1 = size_gnsf_A[0] - size_gnsf_A[1]
     gnsf_nuhat = max(phi_fun.size_in(1))
     gnsf_ny = max(phi_fun.size_in(0))
-    gnsf_nout = max(phi_fun.size_out(0))
+    max(phi_fun.size_out(0))
 
     # set up expressions
     # if the model uses MX because of cost/constraints
