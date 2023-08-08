@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 from cereal import car
 from panda.python import uds
 from selfdrive.car import dbc_dict
-from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
+from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Tool, Column
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
@@ -48,6 +48,8 @@ class CAR:
   FORESTER = "SUBARU FORESTER 2019"
   OUTBACK = "SUBARU OUTBACK 6TH GEN"
   LEGACY = "SUBARU LEGACY 7TH GEN"
+  FORESTER_2022 = "SUBARU FORESTER 2022"
+  OUTBACK_2023 = "SUBARU OUTBACK 7TH GEN"
 
   # Pre-global
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
@@ -68,6 +70,8 @@ class SubaruCarInfo(CarInfo):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.subaru_a]))
   footnotes: List[Enum] = field(default_factory=lambda: [Footnote.GLOBAL])
 
+  def init_make(self, CP: car.CarParams):
+    self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
 
 CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.ASCENT: SubaruCarInfo("Subaru Ascent 2019-21", "All"),
@@ -88,6 +92,8 @@ CAR_INFO: Dict[str, Union[SubaruCarInfo, List[SubaruCarInfo]]] = {
   CAR.LEGACY_PREGLOBAL: SubaruCarInfo("Subaru Legacy 2015-18"),
   CAR.OUTBACK_PREGLOBAL: SubaruCarInfo("Subaru Outback 2015-17"),
   CAR.OUTBACK_PREGLOBAL_2018: SubaruCarInfo("Subaru Outback 2018-19"),
+  CAR.FORESTER_2022: SubaruCarInfo("Subaru Forester 2022", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
+  CAR.OUTBACK_2023: SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
 }
 
 SUBARU_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -100,6 +106,11 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, SUBARU_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, SUBARU_VERSION_RESPONSE],
+    ),
+    # Some Eyesight modules fail on TESTER_PRESENT_REQUEST
+    Request(
+      [SUBARU_VERSION_REQUEST],
+      [SUBARU_VERSION_RESPONSE],
     ),
   ],
 )
@@ -276,6 +287,7 @@ FW_VERSIONS = {
       b'\xf3"f@\x07',
       b'\xe6!fp\x07',
       b'\xf3"fp\x07',
+      b'\xe6"f0\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\xf5\004\000\000',
@@ -286,6 +298,7 @@ FW_VERSIONS = {
       b'\xe6\xf5D0\x00',
       b'\xe9\xf6F0\x00',
       b'\xe9\xf5B0\x00',
+      b'\xe9\xf6B0\x00',
     ],
   },
   CAR.FORESTER: {
@@ -536,6 +549,52 @@ FW_VERSIONS = {
       b'\xa5\xfe\xf8@\x00',
     ],
   },
+  CAR.FORESTER_2022: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa3 !x\x00',
+      b'\xa3 !v\x00',
+      b'\xa3 "v\x00',
+      b'\xa3 "x\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'-\xc0%0',
+      b'-\xc0\x040',
+      b'=\xc0%\x02',
+      b'=\xc04\x02',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x04!\x01\x1eD\x07!\x00\x04,'
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd5"a0\x07',
+      b'\xd5"`0\x07',
+      b'\xf1"aq\x07',
+      b'\xf1"`q\x07',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\x1d\x86B0\x00',
+      b'\x1d\xf6B0\x00',
+      b'\x1e\x86B0\x00',
+      b'\x1e\xf6D0\x00',
+    ],
+  },
+  CAR.OUTBACK_2023: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa1 #\x17\x00',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'+\xc0\x12\x11\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\t!\x08\x046\x05!\x08\x01/',
+    ],
+    (Ecu.engine, 0x7a2, None): [
+      b'\xed,\xa2q\x07',
+    ],
+    (Ecu.transmission, 0x7a3, None): [
+      b'\xa8\x8e\xf41\x00',
+    ]
+  }
 }
 
 DBC = {
@@ -543,7 +602,9 @@ DBC = {
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
+  CAR.FORESTER_2022: dbc_dict('subaru_global_2017_generated', None),
   CAR.OUTBACK: dbc_dict('subaru_global_2017_generated', None),
+  CAR.OUTBACK_2023: dbc_dict('subaru_global_2017_generated', None),
   CAR.LEGACY: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
@@ -551,5 +612,6 @@ DBC = {
   CAR.OUTBACK_PREGLOBAL_2018: dbc_dict('subaru_outback_2019_generated', None),
 }
 
-GLOBAL_GEN2 = (CAR.OUTBACK, CAR.LEGACY)
-PREGLOBAL_CARS = (CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018)
+LKAS_ANGLE = {CAR.FORESTER_2022, CAR.OUTBACK_2023}
+GLOBAL_GEN2 = {CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023}
+PREGLOBAL_CARS = {CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL, CAR.OUTBACK_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018}

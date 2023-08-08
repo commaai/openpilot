@@ -25,6 +25,14 @@ if [ -f /TICI ]; then
     sudo systemctl start systemd-resolved
     sleep 3
   fi
+
+  # restart aux USB
+  if [ -e /sys/bus/usb/drivers/hub/3-0:1.0 ]; then
+    echo "restarting aux usb"
+    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/unbind
+    sleep 0.5
+    echo "3-0:1.0" | sudo tee /sys/bus/usb/drivers/hub/bind
+  fi
 fi
 if [ -f /data/openpilot/launch_env.sh ]; then
   source /data/openpilot/launch_env.sh
@@ -181,7 +189,7 @@ pipeline {
           }
           steps {
             phone_steps("tici-needs-can", [
-              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
+              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],

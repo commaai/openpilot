@@ -63,6 +63,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel"});
 
   Params params;
+  PublishState ps = {};
 
   // setup filter to track dropped frames
   FirstOrderFilter frame_dropped_filter(0., 10., 1. / MODEL_FREQ);
@@ -179,7 +180,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client_main, VisionIpcCl
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
     if (model_output != nullptr) {
-      model_publish(&model, pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, meta_main.timestamp_eof, timestamp_llk, model_execution_time,
+      model_publish(pm, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio, *model_output, model, ps, meta_main.timestamp_eof, timestamp_llk, model_execution_time,
                     nav_enabled, live_calib_seen);
       posenet_publish(pm, meta_main.frame_id, vipc_dropped_frames, *model_output, meta_main.timestamp_eof, live_calib_seen);
     }
@@ -237,11 +238,11 @@ int main(int argc, char **argv) {
   // vipc_client.connected is false only when do_exit is true
   if (!do_exit) {
     const VisionBuf *b = &vipc_client_main.buffers[0];
-    LOGW("connected main cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+    LOGW("connected main cam with buffer size: %zu (%zu x %zu)", b->len, b->width, b->height);
 
     if (use_extra_client) {
       const VisionBuf *wb = &vipc_client_extra.buffers[0];
-      LOGW("connected extra cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+      LOGW("connected extra cam with buffer size: %zu (%zu x %zu)", wb->len, wb->width, wb->height);
     }
 
     run_model(model, vipc_client_main, vipc_client_extra, main_wide_camera, use_extra_client);

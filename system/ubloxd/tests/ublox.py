@@ -768,7 +768,7 @@ class UBlox:
     if not self.read_only:
       if self.use_sendrecv:
         return self.dev.send(buf)
-      if type(buf) == str:
+      if isinstance(buf, str):
         return self.dev.write(str.encode(buf))
       else:
         return self.dev.write(buf)
