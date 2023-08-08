@@ -144,7 +144,7 @@ CAR_INFO: Dict[str, Optional[Union[HondaCarInfo, List[HondaCarInfo]]]] = {
   CAR.CRV_HYBRID: HondaCarInfo("Honda CR-V Hybrid 2017-19", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.FIT: HondaCarInfo("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.FREED: HondaCarInfo("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS),
-  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", car_parts=CarParts([Device.three_angled_mount, CarHarness.ford_q3]), min_steer_speed=12. * CV.MPH_TO_MS),
+  CAR.HRV: HondaCarInfo("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS),
   CAR.HRV_3G: HondaCarInfo("Honda HR-V 2023", "All"),
   CAR.ODYSSEY: HondaCarInfo("Honda Odyssey 2018-20"),
   CAR.ODYSSEY_CHN: None,  # Chinese version of Odyssey
