@@ -206,7 +206,7 @@ signals:
   void interactiveTimeout();
 
 public slots:
-  void resetInteractiveTimeout(int timeout = 0);
+  void resetInteractiveTimeout(int timeout = -1);
   void update(const UIState &s);
 };
 
