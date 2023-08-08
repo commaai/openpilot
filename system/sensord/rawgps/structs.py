@@ -213,7 +213,8 @@ gps_measurement_report_sv = """
 position_report = """
   uint8       u_Version;                /* Version number of DM log */
   uint32      q_Fcount;                 /* Local millisecond counter */
-  uint8       u_PosSource;              /* Source of position information */ /*  0: None 1: Weighted least-squares 2: Kalman filter 3: Externally injected 4: Internal database    */
+  uint8       u_PosSource;              /* Source of position information */ \
+                                        /*  0: None 1: Weighted least-squares 2: Kalman filter 3: Externally injected 4: Internal database    */
   uint32      q_Reserved1;              /* Reserved memory field */
   uint16      w_PosVelFlag;             /* Position velocity bit field: (see DM log 0x1476 documentation) */
   uint32      q_PosVelFlag2;            /* Position velocity 2 bit field: (see DM log 0x1476 documentation) */
@@ -259,7 +260,8 @@ position_report = """
   uint32      q_FltHdop;                /* Horizontal position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint32      q_FltVdop;                /* Vertical position dilution of precision as computed from the unweighted least-squares covariance matrix */
   uint8       u_EllipseConfidence;      /* Statistical measure of the confidence (percentage) associated with the uncertainty ellipse values */
-  uint32      q_FltEllipseAngle;        /* Angle of semimajor axis with respect to true North, with increasing angles moving clockwise from North. In units of degrees. */
+  uint32      q_FltEllipseAngle;        /* Angle of semimajor axis with respect to true North, with increasing angles moving clockwise from North. \
+                                                                                                                        In units of degrees degrees.*/
   uint32      q_FltEllipseSemimajorAxis;  /* Semimajor axis of final horizontal position uncertainty error ellipse.  In units of meters. */
   uint32      q_FltEllipseSemiminorAxis;  /* Semiminor axis of final horizontal position uncertainty error ellipse.  In units of meters. */
   uint32      q_FltPosSigmaVertical;    /* Gaussian 1-sigma value for final position height-above-ellipsoid altitude in meters */
@@ -268,8 +270,13 @@ position_report = """
   uint16      w_Reserved2;              /* Reserved memory field */
   uint32      q_FltGnssHeadingRad;      /* User heading in radians derived from GNSS only solution  */
   uint32      q_FltGnssHeadingUncRad;   /* User heading uncertainty in radians derived from GNSS only solution  */
-  uint32      q_SensorDataUsageMask;    /* Denotes which additional sensor data were used to compute this position fix.  BIT[0] 0x00000001 <96> Accelerometer BIT[1] 0x00000002 <96> Gyro 0x0000FFFC - Reserved A bit set to 1 indicates that certain fields as defined by the SENSOR_AIDING_MASK were aided with sensor data*/
-  uint32      q_SensorAidMask;         /* Denotes which component of the position report was assisted with additional sensors defined in SENSOR_DATA_USAGE_MASK BIT[0] 0x00000001 <96> Heading aided with sensor data BIT[1] 0x00000002 <96> Speed aided with sensor data BIT[2] 0x00000004 <96> Position aided with sensor data BIT[3] 0x00000008 <96> Velocity aided with sensor data 0xFFFFFFF0 <96> Reserved */
+  uint32      q_SensorDataUsageMask;    /* Denotes which additional sensor data were used to compute this position fix.  BIT[0] 0x00000001 <96> Accelerometer
+                                           BIT[1] 0x00000002 <96> Gyro 0x0000FFFC - Reserved A bit set to 1 indicates that certain fields as defined
+                                           by the SENSOR_AIDING_MASK were aided with sensor data*/
+  uint32      q_SensorAidMask;         /* Denotes which component of the position report was assisted with additional sensors defined in \
+                                          SENSOR_DATA_USAGE_MASK BIT[0] 0x00000001 <96> Heading aided with sensor data BIT[1] 0x00000002 \
+                                          <96> Speed aided with sensor data BIT[2] 0x00000004 <96> Position aided with sensor data BIT[3] \
+                                          0x00000008 <96> Velocity aided with sensor data 0xFFFFFFF0 <96> Reserved */
   uint8       u_NumGpsSvsUsed;          /* The number of GPS SVs used in the fix */
   uint8       u_TotalGpsSvs;            /* Total number of GPS SVs detected by searcher, including ones not used in position calculation */
   uint8       u_NumGloSvsUsed;          /* The number of Glonass SVs used in the fix */

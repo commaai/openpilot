@@ -99,7 +99,8 @@ def print_car_info_diff(path):
   if any(len(c) for c in changes.values()):
     markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
 
-    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
+    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), \
+                            ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
       if len(changes[category]):
         markdown_builder.append(title)
         if category not in ("detail",):

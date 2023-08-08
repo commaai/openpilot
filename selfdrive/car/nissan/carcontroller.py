@@ -67,7 +67,8 @@ class CarController:
     if self.CP.carFingerprint != CAR.ALTIMA:
       if self.frame % 2 == 0:
         can_sends.append(nissancan.create_lkas_hud_msg(
-          self.packer, CS.lkas_hud_msg, CC.enabled, hud_control.leftLaneVisible, hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
+          self.packer, CS.lkas_hud_msg, CC.enabled, hud_control.leftLaneVisible,
+          hud_control.rightLaneVisible, hud_control.leftLaneDepart, hud_control.rightLaneDepart))
 
       if self.frame % 50 == 0:
         can_sends.append(nissancan.create_lkas_hud_info_msg(
