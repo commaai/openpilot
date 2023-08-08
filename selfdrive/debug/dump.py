@@ -3,14 +3,13 @@ import os
 import sys
 import argparse
 import json
-import codecs
-import cereal.messaging as messaging
-
 from hexdump import hexdump
-from cereal import log
-from cereal.services import service_list
-
+import codecs
 codecs.register_error("strict", codecs.backslashreplace_errors)
+
+from cereal import log
+import cereal.messaging as messaging
+from cereal.services import service_list
 
 if __name__ == "__main__":
 

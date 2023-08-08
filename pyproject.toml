@@ -19,6 +19,7 @@ cffi = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
+flake8 = "*"
 Flask = "*"
 future-fstrings = "*"  # for acados
 gunicorn = "*"
@@ -91,6 +92,7 @@ pprofile = "*"
 pre-commit = "*"
 pycurl = "*"
 pygame = "*"
+pylint = "*"
 pyprof2calltree = "*"
 pytest = "*"
 pytest-xdist = "*"
@@ -159,7 +161,6 @@ PyMySQL = "~0.9"
 pyproj = "*"
 python-logstash = "*"
 redis = "*"
-ruff = "*"
 s2sphere = "*"
 scikit-image = "*"
 scikit-learn = "*"
@@ -185,10 +186,3 @@ opencv-python-headless = { url = "https://github.com/commaai/opencv-python-build
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
-# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
-[tool.ruff]
-select = ["E", "F", "W"]
-ignore = ["W292", "E741"]
-line-length = 2500
-target-version="py311"

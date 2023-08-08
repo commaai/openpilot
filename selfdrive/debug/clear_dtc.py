@@ -35,6 +35,6 @@ try:
 except MessageTimeoutError:
   # functional address isn't properly handled so a timeout occurs
   if args.addr != 0x7DF:
-    pass
+    pass 
 print("")
 print("you may need to power cycle your vehicle now")

@@ -177,23 +177,23 @@ class TestPowerMonitoring(unittest.TestCase):
         if i % 10 == 0:
           self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
       self.assertFalse(pm.should_shutdown(ignition, False, ssb, False))
-
+      
   def test_delay_shutdown_time(self):
     pm = PowerMonitoring()
     pm.car_battery_capacity_uWh = 0
     ignition = False
-    in_car = True
+    in_car = True 
     offroad_timestamp = ssb
     started_seen = True
     pm.calculate(VOLTAGE_BELOW_PAUSE_CHARGING, ignition)
 
     while ssb < offroad_timestamp + DELAY_SHUTDOWN_TIME_S:
-      self.assertFalse(pm.should_shutdown(ignition, in_car,
-                                          offroad_timestamp,
-                                          started_seen),
+      self.assertFalse(pm.should_shutdown(ignition, in_car, 
+                                          offroad_timestamp, 
+                                          started_seen), 
                        f"Should not shutdown before {DELAY_SHUTDOWN_TIME_S} seconds offroad time")
-    self.assertTrue(pm.should_shutdown(ignition, in_car,
-                                       offroad_timestamp,
+    self.assertTrue(pm.should_shutdown(ignition, in_car, 
+                                       offroad_timestamp, 
                                        started_seen),
                     f"Should shutdown after {DELAY_SHUTDOWN_TIME_S} seconds offroad time")
 
