@@ -6,13 +6,14 @@ import threading
 import multiprocessing
 from tqdm import tqdm
 
+os.environ['FILEREADER_CACHE'] = '1'
+
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.plotjuggler.juggle import load_segment
 from tools.lib.logreader import logreader_from_route_or_segment
 from panda import Panda, PandaJungle
 
-os.environ['FILEREADER_CACHE'] = '1'
 
 def send_thread(s, flock):
   if "Jungle" in str(type(s)):

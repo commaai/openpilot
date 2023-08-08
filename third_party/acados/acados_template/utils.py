@@ -103,7 +103,7 @@ def is_column(x):
             return True
         else:
             return False
-    elif x is None or x == []:
+    elif x == None or x == []:
         return False
     else:
         raise Exception("is_column expects one of the following types: np.ndarray, casadi.MX, casadi.SX."
@@ -118,7 +118,7 @@ def is_empty(x):
             return True
         else:
             return False
-    elif x is None or x == []:
+    elif x == None or x == []:
         return True
     else:
         raise Exception("is_empty expects one of the following types: casadi.MX, casadi.SX, "
@@ -135,6 +135,8 @@ def casadi_length(x):
 
 def make_model_consistent(model):
     x = model.x
+    xdot = model.xdot
+    u = model.u
     z = model.z
     p = model.p
 

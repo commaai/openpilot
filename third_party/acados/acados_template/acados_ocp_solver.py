@@ -686,7 +686,7 @@ def ocp_render_templates(acados_ocp, json_file, cmake_builder=None):
     render_template(in_file, out_file, template_dir, json_path)
 
     in_file = 'acados_solver.in.pxd'
-    out_file = 'acados_solver.pxd'
+    out_file = f'acados_solver.pxd'
     render_template(in_file, out_file, template_dir, json_path)
 
     if cmake_builder is not None:
@@ -948,7 +948,7 @@ class AcadosOcpSolver:
         # find out if acados was compiled with OpenMP
         try:
             self.__acados_lib_uses_omp = getattr(self.__acados_lib, 'omp_get_thread_num') is not None
-        except AttributeError:
+        except AttributeError as e:
             self.__acados_lib_uses_omp = False
         if self.__acados_lib_uses_omp:
             print('acados was compiled with OpenMP.')
@@ -1679,7 +1679,7 @@ class AcadosOcpSolver:
                 raise Exception("Unknown api: '{}'".format(api))
 
         if value_shape != tuple(dims):
-            raise Exception('AcadosOcpSolver.constraints_set(): mismatching dimension' +
+            raise Exception(f'AcadosOcpSolver.constraints_set(): mismatching dimension' +
                 f' for field "{field_}" at stage {stage} with dimension {tuple(dims)} (you have {value_shape})')
 
         value_data = cast(value_.ctypes.data, POINTER(c_double))
