@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 import time
 import logging
 import numpy as np
@@ -278,4 +279,7 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    sys.exit()

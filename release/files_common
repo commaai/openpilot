@@ -361,6 +361,7 @@ selfdrive/modeld/modeld.py
 selfdrive/modeld/navmodeld.cc
 selfdrive/modeld/dmonitoringmodeld.cc
 selfdrive/modeld/constants.py
+selfdrive/modeld/modeld
 selfdrive/modeld/navmodeld
 selfdrive/modeld/dmonitoringmodeld
 
