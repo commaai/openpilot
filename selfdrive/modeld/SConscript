@@ -17,7 +17,6 @@ common_src = [
 thneed_src_common = [
   "thneed/thneed_common.cc",
   "thneed/serialize.cc",
-  "runners/thneedmodel.cc",
 ]
 
 thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
@@ -67,10 +66,10 @@ if arch == "Darwin":
 else:
   common_libs.append('OpenCL')
 
-onnxmodel_lib = lenv.Library('onnxmodel', lenv.SharedObject(['runners/onnxmodel.cc']))
-snpemodel_lib = lenv.Library('snpemodel', lenv.SharedObject(['runners/snpemodel.cc']))
-commonmodel_lib = lenv.Library('commonmodel', lenv.SharedObject(common_src))
-driving_lib = lenv.Library('driving', lenv.SharedObject(['models/driving.cc']))
+onnxmodel_lib = lenv.Library('onnxmodel', ['runners/onnxmodel.cc'])
+snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
+commonmodel_lib = lenv.Library('commonmodel', common_src)
+driving_lib = lenv.Library('driving', ['models/driving.cc'])
 
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=common_libs, FRAMEWORKS=common_frameworks)
 lenvCython.Program('runners/onnxmodel_pyx.so', 'runners/onnxmodel_pyx.pyx', LIBS=[onnxmodel_lib, *common_libs], FRAMEWORKS=common_frameworks)
@@ -103,5 +102,6 @@ if (use_thneed and arch == "larch64") or GetOption('pc_thneed'):
   tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
   lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
 
-  thneedmodel_lib = env.Library('thneedmodel', env.SharedObject(thneed_src))
-  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])
+  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'zmq', 'OpenCL', 'dl'])
+  thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
+  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])

@@ -16,7 +16,10 @@ cdef class RunModel:
       self.model.addInput(name, NULL, 0)
 
   def setInputBuffer(self, string name, float[:] buffer):
-    self.model.setInputBuffer(name, &buffer[0], len(buffer))
+    if buffer is not None:
+      self.model.setInputBuffer(name, &buffer[0], len(buffer))
+    else:
+      self.model.setInputBuffer(name, NULL, 0)
 
   def getCLBuffer(self, string name):
     cdef void * cl_buf = self.model.getCLBuffer(name)
