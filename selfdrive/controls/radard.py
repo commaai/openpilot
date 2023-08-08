@@ -322,7 +322,10 @@ def radard_thread(sm: Optional[messaging.SubMaster] = None, pm: Optional[messagi
 
     if sm.updated['modelV2']:
       can_strings = messaging.drain_sock_raw(can_sock)
-      radar_data = interface.update(can_strings)
+      if len(can_strings) == 0:
+        radar_data = None
+      else:
+        radar_data = interface.update(can_strings)
 
       radar.update(sm, radar_data)
       radar.publish(pm, -rk.remaining*1000.0)
