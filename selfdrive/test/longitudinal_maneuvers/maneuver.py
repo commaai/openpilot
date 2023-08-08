@@ -2,7 +2,7 @@ import numpy as np
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 
-class Maneuver():
+class Maneuver:
   def __init__(self, title, duration, **kwargs):
     # Was tempted to make a builder class
     self.distance_lead = kwargs.get("initial_distance_lead", 200.0)
@@ -18,6 +18,8 @@ class Maneuver():
     self.only_radar = kwargs.get("only_radar", False)
     self.ensure_start = kwargs.get("ensure_start", False)
     self.enabled = kwargs.get("enabled", True)
+    self.e2e = kwargs.get("e2e", False)
+    self.force_decel = kwargs.get("force_decel", False)
 
     self.duration = duration
     self.title = title
@@ -30,6 +32,8 @@ class Maneuver():
       enabled=self.enabled,
       only_lead2=self.only_lead2,
       only_radar=self.only_radar,
+      e2e=self.e2e,
+      force_decel=self.force_decel,
     )
 
     valid = True
@@ -58,6 +62,10 @@ class Maneuver():
       if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
         print('LongitudinalPlanner not starting!')
         valid = False
+    if self.force_decel and log['speed'] > 1e-1 and log['acceleration'] > -0.04:
+      print('Not stopping with force decel')
+      valid = False
+
 
     print("maneuver end", valid)
     return valid, np.array(logs)

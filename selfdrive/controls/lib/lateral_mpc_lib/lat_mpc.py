@@ -3,12 +3,12 @@ import os
 import numpy as np
 
 from casadi import SX, vertcat, sin, cos
-
 from common.realtime import sec_since_boot
+# WARNING: imports outside of constants will not trigger a rebuild
 from selfdrive.modeld.constants import T_IDXS
 
 if __name__ == '__main__':  # generating code
-  from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+  from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
   from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
 
@@ -17,12 +17,12 @@ EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = os.path.join(LAT_MPC_DIR, "acados_ocp_lat.json")
 X_DIM = 4
 P_DIM = 2
-N = 16
 COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 2
 SPEED_OFFSET = 10.0
 MODEL_NAME = 'lat'
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
+N = 32
 
 def gen_lat_model():
   model = AcadosModel()
@@ -168,14 +168,14 @@ class LateralMpc():
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:,0] = y_pts
-    v_ego = p_cp[0]
+    v_ego = p_cp[0, 0]
     # rotation_radius = p_cp[1]
     self.yref[:,1] = heading_pts * (v_ego + SPEED_OFFSET)
     self.yref[:,2] = yaw_rate_pts * (v_ego + SPEED_OFFSET)
     for i in range(N):
       self.solver.cost_set(i, "yref", self.yref[i])
-      self.solver.set(i, "p", p_cp)
-    self.solver.set(N, "p", p_cp)
+      self.solver.set(i, "p", p_cp[i])
+    self.solver.set(N, "p", p_cp[N])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
 
     t = sec_since_boot()

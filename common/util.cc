@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <fstream>
 #include <iomanip>
+#include <random>
 #include <sstream>
 
 #ifdef __linux__
@@ -96,22 +97,6 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 
   closedir(d);
   return ret;
-}
-
-void remove_files_in_dir(const std::string &path) {
-  DIR *d = opendir(path.c_str());
-  if (!d) return;
-
-  std::string fn;
-  struct dirent *de = NULL;
-  while ((de = readdir(d))) {
-    if (de->d_type != DT_DIR) {
-      fn = path + "/" + de->d_name;
-      unlink(fn.c_str());
-    }
-  }
-
-  closedir(d);
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
@@ -204,7 +189,7 @@ bool create_directories(const std::string& dir, mode_t mode) {
   return createDirectory(dir, mode);
 }
 
-std::string getenv(const char* key, const char* default_val) {
+std::string getenv(const char* key, std::string default_val) {
   const char* val = ::getenv(key);
   return val ? val : default_val;
 }
@@ -226,6 +211,18 @@ std::string hexdump(const uint8_t* in, const size_t size) {
     ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
   return ss.str();
+}
+
+std::string random_string(std::string::size_type length) {
+  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  std::mt19937 rg{std::random_device{}()};
+  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::string s;
+  s.reserve(length);
+  while (length--) {
+    s += chrs[pick(rg)];
+  }
+  return s;
 }
 
 std::string dir_name(std::string const &path) {
@@ -263,7 +260,7 @@ struct tm get_time() {
 bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2021) || (year == 2021 && month >= 6);
+  return (year > 2023) || (year == 2023 && month >= 6);
 }
 
 }  // namespace util

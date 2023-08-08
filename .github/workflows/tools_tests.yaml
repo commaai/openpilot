@@ -2,8 +2,8 @@ name: tools
 
 on:
   push:
-    branches-ignore:
-      - 'testing-closet*'
+    branches:
+      - master
   pull_request:
 
 concurrency:
@@ -30,7 +30,7 @@ jobs:
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -49,10 +49,10 @@ jobs:
   simulator:
     name: simulator
     runs-on: ubuntu-20.04
-    timeout-minutes: 30
     env:
       IMAGE_NAME: openpilot-sim
     if: github.repository == 'commaai/openpilot'
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -74,7 +74,7 @@ jobs:
   docs:
     name: build docs
     runs-on: ubuntu-20.04
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v3
       with:
@@ -87,5 +87,3 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
-
-
