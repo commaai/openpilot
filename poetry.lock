@@ -13749,13 +13749,13 @@ sentry-sdk = [
 ]
 =======
 name = "sentry-sdk"
-version = "1.29.2"
+version = "1.28.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.29.2.tar.gz", hash = "sha256:a99ee105384788c3f228726a88baf515fe7b5f1d2d0f215a03d194369f158df7"},
-    {file = "sentry_sdk-1.29.2-py2.py3-none-any.whl", hash = "sha256:3e17215d8006612e2df02b0e73115eb8376c37e3f586d8436fa41644e605074d"},
+    {file = "sentry-sdk-1.28.1.tar.gz", hash = "sha256:dcd88c68aa64dae715311b5ede6502fd684f70d00a7cd4858118f0ba3153a3ae"},
+    {file = "sentry_sdk-1.28.1-py2.py3-none-any.whl", hash = "sha256:6bdb25bd9092478d3a817cb0d01fa99e296aea34d404eac3ca0037faa5c2aa0a"},
 ]
 >>>>>>> 89b6a2370 (relock)
 
@@ -16163,5 +16163,9 @@ content-hash = "8d380b52a28e10703130c3b8907e1b908ebb9d36de76c73b4629b64bdb978c3e
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
+<<<<<<< HEAD
 content-hash = "8d380b52a28e10703130c3b8907e1b908ebb9d36de76c73b4629b64bdb978c3e"
 >>>>>>> 5c7da9ede (update sentry)
+=======
+content-hash = "713c016d81a5394fc1bf76e28aea57421cd5eb9a466451fc9e16f02004763c98"
+>>>>>>> 38be9d362 (update)
