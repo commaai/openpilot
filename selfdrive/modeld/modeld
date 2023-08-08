@@ -1,6 +1,7 @@
 #!/bin/sh
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+cd "$DIR/../../"
 
 export LD_PRELOAD="$DIR/libthneed.so"
 PYTHON=/usr/local/pyenv/versions/3.11.4/bin/python3
