@@ -1,3 +1,7 @@
+from cereal import car
+from selfdrive.car.chrysler.values import CAR
+
+Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
   # pylint: disable=C0301

@@ -1,3 +1,7 @@
+from cereal import car
+from selfdrive.car.ford.values import CAR
+
+Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.BRONCO_SPORT_MK1: {

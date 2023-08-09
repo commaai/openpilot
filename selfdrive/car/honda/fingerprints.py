@@ -1,3 +1,7 @@
+from cereal import car
+from selfdrive.car.honda.values import CAR
+
+Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.ACCORD: {

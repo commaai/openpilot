@@ -1,3 +1,8 @@
+from cereal import car
+from selfdrive.car.mazda.values import CAR
+
+Ecu = car.CarParams.Ecu
+
 FW_VERSIONS = {
   CAR.CX5_2022: {
     (Ecu.eps, 0x730, None): [

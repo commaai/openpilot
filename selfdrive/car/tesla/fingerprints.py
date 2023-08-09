@@ -1,3 +1,8 @@
+from cereal import car
+from selfdrive.car.tesla.values import CAR
+
+Ecu = car.CarParams.Ecu
+
 FINGERPRINTS = {
   # pylint: disable=C0301
   CAR.AP1_MODELS: [

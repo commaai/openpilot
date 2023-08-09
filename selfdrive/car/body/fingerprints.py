@@ -1,3 +1,8 @@
+from cereal import car
+from selfdrive.car.body.values import CAR
+
+Ecu = car.CarParams.Ecu
+
 FINGERPRINTS = {
   CAR.BODY: [{
     513: 8, 516: 8, 514: 3, 515: 4,
