@@ -120,8 +120,8 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertEqual(len(ret), num_brands)
 
     # Make sure we can combine dicts
-    ret = get_interface_attr('CAR_INFO', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 200)
+    ret = get_interface_attr('DBC', combine_brands=True)
+    self.assertGreaterEqual(len(ret), 170)
 
     # We don't support combining non-dicts
     ret = get_interface_attr('CAR', combine_brands=True)
