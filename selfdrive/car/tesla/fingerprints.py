@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from cereal import car
 from selfdrive.car.tesla.values import CAR
 from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries

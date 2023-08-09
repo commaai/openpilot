@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import re
 from typing import List, Set, Tuple, Optional
 

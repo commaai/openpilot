@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from cereal import car
 from panda.python import uds
 from selfdrive.car.nissan.values import CAR

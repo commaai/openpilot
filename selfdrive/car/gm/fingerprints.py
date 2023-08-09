@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from selfdrive.car.gm.values import CAR
 
 FINGERPRINTS = {
