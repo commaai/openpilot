@@ -192,3 +192,11 @@ select = ["E", "F", "W"]
 ignore = ["W292", "E741", "E402"]
 line-length = 160
 target-version="py311"
+exclude = [
+  "panda",
+  "opendbc",
+  "laika_repo",
+  "rednose_repo",
+  "tinygrad_repo",
+  "third_party",
+]
