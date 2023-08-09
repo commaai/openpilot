@@ -150,8 +150,7 @@ pipeline {
             sh "git submodule update --init --depth=1 --recursive"
             sh "scons -j42"
             sh "export PYTHONPATH='${WORKSPACE}'"
-            sh "export INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt'"
-            sh "cd selfdrive/car/tests && pytest -n42 --dist=loadscope ./test_models.py"
+            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' pytest -n42 --dist=loadscope ./test_models.py"
           }
 
           post {
