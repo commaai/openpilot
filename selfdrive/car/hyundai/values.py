@@ -518,7 +518,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
-  # noqa: E501
   CAR.HYUNDAI_GENESIS: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DH LKAS 1.1 -150210',
