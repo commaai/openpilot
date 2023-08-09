@@ -143,6 +143,13 @@ pipeline {
         }
         */
 
+        stage('large test models') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+          }
+        }
+
         stage('scons build test') {
           agent {
             dockerfile {
