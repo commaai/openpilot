@@ -112,11 +112,33 @@ class TestCarInterfaces(unittest.TestCase):
 
   def test_interface_attrs(self):
     """ Asserts basic behavior of interface attribute getter """
+    num_brands = len(get_interface_attr('CAR'))
+    self.assertGreaterEqual(num_brands, 13)
+
+    for attr in ('DBC', 'CAR_INFO'):
+      ret = get_interface_attr('DBC', ignore_none=True)
+      self.assertEqual(len(ret), num_brands)
+
+
+    dbc = get_interface_attr('CAR')
+    dbc = get_interface_attr('FW_VERSIONS')
+
     # Should return value for all brands when not combining
     for attr in ('DBC', 'FAKE', 'CAR'):
       ret = get_interface_attr(attr)
       self.assertGreaterEqual(len(ret), 13)
 
+    ret = get_interface_attr('CAR', ignore_none=True)
+    self.assertEqual(len(ret), 13)
+
+    for attr in ('DBC', 'FAKE', 'CAR'):
+      ret = get_interface_attr(attr, ignore_none=True)
+      self.assertGreaterEqual(len(ret), 13)
+
+    ret = get_interface_attr('FW_VERSIONS')
+    self.assertTrue(all(len(i) for i in ret.values()))
+
+#'FW_VERSIONS', 'FINGERPRINTS', 'CAR_INFO'
     ret = get_interface_attr('DBC', combine_brands=True)
     self.assertGreaterEqual(len(ret), 170)
     ret = get_interface_attr('FAKE', combine_brands=True)
@@ -126,7 +148,7 @@ class TestCarInterfaces(unittest.TestCase):
     ret = get_interface_attr('CAR', combine_brands=True)
     self.assertGreaterEqual(len(ret), 0)
 
-    ret = get_interface_attr('FW_VERSIONS', combine_brands=True, file='fingerprints')
+    ret = get_interface_attr('FW_VERSIONS', combine_brands=True)
     self.assertGreaterEqual(len(ret), 190)
 
 
