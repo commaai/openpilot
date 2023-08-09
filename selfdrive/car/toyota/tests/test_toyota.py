@@ -2,7 +2,8 @@
 from cereal import car
 import unittest
 
-from selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
+from selfdrive.car.toyota.fingerprints import FW_VERSIONS
+from selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR
 
 Ecu = car.CarParams.Ecu
 
