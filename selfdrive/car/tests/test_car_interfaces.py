@@ -124,16 +124,13 @@ class TestCarInterfaces(unittest.TestCase):
     ret = get_interface_attr('CAR_INFO', combine_brands=True)
     self.assertGreaterEqual(len(ret), 200)
 
-    # If all attributes exist, should still equal num_brands
-    ret = get_interface_attr('CAR_INFO', ignore_none=True)
-    self.assertEqual(len(ret), num_brands)
-
     # We don't support combining non-dicts
     ret = get_interface_attr('CAR', combine_brands=True)
     self.assertEqual(len(ret), 0)
 
-    # ret = get_interface_attr('FW_VERSIONS', combine_brands=True)
-    # self.assertGreaterEqual(len(ret), 190)
+    # If all attributes exist, should still equal num_brands
+    ret = get_interface_attr('CAR_INFO', ignore_none=True)
+    self.assertEqual(len(ret), num_brands)
 
 
 if __name__ == "__main__":
