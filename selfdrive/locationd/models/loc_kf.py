@@ -372,7 +372,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment]
       self.computer = LstSqComputer(generated_dir, N)
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]

@@ -32,7 +32,7 @@
 #
 
 import os
-from casadi import SX, MX, Function, transpose, vertcat, horzcat, hessian, CasadiMeta
+from casadi import SX, MX, Function, vertcat, hessian, CasadiMeta
 from .utils import ALLOWED_CASADI_VERSIONS, casadi_version_warning
 
 

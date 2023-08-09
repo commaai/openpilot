@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
@@ -142,7 +143,6 @@ class CanBus:
   DROPPED = 192
 
 FINGERPRINTS = {
-  # pylint: disable=C0301
   CAR.HOLDEN_ASTRA: [
   # Astra BK MY17, ASCM unplugged
   {

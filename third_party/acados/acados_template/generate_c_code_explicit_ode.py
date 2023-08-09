@@ -33,7 +33,7 @@
 
 import os
 from casadi import *
-from .utils import ALLOWED_CASADI_VERSIONS, is_empty, casadi_version_warning
+from .utils import ALLOWED_CASADI_VERSIONS, casadi_version_warning
 
 def generate_c_code_explicit_ode( model, opts ):
 
