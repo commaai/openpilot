@@ -171,7 +171,8 @@ class CarKalman(KalmanFilter):
     if P_initial is not None:
       self.P_initial = P_initial
     # init filter
-    self.filter = EKF_sym_pyx(generated_dir, self.name, self.Q, self.initial_x, self.P_initial, dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
+    self.filter = EKF_sym_pyx(generated_dir, self.name, self.Q, self.initial_x, self.P_initial,
+                              dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
 
 
 if __name__ == "__main__":
