@@ -4,9 +4,10 @@ from panda import Panda
 from common.conversions import Conversions as CV
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.fordcan import CanBus
-from selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu
+from selfdrive.car.ford.values import CANFD_CAR, CAR
 from selfdrive.car.interfaces import CarInterfaceBase
 
+Ecu = car.CarParams.Ecu
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
