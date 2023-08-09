@@ -113,7 +113,7 @@ pipeline {
 
       stage('large test models') {
         matrix {
-          agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
+
           axes {
             axis {
               name 'JOB_ID'
@@ -123,6 +123,7 @@ pipeline {
 
           stages {
             stage('start large test models') {
+              agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
               steps {
                 sh "git config --global --add safe.directory '*'"
                 sh "git submodule update --init --depth=1 --recursive"
