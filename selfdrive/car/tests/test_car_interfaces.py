@@ -115,21 +115,14 @@ class TestCarInterfaces(unittest.TestCase):
     num_brands = len(get_interface_attr('CAR'))
     self.assertGreaterEqual(num_brands, 13)
 
-    for attr in ('DBC', 'CAR_INFO'):
-      ret = get_interface_attr('DBC', ignore_none=True)
-      self.assertEqual(len(ret), num_brands)
-
-
-    dbc = get_interface_attr('CAR')
-    dbc = get_interface_attr('FW_VERSIONS')
-
     # Should return value for all brands when not combining
     for attr in ('DBC', 'FAKE', 'CAR'):
       ret = get_interface_attr(attr)
-      self.assertGreaterEqual(len(ret), 13)
+      self.assertEqual(len(ret), num_brands)
 
+    # Every brand must implement CAR
     ret = get_interface_attr('CAR', ignore_none=True)
-    self.assertEqual(len(ret), 13)
+    self.assertGreaterEqual(len(ret), num_brands)
 
     for attr in ('DBC', 'FAKE', 'CAR'):
       ret = get_interface_attr(attr, ignore_none=True)

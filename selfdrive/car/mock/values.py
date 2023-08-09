@@ -10,5 +10,3 @@ class CAR:
 CAR_INFO: Dict[str, Optional[Union[CarInfo, List[CarInfo]]]] = {
   CAR.MOCK: None,
 }
-
-DBC: Dict[str, Dict[str, str]] = {}
