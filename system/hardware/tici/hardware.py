@@ -319,7 +319,8 @@ class Tici(HardwareBase):
       (True, tc + ["class", "add", "dev", adapter, "parent", "1:", "classid", "1:20", "htb", "rate", f"{upload_speed_kbps}kbit"]),
 
       # Create universal 32 bit filter on adapter that sends all outbound ip traffic through the class
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "1:", "protocol", "ip", "prio", \
+                   "10", "u32", "match", "ip", "dst", "0.0.0.0/0", "flowid", "1:20"]),
     ]
 
     download = [
@@ -328,7 +329,8 @@ class Tici(HardwareBase):
 
       # Redirect ingress (incoming) to egress ifb0
       (True, tc + ["qdisc", "add", "dev", adapter, "handle", "ffff:", "ingress"]),
-      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
+      (True, tc + ["filter", "add", "dev", adapter, "parent", "ffff:", "protocol", "ip", "u32", \
+                   "match", "u32", "0", "0", "action", "mirred", "egress", "redirect", "dev", ifb]),
 
       # Add class and rules for virtual interface
       (True, tc + ["qdisc", "add", "dev", ifb, "root", "handle", "2:", "htb"]),

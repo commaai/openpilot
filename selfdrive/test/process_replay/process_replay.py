@@ -323,7 +323,8 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
     has_cached_cp = params.get("CarParamsCache") is not None
     assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
-    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
+    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
+            "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
@@ -606,7 +607,8 @@ def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructRead
   return custom_params
 
 
-def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader, List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
+def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReader,
+                             List[capnp._DynamicStructReader]], *args, **kwargs) -> List[capnp._DynamicStructReader]:
   if isinstance(name, str):
     cfgs = [get_process_config(name)]
   elif isinstance(name, Iterable):
@@ -660,7 +662,8 @@ def _replay_multi_process(
       continue
     
     assert frs is not None, "frs must be provided when replaying process using vision streams"
-    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
+    assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),\
+                                                     f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
     assert all(st in frs for st in cfg.vision_pubs), f"frs for this process must contain following vision streams: {cfg.vision_pubs}"
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)

@@ -142,6 +142,7 @@ class CanBus:
   DROPPED = 192
 
 FINGERPRINTS = {
+  # pylint: disable=C0301
   CAR.HOLDEN_ASTRA: [
   # Astra BK MY17, ASCM unplugged
   {
