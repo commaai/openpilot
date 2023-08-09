@@ -61,7 +61,7 @@ disable=C,R,W0613,W0511,W0212,W0201,W0106,W0603,W0621,W0703,W1201,W1203,E1136,W1
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
-enable=c-extension-no-member
+enable=c-extension-no-member,C0301
 
 
 [REPORTS]
@@ -245,7 +245,7 @@ indent-after-paren=4
 indent-string='  '
 
 # Maximum number of characters on a single line.
-max-line-length=100
+max-line-length=160
 
 # Maximum number of lines in a module
 max-module-lines=1000

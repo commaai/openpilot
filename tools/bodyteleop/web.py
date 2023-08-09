@@ -181,7 +181,8 @@ def main():
   cert_path = TELEOPDIR + '/cert.pem'
   key_path = TELEOPDIR + '/key.pem'
   if (not os.path.exists(cert_path)) or (not os.path.exists(key_path)):
-    asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
+    asyncio.run(run(f'openssl req -x509 -newkey rsa:4096 -nodes -out {cert_path} -keyout {key_path} \
+                     -days 365 -subj "/C=US/ST=California/O=commaai/OU=comma body"'))
   else:
     logger.info("Certificate exists!")
   ssl_context = ssl.SSLContext()

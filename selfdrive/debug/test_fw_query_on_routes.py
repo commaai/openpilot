@@ -112,7 +112,8 @@ if __name__ == "__main__":
           padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - \
+                      (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False

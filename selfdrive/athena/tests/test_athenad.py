@@ -253,7 +253,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_cancelUpload(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -317,7 +318,8 @@ class TestAthenadMethods(unittest.TestCase):
       end_event.set()
 
   def test_listUploadQueue(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id', allow_cellular=True)
+    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
