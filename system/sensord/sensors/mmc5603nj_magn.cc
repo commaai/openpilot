@@ -1,5 +1,6 @@
 #include "mmc5603nj_magn.h"
 
+#include <algorithm>
 #include <cassert>
 
 #include "common/swaglog.h"
@@ -78,12 +79,12 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   uint64_t start_time = nanos_since_boot();
   // SET - RESET cycle
   set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET);
-  util::sleep_for(1);
+  util::sleep_for(5);
   MMC5603NJ_Magn::start_measurement();
   std::vector<float> xyz = MMC5603NJ_Magn::read_measurement();
 
   set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET);
-  util::sleep_for(1);
+  util::sleep_for(5);
   MMC5603NJ_Magn::start_measurement();
   std::vector<float> reset_xyz = MMC5603NJ_Magn::read_measurement();
 
@@ -95,8 +96,12 @@ bool MMC5603NJ_Magn::get_event(MessageBuilder &msg, uint64_t ts) {
   event.setTimestamp(start_time);
 
   float vals[] = {xyz[0], xyz[1], xyz[2], reset_xyz[0], reset_xyz[1], reset_xyz[2]};
+  bool valid = true;
+  if (std::any_of(std::begin(vals), std::end(vals), [](float val) { return val == -32.0; })) {
+    valid = false;
+  }
   auto svec = event.initMagneticUncalibrated();
   svec.setV(vals);
-  svec.setStatus(true);
+  svec.setStatus(valid);
   return true;
 }
