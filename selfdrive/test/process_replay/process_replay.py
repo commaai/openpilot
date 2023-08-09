@@ -52,7 +52,7 @@ class ReplayContext:
     self.main_pub_drained = cfg.main_pub_drained
     self.unlocked_pubs = cfg.unlocked_pubs
     assert(len(self.pubs) != 0 or self.main_pub is not None)
-  
+
   def __enter__(self):
     self.open()
 
@@ -82,7 +82,7 @@ class ReplayContext:
   @property
   def all_recv_called_events(self):
     return [man.recv_called_event for man in self.events.values()]
-  
+
   @property
   def all_recv_ready_events(self):
     return [man.recv_ready_event for man in self.events.values()]
@@ -142,7 +142,7 @@ class ProcessContainer:
     self.cnt = 0
     self.pm: Optional[messaging.PubMaster] = None
     self.sockets: Optional[List[messaging.SubSocket]] = None
-    self.rc: Optional[ReplayContext] = None 
+    self.rc: Optional[ReplayContext] = None
     self.vipc_server: Optional[VisionIpcServer] = None
     self.capture: Optional[ProcessOutputCapture] = None
 
@@ -199,8 +199,8 @@ class ProcessContainer:
     self.process.start()
 
   def start(
-    self, params_config: Dict[str, Any], environ_config: Dict[str, Any], 
-    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]], 
+    self, params_config: Dict[str, Any], environ_config: Dict[str, Any],
+    all_msgs: Union[LogReader, List[capnp._DynamicStructReader]],
     fingerprint: Optional[str], capture_output: bool
   ):
     with self.prefix as p:
@@ -336,7 +336,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
 def controlsd_rcv_callback(msg, cfg, frame):
   # no sendcan until controlsd is initialized
   if msg.which() != "can":
-    return False 
+    return False
 
   socks = [
     s for s in cfg.subs if
@@ -407,7 +407,7 @@ class FrequencyBasedRcvCallback:
       if frame % max(1, int(service_list[msg.which()].frequency / service_list[s].frequency)) == 0
     ]
     return bool(len(resp_sockets))
-  
+
 
 def controlsd_config_callback(params, cfg, lr):
   controlsState = None
@@ -437,7 +437,7 @@ def laikad_config_pubsub_callback(params, cfg, lr):
 def locationd_config_pubsub_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
-  
+
   cfg.pubs = set(cfg.pubs) - sub_keys
 
 
@@ -495,7 +495,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pubs=[
-      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal", 
+      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
       "liveCalibration", "carState", "carParams", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
@@ -577,7 +577,7 @@ def get_process_config(name: str) -> ProcessConfig:
 
 def get_custom_params_from_lr(lr: Union[LogReader, List[capnp._DynamicStructReader]], initial_state: str = "first") -> Dict[str, Any]:
   """
-  Use this to get custom params dict based on provided logs. 
+  Use this to get custom params dict based on provided logs.
   Useful when replaying following processes: calibrationd, paramsd, torqued
   The params may be based on first or last message of given type (carParams, liveCalibration, liveParameters, liveTorqueParameters) in the logs.
   """
@@ -620,7 +620,7 @@ def replay_process_with_name(name: Union[str, Iterable[str]], lr: Union[LogReade
 
 
 def replay_process(
-  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None, 
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: Union[LogReader, List[capnp._DynamicStructReader]], frs: Optional[Dict[str, Any]] = None,
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None,
   captured_output_store: Optional[Dict[str, Dict[str, str]]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
@@ -660,7 +660,7 @@ def _replay_multi_process(
   for cfg in cfgs:
     if len(cfg.vision_pubs) == 0:
       continue
-    
+
     assert frs is not None, "frs must be provided when replaying process using vision streams"
     assert all(meta_from_camera_state(st) is not None for st in cfg.vision_pubs),\
                                                      f"undefined vision stream spotted, probably misconfigured process: {cfg.vision_pubs}"
@@ -722,7 +722,7 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     "DisengageOnAccelerator": True,
     "DisableLogging": False,
   }
-  
+
   if custom_params is not None:
     params_dict.update(custom_params)
   if lr is not None:
@@ -769,7 +769,7 @@ def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> Dict[str
   else:
     environ_dict["SKIP_FW_QUERY"] = ""
     environ_dict["FINGERPRINT"] = ""
-  
+
   return environ_dict
 
 

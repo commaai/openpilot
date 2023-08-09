@@ -34,31 +34,11 @@ repos:
         types: [python]
         args: ['--explicit-package-bases']
         exclude: '^(third_party/)|(cereal/)|(opendbc/)|(panda/)|(laika/)|(laika_repo/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(xx/)'
--   repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.282
     hooks:
-    -   id: flake8
-        exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(opendbc/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(selfdrive/debug/)/'
-        additional_dependencies: ['flake8-no-implicit-concat']
-        args:
-        - --indent-size=2
-        - --enable-extensions=NIC
-        - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
-        - --statistics
-        - -j4
--   repo: local
-    hooks:
-    -   id: pylint
-        name: pylint
-        entry: pylint
-        language: system
-        types: [python]
+    -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
-        args:
-        - -j0
-        - -rn
-        - -sn
-        - --rcfile=.pylintrc
 -   repo: local
     hooks:
     -   id: cppcheck

@@ -203,7 +203,7 @@ class TestMonitoring(unittest.TestCase):
     ds_vector = [msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN] * int(TEST_TIMESPAN/DT_DMON)
     interaction_vector = always_false[:]
     events, d_status = self._run_seq(ds_vector, interaction_vector, always_true, always_false)
-    self.assertTrue(EventName.preDriverUnresponsive in 
+    self.assertTrue(EventName.preDriverUnresponsive in
                               events[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME-0.1)/DT_DMON)].names)
     self.assertTrue(EventName.promptDriverUnresponsive in
                               events[int((INVISIBLE_SECONDS_TO_ORANGE-1+DT_DMON*d_status.settings._HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names)

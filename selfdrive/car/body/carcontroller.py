@@ -56,7 +56,7 @@ class CarController:
       speed_error = speed_desired - speed_measured
 
       if self.wheeled_body is None:
-        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or 
+        freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
                              (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
         angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
 
