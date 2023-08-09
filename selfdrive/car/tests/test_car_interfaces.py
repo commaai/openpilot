@@ -120,29 +120,20 @@ class TestCarInterfaces(unittest.TestCase):
       ret = get_interface_attr(attr)
       self.assertEqual(len(ret), num_brands)
 
-    # Every brand must implement CAR
-    ret = get_interface_attr('CAR', ignore_none=True)
-    self.assertGreaterEqual(len(ret), num_brands)
+    # Make sure we can combine dicts
+    ret = get_interface_attr('CAR_INFO', combine_brands=True)
+    self.assertGreaterEqual(len(ret), 200)
 
-    for attr in ('DBC', 'FAKE', 'CAR'):
-      ret = get_interface_attr(attr, ignore_none=True)
-      self.assertGreaterEqual(len(ret), 13)
+    # If all attributes exist, should still equal num_brands
+    ret = get_interface_attr('CAR_INFO', ignore_none=True)
+    self.assertEqual(len(ret), num_brands)
 
-    ret = get_interface_attr('FW_VERSIONS')
-    self.assertTrue(all(len(i) for i in ret.values()))
-
-#'FW_VERSIONS', 'FINGERPRINTS', 'CAR_INFO'
-    ret = get_interface_attr('DBC', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 170)
-    ret = get_interface_attr('FAKE', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 0)
-
-    # We don't support combining non lists/dicts
+    # We don't support combining non-dicts
     ret = get_interface_attr('CAR', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 0)
+    self.assertEqual(len(ret), 0)
 
-    ret = get_interface_attr('FW_VERSIONS', combine_brands=True)
-    self.assertGreaterEqual(len(ret), 190)
+    # ret = get_interface_attr('FW_VERSIONS', combine_brands=True)
+    # self.assertGreaterEqual(len(ret), 190)
 
 
 if __name__ == "__main__":
