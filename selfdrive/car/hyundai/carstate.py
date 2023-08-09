@@ -7,7 +7,8 @@ from common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HEV_CAR, CANFD_EV_CAR, CANFD_HEV_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import (HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR,
+                                          EV_CAR, HEV_CAR, CANFD_EV_CAR, CANFD_HEV_CAR, Buttons, CarControllerParams)
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8
