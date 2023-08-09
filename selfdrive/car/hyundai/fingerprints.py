@@ -1,5 +1,6 @@
 import re
 from typing import List, Set, Tuple, Optional
+
 from cereal import car
 from panda.python import uds
 from selfdrive.car.hyundai.values import CAR, CANFD_CAR, EV_CAR

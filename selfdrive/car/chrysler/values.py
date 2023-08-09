@@ -1,13 +1,9 @@
-# ruff: noqa: E501
 from enum import IntFlag
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
-from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
-
-Ecu = car.CarParams.Ecu
 
 
 class ChryslerFlags(IntFlag):

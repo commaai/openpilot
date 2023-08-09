@@ -1,12 +1,9 @@
-# ruff: noqa: E501
 from collections import namedtuple
 from typing import Dict, List, Union
 
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-
-Ecu = car.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 

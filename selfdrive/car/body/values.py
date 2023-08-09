@@ -1,10 +1,7 @@
 from typing import Dict
 
-from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-
-Ecu = car.CarParams.Ecu
 
 SPEED_FROM_RPM = 0.008587
 

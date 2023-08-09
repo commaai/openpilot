@@ -8,8 +8,6 @@ from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
 
-Ecu = car.CarParams.Ecu
-
 
 class CarControllerParams:
   STEER_STEP = 5        # LateralMotionControl, 20Hz

@@ -9,7 +9,6 @@ from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
                                            Device
 
-Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter

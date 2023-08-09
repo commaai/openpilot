@@ -7,7 +7,6 @@ from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
 
-Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
