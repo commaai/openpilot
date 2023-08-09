@@ -116,7 +116,7 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertGreaterEqual(num_brands, 13)
 
     # Should return value for all brands when not combining
-    for attr in ('DBC', 'FAKE', 'CAR'):
+    for attr in ('DBC', 'FAKE', 'CAR_INFO'):
       ret = get_interface_attr(attr)
       self.assertEqual(len(ret), num_brands)
 
