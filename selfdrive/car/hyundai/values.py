@@ -3,11 +3,9 @@ from enum import Enum, IntFlag
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from panda.python import uds
 from common.conversions import Conversions as CV
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -282,79 +280,6 @@ class Buttons:
   GAP_DIST = 3
   CANCEL = 4  # on newer models, this is a pause/resume button
 
-
-HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf100)  # Long description
-
-HYUNDAI_VERSION_REQUEST_ALT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf110)  # Alt long description
-
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100)
-
-HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
-    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
-    # CAN queries (OBD-II port)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
-    ),
-
-    # CAN-FD queries (from camera)
-    # TODO: combine shared whitelists with CAN requests
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac],
-      bus=0,
-      auxiliary=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar, Ecu.hvac],
-      bus=1,
-      auxiliary=True,
-      obd_multiplexing=False,
-    ),
-
-    # CAN-FD debugging queries
-    Request(
-      [HYUNDAI_VERSION_REQUEST_ALT],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
-      bus=0,
-      auxiliary=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_ALT],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
-      bus=1,
-      auxiliary=True,
-      obd_multiplexing=False,
-    ),
-  ],
-  extra_ecus=[
-    (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
-    (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
-    (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
-    (Ecu.cornerRadar, 0x7b7, None),
-  ],
-  # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
-  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
-)
 
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021,

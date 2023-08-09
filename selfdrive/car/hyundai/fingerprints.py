@@ -1,21 +1,11 @@
 import re
 from typing import List, Set, Tuple, Optional
 from cereal import car
-from selfdrive.car.hyundai.values import CAR, CANFD_CAR, EV_CAR, HYUNDAI_VERSION_REQUEST_LONG
+from panda.python import uds
+from selfdrive.car.hyundai.values import CAR, CANFD_CAR, EV_CAR
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
-
-# Regex patterns for parsing platform code, FW date, and part number from FW versions
-PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
-                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})')
-DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
-PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
-
-# List of ECUs expected to have platform codes, camera and radar should exist on all cars
-# TODO: use abs, it has the platform code and part number on many platforms
-PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
-# So far we've only seen dates in fwdCamera
-DATE_FW_ECUS = [Ecu.fwdCamera]
 
 
 def get_platform_codes(fw_versions: List[bytes]) -> Set[Tuple[bytes, Optional[bytes]]]:
@@ -86,6 +76,91 @@ def match_fw_to_car_fuzzy(live_fw_versions) -> Set[str]:
 
   return candidates - fuzzy_platform_blacklist
 
+
+HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf100)  # Long description
+
+HYUNDAI_VERSION_REQUEST_ALT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(0xf110)  # Alt long description
+
+HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
+  p16(0xf100)
+
+HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
+
+# Regex patterns for parsing platform code, FW date, and part number from FW versions
+PLATFORM_CODE_FW_PATTERN = re.compile(b'((?<=' + HYUNDAI_VERSION_REQUEST_LONG[1:] +
+                                      b')[A-Z]{2}[A-Za-z0-9]{0,2})')
+DATE_FW_PATTERN = re.compile(b'(?<=[ -])([0-9]{6}$)')
+PART_NUMBER_FW_PATTERN = re.compile(b'(?<=[0-9][.,][0-9]{2} )([0-9]{5}[-/]?[A-Z][A-Z0-9]{3}[0-9])')
+
+# List of ECUs expected to have platform codes, camera and radar should exist on all cars
+# TODO: use abs, it has the platform code and part number on many platforms
+PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
+# So far we've only seen dates in fwdCamera
+DATE_FW_ECUS = [Ecu.fwdCamera]
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
+    # CAN queries (OBD-II port)
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_MULTI],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
+    ),
+
+    # CAN-FD queries (from camera)
+    # TODO: combine shared whitelists with CAN requests
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac],
+      bus=0,
+      auxiliary=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar, Ecu.hvac],
+      bus=1,
+      auxiliary=True,
+      obd_multiplexing=False,
+    ),
+
+    # CAN-FD debugging queries
+    Request(
+      [HYUNDAI_VERSION_REQUEST_ALT],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
+      bus=0,
+      auxiliary=True,
+    ),
+    Request(
+      [HYUNDAI_VERSION_REQUEST_ALT],
+      [HYUNDAI_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
+      bus=1,
+      auxiliary=True,
+      obd_multiplexing=False,
+    ),
+  ],
+  extra_ecus=[
+    (Ecu.adas, 0x730, None),         # ADAS Driving ECU on HDA2 platforms
+    (Ecu.parkingAdas, 0x7b1, None),  # ADAS Parking ECU (may exist on all platforms)
+    (Ecu.hvac, 0x7b3, None),         # HVAC Control Assembly
+    (Ecu.cornerRadar, 0x7b7, None),
+  ],
+  # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
+)
 
 FINGERPRINTS = {
   # pylint: disable=C0301
