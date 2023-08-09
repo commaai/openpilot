@@ -149,7 +149,6 @@ pipeline {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
             sh "scons -j42"
-            sh "export PYTHONPATH='${WORKSPACE}'"
             sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' pytest -n42 --dist=loadscope ./test_models.py"
           }
 
