@@ -63,8 +63,8 @@ def init_kernels(frame_offset=0):
   ctx = cl.create_some_context(interactive=False)
 
   with open(os.path.join(BASEDIR, 'system/camerad/cameras/real_debayer.cl')) as f:
-    build_args = ' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant' + \
-      f' -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DFRAME_OFFSET={frame_offset} -DCAM_NUM=0'
+    build_args = (" -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant"
+                f" -DFRAME_STRIDE={FRAME_STRIDE} -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DFRAME_OFFSET={frame_offset} -DCAM_NUM=0")
     if PC:
       build_args += ' -DHALF_AS_FLOAT=1 -cl-std=CL2.0'
     debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)

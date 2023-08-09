@@ -39,6 +39,8 @@ repos:
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(rednose/)|(panda/)|(laika/)|(laika_repo/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)'
+        args:
+            - --fix
 -   repo: local
     hooks:
     -   id: cppcheck
