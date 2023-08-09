@@ -40,9 +40,10 @@ def load_test_cases_from_file(file_path):
     seg_list = f.read().splitlines()
   platforms, segs = seg_list[0::2], seg_list[1::2]
 
-  for platform, seg in list(zip(platforms, segs)):
+  for platform, seg in zip(platforms, segs):
     segment_name = SegmentName(seg)
-    test_cases.append((platform[2:], CarTestRoute(segment_name.route_name.canonical_name, platform[2:], segment=segment_name.segment_num)))
+    test_cases.append((platform[2:], CarTestRoute(segment_name.route_name.canonical_name, platform[2:],
+                                                  segment=segment_name.segment_num)))
   return test_cases
 
 
