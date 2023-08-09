@@ -149,7 +149,7 @@ pipeline {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
             sh "scons -j42"
-            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+            sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
           }
         }
 
