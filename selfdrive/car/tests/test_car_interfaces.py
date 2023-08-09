@@ -129,8 +129,15 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertEqual(len(ret), 0)
 
     # If all attributes exist, should still equal num_brands
-    ret = get_interface_attr('CAR_INFO', ignore_none=True)
-    self.assertEqual(len(ret), num_brands)
+    # ret = [brand for brand, versions in get_interface_attr('FW_VERSIONS').items() if versions is]
+    ret = get_interface_attr('FW_VERSIONS')
+    none_brands = {b for b, v in ret.items() if v is not None}
+    self.assertGreater(len(none_brands), 0)
+
+    ret = get_interface_attr('FW_VERSIONS', ignore_none=True)
+
+    none_brands_in_ret = {b for b in none_brands if b in ret}
+    self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignored None result: {none_brands_in_ret}')
 
 
 if __name__ == "__main__":
