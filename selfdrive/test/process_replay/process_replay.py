@@ -433,11 +433,6 @@ def laikad_config_pubsub_callback(params, cfg, lr):
   cfg.main_pub_drained = True
 
 
-def locationd_config_pubsub_callback(params, cfg, lr):
-  sub_keys = ({"gnssMeasurements", })
-  cfg.pubs = set(cfg.pubs) - sub_keys
-
-
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -497,7 +492,6 @@ CONFIGS = [
     ],
     subs=["liveLocationKalman"],
     ignore=["logMonoTime", "valid"],
-    config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
