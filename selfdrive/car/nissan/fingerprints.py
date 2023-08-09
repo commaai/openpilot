@@ -1,10 +1,11 @@
 from cereal import car
+from panda.python import uds
 from selfdrive.car.nissan.values import CAR
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
-  # pylint: disable=C0301
   CAR.XTRAIL: [
     {
       2: 5, 42: 6, 346: 6, 347: 5, 348: 8, 349: 7, 361: 8, 386: 8, 389: 8, 397: 8, 398: 8, 403: 8, 520: 2, 523: 6, 548: 8, 645: 8, 658: 8, 665: 8, 666: 8, 674: 2, 682: 8, 683: 8, 689: 8, 723: 8, 758: 3, 768: 2, 783: 3, 851: 8, 855: 8, 1041: 8, 1055: 2, 1104: 4, 1105: 6, 1107: 4, 1108: 8, 1111: 4, 1227: 8, 1228: 8, 1247: 4, 1266: 8, 1273: 7, 1342: 1, 1376: 6, 1401: 8, 1474: 2, 1497: 3, 1821: 8, 1823: 8, 1837: 8, 2015: 8, 2016: 8, 2024: 8
@@ -38,6 +39,33 @@ FINGERPRINTS = {
     },
   ]
 }
+
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
+
+NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
+NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
+
+NISSAN_RX_OFFSET = 0x20
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+    ),
+    Request(
+      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      rx_offset=NISSAN_RX_OFFSET,
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.ALTIMA: {

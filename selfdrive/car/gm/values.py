@@ -143,8 +143,6 @@ class CanBus:
   DROPPED = 192
 
 
-GM_RX_OFFSET = 0x400
-
 DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'))
 
 EV_CAR = {CAR.VOLT, CAR.BOLT_EUV}

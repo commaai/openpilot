@@ -5,7 +5,6 @@ from typing import Dict, List, Union
 from cereal import car
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -26,26 +25,6 @@ DBC = {
   CAR.AP2_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
   CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
 }
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps],
-      rx_offset=0x08,
-      bus=0,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.adas, Ecu.electricBrakeBooster, Ecu.fwdRadar],
-      rx_offset=0x10,
-      bus=0,
-    ),
-  ]
-)
-
 
 class CANBUS:
   # Lateral harness

@@ -1,8 +1,8 @@
 from selfdrive.car.interfaces import get_interface_attr
 
 
-FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
-_FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True)
+FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True, file='fingerprints')
+_FINGERPRINTS = get_interface_attr('FINGERPRINTS', combine_brands=True, ignore_none=True, file='fingerprints')
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 

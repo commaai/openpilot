@@ -7,7 +7,6 @@ from cereal import car
 from common.conversions import Conversions as CV
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarFootnote, CarInfo, Column, CarParts, CarHarness
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -232,77 +231,6 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON,
            CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
-
-# Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
-# Toyota diagnostic software first gets the supported data ids, then queries them one by one.
-# For example, sends: 0x1a8800, receives: 0x1a8800010203, queries: 0x1a8801, 0x1a8802, 0x1a8803
-TOYOTA_VERSION_REQUEST_KWP = b'\x1a\x88\x01'
-TOYOTA_VERSION_RESPONSE_KWP = b'\x5a\x88\x01'
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  # TODO: look at data to whitelist new ECUs effectively
-  requests=[
-    Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
-      bus=0,
-    ),
-    Request(
-      [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
-      [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission,
-                      Ecu.gateway, Ecu.hvac],
-      bus=0,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
-      bus=0,
-    ),
-  ],
-  non_essential_ecus={
-    # FIXME: On some models, abs can sometimes be missing
-    Ecu.abs: [CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_IS],
-    # On some models, the engine can show on two different addresses
-    Ecu.engine: [CAR.CAMRY, CAR.COROLLA_TSS2, CAR.CHR, CAR.CHR_TSS2, CAR.LEXUS_IS, CAR.LEXUS_RC],
-  },
-  extra_ecus=[
-    # All known ECUs on a late-model Toyota vehicle not queried here:
-    # Responds to UDS:
-    # - HV Battery (0x713, 0x747)
-    # - Motor Generator (0x716, 0x724)
-    # - 2nd ABS "Brake/EPB" (0x730)
-    # Responds to KWP (0x1a8801):
-    # - Steering Angle Sensor (0x7b3)
-    # - EPS/EMPS (0x7a0, 0x7a1)
-    # Responds to KWP (0x1a8881):
-    # - Body Control Module ((0x750, 0x40))
-
-    # Hybrid control computer can be on 0x7e2 (KWP) or 0x7d2 (UDS) depending on platform
-    (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    # TODO: if these duplicate ECUs always exist together, remove one
-    (Ecu.srs, 0x780, None),     # SRS Airbag
-    (Ecu.srs, 0x784, None),     # SRS Airbag 2
-    # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
-    # On some cars, EPB is controlled by the ABS module
-    (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
-    # This isn't accessible on all cars
-    (Ecu.gateway, 0x750, 0x5f),
-    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
-    (Ecu.telematics, 0x750, 0xc7),
-    # Transmission is combined with engine on some platforms, such as TSS-P RAV4
-    (Ecu.transmission, 0x701, None),
-    # A few platforms have a tester present response on this address, add to log
-    (Ecu.transmission, 0x7e1, None),
-    # On some cars, this only responds to b'\x1a\x88\x80'
-    (Ecu.combinationMeter, 0x7c0, None),
-    (Ecu.hvac, 0x7c4, None),
-  ],
-)
 
 STEER_THRESHOLD = 100
 

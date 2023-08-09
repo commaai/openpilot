@@ -1,7 +1,24 @@
 from cereal import car
 from selfdrive.car.mazda.values import CAR
+from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+    ),
+    # Log responses on powertrain bus
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      bus=0,
+      logging=True,
+    ),
+  ],
+)
 
 FW_VERSIONS = {
   CAR.CX5_2022: {

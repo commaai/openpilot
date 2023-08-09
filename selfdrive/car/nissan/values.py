@@ -3,10 +3,8 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
 from cereal import car
-from panda.python import uds
 from selfdrive.car import AngleRateLimit, dbc_dict
 from selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -44,33 +42,6 @@ CAR_INFO: Dict[str, Optional[Union[NissanCarInfo, List[NissanCarInfo]]]] = {
   CAR.ROGUE: NissanCarInfo("Nissan Rogue 2018-20"),
   CAR.ALTIMA: NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b])),
 }
-
-NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0x81])
-NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0x81])
-
-NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
-NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
-
-NISSAN_RX_OFFSET = 0x20
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-    ),
-    Request(
-      [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
-      [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
-      rx_offset=NISSAN_RX_OFFSET,
-    ),
-    Request(
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      rx_offset=NISSAN_RX_OFFSET,
-    ),
-  ],
-)
 
 DBC = {
   CAR.XTRAIL: dbc_dict('nissan_x_trail_2017_generated', None),

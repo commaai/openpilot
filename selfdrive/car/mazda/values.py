@@ -4,7 +4,6 @@ from typing import Dict, List, Union
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
@@ -63,22 +62,6 @@ class Buttons:
   RESUME = 3
   CANCEL = 4
 
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  requests=[
-    Request(
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-    ),
-    # Log responses on powertrain bus
-    Request(
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      bus=0,
-      logging=True,
-    ),
-  ],
-)
 
 DBC = {
   CAR.CX5: dbc_dict('mazda_2017', None),
