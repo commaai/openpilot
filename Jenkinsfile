@@ -144,7 +144,7 @@ pipeline {
         */
 
         stage('large test models') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
           steps {
             sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
           }
