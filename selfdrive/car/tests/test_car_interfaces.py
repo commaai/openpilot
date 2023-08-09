@@ -129,7 +129,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     # If brand has None value, it shouldn't return when ignore_none=True is specified
     none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
-    self.assertGreater(len(none_brands), 0)
+    self.assertGreaterEqual(len(none_brands), 1)
 
     ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
     none_brands_in_ret = none_brands.intersection(ret)
