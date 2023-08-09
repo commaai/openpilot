@@ -133,8 +133,7 @@ class TestCarInterfaces(unittest.TestCase):
 
     ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
     none_brands_in_ret = none_brands.intersection(ret)
-    self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: ' +
-                     f'{none_brands_in_ret}')
+    self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}')
 
 
 if __name__ == "__main__":
