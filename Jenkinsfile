@@ -144,12 +144,19 @@ pipeline {
         */
 
         stage('large test models') {
-          agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
-          steps {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --depth=1 --recursive"
-            sh "scons -j42"
-            sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+          matrix {
+            agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
+            axes {
+              name 'JOB_ID'
+              values 0 1 2 3 4
+            }
+
+            steps {
+              sh "git config --global --add safe.directory '*'"
+              sh "git submodule update --init --depth=1 --recursive"
+              sh "scons -j42"
+              sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' JOB_ID=${JOB_ID} NUM_JOBS=5 INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+            }
           }
 
           post {
