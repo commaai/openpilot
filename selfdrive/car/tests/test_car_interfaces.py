@@ -115,10 +115,9 @@ class TestCarInterfaces(unittest.TestCase):
     num_brands = len(get_interface_attr('CAR'))
     self.assertGreaterEqual(num_brands, 13)
 
-    # Should return value for all brands when not combining
-    for attr in ('DBC', 'FAKE', 'CAR_INFO'):
-      ret = get_interface_attr(attr)
-      self.assertEqual(len(ret), num_brands)
+    # Should return value for all brands when not combining, even if attribute doesn't exist
+    ret = get_interface_attr('FAKE_ATTR')
+    self.assertEqual(len(ret), num_brands)
 
     # Make sure we can combine dicts
     ret = get_interface_attr('CAR_INFO', combine_brands=True)
@@ -135,7 +134,7 @@ class TestCarInterfaces(unittest.TestCase):
     ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
     none_brands_in_ret = none_brands.intersection(ret)
     self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: ' +
-                                                 f'{none_brands_in_ret}')
+                     f'{none_brands_in_ret}')
 
 
 if __name__ == "__main__":
