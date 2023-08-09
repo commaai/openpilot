@@ -111,7 +111,7 @@ class TestCarInterfaces(unittest.TestCase):
       radar_interface._update([radar_interface.trigger_msg])
 
   def test_interface_attrs(self):
-    """ Asserts basic behavior of interface attribute getter """
+    """Asserts basic behavior of interface attribute getter"""
     num_brands = len(get_interface_attr('CAR'))
     self.assertGreaterEqual(num_brands, 13)
 
