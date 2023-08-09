@@ -167,8 +167,9 @@ class Laikad:
       position_estimate = position_solution[:3]
 
       position_std_residual = np.median(np.abs(pr_residuals))
-      position_std = np.median(np.abs(pos_std))/10
-      position_std = max(position_std_residual, position_std) * np.ones(3)
+      position_std = pos_std[:3]
+      position_std = np.clip(position_std, position_std_residual, np.inf)
+
 
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
       if len(velocity_solution) < 3:
@@ -176,8 +177,8 @@ class Laikad:
       velocity_estimate = velocity_solution[:3]
 
       velocity_std_residual = np.median(np.abs(prr_residuals))
-      velocity_std = np.median(np.abs(vel_std))/10
-      velocity_std = max(velocity_std, velocity_std_residual) * np.ones(3)
+      velocity_std = vel_std[:3]
+      velocity_std = np.clip(velocity_std, velocity_std_residual, np.inf)
 
       return position_estimate, position_std, velocity_estimate, velocity_std
 
