@@ -132,7 +132,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (TSS2_CAR | RADAR_ACC_CAR):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
-      ret.stockFcw = bool(cp_acc.vl["ACC_HUD"]["FCW"])
+      ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -206,7 +206,7 @@ class CarState(CarStateBase):
           ("ACC_CONTROL", 33),
         ]
       messages += [
-        ("ACC_HUD", 1),
+        ("PCS_HUD", 1),
       ]
 
     if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu:
@@ -229,7 +229,7 @@ class CarState(CarStateBase):
       messages += [
         ("PRE_COLLISION", 33),
         ("ACC_CONTROL", 33),
-        ("ACC_HUD", 1),
+        ("PCS_HUD", 1),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)

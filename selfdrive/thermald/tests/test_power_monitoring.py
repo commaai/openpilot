@@ -120,7 +120,8 @@ class TestPowerMonitoring(unittest.TestCase):
     POWER_DRAW = 0 # To stop shutting down for other reasons
     TEST_TIME = 350
     VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S = 50
-    with pm_patch("VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True), pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
+    with pm_patch("VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S", VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S, constant=True), \
+         pm_patch("HARDWARE.get_current_power_draw", POWER_DRAW):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       ignition = False
