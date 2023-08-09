@@ -147,8 +147,10 @@ pipeline {
           matrix {
             agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
             axes {
-              name 'JOB_ID'
-              values 0 1 2 3 4
+              axis {
+                name 'JOB_ID'
+                values 0 1 2 3 4
+              }
             }
 
             steps {
