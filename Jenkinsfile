@@ -151,6 +151,13 @@ pipeline {
             sh "scons -j42"
             sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
           }
+
+          post {
+            always {
+              sh "rm -rf ${WORKSPACE}/* || true"
+              sh "rm -rf .* || true"
+            }
+          }
         }
 
 //         stage('scons build test') {
