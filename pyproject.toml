@@ -190,5 +190,5 @@ build-backend = "poetry.core.masonry.api"
 [tool.ruff]
 select = ["E", "F", "W"]
 ignore = ["W292", "E741"]
-line-length = 2500
+line-length = 160
 target-version="py311"
