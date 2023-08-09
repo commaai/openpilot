@@ -92,7 +92,6 @@ class TestCarModelBase(unittest.TestCase):
       try:
         if len(INTERNAL_SEG_LIST):
           route_name = RouteName(cls.test_route.route)
-          print(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
           lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
         elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
@@ -333,7 +332,7 @@ class TestCarModelBase(unittest.TestCase):
       CS_prev = CS
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
-    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks} {self.test_route}")
+    self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
 @parameterized_class(('car_model', 'test_route'), test_cases)
