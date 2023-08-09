@@ -153,11 +153,15 @@ pipeline {
               }
             }
 
-            steps {
-              sh "git config --global --add safe.directory '*'"
-              sh "git submodule update --init --depth=1 --recursive"
-              sh "scons -j42"
-              sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' JOB_ID=${JOB_ID} NUM_JOBS=5 INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+            stages {
+              stage('start large test models') {
+                steps {
+                  sh "git config --global --add safe.directory '*'"
+                  sh "git submodule update --init --depth=1 --recursive"
+                  sh "scons -j42"
+                  sh "cd selfdrive/car/tests && PYTHONPATH='${WORKSPACE}' JOB_ID=${JOB_ID} NUM_JOBS=5 INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' ./test_models.py"
+                }
+              }
             }
           }
 
