@@ -49,7 +49,6 @@ def load_test_cases_from_file(file_path):
 # build list of test cases
 test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
 if len(INTERNAL_SEG_LIST):
-  # run with pytest -n32 --dist=loadscope, URLFile's caching isn't thread safe
   test_cases = load_test_cases_from_file(INTERNAL_SEG_LIST)
 else:
   routes_by_car = defaultdict(set)
