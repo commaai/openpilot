@@ -31,7 +31,7 @@ constexpr char PRESERVE_ATTR_VALUE = '1';
 class EncoderInfo {
 public:
   const char *publish_name;
-  const char *filename = "";
+  const char *filename = NULL;
   bool record = true;
   int frame_width = 1928;
   int frame_height = 1208;
