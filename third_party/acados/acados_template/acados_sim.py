@@ -33,6 +33,7 @@
 #
 
 import numpy as np
+import casadi as ca
 import os
 from .acados_model import AcadosModel
 from .utils import get_acados_path

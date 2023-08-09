@@ -37,7 +37,7 @@ class AcadosModel():
     Class containing all the information to code generate the external CasADi functions
     that are needed when creating an acados ocp solver or acados integrator.
     Thus, this class contains:
-
+    
     a) the :py:attr:`name` of the model,
     b) all CasADi variables/expressions needed in the CasADi function generation process.
     """
@@ -55,13 +55,13 @@ class AcadosModel():
         # dynamics
         self.f_impl_expr = None
         """
-        CasADi expression for the implicit dynamics :math:`f_\\text{impl}(\\dot{x}, x, u, z, p) = 0`.
+        CasADi expression for the implicit dynamics :math:`f_\\text{impl}(\dot{x}, x, u, z, p) = 0`.
         Used if :py:attr:`acados_template.acados_ocp.AcadosOcpOptions.integrator_type` == 'IRK'.
         Default: :code:`None`
         """
         self.f_expl_expr = None
         """
-        CasADi expression for the explicit dynamics :math:`\\dot{x} = f_\\text{expl}(x, u, p)`.
+        CasADi expression for the explicit dynamics :math:`\dot{x} = f_\\text{expl}(x, u, p)`.
         Used if :py:attr:`acados_template.acados_ocp.AcadosOcpOptions.integrator_type` == 'ERK'.
         Default: :code:`None`
         """

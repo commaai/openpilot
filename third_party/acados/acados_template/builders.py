@@ -89,7 +89,7 @@ class CMakeBuilder:
         self._build_dir = os.path.abspath(self.build_dir)
         try:
             os.mkdir(self._build_dir)
-        except FileExistsError:
+        except FileExistsError as e:
             pass
 
         try:
