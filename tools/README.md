@@ -59,7 +59,7 @@ Note that this is temporary and only affects current XQuartz session. To make it
 
 `.Xauthority` file is used for authentication with X11 server. It's typically stored in user's `$HOME` directory. Openpilot's dev container is using `XAUTHORITY` env var to locate such file in host file system. If it's not set already, run following lines to set it up (and again, to make it permanent, add it to rc file):
 
-```SH
+```sh
 XAUTH_FILE_ROW=($(xauth info | head -n 1))
 export XAUTHORITY="${XAUTH_FILE_ROW[@]:2}"
 ```
