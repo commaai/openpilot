@@ -2,8 +2,8 @@
 from parameterized import parameterized
 import unittest
 
-from selfdrive.car.gm.fingerprints import FINGERPRINTS
-from selfdrive.car.gm.values import CAMERA_ACC_CAR, CAR, GM_RX_OFFSET
+from selfdrive.car.gm.fingerprints import FINGERPRINTS, GM_RX_OFFSET
+from selfdrive.car.gm.values import CAMERA_ACC_CAR, CAR
 
 CAMERA_DIAGNOSTIC_ADDRESS = 0x24b
 
