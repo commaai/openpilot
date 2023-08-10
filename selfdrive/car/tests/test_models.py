@@ -34,17 +34,6 @@ ignore_addr_checks_valid = [
 ]
 
 
-# def create_test_models_suite(routes: List[Tuple[str, CarTestRoute]], ci=False) -> unittest.TestSuite:
-#   test_suite = unittest.TestSuite()
-#   for car_model, test_route in routes:
-#     # create new test case and discover tests
-#     test_case_args = {"car_model": car_model, "test_route": test_route, "ci": ci}
-#     print(test_case_args)
-#     CarModelTestCase = type("CarModelTestCase", (TestCarModelBase,), test_case_args)
-#     test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
-#   return test_suite
-
-
 def get_test_cases():
   # build list of test cases
   test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
@@ -351,8 +340,4 @@ class TestCarModel(TestCarModelBase):
 
 
 if __name__ == "__main__":
-  # test_route = CarTestRoute("0ffff9faf2699ebc|2023-06-15--14-19-40", "HONDA ODYSSEY 2018", segment=3)
-  # test_route2 = CarTestRoute("7037f9c72bc6f964|2023-06-12--16-02-49", "TOYOTA COROLLA TSS2 2019", segment=2)
-  # test_suite = create_test_models_suite([("HONDA ODYSSEY 2018", test_route), ("TOYOTA COROLLA TSS2 2019", test_route2)], ci=False)
-  # unittest.TextTestRunner().run(test_suite)
   unittest.main()
