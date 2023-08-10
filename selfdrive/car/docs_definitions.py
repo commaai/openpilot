@@ -178,7 +178,7 @@ class CommonFootnote(Enum):
     "the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
     Column.LONGITUDINAL, docs_only=True)
   EXP_LONG_DSU = CarFootnote(
-    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " + 
+    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " +
     "If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace " +
     "stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
     Column.LONGITUDINAL)

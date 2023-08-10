@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import re
 from dataclasses import dataclass
 from enum import Enum, IntFlag
@@ -229,7 +230,7 @@ CAR_INFO: Dict[str, Optional[Union[HyundaiCarInfo, List[HyundaiCarInfo]]]] = {
     HyundaiCarInfo("Kia Niro Hybrid 2021-22", car_parts=CarParts.common([CarHarness.hyundai_f])),  # TODO: 2021 could be hyundai_d, verify
   ],
   CAR.KIA_NIRO_HEV_2ND_GEN: HyundaiCarInfo("Kia Niro Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_a])),
-  CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control", 
+  CAR.KIA_OPTIMA_G4: HyundaiCarInfo("Kia Optima 2017", "Advanced Smart Cruise Control",
                                               car_parts=CarParts.common([CarHarness.hyundai_b])),  # TODO: may support 2016, 2018
   CAR.KIA_OPTIMA_G4_FL: HyundaiCarInfo("Kia Optima 2019-20", car_parts=CarParts.common([CarHarness.hyundai_g])),
   CAR.KIA_OPTIMA_H: [
@@ -284,7 +285,6 @@ class Buttons:
   CANCEL = 4  # on newer models, this is a pause/resume button
 
 FINGERPRINTS = {
-  # pylint: disable=C0301
   CAR.ELANTRA: [{
     66: 8, 67: 8, 68: 8, 127: 8, 273: 8, 274: 8, 275: 8, 339: 8, 356: 4, 399: 8, 512: 6, 544: 8, 593: 8, 608: 8, 688: 5, 790: 8, 809: 8, 897: 8, 832: 8, 899: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1170: 8, 1265: 4, 1280: 1, 1282: 4, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1314: 8, 1322: 8, 1345: 8, 1349: 8, 1351: 8, 1353: 8, 1363: 8, 1366: 8, 1367: 8, 1369: 8, 1407: 8, 1415: 8, 1419: 8, 1425: 2, 1427: 6, 1440: 8, 1456: 4, 1472: 8, 1486: 8, 1487: 8, 1491: 8, 1530: 8, 1532: 5, 2001: 8, 2003: 8, 2004: 8, 2009: 8, 2012: 8, 2016: 8, 2017: 8, 2024: 8, 2025: 8
   }],
@@ -518,7 +518,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 FW_VERSIONS = {
-  # pylint: disable=C0301
   CAR.HYUNDAI_GENESIS: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00DH LKAS 1.1 -150210',
