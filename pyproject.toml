@@ -11,6 +11,7 @@ documentation = "https://docs.comma.ai"
 
 [tool.poetry.dependencies]
 python = "~3.11"
+poetry = "~1.5.1"
 atomicwrites = "*"
 aiohttp = "*"
 aiortc = "*"
