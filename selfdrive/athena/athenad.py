@@ -264,6 +264,7 @@ def upload_handler(end_event: threading.Event) -> None:
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:
+          # TODO: unpreserve file
           cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)

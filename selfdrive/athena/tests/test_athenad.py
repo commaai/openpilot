@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
 import shutil
 import tempfile
 import time
@@ -10,15 +9,18 @@ import queue
 import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
-from typing import Optional
-
 from multiprocessing import Process
 from pathlib import Path
+from typing import Optional
 from unittest import mock
+
+import requests
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from system import swaglog
+from system.loggerd.xattr_cache import setxattr
+from system.loggerd.deleter import has_preserve_xattr, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
@@ -59,9 +61,12 @@ class TestAthenadMethods(unittest.TestCase):
         break
 
   @staticmethod
-  def _create_file(file: str, parent: Optional[str] = None) -> str:
+  def _create_file(file: str, parent: Optional[str] = None, preserve: bool = False) -> str:
     fn = os.path.join(athenad.ROOT if parent is None else parent, file)
-    os.makedirs(os.path.dirname(fn), exist_ok=True)
+    dirname = os.path.dirname(fn)
+    os.makedirs(dirname, exist_ok=True)
+    if preserve:
+      setxattr(dirname, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE)
     Path(fn).touch()
     return fn
 
@@ -151,6 +156,26 @@ class TestAthenadMethods(unittest.TestCase):
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
     resp = athenad._do_upload(item)
     self.assertEqual(resp.status_code, 201)
+
+
+  @with_http_server
+  def test_upload_preserved(self, host):
+    segment = '2023-04-05--12-34-56--0'
+    filenames = ['qlog', 'qcamera.ts', 'rlog', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
+    files = [f'{segment}/{f}' for f in filenames]
+
+    for file in files:
+      self._create_file(file, preserve=True)
+
+    for n, file in enumerate(files):
+      item = athenad.UploadItem(path=file, url=f"{host}/{file}", headers={}, created_at=int(time.time()*1000), id=n)
+      resp = athenad._do_upload(item)
+      self.assertEqual(resp.status_code, 201)
+      if n + 1 != len(files):
+        self.assertTrue(has_preserve_xattr(segment))
+
+    # check folder no longer preserved
+    self.assertFalse(has_preserve_xattr(segment))
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
