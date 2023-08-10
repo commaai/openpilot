@@ -197,8 +197,8 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE"]
-ignore = ["W292", "E741", "E402"]
+select = ["E", "F", "W", "PIE", "C4"]
+ignore = ["W292", "E741", "E402", "C408"]
 line-length = 160
 target-version="py311"
 exclude = [
