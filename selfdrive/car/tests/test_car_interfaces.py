@@ -127,11 +127,15 @@ class TestCarInterfaces(unittest.TestCase):
     ret = get_interface_attr('CAR', combine_brands=True)
     self.assertEqual(len(ret), 0)
 
+    # These are in a different file, other than values.py
+    ret = get_interface_attr('FINGERPRINTS', ignore_none=True, file='fingerprints')
+    self.assertGreaterEqual(len(ret), 1)
+
     # If brand has None value, it shouldn't return when ignore_none=True is specified
-    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
+    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS', file='fingerprints').items() if v is None}
     self.assertGreaterEqual(len(none_brands), 1)
 
-    ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
+    ret = get_interface_attr('FINGERPRINTS', ignore_none=True, file='fingerprints')
     none_brands_in_ret = none_brands.intersection(ret)
     self.assertEqual(len(none_brands_in_ret), 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}')
 
