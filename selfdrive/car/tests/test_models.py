@@ -34,31 +34,29 @@ ignore_addr_checks_valid = [
 ]
 
 
-def load_test_cases_from_file(file_path):
+def get_test_cases():
+  # build list of test cases
   test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-  with open(os.path.join(BASEDIR, file_path), "r") as f:
-    seg_list = f.read().splitlines()
-  platforms, segs = seg_list[0::2], seg_list[1::2]
+  if not len(INTERNAL_SEG_LIST):
+    routes_by_car = defaultdict(set)
+    for r in routes:
+      routes_by_car[r.car_model].add(r)
 
-  for platform, seg in zip(platforms, segs):
-    segment_name = SegmentName(seg)
-    test_cases.append((platform[2:], CarTestRoute(segment_name.route_name.canonical_name, platform[2:],
-                                                  segment=segment_name.segment_num)))
+    for i, c in enumerate(sorted(all_known_cars())):
+      if i % NUM_JOBS == JOB_ID:
+        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+
+  else:
+    with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
+      seg_list = iter(f.read().splitlines())
+
+    for platform in seg_list:
+      platform = platform[2:]  # get rid of comment
+      segment_name = SegmentName(next(seg_list))
+      test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
+                                                segment=segment_name.segment_num)))
   return test_cases
 
-
-# build list of test cases
-test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-if len(INTERNAL_SEG_LIST):
-  test_cases = load_test_cases_from_file(INTERNAL_SEG_LIST)
-else:
-  routes_by_car = defaultdict(set)
-  for r in routes:
-    routes_by_car[r.car_model].add(r)
-
-  for i, c in enumerate(sorted(all_known_cars())):
-    if i % NUM_JOBS == JOB_ID:
-      test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None, ))))
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
@@ -336,7 +334,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-@parameterized_class(('car_model', 'test_route'), test_cases)
+@parameterized_class(('car_model', 'test_route'), get_test_cases())
 class TestCarModel(TestCarModelBase):
   pass
 
