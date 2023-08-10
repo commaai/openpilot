@@ -2,7 +2,6 @@
 import os
 import sys
 import bz2
-import time
 import urllib.parse
 import capnp
 import warnings
@@ -86,15 +85,11 @@ class LogReader:
         # old rlogs weren't bz2 compressed
         raise Exception(f"unknown extension {ext}")
 
-      t = time.perf_counter()
       with FileReader(fn) as f:
         dat = f.read()
-      print('download time', time.perf_counter() - t)
 
-    t = time.perf_counter()
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
-    print('decomp time', time.perf_counter() - t)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 
