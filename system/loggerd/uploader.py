@@ -46,7 +46,7 @@ class FakeResponse:
 UploadResponse = Union[requests.Response, FakeResponse]
 
 def get_directory_sort(d: str) -> List[str]:
-  return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
+  return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
@@ -55,7 +55,7 @@ def listdir_by_creation(d: str) -> List[str]:
     return paths
   except OSError:
     cloudlog.exception("listdir_by_creation failed")
-    return list()
+    return []
 
 def clear_locks(root: str) -> None:
   for logname in os.listdir(root):

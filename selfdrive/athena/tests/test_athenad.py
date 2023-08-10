@@ -414,7 +414,7 @@ class TestAthenadMethods(unittest.TestCase):
       thread.join()
 
   def test_get_logs_to_send_sorted(self):
-    fl = list()
+    fl = []
     for i in range(10):
       file = f'swaglog.{i:010}'
       self._create_file(file, athenad.SWAGLOG_DIR)

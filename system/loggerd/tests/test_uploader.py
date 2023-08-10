@@ -20,8 +20,8 @@ class TestLogHandler(logging.Handler):
     self.reset()
 
   def reset(self):
-    self.upload_order = list()
-    self.upload_ignored = list()
+    self.upload_order = []
+    self.upload_ignored = []
 
   def emit(self, record):
     try:
