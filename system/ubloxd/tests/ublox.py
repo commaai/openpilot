@@ -608,10 +608,10 @@ class UBloxMessage:
     '''pack a message'''
     if not self.valid():
       raise UBloxError('INVALID MESSAGE')
-    msg_types = self.msg_type()
-    if msg_types not in msg_types:
-      raise UBloxError('Unknown message %s' % str(msg_types))
-    msg_types[msg_types].pack(self)
+    msg_type = self.msg_type()
+    if msg_type not in msg_types:
+      raise UBloxError('Unknown message %s' % str(msg_type))
+    msg_types[msg_type].pack(self)
 
   def name(self):
     '''return the short string name for a message'''
