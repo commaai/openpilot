@@ -137,8 +137,8 @@ class Laikad:
       #TODO this only saves currently valid ephems, when we download future ephems we should save them too
       valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
       if len(valid_navs) > 0:
-        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
-                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        ephem_cache = ephemeris_structs.EphemerisCache(glonassEphemerides=[e.data for e in valid_navs if e.prn[0]=='R'],
+                                                       gpsEphemerides=[e.data for e in valid_navs if e.prn[0]=='G'])
         put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time
