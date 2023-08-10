@@ -163,7 +163,6 @@ class TestAthenadMethods(unittest.TestCase):
     segment = '2023-04-05--12-34-56--0'
     filenames = ['qlog', 'qcamera.ts', 'rlog', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
     files = [f'{segment}/{f}' for f in filenames]
-
     for file in files:
       self._create_file(file, preserve=True)
 
@@ -171,10 +170,12 @@ class TestAthenadMethods(unittest.TestCase):
       item = athenad.UploadItem(path=file, url=f"{host}/{file}", headers={}, created_at=int(time.time()*1000), id=n)
       resp = athenad._do_upload(item)
       self.assertEqual(resp.status_code, 201)
+
+      # segment remains preserved until all files are uploaded
       if n + 1 != len(files):
         self.assertTrue(has_preserve_xattr(segment))
 
-    # check folder no longer preserved
+    # check segment is no longer preserved
     self.assertFalse(has_preserve_xattr(segment))
 
   @with_http_server
