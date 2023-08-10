@@ -19,8 +19,8 @@ from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from system import swaglog
+from system.loggerd import deleter
 from system.loggerd.xattr_cache import setxattr
-from system.loggerd.deleter import has_preserve_xattr, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
@@ -33,6 +33,7 @@ class TestAthenadMethods(unittest.TestCase):
     cls.SOCKET_PORT = 45454
     athenad.Params = MockParams
     athenad.ROOT = tempfile.mkdtemp()
+    deleter.ROOT = athenad.ROOT
     athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = {cls.SOCKET_PORT}
@@ -66,7 +67,7 @@ class TestAthenadMethods(unittest.TestCase):
     dirname = os.path.dirname(fn)
     os.makedirs(dirname, exist_ok=True)
     if preserve:
-      setxattr(dirname, PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE)
+      setxattr(dirname, deleter.PRESERVE_ATTR_NAME, deleter.PRESERVE_ATTR_VALUE)
     Path(fn).touch()
     return fn
 
@@ -163,20 +164,21 @@ class TestAthenadMethods(unittest.TestCase):
     segment = '2023-04-05--12-34-56--0'
     filenames = ['qlog', 'qcamera.ts', 'rlog', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
     files = [f'{segment}/{f}' for f in filenames]
+    file_paths = {}
     for file in files:
-      self._create_file(file, preserve=True)
+      file_paths[file] = self._create_file(file, preserve=True)
 
     for n, file in enumerate(files):
-      item = athenad.UploadItem(path=file, url=f"{host}/{file}", headers={}, created_at=int(time.time()*1000), id=n)
+      item = athenad.UploadItem(path=file_paths[file], url=f"{host}/{file}", headers={}, created_at=int(time.time()*1000), id=n)
       resp = athenad._do_upload(item)
       self.assertEqual(resp.status_code, 201)
 
       # segment remains preserved until all files are uploaded
       if n + 1 != len(files):
-        self.assertTrue(has_preserve_xattr(segment))
+        self.assertTrue(deleter.has_preserve_xattr(segment))
 
     # check segment is no longer preserved
-    self.assertFalse(has_preserve_xattr(segment))
+    self.assertFalse(deleter.has_preserve_xattr(segment))
 
   @with_http_server
   def test_uploadFileToUrl(self, host):
