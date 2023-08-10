@@ -211,7 +211,7 @@ class ProcessContainer:
         self.cfg.config_callback(params, self.cfg, all_msgs)
 
       self.rc = ReplayContext(self.cfg)
-      self.rc.open()
+      self.rc.open_context()
 
       self.pm = messaging.PubMaster(self.cfg.pubs)
       self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]

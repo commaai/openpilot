@@ -135,7 +135,7 @@ class UploadQueueCache:
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
       queue: List[Optional[UploadItem]] = list(upload_queue.queue)
-      items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
+      items = [asdict(i) for i in queue if i is not None and (i.item_id not in cancelled_uploads)]
       UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
@@ -223,8 +223,8 @@ def upload_handler(end_event: threading.Event) -> None:
     try:
       cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
 
-      if item.id in cancelled_uploads:
-        cancelled_uploads.remove(item.id)
+      if item.item_id in cancelled_uploads:
+        cancelled_uploads.remove(item.item_id)
         continue
 
       # Remove item if too old
@@ -422,7 +422,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       url=file.url,
       headers=file.headers,
       created_at=int(time.time() * 1000),
-      id=None,
+      item_id=None,
       allow_cellular=file.allow_cellular,
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
