@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from typing import List, Tuple
+from typing import List
 import unittest
 
 from selfdrive.car.tests.routes import CarTestRoute
