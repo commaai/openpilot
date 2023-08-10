@@ -62,7 +62,6 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         cp .pre-commit-config.yaml $STRIPPED_DIR
-        cp .pylintrc $STRIPPED_DIR
         cp mypy.ini $STRIPPED_DIR
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
