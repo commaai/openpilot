@@ -153,7 +153,7 @@ pipeline {
           steps {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
-            sh "cd selfdrive/modeld/models && ls -lah"
+            sh "git lfs pull"
             sh "scons --clean && scons --no-cache -j42"
             sh "scons --clean && scons --no-cache --random -j42"
             sh "INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
