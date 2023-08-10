@@ -169,7 +169,7 @@ def main() -> NoReturn:
 
       # sort pandas to have deterministic order
       pandas.sort(key=cmp_to_key(panda_sort_cmp))
-      panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))
+      panda_serials = [p.get_usb_serial() for p in pandas]
 
       # log panda fw versions
       params.put("PandaSignatures", b','.join(p.get_signature() for p in pandas))

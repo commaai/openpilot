@@ -236,8 +236,8 @@ class TestLaikad(unittest.TestCase):
           has_polys = len(vals) > 0 and max([len(v) for v in vals]) > 0
           has_fix = has_fix or out_msg.gnssMeasurements.positionECEF.valid
           if len(out_msg.gnssMeasurements.ephemerisStatuses):
-            seen_chip_eph = seen_chip_eph or any([x.source == 'gnssChip' for x in out_msg.gnssMeasurements.ephemerisStatuses])
-            seen_internet_eph = seen_internet_eph or any([x.source == 'internet' for x in out_msg.gnssMeasurements.ephemerisStatuses])
+            seen_chip_eph = seen_chip_eph or any(x.source == 'gnssChip' for x in out_msg.gnssMeasurements.ephemerisStatuses)
+            seen_internet_eph = seen_internet_eph or any(x.source == 'internet' for x in out_msg.gnssMeasurements.ephemerisStatuses)
 
         self.assertTrue(has_navs or has_polys)
         self.assertTrue(has_fix)
@@ -278,7 +278,7 @@ class TestLaikad(unittest.TestCase):
       # Verify cache is working for only nav by running a segment
       msg = verify_messages(logs, laikad, return_one_success=True)
       self.assertTrue(len(msg.gnssMeasurements.ephemerisStatuses))
-      self.assertTrue(any([x.source=='cache' for x in msg.gnssMeasurements.ephemerisStatuses]))
+      self.assertTrue(any(x.source=='cache' for x in msg.gnssMeasurements.ephemerisStatuses))
       self.assertIsNotNone(msg)
 
       #TODO test cache with only orbits
