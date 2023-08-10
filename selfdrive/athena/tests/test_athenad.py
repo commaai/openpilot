@@ -256,9 +256,9 @@ class TestAthenadMethods(unittest.TestCase):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
                               created_at=int(time.time()*1000), id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
-    dispatcher["cancelUpload"](item.id)
+    dispatcher["cancelUpload"](item.item_id)
 
-    self.assertIn(item.id, athenad.cancelled_uploads)
+    self.assertIn(item.item_id, athenad.cancelled_uploads)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -300,7 +300,7 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='', allow_cellular=True)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -327,7 +327,7 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertDictEqual(items[0], asdict(item))
     self.assertFalse(items[0]['current'])
 
-    athenad.cancelled_uploads.add(item.id)
+    athenad.cancelled_uploads.add(item.item_id)
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 0)
 
@@ -339,7 +339,7 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.upload_queue.put_nowait(item2)
 
     # Ensure cancelled items are not persisted
-    athenad.cancelled_uploads.add(item2.id)
+    athenad.cancelled_uploads.add(item2.item_id)
 
     # serialize item
     athenad.UploadQueueCache.cache(athenad.upload_queue)

@@ -54,14 +54,14 @@ class ReplayContext:
     assert(len(self.pubs) != 0 or self.main_pub is not None)
 
   def __enter__(self):
-    self.open()
+    self.open_context()
 
     return self
 
   def __exit__(self, exc_type, exc_obj, exc_tb):
-    self.close()
+    self.close_context()
 
-  def open(self):
+  def open_context(self):
     messaging.toggle_fake_events(True)
     messaging.set_fake_prefix(self.proc_name)
 
@@ -73,7 +73,7 @@ class ReplayContext:
     else:
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
 
-  def close(self):
+  def close_context(self):
     del self.events
 
     messaging.toggle_fake_events(False)
@@ -211,7 +211,7 @@ class ProcessContainer:
         self.cfg.config_callback(params, self.cfg, all_msgs)
 
       self.rc = ReplayContext(self.cfg)
-      self.rc.open()
+      self.rc.open_context()
 
       self.pm = messaging.PubMaster(self.cfg.pubs)
       self.sockets = [messaging.sub_sock(s, timeout=100) for s in self.cfg.subs]
@@ -237,7 +237,7 @@ class ProcessContainer:
     with self.prefix:
       self.process.signal(signal.SIGKILL)
       self.process.stop()
-      self.rc.close()
+      self.rc.close_context()
       self.prefix.clean_dirs()
 
   def run_step(self, msg: capnp._DynamicStructReader, frs: Optional[Dict[str, Any]]) -> List[capnp._DynamicStructReader]:
