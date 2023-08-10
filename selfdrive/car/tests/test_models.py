@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
+from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
@@ -17,7 +18,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -25,21 +26,37 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
+INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
   HYUNDAI.GENESIS_G70_2020,
 ]
 
-# build list of test cases
-routes_by_car = defaultdict(set)
-for r in routes:
-  routes_by_car[r.car_model].add(r)
 
-test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-for i, c in enumerate(sorted(all_known_cars())):
-  if i % NUM_JOBS == JOB_ID:
-    test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None, ))))
+def get_test_cases():
+  # build list of test cases
+  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+  if not len(INTERNAL_SEG_LIST):
+    routes_by_car = defaultdict(set)
+    for r in routes:
+      routes_by_car[r.car_model].add(r)
+
+    for i, c in enumerate(sorted(all_known_cars())):
+      if i % NUM_JOBS == JOB_ID:
+        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+
+  else:
+    with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
+      seg_list = iter(f.read().splitlines())
+
+    for platform in seg_list:
+      platform = platform[2:]  # get rid of comment
+      segment_name = SegmentName(next(seg_list))
+      test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
+                                                segment=segment_name.segment_num)))
+  return test_cases
+
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
@@ -72,7 +89,10 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if cls.ci:
+        if len(INTERNAL_SEG_LIST):
+          route_name = RouteName(cls.test_route.route)
+          lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
+        elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
@@ -314,7 +334,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-@parameterized_class(('car_model', 'test_route'), test_cases)
+@parameterized_class(('car_model', 'test_route'), get_test_cases())
 class TestCarModel(TestCarModelBase):
   pass
 
