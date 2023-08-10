@@ -1,3 +1,9 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=laika_repo/"
+python_files = "test_*.py"
+timeout = "30"  # you get this long by default
+
 [tool.poetry]
 name = "openpilot"
 version = "0.1.0"
