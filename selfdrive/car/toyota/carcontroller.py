@@ -8,7 +8,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, \
                                         UNSUPPORTED_DSU_CAR
-from opendbc.can.packer import CANPacker
+from selfdrive.car.interfaces import CarControllerBase
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -27,19 +27,14 @@ MAX_STEER_ANGLE = 94.9461  # deg
 MAX_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.params = CarControllerParams(self.CP)
-    self.frame = 0
-    self.last_steer = 0
-    self.last_angle = 0
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
 
-    self.packer = CANPacker(dbc_name)
     self.gas = 0
     self.accel = 0
 
@@ -55,7 +50,7 @@ class CarController:
     # *** steer torque ***
     if CC.latActive:
       new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_meas_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, self.params)
+      apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
     else:
       apply_steer = 0
 
@@ -73,14 +68,14 @@ class CarController:
         apply_angle = actuators.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
         # Angular rate limit based on speed
-        apply_angle = apply_std_steer_angle_limits(apply_angle, self.last_angle, CS.out.vEgo, self.params)
+        apply_angle = apply_std_steer_angle_limits(apply_angle, self.apply_angle_last, CS.out.vEgo, self.params)
 
         if not lat_active:
           apply_angle = CS.out.steeringAngleDeg + CS.out.steeringAngleOffsetDeg
 
-        self.last_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+        self.apply_angle_last = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
 
-    self.last_steer = apply_steer
+    self.apply_steer_last = apply_steer
 
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
@@ -91,7 +86,7 @@ class CarController:
       full_torque_condition = (abs(CS.out.steeringTorqueEps) < self.params.STEER_MAX and
                                abs(CS.out.steeringTorque) < MAX_DRIVER_TORQUE_ALLOWANCE)
       setme_x64 = 100 if lta_active and full_torque_condition else 0
-      can_sends.append(create_lta_steer_command(self.packer, self.last_angle, lta_active, self.frame // 2, setme_x64))
+      can_sends.append(create_lta_steer_command(self.packer, self.apply_angle_last, lta_active, self.frame // 2, setme_x64))
 
     # *** gas and brake ***
     if self.CP.enableGasInterceptor and CC.longActive:
@@ -177,7 +172,7 @@ class CarController:
     new_actuators = actuators.copy()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
-    new_actuators.steeringAngleDeg = self.last_angle
+    new_actuators.steeringAngleDeg = self.apply_angle_last
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
 

@@ -2,10 +2,10 @@ import numpy as np
 
 from common.params import Params
 from common.realtime import DT_CTRL
-from opendbc.can.packer import CANPacker
 from selfdrive.car.body import bodycan
-from selfdrive.car.body.values import SPEED_FROM_RPM
+from selfdrive.car.body.values import SPEED_FROM_RPM, CarControllerParams
 from selfdrive.controls.lib.pid import PIDController
+from selfdrive.car.interfaces import CarControllerBase
 
 
 MAX_TORQUE = 500
@@ -15,10 +15,9 @@ MAX_POS_INTEGRATOR = 0.2   # meters
 MAX_TURN_INTEGRATOR = 0.1  # meters
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.frame = 0
-    self.packer = CANPacker(dbc_name)
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
 
     # Speed, balance and turn PIDs
     self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)

@@ -2,11 +2,11 @@ from cereal import car
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
-from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
 from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
+from selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -42,17 +42,13 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
     self.CAN = CanBus(CP)
-    self.params = CarControllerParams(CP)
-    self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
-    self.frame = 0
 
     self.accel_last = 0
-    self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
 
@@ -78,7 +74,7 @@ class CarController:
     self.apply_steer_last = apply_steer
 
     # accel + longitudinal
-    accel = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    accel = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
     stopping = actuators.longControlState == LongCtrlState.stopping
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
 

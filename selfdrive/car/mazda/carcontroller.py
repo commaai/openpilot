@@ -1,19 +1,16 @@
 from cereal import car
-from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.mazda import mazdacan
 from selfdrive.car.mazda.values import CarControllerParams, Buttons
+from selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.apply_steer_last = 0
-    self.packer = CANPacker(dbc_name)
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
     self.brake_counter = 0
-    self.frame = 0
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -22,9 +19,9 @@ class CarController:
 
     if CC.latActive:
       # calculate steer and also set limits due to driver torque
-      new_steer = int(round(CC.actuators.steer * CarControllerParams.STEER_MAX))
+      new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last,
-                                                     CS.out.steeringTorque, CarControllerParams)
+                                                     CS.out.steeringTorque, self.params)
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
@@ -58,7 +55,7 @@ class CarController:
                                                       self.frame, apply_steer, CS.cam_lkas))
 
     new_actuators = CC.actuators.copy()
-    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1

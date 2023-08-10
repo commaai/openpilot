@@ -3,14 +3,12 @@ from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_angle_limits
 from selfdrive.car.tesla.teslacan import TeslaCAN
 from selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams
+from selfdrive.car.interfaces import CarControllerBase
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.frame = 0
-    self.apply_angle_last = 0
-    self.packer = CANPacker(dbc_name)
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
@@ -27,7 +25,7 @@ class CarController:
     if self.frame % 2 == 0:
       if lkas_enabled:
         # Angular rate limit based on speed
-        apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, CarControllerParams)
+        apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgo, self.params)
 
         # To not fault the EPS
         apply_angle = clip(apply_angle, CS.out.steeringAngleDeg - 20, CS.out.steeringAngleDeg + 20)
@@ -40,7 +38,7 @@ class CarController:
     # Longitudinal control (in sync with stock message, about 40Hz)
     if self.CP.openpilotLongitudinalControl:
       target_accel = actuators.accel
-      target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
+      target_speed = max(CS.out.vEgo + (target_accel * self.params.ACCEL_TO_SPEED_MULTIPLIER), 0)
       max_accel = 0 if target_accel < 0 else target_accel
       min_accel = 0 if target_accel > 0 else target_accel
 

@@ -3,11 +3,11 @@ from collections import namedtuple
 from cereal import car
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from opendbc.can.packer import CANPacker
 from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from selfdrive.controls.lib.drive_helpers import rate_limit
+from selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -104,12 +104,9 @@ def rate_limit_steer(new_steer, last_steer):
   return clip(new_steer, last_steer - MAX_DELTA, last_steer + MAX_DELTA)
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.packer = CANPacker(dbc_name)
-    self.params = CarControllerParams(CP)
-    self.frame = 0
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
 
     self.braking = False
     self.brake_steady = 0.
@@ -122,7 +119,6 @@ class CarController:
     self.speed = 0.0
     self.gas = 0.0
     self.brake = 0.0
-    self.last_steer = 0.0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -139,8 +135,8 @@ class CarController:
       gas, brake = 0.0, 0.0
 
     # *** rate limit steer ***
-    limited_steer = rate_limit_steer(actuators.steer, self.last_steer)
-    self.last_steer = limited_steer
+    limited_steer = rate_limit_steer(actuators.steer, self.apply_steer_last)
+    self.apply_steer_last = limited_steer
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
@@ -263,7 +259,7 @@ class CarController:
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
     new_actuators.brake = self.brake
-    new_actuators.steer = self.last_steer
+    new_actuators.steer = self.apply_steer_last
     new_actuators.steerOutputCan = apply_steer
 
     self.frame += 1

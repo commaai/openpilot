@@ -1,23 +1,18 @@
-from opendbc.can.packer import CANPacker
 from common.realtime import DT_CTRL
 from selfdrive.car import apply_meas_steer_torque_limits
 from selfdrive.car.chrysler.chryslercan import create_lkas_hud, create_lkas_command, create_cruise_buttons
 from selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from selfdrive.car.interfaces import CarControllerBase
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.apply_steer_last = 0
-    self.frame = 0
+    super().__init__(dbc_name, CP, VM, CarControllerParams(CP))
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0
     self.lkas_control_bit_prev = False
     self.last_button_frame = 0
-
-    self.packer = CANPacker(dbc_name)
-    self.params = CarControllerParams(CP)
 
   def update(self, CC, CS, now_nanos):
     can_sends = []

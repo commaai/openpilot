@@ -14,6 +14,7 @@ from selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_ine
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.vehicle_model import VehicleModel
+from opendbc.can.packer import CANPacker
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -459,3 +460,13 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
       pass
 
   return result
+
+
+class CarControllerBase(ABC):
+  def __init__(self, dbc_name, CP, VM, car_controller_params):
+    self.CP = CP
+    self.frame = 0
+    self.packer = CANPacker(dbc_name)
+    self.apply_steer_last = 0
+    self.apply_angle_last = 0
+    self.params = car_controller_params
