@@ -209,3 +209,4 @@ exclude = [
   "tinygrad_repo",
   "third_party",
 ]
+flake8-implicit-str-concat.allow-multiline=false
