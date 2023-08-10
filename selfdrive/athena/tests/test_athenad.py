@@ -300,7 +300,7 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_listUploadQueueCurrent(self, host: str):
     fn = self._create_file('qlog.bz2')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='', allow_cellular=True)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
