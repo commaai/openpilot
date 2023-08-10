@@ -197,8 +197,8 @@ build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
-select = ["E", "F", "W", "PIE", "C4"]
-ignore = ["W292", "E741", "E402", "C408"]
+select = ["E", "F", "W", "PIE", "C4", "ISC"]
+ignore = ["W292", "E741", "E402", "C408", "ISC003"]
 line-length = 160
 target-version="py311"
 exclude = [
@@ -209,3 +209,4 @@ exclude = [
   "tinygrad_repo",
   "third_party",
 ]
+flake8-implicit-str-concat.allow-multiline=false
