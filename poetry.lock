@@ -8157,9 +8157,9 @@ setuptools = "*"
 [[package]]
 name = "sconscontrib"
 version = "1.0"
-description = ""
+description = "Contributed builders and other useful logic for the SCons build system.,"
 optional = false
-python-versions = ">=3.6, <4"
+python-versions = "<4,>=3.6"
 files = []
 develop = false
 
