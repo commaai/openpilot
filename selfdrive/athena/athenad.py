@@ -85,7 +85,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str]
+  item_id: Optional[str]
   retry_count: int = 0
   current: bool = False
   progress: float = 0
