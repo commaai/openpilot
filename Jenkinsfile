@@ -147,7 +147,7 @@ pipeline {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot_base'
-              args '--user=root'
+              args '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache'
             }
           }
           steps {
