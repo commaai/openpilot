@@ -20,7 +20,7 @@ def create_test_models_suite(routes: List[CarTestRoute], ci=False) -> unittest.T
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="Test any route against common issues with a new car port. "
+  parser = argparse.ArgumentParser(description="Test any route against common issues with a new car port. " +
                                                "Uses selfdrive/car/tests/test_models.py")
   parser.add_argument("route_or_segment_name", help="Specify route to run tests on")
   parser.add_argument("--car", help="Specify car model for test route")

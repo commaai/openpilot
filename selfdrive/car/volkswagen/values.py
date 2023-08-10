@@ -160,15 +160,15 @@ class Footnote(Enum):
     "Refers only to the MQB-based European B8 Passat, not the NMS Passat in the USA/China/Mideast markets.",
     Column.MODEL)
   SKODA_HEATED_WINDSHIELD = CarFootnote(
-    "Some Škoda vehicles are equipped with heated windshields, which are known "
+    "Some Škoda vehicles are equipped with heated windshields, which are known " +
     "to block GPS signal needed for some comma three functionality.",
     Column.MODEL)
   VW_EXP_LONG = CarFootnote(
-    "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness "
+    "Only available for vehicles using a gateway (J533) harness. At this time, vehicles using a camera harness " +
     "are limited to using stock ACC.",
     Column.LONGITUDINAL)
   VW_MQB_A0 = CarFootnote(
-    "Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot "
+    "Model-years 2022 and beyond may have a combined CAN gateway and BCM, which is supported by openpilot " +
     "in software, but doesn't yet have a harness available from the comma store.",
     Column.HARDWARE)
 

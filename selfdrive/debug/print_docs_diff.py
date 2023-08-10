@@ -90,10 +90,10 @@ def print_car_info_diff(path):
 
       # Detail sentence changes
       if base_car.detail_sentence != new_car.detail_sentence:
-        changes["detail"].append(f"- Sentence for {base_car.name} changed!\n"
-                                 "  ```diff\n"
-                                 f"  - {base_car.detail_sentence}\n"
-                                 f"  + {new_car.detail_sentence}\n"
+        changes["detail"].append(f"- Sentence for {base_car.name} changed!\n" +
+                                 "  ```diff\n" +
+                                 f"  - {base_car.detail_sentence}\n" +
+                                 f"  + {new_car.detail_sentence}\n" +
                                  "  ```")
 
   # Print diff

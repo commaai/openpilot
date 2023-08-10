@@ -403,7 +403,7 @@ def get_orbit_data(t: GPSTime, valid_const, auto_update, valid_ephem_types, cach
   try:
     astro_dog.get_navs(t)
     cloudlog.info(f"Done parsing navs. Took {time.monotonic() - start_time:.1f}s")
-    cloudlog.debug(f"Downloaded navs ({sum([len(v) for v in astro_dog.navs])}): {list(astro_dog.navs.keys())}"
+    cloudlog.debug(f"Downloaded navs ({sum([len(v) for v in astro_dog.navs])}): {list(astro_dog.navs.keys())}" +
                    f"With time range: {[f'{start.as_datetime()}, {end.as_datetime()}' for (start,end) in astro_dog.orbit_fetched_times._ranges]}")
     return astro_dog.navs, astro_dog.navs_fetched_times, t
   except (DownloadFailed, RuntimeError, ValueError, IOError) as e:

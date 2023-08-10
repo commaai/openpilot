@@ -174,12 +174,12 @@ CarFootnote = namedtuple("CarFootnote", ["text", "column", "docs_only", "shop_fo
 
 class CommonFootnote(Enum):
   EXP_LONG_AVAIL = CarFootnote(
-    "Experimental openpilot longitudinal control is available behind a toggle; "
+    "Experimental openpilot longitudinal control is available behind a toggle; " +
     "the toggle is only available in non-release branches such as `devel` or `master-ci`. ",
     Column.LONGITUDINAL, docs_only=True)
   EXP_LONG_DSU = CarFootnote(
-    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. "
-    "If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace "
+    "By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. " +
+    "If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace " +
     "stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b>",
     Column.LONGITUDINAL)
 
