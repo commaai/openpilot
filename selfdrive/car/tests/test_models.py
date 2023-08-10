@@ -51,6 +51,7 @@ def get_test_cases():
       seg_list = iter(f.read().splitlines())
 
     for platform in seg_list:
+      # TODO: can simplify a lot if we get rid of hard-coded platform
       platform = platform[2:]  # get rid of comment
       segment_name = SegmentName(next(seg_list))
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
