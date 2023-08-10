@@ -69,7 +69,7 @@ PROCS.update({
      "./boardd": 19.0,
     "system.sensord.rawgps.rawgpsd": 1.0,
   }
-}[HARDWARE.get_device_type()])
+}.get(HARDWARE.get_device_type(), {}))
 
 TIMINGS = {
   # rtols: max/min, rsd
