@@ -55,7 +55,7 @@ Open XQuartz, go to `XQuartz` > `Settings...` > `Security` and check "Authentica
 ```
 xhost +localhost
 ```
-Note that this is temporary and only affects current XQuartz session. To make it pernament, add the above line to shell rc file.
+Note that this is temporary and only affects current XQuartz session. To make it permanent, add the above line to shell rc file.
 
 ### Windows
 
