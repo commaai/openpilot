@@ -143,24 +143,7 @@ pipeline {
         }
         */
 
-        stage('big test models') {
-          agent { dockerfile { filename 'Dockerfile.openpilot_base'; args '--user=root' } }
-          steps {
-            sh "git config --global --add safe.directory '*'"
-            sh "git submodule update --init --depth=1 --recursive"
-            sh "scons -j42"
-            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' pytest -n42 --dist=loadscope ./test_models.py"
-          }
-
-          post {
-            always {
-              sh "rm -rf ${WORKSPACE}/* || true"
-              sh "rm -rf .* || true"
-            }
-          }
-        }
-
-        stage('scons build test') {
+        stage('PC tests') {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot_base'
@@ -172,6 +155,7 @@ pipeline {
             sh "git submodule update --init --depth=1 --recursive"
             sh "scons --clean && scons --no-cache -j42"
             sh "scons --clean && scons --no-cache --random -j42"
+            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' pytest -n42 --dist=loadscope ./test_models.py"
           }
 
           post {
