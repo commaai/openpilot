@@ -35,7 +35,6 @@ class URLFile:
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
       self._force_download = not cache
-    print('_force_download', self._force_download)
 
     try:
       self._curl = self._tlocal.curl
@@ -100,12 +99,10 @@ class URLFile:
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
-        print('cached file does not exist!', full_path)
         data = self.read_aux(ll=CHUNK_SIZE)
         with atomic_write_in_dir(full_path, mode="wb") as new_cached_file:
           new_cached_file.write(data)
       else:
-        print('cached file exists!', full_path)
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
 
