@@ -340,7 +340,7 @@ python-versions = "*"
 
 [[package]]
 name = "azure-core"
-version = "1.29.0"
+version = "1.29.1"
 description = "Microsoft Azure Core Library for Python"
 category = "dev"
 optional = false
@@ -3347,17 +3347,17 @@ develop = false
 numpy = "*"
 
 [package.extras]
-dev = ["PytorchNvCodec @ file:///home/batman/.cache/pypoetry/virtualenvs/openpilot-KeCh4I9p-py3.11/src/VideoProcessingFramework/src/PytorchNvCodec", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision"]
+dev = ["PytorchNvCodec @ file:///home/batman/.pyenv/versions/3.11.4/src/VideoProcessingFramework/src/PytorchNvCodec", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision"]
 samples = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "onnx", "opencv-python", "pycuda", "pyopengl", "tensorrt", "torch", "torchvision", "tqdm"]
 tensorrt = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "torch", "torchvision"]
 tests = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "opencv-python", "pycuda", "pyopengl", "torch", "torchvision"]
-torch = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "opencv-python", "torch", "torchvision"]
+torch = ["PytorchNvCodec @ git+https://github.com/NVIDIA/VideoProcessingFramework.git#subdirectory=src/PytorchNvCodec/", "torch", "torchvision"]
 
 [package.source]
 type = "git"
 url = "https://github.com/NVIDIA/VideoProcessingFramework.git"
-reference = "3347e55"
-resolved_reference = "3347e555ed795ba7de98b4e6b9bf7fe441784663"
+reference = "HEAD"
+resolved_reference = "f45e862b3e735c5a5f0c2b16b5394e71eadcc0d7"
 
 [[package]]
 name = "pyopencl"
@@ -3914,10 +3914,10 @@ setuptools = "*"
 [[package]]
 name = "sconscontrib"
 version = "1.0"
-description = "Contributed builders and other useful logic for the SCons build system.,"
+description = ""
 category = "main"
 optional = false
-python-versions = "<4,>=3.6"
+python-versions = ">=3.6, <4"
 develop = false
 
 [package.dependencies]
@@ -3966,7 +3966,7 @@ win32 = ["pywin32"]
 
 [[package]]
 name = "sentry-sdk"
-version = "1.29.2"
+version = "1.28.1"
 description = "Python client for Sentry (https://sentry.io)"
 category = "main"
 optional = false
@@ -4953,7 +4953,7 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.11"
-content-hash = "0167f827041ed0653bbe9fe6e781f19c3dcbd3863ead1770f9068de9470d75e5"
+content-hash = "ecfec2a0ec961b841389e2c0e70434f35126e3f5ed6423665e760ba53a0bb9ef"
 
 [metadata.files]
 adal = [
@@ -5255,8 +5255,8 @@ azure-common = [
     {file = "azure_common-1.1.28-py2.py3-none-any.whl", hash = "sha256:5c12d3dcf4ec20599ca6b0d3e09e86e146353d443e7fcc050c9a19c1f9df20ad"},
 ]
 azure-core = [
-    {file = "azure-core-1.29.0.zip", hash = "sha256:552b2010983ab3d3d35e4d4bcc7bb24fc98e40fe70fe534f5700dc90831e2396"},
-    {file = "azure_core-1.29.0-py3-none-any.whl", hash = "sha256:b591cada3644523ae61fd8f120e14e2486ac70485206355db49d7de36709303a"},
+    {file = "azure-core-1.29.1.zip", hash = "sha256:68e5bb6e3a3230ec202001cc5cb88e57f11c441c8345e921a9ffb8c370abf936"},
+    {file = "azure_core-1.29.1-py3-none-any.whl", hash = "sha256:6bcefa1f70ff7bf3c39c07c73d8a21df73288eff7e6a1031eb8cfae71cc7bed4"},
 ]
 azure-mgmt-core = [
     {file = "azure-mgmt-core-1.4.0.zip", hash = "sha256:d195208340094f98e5a6661b781cde6f6a051e79ce317caabd8ff97030a9b3ae"},
@@ -8991,8 +8991,8 @@ send2trash = [
     {file = "Send2Trash-1.8.2.tar.gz", hash = "sha256:c132d59fa44b9ca2b1699af5c86f57ce9f4c5eb56629d5d55fbb7a35f84e2312"},
 ]
 sentry-sdk = [
-    {file = "sentry-sdk-1.29.2.tar.gz", hash = "sha256:a99ee105384788c3f228726a88baf515fe7b5f1d2d0f215a03d194369f158df7"},
-    {file = "sentry_sdk-1.29.2-py2.py3-none-any.whl", hash = "sha256:3e17215d8006612e2df02b0e73115eb8376c37e3f586d8436fa41644e605074d"},
+    {file = "sentry-sdk-1.28.1.tar.gz", hash = "sha256:dcd88c68aa64dae715311b5ede6502fd684f70d00a7cd4858118f0ba3153a3ae"},
+    {file = "sentry_sdk-1.28.1-py2.py3-none-any.whl", hash = "sha256:6bdb25bd9092478d3a817cb0d01fa99e296aea34d404eac3ca0037faa5c2aa0a"},
 ]
 setproctitle = [
     {file = "setproctitle-1.3.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:288943dec88e178bb2fd868adf491197cc0fc8b6810416b1c6775e686bab87fe"},
