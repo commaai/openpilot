@@ -57,11 +57,7 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
 
     # steering torque
-    if CC.latActive:
-      new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
-    else:
-      apply_steer = 0
+    apply_steer = 0 if not CC.latActive else apply_driver_steer_torque_limits(actuators.steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     # >90 degree steering fault prevention
     self.angle_limit_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringAngleDeg, MAX_ANGLE, CC.latActive,

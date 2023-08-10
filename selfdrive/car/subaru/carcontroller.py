@@ -21,12 +21,7 @@ class CarController(CarControllerBase):
     # *** steering ***
     if (self.frame % self.params.STEER_STEP) == 0:
 
-      if CC.latActive:
-        new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-        # limits due to driver torque
-        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
-      else:
-        apply_steer = 0
+      apply_steer = 0 if not CC.latActive else apply_driver_steer_torque_limits(actuators.steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))

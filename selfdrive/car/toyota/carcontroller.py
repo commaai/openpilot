@@ -48,11 +48,7 @@ class CarController(CarControllerBase):
     can_sends = []
 
     # *** steer torque ***
-    if CC.latActive:
-      new_steer = int(round(actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
-    else:
-      apply_steer = 0
+    apply_steer = 0 if not CC.latActive else apply_meas_steer_torque_limits(actuators.steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
 
     # >100 degree/sec steering fault prevention
     self.steer_rate_counter, apply_steer_req = common_fault_avoidance(CS.out.steeringRateDeg, MAX_STEER_RATE, CC.latActive,

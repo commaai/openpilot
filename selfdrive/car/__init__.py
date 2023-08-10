@@ -77,6 +77,7 @@ def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> Dict[str, st
 
 def apply_driver_steer_torque_limits(apply_torque, apply_torque_last, driver_torque, LIMITS):
 
+  apply_torque = int(round(apply_torque * LIMITS.STEER_MAX))
   # limits due to driver torque
   driver_max_torque = LIMITS.STEER_MAX + (LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
   driver_min_torque = -LIMITS.STEER_MAX + (-LIMITS.STEER_DRIVER_ALLOWANCE + driver_torque * LIMITS.STEER_DRIVER_FACTOR) * LIMITS.STEER_DRIVER_MULTIPLIER
@@ -118,6 +119,7 @@ def apply_dist_to_meas_limits(val, val_last, val_meas,
 
 
 def apply_meas_steer_torque_limits(apply_torque, apply_torque_last, motor_torque, LIMITS):
+  apply_torque = int(round(apply_torque * LIMITS.STEER_MAX))
   return int(round(apply_dist_to_meas_limits(apply_torque, apply_torque_last, motor_torque,
                                              LIMITS.STEER_DELTA_UP, LIMITS.STEER_DELTA_DOWN,
                                              LIMITS.STEER_ERROR_MAX, LIMITS.STEER_MAX)))

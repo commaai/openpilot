@@ -61,11 +61,11 @@ class CarController(CarControllerBase):
       self.lkas_control_bit_prev = lkas_control_bit
 
       # steer torque
-      if lkas_active and lkas_control_bit:
-        new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
-        apply_steer = apply_meas_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorqueEps, self.params)
-      else:
-        apply_steer = 0
+      apply_steer = 0 if not (lkas_active and lkas_control_bit) else apply_meas_steer_torque_limits(CC.actuators.steer,
+                                                                                                    self.apply_steer_last,
+                                                                                                    CS.out.steeringTorqueEps,
+                                                                                                    self.params)
+
       self.apply_steer_last = apply_steer
 
       can_sends.append(create_lkas_command(self.packer, self.CP, int(apply_steer), lkas_control_bit))

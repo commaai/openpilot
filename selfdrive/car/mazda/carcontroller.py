@@ -15,13 +15,8 @@ class CarController(CarControllerBase):
   def update(self, CC, CS, now_nanos):
     can_sends = []
 
-    apply_steer = 0
-
-    if CC.latActive:
-      # calculate steer and also set limits due to driver torque
-      new_steer = int(round(CC.actuators.steer * self.params.STEER_MAX))
-      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last,
-                                                     CS.out.steeringTorque, self.params)
+    # calculate steer and also set limits due to driver torque
+    apply_steer = 0 if not CC.latActive else apply_driver_steer_torque_limits(CC.actuators.steer, self.apply_steer_last, CS.out.steeringTorque, self.params)
 
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
