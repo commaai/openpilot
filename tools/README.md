@@ -44,6 +44,19 @@ Dev containers are supported in [multiple editors and IDEs](https://containers.d
 
 After installing prerequisites, start VS Code and run `Dev Containers: Open Folder in Container...` command from the Command Palette (`F1`) and select openpilot project directory.
 
+#### X11 forwarding on macOS
+
+GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. First of all, install [XQuartz](https://formulae.brew.sh/cask/xquartz#default):
+```
+brew install --cask xquartz
+```
+
+Open XQuartz, go to `XQuartz` > `Settings...` > `Security` and check "Authenticate connections" and "Allow connections from network clients" boxes. Then allow for connections from localhost with:
+```
+xhost +localhost
+```
+Note that this is temporary and only affects current XQuartz session. To make it pernament, add the above line to shell rc file.
+
 ### Windows
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
