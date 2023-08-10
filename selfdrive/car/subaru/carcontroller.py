@@ -25,14 +25,12 @@ class CarController:
 
     # *** steering ***
     if (self.frame % self.p.STEER_STEP) == 0:
-      apply_steer = int(round(actuators.steer * self.p.STEER_MAX))
 
-      # limits due to driver torque
-
-      new_steer = int(round(apply_steer))
-      apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
-
-      if not CC.latActive:
+      if CC.latActive:
+        new_steer = int(round(actuators.steer * self.p.STEER_MAX))
+        # limits due to driver torque
+        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
+      else:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
