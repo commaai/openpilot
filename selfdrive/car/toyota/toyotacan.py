@@ -9,7 +9,7 @@ def create_steer_command(packer, steer, steer_req):
   return packer.make_can_msg("STEERING_LKA", 0, values)
 
 
-def create_lta_steer_command(packer, steer_angle, steer_req, frame):
+def create_lta_steer_command(packer, steer_angle, steer_req, frame, setme_x64):
   """Creates a CAN message for the Toyota LTA Steer Command."""
 
   values = {
@@ -17,7 +17,7 @@ def create_lta_steer_command(packer, steer_angle, steer_req, frame):
     "SETME_X1": 1,
     "SETME_X3": 3,
     "PERCENTAGE": 100,
-    "SETME_X64": 0,
+    "SETME_X64": setme_x64,
     "ANGLE": 0,
     "STEER_ANGLE_CMD": steer_angle,
     "STEER_REQUEST": steer_req,
@@ -63,7 +63,7 @@ def create_fcw_command(packer, fcw):
     "PCS_OFF": 1,
     "PCS_SENSITIVITY": 0,
   }
-  return packer.make_can_msg("ACC_HUD", 0, values)
+  return packer.make_can_msg("PCS_HUD", 0, values)
 
 
 def create_ui_command(packer, steer, chime, left_line, right_line, left_lane_depart, right_lane_depart, enabled, stock_lkas_hud):

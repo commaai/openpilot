@@ -9,9 +9,9 @@ base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'x86_64']
+maps = arch in ['larch64', 'aarch64', 'x86_64']
 
-if maps and arch == 'x86_64':
+if maps and arch != 'larch64':
   rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -29,7 +29,8 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc", "qt/
 qt_env['CPPDEFINES'] = []
 if maps:
   base_libs += ['qmapboxgl']
-  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc"]
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
+                  "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
@@ -104,7 +105,7 @@ if GetOption('extras'):
   installers = [
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
-    ("openpilot_nightly", "master-ci"),
+    ("openpilot_nightly", "nightly"),
     ("openpilot_internal", "master"),
     ("dashcam", dashcam),
     ("dashcam_test", f"{dashcam}-staging"),
@@ -130,5 +131,5 @@ if GetOption('extras'):
     assert f[0].get_size() < 300*1e3
 
 # build watch3
-if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
