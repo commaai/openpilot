@@ -153,9 +153,9 @@ pipeline {
           steps {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
-            sh "scons --clean && scons --no-cache -j42"
-            sh "scons --clean && scons --no-cache --random -j42"
-            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' FILEREADER_CACHE='1' pytest -n42 --dist=loadscope ./test_models.py"
+            sh "scons --clean && scons -j42"
+//             sh "scons --clean && scons --no-cache --random -j42"
+            sh "cd selfdrive/car/tests && INTERNAL_SEG_LIST='selfdrive/car/tests/test_models_segs.txt' FILEREADER_CACHE='1' ./test_models.py"
           }
 
           post {
