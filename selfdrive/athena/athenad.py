@@ -85,7 +85,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  item_id: Optional[str]
+  id: Optional[str] # noqa: A003 (to match the response from the remote server)
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -135,7 +135,7 @@ class UploadQueueCache:
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
       queue: List[Optional[UploadItem]] = list(upload_queue.queue)
-      items = [asdict(i) for i in queue if i is not None and (i.item_id not in cancelled_uploads)]
+      items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
       UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
@@ -223,8 +223,8 @@ def upload_handler(end_event: threading.Event) -> None:
     try:
       cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
 
-      if item.item_id in cancelled_uploads:
-        cancelled_uploads.remove(item.item_id)
+      if item.id in cancelled_uploads:
+        cancelled_uploads.remove(item.id)
         continue
 
       # Remove item if too old
@@ -422,11 +422,11 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       url=file.url,
       headers=file.headers,
       created_at=int(time.time() * 1000),
-      item_id=None,
+      id=None,
       allow_cellular=file.allow_cellular,
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
-    item = replace(item, item_id=upload_id)
+    item = replace(item, id=upload_id)
     upload_queue.put_nowait(item)
     items.append(asdict(item))
 
@@ -442,7 +442,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
 @dispatcher.add_method
 def listUploadQueue() -> List[UploadItemDict]:
   items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [asdict(i) for i in items if (i is not None) and (i.item_id not in cancelled_uploads)]
+  return [asdict(i) for i in items if (i is not None) and (i.id not in cancelled_uploads)]
 
 
 @dispatcher.add_method
@@ -450,7 +450,7 @@ def cancelUpload(upload_id: Union[str, List[str]]) -> Dict[str, Union[int, str]]
   if not isinstance(upload_id, list):
     upload_id = [upload_id]
 
-  uploading_ids = {item.item_id for item in list(upload_queue.queue)}
+  uploading_ids = {item.id for item in list(upload_queue.queue)}
   cancelled_ids = uploading_ids.intersection(upload_id)
   if len(cancelled_ids) == 0:
     return {"success": 0, "error": "not found"}
