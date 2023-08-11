@@ -88,12 +88,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   distance->setText(getDistance(instruction.getManeuverDistance()));
 
   // Show arrow with direction
-  QString maneuver_type = QString::fromStdString(instruction.getManeuverType());
-  QString maneuver_modifier = QString::fromStdString(instruction.getManeuverModifier());
-  if (!maneuver_type.isEmpty()) {
-    QString fn = "direction_" + maneuver_type;
-    if (!maneuver_modifier.isEmpty()) {
-      fn += "_" + maneuver_modifier;
+  QString type = QString::fromStdString(instruction.getManeuverType());
+  QString modifier = QString::fromStdString(instruction.getManeuverModifier());
+  if (!type.isEmpty()) {
+    QString fn = "direction_" + type;
+    if (!modifier.isEmpty()) {
+      fn += "_" + modifier;
     }
     fn = fn.replace(' ', '_');
     bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
@@ -103,7 +103,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
 
   // Hide distance after arrival
-  distance->setVisible(maneuver_type != "arrive" || instruction.getManeuverDistance() > 0);
+  distance->setVisible(type != "arrive" || instruction.getManeuverDistance() > 0);
 
   // Show lanes
   auto lanes = instruction.getLanes();
