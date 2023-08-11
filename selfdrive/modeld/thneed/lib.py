@@ -1,4 +1,5 @@
-import struct, json
+import struct
+import json
 
 def load_thneed(fn):
   with open(fn, "rb") as f:

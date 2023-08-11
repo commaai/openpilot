@@ -68,7 +68,8 @@ class TestCarlaIntegration(unittest.TestCase):
         no_car_events_issues_once = True
         break
 
-    self.assertTrue(no_car_events_issues_once, f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
+    self.assertTrue(no_car_events_issues_once,
+                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
 
     start_time = time.monotonic()
     min_counts_control_active = 100

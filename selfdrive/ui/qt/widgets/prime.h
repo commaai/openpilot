@@ -69,10 +69,12 @@ class SetupWidget : public QFrame {
 public:
   explicit SetupWidget(QWidget* parent = 0);
 
+signals:
+  void openSettings(int index = 0, const QString &param = "");
+
 private:
   PairingPopup *popup;
   QStackedWidget *mainLayout;
-  PrimeAdWidget *primeAd;
   PrimeUserWidget *primeUser;
 
 private slots:

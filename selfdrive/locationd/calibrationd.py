@@ -73,11 +73,11 @@ class Calibrator:
 
     if param_put and calibration_params:
       try:
-        msg = log.Event.from_bytes(calibration_params)
-        rpy_init = np.array(msg.liveCalibration.rpyCalib)
-        valid_blocks = msg.liveCalibration.validBlocks
-        wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
-        height = np.array(msg.liveCalibration.height)
+        with log.Event.from_bytes(calibration_params) as msg:
+          rpy_init = np.array(msg.liveCalibration.rpyCalib)
+          valid_blocks = msg.liveCalibration.validBlocks
+          wide_from_device_euler = np.array(msg.liveCalibration.wideFromDeviceEuler)
+          height = np.array(msg.liveCalibration.height)
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
@@ -211,7 +211,8 @@ class Calibrator:
       new_height = HEIGHT_INIT
 
     self.rpys[self.block_idx] = moving_avg_with_linear_decay(self.rpys[self.block_idx], new_rpy, self.idx, float(BLOCK_SIZE))
-    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx], new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
+    self.wide_from_device_eulers[self.block_idx] = moving_avg_with_linear_decay(self.wide_from_device_eulers[self.block_idx],
+                                                                                new_wide_from_device_euler, self.idx, float(BLOCK_SIZE))
     self.heights[self.block_idx] = moving_avg_with_linear_decay(self.heights[self.block_idx], new_height, self.idx, float(BLOCK_SIZE))
 
     self.idx = (self.idx + 1) % BLOCK_SIZE
