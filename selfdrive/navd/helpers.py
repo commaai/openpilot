@@ -121,7 +121,7 @@ def coordinate_from_param(param: str, params: Optional[Params] = None) -> Option
 def string_to_direction(direction: str) -> str:
   for d in ['left', 'right', 'straight']:
     if d in direction:
-      return d
+      return direction.replace(' l', 'L').replace(' r', 'R')
   return 'none'
 
 
@@ -166,6 +166,8 @@ def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -
   # Lane lines
   if field_valid(current_banner, 'sub'):
     lanes = []
+    # print()
+    print(current_banner['sub']['components'])
     for component in current_banner['sub']['components']:
       if component['type'] != 'lane':
         continue
@@ -174,11 +176,14 @@ def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -
         'active': component['active'],
         'directions': [string_to_direction(d) for d in component['directions']],
       }
+      print(component['directions'])
 
       if field_valid(component, 'active_direction'):
         lane['activeDirection'] = string_to_direction(component['active_direction'])
 
       lanes.append(lane)
+      print('appended', lane)
     instruction['lanes'] = lanes
 
+  print('instruction', instruction)
   return instruction

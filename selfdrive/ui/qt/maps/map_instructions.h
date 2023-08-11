@@ -25,3 +25,15 @@ public:
   QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
 };
+
+QString getLaneDirectionName(const std::vector<cereal::NavInstruction::Direction>& directions,
+                             bool active, cereal::NavInstruction::Direction active_direction);
+
+static std::map<cereal::NavInstruction::Direction, QString> DIRECTIONS = {
+  {cereal::NavInstruction::Direction::NONE, "none"},
+  {cereal::NavInstruction::Direction::LEFT, "left"},
+  {cereal::NavInstruction::Direction::SLIGHT_LEFT, "slight_left"},
+  {cereal::NavInstruction::Direction::STRAIGHT, "straight"},
+  {cereal::NavInstruction::Direction::SLIGHT_RIGHT, "slight_right"},
+  {cereal::NavInstruction::Direction::RIGHT, "right"},
+};
