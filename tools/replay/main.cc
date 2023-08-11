@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
 #ifdef __APPLE__
-  // With all the sockets opened, we might hit the default limit of 256 on macOS
+  // With all sockets opened, we might hit the default limit of 256 on macOS
   setFileDescriptorLimit(1024);
 #endif
 
