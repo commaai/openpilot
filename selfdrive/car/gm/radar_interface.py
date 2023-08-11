@@ -25,7 +25,7 @@ def create_radar_can_parser(car_fingerprint):
                      ['TrkRange'] * NUM_SLOTS + ['TrkRangeRate'] * NUM_SLOTS +
                      ['TrkRangeAccel'] * NUM_SLOTS + ['TrkAzimuth'] * NUM_SLOTS +
                      ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
-                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6))
+                     [RADAR_HEADER_MSG] * 7 + radar_targets * 6, strict=True))
 
   messages = list({(s[1], 14) for s in signals})
 
