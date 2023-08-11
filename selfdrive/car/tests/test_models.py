@@ -181,16 +181,28 @@ class TestCarModelBase(unittest.TestCase):
         can_invalid_cnt += not CS.canValid
 
     self.assertEqual(can_invalid_cnt, 0)
+    self.assertInterfaceTiming((time.process_time_ns() - start_time) * 1e-6)
 
+  def assertInterfaceTiming(self, total_time_ms):
+    """Asserts sane timing"""
+    total_time_thresh = (1000, 3000)
+    per_packet_thresh = (0.2, 0.5)
+
+    self.assertLess(total_time_ms, total_time_thresh[1])
+    self.assertGreater(total_time_ms, total_time_thresh[0], "Performance seems to have improved, update test refs.")
+
+    avg_time_msg = total_time_ms / len(self.can_msgs)
+    self.assertLess(avg_time_msg, per_packet_thresh[1])
+    self.assertGreater(avg_time_msg, per_packet_thresh[0], "Performance seems to have improved, update test refs.")
     # Timing test
-    elapsed_time_ms = (time.process_time_ns() - start_time) * 1e-6
     # self.assertLess(elapsed_time_ms, 3000, "Car interface took too long to process CAN packets")
     # self.assertGreater(elapsed_time_ms, 1000, "Car interface processed CAN packets too quickly")
 
     # self.assertLess(elapsed_time_ms / len(self.can_msgs), 0.5, "Time per CAN packet too high")
     # self.assertGreater(elapsed_time_ms / len(self.can_msgs), 0.2, "Time per CAN packet too fast")
 
-    print(elapsed_time_ms, elapsed_time_ms / len(self.can_msgs))
+    print(total_time_ms, total_time_ms / len(self.can_msgs))
+
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
