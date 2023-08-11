@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
 from cereal import log, car
+from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
@@ -17,7 +18,7 @@ from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+from tools.lib.route import Route, SegmentName, RouteName
 
 from panda.tests.libpanda import libpanda_py
 
@@ -25,21 +26,37 @@ PandaType = log.PandaState.PandaType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
+INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
   HYUNDAI.GENESIS_G70_2020,
 ]
 
-# build list of test cases
-routes_by_car = defaultdict(set)
-for r in routes:
-  routes_by_car[r.car_model].add(r)
 
-test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
-for i, c in enumerate(sorted(all_known_cars())):
-  if i % NUM_JOBS == JOB_ID:
-    test_cases.extend((c, r) for r in routes_by_car.get(c, (None, )))
+def get_test_cases():
+  # build list of test cases
+  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+  if not len(INTERNAL_SEG_LIST):
+    routes_by_car = defaultdict(set)
+    for r in routes:
+      routes_by_car[r.car_model].add(r)
+
+    for i, c in enumerate(sorted(all_known_cars())):
+      if i % NUM_JOBS == JOB_ID:
+        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+
+  else:
+    with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
+      seg_list = iter(f.read().splitlines())
+
+    for platform in seg_list:
+      platform = platform[2:]  # get rid of comment
+      segment_name = SegmentName(next(seg_list))
+      test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
+                                                segment=segment_name.segment_num)))
+  return test_cases
+
 
 SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
@@ -72,7 +89,10 @@ class TestCarModelBase(unittest.TestCase):
 
     for seg in test_segs:
       try:
-        if cls.ci:
+        if len(INTERNAL_SEG_LIST):
+          route_name = RouteName(cls.test_route.route)
+          lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
+        elif cls.ci:
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
@@ -201,6 +221,42 @@ class TestCarModelBase(unittest.TestCase):
           self.assertTrue(self.safety.addr_checks_valid())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
+  def test_panda_safety_tx_cases(self, data=None):
+    """Asserts we can tx common messages"""
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    def test_car_controller(car_control):
+      now_nanos = 0
+      msgs_sent = 0
+      CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+      for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
+        CI.update(car_control, [])
+        _, sendcan = CI.apply(car_control, now_nanos)
+
+        now_nanos += DT_CTRL * 1e9
+        msgs_sent += len(sendcan)
+        for addr, _, dat, bus in sendcan:
+          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+          self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
+
+      # Make sure we attempted to send messages
+      self.assertGreater(msgs_sent, 50)
+
+    # Make sure we can send all messages while inactive
+    CC = car.CarControl.new_message()
+    test_car_controller(CC)
+
+    # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
+    self.safety.set_cruise_engaged_prev(True)
+    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
+    test_car_controller(CC)
+
+    # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
+    self.safety.set_controls_allowed(True)
+    CC = car.CarControl.new_message(cruiseControl={'resume': True})
+    test_car_controller(CC)
+
   def test_panda_safety_carstate(self):
     """
       Assert that panda safety matches openpilot's carState
@@ -214,7 +270,7 @@ class TestCarModelBase(unittest.TestCase):
     for can in self.can_msgs[:300]:
       self.CI.update(CC, (can.as_builder().to_bytes(), ))
       for msg in filter(lambda m: m.src in range(64), can.can):
-        to_send = libpanda_py.make_CANPacket(msg.address, msg.src, msg.dat)
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
@@ -278,7 +334,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
 
 
-@parameterized_class(('car_model', 'test_route'), test_cases)
+@parameterized_class(('car_model', 'test_route'), get_test_cases())
 class TestCarModel(TestCarModelBase):
   pass
 
