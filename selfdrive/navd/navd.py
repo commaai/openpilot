@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
+from enum import StrEnum
 import json
 import math
 import os
 import threading
+from typing import Tuple, Optional
 
 import requests
 
@@ -20,6 +22,12 @@ from openpilot.common.swaglog import cloudlog
 REROUTE_DISTANCE = 25
 MANEUVER_TRANSITION_THRESHOLD = 10
 REROUTE_COUNTER_MIN = 3
+
+
+class RECOMPUTE_REASON(StrEnum):
+  WRONG_DIRECTION = "wrong direction"
+  DISTANCE_TO_ROUTE = "distance to route"
+  NEW_DESTINATION = "new destination"
 
 
 class RouteEngine:
@@ -46,7 +54,11 @@ class RouteEngine:
 
     self.ui_pid = None
 
-    self.reroute_counter = 0
+    self.distance_reroute_counter = 0
+    self.wrong_direction_reroute_counter = 0
+
+    self.smallest_total_distance_remaining = math.inf
+    self.distance_delta = 0
 
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
@@ -94,25 +106,20 @@ class RouteEngine:
       self.reset_recompute_limits()
       return
 
-    should_recompute = self.should_recompute()
-    if new_destination != self.nav_destination:
-      cloudlog.warning(f"Got new destination from NavDestination param {new_destination}")
-      should_recompute = True
-
-    # Don't recompute when GPS drifts in tunnels
-    if not self.gps_ok and self.step_idx is not None:
-      return
+    should_recompute, recompute_reason = self.should_recompute(new_destination)
 
     if self.recompute_countdown == 0 and should_recompute:
       self.recompute_countdown = 2**self.recompute_backoff
       self.recompute_backoff = min(6, self.recompute_backoff + 1)
-      self.calculate_route(new_destination)
-      self.reroute_counter = 0
+      self.calculate_route(new_destination, recompute_reason)
+      self.distance_reroute_counter = 0
+      self.wrong_direction_reroute_counter = 0
     else:
       self.recompute_countdown = max(0, self.recompute_countdown - 1)
 
-  def calculate_route(self, destination):
-    cloudlog.warning(f"Calculating route {self.last_position} -> {destination}")
+  def calculate_route(self, destination: Coordinate, reason: RECOMPUTE_REASON):
+    cloudlog.warning(f"Calculating route due to {RECOMPUTE_REASON} {self.last_position} -> {destination}")
+    self.smallest_total_distance_remaining = math.inf
     self.nav_destination = destination
 
     lang = self.params.get('LanguageSetting', encoding='utf8')
@@ -244,23 +251,27 @@ class RouteEngine:
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)
-    total_distance = step['distance'] * remaining
-    total_time = step['duration'] * remaining
+    total_distance_remaining = step['distance'] * remaining
+    total_time_remaining = step['duration'] * remaining
 
     if step['duration_typical'] is None:
-      total_time_typical = total_time
+      total_typical_time_remaining = total_time_remaining
     else:
-      total_time_typical = step['duration_typical'] * remaining
+      total_typical_time_remaining = step['duration_typical'] * remaining
 
     # Add up totals for future steps
     for i in range(self.step_idx + 1, len(self.route)):
-      total_distance += self.route[i]['distance']
-      total_time += self.route[i]['duration']
-      total_time_typical += self.route[i]['duration_typical']
+      total_distance_remaining += self.route[i]['distance']
+      total_time_remaining += self.route[i]['duration']
+      total_typical_time_remaining += self.route[i]['duration_typical']
 
-    msg.navInstruction.distanceRemaining = total_distance
-    msg.navInstruction.timeRemaining = total_time
-    msg.navInstruction.timeRemainingTypical = total_time_typical
+    msg.navInstruction.distanceRemaining = total_distance_remaining
+    msg.navInstruction.timeRemaining = total_time_remaining
+    msg.navInstruction.timeRemainingTypical = total_typical_time_remaining
+
+    # Compute if we are going the wrong way
+    self.smallest_total_distance_remaining = min(self.smallest_total_distance_remaining, total_distance_remaining)
+    self.distance_delta = total_distance_remaining - self.smallest_total_distance_remaining
 
     # Speed limit
     closest_idx, closest = min(enumerate(geometry), key=lambda p: p[1].distance_to(self.last_position))
@@ -316,7 +327,33 @@ class RouteEngine:
     self.recompute_backoff = 0
     self.recompute_countdown = 0
 
-  def should_recompute(self):
+  def should_recompute(self, new_destination: Optional[Coordinate]) -> Tuple[bool, Optional[RECOMPUTE_REASON]]:
+    # Don't recompute when GPS drifts in tunnels
+    if not self.gps_ok and self.step_idx is not None:
+      return False, None
+
+    if new_destination != self.nav_destination:
+      cloudlog.warning(f"Got new destination from NavDestination param {new_destination}")
+      return True, RECOMPUTE_REASON.NEW_DESTINATION
+
+    if self.too_far_from_route():
+      return True, RECOMPUTE_REASON.DISTANCE_TO_ROUTE
+
+    if self.going_wrong_direction():
+      return True, RECOMPUTE_REASON.WRONG_DIRECTION
+
+    return False, None
+
+  def going_wrong_direction(self) -> bool:
+    # Check if our distance remaining has increased
+    if self.distance_delta > REROUTE_DISTANCE:
+      self.wrong_direction_reroute_counter += 1
+    else:
+      self.wrong_direction_reroute_counter = 0
+
+    return bool(self.wrong_direction_reroute_counter > REROUTE_COUNTER_MIN)
+
+  def too_far_from_route(self) -> bool:
     if self.step_idx is None or self.route is None:
       return True
 
@@ -336,12 +373,13 @@ class RouteEngine:
 
       min_d = min(min_d, minimum_distance(a, b, self.last_position))
 
+    # Check if we've driven off the route
     if min_d > REROUTE_DISTANCE:
-      self.reroute_counter += 1
+      self.distance_reroute_counter += 1
     else:
-      self.reroute_counter = 0
-    return self.reroute_counter > REROUTE_COUNTER_MIN
-    # TODO: Check for going wrong way in segment
+      self.distance_reroute_counter = 0
+
+    return bool(self.distance_reroute_counter > REROUTE_COUNTER_MIN)
 
 
 def main():
