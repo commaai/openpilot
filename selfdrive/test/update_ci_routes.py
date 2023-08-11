@@ -52,7 +52,7 @@ def sync_to_ci_public(route):
     return True
 
   print(f"Uploading {route}")
-  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys):
+  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [
       "azcopy",

@@ -173,7 +173,7 @@ class TestLaikad(unittest.TestCase):
     self.assertTrue(kf_valid)
 
   def test_laika_online_nav_only(self):
-    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
       laikad = Laikad(auto_update=True, valid_ephem_types=EphemerisType.NAV, use_qcom=use_qcom)
       # Disable fetch_orbits to test NAV only
       correct_msgs = verify_messages(logs, laikad)
@@ -215,7 +215,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_get_navs_in_process(self):
     for auto_fetch_navs in [True, False]:
-      for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+      for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
         laikad = Laikad(auto_update=False, use_qcom=use_qcom, auto_fetch_navs=auto_fetch_navs)
         has_navs = False
         has_fix = False
@@ -248,7 +248,7 @@ class TestLaikad(unittest.TestCase):
 
   def test_cache(self):
     use_qcom = True
-    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs]):
+    for use_qcom, logs in zip([True, False], [self.logs_qcom, self.logs], strict=True):
       Params().remove(EPHEMERIS_CACHE)
       laikad = Laikad(auto_update=True, save_ephemeris=True, use_qcom=use_qcom)
       def wait_for_cache():
