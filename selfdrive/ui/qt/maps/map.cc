@@ -35,7 +35,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setFixedHeight(120);
 
   error = new QLabel(this);
-  error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgb(0, 0, 0, 150);)");
+  error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgba(0, 0, 0, 150);)");
   error->setAlignment(Qt::AlignCenter);
 
   overlay_layout->addWidget(error);
