@@ -50,7 +50,6 @@ private:
   void setError(const QString &err_str);
 
   bool loaded_once = false;
-  bool allow_open = true;
 
   // Panning
   QPointF m_lastPos;
@@ -59,6 +58,7 @@ private:
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
+  std::optional<QMapbox::Coordinate> prev_nav_dest;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
@@ -75,8 +75,7 @@ private:
   }
 
   void clearRoute();
-  void updateDestinationMarker();
-  uint64_t route_rcv_frame = 0;
+  void updateDestinationMarker(std::optional<QMapbox::Coordinate> nav_dest);
 
 private slots:
   void updateState(const UIState &s);
