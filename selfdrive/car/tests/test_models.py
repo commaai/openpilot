@@ -193,13 +193,6 @@ class TestCarModelBase(unittest.TestCase):
       self.assertLess(t, thresh[1])
       self.assertGreater(t, thresh[0], "Performance seems to have improved, update test refs.")
 
-    # Timing test
-    # self.assertLess(elapsed_time_ms, 3000, "Car interface took too long to process CAN packets")
-    # self.assertGreater(elapsed_time_ms, 1000, "Car interface processed CAN packets too quickly")
-
-    # self.assertLess(elapsed_time_ms / len(self.can_msgs), 0.5, "Time per CAN packet too high")
-    # self.assertGreater(elapsed_time_ms / len(self.can_msgs), 0.2, "Time per CAN packet too fast")
-
     print(total_time_ms, total_time_ms / len(self.can_msgs))
 
   def test_radar_interface(self):
