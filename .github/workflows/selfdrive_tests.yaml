@@ -108,7 +108,7 @@ jobs:
       id: scons-restore-cache
       uses: actions/cache/restore@v3
       with:
-        path: ~/scons_cache
+        path: /tmp/scons_cache
         key: macos_scons-${{ github.sha }}
         restore-keys: macos_scons-
     - name: Cache dependencies
