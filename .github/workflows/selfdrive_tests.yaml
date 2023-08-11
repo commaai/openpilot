@@ -47,7 +47,7 @@ jobs:
       timeout-minutes: 1
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
@@ -77,7 +77,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build openpilot with all flags
-      timeout-minutes: 12
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
     - name: Cleanup scons cache
       timeout-minutes: 2
@@ -243,7 +243,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build openpilot
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: 40
