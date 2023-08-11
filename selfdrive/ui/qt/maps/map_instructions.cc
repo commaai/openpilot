@@ -67,11 +67,11 @@ QString MapInstructions::getDistance(float d) {
   d = std::max(d, 0.0f);
   if (uiState()->scene.is_metric) {
     return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
-                     : QString::number(50 * int(d / 50)) + tr(" m");
+                     : QString::number(50 * qRound(d / 50)) + tr(" m");
   } else {
     float feet = d * METER_TO_FOOT;
     return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
-                        : QString::number(50 * int(feet / 50)) + tr(" ft");
+                        : QString::number(50 * qRound(feet / 50)) + tr(" ft");
   }
 }
 
