@@ -159,12 +159,20 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
+  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
+    qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
+
+    // Only open the map on setting destination the first time
+    if (allow_open) {
+      emit requestSettings(false);
+      emit requestVisible(true); // Show map on destination set/change
+      allow_open = false;
+    }
+  }
+
   loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
   if (!loaded_once) {
     setError(tr("Map Loading"));
-    if (!isVisible() && sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
-      requestShow();
-    }
     return;
   }
   initLayers();
@@ -301,6 +309,7 @@ void MapWindow::clearRoute() {
 
   map_instructions->setVisible(false);
   map_eta->setVisible(false);
+  allow_open = true;
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
