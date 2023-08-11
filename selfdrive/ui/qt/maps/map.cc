@@ -164,8 +164,7 @@ void MapWindow::updateState(const UIState &s) {
 
     // Only open the map on setting destination the first time
     if (allow_open) {
-      emit requestSettings(false);
-      emit requestVisible(true); // Show map on destination set/change
+      requestShow();
       allow_open = false;
     }
   }
