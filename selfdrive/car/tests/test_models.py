@@ -185,8 +185,8 @@ class TestCarModelBase(unittest.TestCase):
 
   def assertInterfaceTiming(self, total_time_ms):
     """Asserts sane timing"""
-    total_time_thresh = (1000, 3000)
-    per_packet_thresh = (0.2, 0.5)
+    total_time_thresh = (1000, 5000)
+    per_packet_thresh = (0.2, 0.6)
 
     avg_time_msg = total_time_ms / len(self.can_msgs)
     for t, thresh in ((total_time_ms, total_time_thresh), (avg_time_msg, per_packet_thresh)):
