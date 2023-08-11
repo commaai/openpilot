@@ -159,13 +159,14 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
-    qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
-
-    // Only open the map on setting destination the first time
-    if (allow_open) {
-      requestShow();
-      allow_open = false;
+  if (sm.updated("navRoute")) {
+    auto nav_dest = coordinate_from_param("NavDestination");
+    if (std::exchange(current_nav_dest, nav_dest) != nav_dest) {
+      // Show map on destination set/change
+      if (current_nav_dest && !isVisible()) {
+        emit requestSettings(false);
+        emit requestVisible(true);
+      }
     }
   }
 
@@ -228,7 +229,6 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
-    route_rcv_frame = sm.rcv_frame("navRoute");
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
@@ -239,21 +239,9 @@ void MapWindow::updateState(const UIState &s) {
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    auto nav_dest = coordinate_from_param("NavDestination");
-    if (nav_dest != current_nav_dest) {
-      current_nav_dest = nav_dest;
-      updateDestinationMarker(nav_dest);
-      // Show map on destination set/change
-      if (nav_dest && !isVisible()) {
-        requestShow();
-      }
-    }
+    route_rcv_frame = sm.rcv_frame("navRoute");
+    updateDestinationMarker(current_nav_dest);
   }
-}
-
-void MapWindow::requestShow() {
-  emit requestSettings(false);
-  emit requestVisible(true);
 }
 
 void MapWindow::setError(const QString &err_str) {
@@ -308,7 +296,6 @@ void MapWindow::clearRoute() {
 
   map_instructions->setVisible(false);
   map_eta->setVisible(false);
-  allow_open = true;
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {

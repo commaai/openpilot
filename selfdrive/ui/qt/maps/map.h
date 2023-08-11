@@ -48,10 +48,8 @@ private:
   bool gestureEvent(QGestureEvent *event);
   void pinchTriggered(QPinchGesture *gesture);
   void setError(const QString &err_str);
-  void requestShow();
 
   bool loaded_once = false;
-  bool allow_open = true;
 
   // Panning
   QPointF m_lastPos;
