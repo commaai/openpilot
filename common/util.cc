@@ -214,9 +214,9 @@ std::string hexdump(const uint8_t* in, const size_t size) {
 }
 
 std::string random_string(std::string::size_type length) {
-  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   std::mt19937 rg{std::random_device{}()};
-  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::uniform_int_distribution<std::string::size_type> pick(0, chrs.length() - 1);
   std::string s;
   s.reserve(length);
   while (length--) {
