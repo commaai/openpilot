@@ -102,16 +102,16 @@ class TestHyundaiFingerprint(unittest.TestCase):
             codes |= result
 
           if ecu[0] not in DATE_FW_ECUS or car_model in NO_DATES_PLATFORMS:
-            self.assertTrue(all({date is None for _, date in codes}))
+            self.assertTrue(all(date is None for _, date in codes))
           else:
-            self.assertTrue(all({date is not None for _, date in codes}))
+            self.assertTrue(all(date is not None for _, date in codes))
 
           if car_model == CAR.HYUNDAI_GENESIS:
             raise unittest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
           # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
-          self.assertTrue(all({b"-" in code for code, _ in codes}),
+          self.assertTrue(all(b"-" in code for code, _ in codes),
                           f"FW does not have part number: {fw}")
 
   def test_platform_codes_spot_check(self):

@@ -9,6 +9,7 @@ from unittest.mock import MagicMock
 from common.params import Params
 from common.timeout import Timeout
 from selfdrive.athena import athenad
+from selfdrive.manager.helpers import write_onroad_params
 from system.hardware import TICI
 
 
@@ -36,9 +37,6 @@ class TestAthenadPing(unittest.TestCase):
 
   def _received_ping(self) -> bool:
     return self._get_ping_time() is not None
-
-  def _set_onroad(self, onroad: bool) -> None:
-    self.params.put_bool("IsOnroad", onroad)
 
   @classmethod
   def setUpClass(cls) -> None:
@@ -101,12 +99,12 @@ class TestAthenadPing(unittest.TestCase):
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self) -> None:
-    self._set_onroad(False)
+    write_onroad_params(False, self.params)
     self.assertTimeout(100)  # expect approx 90s
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
-    self._set_onroad(True)
+    write_onroad_params(True, self.params)
     self.assertTimeout(30)  # expect 20-30s
 
 

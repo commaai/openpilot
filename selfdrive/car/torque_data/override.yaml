@@ -7,6 +7,10 @@ NISSAN LEAF 2018 Instrument Cluster: [.nan, 1.5, .nan]
 NISSAN LEAF 2018: [.nan, 1.5, .nan]
 NISSAN ROGUE 2019: [.nan, 1.5, .nan]
 
+# New subarus angle based controllers
+SUBARU FORESTER 2022: [.nan, 3.0, .nan]
+SUBARU OUTBACK 7TH GEN: [.nan, 3.0, .nan]
+
 # Toyota LTA also has torque
 TOYOTA RAV4 2023: [.nan, 3.0, .nan]
 TOYOTA RAV4 HYBRID 2023: [.nan, 3.0, .nan]
@@ -50,6 +54,7 @@ KIA NIRO EV 2ND GEN: [2.05, 2.5, 0.14]
 GENESIS GV80 2023: [2.5, 2.5, 0.1]
 KIA CARNIVAL 4TH GEN: [1.75, 1.75, 0.15]
 GMC ACADIA DENALI 2018: [1.6, 1.6, 0.2]
+LEXUS IS 2023: [2.0, 2.0, 0.1]
 
 # Dashcam or fallback configured as ideal car
 mock: [10.0, 10, 0.0]

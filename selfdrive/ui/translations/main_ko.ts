@@ -404,7 +404,7 @@
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
+        <translation>경로를 기다리는중</translation>
     </message>
 </context>
 <context>
@@ -1127,14 +1127,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
+        <translation>E2E 롱컨트롤</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits/forks.These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1188,12 +1188,12 @@ This may take up to a minute.</source>
         <translation>설정 열기</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>트레이닝 데이터 업로드</translation>
+        <source>Ready to upload</source>
+        <translation>업로드 준비완료</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>귀하의 데이터는 운전 모델을 교육하고 openpilot을 개선하는 데 사용됩니다.</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>기기가 wifi에 연결되어 있는 동안 트레이닝 데이터를 주기적으로 전송합니다.</translation>
     </message>
 </context>
 <context>

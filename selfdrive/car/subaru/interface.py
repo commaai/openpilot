@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
-    ret.dashcamOnly = candidate in PREGLOBAL_CARS
+    ret.dashcamOnly = candidate in (PREGLOBAL_CARS | LKAS_ANGLE)
     ret.autoResumeSng = False
 
     # Detect infotainment message sent from the camera
@@ -30,7 +30,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     ret.steerActuatorDelay = 0.1
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    if candidate in LKAS_ANGLE:
+      ret.steerControlType = car.CarParams.SteerControlType.angle
+    else:
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if candidate == CAR.ASCENT:
       ret.mass = 2031. + STD_CARGO_KG
@@ -64,7 +68,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.045, 0.042, 0.20], [0.04, 0.035, 0.045]]
 
-    elif candidate == CAR.FORESTER:
+    elif candidate in (CAR.FORESTER, CAR.FORESTER_2022):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
@@ -74,13 +78,12 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 14., 23.], [0., 14., 23.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
-    elif candidate in (CAR.OUTBACK, CAR.LEGACY):
+    elif candidate in (CAR.OUTBACK, CAR.LEGACY, CAR.OUTBACK_2023):
       ret.mass = 1568. + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 17
       ret.steerActuatorDelay = 0.1
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate in (CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018):
       ret.safetyConfigs[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
@@ -101,7 +104,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 20           # learned, 14 stock
-
     else:
       raise ValueError(f"unknown car: {candidate}")
 

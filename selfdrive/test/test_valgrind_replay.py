@@ -73,7 +73,7 @@ class TestValgrind(unittest.TestCase):
       self.leak = False
 
   def replay_process(self, config, logreader):
-    pub_sockets = [s for s in config.pub_sub.keys()]  # We dump data from logs here
+    pub_sockets = list(config.pub_sub.keys())  # We dump data from logs here
     sub_sockets = [s for _, sub in config.pub_sub.items() for s in sub]  # We get responses here
     pm = messaging.PubMaster(pub_sockets)
     sm = messaging.SubMaster(sub_sockets)
