@@ -26,6 +26,7 @@ class NavigationRequest : public QObject {
 public:
   static NavigationRequest *instance();
   QJsonArray currentLocations() const { return locations; };
+  void updateNextDestination();
 
 signals:
   void locationsUpdated(const QJsonArray &locations);
@@ -37,6 +38,7 @@ private:
 
   Params params;
   QString prev_response;
+  QString offline_dest;
   QJsonArray locations;
 };
 

@@ -295,6 +295,7 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
     {
       auto param_watcher = new ParamWatcher(this);
       QObject::connect(param_watcher, &ParamWatcher::paramChanged, this, &NavigationRequest::nextDestinationUpdated);
+      param_watcher->addParam("NavDestination");
 
       // Destination set while offline
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
@@ -302,12 +303,8 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
       RequestRepeater *repeater = new RequestRepeater(this, url, "", 10, true);
       QObject::connect(repeater, &RequestRepeater::requestDone, [=](const QString &resp, bool success) {
         if (success && resp != "null") {
-          if (params.get("NavDestination").empty()) {
-            qWarning() << "Setting NavDestination from /next" << resp;
-            params.put("NavDestination", resp.toStdString());
-          } else {
-            qWarning() << "Got location from /next, but NavDestination already set";
-          }
+          offline_dest = resp;
+          updateNextDestination();
           // Send DELETE to clear destination server side
           deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
@@ -316,6 +313,19 @@ NavigationRequest::NavigationRequest(QObject *parent) : QObject(parent) {
         param_watcher->addParam("NavDestination");
       });
     }
+
+    QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
+      if (!offroad) updateNextDestination();
+      offline_dest = "";
+    });
+  }
+}
+
+void NavigationRequest::updateNextDestination() {
+  if (!offline_dest.isEmpty() && params.get("NavDestination").empty()) {
+    qWarning() << "Setting NavDestination from /next" << offline_dest;
+    params.put("NavDestination", offline_dest.toStdString());
+    emit nextDestinationUpdated();
   }
 }
 
