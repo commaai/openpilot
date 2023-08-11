@@ -142,13 +142,3 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   setUpdatesEnabled(true);
   setVisible(true);
 }
-
-QString getLaneDirectionName(const std::vector<cereal::NavInstruction::Direction>& directions,
-                             bool active, cereal::NavInstruction::Direction active_direction) {
-  return "";
-}
-
-//QString direction(const std::vector<cereal::NavInstruction::Direction>& directions,
-//                             bool active, cereal::NavInstruction::Direction active_direction) {
-//
-//}

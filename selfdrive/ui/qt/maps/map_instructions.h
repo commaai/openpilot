@@ -6,6 +6,13 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 
+static std::map<cereal::NavInstruction::Direction, QString> DIRECTIONS = {
+  {cereal::NavInstruction::Direction::NONE, "none"},
+  {cereal::NavInstruction::Direction::LEFT, "left"},
+  {cereal::NavInstruction::Direction::RIGHT, "right"},
+  {cereal::NavInstruction::Direction::STRAIGHT, "straight"},
+};
+
 class MapInstructions : public QWidget {
   Q_OBJECT
 
@@ -24,14 +31,4 @@ public:
   void buildPixmapCache();
   QString getDistance(float d);
   void updateInstructions(cereal::NavInstruction::Reader instruction);
-};
-
-QString getLaneDirectionName(const std::vector<cereal::NavInstruction::Direction>& directions,
-                             bool active, cereal::NavInstruction::Direction active_direction);
-
-static std::map<cereal::NavInstruction::Direction, QString> DIRECTIONS = {
-  {cereal::NavInstruction::Direction::NONE, "none"},
-  {cereal::NavInstruction::Direction::LEFT, "left"},
-  {cereal::NavInstruction::Direction::RIGHT, "right"},
-  {cereal::NavInstruction::Direction::STRAIGHT, "straight"},
 };
