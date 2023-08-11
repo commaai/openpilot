@@ -76,8 +76,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-      with:
-        save-cache: true
     - name: Build openpilot with all flags
       timeout-minutes: 12
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
@@ -86,6 +84,12 @@ jobs:
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   build_mac:
     name: build macos
