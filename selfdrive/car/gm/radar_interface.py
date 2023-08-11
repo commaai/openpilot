@@ -27,9 +27,9 @@ def create_radar_can_parser(car_fingerprint):
                      ['TrkWidth'] * NUM_SLOTS + ['TrkObjectID'] * NUM_SLOTS,
                      [RADAR_HEADER_MSG] * 7 + radar_targets * 6))
 
-  checks = list({(s[1], 14) for s in signals})
+  messages = list({(s[1], 14) for s in signals})
 
-  return CANParser(DBC[car_fingerprint]['radar'], signals, checks, CanBus.OBSTACLE)
+  return CANParser(DBC[car_fingerprint]['radar'], messages, CanBus.OBSTACLE)
 
 
 class RadarInterface(RadarInterfaceBase):

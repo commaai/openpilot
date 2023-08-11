@@ -33,7 +33,8 @@ class States():
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables
+  # (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -324,7 +325,8 @@ class LocKalman():
       obs_eqs.append([h_track_sym, ObservationKind.ORB_FEATURES, track_epos_sym])
       obs_eqs.append([h_track_wide_cam_sym, ObservationKind.ORB_FEATURES_WIDE, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.FEATURE_TRACK_TEST, track_epos_sym])
-      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
+      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N,
+                      [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
     else:
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
@@ -334,12 +336,13 @@ class LocKalman():
 
 
     # process noise
-    clock_error_drift = 100.0 if erratic_clock else 0.1
+    q_clock_error = 100.0 if erratic_clock else 0.1
+    q_clock_error_rate = 10 if erratic_clock else 0.0
     self.Q = np.diag([0.03**2, 0.03**2, 0.03**2,
                       0.0**2, 0.0**2, 0.0**2,
                       0.0**2, 0.0**2, 0.0**2,
                       0.1**2, 0.1**2, 0.1**2,
-                      (clock_error_drift)**2, (0)**2,
+                      (q_clock_error)**2, (q_clock_error_rate)**2,
                       (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                       (0.02 / 100)**2,
                       3**2, 3**2, 3**2,
@@ -369,7 +372,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment]
       self.computer = LstSqComputer(generated_dir, N)
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]

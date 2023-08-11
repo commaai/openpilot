@@ -21,6 +21,7 @@ jobs:
       IMAGE_NAME: openpilot-prebuilt
     steps:
     - name: Wait for green check mark
+      if: ${{ github.event_name != 'workflow_dispatch' }}
       uses: lewagon/wait-on-check-action@e2558238c09778af25867eb5de5a3ce4bbae3dcd
       with:
         ref: master
@@ -38,3 +39,5 @@ jobs:
       run: |
         $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest
+        docker tag $DOCKER_REGISTRY/$IMAGE_NAME:latest $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:$GITHUB_SHA

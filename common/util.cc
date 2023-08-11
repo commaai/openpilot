@@ -214,9 +214,9 @@ std::string hexdump(const uint8_t* in, const size_t size) {
 }
 
 std::string random_string(std::string::size_type length) {
-  const char* chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   std::mt19937 rg{std::random_device{}()};
-  std::uniform_int_distribution<std::string::size_type> pick(0, sizeof(chrs) - 2);
+  std::uniform_int_distribution<std::string::size_type> pick(0, chrs.length() - 1);
   std::string s;
   s.reserve(length);
   while (length--) {
@@ -260,7 +260,7 @@ struct tm get_time() {
 bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2021) || (year == 2021 && month >= 6);
+  return (year > 2023) || (year == 2023 && month >= 6);
 }
 
 }  // namespace util
