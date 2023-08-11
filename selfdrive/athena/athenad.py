@@ -426,7 +426,7 @@ def uploadFilesToUrls(files_data: List[UploadFileDict]) -> UploadFilesToUrlRespo
       allow_cellular=file.allow_cellular,
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
-    item = replace(item, id=upload_id)
+    item = replace(item, item_id=upload_id)
     upload_queue.put_nowait(item)
     items.append(asdict(item))
 
