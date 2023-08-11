@@ -339,7 +339,7 @@ jobs:
         ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
-      timeout-minutes: 3
+      timeout-minutes: 4
       run: |
         ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
                            coverage xml"

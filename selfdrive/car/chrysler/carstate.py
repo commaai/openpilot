@@ -98,51 +98,16 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_cruise_signals():
-    signals = [
-      ("ACC_AVAILABLE", "DAS_3"),
-      ("ACC_ACTIVE", "DAS_3"),
-      ("ACC_FAULTED", "DAS_3"),
-      ("ACC_STANDSTILL", "DAS_3"),
-      ("COUNTER", "DAS_3"),
-      ("ACC_SET_SPEED_KPH", "DAS_4"),
-      ("ACC_STATE", "DAS_4"),
-    ]
-    checks = [
+  def get_cruise_messages():
+    messages = [
       ("DAS_3", 50),
       ("DAS_4", 50),
     ]
-    return signals, checks
+    return messages
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("DOOR_OPEN_FL", "BCM_1"),
-      ("DOOR_OPEN_FR", "BCM_1"),
-      ("DOOR_OPEN_RL", "BCM_1"),
-      ("DOOR_OPEN_RR", "BCM_1"),
-      ("Brake_Pedal_State", "ESP_1"),
-      ("Accelerator_Position", "ECM_5"),
-      ("WHEEL_SPEED_FL", "ESP_6"),
-      ("WHEEL_SPEED_RR", "ESP_6"),
-      ("WHEEL_SPEED_RL", "ESP_6"),
-      ("WHEEL_SPEED_FR", "ESP_6"),
-      ("STEERING_ANGLE", "STEERING"),
-      ("STEERING_ANGLE_HP", "STEERING"),
-      ("STEERING_RATE", "STEERING"),
-      ("TURN_SIGNALS", "STEERING_LEVERS"),
-      ("HIGH_BEAM_PRESSED", "STEERING_LEVERS"),
-      ("SEATBELT_DRIVER_UNLATCHED", "ORC_1"),
-      ("COUNTER", "EPS_2",),
-      ("COLUMN_TORQUE", "EPS_2"),
-      ("EPS_TORQUE_MOTOR", "EPS_2"),
-      ("LKAS_TEMPORARY_FAULT", "EPS_2"),
-      ("LKAS_STATE", "EPS_2"),
-      ("COUNTER", "CRUISE_BUTTONS"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("ESP_1", 50),
       ("EPS_2", 100),
@@ -156,53 +121,30 @@ class CarState(CarStateBase):
     ]
 
     if CP.enableBsm:
-      signals += [
-        ("RIGHT_STATUS", "BSM_1"),
-        ("LEFT_STATUS", "BSM_1"),
-      ]
-      checks.append(("BSM_1", 2))
+      messages.append(("BSM_1", 2))
 
     if CP.carFingerprint in RAM_CARS:
-      signals += [
-        ("DASM_FAULT", "EPS_3"),
-        ("Vehicle_Speed", "ESP_8"),
-        ("Gear_State", "Transmission_Status"),
-      ]
-      checks += [
+      messages += [
         ("ESP_8", 50),
         ("EPS_3", 50),
         ("Transmission_Status", 50),
       ]
     else:
-      signals += [
-        ("PRNDL", "GEAR"),
-        ("SPEED_LEFT", "SPEED_1"),
-        ("SPEED_RIGHT", "SPEED_1"),
-      ]
-      checks += [
+      messages += [
         ("GEAR", 50),
         ("SPEED_1", 100),
       ]
-      signals += CarState.get_cruise_signals()[0]
-      checks += CarState.get_cruise_signals()[1]
+      messages += CarState.get_cruise_messages()
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      # sig_name, sig_address, default
-      ("CAR_MODEL", "DAS_6"),
-    ]
-    checks = [
+    messages = [
       ("DAS_6", 4),
     ]
 
     if CP.carFingerprint in RAM_CARS:
-      signals += [
-        ("AUTO_HIGH_BEAM_ON", "DAS_6"),
-      ]
-      signals += CarState.get_cruise_signals()[0]
-      checks += CarState.get_cruise_signals()[1]
+      messages += CarState.get_cruise_messages()
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
