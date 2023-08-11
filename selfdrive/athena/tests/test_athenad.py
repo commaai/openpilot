@@ -144,11 +144,11 @@ class TestAthenadMethods(unittest.TestCase):
   def test_do_upload(self, host):
     fn = self._create_file('qlog.bz2')
 
-    item = athenad.UploadItem(path=fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), item_id='')
     with self.assertRaises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='')
     resp = athenad._do_upload(item)
     self.assertEqual(resp.status_code, 201)
 
@@ -183,7 +183,7 @@ class TestAthenadMethods(unittest.TestCase):
   @with_http_server
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.bz2')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='', allow_cellular=True)
 
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -205,7 +205,7 @@ class TestAthenadMethods(unittest.TestCase):
     for status, retry in ((500, True), (412, False)):
       mock_put.return_value.status_code = status
       fn = self._create_file('qlog.bz2')
-      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+      item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='', allow_cellular=True)
 
       end_event = threading.Event()
       thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
@@ -226,7 +226,7 @@ class TestAthenadMethods(unittest.TestCase):
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.bz2')
-    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), item_id='', allow_cellular=True)
     item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
     end_event = threading.Event()
@@ -254,7 +254,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_cancelUpload(self):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
+                              created_at=int(time.time()*1000), item_id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.item_id)
 
@@ -278,7 +278,7 @@ class TestAthenadMethods(unittest.TestCase):
 
     # Item that would time out if actually uploaded
     fn = self._create_file('qlog.bz2')
-    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=ts, id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=ts, item_id='', allow_cellular=True)
 
 
     end_event = threading.Event()
@@ -319,7 +319,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   def test_listUploadQueue(self):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
+                              created_at=int(time.time()*1000), item_id='id', allow_cellular=True)
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
@@ -332,8 +332,8 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertEqual(len(items), 0)
 
   def test_upload_queue_persistence(self):
-    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')
-    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id2')
+    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), item_id='id1')
+    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), item_id='id2')
 
     athenad.upload_queue.put_nowait(item1)
     athenad.upload_queue.put_nowait(item2)
