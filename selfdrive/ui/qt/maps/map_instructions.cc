@@ -109,67 +109,23 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   auto lanes = instruction.getLanes();
   for (int i = 0; i < lanes.size(); ++i) {
     bool active = lanes[i].getActive();
-//    bool modifier = lanes[i].getModifier();
-
-//    bool left = false, slight_left = false, straight = false, right = false, slight_right;
-    QString fn = "lane_direction_";
-//    QString name = "";
     const auto active_direction = lanes[i].getActiveDirection();
+
+    QString fn = "lane_direction_";
     if (active_direction != cereal::NavInstruction::Direction::NONE) {
       fn += "turn_" + DIRECTIONS[active_direction];
     } else {
       for (auto const &direction : lanes[i].getDirections()) {
         if (direction != cereal::NavInstruction::Direction::NONE) {
-          qDebug() << DIRECTIONS[direction];
           fn += "turn_" + DIRECTIONS[direction];
           break;
         }
       }
     }
 
-//        left |= direction == cereal::NavInstruction::Direction::LEFT;
-//        slight_left |= direction == cereal::NavInstruction::Direction::SLIGHT_LEFT;
-//        right |= direction == cereal::NavInstruction::Direction::RIGHT;
-//        slight_right |= direction == cereal::NavInstruction::Direction::SLIGHT_RIGHT;
-//        straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
-//      }
-//    qDebug() << QString::fromStdString(cereal::NavInstruction::Direction::toString(cereal::NavInstruction::Direction::LEFT));
-//    qDebug() << QString::fromStdString(cereal::NavInstruction::Direction::LEFT.toString());
-//    for (auto const &direction : lanes[i].getDirections()) {
-//      qDebug() << DIRECTIONS_MAP[direction];
-//
-//      left |= direction == cereal::NavInstruction::Direction::LEFT;
-//      slight_left |= direction == cereal::NavInstruction::Direction::SLIGHT_LEFT;
-//      right |= direction == cereal::NavInstruction::Direction::RIGHT;
-//      slight_right |= direction == cereal::NavInstruction::Direction::SLIGHT_RIGHT;
-//      straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
-//    }
-//
-//    // active direction has precedence
-////    const auto active_direction = lanes[i].getActiveDirection();
-//    bool active_left = active_direction == cereal::NavInstruction::Direction::LEFT;
-//    bool active_slight_left = active_direction == cereal::NavInstruction::Direction::SLIGHT_LEFT;
-//    bool active_right = active_direction == cereal::NavInstruction::Direction::RIGHT;
-//    bool active_slight_right = active_direction == cereal::NavInstruction::Direction::SLIGHT_RIGHT;
-//
-//    // TODO: Make more images based on active direction and combined directions
-//
-//    if (left && (active_left || !active)) {
-//      fn += "turn_left";
-//    } else if (slight_left && (active_slight_left || !active)) {
-//      fn += "turn_slight_left";
-//    } else if (right && (active_right || !active)) {
-//      fn += "turn_right";
-//    } else if (slight_right && (active_slight_right || !active)) {
-//      fn += "turn_slight_right";
-//    } else if (straight) {
-//      fn += "turn_straight";
-//    }
-
     if (!active) {
       fn += "_inactive";
     }
-    qDebug() << "final fn:" << fn;
 
     QLabel *label = (i < lane_labels.size()) ? lane_labels[i] : lane_labels.emplace_back(new QLabel);
     if (!label->parentWidget()) {
