@@ -113,7 +113,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
     // TODO: Make more images based on active direction and combined directions
     QString fn = "lane_direction_";
-    if (active_direction != cereal::NavInstruction::Direction::NONE) {
+    if (active && active_direction != cereal::NavInstruction::Direction::NONE) {
       fn += "turn_" + DIRECTIONS[active_direction];
     } else {
       for (auto const &direction : lanes[i].getDirections()) {
