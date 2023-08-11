@@ -10,7 +10,7 @@ NUM_POINTS = len(RADAR_MSGS_A)
 
 def get_radar_can_parser(CP):
   # Status messages
-  checks = [
+  messages = [
     ('TeslaRadarSguInfo', 10),
   ]
 
@@ -19,12 +19,12 @@ def get_radar_can_parser(CP):
   for i in range(NUM_POINTS):
     msg_id_a = RADAR_MSGS_A[i]
     msg_id_b = RADAR_MSGS_B[i]
-    checks.extend([
+    messages.extend([
       (msg_id_a, 8),
       (msg_id_b, 8),
     ])
 
-  return CANParser(DBC[CP.carFingerprint]['radar'], checks, CANBUS.radar)
+  return CANParser(DBC[CP.carFingerprint]['radar'], messages, CANBUS.radar)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
