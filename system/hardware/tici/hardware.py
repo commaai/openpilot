@@ -85,6 +85,7 @@ def affine_irq(val, action):
 
 @lru_cache
 def get_device_type():
+  # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
   model = model.split('comma ')[-1]
