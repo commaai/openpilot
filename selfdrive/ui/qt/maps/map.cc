@@ -295,6 +295,7 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
+    current_nav_dest = std::nullopt;
     updateDestinationMarker(std::nullopt);
   }
 
