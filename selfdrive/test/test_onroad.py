@@ -282,7 +282,7 @@ class TestOnroad(unittest.TestCase):
     result += "-------------- Debayer Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    ts = [getattr(getattr(m, m.which()), "processingTime") for m in self.lr if 'CameraState' in m.which()]
+    ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
     self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
     result += f"execution time: min  {min(ts):.5f}s\n"
     result += f"execution time: max  {max(ts):.5f}s\n"
@@ -297,7 +297,7 @@ class TestOnroad(unittest.TestCase):
     result += "-----------------  SoF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
-      ts = [getattr(getattr(m, m.which()), "timestampSof") for m in self.lr if name in m.which()]
+      ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
       self.assertLess(max(d50), 1.0, f"high sof delta vs 50ms: {max(d50)}")
@@ -315,7 +315,7 @@ class TestOnroad(unittest.TestCase):
 
     cfgs = [("lateralPlan", 0.05, 0.05), ("longitudinalPlan", 0.05, 0.05)]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(getattr(m, s), "solverExecutionTime") for m in self.service_msgs[s]]
+      ts = [getattr(m, s).solverExecutionTime for m in self.service_msgs[s]]
       self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
@@ -335,7 +335,7 @@ class TestOnroad(unittest.TestCase):
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.service_msgs[s]]
+      ts = [getattr(m, s).modelExecutionTime for m in self.service_msgs[s]]
       self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"

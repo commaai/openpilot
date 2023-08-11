@@ -39,7 +39,7 @@ def launcher(proc: str, name: str) -> None:
     sentry.set_tag("daemon", name)
 
     # exec the process
-    getattr(mod, 'main')()
+    mod.main()
   except KeyboardInterrupt:
     cloudlog.warning(f"child {proc} got SIGINT")
   except Exception:
