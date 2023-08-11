@@ -48,6 +48,7 @@ private:
   bool gestureEvent(QGestureEvent *event);
   void pinchTriggered(QPinchGesture *gesture);
   void setError(const QString &err_str);
+  void requestShow();
 
   bool loaded_once = false;
 
@@ -58,7 +59,7 @@ private:
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
-  std::optional<QMapbox::Coordinate> prev_nav_dest;
+  std::optional<QMapbox::Coordinate> current_nav_dest;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
@@ -76,6 +77,7 @@ private:
 
   void clearRoute();
   void updateDestinationMarker(std::optional<QMapbox::Coordinate> nav_dest);
+  uint64_t route_rcv_frame = 0;
 
 private slots:
   void updateState(const UIState &s);
