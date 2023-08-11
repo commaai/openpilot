@@ -130,7 +130,7 @@ class TestLoggerd(unittest.TestCase):
 
     # check params
     logged_params = {entry.key: entry.value for entry in initData.params.entries}
-    expected_params = set(k for k, _, __ in fake_params) | {'LaikadEphemerisV3'}
+    expected_params = {k for k, _, __ in fake_params} | {'LaikadEphemerisV3'}
     assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
     assert logged_params['LaikadEphemerisV3'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['LaikadEphemerisV3'])}"
     for param_key, initData_key, v in fake_params:

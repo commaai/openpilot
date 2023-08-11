@@ -135,32 +135,33 @@ def field_valid(dat: dict, field: str) -> bool:
   return field in dat and dat[field] is not None
 
 
-def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
+def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -> Optional[Dict[str, Any]]:
   if not len(banners):
-    return
+    return None
 
-  current_banner = banners[0]
+  instruction = {}
 
   # A segment can contain multiple banners, find one that we need to show now
+  current_banner = banners[0]
   for banner in banners:
     if distance_to_maneuver < banner['distanceAlongGeometry']:
       current_banner = banner
 
   # Only show banner when close enough to maneuver
-  instruction.showFull = distance_to_maneuver < current_banner['distanceAlongGeometry']
+  instruction['showFull'] = distance_to_maneuver < current_banner['distanceAlongGeometry']
 
   # Primary
   p = current_banner['primary']
   if field_valid(p, 'text'):
-    instruction.maneuverPrimaryText = p['text']
+    instruction['maneuverPrimaryText'] = p['text']
   if field_valid(p, 'type'):
-    instruction.maneuverType = p['type']
+    instruction['maneuverType'] = p['type']
   if field_valid(p, 'modifier'):
-    instruction.maneuverModifier = p['modifier']
+    instruction['maneuverModifier'] = p['modifier']
 
   # Secondary
   if field_valid(current_banner, 'secondary'):
-    instruction.maneuverSecondaryText = current_banner['secondary']['text']
+    instruction['maneuverSecondaryText'] = current_banner['secondary']['text']
 
   # Lane lines
   if field_valid(current_banner, 'sub'):
@@ -178,4 +179,6 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
         lane['activeDirection'] = string_to_direction(component['active_direction'])
 
       lanes.append(lane)
-    instruction.lanes = lanes
+    instruction['lanes'] = lanes
+
+  return instruction

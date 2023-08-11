@@ -69,7 +69,7 @@ PROCS.update({
      "./boardd": 19.0,
     "system.sensord.rawgps.rawgpsd": 1.0,
   }
-}[HARDWARE.get_device_type()])
+}.get(HARDWARE.get_device_type(), {}))
 
 TIMINGS = {
   # rtols: max/min, rsd
@@ -258,7 +258,7 @@ class TestOnroad(unittest.TestCase):
         cpu_ok = False
 
     # Ensure there's no missing procs
-    all_procs = set([p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning])
+    all_procs = {p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
       with self.subTest(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
