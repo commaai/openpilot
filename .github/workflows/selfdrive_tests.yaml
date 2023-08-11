@@ -286,7 +286,7 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ (github.repository == $BASE_REPO || github.event.pull_request.head.repo.full_name == $BASE_REPO) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
+    runs-on: ${{ (github.repository == env.BASE_REPO || github.event.pull_request.head.repo.full_name == env.BASE_REPO) && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
