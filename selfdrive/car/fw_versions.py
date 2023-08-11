@@ -129,7 +129,7 @@ def match_fw_to_car_exact(live_fw_versions, log=True) -> Set[str]:
       if ecu_type == Ecu.debug:
         continue
 
-      if not any([found_version in expected_versions for found_version in found_versions]):
+      if not any(found_version in expected_versions for found_version in found_versions):
         invalid.add(candidate)
         break
 
@@ -208,7 +208,7 @@ def get_brand_ecu_matches(ecu_rx_addrs):
   brand_addrs = get_brand_addrs()
   brand_matches = {brand: set() for brand, _, _ in REQUESTS}
 
-  brand_rx_offsets = set((brand, r.rx_offset) for brand, _, r in REQUESTS)
+  brand_rx_offsets = {(brand, r.rx_offset) for brand, _, r in REQUESTS}
   for addr, sub_addr, _ in ecu_rx_addrs:
     # Since we can't know what request an ecu responded to, add matches for all possible rx offsets
     for brand, rx_offset in brand_rx_offsets:

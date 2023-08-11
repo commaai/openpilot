@@ -675,8 +675,8 @@ def _replay_multi_process(
       container.start(params_config, env_config, all_msgs, fingerprint, captured_output_store is not None)
       containers.append(container)
 
-    all_pubs = set([pub for container in containers for pub in container.pubs])
-    all_subs = set([sub for container in containers for sub in container.subs])
+    all_pubs = {pub for container in containers for pub in container.pubs}
+    all_subs = {sub for container in containers for sub in container.subs}
     lr_pubs = all_pubs - all_subs
     pubs_to_containers = {pub: [container for container in containers if pub in container.pubs] for pub in all_pubs}
 

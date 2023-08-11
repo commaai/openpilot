@@ -78,7 +78,7 @@ class CarState(CarStateBase):
     ret.buttonEvents = buttonEvents
 
     # Doors
-    ret.doorOpen = any([(self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS])
+    ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
     # Blinkers
     ret.leftBlinker = (cp.vl["GTW_carState"]["BC_indicatorLStatus"] == 1)
