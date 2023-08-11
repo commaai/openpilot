@@ -84,7 +84,7 @@ class TestCarDocs(unittest.TestCase):
         if car.name == "comma body":
           raise unittest.SkipTest
 
-        car_part_type = [p.type for p in car.car_parts.all_parts()]
+        car_part_type = [p.part_type for p in car.car_parts.all_parts()]
         car_parts = list(car.car_parts.all_parts())
         self.assertTrue(len(car_parts) > 0, f"Need to specify car parts: {car.name}")
         self.assertTrue(car_part_type.count(PartType.connector) == 1, f"Need to specify one harness connector: {car.name}")

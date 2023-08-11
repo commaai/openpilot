@@ -29,7 +29,7 @@ VERSION = get_version()
 # -- Project information -----------------------------------------------------
 
 project = 'openpilot docs'
-copyright = '2021, comma.ai'
+copyright = '2021, comma.ai' # noqa: A001
 author = 'comma.ai'
 version = VERSION
 release = VERSION
