@@ -181,7 +181,7 @@ jobs:
   docker_push:
     name: docker push
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == "commaai/openpilot"
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v3
       with:
@@ -284,7 +284,7 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ (github.repository == "commaai/openpilot" || github.event.pull_request.head.repo.full_name == "commaai/openpilot") && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
+    runs-on: ${{ (github.repository == 'commaai/openpilot' || github.event.pull_request.head.repo.full_name == 'commaai/openpilot') && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     steps:
     - uses: actions/checkout@v3
       with:
@@ -352,7 +352,7 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ${{ (github.repository == "commaai/openpilot" || github.event.pull_request.head.repo.full_name == "commaai/openpilot") && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
+    runs-on: ${{ (github.repository == 'commaai/openpilot' || github.event.pull_request.head.repo.full_name == 'commaai/openpilot') && 'buildjet-8vcpu-ubuntu-2004' || 'ubuntu-20.04' }}
     strategy:
       fail-fast: false
       matrix:
