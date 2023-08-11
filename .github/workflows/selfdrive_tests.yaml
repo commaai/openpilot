@@ -47,7 +47,7 @@ jobs:
       timeout-minutes: 1
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
@@ -76,16 +76,20 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-      with:
-        save-cache: true
     - name: Build openpilot with all flags
-      timeout-minutes: 12
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
-    - name: Cleanup scons cache
-      timeout-minutes: 2
+    - name: Cleanup scons cache and rebuild
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   build_mac:
     name: build macos
@@ -239,7 +243,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build openpilot
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: 40
