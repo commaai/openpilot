@@ -70,8 +70,8 @@ def ffprobe(fn, fmt=None):
 
   try:
     ffprobe_output = subprocess.check_output(cmd)
-  except subprocess.CalledProcessError:
-    raise DataUnreadableError(fn)
+  except subprocess.CalledProcessError as e:
+    raise DataUnreadableError(fn) from e
 
   return json.loads(ffprobe_output)
 
@@ -86,8 +86,8 @@ def vidindex(fn, typ):
        tempfile.NamedTemporaryFile() as index_f:
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
-    except subprocess.CalledProcessError:
-      raise DataUnreadableError(f"vidindex failed on file {fn}")
+    except subprocess.CalledProcessError as e:
+      raise DataUnreadableError(f"vidindex failed on file {fn}") from e
     with open(index_f.name, "rb") as f:
       index = f.read()
     with open(prefix_f.name, "rb") as f:
@@ -418,7 +418,7 @@ class VideoStreamDecompressor:
         elif self.pix_fmt == "yuv444p":
           ret = np.frombuffer(dat, dtype=np.uint8).reshape((3, self.h, self.w))
         else:
-          assert False
+          raise RuntimeError(f"unknown pix_fmt: {self.pix_fmt}")
         yield ret
 
       result_code = self.proc.wait()

@@ -98,7 +98,7 @@ class LogReader:
       for e in ents:
         _ents.append(e)
     except capnp.KjException:
-      warnings.warn("Corrupted events detected", RuntimeWarning)
+      warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
     self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
     self._ts = [x.logMonoTime for x in self._ents]

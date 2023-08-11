@@ -119,7 +119,9 @@ class DriverBlink():
     self.right_blink = 0.
 
 class DriverStatus():
-  def __init__(self, rhd_saved=False, settings=DRIVER_MONITOR_SETTINGS()):
+  def __init__(self, rhd_saved=False, settings=None):
+    if settings is None:
+      settings = DRIVER_MONITOR_SETTINGS()
     # init policy settings
     self.settings = settings
 
