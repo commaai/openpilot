@@ -2,6 +2,7 @@
 # pylint: disable=E1101
 import os
 import importlib
+import time
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -167,6 +168,7 @@ class TestCarModelBase(unittest.TestCase):
     can_valid = False
     CC = car.CarControl.new_message()
 
+    start_time = time.process_time_ns()
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC, msg.logMonoTime)
@@ -179,6 +181,11 @@ class TestCarModelBase(unittest.TestCase):
         can_invalid_cnt += not CS.canValid
 
     self.assertEqual(can_invalid_cnt, 0)
+
+    elapsed_time_ms = (time.process_time_ns() - start_time) * 1e-6
+    self.assertLess(elapsed_time_ms, 3000, "Car interface took too long to process CAN packets")
+    self.assertLess(elapsed_time_ms / len(self.can_msgs), 0.5, "Time per CAN packet too high")
+    print(elapsed_time_ms, elapsed_time_ms / len(self.can_msgs) * 1000)
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
