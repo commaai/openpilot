@@ -182,10 +182,15 @@ class TestCarModelBase(unittest.TestCase):
 
     self.assertEqual(can_invalid_cnt, 0)
 
+    # Timing test
     elapsed_time_ms = (time.process_time_ns() - start_time) * 1e-6
     self.assertLess(elapsed_time_ms, 3000, "Car interface took too long to process CAN packets")
+    self.assertGreater(1000, elapsed_time_ms, "Car interface processed CAN packets too quickly")
+
     self.assertLess(elapsed_time_ms / len(self.can_msgs), 0.5, "Time per CAN packet too high")
-    print(elapsed_time_ms, elapsed_time_ms / len(self.can_msgs) * 1000)
+    self.assertGreater(0.2, elapsed_time_ms / len(self.can_msgs), "Time per CAN packet too fast")
+
+    print(elapsed_time_ms, elapsed_time_ms / len(self.can_msgs))
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
