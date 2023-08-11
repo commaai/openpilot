@@ -14,7 +14,7 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: restore-scons-cache
-      uses: buildjet/cache/restore@v3
+      uses: actions/cache/restore@v3
       with:
         path: /tmp/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
