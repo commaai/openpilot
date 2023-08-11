@@ -334,7 +334,7 @@ qt_flags = [
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
 qt_env['LIBS'] = qt_libs
-qt_env['QT_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
+qt_env['QT3_MOCHPREFIX'] = cache_dir + '/moc_files/moc_'
 
 if GetOption("clazy"):
   checks = [

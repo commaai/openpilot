@@ -13,7 +13,7 @@ from selfdrive.controls.radard import _LEAD_ACCEL_TAU
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
-  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython  # pylint: disable=no-name-in-module, import-error
+  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverCython
 
 from casadi import SX, vertcat
 
@@ -423,7 +423,8 @@ class LongitudinalMpc:
     self.time_integrator = float(self.solver.get_stats('time_sim')[0])
 
     # qp_iter = self.solver.get_stats('statistics')[-1][-1] # SQP_RTI specific
-    # print(f"long_mpc timings: tot {self.solve_time:.2e}, qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e}, integrator {self.time_integrator:.2e}, qp_iter {qp_iter}")
+    # print(f"long_mpc timings: tot {self.solve_time:.2e}, qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e}, \
+    # integrator {self.time_integrator:.2e}, qp_iter {qp_iter}")
     # res = self.solver.get_residuals()
     # print(f"long_mpc residuals: {res[0]:.2e}, {res[1]:.2e}, {res[2]:.2e}, {res[3]:.2e}")
     # self.solver.print_statistics()
@@ -446,7 +447,8 @@ class LongitudinalMpc:
         cloudlog.warning(f"Long mpc reset, solution_status: {self.solution_status}")
       self.reset()
       # reset = 1
-    # print(f"long_mpc timings: total internal {self.solve_time:.2e}, external: {(sec_since_boot() - t0):.2e} qp {self.time_qp_solution:.2e}, lin {self.time_linearization:.2e} qp_iter {qp_iter}, reset {reset}")
+    # print(f"long_mpc timings: total internal {self.solve_time:.2e}, external: {(sec_since_boot() - t0):.2e} qp {self.time_qp_solution:.2e}, \
+    # lin {self.time_linearization:.2e} qp_iter {qp_iter}, reset {reset}")
 
 
 if __name__ == "__main__":

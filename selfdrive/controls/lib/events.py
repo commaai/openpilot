@@ -67,7 +67,7 @@ class Events:
     self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
-  def any(self, event_type: str) -> bool:
+  def contains(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
 
   def create_alerts(self, event_types: List[str], callback_args=None):
@@ -724,7 +724,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),

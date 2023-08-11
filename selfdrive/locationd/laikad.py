@@ -81,7 +81,8 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
-    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
+                              clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_navs = auto_fetch_navs
@@ -136,8 +137,8 @@ class Laikad:
       #TODO this only saves currently valid ephems, when we download future ephems we should save them too
       valid_navs = [e for e in nav_list if e.valid(self.last_report_time)]
       if len(valid_navs) > 0:
-        ephem_cache = ephemeris_structs.EphemerisCache(**{'glonassEphemerides': [e.data for e in valid_navs if e.prn[0]=='R'],
-                                                          'gpsEphemerides': [e.data for e in valid_navs if e.prn[0]=='G']})
+        ephem_cache = ephemeris_structs.EphemerisCache(glonassEphemerides=[e.data for e in valid_navs if e.prn[0]=='R'],
+                                                       gpsEphemerides=[e.data for e in valid_navs if e.prn[0]=='G'])
         put_nonblocking(EPHEMERIS_CACHE, ephem_cache.to_bytes())
         cloudlog.debug("Cache saved")
       self.last_cached_t = self.last_report_time

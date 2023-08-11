@@ -143,18 +143,20 @@ pipeline {
         }
         */
 
-        stage('scons build test') {
+        stage('PC tests') {
           agent {
             dockerfile {
               filename 'Dockerfile.openpilot_base'
-              args '--user=root'
+              args '--user=root -v /tmp/comma_download_cache:/tmp/comma_download_cache'
             }
           }
           steps {
             sh "git config --global --add safe.directory '*'"
             sh "git submodule update --init --depth=1 --recursive"
+            sh "git lfs pull"
             sh "scons --clean && scons --no-cache -j42"
             sh "scons --clean && scons --no-cache --random -j42"
+            sh "INTERNAL_SEG_LIST=selfdrive/car/tests/test_models_segs.txt FILEREADER_CACHE=1 pytest -n42 --dist=loadscope selfdrive/car/tests/test_models.py"
           }
 
           post {
@@ -189,7 +191,7 @@ pipeline {
           }
           steps {
             phone_steps("tici-needs-can", [
-              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR EXTRA_FILES='tools/' ./build_devel.sh"],
+              ["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR ./build_devel.sh"],
               ["build openpilot", "cd selfdrive/manager && ./build.py"],
               ["check dirty", "release/check-dirty.sh"],
               ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
