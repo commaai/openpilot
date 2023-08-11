@@ -4,8 +4,14 @@
 #include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
+#include "tools/replay/util.h"
 
 int main(int argc, char *argv[]) {
+#ifdef __APPLE__
+  // With all the sockets opened, we might hit the default limit of 256 on macOS
+  setFileDescriptorLimit(1024);
+#endif
+
   QCoreApplication app(argc, argv);
 
   const QStringList base_blacklist = {"uiDebug", "userFlag"};

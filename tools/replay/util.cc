@@ -12,6 +12,8 @@
 #include <mutex>
 #include <numeric>
 
+#include <sys/resource.h>
+
 #include "common/timing.h"
 #include "common/util.h"
 
@@ -317,4 +319,18 @@ std::string sha256(const std::string &str) {
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(hash, &sha256);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
+}
+
+int setFileDescriptorLimit(uint64_t limit_val) {
+  struct rlimit limit;
+  int status;
+
+  if ((status = getrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  limit.rlim_cur = limit_val;
+  if ((status = setrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  return 0;
 }
