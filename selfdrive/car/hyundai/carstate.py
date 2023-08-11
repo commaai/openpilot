@@ -302,15 +302,15 @@ class CarState(CarStateBase):
 
   def get_can_parser_canfd(self, CP):
     messages = [
-      ("WHEEL_SPEEDS", 100),
       (self.gear_msg_canfd, 100),
+      (self.cruise_btns_msg_canfd, 50),
+      (self.accelerator_msg_canfd, 100),
+      ("WHEEL_SPEEDS", 100),
       ("STEERING_SENSORS", 100),
       ("MDPS", 100),
       ("TCS", 50),
-      (self.cruise_btns_msg_canfd, 50),
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
-      (self.accelerator_msg_canfd, 100),
     ]
 
     if CP.enableBsm:
