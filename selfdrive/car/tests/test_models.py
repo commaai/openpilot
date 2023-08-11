@@ -188,12 +188,11 @@ class TestCarModelBase(unittest.TestCase):
     total_time_thresh = (1000, 3000)
     per_packet_thresh = (0.2, 0.5)
 
-    self.assertLess(total_time_ms, total_time_thresh[1])
-    self.assertGreater(total_time_ms, total_time_thresh[0], "Performance seems to have improved, update test refs.")
-
     avg_time_msg = total_time_ms / len(self.can_msgs)
-    self.assertLess(avg_time_msg, per_packet_thresh[1])
-    self.assertGreater(avg_time_msg, per_packet_thresh[0], "Performance seems to have improved, update test refs.")
+    for t, thresh in ((total_time_ms, total_time_thresh), (avg_time_msg, per_packet_thresh)):
+      self.assertLess(t, thresh[1])
+      self.assertGreater(t, thresh[0], "Performance seems to have improved, update test refs.")
+
     # Timing test
     # self.assertLess(elapsed_time_ms, 3000, "Car interface took too long to process CAN packets")
     # self.assertGreater(elapsed_time_ms, 1000, "Car interface processed CAN packets too quickly")
@@ -202,7 +201,6 @@ class TestCarModelBase(unittest.TestCase):
     # self.assertGreater(elapsed_time_ms / len(self.can_msgs), 0.2, "Time per CAN packet too fast")
 
     print(total_time_ms, total_time_ms / len(self.can_msgs))
-
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
