@@ -95,8 +95,11 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
 
     v_ego = sm['carState'].vEgo
+    v_ego_raw = sm['carState'].vEgoRaw
+    v_ego_cluster = sm['carState'].vEgoCluster
+    v_ego_diff = v_ego_raw - v_ego_cluster if v_ego_cluster > 0 else 0
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
-    v_cruise = v_cruise_kph * CV.KPH_TO_MS
+    v_cruise = v_cruise_kph * CV.KPH_TO_MS + v_ego_diff
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
