@@ -226,7 +226,32 @@ class RouteEngine:
 
     # Current instruction
     msg.navInstruction.maneuverDistance = distance_to_maneuver_along_geometry
-    parse_banner_instructions(msg.navInstruction, banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    instruction = parse_banner_instructions(banner_step['bannerInstructions'], distance_to_maneuver_along_geometry)
+    if instruction is not None:
+      for k,v in instruction.items():
+        setattr(msg.navInstruction, k, v)
+
+    # All instructions
+    maneuvers = []
+    for i, step_i in enumerate(self.route):
+      if i < self.step_idx:
+        distance_to_maneuver = -sum(self.route[j]['distance'] for j in range(i+1, self.step_idx)) - along_geometry
+      elif i == self.step_idx:
+        distance_to_maneuver = distance_to_maneuver_along_geometry
+      else:
+        distance_to_maneuver = distance_to_maneuver_along_geometry + sum(self.route[j]['distance'] for j in range(self.step_idx+1, i+1))
+
+      instruction = parse_banner_instructions(step_i['bannerInstructions'], distance_to_maneuver)
+      if instruction is None:
+        continue
+      maneuver = {'distance': distance_to_maneuver}
+      if 'maneuverType' in instruction:
+        maneuver['type'] = instruction['maneuverType']
+      if 'maneuverModifier' in instruction:
+        maneuver['modifier'] = instruction['maneuverModifier']
+      maneuvers.append(maneuver)
+
+    msg.navInstruction.allManeuvers = maneuvers
 
     # Compute total remaining time and distance
     remaining = 1.0 - along_geometry / max(step['distance'], 1)

@@ -36,7 +36,8 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 PANDA_STATES_TIMEOUT = int(1000 * 1.5 * DT_TRML)  # 1.5x the expected pandaState frequency
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
-HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats', 'network_metered', 'nvme_temps', 'modem_temps'])
+HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
+                                             'network_metered', 'nvme_temps', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -211,6 +212,7 @@ def thermald_thread(end_event, hw_queue):
 
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
+    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
 
@@ -224,7 +226,7 @@ def thermald_thread(end_event, hw_queue):
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
 
       # Setup fan handler on first connect to panda
-      if fan_controller is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+      if fan_controller is None and peripheral_panda_present:
         if TICI:
           fan_controller = TiciFanController()
 
@@ -289,7 +291,7 @@ def thermald_thread(end_event, hw_queue):
     # Ensure date/time are valid
     now = datetime.datetime.utcnow()
     startup_conditions["time_valid"] = now > MIN_DATE
-    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
+    set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]) and peripheral_panda_present)
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")

@@ -46,7 +46,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   // Distance
   auto distance = map_format_distance(d, uiState()->scene.is_metric);
 
-  eta_doc.setHtml(QString(R"(<body><table><tr><td><b>%1</b></td><td>%2</td>
+  eta_doc.setHtml(QString(R"(<body><table><tr style="vertical-align:bottom;"><td><b>%1</b></td><td>%2</td>
                              <td style="padding-left:40px;color:%3;"><b>%4</b></td><td style="padding-right:40px;color:%3;">%5</td>
                              <td><b>%6</b></td><td>%7</td></tr></body>)")
                       .arg(eta.first, eta.second, color, remaining.first, remaining.second, distance.first, distance.second));

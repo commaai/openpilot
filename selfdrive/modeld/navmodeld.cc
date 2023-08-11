@@ -16,8 +16,8 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
   SubMaster sm({"navInstruction"});
   PubMaster pm({"navModel"});
 
-  double last_ts = 0;
-  uint32_t last_frame_id = 0;
+  //double last_ts = 0;
+  //uint32_t last_frame_id = 0;
   VisionIpcBufExtra extra = {};
 
   while (!do_exit) {
@@ -34,8 +34,8 @@ void run_model(NavModelState &model, VisionIpcClient &vipc_client) {
     navmodel_publish(pm, extra, *model_res, (t2 - t1) / 1000.0, sm["navInstruction"].getValid());
 
     //printf("navmodel process: %.2fms, from last %.2fms\n", t2 - t1, t1 - last_ts);
-    last_ts = t1;
-    last_frame_id = extra.frame_id;
+    //last_ts = t1;
+    //last_frame_id = extra.frame_id;
   }
 }
 
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
 
   // run the models
   if (vipc_client.connected) {
-    LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
+    LOGW("connected with buffer size: %zu", vipc_client.buffers[0].len);
     run_model(model, vipc_client);
   }
 

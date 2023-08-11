@@ -32,29 +32,9 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("SPEED_L", "MOTORS_DATA"),
-      ("SPEED_R", "MOTORS_DATA"),
-      ("ELEC_ANGLE_L", "MOTORS_DATA"),
-      ("ELEC_ANGLE_R", "MOTORS_DATA"),
-      ("COUNTER", "MOTORS_DATA"),
-      ("CHECKSUM", "MOTORS_DATA"),
-      ("IGNITION", "VAR_VALUES"),
-      ("ENABLE_MOTORS", "VAR_VALUES"),
-      ("FAULT", "VAR_VALUES"),
-      ("MOTOR_ERR_L", "VAR_VALUES"),
-      ("MOTOR_ERR_R", "VAR_VALUES"),
-      ("MCU_TEMP", "BODY_DATA"),
-      ("BATT_VOLTAGE", "BODY_DATA"),
-      ("BATT_PERCENTAGE", "BODY_DATA"),
-      ("CHARGER_CONNECTED", "BODY_DATA"),
-    ]
-
-    checks = [
+    messages = [
       ("MOTORS_DATA", 100),
       ("VAR_VALUES", 10),
       ("BODY_DATA", 1),
     ]
-
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)

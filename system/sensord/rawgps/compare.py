@@ -19,8 +19,8 @@ if __name__ == "__main__":
     recv_time = report.milliseconds / 1000
 
     car = []
-    print("qcom has ", list(sorted([x.svId for x in report.sv])))
-    print("ublox has", list(sorted([x.svId for x in meas if x.gnssId == (6 if GLONASS else 0)])))
+    print("qcom has ", sorted([x.svId for x in report.sv]))
+    print("ublox has", sorted([x.svId for x in meas if x.gnssId == (6 if GLONASS else 0)]))
     for i in report.sv:
       # match to ublox
       tm = None
