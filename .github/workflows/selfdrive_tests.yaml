@@ -79,8 +79,8 @@ jobs:
     - name: Build openpilot with all flags
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
-    - name: Cleanup scons cache
-      timeout-minutes: 2
+    - name: Cleanup scons cache and rebuild
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
