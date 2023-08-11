@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-from functools import lru_cache
-import sys
 import subprocess
-from tqdm import tqdm
+import sys
+from functools import lru_cache
+
 from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
+from tqdm import tqdm
+from xx.chffr.lib import azureutil  # pylint: disable=import-error
+from xx.chffr.lib.storage import _DATA_ACCOUNT_CI, _DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION  # pylint: disable=import-error
 
 from selfdrive.car.tests.routes import routes as test_car_models_routes
-from selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
+from selfdrive.locationd.test.test_laikad import QCOM_TEST_ROUTE, UBLOX_TEST_ROUTE
 from selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from xx.chffr.lib import azureutil  # pylint: disable=import-error
-from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION  # pylint: disable=import-error
 
 SOURCES = [
   (_DATA_ACCOUNT_PRODUCTION, _DATA_BUCKET_PRODUCTION),

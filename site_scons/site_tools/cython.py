@@ -1,4 +1,5 @@
 import re
+
 import SCons
 from SCons.Action import Action
 from SCons.Scanner import Scanner

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import time
 import threading
+import time
 import unittest
 from collections import namedtuple
 from pathlib import Path

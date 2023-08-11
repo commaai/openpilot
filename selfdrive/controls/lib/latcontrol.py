@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL

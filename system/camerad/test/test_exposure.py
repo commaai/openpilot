@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import time
 import unittest
+
 import numpy as np
 
-from selfdrive.test.helpers import with_processes, phone_only
+from selfdrive.test.helpers import phone_only, with_processes
 from system.camerad.snapshot.snapshot import get_snapshots
 
 TEST_TIME = 45

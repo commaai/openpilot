@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 import argparse
-from collections import defaultdict
-import jinja2
 import os
+from collections import defaultdict
 from enum import Enum
-from natsort import natsorted
 from typing import Dict, List
+
+import jinja2
+from natsort import natsorted
 
 from cereal import car
 from common.basedir import BASEDIR
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car.car_helpers import get_interface_attr, interfaces
 from selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
-from selfdrive.car.car_helpers import interfaces, get_interface_attr
 
 
 def get_all_footnotes() -> Dict[Enum, int]:

@@ -1,6 +1,6 @@
 # ruff: noqa: E501
-from enum import IntFlag
 from dataclasses import dataclass, field
+from enum import IntFlag
 from typing import Dict, List, Optional, Union
 
 from cereal import car

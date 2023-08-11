@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
+import struct
 import time
 import unittest
-import struct
 
-from common.params import Params
 import cereal.messaging as messaging
 import system.sensord.pigeond as pd
-from system.hardware import TICI
+from common.params import Params
 from selfdrive.test.helpers import with_processes
+from system.hardware import TICI
 
 
 def read_events(service, duration_sec):

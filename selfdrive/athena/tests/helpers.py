@@ -1,10 +1,11 @@
 import http.server
 import random
-import requests
 import socket
 import time
 from functools import wraps
 from multiprocessing import Process
+
+import requests
 
 from common.timeout import Timeout
 

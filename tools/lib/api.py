@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
 class CommaApi():

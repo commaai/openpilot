@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
+import signal
+import struct
 import sys
 import time
-import signal
-import serial
-import struct
-import requests
 import urllib.parse
 from datetime import datetime
 from typing import List, Optional, Tuple
 
+import requests
+import serial
+
 from cereal import messaging
-from common.params import Params
-from system.swaglog import cloudlog
-from system.hardware import TICI
 from common.gpio import gpio_init, gpio_set
+from common.params import Params
+from system.hardware import TICI
 from system.hardware.tici.pins import GPIO
+from system.swaglog import cloudlog
 
 UBLOX_TTY = "/dev/ttyHS0"
 

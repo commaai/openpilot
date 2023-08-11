@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
 # pylint: disable=E1101
-import os
 import importlib
+import os
 import unittest
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from typing import List, Optional, Tuple
+
 from parameterized import parameterized_class
 
-from cereal import log, car
+from cereal import car, log
 from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
-from selfdrive.car.fingerprints import all_known_cars
+from panda.tests.libpanda import libpanda_py
 from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.gm.values import CAR as GM
-from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
+from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
-from selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from selfdrive.car.tests.routes import CarTestRoute, non_tested_cars, routes
 from selfdrive.test.openpilotci import get_url
 from tools.lib.logreader import LogReader
-from tools.lib.route import Route, SegmentName, RouteName
-
-from panda.tests.libpanda import libpanda_py
+from tools.lib.route import Route, RouteName, SegmentName
 
 PandaType = log.PandaState.PandaType
 

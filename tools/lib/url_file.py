@@ -1,15 +1,18 @@
 # pylint: skip-file
 
 import os
-import time
 import tempfile
 import threading
+import time
 import urllib.parse
-import pycurl
 from hashlib import sha256
 from io import BytesIO
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+
+import pycurl
+from tenacity import retry, stop_after_attempt, wait_random_exponential
+
+from common.file_helpers import atomic_write_in_dir, mkdirs_exists_ok
+
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K

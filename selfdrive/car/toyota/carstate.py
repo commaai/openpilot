@@ -2,13 +2,13 @@ import copy
 
 from cereal import car
 from common.conversions import Conversions as CV
-from common.numpy_fast import mean
 from common.filter_simple import FirstOrderFilter
+from common.numpy_fast import mean
 from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
+from selfdrive.car.toyota.values import CAR, DBC, EPS_SCALE, NO_STOP_TIMER_CAR, RADAR_ACC_CAR, STEER_THRESHOLD, TSS2_CAR, UNSUPPORTED_DSU_CAR, ToyotaFlags
 
 SteerControlType = car.CarParams.SteerControlType
 

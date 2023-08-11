@@ -1,8 +1,9 @@
-import yaml
 import os
 import time
-from abc import abstractmethod, ABC
-from typing import Any, Dict, Optional, Tuple, List, Callable
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
+import yaml
 
 from cereal import car
 from common.basedir import BASEDIR

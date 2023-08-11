@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import capnp
 import time
 from typing import Optional, Set, Tuple
 
+import capnp
+
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from selfdrive.car import make_can_msg
 from selfdrive.boardd.boardd import can_list_to_can_capnp
+from selfdrive.car import make_can_msg
 from system.swaglog import cloudlog
 
 EcuAddrBusType = Tuple[int, Optional[int], int]

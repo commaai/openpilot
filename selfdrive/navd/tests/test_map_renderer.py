@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import os
-import unittest
-import requests
-import threading
 import http.server
-import cereal.messaging as messaging
-
+import os
+import threading
+import unittest
 from typing import Any
+
+import requests
+
+import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcClient, VisionStreamType
 from selfdrive.manager.process_config import managed_processes
 

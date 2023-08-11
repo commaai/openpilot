@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import zmq
 from typing import NoReturn
+
+import zmq
 
 import cereal.messaging as messaging
 from common.logging_extra import SwagLogFileFormatter

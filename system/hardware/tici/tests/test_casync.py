@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
-import unittest
-import tempfile
 import subprocess
+import tempfile
+import unittest
 
 import system.hardware.tici.casync as casync
 

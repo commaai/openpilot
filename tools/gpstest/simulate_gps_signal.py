@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-import os
-import random
 import argparse
 import datetime as dt
+import os
+import random
 import subprocess as sp
 from typing import Tuple
 

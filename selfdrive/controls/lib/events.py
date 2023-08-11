@@ -1,10 +1,10 @@
 import math
 import os
 from enum import IntEnum
-from typing import Dict, Union, Callable, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
-from cereal import log, car
 import cereal.messaging as messaging
+from cereal import car, log
 from common.conversions import Conversions as CV
 from common.realtime import DT_CTRL
 from selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
@@ -958,8 +958,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
 
 if __name__ == '__main__':
   # print all alerts by type and priority
+  from collections import OrderedDict, defaultdict
+
   from cereal.services import service_list
-  from collections import defaultdict, OrderedDict
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}
   alerts_by_type: Dict[str, Dict[int, List[str]]] = defaultdict(lambda: defaultdict(list))

@@ -6,7 +6,7 @@ import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import PC
-from system.version import training_version, terms_version
+from system.version import terms_version, training_version
 
 
 def set_params_enabled():

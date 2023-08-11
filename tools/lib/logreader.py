@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import sys
-import bz2
 import urllib.parse
-import capnp
 import warnings
 
+import capnp
 
 from cereal import log as capnp_log
 from tools.lib.filereader import FileReader
 from tools.lib.route import Route, SegmentName
+
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator:

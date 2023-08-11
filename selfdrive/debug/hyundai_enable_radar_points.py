@@ -11,13 +11,14 @@ to go back to the default values.
 
 USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by these changes."""
 
-import sys
 import argparse
+import sys
+from subprocess import CalledProcessError, check_output
 from typing import NamedTuple
-from subprocess import check_output, CalledProcessError
 
 from panda.python import Panda
-from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
+from panda.python.uds import DATA_IDENTIFIER_TYPE, SESSION_TYPE, UdsClient
+
 
 class ConfigValues(NamedTuple):
   default_config: bytes

@@ -3,8 +3,8 @@ import functools
 import re
 from typing import List, Optional
 
-from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
+from tools.lib.auth_config import get_token
 from tools.lib.helpers import RE, timestamp_to_datetime
 
 

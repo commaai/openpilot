@@ -1,13 +1,14 @@
 #!/usr/bin/env python
-import os
 import argparse
+import os
 import threading
+
 from inputs import get_gamepad
 
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper
-from common.numpy_fast import interp, clip
+from common.numpy_fast import clip, interp
 from common.params import Params
+from common.realtime import Ratekeeper
 from tools.lib.kbhit import KBHit
 
 

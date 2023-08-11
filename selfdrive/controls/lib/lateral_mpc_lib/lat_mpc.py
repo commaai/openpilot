@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
-import numpy as np
 
-from casadi import SX, vertcat, sin, cos
+import numpy as np
+from casadi import SX, cos, sin, vertcat
+
 from common.realtime import sec_since_boot
+
 # WARNING: imports outside of constants will not trigger a rebuild
 from selfdrive.modeld.constants import T_IDXS
 

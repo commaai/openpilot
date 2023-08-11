@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car.tesla.values import CANBUS, CAR
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.tesla.values import CANBUS, CAR
 
 
 class CarInterface(CarInterfaceBase):

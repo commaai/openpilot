@@ -3,15 +3,15 @@ import json
 import logging
 import os
 import ssl
-import uuid
 import time
+import uuid
 
-from common.basedir import BASEDIR
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
-from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
+from common.basedir import BASEDIR
+from tools.bodyteleop.bodyav import BodyMic, EncodedBodyVideo, MediaBlackhole, WebClientSpeaker, force_codec, play_sound
 
 logger = logging.getLogger("pc")
 logging.basicConfig(level=logging.INFO)

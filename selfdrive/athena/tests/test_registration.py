@@ -3,12 +3,13 @@ import json
 import os
 import tempfile
 import unittest
-from Crypto.PublicKey import RSA
 from pathlib import Path
 from unittest import mock
 
+from Crypto.PublicKey import RSA
+
 from common.params import Params
-from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from selfdrive.athena.registration import UNREGISTERED_DONGLE_ID, register
 from selfdrive.athena.tests.helpers import MockResponse
 
 

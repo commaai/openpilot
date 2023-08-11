@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
-from tqdm import tqdm
+
 import capnp
+from tqdm import tqdm
 
 import panda.python.uds as uds
 from cereal import car
 from common.params import Params
 from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
-from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
+from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from system.swaglog import cloudlog
 
@@ -330,8 +331,9 @@ def get_fw_versions(logcan, sendcan, query_brand=None, extra=None, timeout=0.1, 
 
 
 if __name__ == "__main__":
-  import time
   import argparse
+  import time
+
   import cereal.messaging as messaging
   from selfdrive.car.vin import get_vin
 

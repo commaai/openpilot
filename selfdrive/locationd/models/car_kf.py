@@ -5,14 +5,14 @@ from typing import Any, Dict
 
 import numpy as np
 
+from rednose.helpers.kalmanfilter import KalmanFilter
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.locationd.models.constants import ObservationKind
 from system.swaglog import cloudlog
 
-from rednose.helpers.kalmanfilter import KalmanFilter
-
 if __name__ == '__main__':  # Generating sympy
   import sympy as sp
+
   from rednose.helpers.ekf_sym import gen_code
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx  # pylint: disable=no-name-in-module, import-error

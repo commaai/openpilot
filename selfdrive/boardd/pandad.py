@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # simple boardd wrapper that updates the panda first
-import os
-import usb1
-import time
 import json
+import os
 import subprocess
-from typing import List, NoReturn
+import time
 from functools import cmp_to_key
+from typing import List, NoReturn
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+import usb1
+
 from common.basedir import BASEDIR
 from common.params import Params
+from panda import FW_PATH, Panda, PandaDFU, PandaProtocolMismatch
 from selfdrive.boardd.set_time import set_time
 from system.hardware import HARDWARE
 from system.swaglog import cloudlog

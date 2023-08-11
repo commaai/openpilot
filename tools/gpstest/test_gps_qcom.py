@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
+import subprocess as sp
 import time
 import unittest
-import subprocess as sp
 
-from common.params import Params
-from system.hardware import TICI
 import cereal.messaging as messaging
+from common.params import Params
 from selfdrive.manager.process_config import managed_processes
+from system.hardware import TICI
 
 
 def exec_mmcli(cmd):

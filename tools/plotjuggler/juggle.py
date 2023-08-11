@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-import os
-import sys
+import argparse
 import multiprocessing
+import os
 import platform
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
+from urllib.parse import parse_qs, urlparse
+
 import requests
-import argparse
 
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import get_url
+from tools.lib.helpers import save_log
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route, SegmentName
-from tools.lib.helpers import save_log
-from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 

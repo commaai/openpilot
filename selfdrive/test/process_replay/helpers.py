@@ -1,10 +1,10 @@
 import os
 import shutil
 import uuid
-
 from typing import List, Optional
 
 from common.params import Params
+
 
 class OpenpilotPrefix(object):
   def __init__(self, prefix: Optional[str] = None, clean_dirs_on_exit: bool = True):

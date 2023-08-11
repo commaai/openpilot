@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 from cereal import car
-from panda import Panda
 from common.conversions import Conversions as CV
 from common.numpy_fast import interp
-from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, HondaFlags, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, \
-                                                                                            HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_BOSCH_RADARLESS
-from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, scale_tire_stiffness, get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
+from panda import Panda
+from selfdrive.car import STD_CARGO_KG, CivicParams, create_button_event, get_safety_config, scale_tire_stiffness
 from selfdrive.car.disable_ecu import disable_ecu
-
+from selfdrive.car.honda.values import (
+  CAR,
+  HONDA_BOSCH,
+  HONDA_BOSCH_ALT_BRAKE_SIGNAL,
+  HONDA_BOSCH_RADARLESS,
+  HONDA_NIDEC_ALT_SCM_MESSAGES,
+  CarControllerParams,
+  CruiseButtons,
+  HondaFlags,
+)
+from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

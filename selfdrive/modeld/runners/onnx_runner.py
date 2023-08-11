@@ -2,8 +2,9 @@
 
 import os
 import sys
+from typing import Any, Dict, Tuple, Union
+
 import numpy as np
-from typing import Tuple, Dict, Union, Any
 
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"

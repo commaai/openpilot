@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-import os
-import time
-import threading
-import unittest
-import logging
 import json
+import logging
+import os
+import threading
+import time
+import unittest
 from pathlib import Path
 from typing import List, Optional
 
-from system.swaglog import cloudlog
-from system.loggerd.uploader import uploader_fn, UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE
-
 from system.loggerd.tests.loggerd_tests_common import UploaderTestCase
+from system.loggerd.uploader import UPLOAD_ATTR_NAME, UPLOAD_ATTR_VALUE, uploader_fn
+from system.swaglog import cloudlog
 
 
 class TestLogHandler(logging.Handler):

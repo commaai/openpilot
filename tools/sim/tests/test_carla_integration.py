@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import os
 import subprocess
 import time
 import unittest
-import os
 from multiprocessing import Queue
 
 from cereal import messaging

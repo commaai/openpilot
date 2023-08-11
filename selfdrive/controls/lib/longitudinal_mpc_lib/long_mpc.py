@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import os
+
 import numpy as np
+
 from cereal import log
-from common.realtime import sec_since_boot
 from common.numpy_fast import clip
-from system.swaglog import cloudlog
-# WARNING: imports outside of constants will not trigger a rebuild
-from selfdrive.modeld.constants import index_function
+from common.realtime import sec_since_boot
 from selfdrive.car.interfaces import ACCEL_MIN
 from selfdrive.controls.radard import _LEAD_ACCEL_TAU
+
+# WARNING: imports outside of constants will not trigger a rebuild
+from selfdrive.modeld.constants import index_function
+from system.swaglog import cloudlog
 
 if __name__ == '__main__':  # generating code
   from third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver

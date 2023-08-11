@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 import os
 import time
+
 import numpy as np
+
+from common.gpio import gpio_export, gpio_init, gpio_set
 from system.hardware.tici.hardware import Tici
 from system.hardware.tici.pins import GPIO
-from common.gpio import gpio_init, gpio_set, gpio_export
+
 
 def read_power():
   with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/in1_input") as f:

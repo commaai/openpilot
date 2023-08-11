@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import ast
+import os
 import stat
 import subprocess
 

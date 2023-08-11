@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 import random
+import threading
 import time
 import unittest
 from collections import defaultdict
+
 from parameterized import parameterized
-import threading
 
 from cereal import car
 from common.params import Params
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.fingerprints import FW_VERSIONS
-from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
+from selfdrive.car.fw_versions import FUZZY_EXCLUDE_ECUS, FW_QUERY_CONFIGS, VERSIONS, build_fw_dict, get_fw_versions, get_present_ecus, match_fw_to_car
 from selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw

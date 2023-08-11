@@ -7,23 +7,31 @@ import sys
 import traceback
 from typing import List, Tuple, Union
 
-from cereal import log
 import cereal.messaging as messaging
 import selfdrive.sentry as sentry
+from cereal import log
 from common.basedir import BASEDIR
-from common.params import Params, ParamKeyType
+from common.params import ParamKeyType, Params
 from common.text_window import TextWindow
+from selfdrive.athena.registration import UNREGISTERED_DONGLE_ID, register
 from selfdrive.boardd.set_time import set_time
-from system.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout, write_onroad_params
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
-from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from system.swaglog import cloudlog, add_file_handler
-from system.version import is_dirty, get_commit, get_version, get_origin, get_short_branch, \
-                           get_normalized_origin, terms_version, training_version, \
-                           is_tested_branch, is_release_branch
-
+from system.hardware import HARDWARE, PC
+from system.swaglog import add_file_handler, cloudlog
+from system.version import (
+  get_commit,
+  get_normalized_origin,
+  get_origin,
+  get_short_branch,
+  get_version,
+  is_dirty,
+  is_release_branch,
+  is_tested_branch,
+  terms_version,
+  training_version,
+)
 
 
 def manager_init() -> None:

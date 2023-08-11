@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
 import json
 import os
-import requests
+import queue
 import shutil
 import tempfile
-import time
 import threading
-import queue
+import time
 import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
-from typing import Optional
-
 from multiprocessing import Process
 from pathlib import Path
+from typing import Optional
 from unittest import mock
+
+import requests
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
-from system import swaglog
+from cereal import messaging
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
-from cereal import messaging
+from selfdrive.athena.tests.helpers import EchoSocket, MockApi, MockParams, MockWebsocket, with_http_server
+from system import swaglog
 
 
 class TestAthenadMethods(unittest.TestCase):

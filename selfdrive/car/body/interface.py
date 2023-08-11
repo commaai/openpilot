@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import math
+
 from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.car import get_safety_config
-from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.body.values import SPEED_FROM_RPM
+from selfdrive.car.interfaces import CarInterfaceBase
+
 
 class CarInterface(CarInterfaceBase):
   @staticmethod

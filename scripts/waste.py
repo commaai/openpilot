@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import os
-import numpy as np
-from common.realtime import sec_since_boot
 from multiprocessing import Process
+
+import numpy as np
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
+
+from common.realtime import sec_since_boot
+
 
 def waste(core):
   os.sched_setaffinity(0, [core,])  # pylint: disable=no-member

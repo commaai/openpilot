@@ -3,9 +3,9 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from system.swaglog import cloudlog
+from panda.python.uds import FUNCTIONAL_ADDRS, CanClient, IsoTpMessage, get_rx_addr_for_tx_addr
 from selfdrive.boardd.boardd import can_list_to_can_capnp
-from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
+from system.swaglog import cloudlog
 
 
 class IsoTpParallelQuery:

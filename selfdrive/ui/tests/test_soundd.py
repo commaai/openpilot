@@ -3,11 +3,12 @@ import subprocess
 import time
 import unittest
 
-from cereal import log, car
 import cereal.messaging as messaging
-from selfdrive.test.helpers import phone_only, with_processes
+from cereal import car, log
+
 # TODO: rewrite for unittest
 from common.realtime import DT_CTRL
+from selfdrive.test.helpers import phone_only, with_processes
 from system.hardware import HARDWARE
 
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert

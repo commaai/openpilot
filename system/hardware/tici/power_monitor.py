@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import datetime
 import sys
 import time
-import datetime
-import numpy as np
 from typing import List
 
-from common.realtime import Ratekeeper
+import numpy as np
+
 from common.filter_simple import FirstOrderFilter
+from common.realtime import Ratekeeper
 
 
 def read_power():

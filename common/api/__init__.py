@@ -1,7 +1,9 @@
-import jwt
 import os
-import requests
 from datetime import datetime, timedelta
+
+import jwt
+import requests
+
 from common.basedir import PERSIST
 from system.version import get_version
 

@@ -9,14 +9,13 @@ import threading
 from enum import IntEnum
 from functools import wraps
 
+import _io
 import numpy as np
 from lru import LRU
 
-import _io
+from common.file_helpers import atomic_write_in_dir
 from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
-from common.file_helpers import atomic_write_in_dir
-
 from tools.lib.filereader import FileReader
 
 HEVC_SLICE_B = 0

@@ -5,11 +5,11 @@ import unittest
 
 import cereal.messaging as messaging
 from cereal import log
-from common.gpio import gpio_set, gpio_init
+from common.gpio import gpio_init, gpio_set
 from common.params import Params
 from panda import Panda, PandaDFU, PandaProtocolMismatch
-from selfdrive.test.helpers import phone_only
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.helpers import phone_only
 from system.hardware import HARDWARE
 from system.hardware.tici.pins import GPIO
 

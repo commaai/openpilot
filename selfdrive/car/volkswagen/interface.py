@@ -1,9 +1,9 @@
 from cereal import car
-from panda import Panda
 from common.conversions import Conversions as CV
+from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.volkswagen.values import CAR, PQ_CARS, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from selfdrive.car.volkswagen.values import CANBUS, CAR, PQ_CARS, GearShifter, NetworkLocation, TransmissionType
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

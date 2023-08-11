@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import time
 import unittest
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
 
 import cereal.messaging as messaging
 from cereal import log

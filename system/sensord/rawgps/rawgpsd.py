@@ -1,34 +1,45 @@
 #!/usr/bin/env python3
-import os
-import sys
-import signal
 import itertools
 import math
-import time
-import pycurl
+import os
 import shutil
+import signal
 import subprocess
+import sys
+import time
 from datetime import datetime
-from multiprocessing import Process, Event
+from multiprocessing import Event, Process
+from struct import calcsize, pack, unpack_from
 from typing import NoReturn, Optional
-from struct import unpack_from, calcsize, pack
 
-from cereal import log
+import pycurl
+
 import cereal.messaging as messaging
+from cereal import log
 from common.gpio import gpio_init, gpio_set
-from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
+from laika.constants import SECS_IN_DAY, SECS_IN_HR, SECS_IN_WEEK
+from laika.gps_time import GPSTime, get_leap_seconds, utc_to_gpst
 from laika.helpers import get_prn_from_nmea_id
-from laika.constants import SECS_IN_HR, SECS_IN_DAY, SECS_IN_WEEK
 from system.hardware.tici.pins import GPIO
+from system.sensord.rawgps.modemdiag import DIAG_LOG_F, ModemDiag, send_recv, setup_logs
+from system.sensord.rawgps.structs import (
+  LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
+  LOG_GNSS_GPS_MEASUREMENT_REPORT,
+  LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
+  LOG_GNSS_OEMDRE_SVPOLY_REPORT,
+  LOG_GNSS_POSITION_REPORT,
+  dict_unpacker,
+  glonass_measurement_report,
+  glonass_measurement_report_sv,
+  gps_measurement_report,
+  gps_measurement_report_sv,
+  oemdre_measurement_report,
+  oemdre_measurement_report_sv,
+  oemdre_svpoly_report,
+  position_report,
+  relist,
+)
 from system.swaglog import cloudlog
-from system.sensord.rawgps.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
-from system.sensord.rawgps.structs import (dict_unpacker, position_report, relist,
-                                              gps_measurement_report, gps_measurement_report_sv,
-                                              glonass_measurement_report, glonass_measurement_report_sv,
-                                              oemdre_measurement_report, oemdre_measurement_report_sv, oemdre_svpoly_report,
-                                              LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT,
-                                              LOG_GNSS_POSITION_REPORT, LOG_GNSS_OEMDRE_MEASUREMENT_REPORT,
-                                              LOG_GNSS_OEMDRE_SVPOLY_REPORT)
 
 DEBUG = int(os.getenv("DEBUG", "0"))==1
 ASSIST_DATA_FILE = '/tmp/xtra3grc.bin'

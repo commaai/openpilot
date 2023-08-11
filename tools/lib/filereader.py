@@ -1,4 +1,5 @@
 import os
+
 from tools.lib.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")

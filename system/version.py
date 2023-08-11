@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import List, Optional
 from functools import lru_cache
+from typing import List, Optional
 
 from common.basedir import BASEDIR
 from system.swaglog import cloudlog

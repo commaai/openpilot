@@ -1,4 +1,5 @@
 import crcmod
+
 from selfdrive.car.nissan.values import CAR
 
 # TODO: add this checksum to the CANPacker

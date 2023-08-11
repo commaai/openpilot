@@ -2,16 +2,17 @@
 import copy
 import json
 import os
-import unittest
 import random
+import unittest
+
 from PIL import Image, ImageDraw, ImageFont
 
-from cereal import log, car
+from cereal import car, log
 from cereal.messaging import SubMaster
 from common.basedir import BASEDIR
 from common.params import Params
-from selfdrive.controls.lib.events import Alert, EVENTS, ET
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.controls.lib.events import ET, EVENTS, Alert
 from selfdrive.test.process_replay.process_replay import CONFIGS
 
 AlertSize = log.ControlsState.AlertSize

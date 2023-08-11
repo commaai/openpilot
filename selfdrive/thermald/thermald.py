@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import datetime
-import os
 import json
+import os
 import queue
 import threading
 import time
@@ -14,17 +14,17 @@ import psutil
 import cereal.messaging as messaging
 from cereal import log
 from common.dict_helpers import strip_deprecated_keys
-from common.time import MIN_DATE
 from common.filter_simple import FirstOrderFilter
 from common.params import Params
 from common.realtime import DT_TRML, sec_since_boot
+from common.time import MIN_DATE
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from system.hardware import HARDWARE, TICI, AGNOS
-from system.loggerd.config import get_available_percent
 from selfdrive.statsd import statlog
-from system.swaglog import cloudlog
-from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.thermald.fan_controller import TiciFanController
+from selfdrive.thermald.power_monitoring import PowerMonitoring
+from system.hardware import AGNOS, HARDWARE, TICI
+from system.loggerd.config import get_available_percent
+from system.swaglog import cloudlog
 from system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 import json
 import random
-import unittest
 import time
+import unittest
+
 import capnp
 
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.params import Params
 from common.transformations.coordinates import ecef2geodetic
-
 from selfdrive.manager.process_config import managed_processes
 
 

@@ -1,8 +1,8 @@
-import os
-import sys
-import fcntl
 import errno
+import fcntl
+import os
 import signal
+import sys
 
 
 def unblock_stdout() -> None:

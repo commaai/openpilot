@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import os
 
 from tqdm import tqdm
@@ -7,8 +8,6 @@ from tqdm import tqdm
 from common.file_helpers import mkdirs_exists_ok
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-
-import argparse
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

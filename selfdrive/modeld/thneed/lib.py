@@ -1,5 +1,6 @@
-import struct
 import json
+import struct
+
 
 def load_thneed(fn):
   with open(fn, "rb") as f:

@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
+import cProfile  # pylint: disable=import-error
 import os
 import sys
-import cProfile  # pylint: disable=import-error
+
 import pprofile  # pylint: disable=import-error
 import pyprof2calltree  # pylint: disable=import-error
 
 from common.params import Params
-from tools.lib.logreader import LogReader
-from selfdrive.test.profiling.lib import SubMaster, PubMaster, SubSocket, ReplayDone
-from selfdrive.test.process_replay.process_replay import CONFIGS
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.honda.values import CAR as HONDA
+from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VW
+from selfdrive.test.process_replay.process_replay import CONFIGS
+from selfdrive.test.profiling.lib import PubMaster, ReplayDone, SubMaster, SubSocket
+from tools.lib.logreader import LogReader
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
@@ -80,10 +81,10 @@ def profile(proc, func, car='toyota'):
 
 if __name__ == '__main__':
   from selfdrive.controls.controlsd import main as controlsd_thread
-  from selfdrive.controls.radard import radard_thread
-  from selfdrive.locationd.paramsd import main as paramsd_thread
   from selfdrive.controls.plannerd import main as plannerd_thread
+  from selfdrive.controls.radard import radard_thread
   from selfdrive.locationd.laikad import main as laikad_thread
+  from selfdrive.locationd.paramsd import main as paramsd_thread
 
   procs = {
     'radard': radard_thread,

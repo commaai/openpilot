@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
-import sys
-import math
 import datetime
+import math
+import sys
 from collections import Counter
 from pprint import pprint
-from tqdm import tqdm
 from typing import List, Tuple, cast
 
+from tqdm import tqdm
+
 from cereal.services import service_list
-from tools.lib.route import Route
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 if __name__ == "__main__":
   r = Route(sys.argv[1])

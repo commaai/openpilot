@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import datetime
 import os
-import time
-import tempfile
-import unittest
+import random
 import shutil
 import signal
 import subprocess
-import random
+import tempfile
+import time
+import unittest
 
 from common.basedir import BASEDIR
 from common.params import Params

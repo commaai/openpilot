@@ -2,17 +2,16 @@
 import importlib
 import math
 from collections import deque
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 import capnp
-from cereal import messaging, log, car
+
+from cereal import car, log, messaging
+from common.kalman.simple_kalman import KF1D
 from common.numpy_fast import interp
 from common.params import Params
-from common.realtime import Ratekeeper, Priority, config_realtime_process
+from common.realtime import Priority, Ratekeeper, config_realtime_process
 from system.swaglog import cloudlog
-
-from common.kalman.simple_kalman import KF1D
-
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5

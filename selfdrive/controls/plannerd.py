@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import os
+
 import numpy as np
+
+import cereal.messaging as messaging
 from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
-from system.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.lib.lateral_planner import LateralPlanner
-import cereal.messaging as messaging
+from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from selfdrive.modeld.constants import T_IDXS
+from system.swaglog import cloudlog
+
 
 def cumtrapz(x, t):
   return np.concatenate([[0], np.cumsum(((x[0:-1] + x[1:])/2) * np.diff(t))])

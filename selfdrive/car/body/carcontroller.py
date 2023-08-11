@@ -7,7 +7,6 @@ from selfdrive.car.body import bodycan
 from selfdrive.car.body.values import SPEED_FROM_RPM
 from selfdrive.controls.lib.pid import PIDController
 
-
 MAX_TORQUE = 500
 MAX_TORQUE_RATE = 50
 MAX_ANGLE_ERROR = np.radians(7)

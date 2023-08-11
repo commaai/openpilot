@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+import importlib
 import math
 import unittest
+
 import hypothesis.strategies as st
 from hypothesis import given, settings
-import importlib
 from parameterized import parameterized
 
 from cereal import car

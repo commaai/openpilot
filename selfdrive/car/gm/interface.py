@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-from cereal import car
-from math import fabs, exp
-from panda import Panda
+from math import exp, fabs
 
+from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
+from panda import Panda
+from selfdrive.car import STD_CARGO_KG, create_button_event, get_safety_config, scale_tire_stiffness
 from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
+from selfdrive.car.gm.values import CAMERA_ACC_CAR, CAR, EV_CAR, CanBus, CarControllerParams, CruiseButtons
+from selfdrive.car.interfaces import FRICTION_THRESHOLD, CarInterfaceBase, TorqueFromLateralAccelCallbackType
 from selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import unittest
-from common.params import Params
-from cereal import log
 
+from cereal import log
+from common.params import Params
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance, get_T_FOLLOW
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 

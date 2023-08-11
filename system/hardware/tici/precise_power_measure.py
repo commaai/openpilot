@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
+
 from system.hardware.tici.power_monitor import sample_power
 
 if __name__ == '__main__':

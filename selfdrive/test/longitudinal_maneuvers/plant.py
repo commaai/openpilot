@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import time
+
 import numpy as np
 
-from cereal import log
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper, DT_MDL
+from cereal import log
+from common.realtime import DT_MDL, Ratekeeper
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from selfdrive.modeld.constants import T_IDXS
 
 
 class Plant:
@@ -46,8 +47,8 @@ class Plant:
     time.sleep(1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from selfdrive.car.honda.values import CAR
     from selfdrive.car.honda.interface import CarInterface
+    from selfdrive.car.honda.values import CAR
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
 

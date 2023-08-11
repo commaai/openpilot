@@ -2,9 +2,10 @@
 
 import sys
 import time
-import numpy as np
-from typing import DefaultDict, MutableSequence
 from collections import defaultdict, deque
+from typing import DefaultDict, MutableSequence
+
+import numpy as np
 
 import cereal.messaging as messaging
 

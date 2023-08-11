@@ -1,7 +1,7 @@
 from cereal import car
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.body.values import DBC
+from selfdrive.car.interfaces import CarStateBase
 
 STARTUP_TICKS = 100
 

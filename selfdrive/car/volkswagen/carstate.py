@@ -1,10 +1,10 @@
 import numpy as np
+
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
-from selfdrive.car.volkswagen.values import DBC, CANBUS, PQ_CARS, NetworkLocation, TransmissionType, GearShifter, \
-                                            CarControllerParams
+from selfdrive.car.interfaces import CarStateBase
+from selfdrive.car.volkswagen.values import CANBUS, DBC, PQ_CARS, CarControllerParams, GearShifter, NetworkLocation, TransmissionType
 
 
 class CarState(CarStateBase):

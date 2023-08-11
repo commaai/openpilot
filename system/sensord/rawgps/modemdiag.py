@@ -1,7 +1,9 @@
 import select
-from serial import Serial
+from struct import calcsize, pack, unpack_from
+
 from crcmod import mkCrcFun
-from struct import pack, unpack_from, calcsize
+from serial import Serial
+
 
 class ModemDiag:
   def __init__(self):

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
+import random
 import time
 import unittest
+
 import numpy as np
-import random
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.transformations.camera import tici_f_frame_size
 from common.realtime import DT_MDL
+from common.transformations.camera import tici_f_frame_size
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 

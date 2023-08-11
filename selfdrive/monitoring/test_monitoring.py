@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import unittest
+
 import numpy as np
 
 from cereal import car, log
 from common.realtime import DT_DMON
 from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
+from selfdrive.monitoring.driver_monitor import DRIVER_MONITOR_SETTINGS, DriverStatus
 
 EventName = car.CarEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()

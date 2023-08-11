@@ -1,15 +1,15 @@
 import asyncio
 import io
-import numpy as np
-import pyaudio
 import wave
 
+import numpy as np
+import pyaudio
 from aiortc.contrib.media import MediaBlackhole
-from aiortc.mediastreams import AudioStreamTrack, MediaStreamError, MediaStreamTrack
-from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
+from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE, AudioStreamTrack, MediaStreamError, MediaStreamTrack
 from aiortc.rtcrtpsender import RTCRtpSender
 from av import CodecContext, Packet
 from pydub import AudioSegment
+
 import cereal.messaging as messaging
 
 AUDIO_RATE = 16000

@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 import os
-import zmq
 import time
-from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import NoReturn, Union, List, Dict
+from pathlib import Path
+from typing import Dict, List, NoReturn, Union
 
-from common.params import Params
+import zmq
+
 from cereal.messaging import SubMaster
-from system.swaglog import cloudlog
-from system.hardware import HARDWARE
 from common.file_helpers import atomic_write_in_dir
+from common.params import Params
+from system.hardware import HARDWARE
+from system.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_FLUSH_TIME_S, STATS_SOCKET
+from system.swaglog import cloudlog
 from system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
-from system.loggerd.config import STATS_DIR, STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 
 class METRIC_TYPE:

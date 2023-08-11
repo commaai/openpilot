@@ -2,6 +2,7 @@
 import json
 import os
 import unittest
+
 import requests
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))

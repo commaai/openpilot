@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from typing import List
 import unittest
+from typing import List
 
 from selfdrive.car.tests.routes import CarTestRoute
 from selfdrive.car.tests.test_models import TestCarModel

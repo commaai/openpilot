@@ -8,16 +8,17 @@ and the image input into the neural network is not corrected for roll.
 
 import gc
 import os
-import capnp
-import numpy as np
 from typing import List, NoReturn, Optional
 
-from cereal import log
+import capnp
+import numpy as np
+
 import cereal.messaging as messaging
+from cereal import log
 from common.conversions import Conversions as CV
 from common.params import Params, put_nonblocking
 from common.realtime import set_realtime_priority
-from common.transformations.orientation import rot_from_euler, euler_from_rot
+from common.transformations.orientation import euler_from_rot, rot_from_euler
 from system.swaglog import cloudlog
 
 MIN_SPEED_FILTER = 15 * CV.MPH_TO_MS

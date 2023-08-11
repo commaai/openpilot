@@ -8,16 +8,16 @@ from typing import Any
 import cereal.messaging as messaging
 from common.params import Params
 from common.spinner import Spinner
-from system.hardware import PC
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs
-from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.test.process_replay.process_replay import get_process_config, replay_process
+from selfdrive.test.process_replay.test_processes import format_diff
+from system.hardware import PC
 from system.version import get_commit
 from tools.lib.framereader import FrameReader
-from tools.lib.logreader import LogReader
 from tools.lib.helpers import save_log
+from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
@@ -157,10 +157,12 @@ if __name__ == "__main__":
 
   # Update tile refs
   if update:
-    import urllib
-    import requests
-    import threading
     import http.server
+    import threading
+    import urllib
+
+    import requests
+
     from selfdrive.test.openpilotci import upload_bytes
     os.environ['MAPS_HOST'] = 'http://localhost:5000'
 

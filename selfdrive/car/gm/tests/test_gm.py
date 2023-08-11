@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from parameterized import parameterized
 import unittest
+
+from parameterized import parameterized
 
 from selfdrive.car.gm.values import CAMERA_ACC_CAR, CAR, FINGERPRINTS, GM_RX_OFFSET
 

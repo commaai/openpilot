@@ -7,8 +7,16 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import log
 from common.params import Params
-from selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
-                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT
+from selfdrive.locationd.calibrationd import (
+  BLOCK_SIZE,
+  HEIGHT_INIT,
+  INPUTS_NEEDED,
+  INPUTS_WANTED,
+  MAX_YAW_RATE_FILTER,
+  MIN_SPEED_FILTER,
+  SMOOTH_CYCLES,
+  Calibrator,
+)
 
 
 class TestCalibrationd(unittest.TestCase):

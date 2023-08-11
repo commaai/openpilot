@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import numpy as np
 import os
 import random
 import string
@@ -10,20 +9,22 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
+import numpy as np
+
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
+from cereal.visionipc import VisionIpcServer, VisionStreamType
 from common.basedir import BASEDIR
 from common.params import Params
 from common.timeout import Timeout
-from system.loggerd.config import ROOT
-from system.loggerd.xattr_cache import getxattr
-from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from common.transformations.camera import tici_d_frame_size, tici_e_frame_size, tici_f_frame_size
 from selfdrive.manager.process_config import managed_processes
+from system.loggerd.config import ROOT
+from system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from system.loggerd.xattr_cache import getxattr
 from system.version import get_version
 from tools.lib.logreader import LogReader
-from cereal.visionipc import VisionIpcServer, VisionStreamType
-from common.transformations.camera import tici_f_frame_size, tici_d_frame_size, tici_e_frame_size
 
 SentinelType = log.Sentinel.SentinelType
 

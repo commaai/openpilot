@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
-import sys
 import subprocess
+import sys
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 TOKEN_PATH = "/data/azure_token"

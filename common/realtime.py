@@ -3,13 +3,12 @@ import gc
 import os
 import time
 from collections import deque
-from typing import Optional, List, Union
+from typing import List, Optional, Union
 
 from setproctitle import getproctitle  # pylint: disable=no-name-in-module
 
 from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
 from system.hardware import PC
-
 
 # time step for each process
 DT_CTRL = 0.01  # controlsd

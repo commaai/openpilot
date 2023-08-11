@@ -1,9 +1,11 @@
-import os
-import sys
 import fcntl
 import hashlib
+import os
 import platform
+import sys
+
 from cffi import FFI
+
 
 def suffix():
   if platform.system() == "Darwin":

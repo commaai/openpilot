@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import itertools
 import os
-from parameterized import parameterized_class
 import unittest
+
+from parameterized import parameterized_class
 
 from common.params import Params
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE

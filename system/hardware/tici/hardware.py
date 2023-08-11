@@ -8,11 +8,11 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from common.gpio import gpio_set, gpio_init, get_irqs_for_action
+from common.gpio import get_irqs_for_action, gpio_init, gpio_set
 from system.hardware.base import HardwareBase, ThermalConfig
 from system.hardware.tici import iwlist
-from system.hardware.tici.pins import GPIO
 from system.hardware.tici.amplifier import Amplifier
+from system.hardware.tici.pins import GPIO
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'

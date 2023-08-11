@@ -7,13 +7,13 @@ get interrupts in a 2kHz rate.
 
 import argparse
 import sys
-import numpy as np
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 from tools.lib.logreader import LogReader
 from tools.lib.route import Route
-
-import matplotlib.pyplot as plt
 
 SRC_BMX = "bmx055"
 SRC_LSM = "lsm6ds3"

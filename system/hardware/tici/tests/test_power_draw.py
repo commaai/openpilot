@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-import unittest
-import time
 import math
 import threading
+import time
+import unittest
 from dataclasses import dataclass
-from tabulate import tabulate
 from typing import List
+
+from tabulate import tabulate
 
 import cereal.messaging as messaging
 from cereal.services import service_list
+from selfdrive.manager.manager import manager_cleanup
+from selfdrive.manager.process_config import managed_processes
+from selfdrive.navd.tests.test_map_renderer import gen_llk
 from system.hardware import HARDWARE, TICI
 from system.hardware.tici.power_monitor import get_power
-from selfdrive.manager.process_config import managed_processes
-from selfdrive.manager.manager import manager_cleanup
-from selfdrive.navd.tests.test_map_renderer import gen_llk
 
 SAMPLE_TIME = 8   # seconds to sample power
 

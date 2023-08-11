@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import json
 import os
 import sys
 import time
-import json
 
 from common.basedir import BASEDIR
 from common.params import Params

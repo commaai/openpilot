@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 import time
 import unittest
+
 from parameterized import parameterized
 
-from cereal import log, car
 import cereal.messaging as messaging
+from cereal import car, log
 from common.params import Params
-from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
+from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
+from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.controls.lib.events import EVENT_NAME
 from selfdrive.test.helpers import with_processes
 

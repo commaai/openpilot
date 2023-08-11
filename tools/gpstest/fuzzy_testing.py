@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import multiprocessing
-import rpyc # pylint: disable=import-error
 from collections import defaultdict
 
-from helper import download_rinex, exec_LimeGPS_bin
-from helper import get_random_coords, get_continuous_coords
+import rpyc  # pylint: disable=import-error
+from helper import download_rinex, exec_LimeGPS_bin, get_continuous_coords, get_random_coords
 
 #------------------------------------------------------------------------------
 # this script is supposed to run on HOST PC

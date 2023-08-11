@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
+import bz2
 import os
 import sys
-import bz2
-import numpy as np
 
+import numpy as np
 import pyopencl as cl  # install with `PYOPENCL_CL_PRETEND_VERSION=2.0 pip install pyopencl`
 
-from system.hardware import PC, TICI
 from common.basedir import BASEDIR
 from selfdrive.test.openpilotci import BASE_URL, get_url
-from system.version import get_commit
 from system.camerad.snapshot.snapshot import yuv_to_rgb
-from tools.lib.logreader import LogReader
+from system.hardware import PC, TICI
+from system.version import get_commit
 from tools.lib.filereader import FileReader
+from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33"
 SEGMENT = 0

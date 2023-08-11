@@ -1,13 +1,13 @@
-from collections import deque
 import copy
 import math
+from collections import deque
 
 from cereal import car
 from common.conversions import Conversions as CV
-from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from opendbc.can.parser import CANParser
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, CANFD_CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CAN_GEARS, CANFD_CAR, CAR, DBC, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams, HyundaiFlags
 from selfdrive.car.interfaces import CarStateBase
 
 PREV_BUTTON_SAMPLES = 8

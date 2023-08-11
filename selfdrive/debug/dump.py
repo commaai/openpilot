@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
+import argparse
+import codecs
+import json
 import os
 import sys
-import argparse
-import json
-import codecs
-import cereal.messaging as messaging
 
 from hexdump import hexdump
+
+import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
 

@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
+import datetime
+import fcntl
 import os
 import re
-import datetime
-import subprocess
-import psutil
 import shutil
 import signal
-import fcntl
-import time
+import subprocess
 import threading
+import time
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Union, Optional
+from typing import List, Optional, Union
+
+import psutil
 from markdown_it import MarkdownIt
 
 from common.basedir import BASEDIR
 from common.params import Params
 from common.time import system_time_valid
+from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.hardware import AGNOS, HARDWARE
 from system.swaglog import cloudlog
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from system.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import json
 import os
-import time
 import subprocess
+import time
 from typing import NoReturn
 
 import requests

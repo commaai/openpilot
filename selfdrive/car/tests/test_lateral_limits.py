@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-from collections import defaultdict
 import importlib
-from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
 import unittest
+from collections import defaultdict
+from typing import DefaultDict, Dict
+
+from parameterized import parameterized_class
 
 from common.realtime import DT_CTRL
 from selfdrive.car.car_helpers import interfaces

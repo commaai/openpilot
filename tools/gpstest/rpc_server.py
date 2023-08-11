@@ -1,16 +1,16 @@
 import os
-import time
 import shutil
-from datetime import datetime
+import time
 from collections import defaultdict
+from datetime import datetime
 
-import rpyc # pylint: disable=import-error
+import rpyc  # pylint: disable=import-error
 from rpyc.utils.server import ThreadedServer  # pylint: disable=import-error
 
 #from common.params import Params
 import cereal.messaging as messaging
-from selfdrive.manager.process_config import managed_processes
 from laika.lib.coordinates import ecef2geodetic
+from selfdrive.manager.process_config import managed_processes
 
 DELTA = 0.001
 ALT_DELTA = 30

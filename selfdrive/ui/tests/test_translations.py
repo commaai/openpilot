@@ -6,7 +6,7 @@ import shutil
 import unittest
 import xml.etree.ElementTree as ET
 
-from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
+from selfdrive.ui.update_translations import LANGUAGES_FILE, TRANSLATIONS_DIR, update_translations
 
 TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished

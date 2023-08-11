@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
-from panda import Panda
 from common.conversions import Conversions as CV
+from panda import Panda
 from selfdrive.car import STD_CARGO_KG, get_safety_config
 from selfdrive.car.ford.fordcan import CanBus
 from selfdrive.car.ford.values import CANFD_CAR, CAR, Ecu

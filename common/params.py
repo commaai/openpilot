@@ -1,4 +1,5 @@
-from common.params_pyx import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking # pylint: disable=no-name-in-module, import-error
+from common.params_pyx import ParamKeyType, Params, UnknownKeyName, put_bool_nonblocking, put_nonblocking  # pylint: disable=no-name-in-module, import-error
+
 assert Params
 assert ParamKeyType
 assert UnknownKeyName

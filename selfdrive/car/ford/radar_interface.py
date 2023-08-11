@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 from math import cos, sin
+
 from cereal import car
-from opendbc.can.parser import CANParser
 from common.conversions import Conversions as CV
+from opendbc.can.parser import CANParser
 from selfdrive.car.ford.fordcan import CanBus
 from selfdrive.car.ford.values import DBC, RADAR
 from selfdrive.car.interfaces import RadarInterfaceBase

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import capnp
 from collections import defaultdict
+from typing import Dict, Optional
+
+import capnp
 
 from cereal.messaging import SubMaster
 from common.numpy_fast import mean
-from typing import Optional, Dict
+
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq

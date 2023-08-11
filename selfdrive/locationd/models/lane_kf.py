@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import sys
+
 import numpy as np
 import sympy as sp
 
+from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym import gen_code, EKF_sym
 
 
 class LaneKalman():

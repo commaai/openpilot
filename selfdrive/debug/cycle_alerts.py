@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import time
 import random
+import time
 
-from cereal import car, log
 import cereal.messaging as messaging
+from cereal import car, log
 from common.realtime import DT_CTRL
 from selfdrive.car.honda.interface import CarInterface
-from selfdrive.controls.lib.events import ET, Events
 from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.events import ET, Events
 from selfdrive.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName

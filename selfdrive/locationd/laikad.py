@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import math
 import os
-import time
 import shutil
+import time
 from collections import defaultdict
 from concurrent.futures import Future, ProcessPoolExecutor
 from enum import IntEnum
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -15,11 +15,11 @@ from common.params import Params, put_nonblocking
 from laika import AstroDog
 from laika.constants import SECS_IN_HR, SECS_IN_MIN
 from laika.downloader import DownloadFailed
-from laika.ephemeris import EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
+from laika.ephemeris import EphemerisType, GLONASSEphemeris, GPSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, get_sv_id
-from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
-from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
+from laika.opt import calc_pos_fix, calc_vel_fix, get_posfix_sympy_fun, get_velfix_sympy_func
+from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_qcom, read_raw_ublox
 from selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from selfdrive.locationd.models.gnss_kf import GNSSKalman
 from selfdrive.locationd.models.gnss_kf import States as GStates

@@ -22,15 +22,15 @@ Examples::
 """
 
 import argparse
-import sys
 import pprint
+import sys
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict
 from urllib.parse import parse_qs, urlencode
 
 from tools.lib.api import APIError, CommaApi, UnauthorizedError
-from tools.lib.auth_config import set_token, get_token
+from tools.lib.auth_config import get_token, set_token
 
 PORT = 3000
 

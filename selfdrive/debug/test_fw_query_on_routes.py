@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # type: ignore
 
-from collections import defaultdict
 import argparse
 import os
 import traceback
+from collections import defaultdict
+
 from tqdm import tqdm
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
+
 from selfdrive.car.car_helpers import interface_names
 from selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
-
+from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 NO_API = "NO_API" in os.environ
 SUPPORTED_BRANDS = VERSIONS.keys()

@@ -8,7 +8,6 @@ import sympy as sp
 from rednose.helpers.ekf_sym import EKF_sym, gen_code
 from rednose.helpers.lst_sq_computer import LstSqComputer
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
-
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.locationd.models.gnss_helpers import parse_pr, parse_prr
 

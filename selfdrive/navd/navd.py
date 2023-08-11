@@ -4,8 +4,8 @@ import math
 import os
 import threading
 
-import requests
 import numpy as np
+import requests
 
 import cereal.messaging as messaging
 from cereal import log
@@ -13,10 +13,7 @@ from common.api import Api
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.coordinates import ecef2geodetic
-from selfdrive.navd.helpers import (Coordinate, coordinate_from_param,
-                                    distance_along_geometry, maxspeed_to_ms,
-                                    minimum_distance,
-                                    parse_banner_instructions)
+from selfdrive.navd.helpers import Coordinate, coordinate_from_param, distance_along_geometry, maxspeed_to_ms, minimum_distance, parse_banner_instructions
 from system.swaglog import cloudlog
 
 REROUTE_DISTANCE = 25

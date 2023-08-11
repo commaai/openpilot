@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 import argparse
-import os
-import time
-import threading
 import multiprocessing
+import os
+import threading
+import time
+
 from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
-from selfdrive.boardd.boardd import can_capnp_to_can_list
-from tools.plotjuggler.juggle import load_segment
-from tools.lib.logreader import logreader_from_route_or_segment
+from common.realtime import DT_CTRL, Ratekeeper, config_realtime_process
 from panda import Panda, PandaJungle
+from selfdrive.boardd.boardd import can_capnp_to_can_list
+from tools.lib.logreader import logreader_from_route_or_segment
+from tools.plotjuggler.juggle import load_segment
+
 
 def send_thread(s, flock):
   if "Jungle" in str(type(s)):

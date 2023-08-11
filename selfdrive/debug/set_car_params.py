@@ -3,8 +3,8 @@ import sys
 
 from cereal import car
 from common.params import Params
-from tools.lib.route import Route
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
 
 if __name__ == "__main__":
   CP = None

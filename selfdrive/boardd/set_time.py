@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-import os
 import datetime
-from panda import Panda
+import os
 
 from common.time import MIN_DATE
+from panda import Panda
+
 
 def set_time(logger):
   sys_time = datetime.datetime.today()

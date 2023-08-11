@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import Callable, cast, Optional
+from typing import Callable, Optional, cast
 from unittest.mock import MagicMock
 
 from common.params import Params

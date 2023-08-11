@@ -1,4 +1,4 @@
-from struct import unpack_from, calcsize
+from struct import calcsize, unpack_from
 
 LOG_GNSS_POSITION_REPORT = 0x1476
 LOG_GNSS_GPS_MEASUREMENT_REPORT = 0x1477

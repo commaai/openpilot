@@ -4,9 +4,9 @@ import signal
 import time
 import unittest
 
+import selfdrive.manager.manager as manager
 from cereal import car
 from common.params import Params
-import selfdrive.manager.manager as manager
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from system.hardware import HARDWARE

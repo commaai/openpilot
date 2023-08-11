@@ -24,8 +24,7 @@ from typing import BinaryIO, Callable, Dict, List, Optional, Set, Union, cast
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
-                       create_connection)
+from websocket import ABNF, WebSocket, WebSocketException, WebSocketTimeoutException, create_connection
 
 import cereal.messaging as messaging
 from cereal import log
@@ -35,13 +34,12 @@ from common.basedir import PERSIST
 from common.file_helpers import CallbackReader
 from common.params import Params
 from common.realtime import sec_since_boot, set_core_affinity
-from system.hardware import HARDWARE, PC, AGNOS
+from selfdrive.statsd import STATS_DIR
+from system.hardware import AGNOS, HARDWARE, PC
 from system.loggerd.config import ROOT
 from system.loggerd.xattr_cache import getxattr, setxattr
-from selfdrive.statsd import STATS_DIR
 from system.swaglog import SWAGLOG_DIR, cloudlog
 from system.version import get_commit, get_origin, get_short_branch, get_version
-
 
 # TODO: use socket constant when mypy recognizes this as a valid attribute
 TCP_USER_TIMEOUT = 18

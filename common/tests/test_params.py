@@ -1,12 +1,13 @@
 import os
+import shutil
+import tempfile
 import threading
 import time
-import tempfile
-import shutil
-import uuid
 import unittest
+import uuid
 
-from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking, put_bool_nonblocking
+from common.params import ParamKeyType, Params, UnknownKeyName, put_bool_nonblocking, put_nonblocking
+
 
 class TestParams(unittest.TestCase):
   def setUp(self):

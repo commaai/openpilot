@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-import os
-import json
-import time
 import datetime
-import unittest
+import json
+import os
 import subprocess
+import time
+import unittest
+
 import numpy as np
 
 import cereal.messaging as messaging
+from common.transformations.coordinates import ecef_from_geodetic
+from selfdrive.manager.process_config import managed_processes
 from system.hardware import TICI
 from system.sensord.rawgps.rawgpsd import at_cmd, wait_for_modem
-from selfdrive.manager.process_config import managed_processes
-from common.transformations.coordinates import ecef_from_geodetic
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 

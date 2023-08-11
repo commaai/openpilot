@@ -2,12 +2,12 @@ import logging
 import os
 import time
 import warnings
-from pathlib import Path
 from logging.handlers import BaseRotatingHandler
+from pathlib import Path
 
 import zmq
 
-from common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from common.logging_extra import SwagFormatter, SwagLogFileFormatter, SwagLogger
 from system.hardware import PC
 
 if PC:

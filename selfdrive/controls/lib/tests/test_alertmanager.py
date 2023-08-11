@@ -2,8 +2,8 @@
 import random
 import unittest
 
-from selfdrive.controls.lib.events import Alert, EVENTS
 from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.events import EVENTS, Alert
 
 
 class TestAlertManager(unittest.TestCase):

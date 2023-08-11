@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import numpy as np
 import unittest
 
+import numpy as np
 from parameterized import parameterized_class
-from cereal import log
-from common.params import Params
-from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
-from cereal import car
+
+from cereal import car, log
 from common.conversions import Conversions as CV
+from common.params import Params
+from selfdrive.controls.lib.drive_helpers import IMPERIAL_INCREMENT, V_CRUISE_INITIAL, V_CRUISE_MAX, V_CRUISE_MIN, VCruiseHelper
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 ButtonEvent = car.CarState.ButtonEvent

@@ -2,8 +2,7 @@ import os
 import unittest
 from uuid import uuid4
 
-from common.file_helpers import atomic_write_on_fs_tmp
-from common.file_helpers import atomic_write_in_dir
+from common.file_helpers import atomic_write_in_dir, atomic_write_on_fs_tmp
 
 
 class TestFileHelpers(unittest.TestCase):

@@ -1,6 +1,7 @@
-import unittest
 import random
 import timeit
+import unittest
+
 import numpy as np
 
 from common.kalman.simple_kalman import KF1D

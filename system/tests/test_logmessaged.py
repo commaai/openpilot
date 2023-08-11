@@ -7,7 +7,7 @@ import unittest
 
 import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
-from system.swaglog import cloudlog, SWAGLOG_DIR
+from system.swaglog import SWAGLOG_DIR, cloudlog
 
 
 class TestLogmessaged(unittest.TestCase):

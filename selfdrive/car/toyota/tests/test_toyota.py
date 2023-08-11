@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-from cereal import car
 import unittest
 
-from selfdrive.car.toyota.values import CAR, DBC, TSS2_CAR, ANGLE_CONTROL_CAR, FW_VERSIONS
+from cereal import car
+from selfdrive.car.toyota.values import ANGLE_CONTROL_CAR, CAR, DBC, FW_VERSIONS, TSS2_CAR
 
 Ecu = car.CarParams.Ecu
 

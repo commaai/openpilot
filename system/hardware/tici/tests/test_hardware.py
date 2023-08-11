@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import unittest
+
 import numpy as np
 
 from system.hardware import TICI

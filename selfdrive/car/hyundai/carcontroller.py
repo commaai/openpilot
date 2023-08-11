@@ -4,9 +4,9 @@ from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
-from selfdrive.car.hyundai import hyundaicanfd, hyundaican
+from selfdrive.car.hyundai import hyundaican, hyundaicanfd
 from selfdrive.car.hyundai.hyundaicanfd import CanBus
-from selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
+from selfdrive.car.hyundai.values import CANFD_CAR, CAR, Buttons, CarControllerParams, HyundaiFlags
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState

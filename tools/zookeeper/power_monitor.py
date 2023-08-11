@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
+import datetime
 import sys
 import time
-import datetime
 
-from common.realtime import Ratekeeper
 from common.filter_simple import FirstOrderFilter
+from common.realtime import Ratekeeper
 from tools.zookeeper import Zookeeper
 
 if __name__ == "__main__":

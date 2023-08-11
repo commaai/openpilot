@@ -1,17 +1,17 @@
 import os
 from typing import Dict, List
 
-from cereal import car
-from common.params import Params
-from common.basedir import BASEDIR
-from system.version import is_comma_remote, is_tested_branch
-from selfdrive.car.interfaces import get_interface_attr
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
-from system.swaglog import cloudlog
 import cereal.messaging as messaging
+from cereal import car
+from common.basedir import BASEDIR
+from common.params import Params
 from selfdrive.car import gen_empty_fingerprint
+from selfdrive.car.fingerprints import all_legacy_fingerprint_cars, eliminate_incompatible_cars
+from selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from selfdrive.car.interfaces import get_interface_attr
+from selfdrive.car.vin import VIN_UNKNOWN, get_vin, is_valid_vin
+from system.swaglog import cloudlog
+from system.version import is_comma_remote, is_tested_branch
 
 EventName = car.CarEvent.EventName
 

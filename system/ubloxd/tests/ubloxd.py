@@ -2,8 +2,9 @@
 # type: ignore
 # pylint: skip-file
 
-from selfdrive.locationd.test import ublox
 import struct
+
+from selfdrive.locationd.test import ublox
 
 baudrate = 460800
 rate = 100  # send new data every 100ms

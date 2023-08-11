@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from cereal import car
 from common.conversions import Conversions as CV
-from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
-from selfdrive.car import STD_CARGO_KG, scale_tire_stiffness, get_safety_config
+from selfdrive.car import STD_CARGO_KG, get_safety_config, scale_tire_stiffness
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName

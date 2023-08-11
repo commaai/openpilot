@@ -2,14 +2,15 @@
 import os
 import time
 import unittest
+from collections import defaultdict, namedtuple
+
 import numpy as np
-from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
 from common.gpio import get_irqs_for_action
-from system.hardware import TICI
 from selfdrive.manager.process_config import managed_processes
+from system.hardware import TICI
 
 BMX = {
   ('bmx055', 'acceleration'),

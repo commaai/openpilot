@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 import os
-import sys
 import signal
+import sys
+from collections import defaultdict, deque
+
 import numpy as np
-from collections import deque, defaultdict
 
 import cereal.messaging as messaging
 from cereal import car, log
-from common.params import Params
-from common.realtime import config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter
-from system.swaglog import cloudlog
+from common.params import Params
+from common.realtime import DT_MDL, config_realtime_process
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from system.swaglog import cloudlog
 
 HISTORY = 5  # secs
 POINTS_PER_BUCKET = 1500

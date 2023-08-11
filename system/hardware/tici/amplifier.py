@@ -1,7 +1,8 @@
 import time
-from smbus2 import SMBus
 from collections import namedtuple
 from typing import List
+
+from smbus2 import SMBus
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 

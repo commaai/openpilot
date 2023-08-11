@@ -1,7 +1,9 @@
 import unittest
+
 import numpy as np
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
+
 from selfdrive.controls.lib.drive_helpers import CAR_ROTATION_RADIUS
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import N as LAT_MPC_N
 
 

@@ -1,10 +1,10 @@
 import os
-from cffi import FFI
 
 import sip  # pylint: disable=import-error
+from cffi import FFI
 
-from common.ffi_wrapper import suffix
 from common.basedir import BASEDIR
+from common.ffi_wrapper import suffix
 
 
 def get_ffi():

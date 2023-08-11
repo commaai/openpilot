@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import copy
-from hypothesis import given, HealthCheck, Phase, settings
-import hypothesis.strategies as st
-from parameterized import parameterized
 import unittest
 
+import hypothesis.strategies as st
+from hypothesis import HealthCheck, Phase, given, settings
+from parameterized import parameterized
+
+import selfdrive.test.process_replay.process_replay as pr
 from cereal import log
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.test.fuzzy_generation import FuzzyGenerator
-import selfdrive.test.process_replay.process_replay as pr
 
 # These processes currently fail because of unrealistic data breaking assumptions
 # that openpilot makes causing error with NaN, inf, int size, array indexing ...

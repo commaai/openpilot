@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import av
+import argparse
+import multiprocessing
 import os
 import sys
-import argparse
-import numpy as np
-import multiprocessing
 import time
+
+import av
+import numpy as np
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
@@ -26,7 +27,7 @@ def decoder(addr, vipc_server, vst, nvidia, debug=False):
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
     sys.path += os.environ["LD_LIBRARY_PATH"].split(":")
-    import PyNvCodec as nvc # pylint: disable=import-error
+    import PyNvCodec as nvc  # pylint: disable=import-error
 
     nvDec = nvc.PyNvDecoder(W, H, nvc.PixelFormat.NV12, nvc.CudaVideoCodec.HEVC, 0)
     cc1 = nvc.ColorspaceConversionContext(nvc.ColorSpace.BT_709, nvc.ColorRange.JPEG)

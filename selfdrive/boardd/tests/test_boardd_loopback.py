@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import os
 import copy
+import os
 import random
 import time
 import unittest
@@ -14,8 +14,8 @@ from common.spinner import Spinner
 from common.timeout import Timeout
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
-from system.hardware import TICI
 from selfdrive.test.helpers import phone_only, with_processes
+from system.hardware import TICI
 
 
 class TestBoardd(unittest.TestCase):

@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from common.params import Params
+
 params = Params()
 
 # Create fake time
@@ -14,8 +15,7 @@ def mock_sec_since_boot():
 
 with patch("common.realtime.sec_since_boot", new=mock_sec_since_boot):
   with patch("common.params.put_nonblocking", new=params.put):
-    from selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                    CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
+    from selfdrive.thermald.power_monitoring import CAR_CHARGING_RATE_W, DELAY_SHUTDOWN_TIME_S, VBATT_PAUSE_CHARGING, CAR_BATTERY_CAPACITY_uWh, PowerMonitoring
 
 TEST_DURATION_S = 50
 GOOD_VOLTAGE = 12 * 1e3

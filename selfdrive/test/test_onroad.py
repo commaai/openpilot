@@ -1,26 +1,27 @@
 #!/usr/bin/env python3
-import math
 import json
+import math
 import os
 import shutil
 import subprocess
 import time
-import numpy as np
 import unittest
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import car
+import numpy as np
+
 import cereal.messaging as messaging
+from cereal import car
 from cereal.services import service_list
 from common.basedir import BASEDIR
-from common.timeout import Timeout
 from common.params import Params
-from selfdrive.controls.lib.events import EVENTS, ET
+from common.timeout import Timeout
+from selfdrive.controls.lib.events import ET, EVENTS
+from selfdrive.test.helpers import release_only, set_params_enabled
 from system.hardware import HARDWARE
 from system.loggerd.config import ROOT
-from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
