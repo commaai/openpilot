@@ -235,8 +235,11 @@ class CarState(CarStateBase):
     if CP.carFingerprint in CANFD_CAR:
       return CarState.get_can_parser_canfd(CP)
 
+    freq_mdps12 = 100 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50
+
     messages = [
       # address, frequency
+      ("MDPS12", freq_mdps12),
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
@@ -248,8 +251,6 @@ class CarState(CarStateBase):
       ("WHL_SPD11", 50),
       ("SAS11", 100),
     ]
-    freq_mdps12 = 100 if CP.flags & HyundaiFlags.CAN_CANFD.value else 50
-    checks.append(("MDPS12", freq_mdps12))
 
     if not CP.openpilotLongitudinalControl and CP.carFingerprint not in CAMERA_SCC_CAR and not (CP.flags & HyundaiFlags.CAN_CANFD.value):
       messages += [
