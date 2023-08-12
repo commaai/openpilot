@@ -233,7 +233,7 @@ class CarState(CarStateBase):
 
   def get_can_parser(self, CP):
     if CP.carFingerprint in CANFD_CAR:
-      return CarState.get_can_parser_canfd(self, CP)
+      return self.get_can_parser_canfd(CP)
 
     messages = [
       # address, frequency
