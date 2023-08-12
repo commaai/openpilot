@@ -70,7 +70,7 @@ if __name__ == "__main__":
   for brand in fingerprints:
     for car in fingerprints[brand]:
       fingerprints_flat += fingerprints[brand][car]
-      for i in range(len(fingerprints[brand][car])):
+      for _ in range(len(fingerprints[brand][car])):
         car_names.append(car)
         brand_names.append(brand)
 
