@@ -49,7 +49,7 @@ class RadarInterface(RadarInterfaceBase):
 
     radar_data = self._radar_msg_from_buffer(self.updated_values, self.rcp.can_valid)
     self.updated_values.clear()
-  
+
     return radar_data
 
   def _radar_msg_from_buffer(self, updated_values, can_valid):
