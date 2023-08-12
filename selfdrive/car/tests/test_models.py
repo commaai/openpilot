@@ -102,12 +102,12 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
-      for idx, msg in enumerate(lr):
+      for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
 
           # gather fingerprint for 1s
-          if idx <= FRAME_FINGERPRINT:
+          if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
