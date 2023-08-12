@@ -4,6 +4,7 @@
 #include <QPainter>
 
 #include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
 
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
@@ -12,16 +13,23 @@ MapETA::MapETA(QWidget *parent) : QWidget(parent) {
   setVisible(false);
   setAttribute(Qt::WA_TranslucentBackground);
   eta_doc.setUndoRedoEnabled(false);
-  eta_doc.setDefaultStyleSheet("body {font-family:Inter;font-size:70px;color:white;} b{font-weight:600;} td{padding:0 3px;}");
+  eta_doc.setDefaultFont(InterFont(font_size));
+  eta_doc.setDefaultStyleSheet("body {color:white;} b{font-weight:600;} td{padding:0 3px;}");
 }
 
 void MapETA::paintEvent(QPaintEvent *event) {
   if (!eta_doc.isEmpty()) {
+    QSizeF txt_size = eta_doc.size();
+    while (txt_size.width() >= (width() - UI_BORDER_SIZE * 3)) {
+      font_size -= 5;
+      eta_doc.setDefaultFont(InterFont(font_size));
+      txt_size = eta_doc.size();
+    }
+
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
-    QSizeF txt_size = eta_doc.size();
     p.drawRoundedRect((width() - txt_size.width()) / 2 - UI_BORDER_SIZE, 0, txt_size.width() + UI_BORDER_SIZE * 2, height() + 25, 25, 25);
     p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
     eta_doc.drawContents(&p);

@@ -18,6 +18,7 @@ private:
   void showEvent(QShowEvent *event) override { format_24h = param.getBool("NavSettingTime24h"); }
 
   bool format_24h = false;
+  int font_size = 70;
   QTextDocument eta_doc;
   Params param;
 };
