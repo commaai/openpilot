@@ -238,6 +238,7 @@ class TestCarModelBase(unittest.TestCase):
           # No need to check relay malfunction on disabled routes (relay closed)
           if self.openpilot_enabled:
             self.assertFalse(self.safety.get_relay_malfunction())
+
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_tx_cases(self, data=None):
