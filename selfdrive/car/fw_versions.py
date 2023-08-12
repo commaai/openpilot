@@ -116,6 +116,7 @@ def match_fw_to_car_exact(live_fw_versions, filter_brand=None, log=True) -> Set[
   for candidate, fws in candidates.items():
     brand = MODEL_TO_BRAND[candidate]
     if not is_brand(brand, filter_brand):
+      invalid.add(candidate)
       continue
 
     config = FW_QUERY_CONFIGS[brand]
