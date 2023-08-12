@@ -76,7 +76,6 @@ carla = { url = "https://github.com/commaai/carla/releases/download/3.11.4/carla
 control = "*"
 coverage = "*"
 dictdiffer = "*"
-fastcluster = "*"
 ft4222 = "*"
 hexdump = "*"
 hypothesis = "==6.46.7"
