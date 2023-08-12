@@ -230,11 +230,10 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed)
+          # No need to check relay malfunction on disabled routes (relay closed) or reasonable fingerprinting time
           if self.openpilot_enabled and t > 5e6:
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
-            # don't consider relay for reasonable fingerprinting time
             # TODO: detect when relay has flipped to properly check relay malfunction
             self.safety.set_relay_malfunction(False)
 
