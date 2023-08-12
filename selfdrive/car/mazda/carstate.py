@@ -107,22 +107,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("LEFT_BLINK", "BLINK_INFO"),
-      ("RIGHT_BLINK", "BLINK_INFO"),
-      ("HIGH_BEAMS", "BLINK_INFO"),
-      ("STEER_ANGLE", "STEER"),
-      ("STEER_ANGLE_RATE", "STEER_RATE"),
-      ("STEER_TORQUE_SENSOR", "STEER_TORQUE"),
-      ("STEER_TORQUE_MOTOR", "STEER_TORQUE"),
-      ("FL", "WHEEL_SPEEDS"),
-      ("FR", "WHEEL_SPEEDS"),
-      ("RL", "WHEEL_SPEEDS"),
-      ("RR", "WHEEL_SPEEDS"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("BLINK_INFO", 10),
       ("STEER", 67),
@@ -132,30 +117,7 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in GEN1:
-      signals += [
-        ("LKAS_BLOCK", "STEER_RATE"),
-        ("LKAS_TRACK_STATE", "STEER_RATE"),
-        ("HANDS_OFF_5_SECONDS", "STEER_RATE"),
-        ("CRZ_ACTIVE", "CRZ_CTRL"),
-        ("CRZ_AVAILABLE", "CRZ_CTRL"),
-        ("CRZ_SPEED", "CRZ_EVENTS"),
-        ("STANDSTILL", "PEDALS"),
-        ("BRAKE_ON", "PEDALS"),
-        ("BRAKE_PRESSURE", "BRAKE"),
-        ("GEAR", "GEAR"),
-        ("DRIVER_SEATBELT", "SEATBELT"),
-        ("FL", "DOORS"),
-        ("FR", "DOORS"),
-        ("BL", "DOORS"),
-        ("BR", "DOORS"),
-        ("PEDAL_GAS", "ENGINE_DATA"),
-        ("SPEED", "ENGINE_DATA"),
-        ("CTR", "CRZ_BTNS"),
-        ("LEFT_BS_STATUS", "BSM"),
-        ("RIGHT_BS_STATUS", "BSM"),
-      ]
-
-      checks += [
+      messages += [
         ("ENGINE_DATA", 100),
         ("CRZ_CTRL", 50),
         ("CRZ_EVENTS", 50),
@@ -168,41 +130,17 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
-    checks = []
+    messages = []
 
     if CP.carFingerprint in GEN1:
-      signals += [
-        # sig_name, sig_address
-        ("LKAS_REQUEST", "CAM_LKAS"),
-        ("CTR", "CAM_LKAS"),
-        ("ERR_BIT_1", "CAM_LKAS"),
-        ("LINE_NOT_VISIBLE", "CAM_LKAS"),
-        ("BIT_1", "CAM_LKAS"),
-        ("ERR_BIT_2", "CAM_LKAS"),
-        ("STEERING_ANGLE", "CAM_LKAS"),
-        ("ANGLE_ENABLED", "CAM_LKAS"),
-        ("CHKSUM", "CAM_LKAS"),
-
-        ("LINE_VISIBLE", "CAM_LANEINFO"),
-        ("LINE_NOT_VISIBLE", "CAM_LANEINFO"),
-        ("LANE_LINES", "CAM_LANEINFO"),
-        ("BIT1", "CAM_LANEINFO"),
-        ("BIT2", "CAM_LANEINFO"),
-        ("BIT3", "CAM_LANEINFO"),
-        ("NO_ERR_BIT", "CAM_LANEINFO"),
-        ("S1", "CAM_LANEINFO"),
-        ("S1_HBEAM", "CAM_LANEINFO"),
-      ]
-
-      checks += [
+      messages += [
         # sig_address, frequency
         ("CAM_LANEINFO", 2),
         ("CAM_LKAS", 16),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)

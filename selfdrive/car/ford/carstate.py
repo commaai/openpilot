@@ -111,70 +111,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("TrnAinTq_D_Qf", "VehicleOperatingModes"),            # Used to detect hybrid or ICE platform variant
-
-      ("Veh_V_ActlBrk", "BrakeSysFeatures"),                 # ABS vehicle speed (kph)
-      ("VehYaw_W_Actl", "Yaw_Data_FD1"),                     # ABS vehicle yaw rate (rad/s)
-      ("VehStop_D_Stat", "DesiredTorqBrk"),                  # ABS vehicle stopped
-      ("PrkBrkStatus", "DesiredTorqBrk"),                    # ABS park brake status
-      ("ApedPos_Pc_ActlArb", "EngVehicleSpThrottle"),        # PCM throttle (pct)
-      ("BrkTot_Tq_Actl", "BrakeSnData_4"),                   # ABS brake torque (Nm)
-      ("BpedDrvAppl_D_Actl", "EngBrakeData"),                # PCM driver brake pedal pressed
-      ("Veh_V_DsplyCcSet", "EngBrakeData"),                  # PCM ACC set speed (mph)
-                                                             # The units might change with IPC settings?
-      ("CcStat_D_Actl", "EngBrakeData"),                     # PCM ACC status
-      ("AccStopMde_D_Rq", "EngBrakeData"),                   # PCM ACC standstill
-      ("AccEnbl_B_RqDrv", "Cluster_Info1_FD1"),              # PCM ACC enable
-      ("StePinComp_An_Est", "SteeringPinion_Data"),          # PSCM estimated steering angle (deg)
-      ("StePinCompAnEst_D_Qf", "SteeringPinion_Data"),       # PSCM estimated steering angle (quality flag)
-                                                             # Calculates steering angle (and offset) from pinion
-                                                             # angle and driving measurements.
-                                                             # StePinRelInit_An_Sns is the pinion angle, initialised
-                                                             # to zero at the beginning of the drive.
-      ("SteeringColumnTorque", "EPAS_INFO"),                 # PSCM steering column torque (Nm)
-      ("EPAS_Failure", "EPAS_INFO"),                         # PSCM EPAS status
-      ("TurnLghtSwtch_D_Stat", "Steering_Data_FD1"),         # SCCM Turn signal switch
-      ("TjaButtnOnOffPress", "Steering_Data_FD1"),           # SCCM ACC button, lane-centering/traffic jam assist toggle
-      ("DrStatDrv_B_Actl", "BodyInfo_3_FD1"),                # BCM Door open, driver
-      ("DrStatPsngr_B_Actl", "BodyInfo_3_FD1"),              # BCM Door open, passenger
-      ("DrStatRl_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear left
-      ("DrStatRr_B_Actl", "BodyInfo_3_FD1"),                 # BCM Door open, rear right
-      ("FirstRowBuckleDriver", "RCMStatusMessage2_FD1"),     # RCM Seatbelt status, driver
-      ("HeadLghtHiFlash_D_Stat", "Steering_Data_FD1"),       # SCCM Passthrough the remaining buttons
-      ("WiprFront_D_Stat", "Steering_Data_FD1"),
-      ("LghtAmb_D_Sns", "Steering_Data_FD1"),
-      ("AccButtnGapDecPress", "Steering_Data_FD1"),
-      ("AccButtnGapIncPress", "Steering_Data_FD1"),
-      ("AslButtnOnOffCnclPress", "Steering_Data_FD1"),
-      ("AslButtnOnOffPress", "Steering_Data_FD1"),
-      ("LaSwtchPos_D_Stat", "Steering_Data_FD1"),
-      ("CcAslButtnCnclResPress", "Steering_Data_FD1"),
-      ("CcAslButtnDeny_B_Actl", "Steering_Data_FD1"),
-      ("CcAslButtnIndxDecPress", "Steering_Data_FD1"),
-      ("CcAslButtnIndxIncPress", "Steering_Data_FD1"),
-      ("CcAslButtnOffCnclPress", "Steering_Data_FD1"),
-      ("CcAslButtnOnOffCncl", "Steering_Data_FD1"),
-      ("CcAslButtnOnPress", "Steering_Data_FD1"),
-      ("CcAslButtnResDecPress", "Steering_Data_FD1"),
-      ("CcAslButtnResIncPress", "Steering_Data_FD1"),
-      ("CcAslButtnSetDecPress", "Steering_Data_FD1"),
-      ("CcAslButtnSetIncPress", "Steering_Data_FD1"),
-      ("CcAslButtnSetPress", "Steering_Data_FD1"),
-      ("CcButtnOffPress", "Steering_Data_FD1"),
-      ("CcButtnOnOffCnclPress", "Steering_Data_FD1"),
-      ("CcButtnOnOffPress", "Steering_Data_FD1"),
-      ("CcButtnOnPress", "Steering_Data_FD1"),
-      ("HeadLghtHiFlash_D_Actl", "Steering_Data_FD1"),
-      ("HeadLghtHiOn_B_StatAhb", "Steering_Data_FD1"),
-      ("AhbStat_B_Dsply", "Steering_Data_FD1"),
-      ("AccButtnGapTogglePress", "Steering_Data_FD1"),
-      ("WiprFrontSwtch_D_Stat", "Steering_Data_FD1"),
-      ("HeadLghtHiCtrl_D_RqAhb", "Steering_Data_FD1"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("VehicleOperatingModes", 100),
       ("BrakeSysFeatures", 50),
@@ -192,93 +129,31 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in CANFD_CAR:
-      signals += [
-        ("LatCtlSte_D_Stat", "Lane_Assist_Data3_FD1"),       # PSCM lateral control status
-      ]
-      checks += [
+      messages += [
         ("Lane_Assist_Data3_FD1", 33),
       ]
 
     if CP.transmissionType == TransmissionType.automatic:
-      signals += [
-        ("TrnRng_D_RqGsm", "Gear_Shift_by_Wire_FD1"),        # GWM transmission gear position
-      ]
-      checks += [
+      messages += [
         ("Gear_Shift_by_Wire_FD1", 10),
       ]
     elif CP.transmissionType == TransmissionType.manual:
-      signals += [
-        ("CluPdlPos_Pc_Meas", "Engine_Clutch_Data"),         # PCM clutch (pct)
-        ("RvrseLghtOn_B_Stat", "BCM_Lamp_Stat_FD1"),         # BCM reverse light
-      ]
-      checks += [
+      messages += [
         ("Engine_Clutch_Data", 33),
         ("BCM_Lamp_Stat_FD1", 1),
       ]
 
     if CP.enableBsm and CP.carFingerprint not in CANFD_CAR:
-      signals += [
-        ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
-        ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
-      ]
-      checks += [
+      messages += [
         ("Side_Detect_L_Stat", 5),
         ("Side_Detect_R_Stat", 5),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).main)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).main)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("CmbbDeny_B_Actl", "ACCDATA"),               # ACC/AEB unavailable/lockout
-
-      ("CmbbBrkDecel_B_Rq", "ACCDATA_2"),           # AEB actuation request bit
-
-      ("HaDsply_No_Cs", "ACCDATA_3"),
-      ("HaDsply_No_Cnt", "ACCDATA_3"),
-      ("AccStopStat_D_Dsply", "ACCDATA_3"),         # ACC stopped status message
-      ("AccTrgDist2_D_Dsply", "ACCDATA_3"),         # ACC target distance
-      ("AccStopRes_B_Dsply", "ACCDATA_3"),
-      ("TjaWarn_D_Rq", "ACCDATA_3"),                # TJA warning
-      ("Tja_D_Stat", "ACCDATA_3"),                  # TJA status
-      ("TjaMsgTxt_D_Dsply", "ACCDATA_3"),           # TJA text
-      ("IaccLamp_D_Rq", "ACCDATA_3"),               # iACC status icon
-      ("AccMsgTxt_D2_Rq", "ACCDATA_3"),             # ACC text
-      ("FcwDeny_B_Dsply", "ACCDATA_3"),             # FCW disabled
-      ("FcwMemStat_B_Actl", "ACCDATA_3"),           # FCW enabled setting
-      ("AccTGap_B_Dsply", "ACCDATA_3"),             # ACC time gap display setting
-      ("CadsAlignIncplt_B_Actl", "ACCDATA_3"),
-      ("AccFllwMde_B_Dsply", "ACCDATA_3"),          # ACC lead indicator
-      ("CadsRadrBlck_B_Actl", "ACCDATA_3"),
-      ("CmbbPostEvnt_B_Dsply", "ACCDATA_3"),        # AEB event status
-      ("AccStopMde_B_Dsply", "ACCDATA_3"),          # ACC stop mode display setting
-      ("FcwMemSens_D_Actl", "ACCDATA_3"),           # FCW sensitivity setting
-      ("FcwMsgTxt_D_Rq", "ACCDATA_3"),              # FCW text
-      ("AccWarn_D_Dsply", "ACCDATA_3"),             # ACC warning
-      ("FcwVisblWarn_B_Rq", "ACCDATA_3"),           # FCW visible alert
-      ("FcwAudioWarn_B_Rq", "ACCDATA_3"),           # FCW audio alert
-      ("AccTGap_D_Dsply", "ACCDATA_3"),             # ACC time gap
-      ("AccMemEnbl_B_RqDrv", "ACCDATA_3"),          # ACC adaptive/normal setting
-      ("FdaMem_B_Stat", "ACCDATA_3"),               # FDA enabled setting
-
-      ("FeatConfigIpmaActl", "IPMA_Data"),
-      ("FeatNoIpmaActl", "IPMA_Data"),
-      ("PersIndexIpma_D_Actl", "IPMA_Data"),
-      ("AhbcRampingV_D_Rq", "IPMA_Data"),           # AHB ramping
-      ("LaDenyStats_B_Dsply", "IPMA_Data"),         # LKAS error
-      ("CamraDefog_B_Req", "IPMA_Data"),            # Windshield heater?
-      ("CamraStats_D_Dsply", "IPMA_Data"),          # Camera status
-      ("DasAlrtLvl_D_Dsply", "IPMA_Data"),          # DAS alert level
-      ("DasStats_D_Dsply", "IPMA_Data"),            # DAS status
-      ("DasWarn_D_Dsply", "IPMA_Data"),             # DAS warning
-      ("AhbHiBeam_D_Rq", "IPMA_Data"),              # AHB status
-      ("Passthru_63", "IPMA_Data"),
-      ("Passthru_48", "IPMA_Data"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("ACCDATA", 50),
       ("ACCDATA_2", 50),
@@ -287,13 +162,9 @@ class CarState(CarStateBase):
     ]
 
     if CP.enableBsm and CP.carFingerprint in CANFD_CAR:
-      signals += [
-        ("SodDetctLeft_D_Stat", "Side_Detect_L_Stat"),       # Blindspot sensor, left
-        ("SodDetctRight_D_Stat", "Side_Detect_R_Stat"),      # Blindspot sensor, right
-      ]
-      checks += [
+      messages += [
         ("Side_Detect_L_Stat", 5),
         ("Side_Detect_R_Stat", 5),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus(CP).camera)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus(CP).camera)

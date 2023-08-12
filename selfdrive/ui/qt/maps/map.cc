@@ -35,7 +35,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   map_eta->setFixedHeight(120);
 
   error = new QLabel(this);
-  error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgb(0, 0, 0, 150);)");
+  error->setStyleSheet(R"(color:white;padding:50px 11px;font-size: 90px; background-color:rgba(0, 0, 0, 150);)");
   error->setAlignment(Qt::AlignCenter);
 
   overlay_layout->addWidget(error);
@@ -213,8 +213,7 @@ void MapWindow::updateState(const UIState &s) {
     // - API exception/no internet
     // - route response is empty
     // - any time navd is waiting for recompute_countdown
-    auto dest = coordinate_from_param("NavDestination");
-    routing_problem = !sm.valid("navInstruction") && dest.has_value();
+    routing_problem = !sm.valid("navInstruction") && coordinate_from_param("NavDestination").has_value();
 
     if (sm.valid("navInstruction")) {
       auto i = sm["navInstruction"].getNavInstruction();
