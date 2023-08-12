@@ -119,14 +119,10 @@ class TestCarModelBase(unittest.TestCase):
             cls.car_model = msg.carParams.carFingerprint
         elif msg.which() == 'initData':
           for param in msg.initData.params.entries:
-            print(param)
             if param.key == 'OpenpilotEnabledToggle':
-              print('here!')
-              assert param.value.strip(b'\x00') in (b'1', b'0'), ('param value', param.value)
               enabled_toggle = param.value.strip(b'\x00') == b'1'
-              print(enabled_toggle)
 
-      if len(can_msgs) > int(50 / DT_CTRL):# and cls.enabled_toggle is not None:
+      if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
