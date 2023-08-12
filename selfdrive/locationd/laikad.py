@@ -168,7 +168,7 @@ class Laikad:
 
       position_std_residual = np.median(np.abs(pr_residuals))
       position_std = pos_std[:3]
-      position_std = np.clip(position_std, position_std_residual, np.inf)
+      position_std = np.clip(position_std, 5*position_std_residual, np.inf)
 
 
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
@@ -178,7 +178,7 @@ class Laikad:
 
       velocity_std_residual = np.median(np.abs(prr_residuals))
       velocity_std = vel_std[:3]
-      velocity_std = np.clip(velocity_std, velocity_std_residual, np.inf)
+      velocity_std = np.clip(velocity_std, 5*velocity_std_residual, np.inf)
 
       return position_estimate, position_std, velocity_estimate, velocity_std
 
@@ -461,7 +461,7 @@ def main(sm=None, pm=None):
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling
-  use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = True  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)

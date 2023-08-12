@@ -303,7 +303,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 
   double sensor_time = log.getMeasTime() * 1e-9;
   sensor_time -= 0.630;
-  double factor = 0.2;
+  double factor = 1;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
@@ -311,9 +311,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   auto ecef_pos_std = log.getPositionECEF().getStd();
   VectorXd ecef_pos_var = Vector3d(ecef_pos_std[0], ecef_pos_std[1], ecef_pos_std[2]).array().square().matrix();
   double ecef_pos_std_norm = std::sqrt(ecef_pos_var.sum());
-  ecef_pos_std_norm = ecef_pos_std[0];
-  MatrixXdr ecef_pos_R = Vector3d::Constant(pow(factor*ecef_pos_std_norm, 2)).asDiagonal();
-  //MatrixXdr ecef_pos_R = factor * ecef_pos_var.asDiagonal();
+  //MatrixXdr ecef_pos_R = Vector3d::Constant(pow(factor*ecef_pos_std_norm, 2)).asDiagonal();
+  MatrixXdr ecef_pos_R = factor * factor * ecef_pos_var.asDiagonal();
 
   auto ecef_vel_v = log.getVelocityECEF().getValue();
   VectorXd ecef_vel = Vector3d(ecef_vel_v[0], ecef_vel_v[1], ecef_vel_v[2]);
@@ -321,9 +320,8 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   auto ecef_vel_std = log.getVelocityECEF().getStd();
   VectorXd ecef_vel_var = Vector3d(ecef_vel_std[0], ecef_vel_std[1], ecef_vel_std[2]).array().square().matrix();
   double ecef_vel_std_norm = std::sqrt(ecef_vel_var.sum());
-  ecef_vel_std_norm = ecef_vel_std[0];
-  MatrixXdr ecef_vel_R = Vector3d::Constant(pow(factor*ecef_vel_std_norm, 2)).asDiagonal();
-  //MatrixXdr ecef_vel_R = factor * ecef_vel_var.asDiagonal();
+  //MatrixXdr ecef_vel_R = Vector3d::Constant(pow(factor*ecef_vel_std_norm, 2)).asDiagonal();
+  MatrixXdr ecef_vel_R = factor * factor * ecef_vel_var.asDiagonal();
 
   double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
