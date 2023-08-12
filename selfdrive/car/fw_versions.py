@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Set, Tuple
+from typing import Any, DefaultDict, Dict, List, Optional, Set
 from tqdm import tqdm
 import capnp
 
 import panda.python.uds as uds
 from cereal import car
 from common.params import Params
-from selfdrive.car.ecu_addrs import EcuAddrBusType, get_ecu_addrs
+from selfdrive.car.ecu_addrs import get_ecu_addrs
+from selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType
 from selfdrive.car.interfaces import get_interface_attr
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -35,8 +36,8 @@ def is_brand(brand: str, filter_brand: Optional[str]) -> bool:
 
 
 def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
-                  filter_brand: Optional[str] = None) -> Dict[Tuple[int, Optional[int]], Set[bytes]]:
-  fw_versions_dict = defaultdict(set)
+                  filter_brand: Optional[str] = None) -> Dict[AddrType, Set[bytes]]:
+  fw_versions_dict: DefaultDict[AddrType, Set[bytes]] = defaultdict(set)
   for fw in fw_versions:
     if is_brand(fw.brand, filter_brand) and not fw.logging:
       sub_addr = fw.subAddress if fw.subAddress != 0 else None
@@ -44,8 +45,8 @@ def build_fw_dict(fw_versions: List[capnp.lib.capnp._DynamicStructBuilder],
   return dict(fw_versions_dict)
 
 
-def get_brand_addrs() -> Dict[str, Set[Tuple[int, Optional[int]]]]:
-  brand_addrs: DefaultDict[str, Set[Tuple[int, Optional[int]]]] = defaultdict(set)
+def get_brand_addrs() -> Dict[str, Set[AddrType]]:
+  brand_addrs: DefaultDict[str, Set[AddrType]] = defaultdict(set)
   for brand, cars in VERSIONS.items():
     # Add ecus in database + extra ecus to match against
     brand_addrs[brand] |= {(addr, sub_addr) for _, addr, sub_addr in FW_QUERY_CONFIGS[brand].extra_ecus}
