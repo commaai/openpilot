@@ -54,7 +54,7 @@ def get_tombstones():
       with os.scandir(folder) as d:
 
         # Loop over first 1000 directory entries
-        for _, f in zip(range(1000), d):
+        for _, f in zip(range(1000), d, strict=False):
           if f.name.startswith("tombstone"):
             files.append((f.path, int(f.stat().st_ctime)))
           elif f.name.endswith(".crash") and f.stat().st_mode == 0o100640:

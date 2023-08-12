@@ -129,11 +129,15 @@ def gen_lat_ocp():
 
 
 class LateralMpc():
-  def __init__(self, x0=np.zeros(X_DIM)):
+  def __init__(self, x0=None):
+    if x0 is None:
+      x0 = np.zeros(X_DIM)
     self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
     self.reset(x0)
 
-  def reset(self, x0=np.zeros(X_DIM)):
+  def reset(self, x0=None):
+    if x0 is None:
+      x0 = np.zeros(X_DIM)
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.yref = np.zeros((N+1, COST_DIM))

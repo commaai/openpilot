@@ -30,7 +30,7 @@ def create_backup(pigeon):
   pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
   try:
     if not pigeon.wait_for_ack(ack=pd.UBLOX_SOS_ACK, nack=pd.UBLOX_SOS_NACK):
-      assert False, "Could not store almanac"
+      raise RuntimeError("Could not store almanac")
   except TimeoutError:
     pass
 
