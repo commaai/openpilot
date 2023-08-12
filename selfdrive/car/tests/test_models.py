@@ -230,7 +230,7 @@ class TestCarModelBase(unittest.TestCase):
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
 
-          # No need to check relay malfunction on disabled routes (relay closed) or reasonable fingerprinting time
+          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
           if self.openpilot_enabled and t > 5e6:
             self.assertFalse(self.safety.get_relay_malfunction())
           else:
