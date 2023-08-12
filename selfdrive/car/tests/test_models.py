@@ -105,12 +105,10 @@ class TestCarModelBase(unittest.TestCase):
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
-
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
-
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           if msg.carParams.openpilotLongitudinalControl:
