@@ -15,7 +15,7 @@ class SignalModel : public QAbstractItemModel {
   Q_OBJECT
 public:
   struct Item {
-    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, ExtraInfo, Unit, Comment, Min, Max, Desc };
+    enum Type {Root, Sig, Name, Size, Endian, Signed, Offset, Factor, SignalType, MultiplexValue, ExtraInfo, Unit, Comment, Min, Max, Desc };
     ~Item() { qDeleteAll(children); }
     inline int row() { return parent->children.indexOf(this); }
 
@@ -41,10 +41,7 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   void setMessage(const MessageId &id);
   void setFilter(const QString &txt);
-  void addSignal(int start_bit, int size, bool little_endian);
   bool saveSignal(const cabana::Signal *origin_s, cabana::Signal &s);
-  void resizeSignal(const cabana::Signal *sig, int start_bit, int size);
-  void removeSignal(const cabana::Signal *sig);
   Item *getItem(const QModelIndex &index) const;
   int signalRow(const cabana::Signal *sig) const;
   void showExtraInfo(const QModelIndex &index);
@@ -85,8 +82,8 @@ public:
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
   QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  bool helpEvent(QHelpEvent *event, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) override;
   void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+  void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 
   QValidator *name_validator, *double_validator;
   QFont label_font, minmax_font;
@@ -113,10 +110,10 @@ signals:
 
 private:
   void rowsChanged();
-  void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent* event) override;
   void updateToolBar();
   void setSparklineRange(int value);
+  void handleSignalAdded(MessageId id, const cabana::Signal *sig);
   void handleSignalUpdated(const cabana::Signal *sig);
   void updateState(const QHash<MessageId, CanData> *msgs = nullptr);
 
@@ -130,6 +127,10 @@ private:
     void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override {
       // Bypass the slow call to QTreeView::dataChanged.
       QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+    }
+    void leaveEvent(QEvent *event) override {
+      emit ((SignalView *)parentWidget())->highlight(nullptr);
+      QTreeView::leaveEvent(event);
     }
   };
   int max_value_width = 0;

@@ -11,8 +11,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-QFrame *horizontal_line(QWidget *parent = nullptr);
-
 class ElidedLabel : public QLabel {
   Q_OBJECT
 
@@ -202,7 +200,7 @@ class ButtonParamControl : public AbstractControl {
   Q_OBJECT
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     const std::vector<QString> &button_texts) : AbstractControl(title, desc, icon) {
+                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : AbstractControl(title, desc, icon) {
     const QString style = R"(
       QPushButton {
         border-radius: 50px;
@@ -216,20 +214,24 @@ public:
       QPushButton:pressed {
         background-color: #4a4a4a;
       }
-      QPushButton:checked {
+      QPushButton:checked:enabled {
         background-color: #33Ab4C;
+      }
+      QPushButton:disabled {
+        color: #33E4E4E4;
       }
     )";
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
 
-    QButtonGroup *button_group = new QButtonGroup(this);
+    button_group = new QButtonGroup(this);
     button_group->setExclusive(true);
     for (int i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setCheckable(true);
       button->setChecked(i == value);
       button->setStyleSheet(style);
+      button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
       button_group->addButton(button, i);
     }
@@ -241,9 +243,16 @@ public:
     });
   }
 
+  void setEnabled(bool enable) {
+    for (auto btn : button_group->buttons()) {
+      btn->setEnabled(enable);
+    }
+  }
+
 private:
   std::string key;
   Params params;
+  QButtonGroup *button_group;
 };
 
 class ListWidget : public QWidget {
@@ -286,18 +295,4 @@ public:
   LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
     setLayout(l);
   }
-};
-
-class ClickableWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  ClickableWidget(QWidget *parent = nullptr);
-
-protected:
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void paintEvent(QPaintEvent *) override;
-
-signals:
-  void clicked();
 };

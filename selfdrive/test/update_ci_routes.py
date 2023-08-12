@@ -6,6 +6,7 @@ from tqdm import tqdm
 from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
 from selfdrive.car.tests.routes import routes as test_car_models_routes
+from selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from selfdrive.test.process_replay.test_processes import source_segments as replay_segments
 from xx.chffr.lib import azureutil  # pylint: disable=import-error
 from xx.chffr.lib.storage import _DATA_ACCOUNT_PRODUCTION, _DATA_ACCOUNT_CI, _DATA_BUCKET_PRODUCTION  # pylint: disable=import-error
@@ -51,7 +52,7 @@ def sync_to_ci_public(route):
     return True
 
   print(f"Uploading {route}")
-  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys):
+  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
     print(f"Trying {source_account}/{source_bucket}")
     cmd = [
       "azcopy",
@@ -81,6 +82,7 @@ if __name__ == "__main__":
 
   if not len(to_sync):
     # sync routes from the car tests routes and process replay
+    to_sync.extend([UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE])
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 

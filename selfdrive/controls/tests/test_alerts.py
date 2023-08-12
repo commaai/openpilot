@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import copy
 import json
 import os
 import unittest
@@ -76,9 +77,10 @@ class TestAlerts(unittest.TestCase):
           break
 
         font = fonts[alert.alert_size][i]
-        w, _ = draw.textsize(txt, font)
+        left, _, right, _ = draw.textbbox((0, 0), txt, font)
+        width = right - left
         msg = f"type: {alert.alert_type} msg: {txt}"
-        self.assertLessEqual(w, max_text_width, msg=msg)
+        self.assertLessEqual(width, max_text_width, msg=msg)
 
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():
@@ -108,8 +110,9 @@ class TestAlerts(unittest.TestCase):
     params = Params()
     for a in self.offroad_alerts:
       # set the alert
-      alert = self.offroad_alerts[a]
+      alert = copy.copy(self.offroad_alerts[a])
       set_offroad_alert(a, True)
+      alert['extra'] = ''
       self.assertTrue(json.dumps(alert) == params.get(a, encoding='utf8'))
 
       # then delete it
@@ -124,9 +127,9 @@ class TestAlerts(unittest.TestCase):
       alert = self.offroad_alerts[a]
       set_offroad_alert(a, True, extra_text="a"*i)
 
-      expected_txt = alert['text'] + "a"*i
-      written_txt = json.loads(params.get(a, encoding='utf8'))['text']
-      self.assertTrue(expected_txt == written_txt)
+      written_alert = json.loads(params.get(a, encoding='utf8'))
+      self.assertTrue("a"*i == written_alert['extra'])
+      self.assertTrue(alert["text"] == written_alert['text'])
 
 if __name__ == "__main__":
   unittest.main()

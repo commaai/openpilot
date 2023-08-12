@@ -14,7 +14,6 @@
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
-#define BACKLIGHT_OFFROAD 50
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
@@ -24,7 +23,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -79,7 +78,7 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
   *pvd = left_points + right_points;
 }
 
-void update_model(UIState *s, 
+void update_model(UIState *s,
                   const cereal::ModelDataV2::Reader &model,
                   const cereal::UiPlan::Reader &plan) {
   UIScene &scene = s->scene;
@@ -159,8 +158,9 @@ static void update_state(UIState *s) {
   UIScene &scene = s->scene;
 
   if (sm.updated("liveCalibration")) {
-    auto rpy_list = sm["liveCalibration"].getLiveCalibration().getRpyCalib();
-    auto wfde_list = sm["liveCalibration"].getLiveCalibration().getWideFromDeviceEuler();
+    auto live_calib = sm["liveCalibration"].getLiveCalibration();
+    auto rpy_list = live_calib.getRpyCalib();
+    auto wfde_list = live_calib.getWideFromDeviceEuler();
     Eigen::Vector3d rpy;
     Eigen::Vector3d wfde;
     if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
@@ -179,7 +179,7 @@ static void update_state(UIState *s) {
         scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i,j);
       }
     }
-    scene.calibration_valid = sm["liveCalibration"].getLiveCalibration().getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
+    scene.calibration_valid = live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
     scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
@@ -201,8 +201,9 @@ static void update_state(UIState *s) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
   if (sm.updated("wideRoadCameraState")) {
-    float scale = (sm["wideRoadCameraState"].getWideRoadCameraState().getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
-    scene.light_sensor = std::max(100.0f - scale * sm["wideRoadCameraState"].getWideRoadCameraState().getExposureValPercent(), 0.0f);
+    auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
+    float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
+    scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
@@ -216,13 +217,8 @@ void ui_update_params(UIState *s) {
 void UIState::updateStatus() {
   if (scene.started && sm->updated("controlsState")) {
     auto controls_state = (*sm)["controlsState"].getControlsState();
-    auto alert_status = controls_state.getAlertStatus();
     auto state = controls_state.getState();
-    if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
-      status = STATUS_WARNING;
-    } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
-      status = STATUS_ALERT;
-    } else if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+    if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
     } else {
       status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
@@ -278,7 +274,7 @@ void UIState::setPrimeType(int type) {
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   setAwake(true);
-  resetInteractiveTimout();
+  resetInteractiveTimeout();
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
 }
@@ -286,9 +282,6 @@ Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT
 void Device::update(const UIState &s) {
   updateBrightness(s);
   updateWakefulness(s);
-
-  // TODO: remove from UIState and use signals
-  uiState()->awake = awake;
 }
 
 void Device::setAwake(bool on) {
@@ -300,12 +293,12 @@ void Device::setAwake(bool on) {
   }
 }
 
-void Device::resetInteractiveTimout() {
+void Device::resetInteractiveTimeout() {
   interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
-  float clipped_brightness = BACKLIGHT_OFFROAD;
+  float clipped_brightness = offroad_brightness;
   if (s.scene.started) {
     clipped_brightness = s.scene.light_sensor;
 
@@ -338,9 +331,9 @@ void Device::updateWakefulness(const UIState &s) {
   ignition_on = s.scene.ignition;
 
   if (ignition_just_turned_off) {
-    resetInteractiveTimout();
+    resetInteractiveTimeout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
-    emit interactiveTimout();
+    emit interactiveTimeout();
   }
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
@@ -349,4 +342,9 @@ void Device::updateWakefulness(const UIState &s) {
 UIState *uiState() {
   static UIState ui_state;
   return &ui_state;
+}
+
+Device *device() {
+  static Device _device;
+  return &_device;
 }

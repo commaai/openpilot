@@ -2,14 +2,13 @@
 
 #include <cmath>
 
-#include <QAbstractItemView>
 #include <QApplication>
 #include <QByteArray>
 #include <QDateTime>
 #include <QDoubleValidator>
-#include <QColor>
 #include <QFont>
 #include <QRegExpValidator>
+#include <QSocketNotifier>
 #include <QStringBuilder>
 #include <QStyledItemDelegate>
 #include <QToolButton>
@@ -22,7 +21,7 @@ class LogSlider : public QSlider {
   Q_OBJECT
 
 public:
-  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {};
+  LogSlider(double factor, Qt::Orientation orientation, QWidget *parent = nullptr) : factor(factor), QSlider(orientation, parent) {}
 
   void setRange(double min, double max) {
     log_min = factor * std::log10(min);
@@ -68,20 +67,18 @@ public:
   MessageBytesDelegate(QObject *parent, bool multiple_lines = false);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void setMultipleLines(bool v);
-  int widthForBytes(int n) const;
   bool multipleLines() const { return multiple_lines; }
+  void setMultipleLines(bool v) { multiple_lines = v; }
+  int widthForBytes(int n) const;
 
 private:
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
-  mutable QSize size_cache[65] = {};
 };
 
 inline QString toHex(const QByteArray &dat) { return dat.toHex(' ').toUpper(); }
 QString toHex(uint8_t byte);
-QColor getColor(const cabana::Signal *sig);
 
 class NameValidator : public QRegExpValidator {
   Q_OBJECT
@@ -100,7 +97,7 @@ namespace utils {
 QPixmap icon(const QString &id);
 void setTheme(int theme);
 inline QString formatSeconds(int seconds) {
-  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+  return QDateTime::fromSecsSinceEpoch(seconds, Qt::UTC).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 }
 
@@ -138,4 +135,21 @@ private:
   void closeTabClicked();
 };
 
+class UnixSignalHandler : public QObject {
+  Q_OBJECT
+
+public:
+  UnixSignalHandler(QObject *parent = nullptr);
+  ~UnixSignalHandler();
+  static void signalHandler(int s);
+
+public slots:
+  void handleSigTerm();
+
+private:
+  inline static int sig_fd[2] = {};
+  QSocketNotifier *sn;
+};
+
 int num_decimals(double num);
+QString signalToolTip(const cabana::Signal *sig);

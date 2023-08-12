@@ -63,7 +63,7 @@ class PointBuckets:
   def __init__(self, x_bounds, min_points, min_points_total):
     self.x_bounds = x_bounds
     self.buckets = {bounds: NPQueue(maxlen=POINTS_PER_BUCKET, rowsize=3) for bounds in x_bounds}
-    self.buckets_min_points = {bounds: min_point for bounds, min_point in zip(x_bounds, min_points)}
+    self.buckets_min_points = dict(zip(x_bounds, min_points, strict=True))
     self.min_points_total = min_points_total
 
   def bucket_lengths(self):
@@ -73,7 +73,8 @@ class PointBuckets:
     return sum(self.bucket_lengths())
 
   def is_valid(self):
-    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values())) and (self.__len__() >= self.min_points_total)
+    return all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)) \
+                                                                                and (self.__len__() >= self.min_points_total)
 
   def add_point(self, x, y):
     for bound_min, bound_max in self.x_bounds:
@@ -139,8 +140,10 @@ class TorqueEstimator:
     torque_cache = params.get("LiveTorqueParameters")
     if params_cache is not None and torque_cache is not None:
       try:
-        cache_ltp = log.Event.from_bytes(torque_cache).liveTorqueParameters
-        cache_CP = car.CarParams.from_bytes(params_cache)
+        with log.Event.from_bytes(torque_cache) as log_evt:
+          cache_ltp = log_evt.liveTorqueParameters
+        with car.CarParams.from_bytes(params_cache) as msg:
+          cache_CP = msg
         if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
           if cache_ltp.liveValid:
             initial_params = {
@@ -228,7 +231,7 @@ class TorqueEstimator:
       liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
       liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
 
-      if any([val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]]):
+      if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
         cloudlog.exception("Live torque parameters are invalid.")
         liveTorqueParameters.liveValid = False
         self.reset()
@@ -262,8 +265,8 @@ def main(sm=None, pm=None):
     pm = messaging.PubMaster(['liveTorqueParameters'])
 
   params = Params()
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-  estimator = TorqueEstimator(CP)
+  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
+    estimator = TorqueEstimator(CP)
 
   def cache_params(sig, frame):
     signal.signal(sig, signal.SIG_DFL)

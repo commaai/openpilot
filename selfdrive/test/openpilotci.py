@@ -17,8 +17,9 @@ def get_sas_token():
     sas_token = open(TOKEN_PATH).read().strip()
 
   if sas_token is None:
-    sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci --https-only --permissions lrw \
-                                         --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
+    sas_token = subprocess.check_output("az storage container generate-sas --account-name commadataci --name openpilotci \
+                                         --https-only --permissions lrw --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') \
+                                         --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
 
   return sas_token
 
