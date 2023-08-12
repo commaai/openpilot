@@ -161,7 +161,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       idxs.append(name_to_arr_idx[item])
       plot_select.append(i)
     axs[i].set_title(", ".join(f"{nm} ({cl})"
-                               for (nm, cl) in zip(pl_list, plot_colors[i])), fontsize=10)
+                               for (nm, cl) in zip(pl_list, plot_colors[i], strict=True)), fontsize=10)
     axs[i].tick_params(axis="x", colors="white")
     axs[i].tick_params(axis="y", colors="white")
     axs[i].title.set_color("white")
@@ -205,11 +205,11 @@ def plot_model(m, img, calibration, top_down):
     px, py_bottom = to_topdown_pt(x - x_std, y)
     top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
 
-  for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds):
+  for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds, strict=True):
     color = (0, int(255 * prob), 0)
     draw_path(path, color, img, calibration, top_down, YELLOW)
 
-  for edge, std in zip(m.roadEdges, m.roadEdgeStds):
+  for edge, std in zip(m.roadEdges, m.roadEdgeStds, strict=True):
     prob = max(1 - std, 0)
     color = (int(255 * prob), 0, 0)
     draw_path(edge, color, img, calibration, top_down, RED)

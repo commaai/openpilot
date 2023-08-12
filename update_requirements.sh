@@ -45,8 +45,8 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==22.3.1
-pip install poetry==1.2.2
+pip install pip==23.2.1
+pip install poetry==1.5.1
 
 poetry config virtualenvs.prefer-active-python true --local
 

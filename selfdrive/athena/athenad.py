@@ -85,7 +85,7 @@ class UploadItem:
   url: str
   headers: Dict[str, str]
   created_at: int
-  id: Optional[str]
+  id: Optional[str] # noqa: A003 (to match the response from the remote server)
   retry_count: int = 0
   current: bool = False
   progress: float = 0
@@ -213,6 +213,16 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
+def cb(sm, item, tid, sz: int, cur: int) -> None:
+  # Abort transfer if connection changed to metered after starting upload
+  sm.update(0)
+  metered = sm['deviceState'].networkMetered
+  if metered and (not item.allow_cellular):
+    raise AbortTransferException
+
+  cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+
+
 def upload_handler(end_event: threading.Event) -> None:
   sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
@@ -242,15 +252,6 @@ def upload_handler(end_event: threading.Event) -> None:
         continue
 
       try:
-        def cb(sz: int, cur: int) -> None:
-          # Abort transfer if connection changed to metered after starting upload
-          sm.update(0)
-          metered = sm['deviceState'].networkMetered
-          if metered and (not item.allow_cellular):
-            raise AbortTransferException
-
-          cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
-
         fn = item.path
         try:
           sz = os.path.getsize(fn)
@@ -258,7 +259,7 @@ def upload_handler(end_event: threading.Event) -> None:
           sz = -1
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
-        response = _do_upload(item, cb)
+        response = _do_upload(item, partial(cb, sm, item, tid))
 
         if response.status_code not in (200, 201, 401, 403, 412):
           cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)

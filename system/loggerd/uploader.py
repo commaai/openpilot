@@ -46,7 +46,7 @@ class FakeResponse:
 UploadResponse = Union[requests.Response, FakeResponse]
 
 def get_directory_sort(d: str) -> List[str]:
-  return list(map(lambda s: s.rjust(10, '0'), d.rsplit('--', 1)))
+  return [s.rjust(10, '0') for s in d.rsplit('--', 1)]
 
 def listdir_by_creation(d: str) -> List[str]:
   try:
