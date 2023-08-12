@@ -111,6 +111,7 @@ class TestCarModelBase(unittest.TestCase):
             for m in msg.can:
               if m.src < 64:
                 fingerprint[m.src][m.address] = len(m.dat)
+
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           dashcam_only = msg.carParams.dashcamOnly
@@ -118,6 +119,7 @@ class TestCarModelBase(unittest.TestCase):
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
+
         elif msg.which() == 'initData':
           for param in msg.initData.params.entries:
             if param.key == 'OpenpilotEnabledToggle':
