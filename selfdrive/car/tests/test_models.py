@@ -230,7 +230,7 @@ class TestCarModelBase(unittest.TestCase):
 
         # don't consider relay for reasonable fingerprinting time
         # TODO: detect when relay has flipped to properly check relay malfunction
-        if 5e6 > t:
+        if t < 5e6:
           self.safety.set_relay_malfunction(False)
 
         if t > 1e6:
