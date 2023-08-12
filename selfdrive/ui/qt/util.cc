@@ -274,5 +274,7 @@ void ParamWatcher::fileChanged(const QString &path) {
 }
 
 void ParamWatcher::addParam(const QString &param_name) {
-  watcher->addPath(QString::fromStdString(params.getParamPath(param_name.toStdString())));
+  const QString path = QString::fromStdString(params.getParamPath(param_name.toStdString()));
+  watcher->removePath(path);
+  watcher->addPath(path);
 }
