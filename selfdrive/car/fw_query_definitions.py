@@ -7,6 +7,9 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import panda.python.uds as uds
 
+AddrType = Tuple[int, Optional[int]]
+EcuAddrBusType = Tuple[int, Optional[int], int]
+
 
 def p16(val):
   return struct.pack("!H", val)
