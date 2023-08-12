@@ -25,7 +25,7 @@ def _create_radar_can_parser(car_fingerprint):
   messages = list(zip(RADAR_MSGS_C +
                       RADAR_MSGS_D,
                       [20] * msg_n +  # 20Hz (0.05s)
-                      [20] * msg_n))  # 20Hz (0.05s)
+                      [20] * msg_n, strict=True))  # 20Hz (0.05s)
 
   return CANParser(DBC[car_fingerprint]['radar'], messages, 1)
 
@@ -46,7 +46,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None or self.CP.radarUnavailable:
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)

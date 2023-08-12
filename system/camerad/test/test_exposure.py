@@ -18,7 +18,9 @@ class TestCamerad(unittest.TestCase):
     ret = np.clip(im[:,:,2] * 0.114 + im[:,:,1] * 0.587 + im[:,:,0] * 0.299, 0, 255).astype(np.uint8)
     return ret
 
-  def _is_exposure_okay(self, i, med_mean=np.array([[0.2,0.4],[0.2,0.6]])):
+  def _is_exposure_okay(self, i, med_mean=None):
+    if med_mean is None:
+      med_mean = np.array([[0.2,0.4],[0.2,0.6]])
     h, w = i.shape[:2]
     i = i[h//10:9*h//10,w//10:9*w//10]
     med_ex, mean_ex = med_mean

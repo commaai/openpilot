@@ -11,7 +11,7 @@ from cereal import log, car
 from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -82,7 +82,6 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.car_model}")
 
-    experimental_long = False
     test_segs = (2, 1, 0)
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
@@ -102,23 +101,37 @@ class TestCarModelBase(unittest.TestCase):
       car_fw = []
       can_msgs = []
       fingerprint = defaultdict(dict)
+      experimental_long = False
+      enabled_toggle = True
+      dashcam_only = False
       for msg in lr:
         if msg.which() == "can":
-          for m in msg.can:
-            if m.src < 64:
-              fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
+          if len(can_msgs) <= FRAME_FINGERPRINT:
+            for m in msg.can:
+              if m.src < 64:
+                fingerprint[m.src][m.address] = len(m.dat)
+
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
+          dashcam_only = msg.carParams.dashcamOnly
           if msg.carParams.openpilotLongitudinalControl:
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
 
+        elif msg.which() == 'initData':
+          for param in msg.initData.params.entries:
+            if param.key == 'OpenpilotEnabledToggle':
+              enabled_toggle = param.value.strip(b'\x00') == b'1'
+
       if len(can_msgs) > int(50 / DT_CTRL):
         break
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+
+    # if relay is expected to be open in the route
+    cls.openpilot_enabled = enabled_toggle and not dashcam_only
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
@@ -219,6 +232,14 @@ class TestCarModelBase(unittest.TestCase):
         self.safety.safety_tick_current_rx_checks()
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
+
+          # No need to check relay malfunction on disabled routes (relay closed) or for reasonable fingerprinting time
+          # TODO: detect when relay has flipped to properly check relay malfunction
+          if self.openpilot_enabled and t > 5e6:
+            self.assertFalse(self.safety.get_relay_malfunction())
+          else:
+            self.safety.set_relay_malfunction(False)
+
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_tx_cases(self, data=None):
