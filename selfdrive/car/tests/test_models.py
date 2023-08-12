@@ -227,17 +227,16 @@ class TestCarModelBase(unittest.TestCase):
       # ensure all msgs defined in the addr checks are valid
       if self.car_model not in ignore_addr_checks_valid:
         self.safety.safety_tick_current_rx_checks()
-
-        # don't consider relay for reasonable fingerprinting time
-        # TODO: detect when relay has flipped to properly check relay malfunction
-        if t < 5e6:
-          self.safety.set_relay_malfunction(False)
-
         if t > 1e6:
           self.assertTrue(self.safety.addr_checks_valid())
+
           # No need to check relay malfunction on disabled routes (relay closed)
-          if self.openpilot_enabled:
+          if self.openpilot_enabled and t > 5e6:
             self.assertFalse(self.safety.get_relay_malfunction())
+          else:
+            # don't consider relay for reasonable fingerprinting time
+            # TODO: detect when relay has flipped to properly check relay malfunction
+            self.safety.set_relay_malfunction(False)
 
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
