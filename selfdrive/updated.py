@@ -444,7 +444,7 @@ def main() -> None:
       if not system_time_valid():
         wait_helper.sleep(60)
         continue
-        
+
       update_failed_count += 1
 
       # check for update

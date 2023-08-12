@@ -33,7 +33,8 @@ class States():
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
   # TODO the offset is likely a translation of the sensor, not a rotation of the camera
   WIDE_FROM_DEVICE_EULER = slice(33, 36)  # wide camera offset angles in radians (tici only)
-  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
+  # We currently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables
+  # (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_FROM_DEVICE_EULER).
   # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
@@ -190,9 +191,9 @@ class LocKalman():
 
     # Observation matrix modifier
     H_mod_sym = sp.Matrix(np.zeros((dim_state, dim_state_err)))
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       H_mod_sym[p_idx[0]:p_idx[1], p_err_idx[0]:p_err_idx[1]] = np.eye(p_idx[1] - p_idx[0])
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       H_mod_sym[q_idx[0]:q_idx[1], q_err_idx[0]:q_err_idx[1]] = 0.5 * quat_matrix_r(state[q_idx[0]:q_idx[1]])[:, 1:]
 
     # these error functions are defined so that say there
@@ -204,17 +205,17 @@ class LocKalman():
     delta_x = sp.MatrixSymbol('delta_x', dim_state_err, 1)
 
     err_function_sym = sp.Matrix(np.zeros((dim_state, 1)))
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       delta_quat = sp.Matrix(np.ones(4))
       delta_quat[1:, :] = sp.Matrix(0.5 * delta_x[q_err_idx[0]: q_err_idx[1], :])
       err_function_sym[q_idx[0]:q_idx[1], 0] = quat_matrix_r(nom_x[q_idx[0]:q_idx[1], 0]) * delta_quat
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       err_function_sym[p_idx[0]:p_idx[1], :] = sp.Matrix(nom_x[p_idx[0]:p_idx[1], :] + delta_x[p_err_idx[0]:p_err_idx[1], :])
 
     inv_err_function_sym = sp.Matrix(np.zeros((dim_state_err, 1)))
-    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs):
+    for p_idx, p_err_idx in zip(p_idxs, p_err_idxs, strict=True):
       inv_err_function_sym[p_err_idx[0]:p_err_idx[1], 0] = sp.Matrix(-nom_x[p_idx[0]:p_idx[1], 0] + true_x[p_idx[0]:p_idx[1], 0])
-    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs):
+    for q_idx, q_err_idx in zip(q_idxs, q_err_idxs, strict=True):
       delta_quat = quat_matrix_r(nom_x[q_idx[0]:q_idx[1], 0]).T * true_x[q_idx[0]:q_idx[1], 0]
       inv_err_function_sym[q_err_idx[0]:q_err_idx[1], 0] = sp.Matrix(2 * delta_quat[1:])
 
@@ -324,7 +325,8 @@ class LocKalman():
       obs_eqs.append([h_track_sym, ObservationKind.ORB_FEATURES, track_epos_sym])
       obs_eqs.append([h_track_wide_cam_sym, ObservationKind.ORB_FEATURES_WIDE, track_epos_sym])
       obs_eqs.append([h_track_sym, ObservationKind.FEATURE_TRACK_TEST, track_epos_sym])
-      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N, [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
+      msckf_params = [dim_main, dim_augment, dim_main_err, dim_augment_err, N,
+                      [ObservationKind.MSCKF_TEST, ObservationKind.ORB_FEATURES, ObservationKind.ORB_FEATURES_WIDE]]
     else:
       msckf_params = None
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, msckf_params, maha_test_kinds)
@@ -370,7 +372,7 @@ class LocKalman():
     self.dim_state_err = self.dim_main_err + self.dim_augment_err * self.N
 
     if self.N > 0:
-      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment] pylint: disable=unbalanced-tuple-unpacking
+      x_initial, P_initial, Q = self.pad_augmented(self.x_initial, self.P_initial, self.Q)  # lgtm[py/mismatched-multiple-assignment]
       self.computer = LstSqComputer(generated_dir, N)
 
     self.quaternion_idxs = [3, ] + [(self.dim_main + i * self.dim_augment + 3)for i in range(self.N)]

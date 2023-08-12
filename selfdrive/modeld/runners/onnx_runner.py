@@ -8,7 +8,7 @@ from typing import Tuple, Dict, Union, Any
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
-import onnxruntime as ort # pylint: disable=import-error
+import onnxruntime as ort
 
 ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
 
@@ -36,16 +36,16 @@ def run_loop(m, tf8_input=False):
 
   # run once to initialize CUDA provider
   if "CUDAExecutionProvider" in m.get_providers():
-    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes)])))
+    m.run(None, dict(zip(keys, [np.zeros(shp, dtype=itp) for shp, itp in zip(ishapes, itypes, strict=True)], strict=True)))
 
   print("ready to run onnx model", keys, ishapes, file=sys.stderr)
   while 1:
     inputs = []
-    for k, shp, itp in zip(keys, ishapes, itypes):
+    for k, shp, itp in zip(keys, ishapes, itypes, strict=True):
       ts = np.product(shp)
       #print("reshaping %s with offset %d" % (str(shp), offset), file=sys.stderr)
       inputs.append(read(ts, (k=='input_img' and tf8_input)).reshape(shp).astype(itp))
-    ret = m.run(None, dict(zip(keys, inputs)))
+    ret = m.run(None, dict(zip(keys, inputs, strict=True)))
     #print(ret, file=sys.stderr)
     for r in ret:
       write(r.astype(np.float32))

@@ -67,11 +67,11 @@ QString MapInstructions::getDistance(float d) {
   d = std::max(d, 0.0f);
   if (uiState()->scene.is_metric) {
     return (d > 500) ? QString::number(d / 1000, 'f', 1) + tr(" km")
-                     : QString::number(50 * int(d / 50)) + tr(" m");
+                     : QString::number(50 * qRound(d / 50)) + tr(" m");
   } else {
     float feet = d * METER_TO_FOOT;
     return (feet > 500) ? QString::number(d * METER_TO_MILE, 'f', 1) + tr(" mi")
-                        : QString::number(50 * int(feet / 50)) + tr(" ft");
+                        : QString::number(50 * qRound(feet / 50)) + tr(" ft");
   }
 }
 
@@ -109,23 +109,21 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   auto lanes = instruction.getLanes();
   for (int i = 0; i < lanes.size(); ++i) {
     bool active = lanes[i].getActive();
-
-    // TODO: only use active direction if active
-    bool left = false, straight = false, right = false;
-    for (auto const &direction : lanes[i].getDirections()) {
-      left |= direction == cereal::NavInstruction::Direction::LEFT;
-      right |= direction == cereal::NavInstruction::Direction::RIGHT;
-      straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
-    }
+    const auto active_direction = lanes[i].getActiveDirection();
 
     // TODO: Make more images based on active direction and combined directions
     QString fn = "lane_direction_";
-    if (left) {
-      fn += "turn_left";
-    } else if (right) {
-      fn += "turn_right";
-    } else if (straight) {
-      fn += "turn_straight";
+
+    // active direction has precedence
+    if (active && active_direction != cereal::NavInstruction::Direction::NONE) {
+      fn += "turn_" + DIRECTIONS[active_direction];
+    } else {
+      for (auto const &direction : lanes[i].getDirections()) {
+        if (direction != cereal::NavInstruction::Direction::NONE) {
+          fn += "turn_" + DIRECTIONS[direction];
+          break;
+        }
+      }
     }
 
     if (!active) {

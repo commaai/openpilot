@@ -60,6 +60,7 @@ release/*
 
 tools/__init__.py
 tools/lib/*
+tools/bodyteleop/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
@@ -417,8 +418,6 @@ selfdrive/assets/navigation/*
 third_party/.gitignore
 third_party/SConscript
 
-third_party/cluster/*
-
 third_party/linux/**
 third_party/opencl/**
 
@@ -432,15 +431,11 @@ third_party/kaitai/*.h
 third_party/kaitai/*.cpp
 
 third_party/libyuv/include/**
-third_party/libyuv/lib/**
-third_party/libyuv/larch64/**
 
 third_party/snpe/include/**
 third_party/snpe/dsp**
 
 third_party/acados/.gitignore
-third_party/acados/x86_64/**
-third_party/acados/larch64/**
 third_party/acados/include/**
 third_party/acados/acados_template/**
 
