@@ -11,7 +11,7 @@ from cereal import log, car
 from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -106,10 +106,12 @@ class TestCarModelBase(unittest.TestCase):
       dashcam_only = False
       for msg in lr:
         if msg.which() == "can":
-          for m in msg.can:
-            if m.src < 64:
-              fingerprint[m.src][m.address] = len(m.dat)
           can_msgs.append(msg)
+          if len(can_msgs) <= FRAME_FINGERPRINT:
+            for m in msg.can:
+              if m.src < 64:
+                fingerprint[m.src][m.address] = len(m.dat)
+
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
           dashcam_only = msg.carParams.dashcamOnly
@@ -117,6 +119,7 @@ class TestCarModelBase(unittest.TestCase):
             experimental_long = True
           if cls.car_model is None and not cls.ci:
             cls.car_model = msg.carParams.carFingerprint
+
         elif msg.which() == 'initData':
           for param in msg.initData.params.entries:
             if param.key == 'OpenpilotEnabledToggle':
