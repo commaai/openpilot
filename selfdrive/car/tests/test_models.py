@@ -34,8 +34,6 @@ ignore_addr_checks_valid = [
   HYUNDAI.GENESIS_G70_2020,
 ]
 
-STATS = {'total_all': [], 'avg_all': []}
-
 
 def get_test_cases():
   # build list of test cases
@@ -208,10 +206,6 @@ class TestCarModelBase(unittest.TestCase):
       self.assertLess(t, thresh[1])
       self.assertGreater(t, thresh[0], "Performance seems to have improved, update test refs.")
 
-    print(total_time_ms, total_time_ms / len(self.can_msgs))
-    STATS['total_all'].append(total_time_ms)
-    STATS['avg_all'].append(total_time_ms / len(self.can_msgs))
-
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
     RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
@@ -381,5 +375,3 @@ class TestCarModel(TestCarModelBase):
 
 if __name__ == "__main__":
   unittest.main(exit=False)
-  print(STATS['total_all'])
-  print(STATS['avg_all'])
