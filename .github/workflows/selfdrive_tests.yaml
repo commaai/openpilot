@@ -144,6 +144,9 @@ jobs:
     - name: Install dependencies
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
+      env:
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
     - name: Build openpilot
       run: |
         source tools/openpilot_env.sh
@@ -342,7 +345,8 @@ jobs:
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+                           ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 4
