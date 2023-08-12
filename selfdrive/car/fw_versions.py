@@ -55,7 +55,7 @@ def get_brand_addrs() -> Dict[str, Set[AddrType]]:
   return dict(brand_addrs)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
+def match_fw_to_car_fuzzy(live_fw_versions, match_brand=None, log=True, exclude=None):
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -63,6 +63,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
   # Build lookup table from (addr, sub_addr, fw) to list of candidate cars
   all_fw_versions = defaultdict(list)
   for candidate, fw_by_addr in FW_VERSIONS.items():
+    if not is_brand(MODEL_TO_BRAND[candidate], match_brand):
+      continue
+
     if candidate == exclude:
       continue
 
@@ -102,13 +105,14 @@ def match_fw_to_car_fuzzy(live_fw_versions, log=True, exclude=None):
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions, log=True) -> Set[str]:
+def match_fw_to_car_exact(live_fw_versions, match_brand=None, log=True) -> Set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
   needs to match the database."""
   invalid = set()
-  candidates = FW_VERSIONS
+  candidates = {c: f for c, f in FW_VERSIONS.items() if
+                is_brand(MODEL_TO_BRAND[c], match_brand)}
 
   for candidate, fws in candidates.items():
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[candidate]]
@@ -150,7 +154,7 @@ def match_fw_to_car(fw_versions, allow_exact=True, allow_fuzzy=True, log=True):
     matches = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, log=log)
+      matches |= match_func(fw_versions_dict, match_brand=brand, log=log)
 
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
