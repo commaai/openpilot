@@ -106,7 +106,6 @@ class TestCarModelBase(unittest.TestCase):
         if msg.which() == "can":
           can_msgs.append(msg)
 
-          # gather fingerprint for 1s
           if len(can_msgs) <= FRAME_FINGERPRINT:
             for m in msg.can:
               if m.src < 64:
