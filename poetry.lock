@@ -1218,66 +1218,6 @@ files = [
 testing = ["hatch", "pre-commit", "pytest", "tox"]
 
 [[package]]
-name = "fastcluster"
-version = "1.2.6"
-description = "Fast hierarchical clustering routines for R and Python."
-optional = false
-python-versions = ">=3"
-files = [
-    {file = "fastcluster-1.2.6-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d0e8faef0437a25fd083df70fb86cc65ce3c9c9780d4ae377cbe6521e7746ce0"},
-    {file = "fastcluster-1.2.6-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:c8be01f97bc2bf11a9188537864f8e520e1103cdc6007aa2c5d7979b1363b121"},
-    {file = "fastcluster-1.2.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:855ab2b7e6fa9b05f19c4f3023dedfb1a35a88d831933d65d0d9e10a070a9e85"},
-    {file = "fastcluster-1.2.6-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:72503e727887a61a15f9aaa13178798d3994dfec58aa7a943e42dcfda07c0149"},
-    {file = "fastcluster-1.2.6-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2fcb0973ca0e6978e3242046338c350cbed1493108929231fae9bd35ad05a6d6"},
-    {file = "fastcluster-1.2.6-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9020899b67fe492d0ed87a3e993ec9962c5a0b51ea2df71d86b1766f065f1cef"},
-    {file = "fastcluster-1.2.6-cp310-cp310-win32.whl", hash = "sha256:6cf156d4203708348522393c523c2e61c81f5a6a500e0411dcba2b064551ea2f"},
-    {file = "fastcluster-1.2.6-cp310-cp310-win_amd64.whl", hash = "sha256:1801c9daa9aa5bbbb0830efe8bd3034b4b7a417e4b8dd353683999be29797df2"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:ce70c743490f6778b463524d1767a9ecccd31c8bd2dbb5739bb2174168c15d39"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ac1b84d4b28456a379a71451d13995eb3242143452ce9c861f8913360de842a3"},
-    {file = "fastcluster-1.2.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:55b49f6033c45a28f93540847b495ed0f718b5c3f4fef446cf77e3726662e1d5"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c1c776a4ec7594f47cd2e1e2da73a30134f1d402d7c93a81e3cb7c3d8e191173"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:aca61d16435bb7aea3901939d7d7d7e36aff9bb538123e649166a3014b280054"},
-    {file = "fastcluster-1.2.6-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:04ea4a68e0675072ca761bad33322a0e998cb43693fd41165bc420d7db40429a"},
-    {file = "fastcluster-1.2.6-cp311-cp311-win32.whl", hash = "sha256:773043d5db2790e1ff2a4e1eae0b6a60afb2a93ad2c74897a56c80bc800db04f"},
-    {file = "fastcluster-1.2.6-cp311-cp311-win_amd64.whl", hash = "sha256:841d128daa6597d13781793eb482b0b566bbd58d2a9d1e2cf1b58838773beb14"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:cf5acfe1156849279ebd44a8d1fbcbe8b8e21334f7538eda782ae31e7dade9e2"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cb27c13225f5f77f3c5986a27ca27277cce7db12844330cf535019cd38021257"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5fe543b6d45da27e84e5af6248722475b88943d8ef40d835cbabbb0ba5ee786b"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c12224da0b1f2f9d2b3d715dc82ecb1a3a33b990606f97da075cc46bc6d9576f"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-win32.whl", hash = "sha256:86a1ad972e83ba48144884fa849f87626346308b650002157123aee67d3b16fe"},
-    {file = "fastcluster-1.2.6-cp36-cp36m-win_amd64.whl", hash = "sha256:8d3c9eab8e69cb36dcdd64c8b3200e008aedf88e34d39e01ae6af98a9605ad18"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:c61be0bad81a21ee3e5bef91469fdd11968f33d41d142c656accba9b2992babe"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06df1d97edca68b2ffa43d81c3b5f4e4147bc12ab241c6585fadcdeb0bfa23ca"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ab9337b0a6a9b07b6f86fc724972d1ad729c890e2f539c1b33271c2f1f00af8b"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4093d5454bcbe48b30e32da5db43056a08889480a96e4555f28c1f7004fc5323"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-win32.whl", hash = "sha256:58958a0333e3dfbad198394e9b7dd6254de0a3e622019b057288405b2a4a6bba"},
-    {file = "fastcluster-1.2.6-cp37-cp37m-win_amd64.whl", hash = "sha256:03f8efe6435a7b947fa4a420676942d0267dac0d323ec5ead50f1856cc7cf96f"},
-    {file = "fastcluster-1.2.6-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:a5ceb39379327316d34613f7c16c06d7a3816aa38f4437b5e8433aa1bf149e2c"},
-    {file = "fastcluster-1.2.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0bb54283b4d5ec96f167c7fd31921f169226c1261637434fdae7a69ee3c69573"},
-    {file = "fastcluster-1.2.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:6e51db0067e65687a5c46f00a11843d0bb15ca759e8a1767eebac8c4f6e3f4df"},
-    {file = "fastcluster-1.2.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:11748a4e245c745030e9ddd8c2c37e378f8ad8bd8e869d954c84ff674495499f"},
-    {file = "fastcluster-1.2.6-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7254f81dc71cd29ef6f2d9747cf97ff907b569c9ef9d9760352391be5b57118c"},
-    {file = "fastcluster-1.2.6-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:aa4a4c01c5fbec3623e92bc33a9f712ca416ce93255c402f5c904ac4b890ac3c"},
-    {file = "fastcluster-1.2.6-cp38-cp38-win32.whl", hash = "sha256:ffdb00782cd63bbf2c45bb048897531e868326dff5081ab9b752d294b0426c1d"},
-    {file = "fastcluster-1.2.6-cp38-cp38-win_amd64.whl", hash = "sha256:a952a84453123db0c2336b9a9c86162e99ad0b897bae8213107c055a64effd41"},
-    {file = "fastcluster-1.2.6-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:a085e7e13f1afc517358981b2b7ed774dc9abf95f2be0da9a495d9e6b58c4409"},
-    {file = "fastcluster-1.2.6-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:6a7c7f51a6d2f5ab58b1d85e9d0af2af9600ec13bb43bc6aafc9085d2c4ccd93"},
-    {file = "fastcluster-1.2.6-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:8bac5cf64691060cf86b0752dd385ef1eccff6d24bdb8b60691cf8cbf0e4f9ef"},
-    {file = "fastcluster-1.2.6-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:060c1cb3c84942d8d3618385e2c25998ba690c46ec8c73d64477f808abfac3f2"},
-    {file = "fastcluster-1.2.6-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e03a228e018457842eb81de85be7af0b5fe8065d666dd093193e3bdcf1f13d2e"},
-    {file = "fastcluster-1.2.6-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a6f8da329c0032f2acaf4beaef958a2db0dae43d3f946f592dad5c29aa82c832"},
-    {file = "fastcluster-1.2.6-cp39-cp39-win32.whl", hash = "sha256:eb3f98791427d5d5d02d023b66bcef61e48954edfadae6527ef72d70cf32ec86"},
-    {file = "fastcluster-1.2.6-cp39-cp39-win_amd64.whl", hash = "sha256:4b9cfd426966b8037bec2fc03a0d7a9c87313482c699b36ffa1432b49f84ed2e"},
-    {file = "fastcluster-1.2.6.tar.gz", hash = "sha256:aab886efa7b6bba7ac124f4498153d053e5a08b822d2254926b7206cdf5a8aa6"},
-]
-
-[package.dependencies]
-numpy = ">=1.9"
-
-[package.extras]
-test = ["scipy (>=1.6.3)"]
-
-[[package]]
 name = "filelock"
 version = "3.12.2"
 description = "A platform independent file lock."
@@ -5396,4 +5336,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "c88d289360ff8c163e0e9fa45431fd86bd783f8e51134711df3e7559b9e0303e"
+content-hash = "f342fe9e841e08da2db9cf28aceaaa4112a67ea7015fc66c4aadace327868929"
