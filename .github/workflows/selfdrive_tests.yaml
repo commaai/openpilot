@@ -342,6 +342,7 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
+    # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
@@ -351,7 +352,8 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 4
       run: |
-        ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
+        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+                           $UNIT_TEST selfdrive/modeld && \
                            coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
