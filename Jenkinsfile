@@ -6,6 +6,7 @@ ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <
 set -e
 
 export CI=1
+export PYTHONWARNINGS=error
 export LOGPRINT=debug
 export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
@@ -65,6 +66,7 @@ pipeline {
   agent none
   environment {
     CI = "1"
+    PYTHONWARNINGS = "error"
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
     AZURE_TOKEN = credentials('azure_token')

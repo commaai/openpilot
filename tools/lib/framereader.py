@@ -80,7 +80,7 @@ def vidindex(fn, typ):
   vidindex_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "vidindex")
   vidindex = os.path.join(vidindex_dir, "vidindex")
 
-  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=open("/dev/null", "w"))
+  subprocess.check_call(["make"], cwd=vidindex_dir, stdout=subprocess.DEVNULL)
 
   with tempfile.NamedTemporaryFile() as prefix_f, \
        tempfile.NamedTemporaryFile() as index_f:
@@ -237,25 +237,23 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
 
     threads = os.getenv("FFMPEG_THREADS", "0")
     cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
-    proc = subprocess.Popen(
-      ["ffmpeg",
-       "-threads", threads,
-       "-hwaccel", "none" if not cuda else "cuda",
-       "-c:v", "hevc",
-       "-vsync", "0",
-       "-f", vid_fmt,
-       "-flags2", "showall",
-       "-i", "pipe:0",
-       "-threads", threads,
-       "-f", "rawvideo",
-       "-pix_fmt", pix_fmt,
-       "pipe:1"],
-      stdin=tmpf, stdout=subprocess.PIPE, stderr=open("/dev/null"))
-
-    # dat = proc.communicate()[0]
-    dat = proc.stdout.read()
-    if proc.wait() != 0:
-      raise DataUnreadableError("ffmpeg failed")
+    args = ["ffmpeg",
+            "-threads", threads,
+            "-hwaccel", "none" if not cuda else "cuda",
+            "-c:v", "hevc",
+            "-vsync", "0",
+            "-f", vid_fmt,
+            "-flags2", "showall",
+            "-i", "pipe:0",
+            "-threads", threads,
+            "-f", "rawvideo",
+            "-pix_fmt", pix_fmt,
+            "pipe:1"]
+    with subprocess.Popen(args, stdin=tmpf, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as proc:
+      # dat = proc.communicate()[0]
+      dat = proc.stdout.read()
+      if proc.wait() != 0:
+        raise DataUnreadableError("ffmpeg failed")
 
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
