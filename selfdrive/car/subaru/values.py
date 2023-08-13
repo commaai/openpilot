@@ -262,14 +262,12 @@ FW_VERSIONS = {
       b'\xa2 !`\000',
       b'\xf1\x00\xb2\x06\x04',
       b'\xa2  `\x00',
-      b'\xa2 !i\x00',
     ],
     (Ecu.eps, 0x746, None): [
       b'\x9a\xc0\000\000',
       b'\n\xc0\004\000',
       b'\x9a\xc0\x04\x00',
       b'\n\xc0\x04\x01',
-      b'\n\xc0\x04\x00',
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\000\000eb\037@ \"',
@@ -277,7 +275,6 @@ FW_VERSIONS = {
       b'\x00\x00eq\x1f@ "',
       b'\x00\x00eq\x00\x00\x00\x00',
       b'\x00\x00e\x8f\x00\x00\x00\x00',
-      b'\xf1\x00\xac\x03\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xca!ap\a',
@@ -303,7 +300,6 @@ FW_VERSIONS = {
       b'\xe9\xf6F0\x00',
       b'\xe9\xf5B0\x00',
       b'\xe9\xf6B0\x00',
-      b'\xf1\x82\xe9\xf6B0\x00',
     ],
   },
   CAR.FORESTER: {
