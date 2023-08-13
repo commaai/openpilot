@@ -8,6 +8,7 @@
 
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -260,15 +261,10 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       background-color: black;
     }
     #ssidLabel {
-      font-size: 55px;
-      font-weight: 300;
       text-align: left;
       border: none;
       padding-top: 50px;
       padding-bottom: 50px;
-    }
-    #ssidLabel[disconnected=false] {
-      font-weight: 500;
     }
     #ssidLabel:disabled {
       color: #696969;
@@ -351,10 +347,7 @@ void WifiItem::setItem(const Network &n, const QPixmap &status_icon, bool show_f
 
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
-  ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
-  ssidLabel->style()->unpolish(ssidLabel);
-  ssidLabel->style()->polish(ssidLabel);
-  ssidLabel->update();
+  ssidLabel->setFont(InterFont(55, network.connected == ConnectedType::DISCONNECTED ? QFont::Normal : QFont::Medium));
 
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
   forgetBtn->setVisible(show_forget_btn);
