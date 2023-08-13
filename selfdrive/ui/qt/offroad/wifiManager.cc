@@ -177,6 +177,7 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
   connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
+  emit refreshSignal();
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
@@ -310,6 +311,8 @@ std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QStrin
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
+    seenNetworks[ssid].connected = ConnectedType::CONNECTING;
+    emit refreshSignal();
     return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
   return std::nullopt;
