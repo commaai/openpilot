@@ -81,7 +81,7 @@ std::string dir_name(std::string const& path);
 int random_int(int min, int max);
 std::string random_string(std::string::size_type length);
 
-// **** file fhelpers *****
+// **** file helpers *****
 std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
