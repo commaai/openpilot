@@ -210,7 +210,8 @@ class TestLoggerd(unittest.TestCase):
     for fn in ["console-ramoops", "pmsg-ramoops-0"]:
       path = Path(os.path.join("/sys/fs/pstore/", fn))
       if path.is_file():
-        expected_val = open(path, "rb").read()
+        with open(path, "rb") as f:
+          expected_val = f.read()
         bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
         self.assertEqual(expected_val, bootlog_val)
 
