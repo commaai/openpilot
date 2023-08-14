@@ -2,6 +2,7 @@
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 #include <dirent.h>
 
 #include <cassert>

@@ -12,8 +12,6 @@
 #include <mutex>
 #include <numeric>
 
-#include <sys/resource.h>
-
 #include "common/timing.h"
 #include "common/util.h"
 
