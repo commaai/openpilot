@@ -12,6 +12,7 @@ public:
   void setItem(const Network& n, const QPixmap &icon, bool show_forget_btn, const QPixmap &strength);
 
 signals:
+  // Cannot pass Network by reference. it may change after the signal is sent.
   void connectToNetwork(const Network n);
   void forgotNetwork(const Network n);
 
