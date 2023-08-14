@@ -27,6 +27,7 @@ PandaType = log.PandaState.PandaType
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
+INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 
 ignore_addr_checks_valid = [
   GM.BUICK_REGAL,
@@ -48,7 +49,10 @@ def get_test_cases():
 
   else:
     with open(os.path.join(BASEDIR, INTERNAL_SEG_LIST), "r") as f:
-      seg_list = iter(f.read().splitlines())
+      seg_list = f.read().splitlines()
+
+    cnt = INTERNAL_SEG_CNT or len(seg_list)
+    seg_list = iter(seg_list[:cnt])
 
     for platform in seg_list:
       platform = platform[2:]  # get rid of comment
