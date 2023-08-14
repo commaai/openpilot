@@ -101,6 +101,7 @@ types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
+pyqt5 = "*"
 
 
 [build-system]
