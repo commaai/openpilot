@@ -26,11 +26,15 @@ bool RateKeeper::monitorTime() {
   ++frame_;
   last_monitor_time = seconds_since_boot();
   remaining_ = next_frame_time - last_monitor_time;
-  next_frame_time += interval;
 
-  bool lagged = remaining_ < -print_delay_threshold;
-  if (lagged && print_delay_threshold > 0) {
-    LOGW("%s lagging by %.2f ms", name.c_str(), -remaining_ * 1000);
+  bool lagged = remaining_ < 0;
+  if (lagged) {
+    if (print_delay_threshold > 0 && remaining_ < -print_delay_threshold) {
+      LOGW("%s lagging by %.2f ms", name.c_str(), -remaining_ * 1000);
+    }
+    next_frame_time = last_monitor_time + interval;
+  } else {
+    next_frame_time += interval;
   }
   return lagged;
 }
