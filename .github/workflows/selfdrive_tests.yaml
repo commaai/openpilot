@@ -84,7 +84,7 @@ jobs:
     - name: Cleanup scons cache and rebuild
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
+          ${{ env.RUN }} "rm -rf $(find /tmp/scons_cache -maxdepth 1 ! -name moc_files ! -name scons_cache) && \
                           scons -j$(nproc) --cache-populate"
     - name: Save scons cache
       uses: actions/cache/save@v3
@@ -160,7 +160,7 @@ jobs:
       if: github.ref == 'refs/heads/master'
       run: |
         source tools/openpilot_env.sh
-        rm -rf /tmp/scons_cache/*
+        rm -rf $(find /tmp/scons_cache -maxdepth 1 ! -name moc_files ! -name scons_cache)
         poetry run scons -j$(nproc) --cache-populate
     - name: Save scons cache
       id: scons-save-cache
