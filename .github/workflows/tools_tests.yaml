@@ -108,7 +108,7 @@ jobs:
         file: docs/docker/Dockerfile
         push: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
         pull: true
-        tags: $DOCKER_REGISTRY/openpilot-docs-base:latest
+        tags: $DOCKER_REGISTRY/openpilot-docs:latest
         cache-to:
           - type=inline
         cache-from:
