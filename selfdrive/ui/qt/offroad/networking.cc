@@ -295,7 +295,7 @@ void WifiUI::refresh() {
       status_icon = lock;
     }
     bool show_forget_btn = wifi->isKnownConnection(network.ssid) && !is_tethering_enabled;
-    QPixmap strength = strengths[std::clamp((int)round(network.strength / 33.), 0, 3)];
+    QPixmap strength = strengths[strengthLevel(network.strength)];
 
     auto item = getItem(n++);
     item->setItem(network, status_icon, show_forget_btn, strength);
