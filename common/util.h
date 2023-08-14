@@ -44,6 +44,7 @@ namespace util {
 void set_thread_name(const char* name);
 int set_realtime_priority(int level);
 int set_core_affinity(std::vector<int> cores);
+int set_file_descriptor_limit(uint64_t limit);
 
 // ***** Time helpers *****
 struct tm get_time();

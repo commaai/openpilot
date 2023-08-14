@@ -32,4 +32,3 @@ typedef std::function<void(uint64_t cur, uint64_t total, bool success)> Download
 void installDownloadProgressHandler(DownloadProgressHandler);
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
 std::string formattedDataSize(size_t size);
-int setFileDescriptorLimit(uint64_t limit);

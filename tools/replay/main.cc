@@ -4,12 +4,11 @@
 #include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
-#include "tools/replay/util.h"
 
 int main(int argc, char *argv[]) {
 #ifdef __APPLE__
   // With all sockets opened, we might hit the default limit of 256 on macOS
-  setFileDescriptorLimit(1024);
+  util::set_file_descriptor_limit(1024);
 #endif
 
   QCoreApplication app(argc, argv);
