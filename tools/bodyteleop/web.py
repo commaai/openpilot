@@ -6,11 +6,16 @@ import ssl
 import uuid
 import time
 
-from common.basedir import BASEDIR
+# aiortc and its dependencies have lots of internal warnings :(
+import warnings
+warnings.resetwarnings()
+warnings.simplefilter("always")
+
 from aiohttp import web
 from aiortc import RTCPeerConnection, RTCSessionDescription
 
 import cereal.messaging as messaging
+from common.basedir import BASEDIR
 from tools.bodyteleop.bodyav import BodyMic, WebClientSpeaker, force_codec, play_sound, MediaBlackhole, EncodedBodyVideo
 
 logger = logging.getLogger("pc")
