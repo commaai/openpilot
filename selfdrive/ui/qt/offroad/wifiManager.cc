@@ -95,18 +95,29 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
 
   const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
   for (const QDBusObjectPath &path : wather_reply.value()) {
-    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES,
+                                          "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
     auto properties = replay.value();
-
     const QByteArray ssid = properties["Ssid"].toByteArray();
-    uint32_t strength = properties["Strength"].toUInt();
-    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks[ssid].strength)) continue;
+    if (ssid.isEmpty()) {
+      continue;
+    }
 
+    uint32_t strength = properties["Strength"].toUInt();
     SecurityType security = getSecurityType(properties);
     ConnectedType ctype = ConnectedType::DISCONNECTED;
     if (path.path() == activeAp) {
       ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
+
+    // Skip if the network with the same ssid is not disconnected or the signal is stronger.
+    auto it = seenNetworks.find(ssid);
+    if (it != seenNetworks.end()) {
+      if (it.value().connected != ConnectedType::DISCONNECTED || it.value().strength >= strength) {
+        continue;
+      }
+    }
+
     seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
 
