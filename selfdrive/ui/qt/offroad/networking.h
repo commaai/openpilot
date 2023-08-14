@@ -12,8 +12,8 @@ public:
   void setItem(const Network& n, const QPixmap &icon, bool show_forget_btn, const QPixmap &strength);
 
 signals:
-  void connectToNetwork(const Network &n);
-  void forgotNetwork(const Network &n);
+  void connectToNetwork(const Network n);
+  void forgotNetwork(const Network n);
 
 protected:
   ElidedLabel* ssidLabel;
@@ -43,7 +43,7 @@ private:
   std::vector<WifiItem*> wifi_items;
 
 signals:
-  void connectToNetwork(const Network &n);
+  void connectToNetwork(const Network n);
 
 public slots:
   void refresh();
