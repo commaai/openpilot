@@ -213,6 +213,13 @@ std::string hexdump(const uint8_t* in, const size_t size) {
   return ss.str();
 }
 
+int random_int(int min, int max) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+  return dist(rng);
+}
+
 std::string random_string(std::string::size_type length) {
   const std::string chrs = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
   std::mt19937 rg{std::random_device{}()};
