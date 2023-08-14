@@ -91,6 +91,6 @@ public slots:
   void refresh();
 
 private slots:
-  void connectToNetwork(const Network &n);
+  void connectToNetwork(const Network n);
   void wrongPassword(const QString &ssid);
 };

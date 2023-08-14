@@ -8,8 +8,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 bool compare_by_strength(const Network &a, const Network &b) {
-  return std::tuple(a.connected, strengthLevel(a.strength), b.ssid) >
-         std::tuple(b.connected, strengthLevel(b.strength), a.ssid);
+  return std::tuple(a.connected == ConnectedType::CONNECTED, strengthLevel(a.strength), b.ssid) >
+         std::tuple(b.connected == ConnectedType::CONNECTED, strengthLevel(b.strength), a.ssid);
 }
 
 template <typename T = QDBusMessage, typename... Args>
@@ -155,8 +155,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 }
 
 void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
-  connecting_to_network = n.ssid;
-  seenNetworks[n.ssid].connected = ConnectedType::CONNECTING;
+  setCurrentConnecting(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
@@ -177,7 +176,6 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
   connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
-  emit refreshSignal();
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
@@ -257,6 +255,14 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
   }
 }
 
+void WifiManager::setCurrentConnecting(const QString &ssid) {
+  connecting_to_network = ssid;
+  for (auto &network : seenNetworks) {
+    network.connected = (network.ssid == ssid) ? ConnectedType::CONNECTING : ConnectedType::DISCONNECTED;
+  }
+  emit refreshSignal();
+}
+
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
@@ -310,9 +316,7 @@ void WifiManager::initConnections() {
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
-    connecting_to_network = ssid;
-    seenNetworks[ssid].connected = ConnectedType::CONNECTING;
-    emit refreshSignal();
+    setCurrentConnecting(ssid);
     return asyncCall(NM_DBUS_PATH, NM_DBUS_INTERFACE, "ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
   return std::nullopt;

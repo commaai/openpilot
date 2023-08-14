@@ -77,7 +77,7 @@ void Networking::refresh() {
   an->refresh();
 }
 
-void Networking::connectToNetwork(const Network &n) {
+void Networking::connectToNetwork(const Network n) {
   if (wifi->isKnownConnection(n.ssid)) {
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
