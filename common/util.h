@@ -75,8 +75,11 @@ int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
-std::string random_string(std::string::size_type length);
 std::string dir_name(std::string const& path);
+
+// ***** random helpers *****
+int random_int(int min, int max);
+std::string random_string(std::string::size_type length);
 
 // **** file fhelpers *****
 std::string read_file(const std::string& fn);
