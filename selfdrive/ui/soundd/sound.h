@@ -1,3 +1,4 @@
+#include <QFuture>
 #include <QMap>
 #include <QSoundEffect>
 #include <QString>
@@ -29,6 +30,7 @@ protected:
 
   SubMaster sm;
   Alert current_alert = {};
-  QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
   int current_volume = -1;
+  QFuture<void> future;
+  QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
 };
