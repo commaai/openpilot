@@ -347,7 +347,7 @@ void WifiItem::setItem(const Network &n, const QPixmap &status_icon, bool show_f
 
   ssidLabel->setText(n.ssid);
   ssidLabel->setEnabled(n.security_type != SecurityType::UNSUPPORTED);
-  ssidLabel->setFont(InterFont(55, network.connected == ConnectedType::DISCONNECTED ? QFont::Normal : QFont::Medium));
+  ssidLabel->setFont(InterFont(55, network.connected == ConnectedType::DISCONNECTED ? QFont::Normal : QFont::Bold));
 
   connecting->setVisible(n.connected == ConnectedType::CONNECTING);
   forgetBtn->setVisible(show_forget_btn);
