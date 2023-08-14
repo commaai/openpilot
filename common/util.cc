@@ -2,6 +2,7 @@
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/resource.h>
 #include <dirent.h>
 
 #include <cassert>
@@ -58,6 +59,20 @@ int set_core_affinity(std::vector<int> cores) {
 #else
   return -1;
 #endif
+}
+
+int set_file_descriptor_limit(uint64_t limit_val) {
+  struct rlimit limit;
+  int status;
+
+  if ((status = getrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  limit.rlim_cur = limit_val;
+  if ((status = setrlimit(RLIMIT_NOFILE, &limit)) < 0)
+    return status;
+
+  return 0;
 }
 
 std::string read_file(const std::string& fn) {
