@@ -6,7 +6,6 @@ import capnp
 
 from cereal import car
 from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -218,7 +217,7 @@ class CanBusBase:
 
 class CanSignalRateCalculator:
   """
-  Calculates the instantaneous rate of a can signal by using the counter
+  Calculates the instantaneous rate of a CAN signal by using the counter
   variable and the known frequency of the CAN message that contains it.
   """
   def __init__(self, frequency):
@@ -233,7 +232,7 @@ class CanSignalRateCalculator:
       self.reference_counter = self.previous_counter
       self.reference_value = self.previous_value
 
-    rate = (current_value - self.reference_value) / (DT_CTRL * (100 / self.frequency))
+    rate = (current_value - self.reference_value) / self.frequency
 
     self.previous_value = current_value
     self.previous_counter = current_counter
