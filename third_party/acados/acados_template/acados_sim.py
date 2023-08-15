@@ -1,9 +1,6 @@
 # -*- coding: future_fstrings -*-
 #
-# Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
-# Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
-# Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
-# Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+# Copyright (c) The acados authors.
 #
 # This file is part of acados.
 #
@@ -33,10 +30,9 @@
 #
 
 import numpy as np
-import casadi as ca
 import os
 from .acados_model import AcadosModel
-from .utils import get_acados_path
+from .utils import get_acados_path, get_lib_ext
 
 class AcadosSimDims:
     """
@@ -73,28 +69,28 @@ class AcadosSimDims:
         if isinstance(nx, int) and nx > 0:
             self.__nx = nx
         else:
-            raise Exception('Invalid nx value, expected positive integer. Exiting.')
+            raise Exception('Invalid nx value, expected positive integer.')
 
     @nz.setter
     def nz(self, nz):
         if isinstance(nz, int) and nz > -1:
             self.__nz = nz
         else:
-            raise Exception('Invalid nz value, expected nonnegative integer. Exiting.')
+            raise Exception('Invalid nz value, expected nonnegative integer.')
 
     @nu.setter
     def nu(self, nu):
         if isinstance(nu, int) and nu > -1:
             self.__nu = nu
         else:
-            raise Exception('Invalid nu value, expected nonnegative integer. Exiting.')
+            raise Exception('Invalid nu value, expected nonnegative integer.')
 
     @np.setter
     def np(self, np):
         if isinstance(np, int) and np > -1:
             self.__np = np
         else:
-            raise Exception('Invalid np value, expected nonnegative integer. Exiting.')
+            raise Exception('Invalid np value, expected nonnegative integer.')
 
     def set(self, attr, value):
         setattr(self, attr, value)
@@ -112,13 +108,16 @@ class AcadosSimOpts:
         self.__sim_method_num_stages = 1
         self.__sim_method_num_steps = 1
         self.__sim_method_newton_iter = 3
+        # doubles
+        self.__sim_method_newton_tol = 0.0
         # bools
         self.__sens_forw = True
         self.__sens_adj = False
         self.__sens_algebraic = False
         self.__sens_hess = False
-        self.__output_z = False
+        self.__output_z = True
         self.__sim_method_jac_reuse = 0
+        self.__ext_fun_compile_flags = '-O2'
 
     @property
     def integrator_type(self):
@@ -139,6 +138,15 @@ class AcadosSimOpts:
     def newton_iter(self):
         """Number of Newton iterations in simulation method. Default: 3"""
         return self.__sim_method_newton_iter
+
+    @property
+    def newton_tol(self):
+        """
+        Tolerance for Newton system solved in implicit integrator (IRK, GNSF).
+        0.0 means this is not used and exactly newton_iter iterations are carried out.
+        Default: 0.0
+        """
+        return self.__sim_method_newton_tol
 
     @property
     def sens_forw(self):
@@ -162,7 +170,7 @@ class AcadosSimOpts:
 
     @property
     def output_z(self):
-        """Boolean determining if values for algebraic variables (corresponding to start of simulation interval) are computed. Default: False"""
+        """Boolean determining if values for algebraic variables (corresponding to start of simulation interval) are computed. Default: True"""
         return self.__output_z
 
     @property
@@ -184,6 +192,21 @@ class AcadosSimOpts:
         """
         return self.__collocation_type
 
+    @property
+    def ext_fun_compile_flags(self):
+        """
+        String with compiler flags for external function compilation.
+        Default: '-O2'.
+        """
+        return self.__ext_fun_compile_flags
+
+    @ext_fun_compile_flags.setter
+    def ext_fun_compile_flags(self, ext_fun_compile_flags):
+        if isinstance(ext_fun_compile_flags, str):
+            self.__ext_fun_compile_flags = ext_fun_compile_flags
+        else:
+            raise Exception('Invalid ext_fun_compile_flags, expected a string.\n')
+
     @integrator_type.setter
     def integrator_type(self, integrator_type):
         integrator_types = ('ERK', 'IRK', 'GNSF')
@@ -191,7 +214,7 @@ class AcadosSimOpts:
             self.__integrator_type = integrator_type
         else:
             raise Exception('Invalid integrator_type value. Possible values are:\n\n' \
-                    + ',\n'.join(integrator_types) + '.\n\nYou have: ' + integrator_type + '.\n\nExiting.')
+                    + ',\n'.join(integrator_types) + '.\n\nYou have: ' + integrator_type + '.\n\n')
 
     @collocation_type.setter
     def collocation_type(self, collocation_type):
@@ -200,7 +223,7 @@ class AcadosSimOpts:
             self.__collocation_type = collocation_type
         else:
             raise Exception('Invalid collocation_type value. Possible values are:\n\n' \
-                    + ',\n'.join(collocation_types) + '.\n\nYou have: ' + collocation_type + '.\n\nExiting.')
+                    + ',\n'.join(collocation_types) + '.\n\nYou have: ' + collocation_type + '.\n\n')
 
     @T.setter
     def T(self, T):
@@ -226,6 +249,13 @@ class AcadosSimOpts:
             self.__sim_method_newton_iter = newton_iter
         else:
             raise Exception('Invalid newton_iter value. newton_iter must be an integer.')
+
+    @newton_tol.setter
+    def newton_tol(self, newton_tol):
+        if isinstance(newton_tol, float):
+            self.__sim_method_newton_tol = newton_tol
+        else:
+            raise Exception('Invalid newton_tol value. newton_tol must be an float.')
 
     @sens_forw.setter
     def sens_forw(self, sens_forw):
@@ -280,6 +310,7 @@ class AcadosSim:
     - :py:attr:`solver_options` of type :py:class:`acados_template.acados_sim.AcadosSimOpts`
 
     - :py:attr:`acados_include_path` (set automatically)
+    - :py:attr:`shared_lib_ext` (set automatically)
     - :py:attr:`acados_lib_path` (set automatically)
     - :py:attr:`parameter_values` - used to initialize the parameters (can be changed)
 
@@ -301,9 +332,14 @@ class AcadosSim:
 
         self.code_export_directory = 'c_generated_code'
         """Path to where code will be exported. Default: `c_generated_code`."""
+        self.shared_lib_ext = get_lib_ext()
 
-        self.cython_include_dirs = ''
+        # get cython paths
+        from sysconfig import get_paths
+        self.cython_include_dirs = [np.get_include(), get_paths()['include']]
+
         self.__parameter_values = np.array([])
+        self.__problem_class = 'SIM'
 
     @property
     def parameter_values(self):
