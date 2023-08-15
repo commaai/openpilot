@@ -165,6 +165,7 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
+  std::vector<Sensor *> magnetometer_sensors;
   for (auto &[sensor, required] : sensors_init) {
     int err = sensor->init();
     if (err < 0) {
@@ -176,9 +177,8 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
       if (sensor == &bmx055_magn || sensor == &mmc5603nj_magn) {
         has_magnetometer = true;
-      }
-
-      if (!sensor->has_interrupt_enabled()) {
+        magnetometer_sensors.push_back(sensor);
+      } else if (!sensor->has_interrupt_enabled()) {
         sensors.push_back(sensor);
       }
     }
@@ -199,7 +199,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
-  std::vector<Sensor *> magnetometer_sensors = {&bmx055_magn, &mmc5603nj_magn};
   std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
                                    std::ref(sensor_service));
   std::thread magnetometer_thread(&magnetometer_loop, std::ref(magnetometer_sensors),
