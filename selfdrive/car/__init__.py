@@ -60,7 +60,7 @@ def scale_rot_inertia(mass, wheelbase):
 
 # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
 # mass and CG position, so all cars will have approximately similar dyn behaviors
-def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor=1.0):
+def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
   center_to_rear = wheelbase - center_to_front
   tire_stiffness_front = (CivicParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / CivicParams.MASS * \
                          (center_to_rear / wheelbase) / (CivicParams.CENTER_TO_REAR / CivicParams.WHEELBASE)

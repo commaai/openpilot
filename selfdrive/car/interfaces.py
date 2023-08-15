@@ -99,16 +99,9 @@ class CarInterfaceBase(ABC):
     ret = CarInterfaceBase.get_std_params(candidate)
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
-    # Set common params using fields set by the car interface
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
+    # Set params dependent on values set by the car interface
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    # TODO: some car interfaces set stiffness factor
-    if ret.tireStiffnessFront == 0 or ret.tireStiffnessRear == 0:
-      # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-      # mass and CG position, so all cars will have approximately similar dyn behaviors
-      ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
+    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront, ret.tireStiffnessFactor)
 
     return ret
 
@@ -151,6 +144,7 @@ class CarInterfaceBase(ABC):
     ret.autoResumeSng = True  # describes whether car can resume from a stop automatically
 
     # standard ALC params
+    ret.tireStiffnessFactor = 1.0
     ret.steerControlType = car.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0

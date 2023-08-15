@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import capnp
 import time
-from typing import Optional, Set, Tuple
+from typing import Optional, Set
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
 from selfdrive.car import make_can_msg
+from selfdrive.car.fw_query_definitions import EcuAddrBusType
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from system.swaglog import cloudlog
-
-EcuAddrBusType = Tuple[int, Optional[int], int]
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):

@@ -115,7 +115,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   }
 
   LOG("encoder destroy");
-  for(auto &e : encoders) {
+  for (auto &e : encoders) {
     e->encoder_close();
     delete e;
   }
@@ -166,5 +166,5 @@ int main(int argc, char* argv[]) {
   } else {
     encoderd_thread(cameras_logged);
   }
-    return 0;  
+  return 0;
 }
