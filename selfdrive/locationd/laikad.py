@@ -104,7 +104,7 @@ class Laikad:
     self.ttff = -1
 
     # qcom specific stuff
-    self.qcom_reports_received = 1
+    self.qcom_reports_received = 2
     self.qcom_reports = []
 
   def load_cache(self):
@@ -161,6 +161,7 @@ class Laikad:
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
+      measurements = [m for m in measurements if m.constellation_id != ConstellationId.GLONASS]
       position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       if len(position_solution) < 3:
         return None
