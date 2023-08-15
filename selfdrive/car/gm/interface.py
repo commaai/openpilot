@@ -128,6 +128,7 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
@@ -152,7 +153,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.HOLDEN_ASTRA:
       ret.mass = 1363. + STD_CARGO_KG
@@ -160,7 +160,6 @@ class CarInterface(CarInterfaceBase):
       # Remaining parameters copied from Volt for now
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerRatio = 15.7
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
@@ -169,7 +168,6 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.centerToFront = ret.wheelbase * 0.4
       ret.steerActuatorDelay = 0.2
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BUICK_LACROSSE:
@@ -177,7 +175,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.91
       ret.steerRatio = 15.8
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BUICK_REGAL:
@@ -185,14 +182,12 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.83  # 111.4 inches in meters
       ret.steerRatio = 14.4  # guess for tourx
       ret.centerToFront = ret.wheelbase * 0.4  # guess for tourx
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.CADILLAC_ATS:
       ret.mass = 1601. + STD_CARGO_KG
       ret.wheelbase = 2.78
       ret.steerRatio = 15.3
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
 
     elif candidate == CAR.ESCALADE:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
@@ -200,7 +195,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.95  # 116 inches in meters
       ret.steerRatio = 17.3
       ret.centerToFront = ret.wheelbase * 0.5
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.ESCALADE_ESV:
@@ -212,12 +206,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
       ret.lateralTuning.pid.kf = 0.000045
+      ret.tireStiffnessFactor = 1.0
 
     elif candidate == CAR.BOLT_EUV:
       ret.mass = 1669. + STD_CARGO_KG
       ret.wheelbase = 2.63779
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -226,6 +222,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.75
       ret.steerRatio = 16.3
       ret.centerToFront = ret.wheelbase * 0.5
+      ret.tireStiffnessFactor = 1.0
       # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
       # with foot on brake to allow engagement, but this platform only has that check in the camera.
       # TODO: check if this is split by EV/ICE with more platforms in the future
@@ -238,7 +235,6 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.72
       ret.steerRatio = 14.4
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.tireStiffnessFactor = 0.444  # not optimized yet
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.TRAILBLAZER:
@@ -246,6 +242,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.64
       ret.steerRatio = 16.8
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.tireStiffnessFactor = 1.0
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
