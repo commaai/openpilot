@@ -155,13 +155,17 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  if (sm.updated("navRoute")) {
+  // TODO: add a valid flag to navRoute
+  if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     auto nav_dest = coordinate_from_param("NavDestination");
-    // Show map on destination set or change
-    if (std::exchange(current_nav_dest, nav_dest) != nav_dest &&
-        current_nav_dest && !isVisible()) {
+    bool allow_open = std::exchange(last_valid_nav_dest, nav_dest) != nav_dest &&
+                      last_valid_nav_dest && !isVisible();
+    qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
+
+    // Show map on destination set/change
+    if (allow_open) {
       emit requestSettings(false);
-      emit requestVisible(true);
+      emit requestVisible(true); // Show map on destination set/change
     }
   }
 
@@ -235,7 +239,7 @@ void MapWindow::updateState(const UIState &s) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     route_rcv_frame = sm.rcv_frame("navRoute");
-    updateDestinationMarker(current_nav_dest);
+    updateDestinationMarker();
   }
 }
 
@@ -285,12 +289,12 @@ void MapWindow::clearRoute() {
   if (!m_map.isNull()) {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
-    current_nav_dest = std::nullopt;
-    updateDestinationMarker(std::nullopt);
+    updateDestinationMarker();
   }
 
   map_instructions->setVisible(false);
   map_eta->setVisible(false);
+  last_valid_nav_dest = std::nullopt;
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
@@ -375,8 +379,11 @@ void MapWindow::offroadTransition(bool offroad) {
   last_bearing = {};
 }
 
-void MapWindow::updateDestinationMarker(std::optional<QMapbox::Coordinate> nav_dest) {
-  if (nav_dest) {
+void MapWindow::updateDestinationMarker() {
+  m_map->setPaintProperty("pinLayer", "visibility", "none");
+
+  auto nav_dest = coordinate_from_param("NavDestination");
+  if (nav_dest.has_value()) {
     auto point = coordinate_to_collection(*nav_dest);
     QMapbox::Feature feature(QMapbox::Feature::PointType, point, {}, {});
     QVariantMap pinSource;
@@ -384,7 +391,5 @@ void MapWindow::updateDestinationMarker(std::optional<QMapbox::Coordinate> nav_d
     pinSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("pinSource", pinSource);
     m_map->setPaintProperty("pinLayer", "visibility", "visible");
-  } else {
-    m_map->setPaintProperty("pinLayer", "visibility", "none");
   }
 }

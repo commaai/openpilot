@@ -57,8 +57,8 @@ private:
   int zoom_counter = 0;
 
   // Position
+  std::optional<QMapbox::Coordinate> last_valid_nav_dest;
   std::optional<QMapbox::Coordinate> last_position;
-  std::optional<QMapbox::Coordinate> current_nav_dest;
   std::optional<float> last_bearing;
   FirstOrderFilter velocity_filter;
   bool locationd_valid = false;
@@ -75,7 +75,7 @@ private:
   }
 
   void clearRoute();
-  void updateDestinationMarker(std::optional<QMapbox::Coordinate> nav_dest);
+  void updateDestinationMarker();
   uint64_t route_rcv_frame = 0;
 
 private slots:
