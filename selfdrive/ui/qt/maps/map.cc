@@ -157,12 +157,11 @@ void MapWindow::updateState(const UIState &s) {
 
   if (sm.updated("navRoute")) {
     auto nav_dest = coordinate_from_param("NavDestination");
-    if (std::exchange(current_nav_dest, nav_dest) != nav_dest) {
-      // Show map on destination set/change
-      if (current_nav_dest && !isVisible()) {
-        emit requestSettings(false);
-        emit requestVisible(true);
-      }
+    // Show map on destination set or change
+    if (std::exchange(current_nav_dest, nav_dest) != nav_dest &&
+        current_nav_dest && !isVisible()) {
+      emit requestSettings(false);
+      emit requestVisible(true);
     }
   }
 
