@@ -14,6 +14,9 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
 
   auto map = new MapWindow(mapboxSettings);
   QObject::connect(uiState(), &UIState::offroadTransition, map, &MapWindow::offroadTransition);
+  QObject::connect(device(), &Device::interactiveTimeout, [=]() {
+    content_stack->setCurrentIndex(0);
+  });
   QObject::connect(map, &MapWindow::requestVisible, [=](bool visible) {
     // when we show the map for a new route, signal HomeWindow to hide the sidebar
     if (visible) { emit mapPanelRequested(); }
@@ -29,4 +32,12 @@ MapPanel::MapPanel(const QMapboxGLSettings &mapboxSettings, QWidget *parent) : Q
     content_stack->setCurrentIndex(0);
   });
   content_stack->addWidget(settings);
+}
+
+void MapPanel::toggleMapSettings() {
+  // show settings if not visible, then toggle between map and settings
+  int new_index = isVisible() ? (1 - content_stack->currentIndex()) : 1;
+  content_stack->setCurrentIndex(new_index);
+  emit mapPanelRequested();
+  show();
 }

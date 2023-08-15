@@ -71,7 +71,7 @@ void ONNXModel::pread(float *buf, int size) {
     int err;
     err = poll(fds, 1, 10000);  // 10 second timeout
     assert(err == 1 || (err == -1 && errno == EINTR));
-    LOGD("host read remaining %d/%d poll %d", tr, size*sizeof(float), err);
+    LOGD("host read remaining %d/%lu poll %d", tr, size*sizeof(float), err);
     err = read(pipeout[0], cbuf, tr);
     assert(err > 0 || (err == 0 && errno == EINTR));
     cbuf += err;

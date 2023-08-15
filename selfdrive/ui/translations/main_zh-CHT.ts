@@ -389,7 +389,7 @@
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>請在 connect.comma.ai 上進行管理</translation>
+        <translation>請在 connect.comma.ai 上管理</translation>
     </message>
 </context>
 <context>
@@ -401,6 +401,10 @@
     <message>
         <source>Waiting for GPS</source>
         <translation>等待 GPS</translation>
+    </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation>等待路線</translation>
     </message>
 </context>
 <context>
@@ -483,7 +487,7 @@
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation>openpilot偵測到設備的安裝位置發生變化。請確保設備完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
+        <translation>openpilot 偵測到設備的安裝位置發生變化。請確保設備完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
@@ -555,15 +559,15 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>24/7 LTE 連線</translation>
     </message>
     <message>
         <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>導航功能</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>一年的行駛記錄儲存空間</translation>
     </message>
 </context>
 <context>
@@ -1062,20 +1066,12 @@ This may take up to a minute.</source>
         <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮端到端縱向控制🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>讓駕駛模型來控制油門及煞車。openpilot將會模擬人類的駕駛行為，包含在看見紅燈及停止標示時停車。由於車速將由駕駛模型決定，因此您設定的時速將成為速度上限。本功能仍在早期實驗階段，請預期模型有犯錯的可能性。</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
         <translation>新的駕駛視覺介面</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>低速行駛時，將會切換成路側廣角鏡頭，以完整顯示轉彎路徑，右上角將出現實驗模式圖案。</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1086,20 +1082,16 @@ This may take up to a minute.</source>
         <translation>openpilot 縱向控制可能會在未來的更新中提供。</translation>
     </message>
     <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>啟用實驗性縱向控制以使用實驗模式。</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>openpilot 縱向控制 (Alpha 版)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>警告：此車輛的 Openpilot 縱向控制功能目前處於 Alpha 版本，使用此功能將會停用自動緊急制動（AEB）功能。</translation>
+        <translation>警告：此車輛的 openpilot 縱向控制功能目前處於 Alpha 版本，使用此功能將會停用自動緊急制動（AEB）功能。</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation>在這輛車上，Openpilot 預設使用車輛內建的主動巡航控制（ACC），而非 Openpilot 的縱向控制。啟用此項功能可切換至 Openpilot 的縱向控制。當啟用 Openpilot 縱向控制 Alpha 版本時，建議同時啟用實驗性模式（Experimental mode）。</translation>
+        <translation>在這輛車上，openpilot 預設使用車輛內建的主動巡航控制（ACC），而非 openpilot 的縱向控制。啟用此項功能可切換至 openpilot 的縱向控制。當啟用 openpilot 縱向控制 Alpha 版本時，建議同時啟用實驗性模式（Experimental mode）。</translation>
     </message>
     <message>
         <source>Aggressive</source>
@@ -1123,7 +1115,27 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本，以及實驗模式。</translation>
+        <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本以及實驗模式。</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>Navigate on openpilot</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>啟用 openpilot 縱向控制（alpha）切換以允許實驗模式。</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>端到端縱向控制</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>当导航有目的地时，openpilot 将把地图信息输入模型中。这为模型提供了有用的背景信息，使 openpilot 能够在叉路/出口时适当地保持左侧或右侧行驶。车道变换行为保持不变，仍由驾驶员激活。这是一个 Alpha 版的功能；可能会出现错误，特别是在出口和分叉处。这些错误可能包括意外的车道越界、晚出口、朝着分隔栏驶向分隔带区域等。</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>行駛畫面將在低速時切換至道路朝向的廣角鏡頭，以更好地顯示一些轉彎。實驗模式圖標也將顯示在右上角。當設定了導航目的地並且行駛模型正在將其作為輸入時，地圖上的行駛路徑將變為綠色。</translation>
     </message>
 </context>
 <context>
@@ -1169,19 +1181,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>請連接至 Wi-Fi 以上傳駕駛數據，並協助改進 openpilot</translation>
+        <translation>請連接至 Wi-Fi 傳駕駛數據以協助改進 openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
         <translation>開啟設置</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>正在上傳訓練數據</translation>
+        <source>Ready to upload</source>
+        <translation>準備好上傳</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>您的數據將用於訓練駕駛模型並協助改進 openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>訓練數據將定期經過 Wi-Fi 上傳</translation>
     </message>
 </context>
 <context>

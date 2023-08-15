@@ -113,10 +113,10 @@ def ui_thread(addr):
 
     yuv_img_raw = vipc_client.recv()
 
-    if yuv_img_raw is None or not yuv_img_raw.any():
+    if yuv_img_raw is None or not yuv_img_raw.data.any():
       continue
 
-    imgff = np.frombuffer(yuv_img_raw, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
+    imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((vipc_client.height * 3 // 2, vipc_client.width))
     num_px = vipc_client.width * vipc_client.height
     bgr = cv2.cvtColor(imgff, cv2.COLOR_YUV2RGB_NV12)
 

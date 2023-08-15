@@ -254,54 +254,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in PQ_CARS:
       return CarState.get_can_parser_pq(CP)
 
-    signals = [
-      # sig_name, sig_address
-      ("LWI_Lenkradwinkel", "LWI_01"),           # Absolute steering angle
-      ("LWI_VZ_Lenkradwinkel", "LWI_01"),        # Steering angle sign
-      ("LWI_Lenkradw_Geschw", "LWI_01"),         # Absolute steering rate
-      ("LWI_VZ_Lenkradw_Geschw", "LWI_01"),      # Steering rate sign
-      ("ESP_VL_Radgeschw_02", "ESP_19"),         # ABS wheel speed, front left
-      ("ESP_VR_Radgeschw_02", "ESP_19"),         # ABS wheel speed, front right
-      ("ESP_HL_Radgeschw_02", "ESP_19"),         # ABS wheel speed, rear left
-      ("ESP_HR_Radgeschw_02", "ESP_19"),         # ABS wheel speed, rear right
-      ("ESP_Gierrate", "ESP_02"),                # Absolute yaw rate
-      ("ESP_VZ_Gierrate", "ESP_02"),             # Yaw rate sign
-      ("ZV_FT_offen", "Gateway_72"),             # Door open, driver
-      ("ZV_BT_offen", "Gateway_72"),             # Door open, passenger
-      ("ZV_HFS_offen", "Gateway_72"),            # Door open, rear left
-      ("ZV_HBFS_offen", "Gateway_72"),           # Door open, rear right
-      ("ZV_HD_offen", "Gateway_72"),             # Trunk or hatch open
-      ("Comfort_Signal_Left", "Blinkmodi_02"),   # Left turn signal including comfort blink interval
-      ("Comfort_Signal_Right", "Blinkmodi_02"),  # Right turn signal including comfort blink interval
-      ("AB_Gurtschloss_FA", "Airbag_02"),        # Seatbelt status, driver
-      ("AB_Gurtschloss_BF", "Airbag_02"),        # Seatbelt status, passenger
-      ("ESP_Fahrer_bremst", "ESP_05"),           # Driver applied brake pressure over threshold
-      ("MO_Fahrer_bremst", "Motor_14"),          # Brake pedal switch
-      ("ESP_Bremsdruck", "ESP_05"),              # Brake pressure
-      ("MO_Fahrpedalrohwert_01", "Motor_20"),    # Accelerator pedal value
-      ("EPS_Lenkmoment", "LH_EPS_03"),           # Absolute driver torque input
-      ("EPS_VZ_Lenkmoment", "LH_EPS_03"),        # Driver torque input sign
-      ("EPS_HCA_Status", "LH_EPS_03"),           # EPS HCA control status
-      ("ESP_Tastung_passiv", "ESP_21"),          # Stability control disabled
-      ("ESP_Haltebestaetigung", "ESP_21"),       # ESP hold confirmation
-      ("KBI_Handbremse", "Kombi_01"),            # Manual handbrake applied
-      ("KBI_Variante", "Kombi_03"),              # Digital/full-screen instrument cluster installed
-      ("TSK_Status", "TSK_06"),                  # ACC engagement status from drivetrain coordinator
-      ("GRA_Hauptschalter", "GRA_ACC_01"),       # ACC button, on/off
-      ("GRA_Abbrechen", "GRA_ACC_01"),           # ACC button, cancel
-      ("GRA_Tip_Setzen", "GRA_ACC_01"),          # ACC button, set
-      ("GRA_Tip_Hoch", "GRA_ACC_01"),            # ACC button, increase or accel
-      ("GRA_Tip_Runter", "GRA_ACC_01"),          # ACC button, decrease or decel
-      ("GRA_Tip_Wiederaufnahme", "GRA_ACC_01"),  # ACC button, resume
-      ("GRA_Verstellung_Zeitluecke", "GRA_ACC_01"),  # ACC button, time gap adj
-      ("GRA_Typ_Hauptschalter", "GRA_ACC_01"),   # ACC main button type
-      ("GRA_Codierung", "GRA_ACC_01"),           # ACC button configuration/coding
-      ("GRA_Tip_Stufe_2", "GRA_ACC_01"),         # unknown related to stalk type
-      ("GRA_ButtonTypeInfo", "GRA_ACC_01"),      # unknown related to stalk type
-      ("COUNTER", "GRA_ACC_01"),                 # GRA_ACC_01 CAN message counter
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("LWI_01", 100),      # From J500 Steering Assist with integrated sensors
       ("LH_EPS_03", 100),   # From J500 Steering Assist with integrated sensors
@@ -321,108 +274,41 @@ class CarState(CarStateBase):
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
-      signals.append(("GE_Fahrstufe", "Getriebe_11"))  # Auto trans gear selector position
-      checks.append(("Getriebe_11", 20))  # From J743 Auto transmission control module
+      messages.append(("Getriebe_11", 20))  # From J743 Auto transmission control module
     elif CP.transmissionType == TransmissionType.direct:
-      signals.append(("GearPosition", "EV_Gearshift"))  # EV gear selector position
-      checks.append(("EV_Gearshift", 10))  # From J??? unknown EV control module
-    elif CP.transmissionType == TransmissionType.manual:
-      signals += [("MO_Kuppl_schalter", "Motor_14"),  # Clutch switch
-                  ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72")]  # Reverse light from BCM
+      messages.append(("EV_Gearshift", 10))  # From J??? unknown EV control module
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Radars are here on CANBUS.pt
-      signals += MqbExtraSignals.fwd_radar_signals
-      checks += MqbExtraSignals.fwd_radar_checks
+      messages += MqbExtraSignals.fwd_radar_messages
       if CP.enableBsm:
-        signals += MqbExtraSignals.bsm_radar_signals
-        checks += MqbExtraSignals.bsm_radar_checks
+        messages += MqbExtraSignals.bsm_radar_messages
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
     if CP.carFingerprint in PQ_CARS:
       return CarState.get_cam_can_parser_pq(CP)
 
-    signals = []
-    checks = []
+    messages = []
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals += [
-        # sig_name, sig_address
-        ("LDW_SW_Warnung_links", "LDW_02"),      # Blind spot in warning mode on left side due to lane departure
-        ("LDW_SW_Warnung_rechts", "LDW_02"),     # Blind spot in warning mode on right side due to lane departure
-        ("LDW_Seite_DLCTLC", "LDW_02"),          # Direction of most likely lane departure (left or right)
-        ("LDW_DLC", "LDW_02"),                   # Lane departure, distance to line crossing
-        ("LDW_TLC", "LDW_02"),                   # Lane departure, time to line crossing
-      ]
-      checks += [
+      messages += [
         # sig_address, frequency
         ("LDW_02", 10)      # From R242 Driver assistance camera
       ]
     else:
       # Radars are here on CANBUS.cam
-      signals += MqbExtraSignals.fwd_radar_signals
-      checks += MqbExtraSignals.fwd_radar_checks
+      messages += MqbExtraSignals.fwd_radar_messages
       if CP.enableBsm:
-        signals += MqbExtraSignals.bsm_radar_signals
-        checks += MqbExtraSignals.bsm_radar_checks
+        messages += MqbExtraSignals.bsm_radar_messages
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.cam)
 
   @staticmethod
   def get_can_parser_pq(CP):
-    signals = [
-      # sig_name, sig_address, default
-      ("LH3_BLW", "Lenkhilfe_3"),                # Absolute steering angle
-      ("LH3_BLWSign", "Lenkhilfe_3"),            # Steering angle sign
-      ("LH3_LM", "Lenkhilfe_3"),                 # Absolute driver torque input
-      ("LH3_LMSign", "Lenkhilfe_3"),             # Driver torque input sign
-      ("LH2_Sta_HCA", "Lenkhilfe_2"),            # Steering rack HCA status
-      ("Lenkradwinkel_Geschwindigkeit", "Lenkwinkel_1"),  # Absolute steering rate
-      ("Lenkradwinkel_Geschwindigkeit_S", "Lenkwinkel_1"),  # Steering rate sign
-      ("Geschwindigkeit_neu__Bremse_1_", "Bremse_1"),  # Vehicle speed from ABS
-      ("Radgeschw__VL_4_1", "Bremse_3"),         # ABS wheel speed, front left
-      ("Radgeschw__VR_4_1", "Bremse_3"),         # ABS wheel speed, front right
-      ("Radgeschw__HL_4_1", "Bremse_3"),         # ABS wheel speed, rear left
-      ("Radgeschw__HR_4_1", "Bremse_3"),         # ABS wheel speed, rear right
-      ("Giergeschwindigkeit", "Bremse_5"),       # Absolute yaw rate
-      ("Vorzeichen_der_Giergeschwindigk", "Bremse_5"),  # Yaw rate sign
-      ("Gurtschalter_Fahrer", "Airbag_1"),       # Seatbelt status, driver
-      ("Gurtschalter_Beifahrer", "Airbag_1"),    # Seatbelt status, passenger
-      ("Bremstestschalter", "Motor_2"),          # Brake pedal pressed (brake light test switch)
-      ("Bremslichtschalter", "Motor_2"),         # Brakes applied (brake light switch)
-      ("Bremsdruck", "Bremse_5"),                # Brake pressure applied
-      ("Vorzeichen_Bremsdruck", "Bremse_5"),     # Brake pressure applied sign (???)
-      ("Fahrpedal_Rohsignal", "Motor_3"),        # Accelerator pedal value
-      ("ESP_Passiv_getastet", "Bremse_1"),       # Stability control disabled
-      ("GRA_Hauptschalter", "Motor_5"),          # ACC main switch
-      ("GRA_Status", "Motor_2"),                 # ACC engagement status
-      ("GK1_Fa_Tuerkont", "Gate_Komf_1"),        # Door open, driver
-      ("BSK_BT_geoeffnet", "Gate_Komf_1"),       # Door open, passenger
-      ("BSK_HL_geoeffnet", "Gate_Komf_1"),       # Door open, rear left
-      ("BSK_HR_geoeffnet", "Gate_Komf_1"),       # Door open, rear right
-      ("BSK_HD_Hauptraste", "Gate_Komf_1"),      # Trunk or hatch open
-      ("GK1_Blinker_li", "Gate_Komf_1"),         # Left turn signal on
-      ("GK1_Blinker_re", "Gate_Komf_1"),         # Right turn signal on
-      ("Bremsinfo", "Kombi_1"),                  # Manual handbrake applied
-      ("GRA_Hauptschalt", "GRA_Neu"),            # ACC button, on/off
-      ("GRA_Typ_Hauptschalt", "GRA_Neu"),        # ACC button, momentary vs latching
-      ("GRA_Kodierinfo", "GRA_Neu"),             # ACC button, configuration
-      ("GRA_Abbrechen", "GRA_Neu"),              # ACC button, cancel
-      ("GRA_Neu_Setzen", "GRA_Neu"),             # ACC button, set
-      ("GRA_Up_lang", "GRA_Neu"),                # ACC button, increase or accel, long press
-      ("GRA_Down_lang", "GRA_Neu"),              # ACC button, decrease or decel, long press
-      ("GRA_Up_kurz", "GRA_Neu"),                # ACC button, increase or accel, short press
-      ("GRA_Down_kurz", "GRA_Neu"),              # ACC button, decrease or decel, short press
-      ("GRA_Recall", "GRA_Neu"),                 # ACC button, resume
-      ("GRA_Zeitluecke", "GRA_Neu"),             # ACC button, time gap adj
-      ("COUNTER", "GRA_Neu"),                    # ACC button, message counter
-      ("GRA_Sender", "GRA_Neu"),                 # ACC button, CAN message originator
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("Bremse_1", 100),    # From J104 ABS/ESP controller
       ("Bremse_3", 100),    # From J104 ABS/ESP controller
@@ -440,95 +326,55 @@ class CarState(CarStateBase):
     ]
 
     if CP.transmissionType == TransmissionType.automatic:
-      signals += [("Waehlhebelposition__Getriebe_1_", "Getriebe_1", 0)]  # Auto trans gear selector position
-      checks += [("Getriebe_1", 100)]  # From J743 Auto transmission control module
+      messages += [("Getriebe_1", 100)]  # From J743 Auto transmission control module
     elif CP.transmissionType == TransmissionType.manual:
-      signals += [("Kupplungsschalter", "Motor_1", 0),  # Clutch switch
-                  ("GK1_Rueckfahr", "Gate_Komf_1", 0)]  # Reverse light from BCM
-      checks += [("Motor_1", 100)]  # From J623 Engine control module
+      messages += [("Motor_1", 100)]  # From J623 Engine control module
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
       # Extended CAN devices other than the camera are here on CANBUS.pt
-      signals += PqExtraSignals.fwd_radar_signals
-      checks += PqExtraSignals.fwd_radar_checks
+      messages += PqExtraSignals.fwd_radar_messages
       if CP.enableBsm:
-        signals += PqExtraSignals.bsm_radar_signals
-        checks += PqExtraSignals.bsm_radar_checks
+        messages += PqExtraSignals.bsm_radar_messages
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser_pq(CP):
 
-    signals = []
-    checks = []
+    messages = []
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      signals += [
-        # sig_name, sig_address
-        ("LDW_SW_Warnung_links", "LDW_Status"),      # Blind spot in warning mode on left side due to lane departure
-        ("LDW_SW_Warnung_rechts", "LDW_Status"),     # Blind spot in warning mode on right side due to lane departure
-        ("LDW_Seite_DLCTLC", "LDW_Status"),          # Direction of most likely lane departure (left or right)
-        ("LDW_DLC", "LDW_Status"),                   # Lane departure, distance to line crossing
-        ("LDW_TLC", "LDW_Status"),                   # Lane departure, time to line crossing
-      ]
-      checks += [
+      messages += [
         # sig_address, frequency
         ("LDW_Status", 10)      # From R242 Driver assistance camera
       ]
 
     if CP.networkLocation == NetworkLocation.gateway:
       # Radars are here on CANBUS.cam
-      signals += PqExtraSignals.fwd_radar_signals
-      checks += PqExtraSignals.fwd_radar_checks
+      messages += PqExtraSignals.fwd_radar_messages
       if CP.enableBsm:
-        signals += PqExtraSignals.bsm_radar_signals
-        checks += PqExtraSignals.bsm_radar_checks
+        messages += PqExtraSignals.bsm_radar_messages
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.cam)
 
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
-  fwd_radar_signals = [
-    ("ACC_Wunschgeschw_02", "ACC_02"),           # ACC set speed
-    ("ACC_Typ", "ACC_06"),                       # Basic vs FtS vs SnG
-    ("AWV2_Freigabe", "ACC_10"),                 # FCW brake jerk release
-    ("ANB_Teilbremsung_Freigabe", "ACC_10"),     # AEB partial braking release
-    ("ANB_Zielbremsung_Freigabe", "ACC_10"),     # AEB target braking release
-  ]
-  fwd_radar_checks = [
+  fwd_radar_messages = [
     ("ACC_06", 50),                              # From J428 ACC radar control module
     ("ACC_10", 50),                              # From J428 ACC radar control module
     ("ACC_02", 17),                              # From J428 ACC radar control module
   ]
-  bsm_radar_signals = [
-    ("SWA_Infostufe_SWA_li", "SWA_01"),          # Blind spot object info, left
-    ("SWA_Warnung_SWA_li", "SWA_01"),            # Blind spot object warning, left
-    ("SWA_Infostufe_SWA_re", "SWA_01"),          # Blind spot object info, right
-    ("SWA_Warnung_SWA_re", "SWA_01"),            # Blind spot object warning, right
-  ]
-  bsm_radar_checks = [
+  bsm_radar_messages = [
     ("SWA_01", 20),                              # From J1086 Lane Change Assist
   ]
 
 class PqExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
-  fwd_radar_signals = [
-    ("ACS_Typ_ACC", "ACC_System"),               # Basic vs FtS (no SnG support on PQ)
-    ("ACA_StaACC", "ACC_GRA_Anzeige"),           # ACC drivetrain coordinator status
-    ("ACA_V_Wunsch", "ACC_GRA_Anzeige"),         # ACC set speed
-  ]
-  fwd_radar_checks = [
+  fwd_radar_messages = [
     ("ACC_System", 50),                          # From J428 ACC radar control module
     ("ACC_GRA_Anzeige", 25),                     # From J428 ACC radar control module
   ]
-  bsm_radar_signals = [
-    ("SWA_Infostufe_SWA_li", "SWA_1"),           # Blind spot object info, left
-    ("SWA_Warnung_SWA_li", "SWA_1"),             # Blind spot object warning, left
-    ("SWA_Infostufe_SWA_re", "SWA_1"),           # Blind spot object info, right
-    ("SWA_Warnung_SWA_re", "SWA_1"),             # Blind spot object warning, right
-  ]
-  bsm_radar_checks = [
+  bsm_radar_messages = [
     ("SWA_1", 20),                               # From J1086 Lane Change Assist
   ]

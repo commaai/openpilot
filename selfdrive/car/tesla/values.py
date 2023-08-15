@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from collections import namedtuple
 from typing import Dict, List, Union
 

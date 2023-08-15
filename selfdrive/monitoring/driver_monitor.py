@@ -212,7 +212,8 @@ class DriverStatus():
       distracted_types.append(DistractedType.DISTRACTED_BLINK)
 
     if self.ee1_calibrated:
-      ee1_dist = self.eev1 > max(min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1), self.settings._EE_MIN_OFFSET1) * self.settings._EE_THRESH12
+      ee1_dist = self.eev1 > max(min(self.ee1_offseter.filtered_stat.M, self.settings._EE_MAX_OFFSET1), self.settings._EE_MIN_OFFSET1) \
+                              * self.settings._EE_THRESH12
     else:
       ee1_dist = self.eev1 > self.settings._EE_THRESH11
     # if self.ee2_calibrated:
@@ -263,14 +264,17 @@ class DriverStatus():
     self.pose.yaw_std = driver_data.faceOrientationStd[1]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
     self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD
-    self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
-    self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.left_blink = driver_data.leftBlinkProb * (driver_data.leftEyeProb > self.settings._EYE_THRESHOLD) \
+                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
+    self.blink.right_blink = driver_data.rightBlinkProb * (driver_data.rightEyeProb > self.settings._EYE_THRESHOLD) \
+                                                                  * (driver_data.sunglassesProb < self.settings._SG_THRESHOLD)
     self.eev1 = driver_data.notReadyProb[0]
     self.eev2 = driver_data.readyProb[0]
 
     self.distracted_types = self._get_distracted_types()
-    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types or DistractedType.DISTRACTED_BLINK in self.distracted_types) and \
-                                          driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
+    self.driver_distracted = (DistractedType.DISTRACTED_E2E in self.distracted_types or DistractedType.DISTRACTED_POSE in self.distracted_types
+                                or DistractedType.DISTRACTED_BLINK in self.distracted_types) \
+                              and driver_data.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -306,7 +310,8 @@ class DriverStatus():
         self._reset_awareness()
         return
       # only restore awareness when paying attention and alert is not red
-      self.awareness = min(self.awareness + ((self.settings._RECOVERY_FACTOR_MAX-self.settings._RECOVERY_FACTOR_MIN)*(1.-self.awareness)+self.settings._RECOVERY_FACTOR_MIN)*self.step_change, 1.)
+      self.awareness = min(self.awareness + ((self.settings._RECOVERY_FACTOR_MAX-self.settings._RECOVERY_FACTOR_MIN)*
+                                             (1.-self.awareness)+self.settings._RECOVERY_FACTOR_MIN)*self.step_change, 1.)
       if self.awareness == 1.:
         self.awareness_passive = min(self.awareness_passive + self.step_change, 1.)
       # don't display alert banner when awareness is recovering and has cleared orange

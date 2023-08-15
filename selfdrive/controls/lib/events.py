@@ -67,7 +67,7 @@ class Events:
     self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
-  def any(self, event_type: str) -> bool:
+  def contains(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
 
   def create_alerts(self, event_types: List[str], callback_args=None):
@@ -549,7 +549,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
       "Take Control",
       "Turn Exceeds Steering Limit",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 1.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
   },
 
   # Thrown when the fan is driven at >50% but is not rotating
@@ -724,7 +724,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.SOFT_DISABLE: soft_disable_alert("Calibration Incomplete"),
     ET.NO_ENTRY: NoEntryAlert("Calibration in Progress"),
   },
-  
+
   EventName.calibrationRecalibrating: {
     ET.PERMANENT: calibration_incomplete_alert,
     ET.SOFT_DISABLE: soft_disable_alert("Device Remount Detected: Recalibrating"),
@@ -954,3 +954,36 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
 
 }
+
+
+if __name__ == '__main__':
+  # print all alerts by type and priority
+  from cereal.services import service_list
+  from collections import defaultdict, OrderedDict
+
+  event_names = {v: k for k, v in EventName.schema.enumerants.items()}
+  alerts_by_type: Dict[str, Dict[int, List[str]]] = defaultdict(lambda: defaultdict(list))
+
+  CP = car.CarParams.new_message()
+  CS = car.CarState.new_message()
+  sm = messaging.SubMaster(list(service_list.keys()))
+
+  for i, alerts in EVENTS.items():
+    for et, alert in alerts.items():
+      if callable(alert):
+        alert = alert(CP, CS, sm, False, 1)
+      priority = alert.priority
+      alerts_by_type[et][priority].append(event_names[i])
+
+  all_alerts = {}
+  for et, priority_alerts in alerts_by_type.items():
+    all_alerts[et] = OrderedDict([
+      (str(priority), l)
+      for priority, l in sorted(priority_alerts.items(), key=lambda x: -int(x[0]))
+    ])
+
+  for status, evs in sorted(all_alerts.items(), key=lambda x: x[0]):
+    print(f"**** {status} ****")
+    for p, alert_list in evs.items():
+      print(f"  {p}:")
+      print("   ", ', '.join(alert_list), "\n")

@@ -36,7 +36,7 @@ class TestBoardd(unittest.TestCase):
     params = Params()
     params.put_bool("IsOnroad", False)
 
-    with Timeout(60, "boardd didn't start"):
+    with Timeout(90, "boardd didn't start"):
       sm = messaging.SubMaster(['pandaStates'])
       while sm.rcv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
           any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):

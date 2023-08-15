@@ -40,7 +40,7 @@ for f in sorted(pyf):
   print("%5d %s %s" % (lns, f, xbit))
   if 'test' in f:
     testlns += lns
-  elif f.startswith('tools/') or f.startswith('scripts/') or f.startswith('selfdrive/debug'):
+  elif f.startswith(('tools/', 'scripts/', 'selfdrive/debug')):
     scriptlns += lns
   elif f.startswith('selfdrive/car'):
     carlns += lns

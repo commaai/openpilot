@@ -7,7 +7,7 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from common.gpio import get_irq_for_action
+from common.gpio import get_irqs_for_action
 from system.hardware import TICI
 from selfdrive.manager.process_config import managed_processes
 
@@ -113,7 +113,7 @@ class TestSensord(unittest.TestCase):
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
-      cls.sensord_irq = get_irq_for_action("sensord")[0]
+      cls.sensord_irq = get_irqs_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
       managed_processes["sensord"].stop()

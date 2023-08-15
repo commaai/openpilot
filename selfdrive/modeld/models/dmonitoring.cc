@@ -1,7 +1,5 @@
 #include <cstring>
 
-#include "libyuv.h"
-
 #include "common/mat.h"
 #include "common/modeldata.h"
 #include "common/params.h"
@@ -93,7 +91,7 @@ DMonitoringModelResult dmonitoring_eval_frame(DMonitoringModelState* s, void* st
   // fclose(dump_yuv_file);
 
   double t1 = millis_since_boot();
-  s->m->setInputBuffer("input_imgs", (float*)net_input_buf, yuv_buf_len / 4);
+  s->m->setInputBuffer("input_imgs", (float*)net_input_buf, yuv_buf_len / sizeof(float));
   for (int i = 0; i < CALIB_LEN; i++) {
     s->calib[i] = calib[i];
   }

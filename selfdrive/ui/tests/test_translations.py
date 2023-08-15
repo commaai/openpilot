@@ -88,7 +88,7 @@ class TestTranslations(unittest.TestCase):
                 continue
 
               self.assertNotIn(None, numerusform, "Ensure all plural translation forms are completed.")
-              self.assertTrue(all([re.search("%[0-9]+", t) is None for t in numerusform]),
+              self.assertTrue(all(re.search("%[0-9]+", t) is None for t in numerusform),
                               "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
 
   def test_no_locations(self):

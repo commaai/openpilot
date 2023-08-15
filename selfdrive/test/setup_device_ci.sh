@@ -55,7 +55,9 @@ if [ ! -d "$SOURCE_DIR" ]; then
 fi
 cd $SOURCE_DIR
 
-rm -f .git/index.lock
+# cleanup orphaned locks
+find .git -type f -name "*.lock" -exec rm {} +
+
 git reset --hard
 git fetch --no-tags --no-recurse-submodules -j4 --verbose --depth 1 origin $GIT_COMMIT
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;

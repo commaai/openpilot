@@ -1,5 +1,4 @@
 # functions common among cars
-import math
 from collections import namedtuple
 from typing import Dict, Optional
 
@@ -133,6 +132,30 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
+def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_frames: int,
+                           max_above_limit_frames: int, max_mismatching_frames: int = 1):
+  """
+  Several cars have the ability to work around their EPS limits by cutting the
+  request bit of their LKAS message after a certain number of frames above the limit.
+  """
+
+  # Count up to max_above_limit_frames, at which point we need to cut the request for above_limit_frames to avoid a fault
+  if request and fault_condition:
+    above_limit_frames += 1
+  else:
+    above_limit_frames = 0
+
+  # Once we cut the request bit, count additionally to max_mismatching_frames before setting the request bit high again.
+  # Some brands do not respect our workaround without multiple messages on the bus, for example
+  if above_limit_frames > max_above_limit_frames:
+    request = False
+
+  if above_limit_frames >= max_above_limit_frames + max_mismatching_frames:
+    above_limit_frames = 0
+
+  return above_limit_frames, request
+
+
 def crc8_pedal(data):
   crc = 0xFF    # standard init value
   poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
@@ -186,7 +209,7 @@ class CanBusBase:
   def __init__(self, CP, fingerprint: Optional[Dict[int, Dict[int, int]]]) -> None:
     if CP is None:
       assert fingerprint is not None
-      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
+      num = max([k for k, v in fingerprint.items() if len(v)], default=0) // 4 + 1
     else:
       num = len(CP.safetyConfigs)
     self.offset = 4 * (num - 1)

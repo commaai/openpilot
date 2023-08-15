@@ -42,7 +42,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    stop_and_go = False
+    stop_and_go = candidate in TSS2_CAR
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
@@ -116,7 +116,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4H_TSS2, CAR.RAV4H_TSS2_2022,
                        CAR.RAV4_TSS2_2023, CAR.RAV4H_TSS2_2023):
-      stop_and_go = True
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
@@ -138,7 +137,6 @@ class CarInterface(CarInterfaceBase):
           break
 
     elif candidate in (CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -159,7 +157,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444
       ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
 
-    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_RC):
+    elif candidate in (CAR.LEXUS_IS, CAR.LEXUS_IS_TSS2, CAR.LEXUS_RC):
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
@@ -180,7 +178,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
 
     elif candidate == CAR.PRIUS_TSS2:
-      stop_and_go = True
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRatio from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
@@ -194,7 +191,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4300. * CV.LB_TO_KG + STD_CARGO_KG
 
     elif candidate in (CAR.ALPHARD_TSS2, CAR.ALPHARDH_TSS2):
-      stop_and_go = True
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       tire_stiffness_factor = 0.444
@@ -219,7 +215,8 @@ class CarInterface(CarInterfaceBase):
 
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
-    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) and not (ret.flags & ToyotaFlags.SMART_DSU)
+    ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
+                                        and not (ret.flags & ToyotaFlags.SMART_DSU)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
 
     # if the smartDSU is detected, openpilot can send ACC_CONTROL and the smartDSU will block it from the DSU or radar.

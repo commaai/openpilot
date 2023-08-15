@@ -30,8 +30,7 @@ def qcomgps(started, params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
 procs = [
-  # due to qualcomm kernel bugs SIGKILLing camerad sometimes causes page table corruption
-  NativeProcess("camerad", "system/camerad", ["./camerad"], unkillable=True, callback=driverview),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], callback=driverview),
   NativeProcess("clocksd", "system/clocksd", ["./clocksd"]),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"]),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"]),
@@ -73,7 +72,7 @@ procs = [
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], onroad=False, callback=notcar),
-  PythonProcess("webjoystick", "tools.joystick.web", onroad=False, callback=notcar),
+  PythonProcess("webjoystick", "tools.bodyteleop.web", onroad=False, callback=notcar),
 ]
 
 managed_processes = {p.name: p for p in procs}

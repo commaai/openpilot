@@ -3,11 +3,12 @@
 import os
 import sys
 import numpy as np
+from typing import Tuple, Dict, Union, Any
 
 os.environ["OMP_NUM_THREADS"] = "4"
 os.environ["OMP_WAIT_POLICY"] = "PASSIVE"
 
-import onnxruntime as ort # pylint: disable=import-error
+import onnxruntime as ort
 
 ORT_TYPES_TO_NP_TYPES = {'tensor(float16)': np.float16, 'tensor(float)': np.float32, 'tensor(uint8)': np.uint8}
 
@@ -55,14 +56,15 @@ if __name__ == "__main__":
   print("Onnx available providers: ", ort.get_available_providers(), file=sys.stderr)
   options = ort.SessionOptions()
   options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+
+  provider: Union[str, Tuple[str, Dict[Any, Any]]]
   if 'OpenVINOExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     provider = 'OpenVINOExecutionProvider'
   elif 'CUDAExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     options.intra_op_num_threads = 2
-    provider = 'CUDAExecutionProvider'
+    provider = ('CUDAExecutionProvider', {'cudnn_conv_algo_search': 'DEFAULT'})
   else:
     options.intra_op_num_threads = 2
-    options.inter_op_num_threads = 8
     options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'

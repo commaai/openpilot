@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum

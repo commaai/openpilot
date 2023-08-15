@@ -402,6 +402,10 @@
         <source>Waiting for GPS</source>
         <translation>กำลังรอสัญญาณ GPS</translation>
     </message>
+    <message>
+        <source>Waiting for route</source>
+        <translation>กำลังรอเส้นทาง</translation>
+    </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
@@ -554,12 +558,16 @@
         <translation>การเข้าถึงระยะไกล</translation>
     </message>
     <message>
-        <source>1 year of storage</source>
-        <translation>จัดเก็บข้อมูลนาน 1 ปี</translation>
+        <source>24/7 LTE connectivity</source>
+        <translation>การเชื่อมต่อ LTE แบบ 24/7</translation>
     </message>
     <message>
-        <source>Developer perks</source>
-        <translation>สิทธิพิเศษสำหรับนักพัฒนา</translation>
+        <source>1 year of drive storage</source>
+        <translation>จัดเก็บข้อมูลการขับขี่นาน 1 ปี</translation>
+    </message>
+    <message>
+        <source>Turn-by-turn navigation</source>
+        <translation>การนำทางแบบเลี้ยวต่อเลี้ยว</translation>
     </message>
 </context>
 <context>
@@ -1058,10 +1066,6 @@ This may take up to a minute.</source>
         <translation>โดยปกติ openpilot จะขับใน&lt;b&gt;โหมดชิล&lt;/b&gt; เปิดโหมดทดลองเพื่อใช้&lt;b&gt;ความสามารถในขั้นพัฒนา&lt;/b&gt; ซึ่งยังไม่พร้อมสำหรับโหมดชิล ความสามารถในขั้นพัฒนามีดังนี้:</translation>
     </message>
     <message>
-        <source>🌮 End-to-End Longitudinal Control 🌮</source>
-        <translation>🌮 ควบคุมเร่ง/เบรคแบบ End-to-End 🌮</translation>
-    </message>
-    <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
         <translation>ให้ openpilot ควบคุมการเร่ง/เบรค โดย openpilot จะขับอย่างที่มนุษย์คิด รวมถึงการหยุดที่ไฟแดง และป้ายหยุดรถ เนื่องจาก openpilot จะกำหนดความเร็วในการขับด้วยตัวเอง การตั้งความเร็วจะเป็นเพียงการกำหนดความเร็วสูงสูดเท่านั้น ความสามารถนี้ยังอยู่ในขั้นพัฒนา อาจเกิดข้อผิดพลาดขึ้นได้</translation>
     </message>
@@ -1070,20 +1074,12 @@ This may take up to a minute.</source>
         <translation>การแสดงภาพการขับขี่แบบใหม่</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย</translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation>ขณะนี้โหมดทดลองไม่สามารถใช้งานได้ในรถคันนี้ เนื่องจากเปิดใช้ระบบควบคุมการเร่ง/เบรคของรถที่ติดตั้งจากโรงงานอยู่</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>ระบบควบคุมการเร่ง/เบรคโดย openpilot อาจมาในการอัปเดตในอนาคต</translation>
-    </message>
-    <message>
-        <source>Enable experimental longitudinal control to allow Experimental mode.</source>
-        <translation>เปิดระบบควบคุมการเร่ง/เบรคขั้นพัฒนาโดย openpilot เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
@@ -1120,6 +1116,26 @@ This may take up to a minute.</source>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>ระบบควบคุมการเร่ง/เบรคโดย openpilot เวอร์ชัน alpha สามารถทดสอบได้พร้อมกับโหมดการทดลอง บน branch ที่กำลังพัฒนา</translation>
+    </message>
+    <message>
+        <source>End-to-End Longitudinal Control</source>
+        <translation>ควบคุมเร่ง/เบรคแบบ End-to-End</translation>
+    </message>
+    <message>
+        <source>Navigate on openpilot</source>
+        <translation>การนำทางบน openpilot</translation>
+    </message>
+    <message>
+        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
+        <translation>เมื่อการนำทางมีจุดหมายปลายทาง openpilot จะป้อนข้อมูลแผนที่เข้าไปยังโมเดล ซึ่งจะเป็นบริบทที่มีประโยชน์สำหรับโมเดลและจะทำให้ openpilot สามารถรักษาเลนซ้ายหรือขวาได้อย่างเหมาะสมบริเวณทางแยกหรือทางออก พฤติกรรมการเปลี่ยนเลนยังคงเหมือนเดิมและยังคงต้องถูกเริ่มโดยคนขับ ความสามารถนี้ยังอยู่ในระดับ alpha ซึ่งอาจะเกิดความผิดพลาดได้โดยเฉพาะบริเวณทางแยกหรือทางออก ความผิดพลาดที่อาจเกิดขึ้นได้อาจรวมถึงการข้ามเส้นแบ่งเลนโดยไม่ตั้งใจ, การเข้าช่องทางออกช้ากว่าปกติ, การขับเข้าหาแบริเออร์ในเขตปลอดภัย, ฯลฯ</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
+        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย เมื่อเป้าหมายการนำทางถูกเลือกและโมเดลการขับขี่กำลังใช้เป็นอินพุต เส้นทางการขับขี่บนแผนที่จะเปลี่ยนเป็นสีเขียว</translation>
+    </message>
+    <message>
+        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>เปิดระบบควบคุมการเร่ง/เบรคโดย openpilot (alpha) เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
 </context>
 <context>
@@ -1172,12 +1188,12 @@ This may take up to a minute.</source>
         <translation>เปิดการตั้งค่า</translation>
     </message>
     <message>
-        <source>Uploading training data</source>
-        <translation>กำลังอัปโหลดข้อมูลสำหรับการฝึก</translation>
+        <source>Ready to upload</source>
+        <translation>พร้อมจะอัปโหลด</translation>
     </message>
     <message>
-        <source>Your data is used to train driving models and help improve openpilot</source>
-        <translation>ข้อมูลของคุณถูกใช้เพื่อฝึกโมเดลการขับขี่และช่วยปรับปรุง openpilot</translation>
+        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <translation>ข้อมูลการฝึกฝนจะถูกดึงเป็นระยะระหว่างที่อุปกรณ์ของคุณเชื่อมต่อกับ Wi-Fi</translation>
     </message>
 </context>
 <context>
