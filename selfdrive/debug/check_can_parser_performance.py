@@ -3,6 +3,7 @@ import numpy as np
 import time
 from tqdm import tqdm
 
+from cereal import car
 from selfdrive.car.tests.routes import CarTestRoute
 from selfdrive.car.tests.test_models import TestCarModelBase
 from tools.plotjuggler.juggle import DEMO_ROUTE
@@ -19,13 +20,15 @@ if __name__ == '__main__':
   tm = CarModelTestCase()
   tm.setUpClass()
 
+  CC = car.CarControl.new_message()
+
   ets = []
   for _ in tqdm(range(N_RUNS)):
     tm.setUp()
 
-    # CarInterface.update includes CAN parsing and CarState.update
     start_t = time.process_time_ns()
-    tm.test_car_interface()
+    for i, msg in enumerate(tm.can_msgs):
+      CS = tm.CI.update(CC, (msg.as_builder().to_bytes(),))
     ets.append((time.process_time_ns() - start_t) * 1e-6)
 
   print(f'{len(tm.can_msgs)} CAN packets, {N_RUNS} runs')
