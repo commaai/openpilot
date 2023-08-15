@@ -446,20 +446,15 @@ void AnnotatedCameraWidget::updateFrameMat() {
   CameraWidget::updateFrameMat();
   UIState *s = uiState();
   int w = width(), h = height();
-//  qDebug() << w << h;
-//  w = 2100-30/2;
-//  h = 1020-30/2;
 
   s->fb_w = w;
   s->fb_h = h;
-//  qDebug() << x_offset << y_offset;
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
   // convert frame zoom to widget zoom
-//  float frame_zoom = zoom / (h / stream_height);
   s->car_space_transform.reset();
   s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
       .scale(zoom, zoom)
@@ -642,8 +637,7 @@ void AnnotatedCameraWidget::paintGL() {
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
-    qDebug() << s->scene.calibration_valid;
-    if (s->scene.calibration_valid && false) {
+    if (s->scene.calibration_valid) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
