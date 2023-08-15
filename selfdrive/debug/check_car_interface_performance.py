@@ -10,13 +10,13 @@ from tools.plotjuggler.juggle import DEMO_ROUTE
 N_RUNS = 5
 
 
-class TestCarModelDemo(TestCarModelBase):
+class CarModelTestCase(TestCarModelBase):
   test_route = CarTestRoute(DEMO_ROUTE, None)
   ci = False
 
 
 if __name__ == '__main__':
-  tm = TestCarModelDemo()
+  tm = CarModelTestCase()
   tm.setUpClass()
 
   ets = []
