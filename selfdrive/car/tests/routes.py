@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from collections import namedtuple
+from typing import NamedTuple, Optional
 
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.gm.values import CAR as GM
@@ -30,7 +30,12 @@ non_tested_cars = [
   TOYOTA.RAV4H_TSS2_2023,
 ]
 
-CarTestRoute = namedtuple('CarTestRoute', ['route', 'car_model', 'segment'], defaults=(None,))
+
+class CarTestRoute(NamedTuple):
+  route: str
+  car_model: str
+  segment: Optional[int] = None
+
 
 routes = [
   CarTestRoute("efdf9af95e71cd84|2022-05-13--19-03-31", COMMA.BODY),
