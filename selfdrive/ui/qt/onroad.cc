@@ -641,7 +641,7 @@ void AnnotatedCameraWidget::paintGL() {
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     qDebug() << s->scene.calibration_valid;
-    if (s->scene.calibration_valid && false) {
+    if (s->scene.calibration_valid && true) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
