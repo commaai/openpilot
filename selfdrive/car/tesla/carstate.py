@@ -78,7 +78,7 @@ class CarState(CarStateBase):
     ret.buttonEvents = buttonEvents
 
     # Doors
-    ret.doorOpen = any([(self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS])
+    ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
     # Blinkers
     ret.leftBlinker = (cp.vl["GTW_carState"]["BC_indicatorLStatus"] == 1)
@@ -101,68 +101,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("ESP_vehicleSpeed", "ESP_B"),
-      ("DI_pedalPos", "DI_torque1"),
-      ("DI_brakePedal", "DI_torque2"),
-      ("StW_AnglHP", "STW_ANGLHP_STAT"),
-      ("StW_AnglHP_Spd", "STW_ANGLHP_STAT"),
-      ("EPAS_handsOnLevel", "EPAS_sysStatus"),
-      ("EPAS_torsionBarTorque", "EPAS_sysStatus"),
-      ("EPAS_internalSAS", "EPAS_sysStatus"),
-      ("EPAS_eacStatus", "EPAS_sysStatus"),
-      ("EPAS_eacErrorCode", "EPAS_sysStatus"),
-      ("DI_cruiseState", "DI_state"),
-      ("DI_digitalSpeed", "DI_state"),
-      ("DI_speedUnits", "DI_state"),
-      ("DI_gear", "DI_torque2"),
-      ("DOOR_STATE_FL", "GTW_carState"),
-      ("DOOR_STATE_FR", "GTW_carState"),
-      ("DOOR_STATE_RL", "GTW_carState"),
-      ("DOOR_STATE_RR", "GTW_carState"),
-      ("DOOR_STATE_FrontTrunk", "GTW_carState"),
-      ("BOOT_STATE", "GTW_carState"),
-      ("BC_indicatorLStatus", "GTW_carState"),
-      ("BC_indicatorRStatus", "GTW_carState"),
-      ("SDM_bcklDrivStatus", "SDM1"),
-      ("driverBrakeStatus", "BrakeMessage"),
-
-      # We copy this whole message when spamming cancel
-      ("SpdCtrlLvr_Stat", "STW_ACTN_RQ"),
-      ("VSL_Enbl_Rq", "STW_ACTN_RQ"),
-      ("SpdCtrlLvrStat_Inv", "STW_ACTN_RQ"),
-      ("DTR_Dist_Rq", "STW_ACTN_RQ"),
-      ("TurnIndLvr_Stat", "STW_ACTN_RQ"),
-      ("HiBmLvr_Stat", "STW_ACTN_RQ"),
-      ("WprWashSw_Psd", "STW_ACTN_RQ"),
-      ("WprWash_R_Sw_Posn_V2", "STW_ACTN_RQ"),
-      ("StW_Lvr_Stat", "STW_ACTN_RQ"),
-      ("StW_Cond_Flt", "STW_ACTN_RQ"),
-      ("StW_Cond_Psd", "STW_ACTN_RQ"),
-      ("HrnSw_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw00_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw01_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw02_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw03_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw04_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw05_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw06_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw07_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw08_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw09_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw10_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw11_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw12_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw13_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw14_Psd", "STW_ACTN_RQ"),
-      ("StW_Sw15_Psd", "STW_ACTN_RQ"),
-      ("WprSw6Posn", "STW_ACTN_RQ"),
-      ("MC_STW_ACTN_RQ", "STW_ACTN_RQ"),
-      ("CRC_STW_ACTN_RQ", "STW_ACTN_RQ"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("ESP_B", 50),
       ("DI_torque1", 100),
@@ -175,19 +114,12 @@ class CarState(CarStateBase):
       ("SDM1", 10),
       ("BrakeMessage", 50),
     ]
-
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.chassis)
+    return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.chassis)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("DAS_accState", "DAS_control"),
-      ("DAS_aebEvent", "DAS_control"),
-      ("DAS_controlCounter", "DAS_control"),
-    ]
-    checks = [
+    messages = [
       # sig_address, frequency
       ("DAS_control", 40),
     ]
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.autopilot_chassis)
+    return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)

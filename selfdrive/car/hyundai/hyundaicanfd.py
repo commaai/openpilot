@@ -1,17 +1,15 @@
-import math
-
 from common.numpy_fast import clip
+from selfdrive.car import CanBusBase
 from selfdrive.car.hyundai.values import HyundaiFlags
 
 
-class CanBus:
-  def __init__(self, CP, hda2=None, fingerprint=None):
-    if CP is None:
-      assert None not in (hda2, fingerprint)
-      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
-    else:
+class CanBus(CanBusBase):
+  def __init__(self, CP, hda2=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+    if hda2 is None:
+      assert CP is not None
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
-      num = len(CP.safetyConfigs)
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -20,10 +18,9 @@ class CanBus:
     if hda2:
       self._a, self._e = 0, 1
 
-    offset = 4*(num - 1)
-    self._a += offset
-    self._e += offset
-    self._cam = 2 + offset
+    self._a += self.offset
+    self._e += self.offset
+    self._cam = 2 + self.offset
 
   @property
   def ECAN(self):
@@ -63,11 +60,11 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
 
   return ret
 
-def create_cam_0x2a4(packer, CAN, camera_values):
-  camera_values.update({
-    "BYTE7": 0,
-  })
-  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, camera_values)
+def create_cam_0x2a4(packer, CAN, cam_0x2a4):
+  values = {f"BYTE{i}": cam_0x2a4[f"BYTE{i}"] for i in range(3, 24)}
+  values['COUNTER'] = cam_0x2a4['COUNTER']
+  values["BYTE7"] = 0
+  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
@@ -79,10 +76,33 @@ def create_buttons(packer, CP, CAN, cnt, btn):
   bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CAN.CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
-def create_acc_cancel(packer, CAN, cruise_info_copy):
-  values = cruise_info_copy
+def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
+  # TODO: why do we copy different values here?
+  if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
+    values = {s: cruise_info_copy[s] for s in [
+      "COUNTER",
+      "CHECKSUM",
+      "NEW_SIGNAL_1",
+      "MainMode_ACC",
+      "ACCMode",
+      "ZEROS_9",
+      "CRUISE_STANDSTILL",
+      "ZEROS_5",
+      "DISTANCE_SETTING",
+      "VSetDis",
+    ]}
+  else:
+    values = {s: cruise_info_copy[s] for s in [
+      "COUNTER",
+      "CHECKSUM",
+      "ACCMode",
+      "VSetDis",
+      "CRUISE_STANDSTILL",
+    ]}
   values.update({
     "ACCMode": 4,
+    "aReqRaw": 0.0,
+    "aReqValue": 0.0,
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 

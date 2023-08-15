@@ -238,24 +238,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
   // ****** copy inputs
   copy_inputs(finputs, true);
 
-  // ****** set power constraint
-  int ret;
-  struct kgsl_device_constraint_pwrlevel pwrlevel;
-  pwrlevel.level = KGSL_CONSTRAINT_PWR_MAX;
-
-  struct kgsl_device_constraint constraint;
-  constraint.type = KGSL_CONSTRAINT_PWRLEVEL;
-  constraint.context_id = context_id;
-  constraint.data = (void*)&pwrlevel;
-  constraint.size = sizeof(pwrlevel);
-
-  struct kgsl_device_getproperty prop;
-  prop.type = KGSL_PROP_PWR_CONSTRAINT;
-  prop.value = (void*)&constraint;
-  prop.sizebytes = sizeof(constraint);
-  ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
-  assert(ret == 0);
-
   // ****** run commands
   int i = 0;
   for (auto &it : cmds) {
@@ -267,14 +249,6 @@ void Thneed::execute(float **finputs, float *foutput, bool slow) {
 
   // ****** copy outputs
   copy_output(foutput);
-
-  // ****** unset power constraint
-  constraint.type = KGSL_CONSTRAINT_NONE;
-  constraint.data = NULL;
-  constraint.size = 0;
-
-  ret = ioctl(fd, IOCTL_KGSL_SETPROPERTY, &prop);
-  assert(ret == 0);
 
   if (debug >= 1) {
     te = nanos_since_boot();

@@ -15,7 +15,7 @@ class DBCManager : public QObject {
   Q_OBJECT
 
 public:
-  DBCManager(QObject *parent) {}
+  DBCManager(QObject *parent) : QObject(parent) {}
   ~DBCManager() {}
   bool open(const SourceSet &sources, const QString &dbc_file_name, QString *error = nullptr);
   bool open(const SourceSet &sources, const QString &name, const QString &content, QString *error = nullptr);
@@ -32,7 +32,7 @@ public:
 
   QString newMsgName(const MessageId &id);
   QString newSignalName(const MessageId &id);
-  const QList<uint8_t>& mask(const MessageId &id);
+  const std::vector<uint8_t>& mask(const MessageId &id);
 
   const std::map<uint32_t, cabana::Msg> &getMessages(uint8_t source);
   cabana::Msg *msg(const MessageId &id);
@@ -57,6 +57,7 @@ signals:
   void msgUpdated(MessageId id);
   void msgRemoved(MessageId id);
   void DBCFileChanged();
+  void maskUpdated();
 
 private:
   std::map<int, std::shared_ptr<DBCFile>> dbc_files;

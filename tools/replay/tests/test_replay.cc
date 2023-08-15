@@ -43,13 +43,6 @@ TEST_CASE("httpMultiPartDownload") {
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
 }
 
-int random_int(int min, int max) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
-  return dist(rng);
-}
-
 TEST_CASE("FileReader") {
   auto enable_local_cache = GENERATE(true, false);
   std::string cache_file = cacheFilePath(TEST_RLOG_URL);
@@ -144,7 +137,7 @@ TEST_CASE("Route") {
     auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
     Route route(DEMO_ROUTE);
     REQUIRE(route.load());
-    REQUIRE(route.segments().size() == 11);
+    REQUIRE(route.segments().size() == 13);
     for (int i = 0; i < 2; ++i) {
       read_segment(i, route.at(i), flags);
     }
@@ -198,7 +191,7 @@ void TestReplay::test_seek() {
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
     for (int i = 0; i < 10; ++i) {
-      testSeekTo(random_int(0, 1 * 60));
+      testSeekTo(util::random_int(0, 1 * 60));
     }
     loop.quit();
   });

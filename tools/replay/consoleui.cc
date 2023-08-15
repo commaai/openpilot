@@ -259,8 +259,8 @@ void ConsoleUI::updateTimeline() {
 
   const int total_sec = replay->totalSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
-    int start_pos = ((double)begin / total_sec) * width;
-    int end_pos = ((double)end / total_sec) * width;
+    int start_pos = (begin / total_sec) * width;
+    int end_pos = (end / total_sec) * width;
     if (type == TimelineType::Engaged) {
       mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
       mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);

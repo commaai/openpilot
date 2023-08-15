@@ -402,7 +402,7 @@ void ChartsWidget::removeAll() {
 
   if (!charts.isEmpty()) {
     for (auto c : charts) {
-      c->deleteLater();
+      delete c;
     }
     charts.clear();
     updateToolBar();

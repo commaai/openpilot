@@ -64,12 +64,9 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
   QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
   QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
-  QObject::connect(binary_view, &BinaryView::resizeSignal, signal_view->model, &SignalModel::resizeSignal);
-  QObject::connect(binary_view, &BinaryView::addSignal, signal_view->model, &SignalModel::addSignal);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
-  QObject::connect(binary_view, &BinaryView::removeSignal, signal_view->model, &SignalModel::removeSignal);
   QObject::connect(binary_view, &BinaryView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::showChart, charts, &ChartsWidget::showChart);
   QObject::connect(signal_view, &SignalView::highlight, binary_view, &BinaryView::highlight);
@@ -167,7 +164,8 @@ void DetailWidget::editMsg() {
   int size = msg ? msg->size : can->lastMessage(msg_id).dat.size();
   EditMessageDialog dlg(msg_id, msgName(msg_id), size, this);
   if (dlg.exec()) {
-    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(), dlg.size_spin->value(), dlg.comment_edit->toPlainText().trimmed()));
+    UndoStack::push(new EditMsgCommand(msg_id, dlg.name_edit->text().trimmed(),
+                                       dlg.size_spin->value(), dlg.comment_edit->toPlainText().trimmed()));
   }
 }
 
