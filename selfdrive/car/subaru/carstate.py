@@ -50,6 +50,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
+    # ideally we get this from the car, but unclear if it exists. diagnostic software doesn't even have it
     ret.steeringRateDeg = self.angle_rate_calulator.update(ret.steeringAngleDeg, cp.vl["Steering_Torque"]["COUNTER"])
 
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
