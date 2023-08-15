@@ -88,6 +88,37 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
   }
 }
 
+void polling_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::string>& sensor_service, int poll_frequency, PubMaster& pm_int) {
+  RateKeeper rk("sensord", poll_frequency);
+  while (!do_exit) {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    for (Sensor *sensor : sensors) {
+      MessageBuilder msg;
+      if (!sensor->get_event(msg)) {
+        continue;
+      }
+
+      if (!sensor->is_data_valid(init_ts, nanos_since_boot())) {
+        continue;
+      }
+
+      pm_int.send(sensor_service[sensor].c_str(), msg);
+    }
+
+    rk.keepTime();
+  }
+}
+
+void magnetometer_loop(std::vector<Sensor *>& sensors,
+                       std::map<Sensor*, std::string>& sensor_service)
+{
+  PubMaster pm_int({"magnetometer"});
+  polling_loop(sensors, sensor_service, 25, pm_int);
+  for (Sensor *sensor : sensors) {
+    sensor->shutdown();
+  }
+}
+
 int sensor_loop(I2CBus *i2c_bus_imu) {
   BMX055_Accel bmx055_accel(i2c_bus_imu);
   BMX055_Gyro bmx055_gyro(i2c_bus_imu);
@@ -159,39 +190,26 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   util::set_core_affinity({1});
   std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
 
-  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor", "magnetometer"});
+  PubMaster pm_non_int({"gyroscope2", "accelerometer2", "temperatureSensor"});
   init_ts = nanos_since_boot();
 
   // thread for reading events via interrupts
   std::vector<Sensor *> lsm_interrupt_sensors = {&lsm6ds3_accel, &lsm6ds3_gyro};
+  std::vector<Sensor *> magnetometer_sensors = {&bmx055_magn, &mmc5603nj_magn};
   std::thread lsm_interrupt_thread(&interrupt_loop, std::ref(lsm_interrupt_sensors),
                                    std::ref(sensor_service));
+  std::thread magnetometer_thread(&magnetometer_loop, std::ref(magnetometer_sensors),
+                                  std::ref(sensor_service));
 
-  RateKeeper rk("sensord", 100);
 
-  // polling loop for non interrupt handled sensors
-  while (!do_exit) {
-    for (Sensor *sensor : sensors) {
-      MessageBuilder msg;
-      if (!sensor->get_event(msg)) {
-        continue;
-      }
-
-      if (!sensor->is_data_valid(init_ts, nanos_since_boot())) {
-        continue;
-      }
-
-      pm_non_int.send(sensor_service[sensor].c_str(), msg);
-    }
-
-    rk.keepTime();
-  }
+  polling_loop(sensors, sensor_service, 100, pm_non_int);
 
   for (Sensor *sensor : sensors) {
     sensor->shutdown();
   }
 
   lsm_interrupt_thread.join();
+  magnetometer_thread.join();
   return 0;
 }
 
