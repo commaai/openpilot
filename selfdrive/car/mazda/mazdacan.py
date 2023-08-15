@@ -44,6 +44,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
   csum = csum % 256
 
+  values = {}
   if car_fingerprint in GEN1:
     values = {
       "LKAS_REQUEST": apply_steer,

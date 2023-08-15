@@ -128,7 +128,7 @@ class RemoteCheckerService(rpyc.Service):
         if pos_geo is None or len(pos_geo) == 0:
           continue
 
-        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon]))
+        match  = all(abs(g-s) < DELTA for g,s in zip(pos_geo[:2], [slat, slon], strict=True))
         match &= abs(pos_geo[2] - salt) < ALT_DELTA
         if match:
           match_cnt += 1

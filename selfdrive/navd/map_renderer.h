@@ -34,7 +34,7 @@ private:
   std::unique_ptr<VisionIpcServer> vipc_server;
   std::unique_ptr<PubMaster> pm;
   std::unique_ptr<SubMaster> sm;
-  void publish(const double render_time);
+  void publish(const double render_time, const bool loaded);
   void sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf);
 
   QMapboxGLSettings m_settings;
@@ -43,6 +43,10 @@ private:
   void initLayers();
 
   uint32_t frame_id = 0;
+  uint64_t last_llk_rendered = 0;
+  bool rendered() {
+    return last_llk_rendered == (*sm)["liveLocationKalman"].getLogMonoTime();
+  }
 
   QTimer* timer;
 

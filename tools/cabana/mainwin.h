@@ -50,7 +50,6 @@ protected:
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
   void saveFileToClipboard(DBCFile *dbc_file);
-  void removeBusFromFile(DBCFile *dbc_file, uint8_t source);
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void autoSave();
   void cleanupAutoSaveFile();
@@ -95,8 +94,10 @@ protected:
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
+  QString car_fingerprint;
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
+  QByteArray default_state;
   friend class OnlineHelp;
 };
 

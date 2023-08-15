@@ -3,7 +3,7 @@ import os
 import datetime
 from panda import Panda
 
-MIN_DATE = datetime.datetime(year=2023, month=4, day=1)
+from common.time import MIN_DATE
 
 def set_time(logger):
   sys_time = datetime.datetime.today()

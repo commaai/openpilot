@@ -20,6 +20,8 @@ class CarInterface(CarInterfaceBase):
       self.ext_bus = CANBUS.cam
       self.cp_ext = self.cp_cam
 
+    self.eps_timer_soft_disable_alert = False
+
   @staticmethod
   def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
@@ -90,6 +92,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingControl = True
     ret.startingState = True
     ret.startAccel = 1.0
+    ret.stopAccel = -0.55
     ret.vEgoStarting = 1.0
     ret.vEgoStopping = 1.0
     ret.longitudinalTuning.kpV = [0.1]
@@ -242,9 +245,13 @@ class CarInterface(CarInterfaceBase):
       if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.speedTooLow)
 
+    if self.eps_timer_soft_disable_alert:
+      events.add(EventName.steerTimeLimit)
+
     ret.events = events.to_msg()
 
     return ret
 
   def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    new_actuators, can_sends, self.eps_timer_soft_disable_alert = self.CC.update(c, self.CS, self.ext_bus, now_nanos)
+    return new_actuators, can_sends

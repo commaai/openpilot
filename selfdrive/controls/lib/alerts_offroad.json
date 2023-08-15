@@ -1,21 +1,21 @@
 {
   "Offroad_TemperatureTooHigh": {
-    "text": "Device temperature too high. System won't start.",
+    "text": "Device temperature too high. System cooling down before starting. Current internal component temperature: %1",
     "severity": 1
   },
   "Offroad_ConnectivityNeededPrompt": {
-    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in ",
+    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in %1",
     "severity": 0,
-    "_comment": "Append the number of days at the end of the text"
+    "_comment": "Set extra field to number of days"
   },
   "Offroad_ConnectivityNeeded": {
     "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
     "severity": 1
   },
   "Offroad_UpdateFailed": {
-    "text": "Unable to download updates\n",
+    "text": "Unable to download updates\n%1",
     "severity": 1,
-    "_comment": "Append the command and error to the text."
+    "_comment": "Set extra field to the failed reason."
   },
   "Offroad_InvalidTime": {
     "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
@@ -30,7 +30,7 @@
     "severity": 0
   },
   "Offroad_UnofficialHardware": {
-    "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.",
+    "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.",
     "severity": 1
   },
   "Offroad_StorageMissing": {

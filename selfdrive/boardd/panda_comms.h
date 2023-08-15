@@ -14,7 +14,7 @@
 
 
 #define TIMEOUT 0
-#define SPI_BUF_SIZE 1024
+#define SPI_BUF_SIZE 2048
 
 
 // comms base class
@@ -74,7 +74,7 @@ private:
   uint8_t rx_buf[SPI_BUF_SIZE];
   inline static std::recursive_mutex hw_lock;
 
-  int wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout);
+  int wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, unsigned int length);
   int bulk_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t rx_len, unsigned int timeout);
   int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
   int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);

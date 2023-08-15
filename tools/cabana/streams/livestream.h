@@ -42,7 +42,6 @@ private:
   std::vector<Event *> receivedEvents;
   std::deque<Msg> receivedMessages;
 
-  std::unique_ptr<std::ofstream> fs;
   int timer_id;
   QBasicTimer update_timer;
 
@@ -53,4 +52,7 @@ private:
   bool post_last_event = true;
   double speed_ = 1;
   bool paused_ = false;
+
+  struct Logger;
+  std::unique_ptr<Logger> logger;
 };

@@ -62,7 +62,7 @@ public:
   uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
-  std::vector<const cabana::Signal *> sigs;
+  std::vector<cabana::Signal *> sigs;
   bool dynamic_mode = true;
   bool display_signals_mode = true;
 };

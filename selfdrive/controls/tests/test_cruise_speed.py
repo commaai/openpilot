@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import numpy as np
-from parameterized import parameterized_class
 import unittest
 
+from parameterized import parameterized_class
+from cereal import log
+from common.params import Params
 from selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
 from common.conversions import Conversions as CV
@@ -31,13 +33,19 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
 
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
-    for e2e in [False, True]:
-      for speed in np.arange(5, 40, 5):
-        print(f'Testing {speed} m/s')
-        cruise_speed = float(speed)
+    params = Params()
+    personalities = [log.LongitudinalPersonality.relaxed,
+                     log.LongitudinalPersonality.standard,
+                     log.LongitudinalPersonality.aggressive]
+    for personality in personalities:
+      params.put("LongitudinalPersonality", str(personality))
+      for e2e in [False, True]:
+        for speed in [5,35]:
+          print(f'Testing {speed} m/s')
+          cruise_speed = float(speed)
 
-        simulation_steady_state = run_cruise_simulation(cruise_speed, e2e)
-        self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
+          simulation_steady_state = run_cruise_simulation(cruise_speed, e2e)
+          self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
 
 
 # TODO: test pcmCruise

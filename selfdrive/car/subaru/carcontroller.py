@@ -1,7 +1,7 @@
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CarControllerParams, SubaruFlags
+from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -36,15 +36,14 @@ class CarController:
         apply_steer = 0
 
       if self.CP.carFingerprint in PREGLOBAL_CARS:
-        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer))
+        can_sends.append(subarucan.create_preglobal_steering_control(self.packer, apply_steer, CC.latActive))
       else:
-        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer))
+        can_sends.append(subarucan.create_steering_control(self.packer, apply_steer, CC.latActive))
 
       self.apply_steer_last = apply_steer
 
 
     # *** alerts and pcm cancel ***
-
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
@@ -66,7 +65,7 @@ class CarController:
 
     else:
       if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
-        bus = 1 if self.CP.carFingerprint in GLOBAL_GEN2 else 0
+        bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
         self.last_cancel_frame = self.frame
 
@@ -76,9 +75,9 @@ class CarController:
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
                                                         hud_control.leftLaneDepart, hud_control.rightLaneDepart))
-                                                        
+
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-          can_sends.append(subarucan.create_infotainmentstatus(self.packer, CS.es_infotainmentstatus_msg, hud_control.visualAlert))
+          can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
