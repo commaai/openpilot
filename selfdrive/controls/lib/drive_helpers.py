@@ -3,7 +3,7 @@ import math
 from cereal import car, log
 from common.conversions import Conversions as CV
 from common.numpy_fast import clip, interp
-from common.realtime import DT_MDL
+from common.realtime import DT_MDL, DT_CTRL
 from selfdrive.modeld.constants import T_IDXS
 
 # WARNING: this value was determined based on the model's training distribution,
@@ -211,3 +211,27 @@ def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
     vel_err = clip(modelV2.temporalPose.trans[0] - v_ego, -MAX_VEL_ERR, MAX_VEL_ERR)
     return float(vel_err)
   return 0.0
+
+
+class CanSignalRateCalculator:
+  """
+  Calculates the instantaneous rate of a can signal by using the counter
+  variable and the known period of the CAN message that contains it.
+  """
+  def __init__(self, period):
+    self.period = period
+    self.previous_counter = 0
+    self.previous_value = 0
+    self.reference_value = 0
+    self.reference_counter = 0
+
+  def update(self, current_value, current_counter):
+    if current_counter != self.previous_counter:
+      self.reference_counter = self.previous_counter
+      self.reference_value = self.previous_value
+
+    rate = (current_value - self.reference_value) / (DT_CTRL * self.period)
+
+    self.previous_value = current_value
+    self.previous_counter = current_counter
+    return rate
