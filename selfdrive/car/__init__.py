@@ -228,7 +228,7 @@ class CanSignalRateCalculator:
 
   def update(self, current_value, current_counter):
     if current_counter != self.previous_counter:
-      self.rate = (current_value - self.previous_value) / self.frequency
+      self.rate = (current_value - self.previous_value) * self.frequency
 
     self.previous_counter = current_counter
     self.previous_value = current_value
