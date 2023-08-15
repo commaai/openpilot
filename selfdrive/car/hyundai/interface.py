@@ -73,7 +73,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.SONATA_LF:
-      ret.mass = 4497. * CV.LB_TO_KG
+      ret.mass = 1536.
       ret.wheelbase = 2.804
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
     elif candidate == CAR.PALISADE:
