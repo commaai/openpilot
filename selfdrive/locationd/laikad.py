@@ -81,8 +81,12 @@ class Laikad:
     valid_ephem_types: Valid ephemeris types to be used by AstroDog
     save_ephemeris: If true saves and loads nav and orbit ephemeris to cache.
     """
+<<<<<<< HEAD
     self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types,
                               clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+=======
+    self.astro_dog = AstroDog(valid_const=valid_const, auto_update=auto_update, valid_ephem_types=valid_ephem_types, clear_old_ephemeris=True, cache_dir=DOWNLOADS_CACHE_FOLDER)
+>>>>>>> c9c77b4e1 (Ready for live running)
     self.gnss_kf = GNSSKalman(GENERATED_DIR, cython=True, erratic_clock=use_qcom)
 
     self.auto_fetch_navs = auto_fetch_navs
@@ -462,7 +466,7 @@ def main(sm=None, pm=None):
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling
-  use_internet = True  # "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
