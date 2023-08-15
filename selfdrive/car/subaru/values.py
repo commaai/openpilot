@@ -22,8 +22,8 @@ class CarControllerParams:
 
     if CP.carFingerprint in GLOBAL_GEN2:
       self.STEER_MAX = 1000
-      self.STEER_DELTA_UP = 40
-      self.STEER_DELTA_DOWN = 40
+      self.STEER_DELTA_UP = 25
+      self.STEER_DELTA_DOWN = 35
     elif CP.carFingerprint == CAR.IMPREZA_2020:
       self.STEER_MAX = 1439
     else:
