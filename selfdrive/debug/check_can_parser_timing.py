@@ -22,7 +22,7 @@ if __name__ == '__main__':
   print(tm.CP)
   print('canmsgs', len(tm.can_msgs))
 
-  # create_test_models_suite([CarTestRoute()])
+  tests = create_test_models_suite([CarTestRoute(DEMO_ROUTE, None)])
 
   # lr = MultiLogIterator(Route(DEMO_ROUTE).log_paths())
   #
