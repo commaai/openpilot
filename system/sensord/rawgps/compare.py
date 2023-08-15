@@ -19,8 +19,8 @@ if __name__ == "__main__":
     recv_time = report.milliseconds / 1000
 
     car = []
-    print("qcom has ", list(sorted([x.svId for x in report.sv])))
-    print("ublox has", list(sorted([x.svId for x in meas if x.gnssId == (6 if GLONASS else 0)])))
+    print("qcom has ", sorted([x.svId for x in report.sv]))
+    print("ublox has", sorted([x.svId for x in meas if x.gnssId == (6 if GLONASS else 0)]))
     for i in report.sv:
       # match to ublox
       tm = None
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     pr_err /= len(car)
     speed_err /= len(car)
     print("avg psuedorange err %f avg speed err %f" % (pr_err, speed_err))
-    for c in sorted(car, key=lambda x: abs(x[1] - x[3] - pr_err)):  # type: ignore
+    for c in sorted(car, key=lambda x: abs(x[1] - x[3] - pr_err)):
       svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed, cno = c
       print("svid: %3d  pseudorange: %10.2f m  speed: %8.2f m/s   meas: %12.2f  speed: %10.2f   meas_err: %10.3f speed_err: %8.3f cno: %d" %
         (svid, ublox_psuedorange, ublox_speed, qcom_psuedorange, qcom_speed,

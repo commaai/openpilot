@@ -1,6 +1,5 @@
 import yaml
 import os
-import time
 from abc import abstractmethod, ABC
 from typing import Any, Dict, Optional, Tuple, List, Callable
 
@@ -115,7 +114,8 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]], car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def _get_params(ret: car.CarParams, candidate: str, fingerprint: Dict[int, Dict[int, int]],
+                  car_fw: List[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod
@@ -131,8 +131,7 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  @staticmethod
-  def torque_from_lateral_accel_linear(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(self, lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
@@ -312,14 +311,9 @@ class RadarInterfaceBase(ABC):
     self.rcp = None
     self.pts = {}
     self.delay = 0
-    self.radar_ts = CP.radarTimeStep
-    self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
-    ret = car.RadarData.new_message()
-    if not self.no_radar_sleep:
-      time.sleep(self.radar_ts)  # radard runs on RI updates
-    return ret
+    pass
 
 
 class CarStateBase(ABC):

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QApplication>
 #include <QList>
 #include <QSet>
 #include <QStyledItemDelegate>
@@ -13,12 +12,10 @@ class BinaryItemDelegate : public QStyledItemDelegate {
 public:
   BinaryItemDelegate(QObject *parent);
   void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-  void setSelectionColor(const QColor &color) { selection_color = color; }
-  bool isSameColor(const QModelIndex &index, int dx, int dy) const;
-  void drawBorder(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+  bool hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const;
+  void drawSignalCell(QPainter* painter, const QStyleOptionViewItem &option, const QModelIndex &index, const cabana::Signal *sig) const;
 
   QFont small_font, hex_font;
-  QColor selection_color;
 };
 
 class BinaryViewModel : public QAbstractTableModel {
@@ -28,10 +25,9 @@ public:
   void updateState();
   void updateItem(int row, int col, const QString &val, const QColor &color);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const { return {}; }
+  QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return row_count; }
   int columnCount(const QModelIndex &parent = QModelIndex()) const override { return column_count; }
-  inline QModelIndex bitIndex(int bit, bool is_lb) const { return index(bit / 8, is_lb ? (7 - bit % 8) : bit % 8); }
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override {
     return createIndex(row, column, (void *)&items[row * column_count + column]);
   }
@@ -40,7 +36,7 @@ public:
   }
 
   struct Item {
-    QColor bg_color = QColor(102, 86, 169, 0);
+    QColor bg_color = QColor(102, 86, 169, 255);
     bool is_msb = false;
     bool is_lsb = false;
     QString val;
@@ -68,9 +64,6 @@ public:
 signals:
   void signalClicked(const cabana::Signal *sig);
   void signalHovered(const cabana::Signal *sig);
-  void addSignal(int start_bit, int size, bool little_endian);
-  void resizeSignal(const cabana::Signal *sig, int from, int size);
-  void removeSignal(const cabana::Signal *sig);
   void editSignal(const cabana::Signal *origin_s, cabana::Signal &s);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
 

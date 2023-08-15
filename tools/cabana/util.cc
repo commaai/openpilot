@@ -1,10 +1,16 @@
 #include "tools/cabana/util.h"
 
+#include <array>
+#include <csignal>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <QDebug>
+#include <QColor>
 #include <QFontDatabase>
-#include <QHelpEvent>
+#include <QLocale>
 #include <QPainter>
 #include <QPixmapCache>
-#include <QToolTip>
 
 #include "selfdrive/ui/qt/util.h"
 
@@ -48,12 +54,6 @@ MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
 }
 
-void MessageBytesDelegate::setMultipleLines(bool v) {
-  if (std::exchange(multiple_lines, v) != multiple_lines) {
-    std::fill_n(size_cache, std::size(size_cache), QSize{});
-  }
-}
-
 int MessageBytesDelegate::widthForBytes(int n) const {
   int h_margin = QApplication::style()->pixelMetric(QStyle::PM_FocusFrameHMargin) + 1;
   return n * byte_size.width() + h_margin * 2;
@@ -67,30 +67,8 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
   }
   int n = data.toByteArray().size();
   assert(n >= 0 && n <= 64);
-
-  QSize size = size_cache[n];
-  if (size.isEmpty()) {
-    if (!multiple_lines) {
-      size.setWidth(widthForBytes(n));
-      size.setHeight(byte_size.height() + 2 * v_margin);
-    } else {
-      size.setWidth(widthForBytes(8));
-      size.setHeight(byte_size.height() * std::max(1, n / 8) + 2 * v_margin);
-    }
-    size_cache[n] = size;
-  }
-  return size;
-}
-
-bool MessageBytesDelegate::helpEvent(QHelpEvent *e, QAbstractItemView *view, const QStyleOptionViewItem &option, const QModelIndex &index) {
-  if (e->type() == QEvent::ToolTip && index.column() == 0) {
-    if (view->visualRect(index).width() < QStyledItemDelegate::sizeHint(option, index).width()) {
-      QToolTip::showText(e->globalPos(), index.data(Qt::DisplayRole).toString(), view);
-      return true;
-    }
-  }
-  QToolTip::hideText();
-  return false;
+  return !multiple_lines ? QSize{widthForBytes(n), byte_size.height() + 2 * v_margin}
+                         : QSize{widthForBytes(8), byte_size.height() * std::max(1, n / 8) + 2 * v_margin};
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
@@ -105,7 +83,7 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   int v_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameVMargin);
   int h_margin = option.widget->style()->pixelMetric(QStyle::PM_FocusFrameHMargin);
   if (option.state & QStyle::State_Selected) {
-    painter->fillRect(option.rect, option.palette.highlight());
+    painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
 
   const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
@@ -131,22 +109,75 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
   painter->setPen(old_pen);
 }
 
-QColor getColor(const cabana::Signal *sig) {
-  float h = 19 * (float)sig->lsb / 64.0;
-  h = fmod(h, 1.0);
+// TabBar
 
-  size_t hash = qHash(sig->name);
-  float s = 0.25 + 0.25 * (float)(hash & 0xff) / 255.0;
-  float v = 0.75 + 0.25 * (float)((hash >> 8) & 0xff) / 255.0;
-
-  return QColor::fromHsvF(h, s, v);
+int TabBar::addTab(const QString &text) {
+  int index = QTabBar::addTab(text);
+  QToolButton *btn = new ToolButton("x", tr("Close Tab"));
+  int width = style()->pixelMetric(QStyle::PM_TabCloseIndicatorWidth, nullptr, btn);
+  int height = style()->pixelMetric(QStyle::PM_TabCloseIndicatorHeight, nullptr, btn);
+  btn->setFixedSize({width, height});
+  setTabButton(index, QTabBar::RightSide, btn);
+  QObject::connect(btn, &QToolButton::clicked, this, &TabBar::closeTabClicked);
+  return index;
 }
+
+void TabBar::closeTabClicked() {
+  QObject *object = sender();
+  for (int i = 0; i < count(); ++i) {
+    if (tabButton(i, QTabBar::RightSide) == object) {
+      emit tabCloseRequested(i);
+      break;
+    }
+  }
+}
+
+// UnixSignalHandler
+
+UnixSignalHandler::UnixSignalHandler(QObject *parent) : QObject(nullptr) {
+  if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sig_fd)) {
+    qFatal("Couldn't create TERM socketpair");
+  }
+
+  sn = new QSocketNotifier(sig_fd[1], QSocketNotifier::Read, this);
+  connect(sn, &QSocketNotifier::activated, this, &UnixSignalHandler::handleSigTerm);
+  std::signal(SIGINT, signalHandler);
+  std::signal(SIGTERM, UnixSignalHandler::signalHandler);
+}
+
+UnixSignalHandler::~UnixSignalHandler() {
+  ::close(sig_fd[0]);
+  ::close(sig_fd[1]);
+}
+
+void UnixSignalHandler::signalHandler(int s) {
+  ::write(sig_fd[0], &s, sizeof(s));
+}
+
+void UnixSignalHandler::handleSigTerm() {
+  sn->setEnabled(false);
+  int tmp;
+  ::read(sig_fd[1], &tmp, sizeof(tmp));
+
+  printf("\nexiting...\n");
+  qApp->closeAllWindows();
+  qApp->exit();
+}
+
+// NameValidator
 
 NameValidator::NameValidator(QObject *parent) : QRegExpValidator(QRegExp("^(\\w+)"), parent) {}
 
 QValidator::State NameValidator::validate(QString &input, int &pos) const {
   input.replace(' ', '_');
   return QRegExpValidator::validate(input, pos);
+}
+
+DoubleValidator::DoubleValidator(QObject *parent) : QDoubleValidator(parent) {
+  // Match locale of QString::toDouble() instead of system
+  QLocale locale(QLocale::C);
+  locale.setNumberOptions(QLocale::RejectGroupSeparator);
+  setLocale(locale);
 }
 
 namespace utils {
@@ -190,8 +221,8 @@ void setTheme(int theme) {
       new_palette.setColor(QPalette::BrightText, QColor("#f0f0f0"));
       new_palette.setColor(QPalette::Disabled, QPalette::ButtonText, QColor("#777777"));
       new_palette.setColor(QPalette::Disabled, QPalette::WindowText, QColor("#777777"));
-      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));;
-      new_palette.setColor(QPalette::Light, QColor("#3c3f41"));
+      new_palette.setColor(QPalette::Disabled, QPalette::Text, QColor("#777777"));
+      new_palette.setColor(QPalette::Light, QColor("#777777"));
       new_palette.setColor(QPalette::Dark, QColor("#353535"));
     } else {
       new_palette = style->standardPalette();
@@ -217,10 +248,16 @@ QString toHex(uint8_t byte) {
 
 int num_decimals(double num) {
   const QString string = QString::number(num);
-  const QStringList split = string.split('.');
-  if (split.size() == 1) {
-    return 0;
-  } else {
-    return split[1].size();
-  }
+  auto dot_pos = string.indexOf('.');
+  return dot_pos == -1 ? 0 : string.size() - dot_pos - 1;
+}
+
+QString signalToolTip(const cabana::Signal *sig) {
+  return QObject::tr(R"(
+    %1<br /><span font-size:small">
+    Start Bit: %2 Size: %3<br />
+    MSB: %4 LSB: %5<br />
+    Little Endian: %6 Signed: %7</span>
+  )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
+     .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
