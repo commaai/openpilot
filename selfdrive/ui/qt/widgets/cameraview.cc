@@ -231,7 +231,7 @@ void CameraWidget::updateFrameMat() {
       y_offset = std::clamp(y_offset_, -max_y_offset, max_y_offset);
 
       float widget_aspect_ratio = (float)w / h;
-      float frame_aspect_ratio = (2.0 * intrinsic_matrix.v[2]) / (2.0 * intrinsic_matrix.v[5]);
+      float frame_aspect_ratio = (2 * intrinsic_matrix.v[2]) / (2 * intrinsic_matrix.v[5]);
       frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio,
                                          zoom, -x_offset / w * 2, y_offset / h * 2);
     }
