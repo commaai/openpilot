@@ -5,7 +5,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
-from selfdrive.controls.lib.drive_helpers import CanSignalRateCalculator
+from selfdrive.car import CanSignalRateCalculator
 
 
 class CarState(CarStateBase):
@@ -14,7 +14,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
-    self.angle_rate_calulator = CanSignalRateCalculator(2)
+    self.angle_rate_calulator = CanSignalRateCalculator(50)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
