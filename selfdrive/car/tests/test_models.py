@@ -35,9 +35,9 @@ ignore_addr_checks_valid = [
 ]
 
 
-def get_test_cases():
+def get_test_cases() -> List[Tuple[str, Optional[CarTestRoute]]]:
   # build list of test cases
-  test_cases: List[Tuple[str, Optional[CarTestRoute]]] = []
+  test_cases = []
   if not len(INTERNAL_SEG_LIST):
     routes_by_car = defaultdict(set)
     for r in routes:
@@ -52,11 +52,11 @@ def get_test_cases():
       seg_list = f.read().splitlines()
 
     cnt = INTERNAL_SEG_CNT or len(seg_list)
-    seg_list = iter(seg_list[:cnt])
+    seg_list_iter = iter(seg_list[:cnt])
 
-    for platform in seg_list:
+    for platform in seg_list_iter:
       platform = platform[2:]  # get rid of comment
-      segment_name = SegmentName(next(seg_list))
+      segment_name = SegmentName(next(seg_list_iter))
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
   return test_cases
