@@ -1,4 +1,3 @@
-from common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
@@ -65,7 +64,7 @@ class CarController:
         can_sends.append(subarucan.create_preglobal_es_distance(self.packer, cruise_button, CS.es_distance_msg))
 
     else:
-      if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) * DT_CTRL > 0.2:
+      if pcm_cancel_cmd:
         bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
         can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd))
         self.last_cancel_frame = self.frame
