@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import List, NamedTuple, Optional
+from typing import NamedTuple, Optional
 
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.gm.values import CAR as GM
