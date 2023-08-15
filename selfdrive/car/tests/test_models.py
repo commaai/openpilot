@@ -92,15 +92,21 @@ class TestCarModelBase(unittest.TestCase):
       test_segs = (cls.test_route.segment,)
 
     for seg in test_segs:
+      print(seg)
       try:
         if len(INTERNAL_SEG_LIST):
+          print('hi')
           route_name = RouteName(cls.test_route.route)
           lr = LogReader(f"cd:/{route_name.dongle_id}/{route_name.time_str}/{seg}/rlog.bz2")
         elif cls.ci:
+          print('yo')
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
+          print(cls.test_route.route)
+          print(Route(cls.test_route.route).log_paths())
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception:
+      except Exception as e:
+        print(e)
         continue
 
       car_fw = []
