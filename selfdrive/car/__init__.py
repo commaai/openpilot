@@ -213,3 +213,24 @@ class CanBusBase:
     else:
       num = len(CP.safetyConfigs)
     self.offset = 4 * (num - 1)
+
+
+class CanSignalRateCalculator:
+  """
+  Calculates the instantaneous rate of a CAN signal by using the counter
+  variable and the known frequency of the CAN message that contains it.
+  """
+  def __init__(self, frequency):
+    self.frequency = frequency
+    self.previous_counter = 0
+    self.previous_value = 0
+    self.rate = 0
+
+  def update(self, current_value, current_counter):
+    if current_counter != self.previous_counter:
+      self.rate = (current_value - self.previous_value) * self.frequency
+
+    self.previous_counter = current_counter
+    self.previous_value = current_value
+
+    return self.rate
