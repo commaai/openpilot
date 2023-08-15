@@ -61,7 +61,7 @@ def populate_tz_by_type():
     if not n.startswith("thermal_zone"):
       continue
     with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-      tz_by_type[f.read().strip()] = int(n.lstrip("thermal_zone"))
+      tz_by_type[f.read().strip()] = int(n.removeprefix("thermal_zone"))
 
 def read_tz(x):
   if x is None:

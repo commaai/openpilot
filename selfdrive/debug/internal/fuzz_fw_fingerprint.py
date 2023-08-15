@@ -27,7 +27,7 @@ if __name__ == "__main__":
   for _ in tqdm(range(1000)):
     for candidate, fws in FWS.items():
       fw_dict = {}
-      for (tp, addr, subaddr), fw_list in fws.items():
+      for (_, addr, subaddr), fw_list in fws.items():
         fw_dict[(addr, subaddr)] = [random.choice(fw_list)]
 
       matches = match_fw_to_car_fuzzy(fw_dict, log=False, exclude=candidate)

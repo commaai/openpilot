@@ -43,11 +43,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings), 
   overlay_layout->addStretch(1);
   overlay_layout->addWidget(map_eta);
 
-  auto last_gps_position = coordinate_from_param("LastGPSPosition");
-  if (last_gps_position.has_value()) {
-    last_position = *last_gps_position;
-  }
-
+  last_position = coordinate_from_param("LastGPSPosition");
   grabGesture(Qt::GestureType::PinchGesture);
   qDebug() << "MapWindow initialized";
 }

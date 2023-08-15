@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  PYTHONWARNINGS: error
+
   BASE_IMAGE: openpilot-base
   CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_REGISTRY: ghcr.io/commaai
@@ -20,11 +22,11 @@ env:
   BUILD: |
       DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
 
   BUILD_CL: |
       DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $DOCKER_REGISTRY/$CL_BASE_IMAGE:latest -t $CL_BASE_IMAGE:latest -f Dockerfile.openpilot_base_cl .
-  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
+  RUN_CL: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONWARNINGS=error -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v ~/scons_cache:/tmp/scons_cache -v ~/comma_download_cache:/tmp/comma_download_cache -v ~/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
 
   UNIT_TEST: coverage run --append -m unittest discover
 
@@ -47,7 +49,7 @@ jobs:
       timeout-minutes: 1
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py"
@@ -66,7 +68,7 @@ jobs:
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "pre-commit run --all"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
   build_all:
     name: build all
@@ -76,16 +78,20 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-      with:
-        save-cache: true
     - name: Build openpilot with all flags
-      timeout-minutes: 12
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 12 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc) --extras && release/check-dirty.sh"
-    - name: Cleanup scons cache
-      timeout-minutes: 2
+    - name: Cleanup scons cache and rebuild
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 2 || 30) }} # allow more time when we missed the scons cache
       run: |
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
+    - name: Save scons cache
+      uses: actions/cache/save@v3
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: ~/scons_cache
+        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   build_mac:
     name: build macos
@@ -122,7 +128,7 @@ jobs:
           /opt/homebrew/opt
           /opt/homebrew/Caskroom/gcc-arm-*
           /Applications/ArmGNUToolchain/*/*/*
-        key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'update_requirements.sh', 'poetry.lock') }}
+        key: macos_deps-${{ hashFiles('tools/mac_setup.sh', 'tools/install_python_dependencies.sh', 'poetry.lock') }}
         restore-keys: macos_deps-
     - name: Brew link restored dependencies
       run: |
@@ -138,6 +144,9 @@ jobs:
     - name: Install dependencies
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
+      env:
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
     - name: Build openpilot
       run: |
         source tools/openpilot_env.sh
@@ -164,8 +173,9 @@ jobs:
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
         new_cellar=$(brew list --formula -1)
+        exceptions="zstd lz4 xz" # caching step needs zstd
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+          if [[ " $exceptions " != *" $pkg "* ]]; then
             rm -rf "$(brew --cellar)/$pkg"
           fi
         done
@@ -210,7 +220,7 @@ jobs:
       run: eval "$BUILD"
     - name: pre-commit
       timeout-minutes: 4
-      run: ${{ env.RUN }} "pre-commit run --all"
+      run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all"
 
   valgrind:
     name: valgrind
@@ -239,7 +249,7 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build openpilot
-      timeout-minutes: 10
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: 40
@@ -290,7 +300,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v3
       with:
-        path: /tmp/comma_download_cache
+        path: ~/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
     - name: Build openpilot
       run: |
@@ -333,15 +343,18 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
+    # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
       timeout-minutes: 2
       run: |
-        ${{ env.RUN_CL }} "ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+                           ONNXCPU=1 CI=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                            coverage xml"
     - name: Run unit tests
       timeout-minutes: 4
       run: |
-        ${{ env.RUN_CL }} "$UNIT_TEST selfdrive/modeld && \
+        ${{ env.RUN_CL }} "unset PYTHONWARNINGS && \
+                           $UNIT_TEST selfdrive/modeld && \
                            coverage xml"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
@@ -362,7 +375,7 @@ jobs:
       id: dependency-cache
       uses: actions/cache@v3
       with:
-        path: /tmp/comma_download_cache
+        path: ~/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
