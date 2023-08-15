@@ -1,5 +1,6 @@
 import argparse
 import sys
+import unittest
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
 from selfdrive.car.tests.test_models import TestCarModelBase
@@ -9,20 +10,23 @@ from selfdrive.debug.test_car_model import create_test_models_suite
 
 
 # @parameterized_class(('car_model', 'test_route'), get_test_cases())
-class TestCarModelDemo(TestCarModelBase):
-  car_model = None
-  test_route = CarTestRoute(DEMO_ROUTE, None)
-  ci = False
+# class TestCarModelDemo(TestCarModelBase):
+#   car_model = None
+#   test_route = CarTestRoute(DEMO_ROUTE, None)
+#   ci = False
 
 
 
 if __name__ == '__main__':
-  tm = TestCarModelDemo()
-  tm.setUpClass()
-  print(tm.CP)
-  print('canmsgs', len(tm.can_msgs))
+  # tm = TestCarModelDemo()
+  # tm.setUpClass()
+  # print(tm.CP)
+  # print('canmsgs', len(tm.can_msgs))
 
-  tests = create_test_models_suite([CarTestRoute(DEMO_ROUTE, None)])
+  test_suite = create_test_models_suite([CarTestRoute(DEMO_ROUTE, None)], test_filter=('test_car_interface', ))
+
+  unittest.TextTestRunner().run(test_suite)
+  # tests.run()
 
   # lr = MultiLogIterator(Route(DEMO_ROUTE).log_paths())
   #

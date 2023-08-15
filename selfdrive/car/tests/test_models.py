@@ -190,6 +190,7 @@ class TestCarModelBase(unittest.TestCase):
     can_invalid_cnt = 0
     can_valid = False
     CC = car.CarControl.new_message()
+    print('RUNNING!!!')
 
     start_time = time.process_time_ns()
     for i, msg in enumerate(self.can_msgs):
