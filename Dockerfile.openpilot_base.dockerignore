@@ -1,0 +1,9 @@
+# ignore all files
+*
+
+!/pyproject.toml
+!/poetry.lock
+!/.python-version
+
+!/tools/ubuntu_setup.sh
+!/tools/install_python_dependencies.sh
