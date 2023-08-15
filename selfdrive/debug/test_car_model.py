@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from typing import List, Tuple
+from typing import List
 import unittest
 
 from selfdrive.car.tests.routes import CarTestRoute
@@ -9,17 +9,13 @@ from selfdrive.car.tests.test_models import TestCarModel
 from tools.lib.route import SegmentName
 
 
-def create_test_models_suite(routes: List[CarTestRoute], ci: bool = False,
-                             test_filter: Tuple[str] = ()) -> unittest.TestSuite:
+def create_test_models_suite(routes: List[CarTestRoute], ci=False) -> unittest.TestSuite:
   test_suite = unittest.TestSuite()
   for test_route in routes:
     # create new test case and discover tests
     test_case_args = {"car_model": test_route.car_model, "test_route": test_route, "ci": ci}
     CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
-    for test in unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase):
-      if not len(test_filter) or str(test).startswith(test_filter):
-        print('here', test)
-        test_suite.addTest(test)
+    test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
   return test_suite
 
 

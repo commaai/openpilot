@@ -2,7 +2,6 @@
 # pylint: disable=E1101
 import os
 import importlib
-import time
 import unittest
 from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
@@ -100,7 +99,7 @@ class TestCarModelBase(unittest.TestCase):
           lr = LogReader(get_url(cls.test_route.route, seg))
         else:
           lr = LogReader(Route(cls.test_route.route).log_paths()[seg])
-      except Exception as e:
+      except Exception:
         continue
 
       car_fw = []
@@ -185,7 +184,6 @@ class TestCarModelBase(unittest.TestCase):
     can_valid = False
     CC = car.CarControl.new_message()
 
-    start_time = time.process_time_ns()
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
       self.CI.apply(CC, msg.logMonoTime)
@@ -196,6 +194,7 @@ class TestCarModelBase(unittest.TestCase):
       # wait max of 2s for low frequency msgs to be seen
       if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
+
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
