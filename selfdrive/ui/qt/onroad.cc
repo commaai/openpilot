@@ -454,7 +454,6 @@ void AnnotatedCameraWidget::updateFrameMat() {
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
-  // convert frame zoom to widget zoom
   s->car_space_transform.reset();
   s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
       .scale(zoom, zoom)

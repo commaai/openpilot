@@ -218,20 +218,17 @@ void CameraWidget::updateFrameMat() {
         zoom = 1.1;
       }
       const vec3 inf = {{1000., 0., 0.}};
-
       const vec3 Ep = matvecmul3(calibration, inf);
       const vec3 Kep = matvecmul3(intrinsic_matrix, Ep);
 
       float x_offset_ = (Kep.v[0] / Kep.v[2] - intrinsic_matrix.v[2]) * zoom;
       float y_offset_ = (Kep.v[1] / Kep.v[2] - intrinsic_matrix.v[5]) * zoom;
 
-      float max_x_offset = fmax(intrinsic_matrix.v[2] * zoom - w / 2 - 5, 0);
+      float max_x_offset = intrinsic_matrix.v[2] * zoom - w / 2 - 5;
       float max_y_offset = intrinsic_matrix.v[5] * zoom - h / 2 - 5;
 
       x_offset = std::clamp(x_offset_, -max_x_offset, max_x_offset);
       y_offset = std::clamp(y_offset_, -max_y_offset, max_y_offset);
-      x_offset = 0;
-      y_offset = 0;
 
       float widget_aspect_ratio = (float)w / h;
       float frame_aspect_ratio = (2.0 * intrinsic_matrix.v[2]) / (2.0 * intrinsic_matrix.v[5]);
