@@ -5,6 +5,7 @@ from common.conversions import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.car.subaru.values import DBC, CAR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, SubaruFlags
+from selfdrive.car import CanSignalRateCalculator
 
 
 class CarState(CarStateBase):
@@ -12,6 +13,8 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
+
+    self.angle_rate_calulator = CanSignalRateCalculator(50)
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -47,6 +50,11 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.steeringAngleDeg = cp.vl["Steering_Torque"]["Steering_Angle"]
+
+    if self.car_fingerprint not in PREGLOBAL_CARS:
+      # ideally we get this from the car, but unclear if it exists. diagnostic software doesn't even have it
+      ret.steeringRateDeg = self.angle_rate_calulator.update(ret.steeringAngleDeg, cp.vl["Steering_Torque"]["COUNTER"])
+
     ret.steeringTorque = cp.vl["Steering_Torque"]["Steer_Torque_Sensor"]
     ret.steeringTorqueEps = cp.vl["Steering_Torque"]["Steer_Torque_Output"]
 
