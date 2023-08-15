@@ -1,6 +1,7 @@
 # ignore all files
 *
 
+# except for a few scripts we need to build from
 !/pyproject.toml
 !/poetry.lock
 !/.python-version
