@@ -196,19 +196,7 @@ class TestCarModelBase(unittest.TestCase):
       # wait max of 2s for low frequency msgs to be seen
       if i > 200 or can_valid:
         can_invalid_cnt += not CS.canValid
-
     self.assertEqual(can_invalid_cnt, 0)
-    self.assertInterfaceTiming((time.process_time_ns() - start_time) * 1e-6)
-
-  def assertInterfaceTiming(self, total_time_ms):
-    """Asserts sane timing"""
-    total_time_thresh = (100, 7000)
-    per_packet_thresh = (0.10, 0.9)
-
-    # avg_time_msg = total_time_ms / len(self.can_msgs)
-    # for t, thresh in ((total_time_ms, total_time_thresh), (avg_time_msg, per_packet_thresh)):
-    #   self.assertLess(t, thresh[1])
-    #   self.assertGreater(t, thresh[0], "Performance seems to have improved, update test refs.")
 
   def test_radar_interface(self):
     os.environ['NO_RADAR_SLEEP'] = "1"
