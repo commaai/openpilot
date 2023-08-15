@@ -88,7 +88,10 @@ void interrupt_loop(std::vector<Sensor *>& sensors,
   }
 }
 
-void polling_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::string>& sensor_service, int poll_frequency, PubMaster& pm_int) {
+void polling_loop(std::vector<Sensor *>& sensors,
+                  std::map<Sensor*,
+                  std::string>& sensor_service,
+                  int poll_frequency, PubMaster& pm_int) {
   RateKeeper rk("sensord", poll_frequency);
   while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -107,16 +110,17 @@ void polling_loop(std::vector<Sensor *>& sensors, std::map<Sensor*, std::string>
 
     rk.keepTime();
   }
-}
 
-void magnetometer_loop(std::vector<Sensor *>& sensors,
-                       std::map<Sensor*, std::string>& sensor_service)
-{
-  PubMaster pm_int({"magnetometer"});
-  polling_loop(sensors, sensor_service, 25, pm_int);
   for (Sensor *sensor : sensors) {
     sensor->shutdown();
   }
+}
+
+void magnetometer_loop(std::vector<Sensor *>& sensors,
+                       std::map<Sensor*,
+                       std::string>& sensor_service) {
+  PubMaster pm_int({"magnetometer"});
+  polling_loop(sensors, sensor_service, 25, pm_int);
 }
 
 int sensor_loop(I2CBus *i2c_bus_imu) {
@@ -203,10 +207,6 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
 
 
   polling_loop(sensors, sensor_service, 100, pm_non_int);
-
-  for (Sensor *sensor : sensors) {
-    sensor->shutdown();
-  }
 
   lsm_interrupt_thread.join();
   magnetometer_thread.join();
