@@ -74,7 +74,8 @@ mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_w
   return transform;
 }
 
-mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio) {
+mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio,
+                            float zoom, float x_offset, float y_offset) {
   float zx = 1, zy = 1;
   if (frame_aspect_ratio > widget_aspect_ratio) {
     zy = widget_aspect_ratio / frame_aspect_ratio;
@@ -83,8 +84,8 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
   }
 
   const mat4 frame_transform = {{
-    zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, 0.0,
+    zx * zoom, 0.0, 0.0, x_offset,
+    0.0, zy * zoom, 0.0, y_offset,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};
@@ -210,10 +211,10 @@ void CameraWidget::updateFrameMat() {
       // to ensure this ends up in the middle of the screen
       // for narrow come and a little lower for wide cam.
       // TODO: use proper perspective transform?
-      // zoom is in terms of pixel to pixel
+      // zoom is in terms of frame size, not widget size
       if (active_stream_type == VISION_STREAM_WIDE_ROAD) {
         intrinsic_matrix = ECAM_INTRINSIC_MATRIX;
-        zoom = 2.0;
+        zoom = 2.2;
       } else {
         intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
         zoom = 1.1;
@@ -233,26 +234,33 @@ void CameraWidget::updateFrameMat() {
 
       x_offset = std::clamp(x_offset_, -max_x_offset, max_x_offset);
       y_offset = std::clamp(y_offset_, -max_y_offset, max_y_offset);
-//      x_offset = 0;
-//      y_offset = 0;
+      x_offset = 0;
+      y_offset = 0;
 
       float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
       float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
       qDebug() << "zx, zy" << zx << zy;
-      const mat4 frame_transform = {{
-        zx, 0.0, 0.0, -x_offset / w * 2,
-        0.0, zy, 0.0, y_offset / h * 2,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-      }};
+      qDebug() << "intrinsic_matrix.v[5]" << intrinsic_matrix.v[5];
+//      const mat4 frame_transform = {{
+//        zx, 0.0, 0.0, -x_offset / w * 2,
+//        0.0, zy, 0.0, y_offset / h * 2,
+//        0.0, 0.0, 1.0, 0.0,
+//        0.0, 0.0, 0.0, 1.0,
+//      }};
+
+      float widget_aspect_ratio = (float)w / h;
+      float frame_aspect_ratio = ((float)2 * intrinsic_matrix.v[2]) / (2 * intrinsic_matrix.v[5]);
+      const mat4 frame_transform = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio,
+                                                          zoom, -x_offset / w * 2, y_offset / h * 2);
       frame_mat = frame_transform;
+      qDebug() << frame_transform.v[0] << frame_transform.v[3] << frame_transform.v[5];
       qDebug() << "stream_width" << stream_width << stream_height;
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
     float widget_aspect_ratio = (float)w / h;
     float frame_aspect_ratio = (float)stream_width  / stream_height;
-    frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio);
+    frame_mat = get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio, 1.0, 0.0, 0.0);
   }
 }
 

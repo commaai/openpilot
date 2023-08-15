@@ -458,9 +458,11 @@ void AnnotatedCameraWidget::updateFrameMat() {
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
+  // convert frame zoom to widget zoom
+//  float frame_zoom = zoom / (h / stream_height);
   s->car_space_transform.reset();
   s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(2.23, 2.23)
+      .scale(zoom, zoom)
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
@@ -641,7 +643,7 @@ void AnnotatedCameraWidget::paintGL() {
 
     s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     qDebug() << s->scene.calibration_valid;
-    if (s->scene.calibration_valid && true) {
+    if (s->scene.calibration_valid && false) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
