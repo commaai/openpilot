@@ -165,7 +165,7 @@ void MapWindow::updateState(const UIState &s) {
     // Show map on destination set/change
     if (allow_open) {
       emit requestSettings(false);
-      emit requestVisible(true); // Show map on destination set/change
+      emit requestVisible(true);
     }
   }
 
