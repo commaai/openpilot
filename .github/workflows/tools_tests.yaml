@@ -56,9 +56,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        setup_docker_scons_cache: true
         submodules: true
     - uses: ./.github/workflows/setup
+      with:
+        setup_docker_scons_cache: true
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Build simulator image
