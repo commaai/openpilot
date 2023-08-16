@@ -29,23 +29,26 @@ class CarControllerParams:
     else:
       self.STEER_MAX = 2047
 
-  THROTTLE_MIN = 0              # min cruise_throttle
-  THROTTLE_MAX = 3400           # max cruise_throttle
-  THROTTLE_BASE = 1818          # cruise_throttle, from stock drive
-  THROTTLE_SCALE = 3000         # from testing
-  THROTTLE_DELTA = 50
-  THROTTLE_ENGINE_BRAKE = 808
+  THROTTLE_INACTIVE = 1818
+  THROTTLE_ENGINE_BRAKE = 808   # engine braking cruise_throttle
 
-  RPM_MIN = 0                   # min cruise_rpm
-  RPM_MAX = 3200                # max cruise_rpm
-  RPM_BASE = 600                # cruise_rpm idle, from stock drive
-  RPM_SCALE = 3000              # cruise_rpm, from testing
-  RPM_DELTA = 50
+  THROTTLE_MIN = THROTTLE_INACTIVE
+  THROTTLE_MAX = 3400
+
+  RPM_MIN = 0
+  RPM_MAX = 2400
 
   BRAKE_MIN = 0
-  BRAKE_MAX = 400
-  BRAKE_SCALE = 1000            # from testing
-  ENGINE_BRAKE_THRESHOLD = 35
+  BRAKE_MAX = 600
+
+  THROTTLE_LOOKUP_BP = [0, 1]
+  THROTTLE_LOOKUP_V = [THROTTLE_MIN, THROTTLE_MAX]
+
+  RPM_LOOKUP_BP = [0, 1]
+  RPM_LOOKUP_V = [RPM_MIN, RPM_MAX]
+
+  BRAKE_LOOKUP_BP = [-1, 0]
+  BRAKE_LOOKUP_V = [BRAKE_MAX, BRAKE_MIN]
 
 
 class SubaruFlags(IntFlag):

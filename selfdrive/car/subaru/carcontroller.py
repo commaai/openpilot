@@ -1,13 +1,9 @@
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
 from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
-from selfdrive.controls.lib.drive_helpers import rate_limit
 
-
-def compute_gb(accel):
-  return clip(accel/4.0, 0.0, 1.0), clip(-accel/4.0, 0.0, 1.0)
 
 class CarController:
   def __init__(self, dbc_name, CP, VM):
@@ -51,42 +47,21 @@ class CarController:
       self.apply_steer_last = apply_steer
 
     # *** longitudinal ***
-    brake_cmd = False
-    brake_value = 0
-
-    cruise_throttle = 0
+    cruise_throttle = CarControllerParams.THROTTLE_INACTIVE
     cruise_rpm = 0
+    cruise_brake = 0
 
     if self.CP.openpilotLongitudinalControl:
-
-      gas, brake = compute_gb(actuators.accel)
-
-      if CC.longActive and brake > 0:
-        brake_value = clip(int(brake * CarControllerParams.BRAKE_SCALE), CarControllerParams.BRAKE_MIN, CarControllerParams.BRAKE_MAX)
-        brake_cmd = True
-
-      if CC.longActive and gas > 0:
-        # calculate desired values
-        cruise_throttle = int(CarControllerParams.THROTTLE_BASE + (gas * CarControllerParams.THROTTLE_SCALE))
-        cruise_rpm = int(CarControllerParams.RPM_BASE + (gas * CarControllerParams.RPM_SCALE))
+      if CC.longActive:
+        apply_throttle = int(round(interp(actuators.accel, self.params.THROTTLE_LOOKUP_BP, self.params.THROTTLE_LOOKUP_BP)))
+        apply_rpm = int(round(interp(actuators.accel, self.params.RPM_LOOKUP_BP, self.params.RPM_LOOKUP_BP)))
+        apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
 
         # limit min and max values
-        cruise_throttle = clip(cruise_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
-        cruise_rpm = clip(cruise_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
+        cruise_throttle = clip(apply_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
+        cruise_rpm = clip(apply_rpm, CarControllerParams.RPM_MIN, CarControllerParams.RPM_MAX)
+        cruise_brake = clip(apply_brake, CarControllerParams.BRAKE_MIN, CarControllerParams.BRAKE_MAX)
 
-        # rate limiting
-        cruise_throttle = rate_limit(cruise_throttle, self.cruise_throttle_last, -CarControllerParams.THROTTLE_DELTA, CarControllerParams.THROTTLE_DELTA)
-        self.cruise_throttle_last = cruise_throttle
-
-        cruise_rpm = rate_limit(cruise_rpm, self.cruise_rpm_last, -CarControllerParams.RPM_DELTA, CarControllerParams.RPM_DELTA)
-        self.cruise_rpm_last = cruise_rpm
-      
-      else:
-        cruise_throttle = CarControllerParams.THROTTLE_BASE # zero acceleration
-      
-      if brake_value > CarControllerParams.ENGINE_BRAKE_THRESHOLD:
-        cruise_throttle = CarControllerParams.THROTTLE_ENGINE_BRAKE # for engine braking
-      
     # *** alerts and pcm cancel ***
     if self.CP.carFingerprint in PREGLOBAL_CARS:
       if self.frame % 5 == 0:
@@ -109,7 +84,8 @@ class CarController:
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive, self.CP.openpilotLongitudinalControl, hud_control.leadVisible))
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, CC.longActive,
+                                                        self.CP.openpilotLongitudinalControl, hud_control.leadVisible))
 
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
                                                         hud_control.leftLaneVisible, hud_control.rightLaneVisible,
@@ -121,15 +97,16 @@ class CarController:
       if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
           can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, CC.longActive, self.CP.openpilotLongitudinalControl, cruise_rpm))
-          can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, brake_cmd, brake_value))
 
-        if self.frame % 10 == 0:
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive, self.CP.openpilotLongitudinalControl, brake_cmd, brake_value, cruise_throttle))
+          can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, cruise_brake))
 
+          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive,
+                                                        self.CP.openpilotLongitudinalControl, cruise_brake, cruise_throttle))
       else:
         if pcm_cancel_cmd:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
-          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive, self.CP.openpilotLongitudinalControl, brake_cmd, brake_value, cruise_throttle))
+          can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive,
+                                                        self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
           self.last_cancel_frame = self.frame
 
     new_actuators = actuators.copy()

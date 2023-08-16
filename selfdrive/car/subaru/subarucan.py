@@ -16,7 +16,7 @@ def create_steering_control(packer, apply_steer, steer_req):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, {})
 
-def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, long_enabled, brake_cmd, brake_value, cruise_throttle):
+def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, long_enabled, brake_cmd, cruise_throttle):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -46,7 +46,7 @@ def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active
 
   if long_enabled:
     values["Cruise_Throttle"] = cruise_throttle
-  
+
     # Do not disable openpilot on Eyesight Soft Disable, if openpilot is controlling long
     values["Cruise_Soft_Disable"] = 0
 
@@ -151,7 +151,7 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, long_enab
     values["Cruise_Activated"] = 1
     values["Cruise_Disengaged"] = 0
     values["Car_Follow"] = int(lead_visible)
-  
+
   if long_enabled:
     values["PCB_Off"] = 1
 
@@ -161,7 +161,7 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, long_enab
 
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
-def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
+def create_es_brake(packer, es_brake_msg, enabled, brake_value):
   values = {s: es_brake_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -177,8 +177,10 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_cmd, brake_value):
 
   if enabled:
     values["Cruise_Activated"] = 1
-  if brake_cmd:
-    values["Brake_Pressure"] = brake_value
+
+  values["Brake_Pressure"] = brake_value
+
+  if brake_value > 0:
     values["Cruise_Brake_Active"] = 1
     values["Cruise_Brake_Lights"] = 1 if brake_value >= 70 else 0
 
@@ -200,7 +202,7 @@ def create_es_status(packer, es_status_msg, long_active, long_enabled, cruise_rp
 
   if long_enabled:
     values["Cruise_RPM"] = cruise_rpm
-    
+
   if long_active:
     values["Cruise_Activated"] = 1
 
