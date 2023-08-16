@@ -3,7 +3,9 @@ import os
 import sys
 import subprocess
 
-BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
+ACCOUNT_URL = "https://commadataci.blob.core.windows.net"
+CONTAINER_NAME = "openpilotci"
+BASE_URL = f"{ACCOUNT_URL}/{CONTAINER_NAME}/"
 TOKEN_PATH = "/data/azure_token"
 
 
@@ -24,16 +26,15 @@ def get_sas_token():
   return sas_token
 
 def upload_bytes(data, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
-  service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
-  service.create_blob_from_bytes("openpilotci", name, data)
+  from azure.storage.blob import BlobServiceClient
+  service = BlobServiceClient(ACCOUNT_URL, credential=get_sas_token())
+  blob = service.get_blob_client(container=CONTAINER_NAME, blob=name)
+  blob.upload_blob(data)
   return BASE_URL + name
 
 def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
-  service = BlockBlobService(account_name="commadataci", sas_token=get_sas_token())
-  service.create_blob_from_path("openpilotci", name, path)
-  return BASE_URL + name
+  with open(path, "rb") as f:
+    return upload_bytes(f.read(), name)
 
 
 if __name__ == "__main__":
