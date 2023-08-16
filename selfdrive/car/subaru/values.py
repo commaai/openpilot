@@ -32,7 +32,7 @@ class CarControllerParams:
   THROTTLE_MIN = 808
   THROTTLE_MAX = 3400
 
-  THROTTLE_INACTIVE =     1818   # corresponds to zero acceleration
+  THROTTLE_INACTIVE     = 1818   # corresponds to zero acceleration
   THROTTLE_ENGINE_BRAKE = 808    # while braking, eyesight sets throttle to this, probably for engine braking
 
   BRAKE_MIN = 0
