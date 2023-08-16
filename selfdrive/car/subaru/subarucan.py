@@ -204,8 +204,8 @@ def create_es_status(packer, es_status_msg, long_enabled, long_active, cruise_rp
   if long_enabled:
     values["Cruise_RPM"] = cruise_rpm
 
-  if long_active:
-    values["Cruise_Activated"] = 1
+    if long_active:
+      values["Cruise_Activated"] = 1
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 

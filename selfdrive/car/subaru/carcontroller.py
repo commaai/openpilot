@@ -21,7 +21,6 @@ class CarController:
     actuators = CC.actuators
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
-    long_enabled = self.CP.openpilotLongitudinalControl
 
     can_sends = []
 
@@ -82,7 +81,7 @@ class CarController:
 
     else:
       if self.frame % 10 == 0:
-        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, long_enabled,
+        can_sends.append(subarucan.create_es_dashstatus(self.packer, CS.es_dashstatus_msg, CC.enabled, self.CP.openpilotLongitudinalControl,
                                                         CC.longActive, hud_control.leadVisible))
 
         can_sends.append(subarucan.create_es_lkas_state(self.packer, CS.es_lkas_state_msg, CC.enabled, hud_control.visualAlert,
@@ -92,14 +91,14 @@ class CarController:
         if self.CP.flags & SubaruFlags.SEND_INFOTAINMENT:
           can_sends.append(subarucan.create_es_infotainment(self.packer, CS.es_infotainment_msg, hud_control.visualAlert))
 
-      if long_enabled:
+      if self.CP.openpilotLongitudinalControl:
         if self.frame % 5 == 0:
-          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, long_enabled, CC.longActive, cruise_rpm))
+          can_sends.append(subarucan.create_es_status(self.packer, CS.es_status_msg, self.CP.openpilotLongitudinalControl, CC.longActive, cruise_rpm))
 
           can_sends.append(subarucan.create_es_brake(self.packer, CS.es_brake_msg, CC.enabled, cruise_brake))
 
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd,
-                                                        long_enabled, cruise_brake > 0, cruise_throttle))
+                                                        self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
         if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main

@@ -55,7 +55,6 @@ class CarControllerParams:
 
 class SubaruFlags(IntFlag):
   SEND_INFOTAINMENT = 1
-  EXPERIMENTAL_LONG = 2 # EXTREMELY experimental
 
 
 class CanBus:
