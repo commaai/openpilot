@@ -307,7 +307,8 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     updateEvents([&]() {
       events_.swap(new_events_);
       segments_merged_ = segments_need_merge;
-      return true;
+      // Do not wake up the stream thread if the current segment has not been merged.
+      return isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0);
     });
   }
 }
