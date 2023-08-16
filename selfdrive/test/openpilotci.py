@@ -34,7 +34,7 @@ def upload_bytes(data, name):
 
 def upload_file(path, name):
   with open(path, "rb") as f:
-    return upload_bytes(f.read(), name)
+    return upload_bytes(f, name)
 
 
 if __name__ == "__main__":
