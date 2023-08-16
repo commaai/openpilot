@@ -348,7 +348,7 @@ class TestCarModelBase(unittest.TestCase):
 
         # TODO: fix notCar mismatch
         if not self.CP.notCar:
-          checks['cruiseEngaged'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
+          checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
         button_enable = any(evt.enable for evt in CS.events)
