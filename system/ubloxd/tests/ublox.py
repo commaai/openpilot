@@ -185,8 +185,8 @@ class UBloxAttrDict(dict):
   def __getattr__(self, name):
     try:
       return self.__getitem__(name)
-    except KeyError:
-      raise AttributeError(name)
+    except KeyError as e:
+      raise RuntimeError(f"ublock invalid attr: {name}") from e
 
   def __setattr__(self, name, value):
     if name in self.__dict__:
@@ -270,7 +270,7 @@ class UBloxDescriptor:
       return
 
     size2 = struct.calcsize(self.format2)
-    for c in range(count):
+    for _ in range(count):
       r = UBloxAttrDict()
       if size2 > len(buf):
         raise UBloxError("INVALID_SIZE=%u, " % len(buf))
@@ -573,10 +573,10 @@ class UBloxMessage:
     '''allow access to message fields'''
     try:
       return self._fields[name]
-    except KeyError:
+    except KeyError as e:
       if name == 'recs':
         return self._recs
-      raise AttributeError(name)
+      raise AttributeError(name) from e
 
   def __setattr__(self, name, value):
     '''allow access to message fields'''

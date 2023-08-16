@@ -16,7 +16,7 @@ runs:
     - id: restore-scons-cache
       uses: actions/cache/restore@v3
       with:
-        path: /tmp/scons_cache
+        path: ~/scons_cache
         key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ env.CACHE_COMMIT_DATE }}-

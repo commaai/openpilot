@@ -15,7 +15,7 @@ DELPHI_MRR_RADAR_MSG_COUNT = 64
 
 def _create_delphi_esr_radar_can_parser(CP) -> CANParser:
   msg_n = len(DELPHI_ESR_RADAR_MSGS)
-  messages = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n))
+  messages = list(zip(DELPHI_ESR_RADAR_MSGS, [20] * msg_n, strict=True))
 
   return CANParser(RADAR.DELPHI_ESR, messages, CanBus(CP).radar)
 
@@ -51,7 +51,7 @@ class RadarInterface(RadarInterfaceBase):
 
   def update(self, can_strings):
     if self.rcp is None:
-      return super().update(None)
+      return None
 
     vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
