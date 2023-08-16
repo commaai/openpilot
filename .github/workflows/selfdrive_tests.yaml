@@ -118,8 +118,6 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          ~/github_brew_cache_entries.txt
-          ~/.pyenv
           ~/Library/Caches/pypoetry
           /usr/local/Cellar
           /usr/local/opt
@@ -133,7 +131,7 @@ jobs:
     - name: Brew link restored dependencies
       run: |
         if [ -f ~/github_brew_cache_entries.txt ]; then
-          # brew link --force --overwrite $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
+          brew link --force --overwrite $(cat ~/github_brew_cache_entries.txt) # `--force` for keg-only packages
           if [ -d /Applications/ArmGNUToolchain ]; then # link gcc-arm-embedded manually
             GCC_TOOLCHAIN="$(echo /Applications/ArmGNUToolchain/**/**/bin)"
             echo "$GCC_TOOLCHAIN" >> $GITHUB_PATH
