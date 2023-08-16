@@ -90,7 +90,6 @@ class CarState(CarStateBase):
       # 8 is known AEB, there are a few other values related to AEB we ignore
       ret.stockAeb = (cp_es_distance.vl["ES_Brake"]["AEB_Status"] == 8) and \
                      (cp_es_distance.vl["ES_Brake"]["Brake_Pressure"] != 0)
-
       self.es_lkas_state_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
       cp_es_brake = cp_body if self.car_fingerprint in GLOBAL_GEN2 else cp_cam
       self.es_brake_msg = copy.copy(cp_es_brake.vl["ES_Brake"])

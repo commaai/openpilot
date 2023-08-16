@@ -100,7 +100,7 @@ class CarController:
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd, CC.longActive,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake, cruise_throttle))
       else:
-        if pcm_cancel_cmd:
+        if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, bus, pcm_cancel_cmd, CC.longActive,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))

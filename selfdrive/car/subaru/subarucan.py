@@ -154,7 +154,7 @@ def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, long_enab
     values["Car_Follow"] = int(lead_visible)
 
   if long_enabled:
-    values["PCB_Off"] = 1
+    values["PCB_Off"] = 1 # AEB is not presevered, so show the PCB_Off on dash
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   if values["LKAS_State_Msg"] in (2, 3):
