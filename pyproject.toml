@@ -25,7 +25,7 @@ cffi = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
-future-fstrings = "*"
+future-fstrings = "*"  # for acados
 hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
