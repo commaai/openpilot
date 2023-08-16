@@ -8,16 +8,15 @@ inputs:
     default: false
   git_lfs:
     description: 'Whether or not to pull the git lfs'
-    type: boolean
     required: false
-    default: true
+    default: 'true'
 
 runs:
   using: "composite"
   steps:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      if: ${{ inputs.git_lfs }}
+      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
     # build cache
