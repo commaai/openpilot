@@ -12,8 +12,6 @@ class CarController:
     self.frame = 0
 
     self.cruise_button_prev = 0
-    self.cruise_throttle_last = 0
-    self.cruise_rpm_last = 0
 
     self.last_cancel_frame = 0
 
