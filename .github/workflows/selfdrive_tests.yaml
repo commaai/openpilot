@@ -173,8 +173,9 @@ jobs:
       if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: |
         new_cellar=$(brew list --formula -1)
+        exceptions="zstd lz4 xz" # caching step needs zstd
         comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+          if [[ " $exceptions " != *" $pkg "* ]]; then
             rm -rf "$(brew --cellar)/$pkg"
           fi
         done
