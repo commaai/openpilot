@@ -165,7 +165,9 @@ class Laikad:
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
-      measurements = [m for m in measurements if m.constellation_id != ConstellationId.GLONASS]
+      only_gps_meas =  [m for m in measurements if m.constellation_id == ConstellationId.GPS]
+      if len(only_gps_meas) >= (min_measurements + 1):
+        measurements = only_gps_meas
       position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
 
       # outlier rejection
@@ -195,7 +197,7 @@ class Laikad:
         stds = np.array([m.observables_std['D1C'] for m in measurements])
         ratios = np.abs(prr_residuals/stds)
         max_idx = np.argmax(ratios)
-        if ratios[max_idx] > 10:
+        if ratios[max_idx] > 5:
           print(f'{len(measurements)} measurements for vel')
           print('outlier rejected, {measurements[max_idx].observables_std["D1C"]}')
           print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
