@@ -11,7 +11,7 @@ from cereal import log, car
 from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces, can_fingerprint
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -133,6 +133,23 @@ class TestCarModelBase(unittest.TestCase):
         break
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
+
+    can_msgs_iter = iter(can_msgs)
+    def iter_can_msgs():  # next_can
+      # TODO: can also return empty can Event
+      nonlocal can_msgs_iter
+      msg_or_none = next(can_msgs_iter, None)
+      print(len(msg_or_none.can))
+      return msg_or_none.can if msg_or_none else []
+
+    def can_msgs_generator():
+      for msg in can_msgs:
+        yield msg.can
+
+    new_finger, new_fingerprint = can_fingerprint(iter_can_msgs)
+    # new_finger, new_fingerprint = can_fingerprint(can_msgs_generator)
+    # gen = can_msgs_generator()
+    # new_finger, new_fingerprint = can_fingerprint(lambda: next(gen, []))
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = enabled_toggle and not dashcam_only
