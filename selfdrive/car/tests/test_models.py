@@ -302,7 +302,6 @@ class TestCarModelBase(unittest.TestCase):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
-    print('WARM UP DONE, STARTING')
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(lambda: 0)
@@ -347,6 +346,7 @@ class TestCarModelBase(unittest.TestCase):
         else:
           checks['controlsAllowed'] += not CS.cruiseState.enabled and self.safety.get_controls_allowed()
 
+        # TODO: fix notCar mismatch
         if not self.CP.notCar:
           checks['cruiseEngaged'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
