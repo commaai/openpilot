@@ -38,7 +38,7 @@ scons -u -j$(nproc)
 
 ### Dev Container
 
-openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of you local setup.
+openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
 
 Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers).
 
