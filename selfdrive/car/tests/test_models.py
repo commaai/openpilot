@@ -252,7 +252,6 @@ class TestCarModelBase(unittest.TestCase):
   def test_panda_safety_tx_cases(self, data=None):
     """Asserts we can tx common messages"""
     if self.CP.notCar:
-      # TODO: fix inability to send
       self.skipTest("Skipping test for notCar")
 
     def test_car_controller(car_control):
