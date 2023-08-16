@@ -54,8 +54,8 @@ poetry config virtualenvs.prefer-active-python true --local
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
   echo "# msgq doesn't work on mac" >> $ROOT/.env
-  echo "ZMQ=1" >> $ROOT/.env
-  echo "OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
+  echo "export ZMQ=1" >> $ROOT/.env
+  echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
 
 poetry self add poetry-dotenv-plugin@^0.1.0
