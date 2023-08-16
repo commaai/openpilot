@@ -159,9 +159,6 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
-  def test(self):
-    pass
-
   def test_car_params(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
