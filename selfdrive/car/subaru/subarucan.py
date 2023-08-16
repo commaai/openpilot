@@ -10,11 +10,11 @@ def create_steering_control(packer, apply_steer, steer_req):
     "LKAS_Request": steer_req,
     "SET_1": 1
   }
-  return packer.make_can_msg("ES_LKAS", CanBus.main, values)
+  return packer.make_can_msg("ES_LKAS", 0, values)
 
 
 def create_steering_status(packer):
-  return packer.make_can_msg("ES_LKAS_State", CanBus.main, {})
+  return packer.make_can_msg("ES_LKAS_State", 0, {})
 
 def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, long_enabled, brake_cmd, cruise_throttle):
   values = {s: es_distance_msg[s] for s in [
