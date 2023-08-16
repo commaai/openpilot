@@ -3,9 +3,8 @@ name: 'openpilot env setup'
 inputs:
   setup_docker_scons_cache:
     description: 'Whether or not to build the scons-cache docker image'
-    type: boolean
     required: false
-    default: false
+    default: 'false'
   git_lfs:
     description: 'Whether or not to pull the git lfs'
     required: false
@@ -36,7 +35,7 @@ runs:
     - id: setup-scons-cache-docker
       name: Sets up a docker image with scons cache that can by mounted as a buildkit cache mount
       shell: bash
-      if: ${{ inputs.setup_docker_scons_cache }}
+      if: ${{ inputs.setup_docker_scons_cache == 'true' }}
       run: |
         cp Dockerfile.scons_cache ~
         cd ~/scons_cache
