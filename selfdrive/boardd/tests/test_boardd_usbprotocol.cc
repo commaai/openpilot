@@ -1,17 +1,10 @@
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <random>
 
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
+#include "common/util.h"
 #include "selfdrive/boardd/panda.h"
-
-int random_int(int min, int max) {
-  std::random_device dev;
-  std::mt19937 rng(dev());
-  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
-  return dist(rng);
-}
 
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);
@@ -44,10 +37,10 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState
   auto can_list = msg.initEvent().initSendcan(can_list_size);
   for (uint8_t i = 0; i < can_list_size; ++i) {
     auto can = can_list[i];
-    uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
+    uint32_t id = util::random_int(0, std::size(dlc_to_len) - 1);
     const std::string &dat = test_data[dlc_to_len[id]];
     can.setAddress(i);
-    can.setSrc(random_int(0, 3) + bus_offset);
+    can.setSrc(util::random_int(0, 3) + bus_offset);
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
     total_pakets_size += sizeof(can_header) + dat.size();
   }

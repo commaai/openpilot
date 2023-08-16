@@ -13,6 +13,8 @@ from system.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
 
+FRAME_FINGERPRINT = 100  # 1s
+
 EventName = car.CarEvent.EventName
 
 
@@ -126,7 +128,6 @@ def fingerprint(logcan, sendcan, num_pandas):
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
-  frame_fingerprint = 100  # 1s
   car_fingerprint = None
   done = False
 
@@ -152,12 +153,12 @@ def fingerprint(logcan, sendcan, num_pandas):
     # if we only have one car choice and the time since we got our first
     # message has elapsed, exit
     for b in candidate_cars:
-      if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
+      if len(candidate_cars[b]) == 1 and frame > FRAME_FINGERPRINT:
         # fingerprint done
         car_fingerprint = candidate_cars[b][0]
 
     # bail if no cars left or we've been waiting for more than 2s
-    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
+    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > FRAME_FINGERPRINT) or frame > 200
     succeeded = car_fingerprint is not None
     done = failed or succeeded
 

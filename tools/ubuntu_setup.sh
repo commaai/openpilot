@@ -138,9 +138,8 @@ else
   exit 1
 fi
 
-
-# install python dependencies
-$ROOT/update_requirements.sh
+# python setup
+$DIR/install_python_dependencies.sh
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
