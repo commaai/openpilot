@@ -149,15 +149,17 @@ jobs:
         PYTHONWARNINGS: default
     - name: Build openpilot
       run: |
+        source $HOME/.bash_profile
         poetry run scons -j$(nproc)
     - name: Run tests
       run: |
-        export PYTHONPATH=$PWD
+        source $HOME/.bash_profile
         poetry run tools/plotjuggler/test_plotjuggler.py
     - name: Pre Cache - Cleanup scons cache
       if: github.ref == 'refs/heads/master'
       run: |
         rm -rf /tmp/scons_cache/*
+        source $HOME/.bash_profile
         poetry run scons -j$(nproc) --cache-populate
     - name: Save scons cache
       id: scons-save-cache
