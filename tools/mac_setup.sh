@@ -71,8 +71,8 @@ export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
-$DIR/install_python_dependencies.sh
 eval "$(pyenv init --path)"
+$DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
 
 echo
