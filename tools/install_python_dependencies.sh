@@ -24,11 +24,9 @@ if [ -z "\$PYENV_ROOT" ]; then
 fi
 EOF
 
-  # setup now without restarting shell
-  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-  export PYENV_ROOT="$HOME/.pyenv"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
+  # activate pyenv now
+  exec "$SHELL"
+  source $RC_FILE
 fi
 
 export MAKEFLAGS="-j$(nproc)"
