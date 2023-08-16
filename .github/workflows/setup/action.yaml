@@ -30,6 +30,7 @@ runs:
           scons-
     - id: setup-scons-cache-docker
       name: Sets up a docker image with scons cache that can by mounted as a buildkit cache mount
+      shell: bash
       if: ${{ github.event.inputs.setup_docker_scons_cache }}
       run: |
         cp Dockerfile.scons_cache ~
