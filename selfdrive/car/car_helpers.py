@@ -39,7 +39,7 @@ def get_one_can(logcan):
   while True:
     can = messaging.recv_one_retry(logcan)
     if len(can.can) > 0:
-      return can.can
+      return can
 
 
 def load_interfaces(brand_names):
@@ -95,6 +95,8 @@ def can_fingerprint(can_func: Callable) -> Tuple[Optional[str], Dict[int, dict]]
       if can.src < 128:
         if can.src not in finger:
           finger[can.src] = {}
+        if can.address == 1479:
+          print(frame, 'new f', can.address, len(can.dat))
         finger[can.src][can.address] = len(can.dat)
 
       for b in candidate_cars:
