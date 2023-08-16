@@ -25,13 +25,13 @@ cffi = "*"
 crcmod = "*"
 cryptography = "*"
 Cython = "*"
-future-fstrings = "*"  # for acados
+future-fstrings = "*"
 hatanaka = "==2.4"
 hexdump = "*"
 Jinja2 = "*"
 json-rpc = "*"
 libusb1 = "*"
-numpy = "~1.23"  # pinned for acados
+numpy = "*"
 onnx = ">=1.14.0"
 onnxruntime-gpu = { version = ">=1.15.1", platform = "linux", markers = "platform_machine == 'x86_64'" }
 pillow = "*"
