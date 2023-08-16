@@ -73,7 +73,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
       ret.tireStiffnessFactor = 0.65
     elif candidate == CAR.SONATA_LF:
-      ret.mass = 4497. * CV.LB_TO_KG
+      ret.mass = 1536. + STD_CARGO_KG
       ret.wheelbase = 2.804
       ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
     elif candidate == CAR.PALISADE:
@@ -115,12 +115,12 @@ class CarInterface(CarInterfaceBase):
       if candidate in (CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV_2019):
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 2917. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75 * 1.15
       ret.tireStiffnessFactor = 0.5
     elif candidate == CAR.TUCSON:
-      ret.mass = 3520. * CV.LB_TO_KG
+      ret.mass = 3520. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.steerRatio = 14.00 * 1.15
       ret.tireStiffnessFactor = 0.385
@@ -156,7 +156,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.756
       ret.steerRatio = 13.6  # steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     elif candidate in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H):
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 3558. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       ret.tireStiffnessFactor = 0.5
@@ -167,7 +167,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.78
       ret.steerRatio = 14.4 * 1.15   # 15% higher at the center seems reasonable
     elif candidate == CAR.KIA_FORTE:
-      ret.mass = 3558. * CV.LB_TO_KG
+      ret.mass = 2878. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.80
       ret.steerRatio = 13.75
       ret.tireStiffnessFactor = 0.5
@@ -177,7 +177,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75
       ret.tireStiffnessFactor = 0.5
     elif candidate in (CAR.KIA_K5_2021, CAR.KIA_K5_HEV_2020):
-      ret.mass = 3228. * CV.LB_TO_KG
+      ret.mass = 3381. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.85
       ret.steerRatio = 13.27  # 2021 Kia K5 Steering Ratio (all trims)
       ret.tireStiffnessFactor = 0.5
@@ -231,7 +231,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
     elif candidate == CAR.GENESIS_G90:
-      ret.mass = 2200
+      ret.mass = 2200. + STD_CARGO_KG
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
     elif candidate == CAR.GENESIS_GV80:
