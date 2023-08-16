@@ -135,21 +135,21 @@ class TestCarModelBase(unittest.TestCase):
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
     can_msgs_iter = iter(can_msgs)
+
     def iter_can_msgs():  # next_can
       # TODO: can also return empty can Event
-      nonlocal can_msgs_iter
       msg_or_none = next(can_msgs_iter, None)
-      print(len(msg_or_none.can))
       return msg_or_none.can if msg_or_none else []
 
-    def can_msgs_generator():
-      for msg in can_msgs:
-        yield msg.can
-
-    new_finger, new_fingerprint = can_fingerprint(iter_can_msgs)
-    # new_finger, new_fingerprint = can_fingerprint(can_msgs_generator)
-    # gen = can_msgs_generator()
-    # new_finger, new_fingerprint = can_fingerprint(lambda: next(gen, []))
+    _, new_fingerprint = can_fingerprint(iter_can_msgs)
+    # print(fingerprint, new_fingerprint)
+    for old, new in zip(fingerprint[0], new_fingerprint[0]):
+      if old not in new_fingerprint[0]:
+        print('old not in new', old)
+      if new not in fingerprint[0]:
+        print('new not in old', old)
+    print('fp equal', fingerprint[0] == new_fingerprint[0])
+    cls.assertEqual(fingerprint[0], new_fingerprint[0])
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = enabled_toggle and not dashcam_only
