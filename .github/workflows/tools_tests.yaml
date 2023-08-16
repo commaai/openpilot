@@ -82,6 +82,7 @@ jobs:
     - uses: ./.github/workflows/setup
       with:
         setup_docker_scons_cache: true
+        git_lfs: false
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
