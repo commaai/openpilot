@@ -12,7 +12,7 @@ runs:
   steps:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      if: ${{ github.event.inputs.git_lfs }}
+      if: ${{ inputs.git_lfs }}
       run: git lfs pull
 
     # build cache
