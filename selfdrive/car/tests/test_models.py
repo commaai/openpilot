@@ -68,7 +68,7 @@ SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 class TestCarModelBase(unittest.TestCase):
   car_model: Optional[str] = None
-  test_route: CarTestRoute = None
+  test_route: Optional[CarTestRoute] = None
   ci: bool = True
 
   can_msgs: List[capnp.lib.capnp._DynamicStructReader]
