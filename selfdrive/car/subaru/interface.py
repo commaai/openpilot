@@ -107,7 +107,7 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError(f"unknown car: {candidate}")
 
-    ret.flags |= SubaruFlags.EXPERIMENTAL_LONG.value
+    #ret.flags |= SubaruFlags.EXPERIMENTAL_LONG.value
     experimental_long_allowed = (ret.flags & SubaruFlags.EXPERIMENTAL_LONG) != 0
 
     # longitudinal
