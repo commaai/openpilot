@@ -167,9 +167,6 @@ class Laikad:
   def get_lsq_fix(self, t, measurements):
     if self.last_fix_t is None or abs(self.last_fix_t - t) > 0:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
-      only_gps_meas =  [m for m in measurements if m.constellation_id == ConstellationId.GPS]
-      if len(only_gps_meas) >= (min_measurements + 1):
-        measurements = only_gps_meas
 
       position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       # outlier rejection
