@@ -3032,6 +3032,23 @@ PyQt5-Qt5 = ">=5.15.2"
 PyQt5-sip = ">=12.11,<13"
 
 [[package]]
+name = "PyQt5"
+version = "5.15.9"
+description = "Python bindings for the Qt cross platform application toolkit"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "PyQt5-5.15.9.tar.gz", hash = "sha256:dc41e8401a90dc3e2b692b411bd5492ab559ae27a27424eed4bd3915564ec4c0"},
+]
+
+[package.dependencies]
+PyQt5-sip = ">=12.11,<13"
+
+[package.source]
+type = "url"
+url = "https://files.pythonhosted.org/packages/5c/46/b4b6eae1e24d9432905ef1d4e7c28b6610e28252527cdc38f2a75997d8b5/PyQt5-5.15.9.tar.gz"
+
+[[package]]
 name = "pyqt5-qt5"
 version = "5.15.2"
 description = "The subset of a Qt installation needed by PyQt5."
@@ -4164,4 +4181,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "a8e81d5e0f650dc36a228cf4639c09700f0b52f65869eb8444f8365d507fdba0"
+content-hash = "d49099f501afb2f0358a955e8b5d4bc36632ea3cb57b532514bf971c4337efaa"
