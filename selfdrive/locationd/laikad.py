@@ -106,6 +106,8 @@ class Laikad:
     self.use_qcom = use_qcom
     self.first_log_time = None
     self.ttff = -1
+    self.measurement_lag = 0.630 if self.use_qcom else 0.095
+
 
     # qcom specific stuff
     self.qcom_reports_received = 4
@@ -168,53 +170,37 @@ class Laikad:
       only_gps_meas =  [m for m in measurements if m.constellation_id == ConstellationId.GPS]
       if len(only_gps_meas) >= (min_measurements + 1):
         measurements = only_gps_meas
-      position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
 
+      position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
       # outlier rejection
       if len(measurements) >= min_measurements + 1:
         stds = np.array([m.observables_std['C1C'] for m in measurements])
         ratios = np.abs(pr_residuals/stds)
         max_idx = np.argmax(ratios)
-        if ratios[max_idx] > 10:
-          print(f'{len(measurements)} measurements for pos')
-          print(f'outlier rejected, {measurements[max_idx].observables["D1C"]}')
-          print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
+        if ratios[max_idx] > 5:
           measurements.pop(max_idx)
           position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
 
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
-
-      position_std_residual = np.median(np.abs(pr_residuals))
       position_std = pos_std[:3]
-      #position_std = np.clip(position_std, 5*position_std_residual, np.inf)
 
 
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
-
+      # outlier rejection
       if len(measurements) >= min_measurements + 1:
         stds = np.array([m.observables_std['D1C'] for m in measurements])
         ratios = np.abs(prr_residuals/stds)
         max_idx = np.argmax(ratios)
         if ratios[max_idx] > 5:
-          print(f'{len(measurements)} measurements for vel')
-          print('outlier rejected, {measurements[max_idx].observables_std["D1C"]}')
-          print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
           measurements.pop(max_idx)
           velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
 
-
-      print("SAT 7")
-      print([x.observables for x in measurements if x.sv_id == 7])
-      print([x.observables_std for x in measurements if x.sv_id == 7])
       if len(velocity_solution) < 3:
         return None
       velocity_estimate = velocity_solution[:3]
-
-      velocity_std_residual = np.median(np.abs(prr_residuals))
       velocity_std = vel_std[:3]
-      #velocity_std = np.clip(velocity_std, 5*velocity_std_residual, np.inf)
 
       return position_estimate, position_std, velocity_estimate, velocity_std
 
