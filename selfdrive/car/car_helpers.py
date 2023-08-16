@@ -93,8 +93,6 @@ def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]
       if can.src < 128:
         if can.src not in finger:
           finger[can.src] = {}
-        if can.address == 1479:
-          print(frame, 'new f', can.address, len(can.dat))
         finger[can.src][can.address] = len(can.dat)
 
       for b in candidate_cars:
