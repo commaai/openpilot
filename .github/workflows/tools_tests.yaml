@@ -81,6 +81,8 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
+      with:
+        git_lfs: false
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
