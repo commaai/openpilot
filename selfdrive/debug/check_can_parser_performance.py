@@ -8,7 +8,7 @@ from selfdrive.car.tests.routes import CarTestRoute
 from selfdrive.car.tests.test_models import TestCarModelBase
 from tools.plotjuggler.juggle import DEMO_ROUTE
 
-N_RUNS = 5
+N_RUNS = 10
 
 
 class CarModelTestCase(TestCarModelBase):
