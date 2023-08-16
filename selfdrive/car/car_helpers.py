@@ -85,9 +85,7 @@ def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]
   done = False
 
   while not done:
-    a = next_can()
-
-    for can in a:
+    for can in next_can():
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
