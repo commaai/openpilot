@@ -50,9 +50,9 @@ class CarController:
 
     if self.CP.openpilotLongitudinalControl:
       if CC.longActive:
-        apply_throttle = int(round(interp(actuators.accel, self.params.THROTTLE_LOOKUP_BP, self.params.THROTTLE_LOOKUP_BP)))
-        apply_rpm = int(round(interp(actuators.accel, self.params.RPM_LOOKUP_BP, self.params.RPM_LOOKUP_BP)))
-        apply_brake = int(round(interp(actuators.accel, self.params.BRAKE_LOOKUP_BP, self.params.BRAKE_LOOKUP_V)))
+        apply_throttle = int(round(interp(actuators.accel, CarControllerParams.THROTTLE_LOOKUP_BP, CarControllerParams.THROTTLE_LOOKUP_V)))
+        apply_rpm = int(round(interp(actuators.accel, CarControllerParams.RPM_LOOKUP_BP, CarControllerParams.RPM_LOOKUP_V)))
+        apply_brake = int(round(interp(actuators.accel, CarControllerParams.BRAKE_LOOKUP_BP, CarControllerParams.BRAKE_LOOKUP_V)))
 
         # limit min and max values
         cruise_throttle = clip(apply_throttle, CarControllerParams.THROTTLE_MIN, CarControllerParams.THROTTLE_MAX)
