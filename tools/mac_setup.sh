@@ -45,8 +45,6 @@ brew "libusb"
 brew "libtool"
 brew "llvm"
 brew "openssl@3.0"
-brew "pyenv"
-brew "pyenv-virtualenv"
 brew "qt@5"
 brew "zeromq"
 brew "gcc@12"
@@ -71,7 +69,6 @@ export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
-eval "$(pyenv init --path)"
 $DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
 

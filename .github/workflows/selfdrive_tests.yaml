@@ -118,8 +118,6 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
-          ~/github_brew_cache_entries.txt
-          ~/.pyenv
           ~/Library/Caches/pypoetry
           /usr/local/Cellar
           /usr/local/opt
@@ -151,7 +149,8 @@ jobs:
       run: |
         cat $HOME/.bash_profile
         source $HOME/.bash_profile
-        env
+        echo "PATH: $PATH"
+        echo "PYENV_ROOT: $PYENV_ROOT"
         poetry run scons -j$(nproc)
     - name: Run tests
       run: |
