@@ -69,13 +69,6 @@ export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
 export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
-# openpilot environment
-if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
-  echo "source $ROOT/tools/openpilot_env.sh" >> $RC_FILE
-  source "$ROOT/tools/openpilot_env.sh"
-  echo "Added openpilot_env to RC file: $RC_FILE"
-fi
-
 # install python dependencies
 $DIR/install_python_dependencies.sh
 eval "$(pyenv init --path)"
