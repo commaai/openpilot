@@ -7,11 +7,11 @@ from collections import defaultdict, Counter
 from typing import List, Optional, Tuple
 from parameterized import parameterized_class
 
-from cereal import log, car
+from cereal import log, car, messaging
 from common.basedir import BASEDIR
 from common.realtime import DT_CTRL
 from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces, can_fingerprint
+from selfdrive.car.car_helpers import interfaces, can_fingerprint
 from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import CAR as HONDA, HONDA_BOSCH
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -104,20 +104,12 @@ class TestCarModelBase(unittest.TestCase):
 
       car_fw = []
       can_msgs = []
-      fingerprint = defaultdict(dict)
       experimental_long = False
       enabled_toggle = True
       dashcam_only = False
       for msg in lr:
         if msg.which() == "can":
           can_msgs.append(msg)
-          if len(can_msgs) <= FRAME_FINGERPRINT+2:
-            # print('here')
-            for m in msg.can:
-              if m.address == 1479:
-                print(m.address, len(m.dat))
-              if m.src < 128:
-                fingerprint[m.src][m.address] = len(m.dat)
 
         elif msg.which() == "carParams":
           car_fw = msg.carParams.carFw
@@ -137,14 +129,9 @@ class TestCarModelBase(unittest.TestCase):
     else:
       raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded?")
 
+    no_can = messaging.new_message('can', 0)
     can_msgs_iter = iter(can_msgs)
-
-    def next_can():
-      # TODO: can also return empty can Event
-      msg_or_none = next(can_msgs_iter, None)
-      return msg_or_none.can if msg_or_none else []
-
-    _, new_fingerprint = can_fingerprint(next_can)
+    _, fingerprint = can_fingerprint(lambda: next(can_msgs_iter, no_can))
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = enabled_toggle and not dashcam_only
