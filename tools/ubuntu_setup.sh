@@ -141,13 +141,6 @@ fi
 # python setup
 $DIR/install_python_dependencies.sh
 
-source ~/.bashrc
-if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$ROOT" >> ~/.bashrc
-  source ~/.bashrc
-  echo "added openpilot_env to bashrc"
-fi
-
 echo
 echo "----   OPENPILOT SETUP DONE   ----"
 echo "Open a new shell or configure your active shell env by running:"
