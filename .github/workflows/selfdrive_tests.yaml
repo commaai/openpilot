@@ -150,11 +150,11 @@ jobs:
     - name: Build openpilot
       run: |
         source $HOME/.bash_profile
+        env
         poetry run scons -j$(nproc)
     - name: Run tests
       run: |
         source $HOME/.bash_profile
-        env
         poetry run tools/plotjuggler/test_plotjuggler.py
     - name: Pre Cache - Cleanup scons cache
       if: github.ref == 'refs/heads/master'
