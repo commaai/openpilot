@@ -30,7 +30,7 @@ COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system
 COPY ./*.md ${OPENPILOT_PATH}/
 
-RUN --mount=type=bind,from=scons-cache,source=/tmp/scons_cache,target=/tmp/scons_cache scons -j$(nproc)
+RUN --mount=type=bind,from=scons-cache,source=/tmp/scons_cache,target=/tmp/scons_cache scons --cache-readonly -j$(nproc)
 
 RUN apt update && apt install doxygen -y
 COPY ./docs ${OPENPILOT_PATH}/docs
