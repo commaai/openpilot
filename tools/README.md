@@ -40,9 +40,7 @@ scons -u -j$(nproc)
 
 openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of you local setup.
 
-Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including Visual Studio Code. To start using it in VS Code, make sure you have `docker` installed. Then install `Dev Containers` extension. More detailed installation instructions can be found [here](https://code.visualstudio.com/docs/devcontainers/containers#_installation).
-
-After installing prerequisites, start VS Code and run `Dev Containers: Open Folder in Container...` command from the Command Palette (`F1`) and select openpilot project directory.
+Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers).
 
 #### X11 forwarding on macOS
 
