@@ -38,7 +38,7 @@ runs:
       if: ${{ inputs.setup_docker_scons_cache == 'true' }}
       run: |
         cp Dockerfile.scons_cache ~
-        cd ~/scons_cache
+        cd ~
         DOCKER_BUILDKIT=1 docker build -t scons-cache -f Dockerfile.scons_cache .
     # build our docker image
     - shell: bash
