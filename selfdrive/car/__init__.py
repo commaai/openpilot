@@ -60,7 +60,7 @@ def scale_rot_inertia(mass, wheelbase):
 
 # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
 # mass and CG position, so all cars will have approximately similar dyn behaviors
-def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor=1.0):
+def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor):
   center_to_rear = wheelbase - center_to_front
   tire_stiffness_front = (CivicParams.TIRE_STIFFNESS_FRONT * tire_stiffness_factor) * mass / CivicParams.MASS * \
                          (center_to_rear / wheelbase) / (CivicParams.CENTER_TO_REAR / CivicParams.WHEELBASE)
@@ -132,7 +132,7 @@ def apply_std_steer_angle_limits(apply_angle, apply_angle_last, v_ego, LIMITS):
   return clip(apply_angle, apply_angle_last - angle_rate_lim, apply_angle_last + angle_rate_lim)
 
 
-def common_fault_avoidance(measured_value: float, max_value: float, request: bool, above_limit_frames: int,
+def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_frames: int,
                            max_above_limit_frames: int, max_mismatching_frames: int = 1):
   """
   Several cars have the ability to work around their EPS limits by cutting the
@@ -140,7 +140,7 @@ def common_fault_avoidance(measured_value: float, max_value: float, request: boo
   """
 
   # Count up to max_above_limit_frames, at which point we need to cut the request for above_limit_frames to avoid a fault
-  if request and abs(measured_value) >= max_value:
+  if request and fault_condition:
     above_limit_frames += 1
   else:
     above_limit_frames = 0
@@ -213,3 +213,24 @@ class CanBusBase:
     else:
       num = len(CP.safetyConfigs)
     self.offset = 4 * (num - 1)
+
+
+class CanSignalRateCalculator:
+  """
+  Calculates the instantaneous rate of a CAN signal by using the counter
+  variable and the known frequency of the CAN message that contains it.
+  """
+  def __init__(self, frequency):
+    self.frequency = frequency
+    self.previous_counter = 0
+    self.previous_value = 0
+    self.rate = 0
+
+  def update(self, current_value, current_counter):
+    if current_counter != self.previous_counter:
+      self.rate = (current_value - self.previous_value) * self.frequency
+
+    self.previous_counter = current_counter
+    self.previous_value = current_value
+
+    return self.rate

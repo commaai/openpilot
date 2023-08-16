@@ -6,6 +6,13 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 
+static std::map<cereal::NavInstruction::Direction, QString> DIRECTIONS = {
+  {cereal::NavInstruction::Direction::NONE, "none"},
+  {cereal::NavInstruction::Direction::LEFT, "left"},
+  {cereal::NavInstruction::Direction::RIGHT, "right"},
+  {cereal::NavInstruction::Direction::STRAIGHT, "straight"},
+};
+
 class MapInstructions : public QWidget {
   Q_OBJECT
 
