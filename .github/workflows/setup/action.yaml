@@ -3,7 +3,6 @@ name: 'openpilot env setup'
 inputs:
   git_lfs:
     description: 'Whether or not to pull the git lfs'
-    type: boolean
     required: false
     default: 'true'
 
