@@ -66,9 +66,9 @@ SKIP_ENV_VAR = "SKIP_LONG_TESTS"
 
 
 class TestCarModelBase(unittest.TestCase):
-  car_model = None
-  test_route = None
-  ci = True
+  car_model: Optional[str] = None
+  test_route: Optional[CarTestRoute] = None
+  ci: bool = True
 
   @unittest.skipIf(SKIP_ENV_VAR in os.environ, f"Long running test skipped. Unset {SKIP_ENV_VAR} to run")
   @classmethod
