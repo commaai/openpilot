@@ -16,6 +16,9 @@ documentation = "https://docs.comma.ai"
 
 
 [tool.poetry.dependencies]
+laika = { path = "./laika_repo/" , develop = true }
+rednose = { path = "./rednose_repo/" , develop = true }
+tinygrad = { path = "./tinygrad_repo/" , develop = true }
 python = "~3.11"
 atomicwrites = "*"
 aiohttp = "*"
