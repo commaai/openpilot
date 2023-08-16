@@ -16,7 +16,7 @@ def create_steering_control(packer, apply_steer, steer_req):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
-def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_active, long_enabled, brake_cmd, cruise_throttle):
+def create_es_distance(packer, es_distance_msg, bus, pcm_cancel_cmd, long_enabled = False, brake_cmd = False, cruise_throttle = 0):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -116,7 +116,7 @@ def create_es_lkas_state(packer, es_lkas_state_msg, enabled, visual_alert, left_
 
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, values)
 
-def create_es_dashstatus(packer, dashstatus_msg, enabled, long_active, long_enabled, lead_visible):
+def create_es_dashstatus(packer, dashstatus_msg, enabled, long_enabled, long_active, lead_visible):
   values = {s: dashstatus_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
@@ -187,7 +187,7 @@ def create_es_brake(packer, es_brake_msg, enabled, brake_value):
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
-def create_es_status(packer, es_status_msg, long_active, long_enabled, cruise_rpm):
+def create_es_status(packer, es_status_msg, long_enabled, long_active, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
     "CHECKSUM",
     "COUNTER",
