@@ -108,7 +108,7 @@ class Laikad:
     self.ttff = -1
 
     # qcom specific stuff
-    self.qcom_reports_received = 2
+    self.qcom_reports_received = 4
     self.qcom_reports = []
 
   def load_cache(self):
@@ -170,12 +170,12 @@ class Laikad:
 
       # outlier rejection
       if len(measurements) >= min_measurements + 1:
-        print(f'{len(measurements)} measurements for pos')
         stds = np.array([m.observables_std['C1C'] for m in measurements])
         ratios = np.abs(pr_residuals/stds)
         max_idx = np.argmax(ratios)
-        print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
         if ratios[max_idx] > 10:
+          print(f'{len(measurements)} measurements for pos')
+          print(f'outlier rejected, {measurements[max_idx].observables["D1C"]}')
           print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
           measurements.pop(max_idx)
           position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
@@ -192,17 +192,20 @@ class Laikad:
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
 
       if len(measurements) >= min_measurements + 1:
-        print(f'{len(measurements)} measurements for vel')
         stds = np.array([m.observables_std['D1C'] for m in measurements])
         ratios = np.abs(prr_residuals/stds)
         max_idx = np.argmax(ratios)
-        print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
         if ratios[max_idx] > 10:
+          print(f'{len(measurements)} measurements for vel')
+          print('outlier rejected, {measurements[max_idx].observables_std["D1C"]}')
           print(ratios[max_idx], measurements[max_idx].constellation_id, measurements[max_idx].sv_id)
           measurements.pop(max_idx)
           velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
 
 
+      print("SAT 7")
+      print([x.observables for x in measurements if x.sv_id == 7])
+      print([x.observables_std for x in measurements if x.sv_id == 7])
       if len(velocity_solution) < 3:
         return None
       velocity_estimate = velocity_solution[:3]
@@ -214,24 +217,41 @@ class Laikad:
       return position_estimate, position_std, velocity_estimate, velocity_std
 
   def gps_time_from_qcom_report(self, gnss_msg):
-    report = gnss_msg.drMeasurementReport
-    if report.source == log.QcomGnss.MeasurementSource.gps:
-      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-    elif report.source == log.QcomGnss.MeasurementSource.sbas:
-      report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-    elif report.source == log.QcomGnss.MeasurementSource.glonass:
-      report_time = GPSTime.from_glonass(report.glonassYear,
-                                            report.glonassDay,
-                                            report.glonassMilliseconds / 1000.0)
+    if gnss_msg.which() == 'measurementReport':
+      report = gnss_msg.measurementReport
+      if report.source == log.QcomGnss.MeasurementSource.gps:
+        report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
+      elif report.source == log.QcomGnss.MeasurementSource.sbas:
+        report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
+      elif report.source == log.QcomGnss.MeasurementSource.glonass:
+        report_time = GPSTime.from_glonass(report.glonassCycleNumber,
+                                              report.glonassNumberOfDays,
+                                              report.milliseconds / 1000.0)
+      else:
+        raise NotImplementedError(f'Unknownconstellation {report.source}')
     else:
-      raise NotImplementedError(f'Unknownconstellation {report.source}')
+      report = gnss_msg.drMeasurementReport
+      if report.source == log.QcomGnss.MeasurementSource.gps:
+        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+      elif report.source == log.QcomGnss.MeasurementSource.sbas:
+        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
+      elif report.source == log.QcomGnss.MeasurementSource.glonass:
+        report_time = GPSTime.from_glonass(report.glonassYear,
+                                              report.glonassDay,
+                                              report.glonassMilliseconds / 1000.0)
+      else:
+        raise NotImplementedError(f'Unknownconstellation {report.source}')
+    print(report.source, report_time, self.qcom_reports_received)
     return report_time
 
   def is_good_report(self, gnss_msg):
-    if gnss_msg.which() == 'drMeasurementReport' and self.use_qcom:
+    if gnss_msg.which() in ['drMeasurementReport', 'measurementReport'] and self.use_qcom:
       # TODO: Understand and use remaining unknown constellations
       try:
-        constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
+        if gnss_msg.which() == 'drMeasurementReport':
+          constellation_id = ConstellationId.from_qcom_source(gnss_msg.drMeasurementReport.source)
+        else:
+          constellation_id = ConstellationId.from_qcom_source(gnss_msg.measurementReport.source)
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
         report_time = self.gps_time_from_qcom_report(gnss_msg)
       except NotImplementedError:
@@ -248,8 +268,13 @@ class Laikad:
   def read_report(self, gnss_msg):
     if self.use_qcom:
       # QCOM reports are per constellation, so we need to aggregate them
-      report = gnss_msg.drMeasurementReport
+      # Additionally, the pseudoranges are broken in the measurementReports
+      # and the doppler filteredSpeed is broken in the drMeasurementReports
       report_time = self.gps_time_from_qcom_report(gnss_msg)
+      if gnss_msg.which() == 'drMeasurementReport':
+        report = gnss_msg.drMeasurementReport
+      else:
+        report = gnss_msg.measurementReport
 
       if report_time - self.last_report_time > 0:
         self.qcom_reports_received = max(1, len(self.qcom_reports))
@@ -259,9 +284,30 @@ class Laikad:
       self.last_report_time = report_time
 
       new_meas = []
+      new_meas_finespeed = []
       if len(self.qcom_reports) == self.qcom_reports_received:
         for report in self.qcom_reports:
-          new_meas.extend(read_raw_qcom(report))
+          if 'DrMeasurementReport' in str(report.schema):
+            new_meas.extend(read_raw_qcom(report))
+          else:
+            new_meas_finespeed.extend(read_raw_qcom(report))
+        print(f'new meas {len(new_meas)} {len(new_meas_finespeed)}')
+
+      for m in new_meas_finespeed:
+        print(m.observables['D1C'])
+      dicto = {}
+      for meas in new_meas:
+        dicto[meas.prn] = meas
+      for meas in new_meas_finespeed:
+        if meas.prn in dicto:
+          dicto[meas.prn].observables['D1C'] = meas.observables['D1C']
+          dicto[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
+      new_meas = list(dicto.values())
+      new_meas = [m for m in new_meas if np.isfinite(m.observables['D1C'])]
+      print(new_meas)
+      for m in new_meas:
+        print(m.observables['D1C'])
+
 
     else:
       report = gnss_msg.measurementReport
