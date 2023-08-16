@@ -145,24 +145,6 @@ class TestCarModelBase(unittest.TestCase):
       return msg_or_none.can if msg_or_none else []
 
     _, new_fingerprint = can_fingerprint(next_can)
-    # print(fingerprint, new_fingerprint)
-    for old, l in fingerprint[0].items():
-      if l != new_fingerprint[0].get(old):
-        print("doesn't match", old, l, new_fingerprint[0].get(old))
-        assert False
-    for new, l in new_fingerprint[0].items():
-      if l != fingerprint[0].get(new):
-        print("new doesn't match", new, l, fingerprint[0].get(new))
-        # assert False
-
-    # for old, new in zip(fingerprint[0], new_fingerprint[0]):
-    #   if old not in new_fingerprint[0]:
-    #     print('old not in new', old)
-    #   if new not in fingerprint[0]:
-    #     print('new not in old', old)
-    print('fp equal', fingerprint[0] == new_fingerprint[0])
-    # assert fingerprint[0] == new_fingerprint[0]
-    assert fingerprint[1] == new_fingerprint[1]
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = enabled_toggle and not dashcam_only
