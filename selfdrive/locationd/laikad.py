@@ -366,7 +366,7 @@ class Laikad:
   def process_gnss_msg(self, gnss_msg, gnss_mono_time: int, block=False):
     out_msg = messaging.new_message("gnssMeasurements")
     t = gnss_mono_time * 1e-9
-    msg_dict: Dict[str, Any] = {"measTime": gnss_mono_time}
+    msg_dict: Dict[str, Any] = {"measTime": gnss_mono_time - int(1e9 * self.measurement_lag)}
     if self.first_log_time is None:
       self.first_log_time = 1e-9 * gnss_mono_time
     if self.is_ephemeris(gnss_msg):

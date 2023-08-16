@@ -302,7 +302,6 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
   }
 
   double sensor_time = log.getMeasTime() * 1e-9;
-  sensor_time -= 0.630;
 
   auto ecef_pos_v = log.getPositionECEF().getValue();
   VectorXd ecef_pos = Vector3d(ecef_pos_v[0], ecef_pos_v[1], ecef_pos_v[2]);
