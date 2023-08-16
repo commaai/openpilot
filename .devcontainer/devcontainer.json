@@ -7,7 +7,7 @@
   "privileged": true,
   "containerEnv": {
     "DISPLAY": "${localEnv:DISPLAY}",
-    "PYTHONPATH": "/workspaces/openpilot",
+    "PYTHONPATH": "${containerWorkspaceFolder}",
     "force_color_prompt": "1"
   },
   "runArgs": [
