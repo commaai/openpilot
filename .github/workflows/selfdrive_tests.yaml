@@ -149,6 +149,7 @@ jobs:
         PYTHONWARNINGS: default
     - name: Build openpilot
       run: |
+        cat $HOME/.bash_profile
         source $HOME/.bash_profile
         env
         poetry run scons -j$(nproc)
