@@ -8,7 +8,7 @@ import threading
 
 from cereal import car, log
 from common.params import Params
-from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.car_helpers import interfaces, can_fingerprint
 from selfdrive.car.fingerprints import FW_VERSIONS, _FINGERPRINTS as FINGERPRINTS
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
@@ -40,26 +40,12 @@ class TestFwFingerprint(unittest.TestCase):
     car_fingerprint = None
 
     for fingerprint in fingerprints:  # can be multiple fingerprints for each platform
-      for address, length in random.sample(list(fingerprint.items()), min(max(len(fingerprint) - 20, 20), len(fingerprint))):
-        print('len', len(fingerprint))
-        print(address)
-        can = log.CanData(address=address, dat=b'\x00' * length)
-        for b in candidate_cars:
-          # Ignore extended messages and VIN query response.
-          if can.src == b and can.address < 0x800 and can.address not in (0x7df, 0x7e0, 0x7e8):
-            candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
-            print(candidate_cars)
-            print('len', len(fingerprint))
 
-        for b in candidate_cars:
-          if len(candidate_cars[b]) == 1:# and frame > FRAME_FINGERPRINT:
-            # fingerprint done
-            car_fingerprint = candidate_cars[b][0]
-            print('here!', car_fingerprint)
-            break
-            # self.assertEqual(car_fingerprint, car_model)
+      fingerprint_iter = ([log.CanData(address=int(address), dat=b'\x00' * int(length))]
+                          for address, length in list(fingerprint.items()))
+      car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, []))
       self.assertEqual(car_fingerprint, car_model)
-
+      print(car_fingerprint, finger)
 
 # class TestFwFingerprint(unittest.TestCase):
 #   def assertFingerprints(self, candidates, expected):
