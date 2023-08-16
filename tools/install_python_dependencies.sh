@@ -14,7 +14,6 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 
-  echo -e "\n. ~/.pyenvrc" >> $RC_FILE
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
   export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
@@ -23,9 +22,9 @@ if [ -z "\$PYENV_ROOT" ]; then
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
+  echo -e "\nsource ~/.pyenvrc" >> $RC_FILE
 
   # activate pyenv now
-  exec "$SHELL"
   source $RC_FILE
 fi
 
