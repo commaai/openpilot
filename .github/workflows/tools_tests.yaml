@@ -56,6 +56,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
+        setup_docker_scons_cache: true
         submodules: true
     - uses: ./.github/workflows/setup
     - name: Build base cl image
