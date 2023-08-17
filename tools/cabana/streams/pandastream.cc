@@ -7,6 +7,20 @@
 
 #include "selfdrive/ui/qt/util.h"
 
+// TODO: remove clearLayout
+static void clearLayout(QLayout* layout) {
+  while (layout->count() > 0) {
+    QLayoutItem* item = layout->takeAt(0);
+    if (QWidget* widget = item->widget()) {
+      widget->deleteLater();
+    }
+    if (QLayout* childLayout = item->layout()) {
+      clearLayout(childLayout);
+    }
+    delete item;
+  }
+}
+
 PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
   if (config.serial.isEmpty()) {
     auto serials = Panda::list();

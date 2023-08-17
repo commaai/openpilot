@@ -50,7 +50,7 @@ class BasePart:
 
 class EnumBase(Enum):
   @property
-  def type(self):
+  def part_type(self):
     return PartType(self.__class__)
 
 
