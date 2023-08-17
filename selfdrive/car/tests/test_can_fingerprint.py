@@ -9,7 +9,7 @@ from selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 
 class TestCanFingerprint(unittest.TestCase):
   @parameterized.expand([(c, f) for c, f in FINGERPRINTS.items()])
-  def test_fingerprint(self, car_model, fingerprints):
+  def test_can_fingerprint(self, car_model, fingerprints):
     for fingerprint in fingerprints:  # can have multiple fingerprints for each platform
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=b'\x00' * length)
