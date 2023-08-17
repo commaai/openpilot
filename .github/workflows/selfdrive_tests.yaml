@@ -118,6 +118,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: |
+          ./.env
           ~/github_brew_cache_entries.txt
           ~/.pyenv
           ~/Library/Caches/pypoetry
