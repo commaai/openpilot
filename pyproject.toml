@@ -101,7 +101,7 @@ types-pycurl = "*"
 types-PyYAML = "*"
 types-requests = "*"
 types-tabulate = "*"
-pyqt5 = "*"
+pyqt5 = { version = "*", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
 
 
 [build-system]
