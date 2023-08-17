@@ -128,7 +128,6 @@ def string_to_direction(direction: str) -> str:
       if prefix is not None:
         return prefix + d.capitalize()
       return d
-
   return 'none'
 
 
