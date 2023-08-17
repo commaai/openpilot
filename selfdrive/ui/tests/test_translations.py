@@ -87,9 +87,16 @@ class TestTranslations(unittest.TestCase):
               if translation.get("type") == "unfinished":
                 continue
 
-              self.assertNotIn(None, numerusform, "Ensure all plural translation forms are completed.")
-              self.assertTrue(all(re.search("%[0-9]+", t) is None for t in numerusform),
-                              "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
+              for nf in numerusform:
+                self.assertIsNotNone(nf, "Ensure all plural translation forms are completed.")
+                self.assertIn("%n", nf, "Ensure numerus argument (%n) exists in translation.")
+                self.assertIsNone(re.search("%[0-9]+", nf), "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
+            else:
+              translation = message.find("translation")
+              if translation.get("type") == "unfinished":
+                continue
+              self.assertTrue(translation.text is not None and len(translation.text.strip()), translation.text)
+              # print(message.find("translation").text)
 
   def test_no_locations(self):
     for name, file in self.translation_files.items():
