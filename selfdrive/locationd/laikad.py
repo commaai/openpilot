@@ -206,7 +206,6 @@ class Laikad:
                                               report.glonassMilliseconds / 1000.0)
       else:
         raise NotImplementedError(f'Unknownconstellation {report.source}')
-    print(report.source, report_time, self.qcom_reports_received)
     return report_time
 
   def is_good_report(self, gnss_msg):
@@ -256,10 +255,6 @@ class Laikad:
             new_meas.extend(read_raw_qcom(report))
           else:
             new_meas_finespeed.extend(read_raw_qcom(report))
-        print(f'new meas {len(new_meas)} {len(new_meas_finespeed)}')
-
-      for m in new_meas_finespeed:
-        print(m.observables['D1C'])
       dicto = {}
       for meas in new_meas:
         dicto[meas.prn] = meas
@@ -269,11 +264,6 @@ class Laikad:
           dicto[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
       new_meas = list(dicto.values())
       new_meas = [m for m in new_meas if np.isfinite(m.observables['D1C'])]
-      print(new_meas)
-      for m in new_meas:
-        print(m.observables['D1C'])
-
-
     else:
       report = gnss_msg.measurementReport
       self.last_report_time = GPSTime(report.gpsWeek, report.rcvTow)
@@ -503,7 +493,7 @@ def main(sm=None, pm=None):
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling
-  use_internet = True  # "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = False #  "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
