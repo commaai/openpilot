@@ -8,6 +8,9 @@ from common.conversions import Conversions
 from common.numpy_fast import clip
 from common.params import Params
 
+DIRECTIONS = ('left', 'right', 'straight')
+MODIFIABLE_DIRECTIONS = ('left', 'right'
+                                 '')
 EARTH_MEAN_RADIUS = 6371007.2
 SPEED_CONVERSIONS = {
     'km/h': Conversions.KPH_TO_MS,
@@ -119,14 +122,10 @@ def coordinate_from_param(param: str, params: Optional[Params] = None) -> Option
 
 
 def string_to_direction(direction: str) -> str:
-  prefix = None
-  if 'slight' in direction:
-    prefix = 'slight'
-
-  for d in ['left', 'right', 'straight']:
+  for d in DIRECTIONS:
     if d in direction:
-      if prefix is not None:
-        return prefix + d.capitalize()
+      if 'slight' in d and d in MODIFIABLE_DIRECTIONS:
+        return 'slight' + d.capitalize()
       return d
   return 'none'
 
