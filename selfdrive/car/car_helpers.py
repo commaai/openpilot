@@ -38,7 +38,7 @@ def get_one_can(logcan):
   while True:
     can = messaging.recv_one_retry(logcan)
     if len(can.can) > 0:
-      return can.can
+      return can
 
 
 def load_interfaces(brand_names):
@@ -85,7 +85,9 @@ def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]
   done = False
 
   while not done:
-    for can in next_can():
+    a = next_can()
+
+    for can in a.can:
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
