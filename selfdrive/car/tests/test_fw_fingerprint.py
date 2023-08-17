@@ -6,12 +6,10 @@ from collections import defaultdict
 from parameterized import parameterized
 import threading
 
-from cereal import car, log, messaging
-from common.numpy_fast import clip
+from cereal import car
 from common.params import Params
-from selfdrive.car.car_helpers import interfaces, can_fingerprint
-from selfdrive.car.fingerprints import FW_VERSIONS, _FINGERPRINTS as FINGERPRINTS
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
+from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, match_fw_to_car, get_fw_versions, get_present_ecus
 from selfdrive.car.vin import get_vin
 
@@ -28,22 +26,6 @@ class FakeSocket:
   def send(self, msg):
     pass
 
-
-class TestFwFingerprint(unittest.TestCase):
-  def setUp(self):
-    pass
-
-  @parameterized.expand([(c, f) for c, f in FINGERPRINTS.items()])
-  def test_fingerprint(self, car_model, fingerprints):
-    for fingerprint in fingerprints:  # can have multiple fingerprints for each platform
-      can = messaging.new_message('can', 1)
-      can.can = [log.CanData(address=address, dat=b'\x00' * length)
-                 for address, length in fingerprint.items()]
-      fingerprint_iter = iter([can])
-
-      empty_can = messaging.new_message('can', 0)
-      car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, empty_can))
-      self.assertEqual(car_fingerprint, car_model)
 
 class TestFwFingerprint(unittest.TestCase):
   def assertFingerprints(self, candidates, expected):
