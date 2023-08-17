@@ -11,6 +11,7 @@ from selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, u
 TMP_TRANSLATIONS_DIR = os.path.join(TRANSLATIONS_DIR, "tmp")
 UNFINISHED_TRANSLATION_TAG = "<translation type=\"unfinished\""  # non-empty translations can be marked unfinished
 LOCATION_TAG = "<location "
+FORMAT_ARG = re.compile("%[0-9]+")
 
 
 class TestTranslations(unittest.TestCase):
@@ -96,13 +97,13 @@ class TestTranslations(unittest.TestCase):
               for nf in numerusform:
                 self.assertIsNotNone(nf, f"Ensure all plural translation forms are completed: {source_text}")
                 self.assertIn("%n", nf, "Ensure numerus argument (%n) exists in translation.")
-                self.assertIsNone(re.search("%[0-9]+", nf), "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
+                self.assertIsNone(FORMAT_ARG.search(nf), "Plural translations must use %n, not %1, %2, etc.: {}".format(numerusform))
 
             else:
               self.assertIsNotNone(translation.text, f"Ensure translation is completed: {source_text}")
 
-              source_args = re.findall("%[0-9]+", source_text)
-              translation_args = re.findall("%[0-9]+", translation.text)
+              source_args = FORMAT_ARG.findall(source_text)
+              translation_args = FORMAT_ARG.findall(translation.text)
               self.assertEqual(sorted(source_args), sorted(translation_args),
                                f"Ensure format arguments are consistent: `{source_text}` vs. `{translation.text}`")
 
