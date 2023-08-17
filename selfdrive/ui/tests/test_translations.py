@@ -75,6 +75,7 @@ class TestTranslations(unittest.TestCase):
       - that the correct format specifier is used (%n)
       Non-plural:
       - that translation is not empty
+      - that translation format arguments are consistent
     """
     for name, file in self.translation_files.items():
       with self.subTest(name=name, file=file):
@@ -99,6 +100,11 @@ class TestTranslations(unittest.TestCase):
 
             else:
               self.assertIsNotNone(translation.text, f"Ensure translation is completed: {source_text}")
+
+              source_args = re.findall("%[0-9]+", source_text)
+              translation_args = re.findall("%[0-9]+", translation.text)
+              self.assertEqual(sorted(source_args), sorted(translation_args),
+                               f"Ensure format arguments are consistent: `{source_text}` vs. `{translation.text}`")
 
   def test_no_locations(self):
     for name, file in self.translation_files.items():
