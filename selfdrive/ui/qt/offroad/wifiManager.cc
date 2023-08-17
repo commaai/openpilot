@@ -103,22 +103,17 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
       continue;
     }
 
-    uint32_t strength = properties["Strength"].toUInt();
-    SecurityType security = getSecurityType(properties);
-    ConnectedType ctype = ConnectedType::DISCONNECTED;
+    // Implicitly adds new Network
+    seenNetworks[ssid].security_type = getSecurityType(properties);
     if (path.path() == activeAp) {
-      ctype = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
+      seenNetworks[ssid].connected = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
 
-    // Skip if the network with the same ssid is not disconnected or the signal is stronger.
-    auto it = seenNetworks.find(ssid);
-    if (it != seenNetworks.end()) {
-      if (it.value().connected != ConnectedType::DISCONNECTED || it.value().strength >= strength) {
-        continue;
-      }
+    // Show max strength of all access points for ssid
+    uint32_t strength = properties["Strength"].toUInt();
+    if (seenNetworks[ssid].strength < strength) {
+      seenNetworks[ssid].strength = strength;
     }
-
-    seenNetworks[ssid] = {ssid, strength, ctype, security};
   }
 
   emit refreshSignal();
