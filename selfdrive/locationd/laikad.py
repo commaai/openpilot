@@ -18,7 +18,7 @@ from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, get_sv_id
-from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, read_raw_qcom
+from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, get_measurements_from_qcom_reports
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
@@ -104,7 +104,6 @@ class Laikad:
     self.ttff = -1
     self.measurement_lag = 0.630 if self.use_qcom else 0.095
 
-
     # qcom specific stuff
     self.qcom_reports_received = 4
     self.qcom_reports = []
@@ -165,48 +164,18 @@ class Laikad:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
 
       position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
-
       if len(position_solution) < 3:
         return None
       position_estimate = position_solution[:3]
       position_std = pos_std[:3]
 
-
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
-
       if len(velocity_solution) < 3:
         return None
       velocity_estimate = velocity_solution[:3]
       velocity_std = vel_std[:3]
 
       return position_estimate, position_std, velocity_estimate, velocity_std
-
-  def gps_time_from_qcom_report(self, gnss_msg):
-    if gnss_msg.which() == 'measurementReport':
-      report = gnss_msg.measurementReport
-      if report.source == log.QcomGnss.MeasurementSource.gps:
-        report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
-      elif report.source == log.QcomGnss.MeasurementSource.sbas:
-        report_time = GPSTime(report.gpsWeek, report.milliseconds / 1000.0)
-      elif report.source == log.QcomGnss.MeasurementSource.glonass:
-        report_time = GPSTime.from_glonass(report.glonassCycleNumber,
-                                              report.glonassNumberOfDays,
-                                              report.milliseconds / 1000.0)
-      else:
-        raise NotImplementedError(f'Unknownconstellation {report.source}')
-    else:
-      report = gnss_msg.drMeasurementReport
-      if report.source == log.QcomGnss.MeasurementSource.gps:
-        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-      elif report.source == log.QcomGnss.MeasurementSource.sbas:
-        report_time = GPSTime(report.gpsWeek, report.gpsMilliseconds / 1000.0)
-      elif report.source == log.QcomGnss.MeasurementSource.glonass:
-        report_time = GPSTime.from_glonass(report.glonassYear,
-                                              report.glonassDay,
-                                              report.glonassMilliseconds / 1000.0)
-      else:
-        raise NotImplementedError(f'Unknownconstellation {report.source}')
-    return report_time
 
   def is_good_report(self, gnss_msg):
     if gnss_msg.which() in ['drMeasurementReport', 'measurementReport'] and self.use_qcom:
@@ -235,35 +204,15 @@ class Laikad:
       # Additionally, the pseudoranges are broken in the measurementReports
       # and the doppler filteredSpeed is broken in the drMeasurementReports
       report_time = self.gps_time_from_qcom_report(gnss_msg)
-      if gnss_msg.which() == 'drMeasurementReport':
-        report = gnss_msg.drMeasurementReport
-      else:
-        report = gnss_msg.measurementReport
-
       if report_time - self.last_report_time > 0:
         self.qcom_reports_received = max(1, len(self.qcom_reports))
-        self.qcom_reports = [report]
+        self.qcom_reports = [gnss_msg]
       else:
-        self.qcom_reports.append(report)
+        self.qcom_reports.append(gnss_msg)
       self.last_report_time = report_time
 
-      new_meas = []
-      new_meas_finespeed = []
       if len(self.qcom_reports) == self.qcom_reports_received:
-        for report in self.qcom_reports:
-          if 'DrMeasurementReport' in str(report.schema):
-            new_meas.extend(read_raw_qcom(report))
-          else:
-            new_meas_finespeed.extend(read_raw_qcom(report))
-      dicto = {}
-      for meas in new_meas:
-        dicto[meas.prn] = meas
-      for meas in new_meas_finespeed:
-        if meas.prn in dicto:
-          dicto[meas.prn].observables['D1C'] = meas.observables['D1C']
-          dicto[meas.prn].observables_std['D1C'] = meas.observables_std['D1C']
-      new_meas = list(dicto.values())
-      new_meas = [m for m in new_meas if np.isfinite(m.observables['D1C'])]
+        new_meas = get_measurements_from_qcom_reports(self.qcom_reports)
     else:
       report = gnss_msg.measurementReport
       self.last_report_time = GPSTime(report.gpsWeek, report.rcvTow)
@@ -493,7 +442,7 @@ def main(sm=None, pm=None):
 
   # disable until set as main gps source, to better analyze startup time
   # TODO ensure low CPU usage before enabling
-  use_internet = False #  "LAIKAD_NO_INTERNET" not in os.environ
+  use_internet = False  # "LAIKAD_NO_INTERNET" not in os.environ
 
   replay = "REPLAY" in os.environ
   laikad = Laikad(save_ephemeris=not replay, auto_fetch_navs=use_internet, use_qcom=use_qcom)
