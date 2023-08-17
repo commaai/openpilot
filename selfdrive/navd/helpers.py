@@ -124,7 +124,7 @@ def coordinate_from_param(param: str, params: Optional[Params] = None) -> Option
 def string_to_direction(direction: str) -> str:
   for d in DIRECTIONS:
     if d in direction:
-      if 'slight' in d and d in MODIFIABLE_DIRECTIONS:
+      if 'slight' in direction and d in MODIFIABLE_DIRECTIONS:
         return 'slight' + d.capitalize()
       return d
   return 'none'
