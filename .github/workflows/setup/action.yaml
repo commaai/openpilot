@@ -1,10 +1,17 @@
 name: 'openpilot env setup'
 
+inputs:
+  git_lfs:
+    description: 'Whether or not to pull the git lfs'
+    required: false
+    default: 'true'
+
 runs:
   using: "composite"
   steps:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
+      if: ${{ inputs.git_lfs == 'true' }}
       run: git lfs pull
 
     # build cache
