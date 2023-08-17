@@ -1,4 +1,5 @@
 venv/
+.venv/
 .env
 .clang-format
 .DS_Store
