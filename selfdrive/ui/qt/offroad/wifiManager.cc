@@ -97,6 +97,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   for (const QDBusObjectPath &path : wather_reply.value()) {
     QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
     auto properties = replay.value();
+
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) {
       continue;
