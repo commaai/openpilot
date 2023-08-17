@@ -101,7 +101,8 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
 
-    // Add entry for each seen SSID
+    // May be multiple access points for each SSID.
+    // Use first for ssid and security type, then update connected status and strength using all
     if (!seenNetworks.contains(ssid)) {
       seenNetworks[ssid] = {ssid, 0U, ConnectedType::DISCONNECTED, getSecurityType(properties)};
     }
@@ -110,7 +111,6 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
       seenNetworks[ssid].connected = (ssid == connecting_to_network) ? ConnectedType::CONNECTING : ConnectedType::CONNECTED;
     }
 
-    // Show max strength of all access points for ssid
     uint32_t strength = properties["Strength"].toUInt();
     if (seenNetworks[ssid].strength < strength) {
       seenNetworks[ssid].strength = strength;
