@@ -57,10 +57,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Pull LFS
-      run: git lfs pull
-    - name: Build base image
-      run: eval "$BUILD"
+    - uses: ./.github/workflows/setup
     - name: Build base cl image
       run: eval "$BUILD_CL"
     - name: Build simulator image
@@ -75,14 +72,17 @@ jobs:
     name: build docs
     runs-on: ubuntu-20.04
     timeout-minutes: 45
+    env:
+      BUILD: |
+        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest -t $DOCKER_REGISTRY/openpilot-docs-base:latest -f docs/docker/Dockerfile --target openpilot-docs-base .
+        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Build docker container
-      run: |
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest -t $DOCKER_REGISTRY/openpilot-docs-base:latest -f docs/docker/Dockerfile --target openpilot-docs-base .
-        DOCKER_BUILDKIT=1 docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from $DOCKER_REGISTRY/openpilot-docs-base:latest --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+    - uses: ./.github/workflows/setup
+      with:
+        git_lfs: false
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
