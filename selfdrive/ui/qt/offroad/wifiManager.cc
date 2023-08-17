@@ -99,9 +99,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
     auto properties = replay.value();
 
     const QByteArray ssid = properties["Ssid"].toByteArray();
-    if (ssid.isEmpty()) {
-      continue;
-    }
+    if (ssid.isEmpty()) continue;
 
     // Add entry for each seen SSID
     if (!seenNetworks.contains(ssid)) {
