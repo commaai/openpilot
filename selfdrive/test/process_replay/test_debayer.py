@@ -137,7 +137,7 @@ if __name__ == "__main__":
         failed = True
         diff += 'amount of frames not equal\n'
 
-      for i, (frame, cmp_frame) in enumerate(zip(frames, cmp_frames)):
+      for i, (frame, cmp_frame) in enumerate(zip(frames, cmp_frames, strict=True)):
         for j in range(3):
           fr = frame[j]
           cmp_f = cmp_frame[j]
@@ -159,7 +159,7 @@ if __name__ == "__main__":
               diff += f'different at a large amount of pixels ({diff_len})\n'
             else:
               diff += 'different at (frame, yuv, pixel, ref, HEAD):\n'
-              for k in zip(*np.nonzero(frame_diff)):
+              for k in zip(*np.nonzero(frame_diff), strict=True):
                 diff += f'{i}, {yuv_i[j]}, {k}, {cmp_f[k]}, {fr[k]}\n'
 
       if failed:
