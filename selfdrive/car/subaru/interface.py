@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from selfdrive.car import STD_CARGO_KG, get_safety_config
+from selfdrive.car import STD_CARGO_KG, disable_ecu, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.car.subaru.values import CAR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, LKAS_ANGLE, GLOBAL_GEN2, PREGLOBAL_CARS, SubaruFlags
+from system.swaglog import cloudlog
 
 
 class CarInterface(CarInterfaceBase):
@@ -110,6 +111,9 @@ class CarInterface(CarInterfaceBase):
     #ret.experimentalLongitudinalAvailable = candidate not in (GLOBAL_GEN2 | PREGLOBAL_CARS | LKAS_ANGLE)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
 
+    if candidate in GLOBAL_GEN2 and ret.openpilotLongitudinalControl:
+      ret.flags |= SubaruFlags.EYESIGHT_DISABLED.value
+
     if ret.openpilotLongitudinalControl:
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
       ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
@@ -129,6 +133,11 @@ class CarInterface(CarInterfaceBase):
     ret.events = self.create_common_events(ret).to_msg()
 
     return ret
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    if CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+      disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
 
   def apply(self, c, now_nanos):
     return self.CC.update(c, self.CS, now_nanos)

@@ -2,7 +2,7 @@ from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_driver_steer_torque_limits
 from selfdrive.car.subaru import subarucan
-from selfdrive.car.subaru.values import DBC, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
+from selfdrive.car.subaru.values import DBC, GEN2_ES_BUTTONS_DID, GLOBAL_ES_ADDR, GLOBAL_GEN2, PREGLOBAL_CARS, CanBus, CarControllerParams, SubaruFlags
 
 
 class CarController:
@@ -99,6 +99,24 @@ class CarController:
 
           can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg, 0, pcm_cancel_cmd,
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
+          
+        if self.CP.flags & SubaruFlags.EYESIGHT_DISABLED:
+          # Tester present (keeps eyesight disabled)
+          if self.frame % 100 == 0:
+            can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", bus])
+          
+          # read button data request
+          if self.frame % 1 == 0:
+            can_sends.append([GLOBAL_ES_ADDR, 0, b'\x03\x22' + GEN2_ES_BUTTONS_DID + b'\x00\x00\x00\x00', bus])
+          
+          if self.frame % 5 == 0:
+            can_sends.append(subarucan.create_es_highbeamassist(self.packer))
+
+          if self.frame % 10 == 0:
+            can_sends.append(subarucan.create_es_static_1(self.packer))
+
+          if self.frame % 2 == 0:
+            can_sends.append(subarucan.create_es_static_2(self.packer))
       else:
         if pcm_cancel_cmd and (self.frame - self.last_cancel_frame) > 0.2:
           bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
