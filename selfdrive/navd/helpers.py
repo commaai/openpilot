@@ -119,9 +119,16 @@ def coordinate_from_param(param: str, params: Optional[Params] = None) -> Option
 
 
 def string_to_direction(direction: str) -> str:
+  prefix = None
+  if 'slight' in direction:
+    prefix = 'slight'
+
   for d in ['left', 'right', 'straight']:
     if d in direction:
+      if prefix is not None:
+        return prefix + d.capitalize()
       return d
+
   return 'none'
 
 
