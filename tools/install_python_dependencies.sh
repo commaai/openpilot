@@ -14,19 +14,21 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 
+  echo -e "\n. ~/.pyenvrc" >> $RC_FILE
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
   export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH
   export PYENV_ROOT="\$HOME/.pyenv"
-  eval "\$(pyenv init --path)"
   eval "\$(pyenv init -)"
   eval "\$(pyenv virtualenv-init -)"
 fi
 EOF
-  echo -e "\nsource ~/.pyenvrc" >> $RC_FILE
 
-  # activate pyenv now
-  source $RC_FILE
+  # setup now without restarting shell
+  export PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+  export PYENV_ROOT="$HOME/.pyenv"
+  eval "$(pyenv init -)"
+  eval "$(pyenv virtualenv-init -)"
 fi
 
 export MAKEFLAGS="-j$(nproc)"
@@ -50,12 +52,6 @@ pip install poetry==1.5.1
 poetry config virtualenvs.prefer-active-python true --local
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
-if [[ "$(uname)" == 'Darwin' ]]; then
-  echo "# msgq doesn't work on mac" >> $ROOT/.env
-  echo "export ZMQ=1" >> $ROOT/.env
-  echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
-fi
-
 poetry self add poetry-dotenv-plugin@^0.1.0
 
 echo "pip packages install..."
