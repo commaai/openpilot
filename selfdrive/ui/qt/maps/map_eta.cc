@@ -19,17 +19,11 @@ MapETA::MapETA(QWidget *parent) : QWidget(parent) {
 
 void MapETA::paintEvent(QPaintEvent *event) {
   if (!eta_doc.isEmpty()) {
-    QSizeF txt_size = eta_doc.size();
-    while (txt_size.width() >= (width() - UI_BORDER_SIZE * 3)) {
-      font_size -= 5;
-      eta_doc.setDefaultFont(InterFont(font_size));
-      txt_size = eta_doc.size();
-    }
-
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(Qt::NoPen);
     p.setBrush(QColor(0, 0, 0, 150));
+    QSizeF txt_size = adjustSize();
     p.drawRoundedRect((width() - txt_size.width()) / 2 - UI_BORDER_SIZE, 0, txt_size.width() + UI_BORDER_SIZE * 2, height() + 25, 25, 25);
     p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
     eta_doc.drawContents(&p);
@@ -61,4 +55,14 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   setVisible(d >= MANEUVER_TRANSITION_THRESHOLD);
   update();
+}
+
+QSizeF MapETA::adjustSize() {
+  QSizeF size = eta_doc.size();
+  while (size.width() >= (width() - UI_BORDER_SIZE * 3)) {
+    font_size -= 5;
+    eta_doc.setDefaultFont(InterFont(font_size));
+    size = eta_doc.size();
+  }
+  return size;
 }

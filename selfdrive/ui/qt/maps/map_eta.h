@@ -15,6 +15,7 @@ public:
 
 private:
   void paintEvent(QPaintEvent *event) override;
+  QSizeF adjustSize();
   void showEvent(QShowEvent *event) override { format_24h = param.getBool("NavSettingTime24h"); }
 
   bool format_24h = false;
