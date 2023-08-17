@@ -19,18 +19,19 @@ Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir
 }
 
 RouteIdentifier Route::parseRoute(const QString &str) {
-  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
+  QRegExp rx(R"(^(?:([a-z0-9]{16})([|_/]))?(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
   if (rx.indexIn(str) == -1) return {};
 
   const QStringList list = rx.capturedTexts();
-  return {list[1], list[3], list[5].toInt(), list[1] + "|" + list[3]};
+  return {.dongle_id = list[1], .timestamp = list[3], .segment_id = list[5].toInt(), .str = list[1] + "|" + list[3]};
 }
 
 bool Route::load() {
-  if (route_.str.isEmpty()) {
+  if (route_.str.isEmpty() || (data_dir_.isEmpty() && route_.dongle_id.isEmpty())) {
     rInfo("invalid route format");
     return false;
   }
+  date_time_ = QDateTime::fromString(route_.timestamp, "yyyy-MM-dd--HH-mm-ss");
   return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
 }
 

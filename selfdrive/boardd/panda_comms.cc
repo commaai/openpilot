@@ -44,7 +44,7 @@ PandaUsbHandle::PandaUsbHandle(std::string serial) : PandaCommsHandle(serial) {
       ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
-      auto hw_serial = std::string((char *)desc_serial, ret);
+      hw_serial = std::string((char *)desc_serial, ret);
       if (serial.empty() || serial == hw_serial) {
         break;
       }

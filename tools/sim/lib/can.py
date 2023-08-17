@@ -11,19 +11,12 @@ rpacker = CANPacker("acura_ilx_2016_nidec")
 
 def get_car_can_parser():
   dbc_f = 'honda_civic_touring_2016_can_generated'
-  signals = [
-    ("STEER_TORQUE", 0xe4),
-    ("STEER_TORQUE_REQUEST", 0xe4),
-    ("COMPUTER_BRAKE", 0x1fa),
-    ("COMPUTER_BRAKE_REQUEST", 0x1fa),
-    ("GAS_COMMAND", 0x200),
-  ]
   checks = [
     (0xe4, 100),
     (0x1fa, 50),
     (0x200, 50),
   ]
-  return CANParser(dbc_f, signals, checks, 0)
+  return CANParser(dbc_f, checks, 0)
 cp = get_car_can_parser()
 
 def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
@@ -68,6 +61,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   # *** cam bus ***
   msg.append(packer.make_can_msg("STEERING_CONTROL", 2, {}))
   msg.append(packer.make_can_msg("ACC_HUD", 2, {}))
+  msg.append(packer.make_can_msg("LKAS_HUD", 2, {}))
   msg.append(packer.make_can_msg("BRAKE_COMMAND", 2, {}))
 
   # *** radar bus ***

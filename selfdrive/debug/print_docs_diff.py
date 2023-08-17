@@ -9,6 +9,8 @@ from selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
 STAR_ICON = '<a href="##"><img valign="top" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
+VIDEO_ICON = '<a href="{}" target="_blank">\
+                          <img height="18px" src="https://raw.githubusercontent.com/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
@@ -39,8 +41,8 @@ def match_cars(base_cars, new_cars):
 def build_column_diff(base_car, new_car):
   row_builder = []
   for column in Column:
-    base_column = base_car.get_column(column, STAR_ICON, FOOTNOTE_TAG)
-    new_column = new_car.get_column(column, STAR_ICON, FOOTNOTE_TAG)
+    base_column = base_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
+    new_column = new_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
 
     if base_column != new_column:
       row_builder.append(f"{base_column} {ARROW_SYMBOL} {new_column}")
@@ -74,11 +76,11 @@ def print_car_info_diff(path):
 
     # Removals
     for car_info in car_removals:
-      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, FOOTNOTE_TAG) for column in Column]))
+      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
 
     # Additions
     for car_info in car_additions:
-      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, FOOTNOTE_TAG) for column in Column]))
+      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
 
     for new_car, base_car in car_changes:
       # Column changes
@@ -98,7 +100,8 @@ def print_car_info_diff(path):
   if any(len(c) for c in changes.values()):
     markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
 
-    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
+    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"),
+                            ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
       if len(changes[category]):
         markdown_builder.append(title)
         if category not in ("detail",):

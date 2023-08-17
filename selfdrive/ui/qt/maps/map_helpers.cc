@@ -31,7 +31,7 @@ QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
 QMapbox::CoordinatesCollections model_to_collection(
   const cereal::LiveLocationKalman::Measurement::Reader &calibratedOrientationECEF,
   const cereal::LiveLocationKalman::Measurement::Reader &positionECEF,
-  const cereal::ModelDataV2::XYZTData::Reader &line){
+  const cereal::XYZTData::Reader &line){
 
   Eigen::Vector3d ecef(positionECEF.getValue()[0], positionECEF.getValue()[1], positionECEF.getValue()[2]);
   Eigen::Vector3d orient(calibratedOrientationECEF.getValue()[0], calibratedOrientationECEF.getValue()[1], calibratedOrientationECEF.getValue()[2]);
