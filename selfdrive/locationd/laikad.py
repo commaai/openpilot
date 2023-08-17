@@ -18,7 +18,8 @@ from laika.downloader import DownloadFailed
 from laika.ephemeris import EphemerisType, GPSEphemeris, GLONASSEphemeris, ephemeris_structs, parse_qcom_ephem
 from laika.gps_time import GPSTime
 from laika.helpers import ConstellationId, get_sv_id
-from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox, get_measurements_from_qcom_reports
+from laika.raw_gnss import GNSSMeasurement, correct_measurements, process_measurements, read_raw_ublox
+from laika.raw_gnss import gps_time_from_qcom_report, get_measurements_from_qcom_reports
 from laika.opt import calc_pos_fix, get_posfix_sympy_fun, calc_vel_fix, get_velfix_sympy_func
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR, ObservationKind
 from openpilot.selfdrive.locationd.models.gnss_kf import GNSSKalman
@@ -186,7 +187,7 @@ class Laikad:
         else:
           constellation_id = ConstellationId.from_qcom_source(gnss_msg.measurementReport.source)
         good_constellation = constellation_id in [ConstellationId.GPS, ConstellationId.SBAS, ConstellationId.GLONASS]
-        report_time = self.gps_time_from_qcom_report(gnss_msg)
+        report_time = gps_time_from_qcom_report(gnss_msg)
       except NotImplementedError:
         return False
       # Garbage timestamps with week > 32767 are sometimes sent by module.
@@ -203,7 +204,7 @@ class Laikad:
       # QCOM reports are per constellation, so we need to aggregate them
       # Additionally, the pseudoranges are broken in the measurementReports
       # and the doppler filteredSpeed is broken in the drMeasurementReports
-      report_time = self.gps_time_from_qcom_report(gnss_msg)
+      report_time = gps_time_from_qcom_report(gnss_msg)
       if report_time - self.last_report_time > 0:
         self.qcom_reports_received = max(1, len(self.qcom_reports))
         self.qcom_reports = [gnss_msg]
@@ -213,6 +214,8 @@ class Laikad:
 
       if len(self.qcom_reports) == self.qcom_reports_received:
         new_meas = get_measurements_from_qcom_reports(self.qcom_reports)
+      else:
+        new_meas = []
     else:
       report = gnss_msg.measurementReport
       self.last_report_time = GPSTime(report.gpsWeek, report.rcvTow)
