@@ -10,7 +10,6 @@ from pprint import pprint
 import cereal.messaging as messaging
 from cereal import car, log
 from common.params import Params
-from common.spinner import Spinner
 from common.timeout import Timeout
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
@@ -24,11 +23,6 @@ class TestBoardd(unittest.TestCase):
   def setUpClass(cls):
     os.environ['STARTED'] = '1'
     os.environ['BOARDD_LOOPBACK'] = '1'
-    cls.spinner = Spinner()
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.spinner.close()
 
   @phone_only
   @with_processes(['pandad'])
@@ -67,7 +61,6 @@ class TestBoardd(unittest.TestCase):
     n = 200
     for i in range(n):
       print(f"boardd loopback {i}/{n}")
-      self.spinner.update(f"boardd loopback {i}/{n}")
 
       sent_msgs = defaultdict(set)
       for _ in range(random.randrange(20, 100)):
