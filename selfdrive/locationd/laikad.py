@@ -169,14 +169,6 @@ class Laikad:
       min_measurements = 5 if any(p.constellation_id == ConstellationId.GLONASS for p in measurements) else 4
 
       position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
-      # outlier rejection
-      if len(measurements) >= min_measurements + 1:
-        stds = np.array([m.observables_std['C1C'] for m in measurements])
-        ratios = np.abs(pr_residuals/stds)
-        max_idx = np.argmax(ratios)
-        if ratios[max_idx] > 5:
-          measurements.pop(max_idx)
-          position_solution, pr_residuals, pos_std = calc_pos_fix(measurements, self.posfix_functions, min_measurements=min_measurements)
 
       if len(position_solution) < 3:
         return None
@@ -185,14 +177,6 @@ class Laikad:
 
 
       velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
-      # outlier rejection
-      if len(measurements) >= min_measurements + 1:
-        stds = np.array([m.observables_std['D1C'] for m in measurements])
-        ratios = np.abs(prr_residuals/stds)
-        max_idx = np.argmax(ratios)
-        if ratios[max_idx] > 5:
-          measurements.pop(max_idx)
-          velocity_solution, prr_residuals, vel_std = calc_vel_fix(measurements, position_estimate, self.velfix_function, min_measurements=min_measurements)
 
       if len(velocity_solution) < 3:
         return None
