@@ -159,7 +159,7 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.updated("navRoute") && sm["navRoute"].getNavRoute().getCoordinates().size()) {
     auto nav_dest = coordinate_from_param("NavDestination");
     bool allow_open = std::exchange(last_valid_nav_dest, nav_dest) != nav_dest &&
-                      last_valid_nav_dest && !isVisible();
+                      nav_dest && !isVisible();
     qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
 
     // Show map on destination set/change
