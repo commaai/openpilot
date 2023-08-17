@@ -5,7 +5,6 @@
 #include <QAudio>
 #include <QAudioDeviceInfo>
 #include <QDebug>
-#include <QtConcurrent>
 
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
@@ -34,12 +33,12 @@ void Sound::update() {
   sm.update(0);
 
   // scale volume using ambient noise level
-  if (sm.updated("microphone") && !future.isRunning()) {
+  if (sm.updated("microphone")) {
     float volume = util::map_val(sm["microphone"].getMicrophone().getFilteredSoundPressureWeightedDb(), 30.f, 60.f, 0.f, 1.f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     // set volume on changes
     if (std::exchange(current_volume, std::nearbyint(volume * 10)) != current_volume) {
-      future = QtConcurrent::run(Hardware::set_volume, volume);
+      Hardware::set_volume(volume);
     }
   }
 
