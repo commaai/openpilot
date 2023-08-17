@@ -968,7 +968,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>Github kullanıcısı bulunamadı</translation>
+        <translation>Github kullanıcısı %1 bulunamadı</translation>
     </message>
 </context>
 <context>
