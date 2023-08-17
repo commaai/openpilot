@@ -100,6 +100,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
+  } else {
+    icon_01->setVisible(false);
   }
 
   // Hide distance after arrival
